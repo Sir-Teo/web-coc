@@ -51,12 +51,14 @@ vi.mock('../src/game/native-scene-view', () => {
     meshes = new Map();
     renders = 0;
     last?: { x: number; y: number; depth: number };
+    lastPoses?: readonly unknown[];
     constructor(
       public scene: unknown,
       public prefix: string,
     ) {}
-    render(_poses: unknown[], x: number, y: number, depth: number) {
+    render(poses: unknown[], x: number, y: number, depth: number) {
       this.renders++;
+      this.lastPoses = poses;
       this.last = { x, y, depth };
       if (!this.objects.length) this.objects = [new FakeObject(), new FakeObject()];
       this.objects.forEach((o, i) =>
@@ -82,6 +84,8 @@ const { HeroNativePresentation } = await import('../src/game/hero-native-scene')
 const { NativeDefenseEventLog, NativeDefensePresentation, NATIVE_DEFENSE_SPELL_KIND } =
   await import('../src/game/native-defense-scene');
 const { NativeProjectilePresentation } = await import('../src/game/native-projectile-scene');
+const { VillageNativePresentation } = await import('../src/game/village-native-scene');
+const { nativeScenePoses } = await import('../src/game/native-mesh');
 const { unitDepth } = await import('../src/game/unit-depth');
 
 const iso = (x: number, y: number) => ({ x: (x - y) * 32, y: (x + y) * 16 });
@@ -392,6 +396,81 @@ describe('native defense effect log', () => {
     }
     expect(NATIVE_DEFENSE_SPELL_KIND).toEqual(declared);
   });
+});
+
+it('shares identical wall samples without mixing levels or placement preview tints', () => {
+  const pack = JSON.parse(fs.readFileSync('public/assets/village-native/wall/graph.json', 'utf8'));
+  const p = new VillageNativePresentation(
+    fakeScene(),
+    () => {},
+    () => 0,
+  );
+  const state = p as unknown as {
+    packs: Map<string, unknown>;
+    levelsReady: Map<string, Set<number>>;
+    views: Map<
+      number,
+      Map<string, { view: { lastPoses: unknown[]; last: { x: number; y: number } } }>
+    >;
+  };
+  state.packs.set('wall', pack);
+  state.levelsReady.set('wall', new Set([12, 13]));
+  const walls = [
+    makeBuilding(1, 'wall', 10, 10, 12),
+    makeBuilding(2, 'wall', 11, 10, 12),
+    makeBuilding(3, 'wall', 12, 10, 13),
+  ];
+  const view = (id: number) => [...state.views.get(id)!.values()][0].view;
+  p.render(walls, null, 0.5, iso, new Map());
+  expect(view(1).lastPoses).toBe(view(2).lastPoses);
+  expect(view(1).last).not.toEqual(view(2).last);
+  expect(view(1).lastPoses).not.toEqual(view(3).lastPoses);
+  p.preview(makeBuilding(99, 'wall', 13, 10, 12), false);
+  p.render(walls, null, 1, iso, new Map());
+  const expected = nativeScenePoses(
+    pack.scenes.buildings,
+    'defense_wall_lvl12',
+    1,
+    {},
+    [1.2, 0, 0, 0, 1.2, -32],
+  );
+  expect(view(1).lastPoses).toEqual(expected);
+  expect(view(2).lastPoses).toEqual(expected);
+  expect(view(-1).lastPoses).not.toEqual(expected);
+  expect(view(-1).lastPoses).not.toBe(view(1).lastPoses);
+});
+
+it('keeps resource controls distinct when sharing building samples', () => {
+  const pack = JSON.parse(
+    fs.readFileSync('public/assets/village-native/goldmine/graph.json', 'utf8'),
+  );
+  const p = new VillageNativePresentation(
+    fakeScene(),
+    () => {},
+    () => 0,
+  );
+  const state = p as unknown as {
+    packs: Map<string, unknown>;
+    levelsReady: Map<string, Set<number>>;
+    views: Map<number, Map<string, { view: { lastPoses: unknown[] } }>>;
+  };
+  state.packs.set('goldmine', pack);
+  state.levelsReady.set('goldmine', new Set([1]));
+  const mines = [
+    makeBuilding(1, 'goldmine', 10, 10, 1),
+    makeBuilding(2, 'goldmine', 13, 10, 1),
+    makeBuilding(3, 'goldmine', 16, 10, 1),
+  ];
+  mines[1].stored = Number.MAX_SAFE_INTEGER;
+  const poses = (id: number) => [...state.views.get(id)!.values()][0].view.lastPoses;
+  p.render(mines, null, 0.5, iso, new Map());
+  expect(poses(1)).toBe(poses(3));
+  expect(poses(1)).not.toEqual(poses(2));
+  const empty = poses(1);
+  mines[0].stored = mines[1].stored;
+  p.render(mines, null, 0.5, iso, new Map());
+  expect(poses(1)).toEqual(poses(2));
+  expect(poses(3)).toBe(empty);
 });
 
 describe('native defense zap readiness', () => {

@@ -609,6 +609,31 @@ Validation passed all 2,981 tests across 327 files, type checks, documentation l
 production build. Both held-gesture scales passed in Chromium and WebKit; the compiled
 Chromium online/offline smoke check passed.
 
+### Sharing repeated building samples within a frame
+
+Buildings with the same graph, export sequence, integer animation frame, controls and root
+transform now reuse one pose list during a village render pass. This avoids sampling an
+identical animation separately for hundreds of walls. Positions, depth and opacity remain
+per building. Invalid placement previews sample separately because they modify their tint.
+The map clears each pass and when views are released; it never retains a timeline of samples.
+
+A 390×844, 3× phone-viewport probe rendered 533 level-12 walls through the presentation
+without GPU submission. After two warmups, six alternating pairs of 160 advancing animation
+frames averaged 491→409 ms in Chromium and 782→566 ms in WebKit, about 17% and 28% less CPU
+time. The reference disabled only this map. Each shared run sampled once per frame instead
+of 533 times; all 533 views retained their original animation frames. These are isolated
+presentation measurements on software-rendered browsers, not physical-phone FPS.
+
+Regression checks cover independent positions, mixed wall levels, placement tint isolation,
+different resource-fill controls and a control change without advancing the clock. Chromium
+and WebKit produced exactly matching framebuffer bytes for shared versus independent
+animated-wall samples at three clocks, including valid and invalid placement previews.
+
+Validation passed all 2,983 tests across 327 files, type checks, documentation links and the
+production build. Five village recovery/release cases also passed in each browser, covering
+connectivity returns at home and while scouting, page release, and late request completion.
+The compiled Chromium online/offline smoke check passed with no page errors.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

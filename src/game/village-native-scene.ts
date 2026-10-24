@@ -249,6 +249,8 @@ export class VillageNativePresentation {
   private placement?: { building: Building; valid: boolean };
   private seen = new Set<number>();
   private used = new Set<string>();
+  /** Identical building samples share poses only for this pass; never retain a timeline cache. */
+  private frameSamples = new Map<string, readonly NativeScenePose[]>();
   preview(building?: Building, valid = true) {
     this.placement =
       building && hasVillageNativeArt(building.kind)
@@ -350,6 +352,7 @@ export class VillageNativePresentation {
   }
   clear() {
     for (const id of [...this.views.keys()]) this.drop(id);
+    this.frameSamples.clear();
     this.aims.clear();
     this.wantedPacks.clear();
     this.wantedLevels.clear();
@@ -418,6 +421,7 @@ export class VillageNativePresentation {
     iso: (x: number, y: number) => { x: number; y: number },
     sprites: Map<number, Phaser.GameObjects.Image>,
   ) {
+    this.frameSamples.clear();
     this.wantedPacks.clear();
     this.wantedLevels.clear();
     const seen = this.seen;
@@ -644,15 +648,28 @@ export class VillageNativePresentation {
         // resample, retessellation and object updates entirely. The placement preview (tinted
         // per validity) always renders.
         if (b.id !== -1 && entry.signature === signature) continue;
-        const poses: NativeScenePose[] = [];
-        for (const part of group.parts) {
-          const sampled = nativeScenePoses(part.graph, part.name, part.clock, part.controls, root);
-          if (tintedPreview)
-            for (const pose of sampled)
-              pose.multiply = pose.multiply.map((v, channel) =>
-                channel === 1 || channel === 2 ? v * 0.45 : v,
-              );
-          for (const pose of sampled) poses.push(pose);
+        const sampleKey = `${group.prefix}|${group.signature}|${size}`;
+        let poses = tintedPreview ? undefined : this.frameSamples.get(sampleKey);
+        if (!poses) {
+          const sampledPoses: NativeScenePose[] = [];
+          for (const part of group.parts) {
+            const sampled = nativeScenePoses(
+              part.graph,
+              part.name,
+              part.clock,
+              part.controls,
+              root,
+            );
+            if (tintedPreview)
+              for (const pose of sampled)
+                pose.multiply = pose.multiply.map((v, channel) =>
+                  channel === 1 || channel === 2 ? v * 0.45 : v,
+                );
+            for (const pose of sampled) sampledPoses.push(pose);
+          }
+          poses = sampledPoses;
+          // Invalid previews mutate their tint. Shared building samples stay read-only.
+          if (!tintedPreview) this.frameSamples.set(sampleKey, poses);
         }
         entry.view.render(poses, point.x, point.y, depth, alpha);
         entry.signature = b.id === -1 ? undefined : signature;
