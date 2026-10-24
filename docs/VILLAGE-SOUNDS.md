@@ -30,6 +30,17 @@ release a newer voice or disconnect the same nodes twice.
 New fallback tones stay silent while the page is hidden or its audio context is suspended;
 they are not queued to play on return.
 
+On return or the next unlocking gesture, audio resumes from both `suspended` and `interrupted`.
+The latter is the state iOS Safari can report after a tab switch or system audio interruption;
+see [MDN's interruption guidance](https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/state#resuming_interrupted_play_states_in_ios_safari).
+Repeated foreground requests share a pending resume attempt. A rejected attempt can retry on the next gesture,
+and an attempt that completes after the page hides suspends again. Hidden pages also suspend
+interrupted contexts. Returning can retry while an older attempt is still pending; its eventual
+completion cannot clear the newer attempt. `tests/audio-interrupted.test.ts` simulates these
+state transitions, rejected and pending resumes, and the existing gesture and closed-context
+guards. `tests/browser/audio-interrupted.spec.ts` reports a simulated interruption over a real
+suspended context, then checks Settings retry and foreground recovery with native `resume()`.
+
 `tests/village-sounds.test.ts` checks the pinned rows and files and the one-shot player; `tests/browser/village-sounds.spec.ts` checks that nothing is fetched before the first gesture and that collecting Gold plays the client's coin sound.
 `tests/audio-lifecycle.test.ts` checks cleanup and replay isolation; `tests/audio-mute.test.ts`
 checks fallback tones on mute and page hiding. The matching browser test uses the Sound effects

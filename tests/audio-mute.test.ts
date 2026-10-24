@@ -28,8 +28,8 @@ function harness() {
     destination: {},
     createOscillator: () => osc,
     createGain: () => gain,
-    suspend: vi.fn(),
-    resume: vi.fn(),
+    suspend: vi.fn().mockResolvedValue(undefined),
+    resume: vi.fn().mockResolvedValue(undefined),
   };
   const audio = new AudioManager();
   audio.context = context as unknown as AudioContext;

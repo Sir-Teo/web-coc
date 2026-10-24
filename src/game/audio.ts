@@ -21,6 +21,7 @@ export class AudioManager {
   private soundOn = true;
   /** Set by the first user gesture; a context is only created after one. */
   private unlocked = false;
+  private resuming: Promise<void> | null = null;
   private musicOn = false;
   private tones = new Map<OscillatorNode, GainNode>();
   /** The original client's Home and battle music; plays only while music is on. */
@@ -52,13 +53,31 @@ export class AudioManager {
   private updateContext() {
     if (!this.unlocked) return;
     if (this.audible) {
-      if (!this.context) this.context = new AudioContext();
-      if (this.context.state === 'suspended') void this.context.resume();
+      const ctx = (this.context ??= new AudioContext());
+      // Safari can leave a foreground page interrupted after a call or tab switch.
+      if ((ctx.state === 'suspended' || ctx.state === 'interrupted') && !this.resuming) {
+        const attempt: Promise<void> = ctx
+          .resume()
+          // The device may still own the audio hardware; another gesture can retry.
+          .catch(() => {})
+          .finally(() => {
+            if (this.resuming === attempt) this.resuming = null;
+            if (!this.audible) this.suspendContext();
+          });
+        this.resuming = attempt;
+      }
       this.samples.decode();
     } else {
       this.stopTones();
-      if (this.context?.state === 'running') void this.context.suspend();
+      this.suspendContext();
     }
+  }
+  private suspendContext() {
+    // A foreground return must not wait for a resume the suspension superseded.
+    this.resuming = null;
+    const ctx = this.context;
+    if (ctx && (ctx.state === 'running' || ctx.state === 'interrupted'))
+      void ctx.suspend().catch(() => {});
   }
   unlock() {
     this.unlocked = true;
