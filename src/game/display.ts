@@ -48,17 +48,14 @@ export function configureDisplay(game: Phaser.Game) {
   const parent = game.canvas.parentElement!;
   const quality = new RenderQuality();
   quality.reset(performance.now());
+  let appliedScale = quality.scale;
+  let pendingQuality = false;
   const targetDensity = () =>
     Math.min(window.devicePixelRatio, densityCeilings.get(game) ?? Infinity);
   const resize = () => {
     const rect = parent.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return;
-    const size = displaySize(
-      rect.width,
-      rect.height,
-      targetDensity() * quality.scale,
-      maxDimension,
-    );
+    const size = displaySize(rect.width, rect.height, targetDensity() * appliedScale, maxDimension);
     if (game.scale.width !== size.width || game.scale.height !== size.height)
       game.scale.resize(size.width, size.height);
     else game.scale.refresh();
@@ -70,7 +67,8 @@ export function configureDisplay(game: Phaser.Game) {
   const watchDensity = () => {
     if (density === window.devicePixelRatio) return;
     density = window.devicePixelRatio;
-    quality.scale = 1;
+    quality.scale = appliedScale = 1;
+    pendingQuality = false;
     quality.reset(performance.now());
     resolution?.removeEventListener('change', watchDensity);
     resolution = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
@@ -82,7 +80,7 @@ export function configureDisplay(game: Phaser.Game) {
   // when a background window moves between displays; no allocation per frame.
   const checkDensity = () => {
     if (density !== window.devicePixelRatio) watchDensity();
-    // Resizing cancels active drags in the scene: defer quality changes until pointers are up.
+    // Gestures are real render load: measure them, but defer the physical resize until release.
     const scenes = game.scene.scenes;
     const active =
       !document.hidden &&
@@ -91,15 +89,26 @@ export function configureDisplay(game: Phaser.Game) {
       scenes.every(
         (scene) =>
           !scene.load.isLoading() && !(scene as Phaser.Scene & { paused?: boolean }).paused,
-      ) &&
-      !game.input.pointers.some((pointer) => pointer.isDown);
+      );
     // The idle village caps the loop; frames are judged against that pace, not 60 FPS.
     const interval = 1000 / (game.loop.fpsLimit || 60);
-    if (quality.sample(performance.now(), active, targetDensity(), interval)) resize();
+    const now = performance.now();
+    // Wait for a requested size to reach the canvas before judging that size's performance.
+    if (!pendingQuality && quality.sample(now, active, targetDensity(), interval))
+      pendingQuality = true;
+    if (pendingQuality && active && !game.input.pointers.some((pointer) => pointer.isDown)) {
+      pendingQuality = false;
+      if (appliedScale !== quality.scale) {
+        appliedScale = quality.scale;
+        quality.reset(now);
+        resize();
+      }
+    }
   };
   // A new ceiling starts adaptive density afresh at full scale.
   resizers.set(game, () => {
-    quality.scale = 1;
+    quality.scale = appliedScale = 1;
+    pendingQuality = false;
     quality.reset(performance.now());
     resize();
   });

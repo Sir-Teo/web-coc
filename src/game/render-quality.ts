@@ -29,7 +29,7 @@ export class RenderQuality {
     }
     const delta = now - this.previous;
     this.previous = now;
-    // Even a renderer below 1 FPS still needs help. Loading/hidden/dragging are excluded by
+    // Even a renderer below 1 FPS still needs help. Loading/hidden frames are excluded by
     // the caller; reserve the gap reset for a genuine stall or return from a background tab.
     if (!enabled || delta <= 0 || delta > 3000) {
       this.reset(now);

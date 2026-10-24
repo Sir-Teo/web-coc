@@ -47,7 +47,7 @@ describe('adaptive canvas density', () => {
     d.run(45000, 1000 / 60);
     expect(d.quality.scale).toBe(1);
   });
-  it('ignores loads, gestures and background gaps, and restores quality cautiously', () => {
+  it('ignores loads and background gaps, and restores quality cautiously', () => {
     const d = driver();
     d.run(30000, 40, false);
     d.run(30000, 5000);

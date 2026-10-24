@@ -558,6 +558,33 @@ production build. All five defense/projectile loading and retry cases passed in 
 Chromium and WebKit, including phone layouts. The compiled Chromium online/offline smoke
 check passed.
 
+### Letting phones adapt while the player interacts
+
+The display governor previously disabled measurement whenever a pointer was down. Each
+disabled frame restarted its five-second settling period, so frequent taps and pans could
+keep a slow phone at full canvas density indefinitely. It now measures gesture frames and
+queues a quality decision, applying it only after every pointer is released.
+
+Requested and applied density are separate. A viewport resize during a gesture uses the
+currently applied density; it cannot accidentally apply the queued change under a finger.
+Only one change waits at a time, and measurement settles again after that size reaches the
+canvas. This avoids repeatedly lowering quality based on a buffer that has not changed.
+An explicit density ceiling or device-density change clears the pending decision.
+
+All three new integration cases failed against the old implementation and passed after the
+fix. They cover held gestures, a viewport change while held, cancellation by a density
+setting, and the real governor's settling period after a long deferred adjustment. Browser
+checks at 390×844 and 3× density verified that a held pan stays intact, release applies an
+878×1899 buffer, camera framing and world zoom stay fixed, and Town Hall tapping still
+works. That first 0.75-scale step uses about 44% fewer canvas pixels than 1170×2532;
+DOM layout retains its native resolution. It is a pixel-work reduction, not measured phone FPS.
+
+Validation passed all 2,979 tests across 327 files, type checks, documentation links and the
+production build. The new held-gesture case passed in Chromium and WebKit. Existing 3×
+phone input/placement/rotation and framebuffer restoration passed in both engines; Chromium
+also passed native multi-touch pinch and live density changes (the two CDP-only cases are
+skipped in WebKit). The compiled Chromium online/offline smoke check passed.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
