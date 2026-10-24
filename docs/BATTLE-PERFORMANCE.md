@@ -805,6 +805,47 @@ Both layout cases passed in Chromium and WebKit. The bounds unit tests and full 
 suite, type checks, documentation links, production build and compiled online/offline smoke
 check passed alongside the adaptive-resize change.
 
+### Keeping battle defender textures out of the home village
+
+Home villages now load late building art without the later defender-character and projectile
+pages. A battle or replay that needs them holds its clock and deployment until that payload
+has settled. A pending home request can extend to the full battle load; the extension is
+discarded if the originating battle has already ended. Explicit full-preload calls keep their
+previous behavior.
+
+Defender pages owned by this loader are released after the existing 20-second home grace,
+including when the village owns a Monolith or another late building. Building textures stay
+loaded. Shared death-effect pages remain available to the smaller garrison art family.
+Previously, owning any late building kept the entire character payload resident indefinitely.
+Higher-level home Builder huts also stop triggering this combat batch: their home body uses
+the village renderer, and the combat hut renderer only handles them in battle.
+
+At a 390×844, 3× phone viewport, a home village with one added Monolith retained the following
+new nominal RGBA texture storage. The reference forced the old full-load behavior; the new
+run used the implemented loader. Chromium and WebKit reported the same totals:
+
+| Load | Texture bytes |
+| --- | ---: |
+| Building and battle-character art | 210,526,336 |
+| Home building art | 96,065,472 |
+| Reduction | 114,460,864 (109.16 MiB; 54.4%) |
+
+The Monolith rendered in both modes, with no WebGL or page errors. These are managed texture
+dimensions, including other newly requested home art and small render targets, rather than
+process RSS or a phone FPS measurement. Driver padding and browser image-cache retention are
+outside the calculation.
+
+The loader keeps module-failure backoff after clearing a completed request, retains ownership
+of partially loaded pages for retries, and can retry a failed character page after returning
+home. Browser coverage checks both settled and in-flight home-to-battle transitions, cleanup
+and fresh GPU texture creation on the next battle, obsolete queued requests, and upgraded-hut
+home rendering without the late batch.
+
+All five new lifecycle cases passed in Chromium and WebKit, together with module-retry and
+higher-tier hut upgrade/preview/reload checks. The full 2,989-test suite across 328 files, type
+checks, documentation links and production build passed. The compiled Chromium online/offline
+smoke check passed with no page errors.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

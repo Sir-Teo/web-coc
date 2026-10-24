@@ -62,7 +62,7 @@ import {
 import { SPELL_SOURCE } from './spell-progression';
 import { garrisonStats } from './garrison-kinds';
 import { characterBarHeight } from './character-poses';
-import { characterArtLoaded, loadCharacterArt } from './character-art';
+import { characterArtLoaded, commonDeathArt, loadCharacterArt } from './character-art';
 import { preloadCastles, CastlePresentation } from './castle-scene';
 import { CASTLE_ART } from './castle-art';
 import { castleArtLoaded, castleBounds, loadCastleArt } from './castle-graph';
@@ -689,6 +689,8 @@ export class VillageScene extends Phaser.Scene {
   > = INERT_LATE_CAMPAIGN;
   private lateAssets?: Promise<void>;
   lateAssetsReady = false;
+  private lateCharactersReady = false;
+  private lateCharactersLoading = false;
   private lateArtLoading = false;
   private lateArtFailure?: { attempts: number; retryAt: number };
   private lateBattle: { battle: GameModel['battle']; needed: boolean } = {
@@ -1296,12 +1298,34 @@ export class VillageScene extends Phaser.Scene {
     });
   }
   /**
-   * The late Goblin Map families and their defending characters (about 40 MB) load the first
-   * time a battle or replay needs them rather than at boot. Resolves once they can render.
+   * Late building art can render at home without the defending-character textures. Explicit
+   * callers retain the full preload; automatic home requests fetch buildings only.
    */
-  loadLateAssets(): Promise<void> {
-    if (this.lateAssets) return this.lateAssets;
+  loadLateAssets(withCharacters = true, expectedBattle?: Battle): Promise<void> {
+    if (this.lateAssets) {
+      if (withCharacters && !this.lateCharactersReady && !this.lateCharactersLoading)
+        return this.lateAssets.then(() => {
+          if (this.lateAssetsReady && (!expectedBattle || this.model.battle === expectedBattle))
+            return this.loadLateAssets(true, expectedBattle);
+        });
+      return this.lateAssets;
+    }
+    // A failed module leaves scouting held. Other scene refreshes must honor the retry
+    // backoff now that completed requests no longer occupy `lateAssets`.
+    if (
+      !this.lateAssetsReady &&
+      this.lateArtFailure &&
+      this.lateArtFailure.retryAt > performance.now()
+    )
+      return Promise.resolve();
+    if (
+      this.lateAssetsReady &&
+      (!withCharacters || this.lateCharactersReady) &&
+      !this.lateArtFailure
+    )
+      return Promise.resolve();
     this.lateArtLoading = true;
+    this.lateCharactersLoading = withCharacters;
     let shutdown = false;
     let slow: ReturnType<typeof setTimeout>;
     const onShutdown = () => {
@@ -1310,7 +1334,7 @@ export class VillageScene extends Phaser.Scene {
     };
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, onShutdown);
     slow = setTimeout(() => {
-      if (!shutdown && !this.lateAssetsReady) this.model.notify(LOADING_LATE_ART);
+      if (!shutdown && this.lateArtLoading) this.model.notify(LOADING_LATE_ART);
     }, 400);
     const settle = () => {
       clearTimeout(slow);
@@ -1340,12 +1364,32 @@ export class VillageScene extends Phaser.Scene {
               this.garrisonPresentation.clear();
               this.lateCampaign = new LateCampaignPresentation(this, this.audio);
               this.lateAssetsReady = true;
+              if (withCharacters) this.lateCharactersReady = true;
               this.lastRevision = -1;
               resolve();
             });
             const queued = new Set(this.load.list);
             preloadLateCampaign(this);
-            preloadLateGarrisonTroops(this);
+            if (withCharacters) {
+              const buildings = new Set(this.load.list);
+              // Boot garrisons also use this death effect. Its family can have borrowed these
+              // already-loaded pages, so keep them with the building/shared batch at home.
+              const sharedDeathPrefix = commonDeathArt().prefix + ':mesh:';
+              preloadLateGarrisonTroops(this);
+              this.lateCharacterKeys = [
+                ...new Set([
+                  ...this.lateCharacterKeys,
+                  ...[...this.load.list]
+                    .filter(
+                      (file) =>
+                        !buildings.has(file) &&
+                        !file.key.startsWith(sharedDeathPrefix) &&
+                        (file.type === 'image' || file.type === 'spritesheet'),
+                    )
+                    .map((file) => file.key),
+                ]),
+              ];
+            }
             for (const file of this.load.list) if (!queued.has(file)) owned.add(file);
             // Retries queue only missing files; retain ownership of the first batch's pages too.
             this.lateTextureKeys = [
@@ -1368,7 +1412,9 @@ export class VillageScene extends Phaser.Scene {
       },
     );
     this.lateAssets = loading.finally(() => {
+      this.lateAssets = undefined;
       this.lateArtLoading = false;
+      this.lateCharactersLoading = false;
       this.events.off(Phaser.Scenes.Events.SHUTDOWN, onShutdown);
     });
     return this.lateAssets;
@@ -1381,13 +1427,14 @@ export class VillageScene extends Phaser.Scene {
   }
   /** Texture keys the late campaign bundle added (see loadLateAssets). */
   private lateTextureKeys: string[] = [];
+  /** Subset used only by battle defenders; safe to release while home buildings stay loaded. */
+  private lateCharacterKeys: string[] = [];
   /** Home time (ms, game clock) since which the late bundle has gone unused, or undefined. */
   private lateIdleSince?: number;
   /**
-   * Drops the late campaign bundle (about 300 MB of GPU textures with an ordinary army) once the
-   * player has been home for LATE_RELEASE_MS and the home village owns no late family: it stayed
-   * resident for the rest of the session after one late battle, and on phones that pressure ends
-   * in a lost WebGL context. A later battle that needs it loads it again under the usual hold.
+   * After the home idle grace, release defender textures even when late buildings remain.
+   * A village with no late buildings releases the entire batch. The next battle holds for any
+   * missing character pages before starting, as it does for building art.
    */
   private releaseLateAssetsWhenIdle(time: number) {
     if (
@@ -1400,21 +1447,33 @@ export class VillageScene extends Phaser.Scene {
       this.lateIdleSince = undefined;
       return;
     }
-    if (this.model.buildings.some(isLateCampaignBuilding)) {
+    const keepBuildings = this.model.buildings.some(isLateBuilding);
+    if (keepBuildings && !this.lateCharactersReady) {
       this.lateIdleSince = undefined;
       return;
     }
     this.lateIdleSince ??= time;
     if (time - this.lateIdleSince < LATE_RELEASE_MS) return;
     this.lateIdleSince = undefined;
+    this.garrisonPresentation.clear();
+    if (keepBuildings) {
+      const characters = new Set(this.lateCharacterKeys);
+      for (const key of characters) if (this.textures.exists(key)) this.textures.remove(key);
+      this.lateTextureKeys = this.lateTextureKeys.filter((key) => !characters.has(key));
+      this.lateCharacterKeys = [];
+      this.lateCharactersReady = false;
+      this.lastRevision = -1;
+      return;
+    }
     this.lateCampaign.destroy();
     this.lateCampaign = INERT_LATE_CAMPAIGN;
-    this.garrisonPresentation.clear();
     for (const key of this.lateTextureKeys)
       if (this.textures.exists(key)) this.textures.remove(key);
     this.lateTextureKeys = [];
     this.lateAssets = undefined;
     this.lateAssetsReady = false;
+    this.lateCharactersReady = false;
+    this.lateCharacterKeys = [];
     this.lateArtFailure = undefined;
     this.lastRevision = -1;
   }
@@ -1621,7 +1680,8 @@ export class VillageScene extends Phaser.Scene {
       this.needsLateAssets()
     ) {
       this.lateAssets = undefined;
-      void this.loadLateAssets();
+      // Retry every previously attempted character page too, even if the player returned home.
+      void this.loadLateAssets(!!this.model.battle || this.lateCharactersReady);
     }
     const cannons = new Set<number>(),
       towers = new Set<number>();
@@ -1819,7 +1879,10 @@ export class VillageScene extends Phaser.Scene {
   private homeLate = { buildings: null as Building[] | null, revision: -1, needed: false };
   /** True while the current battle waits for late campaign art; its clock and input hold. */
   private lateAssetsPending() {
-    return !this.lateAssetsReady && this.needsLateAssets();
+    return (
+      this.needsLateAssets() &&
+      (!this.lateAssetsReady || (!!this.model.battle && !this.lateCharactersReady))
+    );
   }
   /** Whether the current village uses the late bundle, including a settled batch with failures. */
   private needsLateAssets() {
@@ -1832,7 +1895,7 @@ export class VillageScene extends Phaser.Scene {
       if (home.buildings !== buildings || home.revision !== this.model.revision) {
         home.buildings = buildings;
         home.revision = this.model.revision;
-        home.needed = buildings.some(isLateCampaignBuilding);
+        home.needed = buildings.some(isLateBuilding);
       }
       return home.needed;
     }
@@ -2607,7 +2670,8 @@ export class VillageScene extends Phaser.Scene {
   sync() {
     // Traps whose state this full sync draws; ones that fire later reveal through syncTraps.
     this.trapsSynced = new Set(Object.keys(this.model.battle?.traps ?? {}).map(Number));
-    if (this.lateAssetsPending()) void this.loadLateAssets();
+    if (this.lateAssetsPending())
+      void this.loadLateAssets(!!this.model.battle, this.model.battle ?? undefined);
     if (this.deferredArtPending()) void this.loadFamilies(this.missingFamilies());
     this.retryFailedArt();
     const reduced = this.model.reducedMotion;
@@ -2889,7 +2953,10 @@ export class VillageScene extends Phaser.Scene {
     // Late campaign families draw their own bodies, foundations and ruins; until their art has
     // loaded (in battle or in a home village that owns one), the fallback sprites have no
     // texture to show either.
-    if (this.lateCampaign.handles(b) || (!this.lateAssetsReady && isLateCampaignBuilding(b)))
+    if (
+      this.lateCampaign.handles(b) ||
+      (!this.lateAssetsReady && (this.model.battle ? isLateCampaignBuilding(b) : isLateBuilding(b)))
+    )
       im.setAlpha(0);
     if (
       b.kind === 'archertower' &&
