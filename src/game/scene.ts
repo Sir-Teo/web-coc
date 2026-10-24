@@ -14,6 +14,7 @@ import { DecorationNativePresentation } from './decoration-native-scene';
 import { invalidateLostFramebuffers } from './native-scene-view';
 import { createUnmaskedRenderTexture } from './native-group-buffer';
 import { ruinDecalBounds } from './ruin-decal-bounds';
+import { defenderAnimations } from './defender-art-demand';
 import {
   VillageNativePresentation,
   hasVillageNativeArt,
@@ -311,6 +312,12 @@ interface ArtFamily {
   /** Whether `prepare` has finished; families without it are always prepared. */
   prepared?: () => boolean;
   preload: (scene: Phaser.Scene, fetching?: (key: string) => boolean) => void;
+}
+interface LateArtRequest {
+  withCharacters: boolean;
+  expectedBattle?: Battle;
+  /** Undefined preserves the explicit full preload. */
+  animations?: ReadonlySet<string>;
 }
 /**
  * Whether every deferred family loads right after boot. The dev server does, which is what the
@@ -690,7 +697,15 @@ export class VillageScene extends Phaser.Scene {
   private lateAssets?: Promise<void>;
   lateAssetsReady = false;
   private lateCharactersReady = false;
-  private lateCharactersLoading = false;
+  private lateAllCharactersReady = false;
+  private lateCharacterAnimations = new Set<string>();
+  private lateCharacterRevision = 0;
+  private lateCharacterDemand = {
+    battle: null as Battle | null,
+    animations: new Set<string>() as ReadonlySet<string>,
+    revision: -1,
+    ready: false,
+  };
   private lateArtLoading = false;
   private lateArtFailure?: { attempts: number; retryAt: number };
   private lateBattle: { battle: GameModel['battle']; needed: boolean } = {
@@ -1302,11 +1317,63 @@ export class VillageScene extends Phaser.Scene {
    * callers retain the full preload; automatic home requests fetch buildings only.
    */
   loadLateAssets(withCharacters = true, expectedBattle?: Battle): Promise<void> {
+    return this.loadLateArtRequest({
+      withCharacters,
+      expectedBattle,
+      animations:
+        withCharacters && expectedBattle && !this.lateAllCharactersReady
+          ? this.characterDemand(expectedBattle).animations
+          : undefined,
+    });
+  }
+  private characterDemand(battle: Battle) {
+    if (this.lateCharacterDemand.battle !== battle)
+      this.lateCharacterDemand = {
+        battle,
+        animations: defenderAnimations(battle),
+        revision: -1,
+        ready: false,
+      };
+    return this.lateCharacterDemand;
+  }
+  private charactersCovered(animations?: ReadonlySet<string>) {
+    if (animations?.size === 0) return true;
+    if (!this.lateCharactersReady) return false;
+    if (this.lateAllCharactersReady) return true;
+    if (!animations) return false;
+    for (const name of animations) if (!this.lateCharacterAnimations.has(name)) return false;
+    return true;
+  }
+  private charactersForBattle(battle: Battle) {
+    if (this.lateAllCharactersReady) return this.lateCharactersReady;
+    const demand = this.characterDemand(battle);
+    if (demand.revision !== this.lateCharacterRevision) {
+      demand.ready = this.charactersCovered(demand.animations);
+      demand.revision = this.lateCharacterRevision;
+    }
+    return demand.ready;
+  }
+  private forgetLateCharacters() {
+    this.lateCharacterKeys = [];
+    this.lateCharactersReady = false;
+    this.lateAllCharactersReady = false;
+    this.lateCharacterAnimations.clear();
+    this.lateCharacterRevision++;
+    this.lateCharacterDemand = {
+      battle: null,
+      animations: new Set<string>(),
+      revision: -1,
+      ready: false,
+    };
+  }
+  private loadLateArtRequest(request: LateArtRequest): Promise<void> {
+    const { withCharacters, expectedBattle, animations } = request;
+    const covered = this.charactersCovered(animations);
     if (this.lateAssets) {
-      if (withCharacters && !this.lateCharactersReady && !this.lateCharactersLoading)
+      if (withCharacters && !covered)
         return this.lateAssets.then(() => {
           if (this.lateAssetsReady && (!expectedBattle || this.model.battle === expectedBattle))
-            return this.loadLateAssets(true, expectedBattle);
+            return this.loadLateArtRequest(request);
         });
       return this.lateAssets;
     }
@@ -1318,14 +1385,9 @@ export class VillageScene extends Phaser.Scene {
       this.lateArtFailure.retryAt > performance.now()
     )
       return Promise.resolve();
-    if (
-      this.lateAssetsReady &&
-      (!withCharacters || this.lateCharactersReady) &&
-      !this.lateArtFailure
-    )
+    if (this.lateAssetsReady && (!withCharacters || covered) && !this.lateArtFailure)
       return Promise.resolve();
     this.lateArtLoading = true;
-    this.lateCharactersLoading = withCharacters;
     let shutdown = false;
     let slow: ReturnType<typeof setTimeout>;
     const onShutdown = () => {
@@ -1364,7 +1426,13 @@ export class VillageScene extends Phaser.Scene {
               this.garrisonPresentation.clear();
               this.lateCampaign = new LateCampaignPresentation(this, this.audio);
               this.lateAssetsReady = true;
-              if (withCharacters) this.lateCharactersReady = true;
+              if (withCharacters) {
+                this.lateCharactersReady = true;
+                if (animations)
+                  for (const name of animations) this.lateCharacterAnimations.add(name);
+                else this.lateAllCharactersReady = true;
+                this.lateCharacterRevision++;
+              }
               this.lastRevision = -1;
               resolve();
             });
@@ -1375,7 +1443,7 @@ export class VillageScene extends Phaser.Scene {
               // Boot garrisons also use this death effect. Its family can have borrowed these
               // already-loaded pages, so keep them with the building/shared batch at home.
               const sharedDeathPrefix = commonDeathArt().prefix + ':mesh:';
-              preloadLateGarrisonTroops(this);
+              preloadLateGarrisonTroops(this, animations);
               this.lateCharacterKeys = [
                 ...new Set([
                   ...this.lateCharacterKeys,
@@ -1414,7 +1482,6 @@ export class VillageScene extends Phaser.Scene {
     this.lateAssets = loading.finally(() => {
       this.lateAssets = undefined;
       this.lateArtLoading = false;
-      this.lateCharactersLoading = false;
       this.events.off(Phaser.Scenes.Events.SHUTDOWN, onShutdown);
     });
     return this.lateAssets;
@@ -1460,8 +1527,7 @@ export class VillageScene extends Phaser.Scene {
       const characters = new Set(this.lateCharacterKeys);
       for (const key of characters) if (this.textures.exists(key)) this.textures.remove(key);
       this.lateTextureKeys = this.lateTextureKeys.filter((key) => !characters.has(key));
-      this.lateCharacterKeys = [];
-      this.lateCharactersReady = false;
+      this.forgetLateCharacters();
       this.lastRevision = -1;
       return;
     }
@@ -1472,8 +1538,7 @@ export class VillageScene extends Phaser.Scene {
     this.lateTextureKeys = [];
     this.lateAssets = undefined;
     this.lateAssetsReady = false;
-    this.lateCharactersReady = false;
-    this.lateCharacterKeys = [];
+    this.forgetLateCharacters();
     this.lateArtFailure = undefined;
     this.lastRevision = -1;
   }
@@ -1681,7 +1746,17 @@ export class VillageScene extends Phaser.Scene {
     ) {
       this.lateAssets = undefined;
       // Retry every previously attempted character page too, even if the player returned home.
-      void this.loadLateAssets(!!this.model.battle || this.lateCharactersReady);
+      const battle = this.model.battle;
+      const animations = this.lateAllCharactersReady
+        ? undefined
+        : new Set([
+            ...this.lateCharacterAnimations,
+            ...(battle ? this.characterDemand(battle).animations : []),
+          ]);
+      void this.loadLateArtRequest({
+        withCharacters: !!battle || this.lateCharactersReady,
+        animations,
+      });
     }
     const cannons = new Set<number>(),
       towers = new Set<number>();
@@ -1881,7 +1956,8 @@ export class VillageScene extends Phaser.Scene {
   private lateAssetsPending() {
     return (
       this.needsLateAssets() &&
-      (!this.lateAssetsReady || (!!this.model.battle && !this.lateCharactersReady))
+      (!this.lateAssetsReady ||
+        (!!this.model.battle && !this.charactersForBattle(this.model.battle)))
     );
   }
   /** Whether the current village uses the late bundle, including a settled batch with failures. */

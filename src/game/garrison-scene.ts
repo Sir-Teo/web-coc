@@ -5,6 +5,7 @@ import { NativeSceneView } from './native-scene-view';
 import { preloadNativeMeshes } from './native-mesh-scene';
 import {
   characterArtLoaded,
+  characterArt,
   characterArts,
   commonDeathArt,
   projectileArts,
@@ -61,13 +62,17 @@ export function preloadGarrisonCharacters(scene: Phaser.Scene) {
   for (const name of BOOT_CHARACTERS)
     preloadNativeMeshes(scene, characterArts()[name].graph, characterArts()[name].prefix);
 }
-/** Every later defending character and projectile file, loaded with the late campaign art. */
-export function preloadLateGarrisonTroops(scene: Phaser.Scene) {
+/** Selected defender bodies and shared projectiles; explicit callers can still preload all. */
+export function preloadLateGarrisonTroops(scene: Phaser.Scene, animations?: ReadonlySet<string>) {
+  if (animations?.size === 0) return;
+  const bodies = animations
+    ? [...animations].filter((name) => !BOOT_CHARACTERS.has(name)).map(characterArt)
+    : Object.entries(characterArts()).flatMap(([name, art]) =>
+        BOOT_CHARACTERS.has(name) ? [] : [art],
+      );
   for (const art of [
     commonDeathArt(),
-    ...Object.entries(characterArts()).flatMap(([name, art]) =>
-      BOOT_CHARACTERS.has(name) ? [] : [art],
-    ),
+    ...bodies,
     ...Object.values(projectileArts()),
     ...Object.values(projectileGroupArts()),
   ])

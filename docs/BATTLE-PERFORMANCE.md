@@ -846,6 +846,47 @@ higher-tier hut upgrade/preview/reload checks. The full 2,989-test suite across 
 checks, documentation links and production build passed. The compiled Chromium online/offline
 smoke check passed with no page errors.
 
+### Loading defender bodies for the battle that uses them
+
+Automatic battle loads now select defender animation graphs from the reserve and existing
+defenders, recursively including Golemites, Lava Pups and Witch summons. Concealed Ghost Traps
+and armed huts add their future Ghost and Builder bodies before either can spawn. Shared
+death and projectile graphs retain their existing loading behavior; the smaller boot-garrison
+family still owns its Dragon 7 and Balloon 8 bodies. A battle with no possible defenders skips
+the character payload entirely, including shared projectiles.
+
+The battle's animation demand is cached by battle identity, and its readiness by loaded-art
+revision. Frames do not rebuild the set. Requested animations remain reusable across a quick
+roster change, while missing bodies hold the new battle. Home cleanup clears their coverage
+and demand cache. Retries include previously attempted animations, including after returning
+home. An explicit full-preload call waits for the remaining bodies even when a selective
+request is already in flight.
+
+A 390×844, 3× phone-viewport probe entered a practice battle after the Monolith's home building
+art had loaded. It staged a Witch 4, Golem 8 and Lava Hound 6, together with their Skeleton,
+Golemite and Lava Pup. The reference forced full character loading; the new run used the
+implemented automatic demand:
+
+| Engine | Full-load new texture bytes | Selected new texture bytes | Reduction |
+| --- | ---: | ---: | ---: |
+| Chromium / SwiftShader | 116,208,232 | 12,431,488 | 89.3% |
+| WebKit software renderer | 116,208,232 | 12,423,592 | 89.3% |
+
+All six bodies had visible native objects and no missing-texture placeholders in both modes.
+The runs reported no drawing, WebGL or page errors. These incremental nominal RGBA allocations
+include shared projectiles, the battle's ruin target and small render buffers; they exclude
+already-loaded home textures and driver padding. The roughly 99 MiB battle saving is a
+separate comparison from the earlier cold-home saving, and does not establish a phone FPS gain.
+
+Six planner tests cover the dependency closure, every supported defender level, trap/worker
+requirements, deduplication and unchanged combat state. Nine browser cases check different
+successive rosters, explicit full-load upgrades, visible Ghost/Builder bodies, cancellation,
+retries, empty defender demand and texture ownership across home/battle transitions.
+
+Validation: `npm run check` passed (2,995 tests in 329 files). The nine lifecycle cases and
+six existing art-recovery cases passed in both Chromium and WebKit. The compiled Chromium
+online/offline release check passed with no page errors (cache `41a34c63248b`).
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

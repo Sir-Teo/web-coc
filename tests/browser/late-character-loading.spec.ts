@@ -17,6 +17,27 @@ async function addHomeBuilding(page: Page, kind: 'monolith' | 'builder') {
     return building.id;
   }, kind);
 }
+async function scoutDefender(page: Page, kind = 'archer', level = 9) {
+  return page.evaluate(
+    async ({ kind, level }) => {
+      const { spawnGarrisonDefender } = await import('/src/game/garrison-combat.ts');
+      const { model, scene } = window.__game;
+      model.startBattle(0, true);
+      const battle = model.battle;
+      spawnGarrisonDefender(battle, kind, level, battle.buildings[0].id, 32, 31, 0);
+      model.changed();
+      scene.sync();
+      return {
+        battle: !!model.battle,
+        loading: scene.lateArtLoading,
+        ready: scene.lateCharactersReady,
+        pending: scene.battleArtPending(),
+        keys: scene.lateCharacterKeys.length,
+      };
+    },
+    { kind, level },
+  );
+}
 
 test('upgraded home Builder huts render without requesting the late combat batch', async ({
   page,
@@ -77,11 +98,7 @@ for (const inFlight of [false, true]) {
       expect(requests).toBe(0);
       expect(await page.evaluate(() => window.__game.scene.lateCharactersReady)).toBe(false);
     }
-    await page.evaluate(() => {
-      const { model, scene } = window.__game;
-      model.startBattle(0, true);
-      scene.sync();
-    });
+    await scoutDefender(page);
     await expect.poll(() => requests, { timeout: 30000 }).toBeGreaterThan(0);
     expect(
       await page.evaluate(() => ({
@@ -119,7 +136,7 @@ for (const inFlight of [false, true]) {
         characterReady: scene.lateCharactersReady,
       };
     });
-    expect(released.count).toBeGreaterThan(20);
+    expect(released.count).toBeGreaterThan(0);
     expect(released.beforeGrace).toBe(true);
     expect(released.remaining).toEqual([]);
     expect(released.buildingsKept).toBe(true);
@@ -129,18 +146,7 @@ for (const inFlight of [false, true]) {
       (id) => window.__game.scene.lateCampaign.families.some((family) => family.towers?.has(id)),
       id,
     );
-    const restarted = await page.evaluate(() => {
-      window.__game.model.startBattle(0, true);
-      window.__game.scene.sync();
-      const { scene, model } = window.__game;
-      return {
-        battle: !!model.battle,
-        loading: scene.lateArtLoading,
-        ready: scene.lateCharactersReady,
-        pending: scene.battleArtPending(),
-        keys: scene.lateCharacterKeys.length,
-      };
-    });
+    const restarted = await scoutDefender(page);
     await page.waitForFunction(
       () =>
         window.__game.scene.lateCharactersReady &&
@@ -161,7 +167,7 @@ for (const inFlight of [false, true]) {
       };
     });
     expect(restarted).toMatchObject({ battle: true, loading: true, ready: false, pending: true });
-    expect(finalState.keys).toBeGreaterThan(20);
+    expect(finalState.keys).toBeGreaterThan(0);
     expect(finalState.loaded).toBe(finalState.keys);
     expect(finalState.recreated).toBe(true);
     expect(await page.evaluate(() => window.__game.game.renderer.gl.getError())).toBe(0);
@@ -206,10 +212,7 @@ test('a failed defender page retries after returning to a home village with late
   await page.route('**' + target.path, (route) =>
     route.fulfill({ status: 503, body: 'Temporary outage' }),
   );
-  await page.evaluate(() => {
-    window.__game.model.startBattle(0, true);
-    window.__game.scene.sync();
-  });
+  await scoutDefender(page, 'electrodragon', 3);
   await page.waitForFunction(
     () => !!window.__game.scene.lateArtFailure && !window.__game.scene.lateArtLoading,
   );
@@ -250,12 +253,14 @@ test('leaving scouting cancels a character extension waiting on the home buildin
   await boot(page);
   const id = await page.evaluate(async () => {
     const { makeBuilding } = await import('/src/game/model.ts');
+    const { spawnGarrisonDefender } = await import('/src/game/garrison-combat.ts');
     const { model, scene } = window.__game;
     const building = makeBuilding(model.state.nextId++, 'monolith', 32, 32, 1);
     model.state.buildings.push(building);
     model.changed();
     scene.sync();
     model.startBattle(0, true);
+    spawnGarrisonDefender(model.battle, 'archer', 9, model.battle.buildings[0].id, 32, 31, 0);
     scene.sync();
     model.returnHome();
     scene.sync();
@@ -280,4 +285,182 @@ test('leaving scouting cancels a character extension waiting on the home buildin
   ).toEqual({ battle: null, characters: false, loading: false, error: 0 });
   expect(characters).toBe(0);
   expect(errors).toEqual([]);
+});
+
+test('a different next defender roster loads its missing atlases without loading unrelated bodies', async ({
+  page,
+}) => {
+  test.setTimeout(180000);
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await boot(page);
+  await addHomeBuilding(page, 'monolith');
+  await page.waitForFunction(
+    () => window.__game.scene.lateAssetsReady && !window.__game.scene.lateArtLoading,
+  );
+  await scoutDefender(page, 'golem', 8);
+  await page.waitForFunction(
+    () => !window.__game.scene.lateArtLoading && !window.__game.scene.battleArtPending(),
+  );
+  const first = await page.evaluate(() => [...window.__game.scene.lateCharacterAnimations]);
+  expect(first).toEqual(expect.arrayContaining(['Golem_lvl6', 'GolemSmall_lvl6']));
+  expect(first).not.toContain('Necromancer_lvl2');
+  await page.evaluate(() => {
+    window.__game.model.returnHome();
+    window.__game.scene.sync();
+  });
+  const second = await scoutDefender(page, 'witch', 4);
+  expect(second).toMatchObject({ loading: true, pending: true });
+  await page.waitForFunction(
+    () => !window.__game.scene.lateArtLoading && !window.__game.scene.battleArtPending(),
+  );
+  const result = await page.evaluate(() => {
+    const { scene, game } = window.__game;
+    return {
+      names: [...scene.lateCharacterAnimations],
+      all: scene.lateAllCharactersReady,
+      unrelated: Object.keys(scene.textures.list).filter((key) =>
+        key.startsWith('character-electrodragon-'),
+      ),
+      bodies: [...scene.garrisonPresentation.defenders.values()].reduce(
+        (n, v) => n + v.objects.filter((o) => o.visible).length,
+        0,
+      ),
+      error: game.renderer.gl.getError(),
+    };
+  });
+  expect(result.names).toEqual(
+    expect.arrayContaining(['Golem_lvl6', 'GolemSmall_lvl6', 'Necromancer_lvl2', 'Skeleton']),
+  );
+  expect(result.all).toBe(false);
+  expect(result.unrelated).toEqual([]);
+  await expect
+    .poll(() => page.evaluate(() => window.__game.scene.garrisonPresentation.defenders.size))
+    .toBeGreaterThan(0);
+  expect(result.error).toBe(0);
+  expect(errors).toEqual([]);
+});
+
+test('an explicit full preload waits for the rest of the characters after an active selective request', async ({
+  page,
+}) => {
+  test.setTimeout(180000);
+  await boot(page);
+  await addHomeBuilding(page, 'monolith');
+  await page.waitForFunction(
+    () => window.__game.scene.lateAssetsReady && !window.__game.scene.lateArtLoading,
+  );
+  const result = await page.evaluate(async () => {
+    const { spawnGarrisonDefender } = await import('/src/game/garrison-combat.ts');
+    const { scene, model, game } = window.__game;
+    model.startBattle(0, true);
+    spawnGarrisonDefender(model.battle, 'witch', 4, model.battle.buildings[0].id, 32, 31, 0);
+    model.changed();
+    scene.sync();
+    const active = scene.lateArtLoading && !scene.lateAllCharactersReady;
+    await scene.loadLateAssets();
+    return {
+      active,
+      all: scene.lateAllCharactersReady,
+      ready: scene.lateCharactersReady,
+      unrelated: Object.keys(scene.textures.list).some((key) =>
+        key.startsWith('character-electrodragon-'),
+      ),
+      error: game.renderer.gl.getError(),
+    };
+  });
+  expect(result).toEqual({ active: true, all: true, ready: true, unrelated: true, error: 0 });
+});
+
+test('automatic loading includes Ghost Trap bodies and armed hut workers before they spawn', async ({
+  page,
+}) => {
+  test.setTimeout(180000);
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => {
+    if (message.text().startsWith('Skipped drawing')) errors.push(message.text());
+  });
+  await boot(page);
+  const hutId = await addHomeBuilding(page, 'builder');
+  await page.evaluate(async () => {
+    const { makeBuilding } = await import('/src/game/model.ts');
+    const { model, scene } = window.__game;
+    const trap = makeBuilding(model.state.nextId++, 'bomb', 34, 32, 1);
+    trap.npc = 'ghost-trap';
+    model.state.buildings.push(trap);
+    model.changed();
+    scene.sync();
+    model.startBattle(0, true);
+    scene.sync();
+    scene.cameras.main.centerOn(896, 1184);
+  });
+  await page.waitForFunction(
+    () => !window.__game.scene.lateArtLoading && !window.__game.scene.battleArtPending(),
+  );
+  const spawned = await page.evaluate(async (hutId) => {
+    const { spawnDefendingBuilder } = await import('/src/game/defending-builder.ts');
+    const { spawnGarrisonDefender } = await import('/src/game/garrison-combat.ts');
+    const { ghostTrapSource } = await import('/src/game/ghost-trap.ts');
+    const { model, scene } = window.__game;
+    const battle = model.battle,
+      hut = battle.buildings.find((b) => b.id === hutId);
+    const worker = spawnDefendingBuilder(battle, hut, 0);
+    const source = ghostTrapSource();
+    const ghost = spawnGarrisonDefender(battle, source.kind, source.level, hut.id, 33, 32, 0);
+    ghost.stealthUntil = 0;
+    battle.elapsed = 0.2;
+    model.changed();
+    scene.sync();
+    scene.drawOverlay(200);
+    return { worker: worker.id, ghost: ghost.id };
+  }, hutId);
+  const result = await page.evaluate(
+    (ids) => ({
+      worker: window.__game.scene.children.list.filter(
+        (o) => o.visible && o.alpha > 0 && o.getData?.('defendingBuilder') === ids.worker,
+      ).length,
+      ghost:
+        window.__game.scene.garrisonPresentation.defenders
+          .get(ids.ghost)
+          ?.objects.filter((o) => o.visible && o.alpha > 0).length ?? 0,
+      all: window.__game.scene.lateAllCharactersReady,
+      error: window.__game.game.renderer.gl.getError(),
+    }),
+    spawned,
+  );
+  expect(result.worker).toBeGreaterThan(0);
+  expect(result.ghost).toBeGreaterThan(0);
+  expect(result.all).toBe(false);
+  expect(result.error).toBe(0);
+  expect(errors).toEqual([]);
+});
+
+test('a late battle with no possible defenders requests no character payload', async ({ page }) => {
+  test.setTimeout(120000);
+  let requests = 0;
+  page.on('request', (request) => {
+    if (request.url().includes('/assets/characters-native/')) requests++;
+  });
+  await boot(page);
+  await addHomeBuilding(page, 'monolith');
+  await page.waitForFunction(
+    () => window.__game.scene.lateAssetsReady && !window.__game.scene.lateArtLoading,
+  );
+  await page.evaluate(() => {
+    window.__game.model.startBattle(0, true);
+    window.__game.scene.sync();
+  });
+  await page.waitForFunction(
+    () => !window.__game.scene.lateArtLoading && !window.__game.scene.battleArtPending(),
+  );
+  expect(
+    await page.evaluate(() => ({
+      battle: !!window.__game.model.battle,
+      characters: window.__game.scene.lateCharactersReady,
+      keys: window.__game.scene.lateCharacterKeys.length,
+      error: window.__game.game.renderer.gl.getError(),
+    })),
+  ).toEqual({ battle: true, characters: false, keys: 0, error: 0 });
+  expect(requests).toBe(0);
 });
