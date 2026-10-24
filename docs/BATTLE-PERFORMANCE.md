@@ -326,7 +326,8 @@ Both browser benchmark scripts now count actual Phaser game callbacks rather tha
 independent browser animation frames: a 30 FPS game cap must not report 60 FPS.
 The battle benchmark reports CPU milliseconds per second and canvas dimensions too.
 Use `--msaa=on|off` to compare context sampling, `--freeze` to hold the scene after
-warmup and isolate rendering, or `--profile` for a CPU profile. Run benchmarks alone,
+warmup and isolate rendering, or `--profile` for a CPU profile. Add `--lazyart` to use
+production's on-demand art loading rather than the eager developer preload. Run benchmarks alone,
 with no tests/build running, and keep viewport, canvas density, army and warmup equal.
 
 Validation for this pass: `npm run check` passed 2,955 tests across 325 files and built
@@ -335,6 +336,31 @@ the production app. The selected rendering/audio browser checks passed in Chromi
 subset passed again after the diamond change, and the pixel comparison passed in both
 engines after removing temporary argument arrays. The compiled Chromium production
 check passed online and offline, including army interactions and replay playback.
+
+### Bounding decoded village images
+
+Village changes already release obsolete GPU pages. Their decoded image promises used to
+remain cached for the rest of the session. The warm cache now keeps at most 64 MiB of
+completed images, estimated from their RGBA dimensions; pending requests remain shared.
+Least recently requested pages leave the cache first. Active textures keep their own image
+references, including the source needed after graphics-context loss.
+
+In a Chromium test that prefetched every level of 16 building families, retained decoded
+images (including active and non-village images) fell from 118.5 MiB to 86.7 MiB after forced
+garbage collection. These are pixel-footprint estimates, not measured resident allocations:
+renderer RSS stayed around 510–516 MiB, so this test establishes bounded cache ownership,
+not lower immediate process memory or higher FPS. The browser can retain its own decoded
+surfaces. `tests/browser/village-art-release.spec.ts` exercises the same cache pressure,
+checks active textures across graphics restoration, and revisits an evicted page.
+
+Validation covered 2,962 unit tests: the full run passed 2,961 and the campaign audit hit its
+timeout while competing with browser checks; that audit then passed all three cases alone
+in 60 seconds with its existing timeout. Type checks, documentation links and the production
+build passed. All ten selected village recovery/release cases passed in Chromium and WebKit
+(the Chromium release subset was rerun alone after one slow assertion exceeded its deadline).
+The compiled Chromium online/offline smoke check passed. An additional compiled-app check
+visited 227 levels across the same 16 families, released their GPU pages, then loaded an
+evicted Town Hall page while offline: four new image decodes completed with no page errors.
 
 ## Keeping it that way
 

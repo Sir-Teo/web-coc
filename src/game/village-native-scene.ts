@@ -11,6 +11,7 @@ import {
 } from './native-mesh';
 import { hasNativeDefenseBody, nativeDefenseBody } from './native-defense-poses';
 import { nativeTrapValues } from './native-traps';
+import { DecodedImageCache } from './decoded-image-cache';
 import progressionSource from '../../reference/full-client/progression.json' with { type: 'json' };
 const progression = progressionSource as unknown as {
   buildings: Record<string, (typeof progressionSource.buildings)['townhall']>;
@@ -52,8 +53,8 @@ function fetchPack(key: string, path: string) {
   fetched.set(key, pending);
   return pending;
 }
-/** Decoded texture images by texture key, shared by every presentation. */
-const decoded = new Map<string, Promise<HTMLImageElement>>();
+/** Recent decoded pages; active Phaser textures independently retain their own images. */
+const decoded = new DecodedImageCache<HTMLImageElement>(64 * 1024 * 1024);
 /**
  * The textures one level of a pack draws, decoded and ready to upload. A paged pack (see
  * scripts/native-pages.mjs) tags each page with the levels that draw it, so a village fetches
@@ -67,17 +68,12 @@ function fetchLevel(key: string, pack: Pack, level: number) {
         .filter(([, texture]) => !texture.levels || texture.levels.includes(level))
         .map(async ([id, texture]) => {
           const textureKey = nativeMeshTexture(`village:${key}:${name}`, id);
-          let image = decoded.get(textureKey);
-          if (!image) {
-            image = (async () => {
-              const element = new Image();
-              element.src = '/' + texture.path;
-              await element.decode();
-              return element;
-            })();
-            image.catch(() => decoded.delete(textureKey));
-            decoded.set(textureKey, image);
-          }
+          const image = decoded.get(textureKey, async () => {
+            const element = new Image();
+            element.src = '/' + texture.path;
+            await element.decode();
+            return element;
+          });
           images.set(textureKey, await image);
         }),
     ),
@@ -359,8 +355,8 @@ export class VillageNativePresentation {
     this.wantedLevels.clear();
   }
   /**
-   * Keep GPU pages for home and the current village when changing modes. Decoded images stay
-   * warm for a later visit, but obsolete uploads (including ones still decoding) are released.
+   * Keep GPU pages for home and the current village when changing modes. Recent decoded images
+   * stay warm within the cache budget; obsolete uploads (including pending ones) are released.
    * Clear the old views first so no mesh references a removed texture.
    */
   releaseExcept(buildings: Iterable<Pick<Building, 'kind' | 'level'>>) {

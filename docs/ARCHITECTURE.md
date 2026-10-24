@@ -146,8 +146,13 @@ place, and reconnect retries for metadata and level pages at home and while scou
 
 Changing villages releases native building GPU pages that neither home nor the current
 village uses. Shared pages stay uploaded while any retained level needs them, and mode
-variants stay warm while their building family is present. Decoded images remain cached
-for a later visit, so re-uploading a released page does not download it again. Pending
+variants stay warm while their building family is present. Recent decoded images share a
+64 MiB warm cache, estimated as width × height × four bytes per image. Requests refresh
+recency; pending decodes stay shared, and completed pages leave the cache in request order
+when it exceeds the budget. Eviction drops only the cache reference: active Phaser textures
+retain their images for rendering, tint generation and graphics-context restoration. Recent
+visits reuse decoded images; older evicted pages decode again through the browser/SW cache.
+The budget bounds warm image references, not total process or GPU memory. Pending
 uploads own request tokens: leaving a village cancels obsolete uploads, and a late decode
 cannot recreate released textures or clear a newer visit's request.
 `tests/browser/village-art-release.spec.ts` checks release and reuse across village visits.

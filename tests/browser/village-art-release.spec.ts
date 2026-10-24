@@ -35,6 +35,101 @@ async function returnHome(page: Page) {
   });
 }
 
+test('cache pressure preserves active images and allows evicted pages to decode again', async ({
+  page,
+}) => {
+  test.setTimeout(180000);
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await boot(page);
+  const catalogue = JSON.parse(await readFile('reference/full-client/village-art.json', 'utf8'));
+  const buildings: { kind: string; level: number }[] = [];
+  for (const kind of [
+    'townhall',
+    'goldmine',
+    'goldstorage',
+    'collector',
+    'elixirstorage',
+    'airdefense',
+    'barracks',
+    'laboratory',
+    'spellfactory',
+    'herohall',
+    'blacksmith',
+    'camp',
+    'darkbarracks',
+    'workshop',
+    'pethouse',
+    'eagle',
+  ]) {
+    const response = await page.request.get('/' + catalogue.buildings[kind].path);
+    expect(response.ok()).toBe(true);
+    const pack = await response.json();
+    buildings.push(...pack.levels.map(({ level }) => ({ kind, level })));
+  }
+  const result = await page.evaluate(async (buildings) => {
+    const { scene, model, game } = window.__game;
+    const active = Object.entries(scene.textures.list)
+      .filter(([key]) => key.startsWith('village:townhall:'))
+      .map(([key, texture]) => ({ key, texture, images: texture.source.map((s) => s.image) }));
+    const url = performance
+      .getEntriesByType('resource')
+      .find((entry) => entry.name.includes('/src/game/village-native-scene.ts'))!.name;
+    const { prefetchVillageArt } = await import(/* @vite-ignore */ url);
+    // Sequential families reproduce visits rather than making every decode pending at once.
+    for (const kind of new Set(buildings.map((b) => b.kind)))
+      await prefetchVillageArt(buildings.filter((b) => b.kind === kind));
+    const unchanged = () =>
+      active.every(
+        ({ key, texture, images }) =>
+          scene.textures.get(key) === texture &&
+          texture.source.every(
+            (source, i) => source.image === images[i] && images[i].naturalWidth > 0,
+          ),
+      );
+    const aliveAfterEviction = unchanged();
+    const decode = HTMLImageElement.prototype.decode;
+    let decodes = 0;
+    HTMLImageElement.prototype.decode = function () {
+      decodes++;
+      return decode.call(this);
+    };
+    try {
+      await prefetchVillageArt([{ kind: 'townhall', level: model.townhallLevel }]);
+    } finally {
+      HTMLImageElement.prototype.decode = decode;
+    }
+    const extension = game.renderer.gl.getExtension('WEBGL_lose_context');
+    if (extension) {
+      const lost = new Promise<void>((resolve) =>
+        game.canvas.addEventListener('webglcontextlost', () => resolve(), { once: true }),
+      );
+      extension.loseContext();
+      await lost;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      const restored = new Promise<void>((resolve) =>
+        game.canvas.addEventListener('webglcontextrestored', () => resolve(), { once: true }),
+      );
+      extension.restoreContext();
+      await restored;
+      await new Promise<void>((resolve) => game.events.once('postrender', () => resolve()));
+    }
+    return { active: active.length, aliveAfterEviction, aliveAfterRestore: unchanged(), decodes };
+  }, buildings);
+  expect(result.active).toBeGreaterThan(0);
+  expect(result.aliveAfterEviction).toBe(true);
+  expect(result.aliveAfterRestore).toBe(true);
+  expect(result.decodes).toBeGreaterThan(0);
+  const level = await scout(page);
+  await page.waitForFunction(
+    (level) =>
+      window.__game.scene.villageNativePresentation.levelsReady.get('townhall')?.has(level),
+    level,
+  );
+  await returnHome(page);
+  expect(errors).toEqual([]);
+});
+
 test('leaving a village releases its exclusive pages and keeps shared home pages warm', async ({
   page,
 }) => {

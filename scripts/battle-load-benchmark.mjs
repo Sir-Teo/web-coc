@@ -12,6 +12,7 @@
  * pixel ratio. Headless Chromium with Metal: numbers are relative, not a physical device.
  * --msaa=on|off overrides canvas multisampling for comparisons; --freeze holds the rendered
  * battle after warmup to isolate GPU work; --profile saves a Chrome CPU profile alongside JSON.
+ * --lazyart uses production's on-demand art loading instead of the eager developer preload.
  */
 import { chromium } from '@playwright/test';
 import fs from 'node:fs/promises';
@@ -28,6 +29,7 @@ const gl = process.argv.includes('--gl');
 const freeze = process.argv.includes('--freeze');
 const msaa = arg('msaa', 'default');
 const profile = process.argv.includes('--profile');
+const lazyArt = process.argv.includes('--lazyart');
 const base = process.env.GAME_URL ?? 'http://localhost:5173';
 if (!['roster', 'mixed', 'th18'].includes(army)) throw Error('Use --army=roster, mixed or th18.');
 if (!['default', 'on', 'off'].includes(msaa)) throw Error('Use --msaa=default, on or off.');
@@ -60,7 +62,7 @@ page.on('pageerror', (e) =>
       .join(' | '),
   ),
 );
-await page.goto(base + '/?devtools=1');
+await page.goto(base + '/?devtools=1' + (lazyArt ? '&lazyart' : ''));
 await page.waitForFunction(() => window.__game?.scene.artSettled, {}, { timeout: 180000 });
 await page
   .locator('[data-action="skip-tutorial"]')
@@ -303,6 +305,7 @@ const report = {
   renderer,
   rendering,
   freeze,
+  lazyArt,
   army,
   level,
   stage,
