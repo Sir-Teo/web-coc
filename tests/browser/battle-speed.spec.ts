@@ -32,18 +32,29 @@ for (const viewport of [
         box.y + box.height > o.y;
       expect(overlaps, `${other} overlaps the speed button`).toBe(false);
     }
-    const scouting = () => page.evaluate(() => window.__game.model.battle!.prep);
+    const sample = () =>
+      page.evaluate(() => {
+        const b = window.__game.model.battle!;
+        return { time: b.elapsed - b.prep, wall: performance.now() };
+      });
     const rate = async () => {
-      const a = await scouting();
+      const a = await sample();
       await page.waitForTimeout(1000);
-      return a - (await scouting());
+      const b = await sample();
+      return ((b.time - a.time) * 1000) / (b.wall - a.wall);
     };
     const normal = await rate();
+    expect(normal).toBeGreaterThan(0);
     await speed.click();
     await expect(speed).toContainText('2×');
     await speed.click();
     await expect(speed).toContainText('4×');
     await page.screenshot({ path: `output/playtest/battle-speed-${viewport.width}.png` });
+    // A slow capture may already have ended scouting; exercise the transition if it has not.
+    await page.evaluate(() => {
+      const b = window.__game.model.battle!;
+      if (!b.started) b.prep = 0.1;
+    });
     const fast = await rate();
     expect(fast).toBeGreaterThan(normal * 2.5);
     // The choice is remembered for the next attack and cycles back to 1×.
