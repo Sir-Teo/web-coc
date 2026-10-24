@@ -231,7 +231,7 @@ import { icon, resource, coin, elixir, gem } from './icons';
 import { applyMotionPreference } from './motion';
 import { offlineStatus, retryOfflineWarm, watchOfflineStatus } from '../offline';
 import { ACHIEVEMENTS, UNAVAILABLE_ACHIEVEMENTS } from '../game/achievements';
-import { musicScene } from '../game/music';
+import { musicScene, MUSIC_VOLUME } from '../game/music';
 import { decodeLayout, layoutFromLink, layoutLink } from '../game/layout-share';
 import {
   STARTER_END_TEXT,
@@ -830,7 +830,11 @@ export class HUD {
       'pointerdown',
       (e) => {
         const target = e.target as HTMLElement;
-        if (target.closest('[data-action], [data-add]')) this.pressedActions.add(e.pointerId);
+        if (
+          target.closest('[data-action], [data-add]') ||
+          target.matches('#effects-volume, #music-volume')
+        )
+          this.pressedActions.add(e.pointerId);
         const repeat = target.closest<HTMLButtonElement>('[data-repeat]');
         if (repeat && !repeat.disabled && e.isPrimary) this.startRepeat(repeat);
         if (target.id === 'replay-progress' && this.model.replay) {
@@ -891,6 +895,7 @@ export class HUD {
         if (t.id === 'import-file' && t.files?.[0]) void this.import(t.files[0]);
         if (t.id === 'import-replay-file' && t.files?.[0]) void this.importReplay(t.files[0]);
         if (t.id === 'replay-progress') this.model.seekReplay(Number(t.value));
+        if (t.id === 'effects-volume' || t.id === 'music-volume') this.model.changed();
       },
       { signal },
     );
@@ -898,6 +903,19 @@ export class HUD {
       'input',
       (e) => {
         const t = e.target as HTMLInputElement;
+        if (t.id === 'effects-volume' || t.id === 'music-volume') {
+          const key = t.id === 'effects-volume' ? 'effectsVolume' : 'musicVolume';
+          const percent = Math.max(0, Math.min(100, Number(t.value)));
+          this.model.state.settings[key] = percent / 100;
+          this.audio[key] = percent / 100;
+          setText(this.root.querySelector(`#${t.id}-value`), `${percent}%`);
+          const on =
+            key === 'effectsVolume'
+              ? this.model.state.settings.sound
+              : this.model.state.settings.music;
+          t.setAttribute('aria-valuetext', `${percent} percent${on ? '' : ', muted'}`);
+          this.model.changed(true);
+        }
         if (t.id === 'alchemy-amount') {
           this.alchemyAmount = Number(t.value);
           const { take, out, lost } = this.alchemyPreview();
@@ -2312,6 +2330,8 @@ export class HUD {
     this.model.endEdit();
     this.model.tick(Date.now());
     applyMotionPreference(this.model);
+    this.audio.effectsVolume = data.settings.effectsVolume ?? 1;
+    this.audio.musicVolume = data.settings.musicVolume ?? MUSIC_VOLUME;
     this.audio.enabled = data.settings.sound;
     this.audio.music(data.settings.music);
     let saved = false;
@@ -4898,6 +4918,14 @@ export class HUD {
 
   private settings() {
     const s = this.model.state.settings;
+    const volume = (kind: 'sound' | 'music', on: boolean) => {
+      const id = kind === 'sound' ? 'effects-volume' : 'music-volume';
+      const value = Math.round(
+        (kind === 'sound' ? (s.effectsVolume ?? 1) : (s.musicVolume ?? MUSIC_VOLUME)) * 100,
+      );
+      const name = kind === 'sound' ? 'Sound effects volume' : 'Music volume';
+      return `<label class="audio-volume" for="${id}"><span>Volume${on ? '' : ' · Muted'}</span><output id="${id}-value" for="${id}">${value}%</output><input id="${id}" type="range" min="0" max="100" step="1" value="${value}" aria-label="${name}" aria-valuetext="${value} percent${on ? '' : ', muted'}"></label>`;
+    };
     return `<div class="modal-body settings-body">${(
       [
         ['sound', 'Sound effects', 'Little sounds for big moments.', s.sound],
@@ -4941,7 +4969,7 @@ export class HUD {
     )
       .map(
         ([k, title, desc, on]) =>
-          `<div class="setting-row"><div><h3>${title}</h3><p>${desc}</p></div><button class="toggle ${on ? 'on' : ''}" data-action="${k}" role="switch" aria-checked="${on}" aria-label="${title}"><span></span></button></div>`,
+          `<div class="setting-row${k === 'sound' || k === 'music' ? ' audio-setting' : ''}"><div class="setting-copy"><h3>${title}</h3><p>${desc}</p></div><button class="toggle ${on ? 'on' : ''}" data-action="${k}" role="switch" aria-checked="${on}" aria-label="${title}"><span></span></button>${k === 'sound' || k === 'music' ? volume(k, on) : ''}</div>`,
       )
       .join('')}${
       // iPhone Safari has no full screen for pages; an installed copy runs without its bars.

@@ -1,4 +1,5 @@
 import catalog from '../../reference/music/catalog.json' with { type: 'json' };
+import { audioVolume, setAudioGain } from './audio-volume';
 
 /**
  * Original client music (see reference/music): the classic Home theme in three parts, the
@@ -79,6 +80,9 @@ export class MusicPlayer {
   private urls = new Map<string, Promise<string | null>>();
   private stings = new Map<string, Promise<AudioBuffer | null>>();
   private activeSting: { source: AudioBufferSourceNode; gain: GainNode } | null = null;
+  private level = MUSIC_VOLUME;
+  private gain: GainNode | null = null;
+  private stream: MediaElementAudioSourceNode | null = null;
   /** Increments on every change, so a slow download cannot start a track no longer wanted. */
   private generation = 0;
   private host: MusicHost;
@@ -90,6 +94,22 @@ export class MusicPlayer {
   }
   get current() {
     return this.loop ? LOOPS[this.loop][this.part] : null;
+  }
+  get volume() {
+    return this.level;
+  }
+  setVolume(value: number) {
+    this.level = audioVolume(value, MUSIC_VOLUME);
+    if (this.gain) setAudioGain(this.gain, this.level, this.host.context());
+    if (this.el) this.el.volume = this.stream ? 1 : this.level;
+  }
+  private output(ctx: AudioContext) {
+    if (!this.gain) {
+      this.gain = ctx.createGain();
+      this.gain.gain.value = this.level;
+      this.gain.connect(ctx.destination);
+    }
+    return this.gain;
   }
   setEnabled(on: boolean) {
     if (this.enabled === on) return;
@@ -144,12 +164,23 @@ export class MusicPlayer {
       const el = (this.el ??= this.createElement());
       if (el.src !== url) el.src = url;
       el.loop = LOOPS[loop].length === 1;
-      el.volume = MUSIC_VOLUME;
+      el.volume = this.stream ? 1 : this.level;
       void el.play().catch(() => {});
     });
   }
   private createElement() {
     const el = this.host.element();
+    const ctx = this.host.context();
+    // A media source keeps long tracks streamed while Web Audio controls volume on iOS too.
+    if (ctx && typeof ctx.createMediaElementSource === 'function') {
+      try {
+        this.stream = ctx.createMediaElementSource(el as HTMLMediaElement);
+        this.stream.connect(this.output(ctx));
+      } catch {
+        this.stream?.disconnect();
+        this.stream = null;
+      }
+    }
     el.addEventListener('ended', () => {
       if (!this.loop) return;
       this.part = (this.part + 1) % LOOPS[this.loop].length;
@@ -180,10 +211,10 @@ export class MusicPlayer {
       const source = ctx.createBufferSource(),
         gain = ctx.createGain();
       this.activeSting = { source, gain };
-      gain.gain.value = MUSIC_VOLUME;
+      gain.gain.value = 1;
       source.buffer = decoded;
       source.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(this.output(ctx));
       source.onended = () => {
         if (this.activeSting?.source !== source) return;
         this.activeSting = null;

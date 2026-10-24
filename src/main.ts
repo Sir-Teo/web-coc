@@ -5,6 +5,7 @@ import './game/import-retry';
 import { GameModel } from './game/model';
 import { VillageScene, prepareHomeArt } from './game/scene';
 import { AudioManager } from './game/audio';
+import { MUSIC_VOLUME } from './game/music';
 import {
   loadSave,
   parseSaveFile,
@@ -42,6 +43,8 @@ async function boot() {
     }
     const model = new GameModel(saved);
     const audio = new AudioManager();
+    audio.effectsVolume = model.state.settings.effectsVolume ?? 1;
+    audio.musicVolume = model.state.settings.musicVolume ?? MUSIC_VOLUME;
     audio.enabled = model.state.settings.sound;
     // Vibration for the player's own raid: replays (the first-run Goblin raid among them) stay
     // still, and victory buzzes only when the raid earned a star.

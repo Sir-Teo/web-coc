@@ -1,5 +1,6 @@
 import { SampleAudio } from './sample-audio';
 import { MusicPlayer, type MusicScene } from './music';
+import { audioVolume, setAudioGain } from './audio-volume';
 import villageSounds from '../../reference/village-sounds/sounds.json' with { type: 'json' };
 export type Tone = 'click' | 'collect' | 'build' | 'hit' | 'destroy' | 'deploy' | 'victory';
 /** The client's village feedback effects (logic/effects.csv), by its own names. */
@@ -17,13 +18,18 @@ export class AudioManager {
    * Native samples only see the context while sound is on: with sound off, the first gesture
    * neither decodes the ~115 samples nor plays them. Decoding starts when sound is enabled.
    */
-  samples = new SampleAudio(() => (this.soundOn ? this.context : null));
+  samples = new SampleAudio(
+    () => (this.soundOn ? this.context : null),
+    (ctx) => this.effectsOutput(ctx),
+  );
   private soundOn = true;
   /** Set by the first user gesture; a context is only created after one. */
   private unlocked = false;
   private resuming: Promise<void> | null = null;
   private musicOn = false;
   private tones = new Map<OscillatorNode, GainNode>();
+  private effectsLevel = 1;
+  private effectsGain: GainNode | null = null;
   /** The original client's Home and battle music; plays only while music is on. */
   readonly tracks = new MusicPlayer(() => (this.musicOn ? this.context : null));
   private lastPlay: Partial<Record<string, number>> = {};
@@ -44,6 +50,27 @@ export class AudioManager {
       this.stopTones();
     }
     this.updateContext();
+  }
+  get effectsVolume() {
+    return this.effectsLevel;
+  }
+  set effectsVolume(value: number) {
+    this.effectsLevel = audioVolume(value, 1);
+    if (this.effectsGain) setAudioGain(this.effectsGain, this.effectsLevel, this.context);
+  }
+  get musicVolume() {
+    return this.tracks.volume;
+  }
+  set musicVolume(value: number) {
+    this.tracks.setVolume(value);
+  }
+  private effectsOutput(ctx: AudioContext) {
+    if (!this.effectsGain) {
+      this.effectsGain = ctx.createGain();
+      this.effectsGain.gain.value = this.effectsLevel;
+      this.effectsGain.connect(ctx.destination);
+    }
+    return this.effectsGain;
   }
   /** True while anything may be heard: sound effects or music, on a visible page. */
   private get audible() {
@@ -169,7 +196,7 @@ export class AudioManager {
     gain.gain.setValueAtTime(kind === 'destroy' ? 0.045 : 0.025, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(this.effectsOutput(ctx));
     this.tones.set(osc, gain);
     osc.start();
     osc.stop(ctx.currentTime + duration);

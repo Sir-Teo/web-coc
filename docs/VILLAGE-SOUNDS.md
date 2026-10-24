@@ -23,6 +23,11 @@ Generic Pick Up and Boost Start are imported too, for moments this game does not
 
 They are fetched after the first gesture with sound on, never at boot, and decoded like the other native samples. Until a sound is decoded, or where a browser cannot decode Ogg, the generated tone it replaces plays instead. Vibration follows the same moments either way. A sample plays at the client's volume scaled as every native sample is (`volume × 0.12`), and at most eight interface sounds overlap.
 
+The Sound effects volume slider applies a shared output gain to native samples and generated
+tones. Its default is 100%, preserving that mix. Changes affect existing voices as well as the
+next cue; the switch can still mute the channel separately. See [volume controls](MUSIC.md#volume-controls)
+for persistence, keyboard and compact-layout behavior.
+
 Turning Sound effects off or hiding the page stops active native interface sounds, generated
 fallback tones and battle samples, and releases their voices. Seeking or pausing a replay only resets its battle
 timeline, so interface feedback can finish independently. Stale completion callbacks cannot

@@ -696,6 +696,10 @@ export interface Save {
     sound: boolean;
     music: boolean;
     reducedMotion: boolean;
+    /** Effects channel volume, 0–1; absent keeps the original full effects mix. */
+    effectsVolume?: number;
+    /** Music channel volume, 0–1; absent keeps the original half-volume mix. */
+    musicVolume?: number;
     /** Live attack speed (1×, 2× or 4×); absent means 1×. Replays keep their own speed. */
     battleSpeed?: BattleSpeed;
     /** Full motion although the operating system asks to reduce it (an explicit override). */

@@ -21,7 +21,9 @@ Campaign raids, ladder matches, practice attacks and replays all follow the same
   playback can also recover its audio context through feedback while effects stay muted.
 - The loops stream through one media element, so a three-minute track is never held decoded in memory. Each file is fetched whole and played from a blob URL: a media element's range requests bypass the service worker's cache, while a whole-file fetch is kept for offline play once heard.
 - The stings are seconds long and play through Web Audio.
-- Music plays at half volume under the effects. iOS ignores a media element's volume, so the Home and battle loops play at full volume there; the stings still follow it.
+- Music starts at 50% volume under the effects. The retained media element streams through a
+  Web Audio gain, shared with the short stings, so the Music slider works on iOS too. If a media
+  source cannot be created, playback uses the element's own volume instead.
 - Hiding the page or turning Music off pauses the current loop in place, and it resumes from the same point. Short intro/result stings stop immediately; they do not resume or spill into the next screen.
 - A sting that finishes downloading after its screen has changed stays silent, including after an off/on cycle. Its decoded bytes remain available for the next time that screen is entered.
 - A track that fails to download stays silent and is tried again on the next scene change.
@@ -33,3 +35,26 @@ Campaign raids, ladder matches, practice attacks and replays all follow the same
 `tests/audio-activation.test.ts` checks music-only recovery and all-off silence.
 `tests/browser/audio-activation.spec.ts` reloads saved music-only preferences, starts playback
 with Tab after ignored keys, and resumes an interrupted context without playing effects.
+
+## Volume controls
+
+Settings has separate **Sound effects volume** and **Music volume** sliders. Effects start at
+100% and Music at 50%; the on/off switches retain their own state. A muted channel can have
+its volume prepared before turning it on. Zero remains zero through reload and import.
+
+The controls update active sounds without restarting them. Native shots, battle loops and
+fallback tones share the effects output; the streamed music loop and stings share the music
+output. Live changes use a short gain transition, including zero, without invalid exponential
+ramps. Each long track remains streamed rather than decoded as a complete Web Audio buffer.
+
+`settings.effectsVolume` and `settings.musicVolume` are optional numbers from 0 to 1. Existing
+villages use the defaults. Invalid imported values are rejected. Startup and backup restoration
+apply levels before enabling playback. During a drag the range input stays mounted across
+model refreshes; Home, End and arrow keys work, focus survives completed changes, and muted
+state is included in the slider's accessible value.
+
+`tests/audio-volume.test.ts` checks live effects/music routing, lazy outputs and media fallback.
+`tests/audio-volume-save.test.ts` checks old saves, bounds, zero and backup reconstruction.
+`tests/browser/audio-volume.spec.ts` exercises pointer retention, native keyboard input, real
+channel gains, independent switches, reload/import, 44px controls and compact layouts, with
+phone and desktop captures in Chromium and WebKit.

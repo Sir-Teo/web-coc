@@ -150,7 +150,7 @@ describe('sound lifecycle', () => {
   });
 
   it('stops a playing intro on combat and a result sting on mute without stale continuations', async () => {
-    const { player, finish, sources, gains, el } = music();
+    const { player, finish, sources, el } = music();
     player.setEnabled(true);
     player.setScene('planning');
     await finish('new_battle_intro_01.mp3');
@@ -158,7 +158,7 @@ describe('sound lifecycle', () => {
     const introEnded = sources[0].onended;
     player.setScene('combat');
     expect(sources[0].stop).toHaveBeenCalledOnce();
-    expect(gains[0].disconnect).toHaveBeenCalledOnce();
+    expect(sources[0].connect.mock.calls[0][0].disconnect).toHaveBeenCalledOnce();
     await finish('combat_music.ogg');
     introEnded?.();
     await flush();
@@ -169,7 +169,7 @@ describe('sound lifecycle', () => {
     const resultEnded = sources[1].onended;
     player.setEnabled(false);
     expect(sources[1].stop).toHaveBeenCalledOnce();
-    expect(gains[1].disconnect).toHaveBeenCalledOnce();
+    expect(sources[1].connect.mock.calls[0][0].disconnect).toHaveBeenCalledOnce();
     resultEnded?.();
     await flush();
     expect(el.paused).toBe(true);
