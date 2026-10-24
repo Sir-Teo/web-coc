@@ -1474,12 +1474,16 @@ export class VillageScene extends Phaser.Scene {
       // Withdraw a loading notice that is still showing; later messages stay.
       if (document.querySelector('#toast')?.textContent === LOADING_LATE_ART) this.model.notify('');
     };
-    // The presentation code and its source graphs are a separate chunk, fetched with the art.
+    // Ordinary garrisons draw through GarrisonPresentation; their first battle does not
+    // need the multi-megabyte late-building presentation graph. Recorded workers can still
+    // need its presentation after their huts have disappeared from the setup.
+    const needsPresentation =
+      buildingMask !== 0 || !!this.model.battle?.late?.defendingBuilder?.builders.length;
     const loading = Promise.all([
-      import('./late-campaign-scene'),
+      needsPresentation ? import('./late-campaign-scene') : Promise.resolve(undefined),
       loadCharacters ? loadCharacterArt() : Promise.resolve(),
     ]).then(
-      ([{ LateCampaignPresentation, preloadLateCampaign }]) =>
+      ([presentation]) =>
         new Promise<void>((resolve) => {
           const kick = () => {
             if (shutdown) return resolve();
@@ -1501,8 +1505,10 @@ export class VillageScene extends Phaser.Scene {
               // Rebuild against the completed textures, keeping failed bodies on their fallback.
               this.lateCampaign.destroy();
               this.garrisonPresentation.clear();
-              this.lateCampaignFactory = () => new LateCampaignPresentation(this, this.audio);
-              this.lateCampaign = this.lateCampaignFactory();
+              if (presentation)
+                this.lateCampaignFactory = () =>
+                  new presentation.LateCampaignPresentation(this, this.audio);
+              this.lateCampaign = this.lateCampaignFactory?.() ?? INERT_LATE_CAMPAIGN;
               this.lateAssetsReady = true;
               this.lateBuildingCoverage |= buildingMask;
               if (loadCharacters) {
@@ -1516,7 +1522,7 @@ export class VillageScene extends Phaser.Scene {
               resolve();
             });
             const queued = new Set(this.load.list);
-            preloadLateCampaign(
+            presentation?.preloadLateCampaign(
               this,
               buildingMask,
               (family, keys) => {

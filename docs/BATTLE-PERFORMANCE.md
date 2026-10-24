@@ -1005,6 +1005,35 @@ passed in both engines, including live Dragon/Balloon death animations and repla
 Chromium; the compiled late-campaign replay matched its recorded result in both engines
 (cache `8a20977f7d21`).
 
+## Keeping building presentation code out of ordinary garrisons
+
+An automatic character-only request no longer imports the late building presentation bundle.
+The ordinary garrison renderer already draws those troops; its texture and character-graph
+requests continue independently. A nonzero building mask, or existing recorded Defending
+Builder workers, still loads the late presentation. If an earlier village already loaded a
+presentation factory, character-only completion rebuilds from that factory instead of losing
+its home building views.
+
+Three phone-sized browser cases cover a cold Archer reserve followed by the first home
+Monolith, recorded workers with no building families, and a warm Monolith village visiting a
+garrison-only enemy before returning home. The compiled baseline uses a validated Archer
+replay through the normal replay-import UI at 390×844 with 3× device scale, without developer
+hooks. Both engines fetch 4,785,328 B of late-building presentation JavaScript and 1,817,507 B
+of character graphs before this change. The camera is panned to keep the living Archer visible
+above the replay controls.
+
+After the change, both engines fetch **zero** late-building presentation modules (**0 B**),
+while the character-graph request stays at 1,817,507 B. The replay retains the same living
+Archer, with matching position and HP, no page errors, and no exposed developer surface.
+The captured phone view still shows its native body. These are decoded JavaScript response
+bytes, not total process memory or a physical-phone frame-rate measurement.
+
+Validation: strict type checking and `npm run check` passed all 3,001 tests in 330 files.
+Twenty-seven relevant browser cases passed in each engine (three new transitions plus 24
+existing loading/recovery cases). The standard production check passed online in both engines
+and offline in Chromium, and the compiled late-campaign replay matched its recorded result
+in both engines (cache `eaef932c17e9`).
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

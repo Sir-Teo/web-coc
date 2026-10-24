@@ -22,15 +22,22 @@ async function boot(page: Page) {
   });
   await page.waitForFunction(() => window.__game.scene.artSettled);
 }
-async function scout(page: Page, kind: 'archer' | 'dragon' | 'balloon', reserve = true) {
+async function scout(
+  page: Page,
+  kind: 'archer' | 'dragon' | 'balloon',
+  reserve = true,
+  withoutMonolith = false,
+) {
   return page.evaluate(
-    async ({ kind, reserve }) => {
+    async ({ kind, reserve, withoutMonolith }) => {
       const { initializeGarrison } = await import('/src/game/garrison-release.ts');
       const { spawnGarrisonDefender } = await import('/src/game/garrison-combat.ts');
       const { model, scene } = window.__game;
       if (model.battle) model.returnHome();
       model.startBattle(0, true);
       const battle = model.battle;
+      if (withoutMonolith)
+        battle.buildings = battle.buildings.filter((building) => building.kind !== 'monolith');
       const level = kind === 'archer' ? 9 : kind === 'dragon' ? 7 : 8;
       battle.garrisons = reserve
         ? [
@@ -55,7 +62,7 @@ async function scout(page: Page, kind: 'archer' | 'dragon' | 'balloon', reserve 
       scene.cameras.main.centerOn(896, 1168);
       return defender.id;
     },
-    { kind, reserve },
+    { kind, reserve, withoutMonolith },
   );
 }
 async function visible(page: Page, id: number) {
@@ -249,5 +256,141 @@ test('releasing late art preserves shared death borrowed by the foundation famil
       sharedKeys,
     ),
   ).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test('an ordinary garrison skips the late building module until a home building needs it', async ({
+  page,
+}) => {
+  test.setTimeout(180000);
+  const errors: string[] = [];
+  const requests: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/src/game/late-campaign-scene.ts')
+      requests.push(request.url());
+  });
+  await boot(page);
+  await visible(page, await scout(page, 'archer'));
+  expect(requests).toEqual([]);
+  const id = await page.evaluate(async () => {
+    const { makeBuilding } = await import('/src/game/model.ts');
+    const { model, scene } = window.__game;
+    model.returnHome();
+    const mono = makeBuilding(model.state.nextId++, 'monolith', 32, 32);
+    model.state.buildings.push(mono);
+    model.changed();
+    scene.sync();
+    scene.cameras.main.centerOn(896, 1184);
+    return mono.id;
+  });
+  await page.waitForFunction(
+    () => window.__game.scene.artSettled && !window.__game.scene.lateArtLoading,
+  );
+  await expect
+    .poll(() =>
+      page.evaluate((id) => {
+        const { scene } = window.__game;
+        scene.drawOverlay(0);
+        return scene.children.list.some(
+          (object) =>
+            object.visible && object.alpha > 0 && object.getData?.('nativeMonolith')?.id === id,
+        );
+      }, id),
+    )
+    .toBe(true);
+  expect(requests).toHaveLength(1);
+  expect(await page.evaluate(() => window.__game.game.renderer.gl.getError())).toBe(0);
+  expect(errors).toEqual([]);
+});
+
+test('recorded workers without a hut still load their late presentation with no building families', async ({
+  page,
+}) => {
+  test.setTimeout(120000);
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await boot(page);
+  const id = await page.evaluate(async () => {
+    const { makeBuilding } = await import('/src/game/model.ts');
+    const { spawnDefendingBuilder } = await import('/src/game/defending-builder.ts');
+    const { model, scene } = window.__game;
+    model.startBattle(0, true);
+    const battle = model.battle;
+    battle.garrisons = [];
+    battle.late ??= {};
+    const worker = spawnDefendingBuilder(battle, makeBuilding(99999, 'builder', 32, 31, 2), 0);
+    // A recorded worker can survive after its source hut has disappeared from the setup.
+    battle.buildings = battle.buildings.filter((building) => building.kind !== 'builder');
+    model.changed();
+    await scene.loadLateAssets(true, battle, 0);
+    scene.sync();
+    scene.cameras.main.centerOn(896, 1168);
+    return worker.id;
+  });
+  await expect
+    .poll(() =>
+      page.evaluate((id) => {
+        const { scene } = window.__game;
+        scene.drawOverlay(0);
+        return scene.children.list.filter(
+          (object) =>
+            object.visible &&
+            object.alpha > 0 &&
+            object.getData?.('defendingBuilder') === id &&
+            !['__MISSING', '__DEFAULT'].includes(object.texture?.key),
+        ).length;
+      }, id),
+    )
+    .toBeGreaterThan(0);
+  expect(
+    await page.evaluate(() => ({
+      coverage: window.__game.scene.lateBuildingCoverage,
+      gl: window.__game.game.renderer.gl.getError(),
+    })),
+  ).toEqual({ coverage: 0, gl: 0 });
+  expect(errors).toEqual([]);
+});
+
+test('a warm home presentation survives a garrison-only enemy and the return home', async ({
+  page,
+}) => {
+  test.setTimeout(180000);
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await boot(page);
+  const id = await page.evaluate(async () => {
+    const { makeBuilding } = await import('/src/game/model.ts');
+    const { model, scene } = window.__game;
+    const mono = makeBuilding(model.state.nextId++, 'monolith', 32, 32);
+    model.state.buildings.push(mono);
+    model.changed();
+    scene.sync();
+    return mono.id;
+  });
+  await page.waitForFunction(
+    () => window.__game.scene.artSettled && !window.__game.scene.lateArtLoading,
+  );
+  await visible(page, await scout(page, 'archer', true, true));
+  expect(await page.evaluate(() => window.__game.scene.wantedLateBuildings())).toBe(0);
+  await page.evaluate(() => {
+    const { model, scene } = window.__game;
+    model.returnHome();
+    scene.sync();
+    scene.cameras.main.centerOn(896, 1184);
+  });
+  await expect
+    .poll(() =>
+      page.evaluate((id) => {
+        const { scene } = window.__game;
+        scene.drawOverlay(0);
+        return scene.children.list.some(
+          (object) =>
+            object.visible && object.alpha > 0 && object.getData?.('nativeMonolith')?.id === id,
+        );
+      }, id),
+    )
+    .toBe(true);
+  expect(await page.evaluate(() => window.__game.game.renderer.gl.getError())).toBe(0);
   expect(errors).toEqual([]);
 });
