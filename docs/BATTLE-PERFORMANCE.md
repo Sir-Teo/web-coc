@@ -576,7 +576,7 @@ fix. They cover held gestures, a viewport change while held, cancellation by a d
 setting, and the real governor's settling period after a long deferred adjustment. Browser
 checks at 390×844 and 3× density verified that a held pan stays intact, release applies an
 878×1899 buffer, camera framing and world zoom stay fixed, and Town Hall tapping still
-works. That first 0.75-scale step uses about 44% fewer canvas pixels than 1170×2532;
+works. A 0.75-scale step uses about 44% fewer canvas pixels than 1170×2532;
 DOM layout retains its native resolution. It is a pixel-work reduction, not measured phone FPS.
 
 Validation passed all 2,979 tests across 327 files, type checks, documentation links and the
@@ -584,6 +584,30 @@ production build. The new held-gesture case passed in Chromium and WebKit. Exist
 phone input/placement/rotation and framebuffer restoration passed in both engines; Chromium
 also passed native multi-touch pinch and live density changes (the two CDP-only cases are
 skipped in WebKit). The compiled Chromium online/offline smoke check passed.
+
+### Responding faster to severe phone overload
+
+After the sustained-pressure window, an average frame longer than three target intervals
+now halves the current density scale; moderate pressure keeps the quarter-step reduction.
+The threshold follows deliberate frame caps, and fast frames keep native quality. At 3×
+phone density, the first severe reduction produces 585×1266 instead of 1170×2532: 75% fewer
+canvas pixels. Recovery remains gradual. A window also needs at least two observed frames,
+so one long stall followed by fast rendering does not trigger a reduction.
+
+Phone-viewport probes at 390×844 and 3× density recorded the real governor requesting 0.5
+while held, applying it on release with unchanged world zoom and no page errors. In these
+software-renderer samples, Chromium's post-release phase reached 17 FPS and WebKit's 26 FPS;
+the earlier quarter-step samples reached about 8 and 20 FPS. Chromium used native touch
+injection; WebKit used mouse gestures in a touch-enabled viewport. These are local emulation
+observations, not physical-phone frame rates. The frozen-view density comparisons were also
+variable but showed substantially less rendering work at 1.5× than 3×.
+
+Tests cover severe phone pressure, frame-cap scaling, the half-pixel floor, cautious recovery
+and a single long stall. The held-gesture browser check exercises both 0.75 and 0.5 scales.
+
+Validation passed all 2,981 tests across 327 files, type checks, documentation links and the
+production build. Both held-gesture scales passed in Chromium and WebKit; the compiled
+Chromium online/offline smoke check passed.
 
 ## Keeping it that way
 

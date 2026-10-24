@@ -318,71 +318,74 @@ test.describe('3x touch gestures', () => {
 
 test.describe('phone adaptive gesture pressure', () => {
   test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3 });
-  test('measures a held drag and applies pending density after release without moving the camera', async ({
-    page,
-  }) => {
-    test.setTimeout(120000);
-    const errors: string[] = [];
-    page.on('pageerror', (error) => errors.push(error.message));
-    await boot(page);
-    await page.evaluate(async () => {
-      const resource = performance
-        .getEntriesByType('resource')
-        .find((entry) => entry.name.includes('/src/game/render-quality.ts'))!.name;
-      const { RenderQuality } = await import(/* @vite-ignore */ resource);
-      const probe = { request: false, measured: 0 };
-      (window as unknown as { __phonePressure: typeof probe }).__phonePressure = probe;
-      RenderQuality.prototype.sample = function (_now: number, enabled: boolean) {
-        if (probe.request && enabled) {
-          probe.request = false;
-          probe.measured++;
-          this.scale = 0.75;
-          return true;
-        }
-        return false;
-      };
-      const { model, scene } = window.__game;
-      model.state.settings.reducedMotion = true;
-      scene.setZoom(0.95);
-      scene.cameras.main.centerOn(1000, 600);
-      scene.clampCamera();
+  for (const requestedScale of [0.75, 0.5])
+    test(`measures a held drag and applies pending density after release without moving the camera (${requestedScale})`, async ({
+      page,
+    }) => {
+      test.setTimeout(120000);
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      await boot(page);
+      await page.evaluate(async (requestedScale) => {
+        const resource = performance
+          .getEntriesByType('resource')
+          .find((entry) => entry.name.includes('/src/game/render-quality.ts'))!.name;
+        const { RenderQuality } = await import(/* @vite-ignore */ resource);
+        const probe = { request: false, measured: 0 };
+        (window as unknown as { __phonePressure: typeof probe }).__phonePressure = probe;
+        RenderQuality.prototype.sample = function (_now: number, enabled: boolean) {
+          if (probe.request && enabled) {
+            probe.request = false;
+            probe.measured++;
+            this.scale = requestedScale;
+            return true;
+          }
+          return false;
+        };
+        const { model, scene } = window.__game;
+        model.state.settings.reducedMotion = true;
+        scene.setZoom(0.95);
+        scene.cameras.main.centerOn(1000, 600);
+        scene.clampCamera();
+      }, requestedScale);
+      const initial = await view(page);
+      await page.mouse.move(170, 400);
+      await page.mouse.down();
+      await page.mouse.move(210, 425, { steps: 4 });
+      await page.waitForFunction(
+        () =>
+          window.__game.scene.gesture === 'pan' &&
+          window.__game.game.input.pointers.some((p) => p.isDown),
+      );
+      await page.evaluate(() => {
+        (window as unknown as { __phonePressure: { request: boolean } }).__phonePressure.request =
+          true;
+      });
+      await page.waitForFunction(
+        () =>
+          (window as unknown as { __phonePressure: { measured: number } }).__phonePressure
+            .measured === 1,
+      );
+      const held = await view(page);
+      expect(held.width).toBe(initial.width);
+      expect(held.height).toBe(initial.height);
+      expect(
+        await page.evaluate(
+          () => window.__game.scene.down !== undefined && window.__game.scene.gesture === 'pan',
+        ),
+      ).toBe(true);
+      await page.mouse.up();
+      await expect
+        .poll(async () => (await view(page)).width)
+        .toBe(Math.round(390 * 3 * requestedScale));
+      const released = await view(page);
+      expect(released.height).toBe(Math.round(844 * 3 * requestedScale));
+      expect(released.x).toBeCloseTo(held.x, 6);
+      expect(released.y).toBeCloseTo(held.y, 6);
+      expect(released.zoom).toBeCloseTo(held.zoom, 6);
+      const point = await page.evaluate(() => window.__game.scene.screenFor(12.5, 11.5));
+      await page.mouse.click(point.x, point.y);
+      await expect(page.locator('.building-context h2')).toHaveText('Town Hall');
+      expect(errors).toEqual([]);
     });
-    const initial = await view(page);
-    await page.mouse.move(170, 400);
-    await page.mouse.down();
-    await page.mouse.move(210, 425, { steps: 4 });
-    await page.waitForFunction(
-      () =>
-        window.__game.scene.gesture === 'pan' &&
-        window.__game.game.input.pointers.some((p) => p.isDown),
-    );
-    await page.evaluate(() => {
-      (window as unknown as { __phonePressure: { request: boolean } }).__phonePressure.request =
-        true;
-    });
-    await page.waitForFunction(
-      () =>
-        (window as unknown as { __phonePressure: { measured: number } }).__phonePressure
-          .measured === 1,
-    );
-    const held = await view(page);
-    expect(held.width).toBe(initial.width);
-    expect(held.height).toBe(initial.height);
-    expect(
-      await page.evaluate(
-        () => window.__game.scene.down !== undefined && window.__game.scene.gesture === 'pan',
-      ),
-    ).toBe(true);
-    await page.mouse.up();
-    await expect.poll(async () => (await view(page)).width).toBe(878);
-    const released = await view(page);
-    expect(released.height).toBe(1899);
-    expect(released.x).toBeCloseTo(held.x, 6);
-    expect(released.y).toBeCloseTo(held.y, 6);
-    expect(released.zoom).toBeCloseTo(held.zoom, 6);
-    const point = await page.evaluate(() => window.__game.scene.screenFor(12.5, 11.5));
-    await page.mouse.click(point.x, point.y);
-    await expect(page.locator('.building-context h2')).toHaveText('Town Hall');
-    expect(errors).toEqual([]);
-  });
 });
