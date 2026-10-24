@@ -12,6 +12,16 @@ The previous HUD positioned side tools using a percentage of screen height while
 
 The new rules preserve the existing game actions, modal/drawer behavior, art, camera coordinates, economy, save format and combat rules. Views taller than 700 CSS pixels retain their previous HUD layouts.
 
+## Battle deployment controls
+
+Live and scouting battle controls also use separate rows at widths up to 700 pixels. The
+Surrender/Return and speed buttons sit above the complete deployment tray, including its
+wrapped hint. The speed button has a 44-pixel target. Fixed offsets previously placed these
+buttons on the hint at 320 and 390 pixels wide. `tests/browser/battle-deployment-layout.spec.ts`
+checks troop and hero hints, both battle states, viewport bounds and actual hit areas across
+eight portrait, landscape and breakpoint sizes. The adjacent speed and notification checks
+cover changing speed and keeping battle toasts clear.
+
 ## Tall phones
 
 The compact rules stop at 700 pixels high, so most phones in portrait (390×844 and taller) still used the narrow-width layout. An October 2026 audit at 390×844 found a 33×35 Settings button, 29×30 camera buttons, 19×24 resource "+" buttons, 33×35 dialog close buttons and 49×27 Settings switches.
