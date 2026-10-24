@@ -2501,13 +2501,13 @@ export class HUD {
     }
     if (this.model.battle && !this.model.replay) {
       if (e.key.toLowerCase() === 'h') {
-        this.action('hero-select');
+        if (!e.repeat) this.action('hero-select');
         return;
       }
       const troopIndex = TROOP_HOTKEYS.indexOf(e.key.toLowerCase());
       if (troopIndex >= 0) this.action(`troop:${TROOP_ORDER[troopIndex]}`);
-      const spellIndex = SPELL_HOTKEYS.indexOf(e.key);
-      if (spellIndex >= 0) this.action(`spell:${SPELL_ORDER[spellIndex]}`);
+      const spellIndex = SPELL_HOTKEYS.indexOf(e.key.toLowerCase());
+      if (spellIndex >= 0 && !e.repeat) this.action(`spell:${SPELL_ORDER[spellIndex]}`);
     }
     if (e.key === '+' || e.key === '=') this.scene.zoomBy(1.15);
     if (e.key === '-') this.scene.zoomBy(1 / 1.15);
@@ -3423,7 +3423,7 @@ export class HUD {
                 .map((k) => this.spellCard(k, b.spells[k], `spell:${k}`, m.activeSpell === k))
                 .join('')}`
             : ''
-        }</div></div><div class="battle-tip">${icon('MousePointer2', 19)}<span>Troops <b>1–7, Q, W, E</b> · Spells <b>8, 9, 0</b> · Heroes <b>H</b><br>Drag the base to move the camera</span></div></div>`
+        }</div></div><div class="battle-tip">${icon('MousePointer2', 19)}<span>Troops <b>1–7, Q, E, Z</b> · Spells <b>8, 9, 0</b> · Heroes <b>H</b><br>Drag the base to move the camera</span></div></div>`
   }`;
   }
 

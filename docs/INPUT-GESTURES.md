@@ -51,6 +51,13 @@ input. Army dropdowns can use arrows and letter selection while the map cursor i
 without moving that cursor or triggering map shortcuts. `tests/browser/modal-focus.spec.ts`
 covers both cases alongside dialog opening, rerendering and focus restoration.
 
+Troop and spell letter shortcuts accept either case, including Shift and Caps Lock.
+Pressing a selected spell's shortcut again deselects it. Dialogs and editable fields retain
+their keys. Held spell keys and H act once per press, so key repeat cannot flicker a selection,
+cycle heroes or spend an ability after deployment. Camera and map-cursor movement keep their
+normal repeats. `tests/browser/spell-shortcuts.spec.ts` exercises every spell binding, uppercase
+letters, held keys, repeat toggles, hero abilities and the surrender dialog.
+
 ## Browser gestures on phones
 
 October 1, 2026. Several browser gestures could take over during touch play. The canvas already set `touch-action: none`, but the HUD did not:
