@@ -17,6 +17,9 @@ async function boot(page: Page, maxDensity?: number) {
     const { setMaxDensity } = await import(/* @vite-ignore */ resource('/src/game/display.ts'));
     setMaxDensity(window.__game.game, 0.5);
     setMaxDensity(window.__game.game, density ?? Infinity);
+    // getWorldPoint reads the camera's last rendered matrix. A changed density updates
+    // its physical viewport first; wait for that matrix before placing pixel witnesses.
+    await new Promise<void>((resolve) => window.__game.game.events.once('postrender', resolve));
   }, maxDensity);
 }
 const view = (page: Page) =>

@@ -745,6 +745,38 @@ texture destruction and restoration of the renderer's stencil setting. Five nati
 checks passed per engine. All 2,984 tests across 327 files, type checks, documentation links,
 the production build and the compiled Chromium online/offline smoke check passed.
 
+### Measuring again sooner after an adaptive resize
+
+After a requested density actually reaches the canvas, the governor now waits one second
+before collecting the next two-second pressure window. The previous five-second pause was
+the same grace used for startup and loading; repeating it after every reduction prolonged
+overload on a dense phone. Startup, loading, background-gap and frame-cap resets retain their
+five-second grace. Held gestures still defer the physical resize, and recovery still requires
+15 seconds of fast measurements and raises density gradually.
+
+The display integration test holds a 3× phone under 80 ms frames: it retains native density
+during initial settling and reaches the half-pixel CSS floor within 13.5 seconds. The former
+post-resize pause took about 21 seconds in the controlled driver.
+
+Frozen-home browser probes used 390×844 CSS pixels at 3× device density, alternating the
+original and shortened pause in old/new/new/old order, with 30 seconds per run. The only
+override changed settling after an applied resize. Time-weighted mean canvas area was:
+
+| Engine | Original pixels | Shorter-pause pixels | Reduction |
+| --- | ---: | ---: | ---: |
+| Chromium / SwiftShader | 1,055,772 | 958,857 | 9.2% |
+| WebKit software renderer | 1,549,399 | 1,399,463 | 9.7% |
+
+Initial stalls varied, and one shortened-pause run had a higher mean area than its first
+reference run. These averages measure canvas allocation over the transition, not total GPU
+work or a physical-phone FPS improvement. Every run reported no page errors.
+
+The combined rendering changes passed all 2,989 tests across 328 files, type checks,
+documentation links and the production build. Density/input checks passed 12 Chromium cases
+and 10 WebKit cases (two native-gesture cases are skipped there), including held-drag requests
+at both reduction sizes. The compiled Chromium online/offline check passed with no page errors.
+The pixel-test helper now waits for the first rendered camera matrix after a density change.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

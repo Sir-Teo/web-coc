@@ -100,7 +100,9 @@ export function configureDisplay(game: Phaser.Game) {
       pendingQuality = false;
       if (appliedScale !== quality.scale) {
         appliedScale = quality.scale;
-        quality.reset(now);
+        // Exclude the resize itself, then measure the new density promptly. Keeping the
+        // loading grace here prolonged severe phone overload across several reductions.
+        quality.reset(now, 1000);
         resize();
       }
     }

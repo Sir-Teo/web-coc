@@ -145,15 +145,24 @@ describe('adaptive density during phone gestures', () => {
     p.pointer.isDown = false;
     p.step();
     expect([p.scale.width, p.scale.height]).toEqual([878, 1899]);
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 50; i++) {
       now += 40;
       p.step();
     }
     expect([p.scale.width, p.scale.height]).toEqual([878, 1899]);
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 50; i++) {
       now += 40;
       p.step();
     }
     expect([p.scale.width, p.scale.height]).toEqual([585, 1266]);
+  });
+  it('rechecks sustained severe phone pressure promptly after each applied resize', () => {
+    let now = 0;
+    vi.spyOn(performance, 'now').mockImplementation(() => now);
+    const p = phone(false);
+    for (now = 80; now <= 4800; now += 80) p.step();
+    expect([p.scale.width, p.scale.height]).toEqual([1170, 2532]);
+    for (; now <= 13500; now += 80) p.step();
+    expect([p.scale.width, p.scale.height]).toEqual([195, 422]);
   });
 });

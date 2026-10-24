@@ -10,10 +10,10 @@ export class RenderQuality {
   private fastFor = 0;
   private settleUntil = 0;
 
-  reset(now: number) {
+  reset(now: number, settleMs = 5000) {
     this.previous = now;
     this.elapsed = this.frames = this.slow = this.fastFor = 0;
-    this.settleUntil = now + 5000;
+    this.settleUntil = now + settleMs;
   }
 
   /**
