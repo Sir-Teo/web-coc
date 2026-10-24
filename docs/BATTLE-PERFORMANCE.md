@@ -1034,6 +1034,39 @@ existing loading/recovery cases). The standard production check passed online in
 and offline in Chromium, and the compiled late-campaign replay matched its recorded result
 in both engines (cache `eaef932c17e9`).
 
+## Fetching presentation graphs by building family
+
+The late presentation entry now prepares only requested building modules. Successful module
+loads stay shared, failed loads can be retried, and the presentation uses the prepared families
+in its original rendering order. Recorded or armed-hut workers prepare their separate presenter.
+Explicit full preloads retain every family. The existing building mask still controls texture
+loading and home release; this change also keeps unrelated render graphs out of JavaScript
+parsing and retained module data.
+
+The import retry plugin wraps the new family chunks in development and production. A focused
+case holds Scattershot code at HTTP 503 while a loaded Monolith stays visible, checks bounded
+backoff, then recovers on reconnect. Separate compiled probes verify a successful retry through
+a fresh `art-retry=1` URL in both engines without developer hooks or page errors.
+
+For a cold home village with one Monolith at 390×844 and 3× device scale, both engines report:
+
+| Decoded JavaScript responses | Before | Selected presentation modules |
+| --- | ---: | ---: |
+| Whole page | 12,419,769 B | 8,204,057 B |
+| Late building code and its shared helper | 4,785,328 B | 569,532 B |
+
+That is 34.0% less JavaScript across the page and 88.1% less late presentation code. The selected
+requests comprise the small entry, Monolith and a generic effect helper; other building
+presenters and character graphs stay unfetched. Both runs retain the Monolith and report no
+page errors. The numbers measure decoded script responses, rather than process memory or
+physical-phone frame rate.
+
+Validation: strict type checking, the production build and `npm run check` passed all 3,001
+tests in 330 files. Thirty relevant browser cases passed in each engine, including both new
+module checks and existing garrison, worker, Ghost Trap, loading and recovery behavior. The
+standard production checks passed online in both engines and offline in Chromium; compiled
+late-campaign replays matched their recorded results in both engines (cache `57d689d7db3c`).
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

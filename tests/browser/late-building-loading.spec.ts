@@ -11,6 +11,28 @@ function watchErrors(page: Page) {
   });
   return errors;
 }
+
+function watchLateModules(page: Page) {
+  const wanted = new Set([
+    'spell-tower-scene',
+    'tornado-trap-scene',
+    'freeze-trap-scene',
+    'ghost-trap-scene',
+    'eagle-artillery-scene',
+    'scattershot-scene',
+    'monolith-scene',
+    'late-goblin-buildings-scene',
+    'builder-hut-scene',
+    'defending-builder-scene',
+  ]);
+  const modules: string[] = [];
+  page.on('request', (request) => {
+    const name = new URL(request.url()).pathname.split('/').at(-1)?.replace(/\.ts$/, '');
+    if (name && wanted.has(name)) modules.push(name);
+  });
+  return modules;
+}
+
 async function boot(page: Page) {
   await page.goto('/?lazyart');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
@@ -57,6 +79,7 @@ test('a new home family loads without unrelated atlases or reuploading the Monol
 }) => {
   test.setTimeout(180000);
   const errors = watchErrors(page);
+  const modules = watchLateModules(page);
   await boot(page);
   const mono = await homeBuilding(page, 'monolith');
   await settled(page);
@@ -88,6 +111,7 @@ test('a new home family loads without unrelated atlases or reuploading the Monol
       };
     }),
   ).toEqual({ coverage: MONOLITH, characters: false, unrelated: [] });
+  expect(modules).toEqual(['monolith-scene']);
   const scatter = await homeBuilding(page, 'scattershot');
   await settled(page);
   const rendered = await page.evaluate(
@@ -122,6 +146,7 @@ test('a new home family loads without unrelated atlases or reuploading the Monol
     },
     { mono, scatter },
   );
+  expect(modules).toEqual(['monolith-scene', 'scattershot-scene']);
   expect(rendered.coverage).toBe(MONOLITH | SCATTERSHOT);
   expect(rendered.mono).toBeGreaterThan(0);
   expect(rendered.scatter).toBeGreaterThan(0);
@@ -453,4 +478,70 @@ test('a failed body waits for its shared preview and retries without duplicate i
     release();
     releaseNative();
   }
+});
+
+test('a failed family module preserves warm building views and retries on reconnect', async ({
+  page,
+}) => {
+  test.setTimeout(180000);
+  const errors = watchErrors(page);
+  await boot(page);
+  const mono = await homeBuilding(page, 'monolith');
+  await settled(page);
+  let attempts = 0;
+  page.on('request', (request) => {
+    if (
+      request.method() === 'GET' &&
+      new URL(request.url()).pathname === '/src/game/scattershot-scene.ts'
+    )
+      attempts++;
+  });
+  const pattern = '**/src/game/scattershot-scene.ts*';
+  await page.route(pattern, (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: 'application/javascript',
+      body: 'Temporary family outage',
+    }),
+  );
+  const scatter = await homeBuilding(page, 'scattershot');
+  await page.waitForFunction(
+    () => window.__game.scene.lateArtFailure?.module && !window.__game.scene.lateArtLoading,
+  );
+  const monoVisible = () =>
+    page.evaluate((id) => {
+      const { scene } = window.__game;
+      scene.drawOverlay(0);
+      return scene.children.list.some(
+        (object) =>
+          object.visible && object.alpha > 0 && object.getData?.('nativeMonolith')?.id === id,
+      );
+    }, mono);
+  await expect.poll(monoVisible).toBe(true);
+  expect(attempts).toBe(1);
+  await page.evaluate(async () => {
+    const { scene } = window.__game;
+    for (let i = 0; i < 3; i++)
+      await scene.loadLateAssets(false, undefined, scene.wantedLateBuildings());
+  });
+  expect(attempts).toBe(1);
+  await page.unroute(pattern);
+  await page.evaluate(() => window.dispatchEvent(new Event('online')));
+  await settled(page);
+  await expect
+    .poll(() =>
+      page.evaluate((id) => {
+        const { scene } = window.__game;
+        scene.drawOverlay(0);
+        return scene.children.list.some(
+          (object) =>
+            object.visible && object.alpha > 0 && object.getData?.('scattershot')?.id === id,
+        );
+      }, scatter),
+    )
+    .toBe(true);
+  expect(attempts).toBe(2);
+  expect(await monoVisible()).toBe(true);
+  expect(await page.evaluate(() => window.__game.game.renderer.gl.getError())).toBe(0);
+  expect(errors).toEqual([]);
 });

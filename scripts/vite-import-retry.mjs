@@ -1,7 +1,20 @@
 import path from 'node:path';
 
 const KEY = 'crown-clan.import-retry';
-const TARGETS = ['late-campaign-scene', 'character-graphs'];
+const REQUIRED_TARGETS = ['late-campaign-scene', 'character-graphs'];
+const TARGETS = [
+  ...REQUIRED_TARGETS,
+  'spell-tower-scene',
+  'tornado-trap-scene',
+  'freeze-trap-scene',
+  'ghost-trap-scene',
+  'eagle-artillery-scene',
+  'scattershot-scene',
+  'monolith-scene',
+  'late-goblin-buildings-scene',
+  'builder-hut-scene',
+  'defending-builder-scene',
+];
 const coreModule = (id) =>
   !!id && TARGETS.some((name) => id.split('?')[0].endsWith(`/src/game/${name}.ts`));
 const selected = (id, root) => {
@@ -100,7 +113,7 @@ export function importRetry() {
       nativeWrapped = false;
     },
     generateBundle() {
-      const core = TARGETS.every((name) =>
+      const core = REQUIRED_TARGETS.every((name) =>
         [...expected].some((id) => id.split('?')[0].endsWith(`/src/game/${name}.ts`)),
       );
       if (

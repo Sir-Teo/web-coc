@@ -17,6 +17,7 @@ import { ruinDecalBounds } from './ruin-decal-bounds';
 import { defenderAnimations } from './defender-art-demand';
 import {
   ALL_LATE_BUILDING_ART,
+  LATE_BUILDING_ART,
   lateBuildingArtMask,
   lateBuildingDemand,
 } from './late-building-demand';
@@ -1477,10 +1478,17 @@ export class VillageScene extends Phaser.Scene {
     // Ordinary garrisons draw through GarrisonPresentation; their first battle does not
     // need the multi-megabyte late-building presentation graph. Recorded workers can still
     // need its presentation after their huts have disappeared from the setup.
-    const needsPresentation =
-      buildingMask !== 0 || !!this.model.battle?.late?.defendingBuilder?.builders.length;
+    const needsWorkers =
+      !!(buildingMask & LATE_BUILDING_ART.builderHut) ||
+      !!this.model.battle?.late?.defendingBuilder?.builders.length;
+    const needsPresentation = buildingMask !== 0 || needsWorkers;
     const loading = Promise.all([
-      needsPresentation ? import('./late-campaign-scene') : Promise.resolve(undefined),
+      needsPresentation
+        ? import('./late-campaign-scene').then(async (presentation) => {
+            await presentation.prepareLateCampaign(buildingMask, needsWorkers);
+            return presentation;
+          })
+        : Promise.resolve(undefined),
       loadCharacters ? loadCharacterArt() : Promise.resolve(),
     ]).then(
       ([presentation]) =>

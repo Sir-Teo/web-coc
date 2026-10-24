@@ -164,8 +164,10 @@ and bump the art revision, replacing the fallback even during scouting or a paus
 `tests/browser/native-page-recovery.spec.ts` covers Cannon pages and both Archer Tower
 body and resident pages with temporary failures and reconnects.
 
-The late campaign bundle also retries failed files and lazy-module downloads with bounded
-backoff, or immediately on reconnect. Its families check their body textures before replacing
+Automatic late-art requests prepare only the building presentation families on the map and
+the character bodies a battle can use. Ordinary garrisons skip building presentation code;
+explicit full preloads remain available. Late campaign art retries failed files and family
+module downloads with bounded backoff, or immediately on reconnect. Its families check their body textures before replacing
 fallback sprites, so a failed Eagle Artillery does not hide the loaded Scattershot beside it.
 Retries rebuild presentation views against the completed textures and retain ownership of
 pages from every attempt; returning home can still release the whole unused bundle. An
@@ -178,7 +180,7 @@ the armed and triggered atlases before hiding its fallback. The family retains a
 textures the home village needs after the late bundle is released.
 `tests/browser/ghost-trap-art-recovery.spec.ts` checks cold loading, reconnect recovery and reuse.
 
-Browsers cache failed module imports, so the late presentation, character graphs and optional
+Browsers cache failed module imports, so late presentation families, character graphs and optional
 art JSON modules use a shared retry cache: a failed attempt gets a fresh URL, and successful
 modules stay cached across visits. `vite-import-retry.mjs` preserves the original lazy chunk boundaries
 and emits the underlying native import after Vite's preload instrumentation. Temporary
