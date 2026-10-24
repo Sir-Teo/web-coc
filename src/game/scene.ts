@@ -12,6 +12,7 @@ import { HERO_KINDS, heroPortraitImage, type HeroKind } from './native-hero-data
 import { TroopNativePresentation } from './troop-native-scene';
 import { DecorationNativePresentation } from './decoration-native-scene';
 import { invalidateLostFramebuffers } from './native-scene-view';
+import { createUnmaskedRenderTexture } from './native-group-buffer';
 import {
   VillageNativePresentation,
   hasVillageNativeArt,
@@ -3558,16 +3559,15 @@ export class VillageScene extends Phaser.Scene {
     this.ruinDecalsLost = false;
     let rt = this.ruinDecals;
     if (!rt?.scene) {
-      rt = this.ruinDecals = this.add
-        .renderTexture(
-          WORLD.left,
-          0,
-          Math.ceil(WORLD.width * RUIN_DECAL_SCALE),
-          Math.ceil(WORLD.height * RUIN_DECAL_SCALE),
-        )
-        .setOrigin(0, 0)
+      rt = this.ruinDecals = createUnmaskedRenderTexture(
+        this,
+        Math.ceil(WORLD.width * RUIN_DECAL_SCALE),
+        Math.ceil(WORLD.height * RUIN_DECAL_SCALE),
+      )
+        .setPosition(WORLD.left, 0)
         .setScale(1 / RUIN_DECAL_SCALE)
         .setDepth(-875);
+      this.add.existing(rt);
       // A lost context drops the texture's pixels: stamp everything again when restored.
       const renderer = this.game.renderer;
       const restore = () => {

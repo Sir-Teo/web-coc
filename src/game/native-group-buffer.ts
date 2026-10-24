@@ -25,11 +25,11 @@ export interface NativeGroupBuffer {
 /**
  * Phaser 4.2.1's DynamicTexture lets its TextureSource allocate a GL texture, then replaces
  * `source.glTexture` with its drawing context's texture without deleting the first one. Every
- * RenderTexture therefore leaked one texture. Capture and delete that orphan here. Group buffers
- * also skip the renderer's default stencil renderbuffer: they never draw
- * masked content, and the renderbuffer doubled VRAM and forced a framebuffer completeness check.
+ * RenderTexture therefore leaked one texture. Capture and delete that orphan here. Unmasked
+ * targets also skip the renderer's default stencil renderbuffer, avoiding unused storage and
+ * its framebuffer completeness check. The caller adds the returned image to the display list.
  */
-export function createGroupBuffer(scene: Phaser.Scene, width: number, height: number) {
+export function createUnmaskedRenderTexture(scene: Phaser.Scene, width: number, height: number) {
   const renderer = scene.game.renderer as Renderer;
   const created: TextureWrapper[] = [];
   const original = renderer.createTextureFromSource;
@@ -113,7 +113,7 @@ class GroupBufferPool {
     const allocW = Math.min(w, maxSize - (maxSize % 2)),
       allocH = Math.min(h, maxSize - (maxSize % 2));
     return {
-      image: createGroupBuffer(this.scene, allocW, allocH),
+      image: createUnmaskedRenderTexture(this.scene, allocW, allocH),
       width: allocW,
       height: allocH,
       releasedAt: 0,

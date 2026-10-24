@@ -725,6 +725,26 @@ in Chromium and WebKit (19 cases per engine). Source-sheet helpers now explicitl
 canvas density so the adaptive governor cannot change their reference-image dimensions.
 The compiled Chromium online/offline check passed with no page errors.
 
+### Removing unused ruin-layer GPU allocations
+
+The ruin decal layer now uses the same unmasked RenderTexture factory as native blend
+groups. Phaser 4.2.1's plain constructor allocated two 1536×918 RGBA textures, replaced the
+first without deleting it, and added a stencil renderbuffer. Ruin stamps need neither the
+orphan texture nor stencil. The layer still allocates during scouting, retains the same
+dimensions and world placement, and reuses its texture across battles.
+
+The new path owns one 5,640,192-byte RGBA texture. Removing the orphan and the nominal
+8-bit stencil storage saves 7,050,240 bytes (6.72 MiB); driver allocation padding is not
+included. Destroying the layer releases its sole texture. This is an allocation reduction,
+not a measured phone FPS claim.
+
+At 390×844 CSS pixels and 3× device density, Chromium and WebKit checks compare visible
+ruin stamps with the original constructor at two zoom levels, with zero changed framebuffer
+bytes. They also verify restoration after context loss, reuse, clearing on returning home,
+texture destruction and restoration of the renderer's stencil setting. Five native blend
+checks passed per engine. All 2,984 tests across 327 files, type checks, documentation links,
+the production build and the compiled Chromium online/offline smoke check passed.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
