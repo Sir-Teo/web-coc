@@ -375,6 +375,50 @@ to compare shared root meshes against the retained ordinary triangle handler. Fr
 wait for pending native page uploads and run without a frame cap. Compare matching scene
 censuses and allow the renderer to warm up; software-renderer timing samples varied widely.
 
+### Reusing building-goal distance components
+
+Subtile A* now caches the squared X and Y distances from cell centers to a building's
+rectangle. A falling building changes the collision grid, while these geometric distances
+remain valid. Each searched node adds the two cached components and takes the same square
+root as before. Point targets retain their direct calculation. Coordinates and footprint
+size form the exact cache key; 64 goals retain at most 96 KiB of axis arrays, and a battle
+reset releases them. Heap ordering, costs, range checks and route memoization are unchanged.
+
+The final implementation was compared with the saved original in one Node process, using
+separate SSR module contexts, two warmup battles per variant and three alternating measured
+runs of 400 fixed steps. Main-thread CPU means were:
+
+| Stage 61 army, half levels | Original | Cached axes | Reduction |
+| --- | --- | --- | --- |
+| TH18 mixed army | 1778 ms | 1444 ms | 19% |
+| Full roster | 2744 ms | 2621 ms | 4.5% |
+
+Both variants retained the earlier TH18 battle hash and full-roster hash
+`fb81b2fcba9196805dc6c881a4895a22b381c7b9b7eebdfeaecb5b141c883d87`.
+These are workload-specific observations: earlier prototype trials were noisier, and a
+timing gain does not establish a change in FPS on a physical device.
+
+The 391-route witness was recorded from the original implementation. It covers four native
+layouts, fractional starts, melee/ranged approaches, a falling obstacle, moving/resized goals,
+point targets, more goals than the cache holds, and resets. Its SHA-256 remains
+`51051fefba698e3b95134b5affb8f11e09570530d19d6ccb587fc8dc9965d583`.
+The shared fixture runs in Node, Chromium and WebKit.
+
+For repeatable CPU sampling, use `npm run test:battle:sim -- --warmup=2 --runs=3`;
+add `--army=roster` for the second workload or `--profile` for the final measured battle's
+CPU profile. The report includes individual runs and main-thread CPU time when Node supports
+it. Warmup and setup stay outside timed steps, and repeated battle hashes must match. It also
+reports active steps and their median: the full roster can finish before all 400 attempted
+steps, making the overall median unrepresentative. The final run is marked when profiled;
+compare performance without profiling overhead.
+
+Validation: `npm run check` passed 2,968 tests across 327 files, type checks, documentation
+links and the production build. The 391-route digest matched in Chromium and WebKit. Both
+engines passed native campaign victory, persistence and replay through the UI; the WebKit
+case first exposed a test reading sprites before the next canvas frame, so the test now waits
+for those objects explicitly. The compiled Chromium online/offline check passed. Default
+TH18 and warmed/repeated full-roster CLI runs retained their recorded battle hashes.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

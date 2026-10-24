@@ -1,5 +1,6 @@
 import { BUILDINGS, isTrap } from './data';
 import { distance2D } from './distance';
+import { GoalDistanceAxes } from './goal-distance-axes';
 import { MAP_SIZE } from './grid';
 import type { Building } from './model';
 
@@ -103,9 +104,12 @@ interface SubtileGrid {
  */
 const GRID_SLOTS = 6;
 const grids: SubtileGrid[] = [];
+/** 64 pairs of 96 doubles: at most 96 KiB, shared across this battle's collision grids. */
+const goalAxes = new GoalDistanceAxes(SIZE, SUBTILES);
 /** Drop every cached grid and route (new battle or replay runner). Never needed for results. */
 export function resetSubtileGrids() {
   grids.length = 0;
+  goalAxes.clear();
 }
 /** Collision for the living, non-trap buildings the caller knows about. */
 function gridFor(buildings: readonly Building[]): SubtileGrid {
@@ -266,6 +270,8 @@ function searchSubtilePath(
   let sequence = 0;
   const targetX = target.x,
     targetY = target.y;
+  // Moving point targets retain the direct calculation; static building goals reuse axes.
+  const axes = goalSize ? goalAxes.get(targetX, targetY, goalSize) : undefined;
   const step = 1 / SUBTILES;
   stamp[first] = generation;
   closed[first] = 0;
@@ -374,12 +380,15 @@ function searchSubtilePath(
         prev[n] = current;
         // queue(n): score, then insert or decrease-key with a sift up.
         if (Number.isNaN(heuristic[n])) {
-          const cx = (nx + 0.5) / SUBTILES,
-            cy = (ny + 0.5) / SUBTILES;
-          heuristic[n] = distance2D(
-            Math.max(targetX - cx, 0, cx - targetX - goalSize),
-            Math.max(targetY - cy, 0, cy - targetY - goalSize),
-          );
+          if (axes) heuristic[n] = Math.sqrt(axes.x[nx] + axes.y[ny]);
+          else {
+            const cx = (nx + 0.5) / SUBTILES,
+              cy = (ny + 0.5) / SUBTILES;
+            heuristic[n] = distance2D(
+              Math.max(targetX - cx, 0, cx - targetX - goalSize),
+              Math.max(targetY - cy, 0, cy - targetY - goalSize),
+            );
+          }
         }
         const score = next + heuristic[n];
         priority[n] = score;
