@@ -507,6 +507,31 @@ exhaustive-grid search witness, but mixed-army means were slower in both trials.
 with more warmup and garbage collection outside timed steps remained noisy and did not
 establish a benefit. Neither experiment changes the runtime implementation.
 
+### Skipping unused support-group selection
+
+Group-following troops now skip anchor selection when they can already attack their target.
+They still capture the position snapshot at the same first follower as before: a later unit
+in the tick must not measure a different cluster after allies have moved. Only the unused
+scan and lazy weight lookups are omitted. Target distance is calculated once and reused.
+
+A focused native-step probe held 32 Apprentice Wardens in attack range with 96 nearby allies
+for 400 fixed steps. Instrumented comparisons confirmed 12,800 group calls in both versions;
+the candidate skipped all 1,228,800 anchor visits and weight lookups. An uninstrumented
+comparison, after two warmups and six alternating measured runs per variant, reduced mean
+thread CPU from 257 to 34 ms in this isolated loop. Both versions retained battle SHA-256
+`7cb81dc88bafa01e52f0df40491ec9a865e4448a621863e0575b9d902d76022f`.
+This is a targeted unit-step result, not an end-to-end battle or FPS measurement.
+
+The standard TH18 and roster benchmark hashes also matched. A work counter showed zero
+skipped scans in that roster sample: its Wardens stayed out of attack range before victory,
+so its timing differences do not establish the benefit of this guard. The shared regression
+probe covers an attacking follower, an ally moving between follower calls, and a refreshed
+snapshot on the next tick; movement coordinates were recorded from the original code.
+
+Validation passed all 2,975 tests across 327 files, type checks, documentation links and the
+production build. Chromium and WebKit matched the group snapshot's exact coordinates and
+both route witnesses (903 routes). The compiled Chromium online/offline smoke check passed.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

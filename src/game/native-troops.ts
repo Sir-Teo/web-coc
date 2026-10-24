@@ -379,7 +379,7 @@ interface GroupWeights {
 const groupWeightCache = new WeakMap<Battle, GroupWeights>();
 /** Numeric cell keys; units stay within a few tiles of the 48-tile map. */
 const groupCell = (cx: number, cy: number) => (cx + 1024) * 4096 + (cy + 1024);
-function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats) {
+function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats, following: boolean) {
   // Snapshot the living units once per tick; weigh an anchor only when a follower in range
   // asks for it. Weights read the snapshot, so they equal what a full pass at that moment
   // would have measured no matter how many units have moved since.
@@ -419,6 +419,9 @@ function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats) {
       i++;
     }
   }
+  // Capture at the same first follower as before, even if it can already attack. Later
+  // followers must read those positions; only the unused anchor selection can be skipped.
+  if (!following) return undefined;
   const snapshot = cached;
   const cell = Math.max(1, snapshot.radius);
   const weightOf = (ally: Unit) => {
@@ -570,9 +573,10 @@ export function stepNativeUnit(
       state.burrowed = true;
     }
   }
+  const distance = distanceTo(u, target);
   if (s.groups) {
-    const anchor = groupAnchor(battle, u, s);
-    if (anchor && distanceTo(u, target) > s.range + 1e-9) {
+    const anchor = groupAnchor(battle, u, s, distance > s.range + 1e-9);
+    if (anchor) {
       moveToward(
         u,
         anchor,
@@ -581,7 +585,6 @@ export function stepNativeUnit(
       return;
     }
   }
-  const distance = distanceTo(u, target);
   if (
     (u.kind === 'battleblimp' || u.kind === 'loglauncher') &&
     distance > s.range &&
