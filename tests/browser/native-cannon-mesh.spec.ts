@@ -34,6 +34,7 @@ for (const witness of witnesses)
   }) => {
     test.setTimeout(180000);
     await page.setViewportSize({ width: 1250, height: Math.ceil(witness.height / 2) + 50 });
+    await page.addInitScript(() => performance.setResourceTimingBufferSize(4000));
     await page.goto('/');
     await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('#loading').waitFor({ state: 'detached' });
@@ -49,6 +50,11 @@ for (const witness of witnesses)
       document.querySelector<HTMLElement>('#ui')!.style.display = 'none';
       scene.paused = true;
       scene.tweens.pauseAll();
+      const display = performance
+        .getEntriesByType('resource')
+        .find((entry) => entry.name.includes('/src/game/display.ts'))!.name;
+      const { setMaxDensity } = await import(/* @vite-ignore */ display);
+      setMaxDensity(game, devicePixelRatio);
       for (const child of scene.children.list) child.setVisible(false);
       scene.cameras.main.setScroll(0, 0).setZoom(1).setBackgroundColor(reference.background);
       preloadNativeMeshes(scene, world, 'cannon-test-world');

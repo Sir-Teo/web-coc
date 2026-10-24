@@ -688,6 +688,43 @@ passed in Chromium and WebKit. The row helper now distinguishes physical camera 
 from CSS viewport dimensions, so adaptive density cannot leave it waiting for an impossible
 equality. The compiled Chromium online/offline smoke check passed with no page errors.
 
+### Sharing strip vertices while preserving triangle order
+
+Adjacent native strip triangles `a,b,c` and `c,b,d` now use four vertices in the shared sprite
+batch. Their element indices preserve both original triangle orders. Ordinary sprites keep
+their existing indices, and single triangles, odd strip tails and texture-page changes keep
+the previous fallback. Two byte arrays track current and retained index choices (32 KiB at
+the current batch capacity). Only changed element-buffer ranges upload, once per batch;
+the managed buffer uses a dynamic allocation hint and retains its data for context restoration.
+Element updates bind the batch's own VAO first.
+
+The expanded mixed-renderer check compares exact framebuffer bytes across skewed strips,
+rectangles, odd tails, page changes, tint modes, rotation, flipped UVs, rounding, capacity
+crossings and context restoration. A separate index-count assertion verifies that paired
+rectangles use one quad. A simpler cyclic vertex permutation was rejected because WebKit
+changed pixels; a rectangle-only version saved too little data for its extra CPU work.
+
+Frozen 390×844, 3× phone-viewport probes held each battle, camera and 195×422 canvas fixed,
+alternating the original and indexed batching functions. Both engines produced zero changed
+framebuffer bytes in their full battle comparison. Total upload bytes include the extra
+element-buffer updates:
+
+| Engine | Original bytes/frame | Indexed bytes/frame | Reduction | Draw calls/frame |
+| --- | ---: | ---: | ---: | ---: |
+| Chromium / SwiftShader | 2,041,236 | 1,436,812 | 29.6% | 113 in both modes |
+| WebKit software renderer | 2,015,504 | 1,408,664 | 30.1% | 90 in both modes |
+
+CPU timings varied substantially across alternating samples. These measurements establish
+less transformed/uploaded geometry, not a general FPS or physical-phone speedup. A Chromium
+timeline also recorded about five seconds of compositor pixel-readback waits during a
+ten-second software-rendered battle, outside the named game functions.
+
+Validation passed all 2,984 tests across 327 files, type checks, documentation links and the
+production build. The mixed batching and Cannon, Mortar and Tesla source-sheet checks passed
+in Chromium and WebKit (19 cases per engine). Source-sheet helpers now explicitly fix their
+canvas density so the adaptive governor cannot change their reference-image dimensions.
+The compiled Chromium online/offline check passed with no page errors.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

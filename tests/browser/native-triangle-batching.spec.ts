@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { writeFile } from 'node:fs/promises';
 
 test('native triangles share sprite batches with exact pixels across pages, flushes and restoration', async ({
   page,
@@ -51,20 +52,40 @@ test('native triangles share sprite batches with exact pixels across pages, flus
       keys.push(key);
     }
     const meshes = [];
-    const makeMesh = (count: number, number: number, onePage = false) => {
+    const makeMesh = (
+      count: number,
+      number: number,
+      onePage = false,
+      strips = false,
+      rectangles = false,
+    ) => {
       const vertices: number[] = [],
         indices: number[] = [];
       for (let i = 0; i < count; i++) {
         const x = (i % 20) * 3 + 0.3,
           y = Math.floor(i / 20) * 2 + 0.7;
         const base = vertices.length / 4;
-        vertices.push(x, y, 0.1, 0.15, x + 6.1, y + 1.3, 0.85, 0.2, x + 1.2, y + 5.8, 0.2, 0.9);
-        indices.push(base, base + 1, base + 2, onePage ? 0 : i % 2);
+        if (rectangles)
+          vertices.push(x, y, 0.125, 0.125, x, y + 6, 0.125, 0.875, x + 6, y, 0.875, 0.125);
+        else
+          vertices.push(x, y, 0.1, 0.15, x + 6.1, y + 1.3, 0.85, 0.2, x + 1.2, y + 5.8, 0.2, 0.9);
+        const source = onePage ? 0 : i % 2;
+        indices.push(base, base + 1, base + 2, source);
+        if (strips) {
+          if (rectangles) vertices.push(x + 6, y + 6, 0.875, 0.875);
+          else vertices.push(x + 7.6, y + 7.1, 0.93, 0.97);
+          // A different page must keep this pair as two independent triangles.
+          indices.push(base + 2, base + 1, base + 3, !onePage && i % 5 === 0 ? 1 - source : source);
+          if (i % 4 === 0) {
+            vertices.push(x + 0.8, y + 9.7, 0.23, 0.77);
+            indices.push(base + 2, base + 3, base + 4, source);
+          }
+        }
       }
       const mesh = new Mesh(
         scene,
-        number === 100 ? 660 : 18 + (number % 10) * 75,
-        number === 100 ? 280 : 18 + Math.floor(number / 10) * 51,
+        number >= 100 ? 660 : 18 + (number % 10) * 75,
+        number >= 100 ? 280 : 18 + Math.floor(number / 10) * 51,
         keys[number % keys.length],
         vertices,
         indices,
@@ -86,9 +107,10 @@ test('native triangles share sprite batches with exact pixels across pages, flus
       mesh.setBlendMode(number % 7 === 0 ? 'ADD' : 'NORMAL');
       scene.add.existing(mesh);
       meshes.push(mesh);
+      return mesh;
     };
     for (let i = 0; i < 100; i++) {
-      makeMesh(41, i);
+      makeMesh(41, i, false, i % 3 === 0, i % 6 === 0);
       scene.add
         .image(28 + (i % 10) * 75, 28 + Math.floor(i / 10) * 51, keys[(i + 3) % keys.length])
         .setScale(0.6)
@@ -96,29 +118,36 @@ test('native triangles share sprite batches with exact pixels across pages, flus
     }
     // This one source crosses the full batch while its texture slot is cached inside the mesh.
     makeMesh(capacity + 5, 100, true);
-    let draws = 0;
+    makeMesh(capacity + 5, 101, true, true);
+    const rectangles = makeMesh(capacity + 5, 102, true, true, true);
+    let draws = 0,
+      indexCount = 0;
     const draw = gl.drawElements;
     gl.drawElements = function (...args) {
       draws++;
+      indexCount += args[1];
       return draw.apply(this, args);
     };
     const capture = () =>
-      new Promise<{ pixels: Uint8Array; draws: number; error: number }>((resolve) => {
-        draws = 0;
-        game.events.once('postrender', () => {
-          const pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
-          gl.readPixels(
-            0,
-            0,
-            gl.drawingBufferWidth,
-            gl.drawingBufferHeight,
-            gl.RGBA,
-            gl.UNSIGNED_BYTE,
-            pixels,
-          );
-          resolve({ pixels, draws, error: gl.getError() });
-        });
-      });
+      new Promise<{ pixels: Uint8Array; draws: number; indices: number; error: number }>(
+        (resolve) => {
+          draws = 0;
+          indexCount = 0;
+          game.events.once('postrender', () => {
+            const pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
+            gl.readPixels(
+              0,
+              0,
+              gl.drawingBufferWidth,
+              gl.drawingBufferHeight,
+              gl.RGBA,
+              gl.UNSIGNED_BYTE,
+              pixels,
+            );
+            resolve({ pixels, draws, indices: indexCount, error: gl.getError() });
+          });
+        },
+      );
     const difference = (a: Uint8Array, b: Uint8Array) => {
       let changed = 0;
       for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) changed++;
@@ -126,6 +155,7 @@ test('native triangles share sprite batches with exact pixels across pages, flus
     };
     const comparisons = [];
     let visibleMeshChanges = 0;
+    let lastSharedPixels: Uint8Array;
     for (const rounded of [false, true]) {
       scene.cameras.main.roundPixels = rounded;
       for (const mesh of meshes) mesh.customRenderNodes.BatchHandlerTriangles = legacy;
@@ -138,6 +168,7 @@ test('native triangles share sprite batches with exact pixels across pages, flus
       }
       for (const mesh of meshes) mesh.customRenderNodes.BatchHandlerTriangles = shared;
       const actual = await capture();
+      lastSharedPixels = actual.pixels;
       comparisons.push({
         rounded,
         changed: difference(expected.pixels, actual.pixels),
@@ -146,6 +177,17 @@ test('native triangles share sprite batches with exact pixels across pages, flus
         errors: [expected.error, actual.error],
       });
     }
+    const textureSlots = shared.maxTexturesPerBatch;
+    shared.updateTextureCount(1);
+    const singleTexture = await capture();
+    const singleTextureChanges = difference(lastSharedPixels!, singleTexture.pixels);
+    shared.updateTextureCount(textureSlots);
+    const visibility = scene.children.list.map((child) => [child, child.visible] as const);
+    for (const [child] of visibility) child.setVisible(false);
+    const emptyIndices = (await capture()).indices;
+    rectangles.setVisible(true);
+    const rectangleIndices = (await capture()).indices - emptyIndices;
+    for (const [child, visible] of visibility) child.setVisible(visible);
     const before = await capture();
     const extension = gl.getExtension('WEBGL_lose_context');
     if (!extension) throw Error('Context-loss extension unavailable');
@@ -169,12 +211,22 @@ test('native triangles share sprite batches with exact pixels across pages, flus
     gl.drawElements = draw;
     return {
       comparisons,
+      singleTextureChanges,
+      singleTextureError: singleTexture.error,
       visibleMeshChanges,
       restoredChanged: difference(before.pixels, restored.pixels),
       restoredError: restored.error,
       capacity,
-      triangles: 4100 + capacity + 5,
+      rectangleIndices,
+      expectedRectangleIndices: 6 * (capacity + 5 + Math.ceil((capacity + 5) / 4)),
+      triangles: meshes.reduce((sum, mesh) => sum + mesh.indices.length / 4, 0),
     };
+  });
+  const reportPath = test.info().outputPath('batching-result.json');
+  await writeFile(reportPath, JSON.stringify(result, null, 2));
+  await test.info().attach('batching-result', {
+    path: reportPath,
+    contentType: 'application/json',
   });
   expect(result.triangles).toBeGreaterThan(result.capacity);
   expect(result.visibleMeshChanges).toBeGreaterThan(1000);
@@ -185,4 +237,7 @@ test('native triangles share sprite batches with exact pixels across pages, flus
   }
   expect(result.restoredChanged).toBe(0);
   expect(result.restoredError).toBe(0);
+  expect(result.singleTextureChanges).toBe(0);
+  expect(result.singleTextureError).toBe(0);
+  expect(result.rectangleIndices).toBe(result.expectedRectangleIndices);
 });
