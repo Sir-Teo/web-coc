@@ -13,6 +13,7 @@ import { TroopNativePresentation } from './troop-native-scene';
 import { DecorationNativePresentation } from './decoration-native-scene';
 import { invalidateLostFramebuffers } from './native-scene-view';
 import { createUnmaskedRenderTexture } from './native-group-buffer';
+import { ruinDecalBounds } from './ruin-decal-bounds';
 import {
   VillageNativePresentation,
   hasVillageNativeArt,
@@ -2719,7 +2720,7 @@ export class VillageScene extends Phaser.Scene {
       this.mode = mode;
       // The ruin layer's texture is allocated during scouting, not on the first destroyed
       // building mid-fight (a framebuffer completeness check stalls that frame).
-      if (mode === 'battle' && !this.ruinDecals?.scene) {
+      if (mode === 'battle') {
         this.resetRuinDecals().setVisible(false);
         this.ruinStamped.clear();
       }
@@ -3529,8 +3530,8 @@ export class VillageScene extends Phaser.Scene {
       this.ruinStamped.add(b.id);
       stamped = true;
       const d = BUILDINGS[b.kind];
-      const x = (WORLD.ox + (b.x - b.y) * 32 - WORLD.left) * RUIN_DECAL_SCALE,
-        y = (WORLD.oy + (b.x + b.y + d.size) * 16) * RUIN_DECAL_SCALE;
+      const x = (WORLD.ox + (b.x - b.y) * 32 - rt.x) * RUIN_DECAL_SCALE,
+        y = (WORLD.oy + (b.x + b.y + d.size) * 16 - rt.y) * RUIN_DECAL_SCALE;
       const width =
         (b.kind === 'camp' ? campArt(b.level).width : d.width) * 1.12 * RUIN_DECAL_SCALE;
       rt.stamp(ellipse.key, ellipse.frame, x, y + 4 * RUIN_DECAL_SCALE, {
@@ -3554,17 +3555,25 @@ export class VillageScene extends Phaser.Scene {
     rt.setVisible(true);
   }
   private ruinDecalsLost = false;
+  private ruinLayoutBattle?: Battle | null;
   private resetRuinDecals() {
     this.ruinStamped.clear();
     this.ruinDecalsLost = false;
     let rt = this.ruinDecals;
+    let layout: ReturnType<typeof ruinDecalBounds> | undefined;
+    if (!rt?.scene || this.ruinLayoutBattle !== this.model.battle) {
+      const ellipse = this.ellipseShape();
+      const frame = this.textures.getFrame(ellipse.key, ellipse.frame);
+      // Include intact buildings too: no texture growth on the first destruction. Cover all
+      // families, including art that has not loaded yet, while keeping the original pixel grid.
+      layout = ruinDecalBounds(this.model.buildings, WORLD, RUIN_DECAL_SCALE, {
+        ...ellipse,
+        width: frame.width,
+        height: frame.height,
+      });
+    }
     if (!rt?.scene) {
-      rt = this.ruinDecals = createUnmaskedRenderTexture(
-        this,
-        Math.ceil(WORLD.width * RUIN_DECAL_SCALE),
-        Math.ceil(WORLD.height * RUIN_DECAL_SCALE),
-      )
-        .setPosition(WORLD.left, 0)
+      rt = this.ruinDecals = createUnmaskedRenderTexture(this, layout!.width, layout!.height)
         .setScale(1 / RUIN_DECAL_SCALE)
         .setDepth(-875);
       this.add.existing(rt);
@@ -3578,6 +3587,12 @@ export class VillageScene extends Phaser.Scene {
       rt.once(Phaser.GameObjects.Events.DESTROY, () =>
         renderer.off(Phaser.Renderer.Events.RESTORE_WEBGL, restore),
       );
+    }
+    if (layout) {
+      if (rt.width !== layout.width || rt.height !== layout.height)
+        rt.resize(layout.width, layout.height);
+      rt.setPosition(WORLD.left + layout.left / RUIN_DECAL_SCALE, layout.top / RUIN_DECAL_SCALE);
+      this.ruinLayoutBattle = this.model.battle;
     }
     rt.clear();
     return rt;

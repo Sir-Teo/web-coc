@@ -777,6 +777,34 @@ and 10 WebKit cases (two native-gesture cases are skipped there), including held
 at both reduction sizes. The compiled Chromium online/offline check passed with no page errors.
 The pixel-test helper now waits for the first rendered camera matrix after a density change.
 
+### Sizing ruin textures for the current layout
+
+Scouting now allocates the ruin target around every building's potential stamps, including
+intact buildings and families whose art is still loading. This avoids growth on the first
+kill. Bounds keep the original physical pixel grid, guard texels, even dimensions and world
+clipping. A later battle resizes and repositions the same target during scouting; a smaller
+layout releases the larger allocation. Used targets avoid Phaser's power-of-two repeat mode.
+
+| Layout | Previous RGBA bytes | Cropped RGBA bytes | Reduction |
+| --- | ---: | ---: | ---: |
+| Starter practice village | 5,640,192 | 567,728 | 89.9% |
+| Large campaign stage 61 | 5,640,192 | 1,545,280 | 72.6% |
+
+These are the ruin layer's nominal color-storage bytes, after removing its orphan and stencil;
+they exclude driver padding and other game textures. They do not establish a phone FPS gain.
+
+Phone-viewport checks compare the entire original texture with the cropped contents, including
+regions outside the camera. Every pixel outside the crop remains transparent. Chromium's
+source comparison is exact; WebKit differs by at most one channel level. Final framebuffer
+samples at four zooms, including the lowest supported phone scale, differ by at most two levels
+from the old texture. Context restoration of the same cropped target is exact in both engines.
+The checks also cover reuse through small/larger/small layouts, higher-level camp geometry,
+clearing on return home and texture destruction.
+
+Both layout cases passed in Chromium and WebKit. The bounds unit tests and full 2,989-test
+suite, type checks, documentation links, production build and compiled online/offline smoke
+check passed alongside the adaptive-resize change.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
