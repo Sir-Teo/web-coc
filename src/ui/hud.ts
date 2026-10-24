@@ -243,6 +243,7 @@ import {
 type Panel =
   | 'magic-items'
   | 'trader'
+  | 'trader-equipment'
   | 'shortfall'
   | 'treasure'
   | 'builders'
@@ -1288,6 +1289,12 @@ export class HUD {
           : 'king';
         this.show('blacksmith');
         break;
+      case 'trader-equipment-hero':
+        if (HERO_KINDS.includes(arg as HeroKind) && m.heroProgress(arg as HeroKind)) {
+          this.inspectedSmithHero = arg as HeroKind;
+          this.show('trader-equipment');
+        }
+        break;
       case 'native-item':
       case 'native-slot':
         this.nativeOrePurchase = null;
@@ -1481,6 +1488,9 @@ export class HUD {
         break;
       case 'trader':
         this.show('trader');
+        break;
+      case 'trader-equipment':
+        this.show('trader-equipment');
         break;
       case 'trader-buy':
         m.buyDeal(arg);
@@ -3623,6 +3633,7 @@ export class HUD {
     return `<div class="modal-body treasury-body">${rows}<p class="treasury-note">The Star Bonus is banked here. Collecting moves everything at once; whatever your storages cannot hold stays in the Treasury. Without a clan, its size follows your Town Hall.</p></div><footer class="modal-footer">${button('treasury-collect', `${icon('Download', 16)} Collect`, 'game-btn green', any ? '' : 'disabled')}<span>Town Hall ${m.townhall?.level ?? 1} Treasury</span></footer>`;
   }
   private trader() {
+    if (this.panel === 'trader-equipment') return this.traderEquipment();
     const m = this.model;
     const art = (deal: TraderOffer) =>
       'item' in deal.good
@@ -3638,7 +3649,32 @@ export class HUD {
       })
       .join(
         '',
-      )}</div></div><footer class="modal-footer">${gem} ${n(m.state.gems)} gems ${button('magic-items', `${icon('Sparkles', 16)} Magic items`, 'game-btn stone')}<span>Raid Medal deals need the Clan Capital</span></footer>`;
+      )}</div></div><footer class="modal-footer trader-footer"><div class="trader-wallet">${gem} ${n(m.state.gems)} gems</div>${button('trader-equipment', `${icon('Anvil', 16)} Epic Equipment`, 'game-btn orange')}${button('magic-items', `${icon('Sparkles', 16)} Magic items`, 'game-btn stone')}<span>Raid Medal deals need the Clan Capital</span></footer>`;
+  }
+  /** Permanent Epic purchases share the Blacksmith command and do not consume weekly deals. */
+  private traderEquipment() {
+    const m = this.model,
+      gear = m.gear,
+      heroes = HERO_KINDS.filter((hero) => m.heroProgress(hero));
+    if (heroes.length && !heroes.includes(this.inspectedSmithHero))
+      this.inspectedSmithHero = heroes[0];
+    const hero = this.inspectedSmithHero,
+      catalog = heroes.length ? heroItems(hero).filter((slug) => itemRarity(slug) === 'EPIC') : [];
+    const cards = catalog.map((slug) => {
+      const level = gear.levels[slug],
+        owned = level !== undefined,
+        issue = owned
+          ? 'Owned'
+          : !m.blacksmith
+            ? 'Build a Blacksmith'
+            : m.battle
+              ? 'Finish your battle first'
+              : m.state.gems < EPIC_ITEM_GEMS
+                ? 'Not enough gems'
+                : null;
+      return `<article class="magic-item trader-epic" data-epic="${slug}">${nativeItemImage(slug)}<div><h3>${nativeItemName(slug)} <b>${owned ? `Level ${level}` : 'Epic'}</b></h3><p>For ${HERO_SOURCE[hero]} · ${owned ? 'Available at your Blacksmith' : 'Permanent level 1 unlock'}</p><div class="magic-item-actions">${button(`epic-buy:${slug}`, owned ? 'Owned' : `${gem} ${n(EPIC_ITEM_GEMS)}`, `game-btn ${issue ? 'stone' : 'green'}`, issue ? 'disabled' : '')}${button(`native-item:${slug}`, 'Details', 'game-btn stone')}${issue && !owned ? `<small class="item-note">${issue}</small>` : ''}</div></div></article>`;
+    });
+    return `${heroes.length ? this.smithTabs('trader-equipment-hero') : ''}<div class="modal-body trader-equipment-body">${cards.length ? `<div class="magic-item-grid">${cards.join('')}</div>` : `<p class="army-empty">${heroes.length ? 'This hero has no Epic equipment.' : 'Recruit a hero at the Hero Hall to see its Epic equipment.'}</p>`}</div><footer class="modal-footer trader-footer"><div class="trader-wallet">${gem} ${n(m.state.gems)} gems</div>${button('trader', `${icon('ShoppingBasket', 16)} Weekly Deals`, 'game-btn stone')}<span>Buy once. Equip at the Blacksmith.</span></footer>`;
   }
   /** The Town Hall's magic items: what each does, how many are held, and its use or sale. */
   private magicItems() {
@@ -3853,11 +3889,11 @@ export class HUD {
     </div>`;
   }
   /** Hero tabs above the forge: one loadout per hero the village has. */
-  private smithTabs() {
+  private smithTabs(action = 'blacksmith-hero') {
     const m = this.model;
     const tab = (value: HeroKind, label: string) =>
       button(
-        `blacksmith-hero:${value}`,
+        `${action}:${value}`,
         label,
         `tab ${this.inspectedSmithHero === value ? 'active' : ''}`,
         `role="tab" aria-selected="${this.inspectedSmithHero === value}"`,
@@ -4206,6 +4242,7 @@ export class HUD {
       heroes: 'Hero Hall',
       'magic-items': 'Magic items',
       trader: 'Weekly Deals',
+      'trader-equipment': 'Epic Equipment',
       shortfall: this.shortfallTitle(),
       treasure: this.treasureTitle(),
       builders: 'Builders',
@@ -4234,11 +4271,12 @@ export class HUD {
       'army-presets': 'Save a composition. Be ready in one tap.',
       cookbook: ARMY_RECIPE_TEXTS.info,
       'battle-log': 'Your last twenty attacks, kept with your village.',
-      blacksmith: 'Forge your King’s abilities.',
+      blacksmith: 'Equip your heroes and upgrade their abilities.',
       heroes: 'A champion for every attack.',
       journey: 'Every hero level moves you along the track.',
       'magic-items': 'Kept in your Town Hall. Use them, or cash them in for gems.',
       trader: `New deals in ${time((traderWeekEnds(this.model.clock) - this.model.clock) / 1000)}!`,
+      'trader-equipment': `Permanent level 1 unlocks · ${n(EPIC_ITEM_GEMS)} gems each`,
       treasury: 'Star Bonus loot, kept safe in your Clan Castle.',
       shortfall: 'Gems complete the price, then it goes ahead.',
       treasure: 'Straight into your storages.',
@@ -4271,7 +4309,7 @@ export class HUD {
             ? this.treasureBody()
             : this.panel === 'builders'
               ? this.builderMenu()
-              : this.panel === 'trader'
+              : this.panel === 'trader' || this.panel === 'trader-equipment'
                 ? this.trader()
                 : this.panel === 'treasury'
                   ? this.treasury()

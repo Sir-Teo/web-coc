@@ -6844,6 +6844,15 @@ h3 {
 }
 
 /* Magic items: the Town Hall inventory. */
+.trader-footer {
+  flex-wrap: wrap;
+}
+.trader-wallet {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
 .magic-item-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
