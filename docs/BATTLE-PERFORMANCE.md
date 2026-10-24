@@ -507,6 +507,12 @@ exhaustive-grid search witness, but mixed-army means were slower in both trials.
 with more warmup and garbage collection outside timed steps remained noisy and did not
 establish a benefit. Neither experiment changes the runtime implementation.
 
+Keeping heap priorities and insertion order beside heap slots also preserved all 909 route
+cases and the exact 734,838-entry pop trace, including 192 decrease-key operations. Node
+timings had large outliers. Browser-only 903-route samples were steadier: Chromium means
+were 133 versus 129 ms, and WebKit 119 versus 120 ms. That small, inconsistent difference
+does not justify the extra rank copies on every sift; the existing layout remains in use.
+
 ### Skipping unused support-group selection
 
 Group-following troops now skip anchor selection when they can already attack their target.
