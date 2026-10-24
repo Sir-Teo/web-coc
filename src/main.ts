@@ -23,6 +23,7 @@ import { decodeLoadedImages } from './game/image-decode';
 import { watchSystemMotion } from './ui/motion';
 import { ScreenAwake } from './ui/screen-awake';
 import { Haptics } from './ui/haptics';
+import { onFirstAudioGesture } from './ui/first-audio-gesture';
 recordBootResources();
 decodeLoadedImages();
 /** A 1×1 fully transparent PNG. */
@@ -30,6 +31,7 @@ const TRANSPARENT_PIXEL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADUlEQVQImWNgYGBgAAAABQABh6FO1AAAAABJRU5ErkJggg==';
 async function boot() {
   const releaseSession = await acquireVillage();
+  let cancelAudioGesture = () => {};
   try {
     let saved;
     try {
@@ -50,14 +52,10 @@ async function boot() {
       else if (cue === 'victory' && (model.battle?.stars ?? 0) > 0) haptics.pulse(cue);
     };
     watchSystemMotion(model);
-    document.addEventListener(
-      'pointerdown',
-      () => {
-        audio.unlock();
-        if (model.state.settings.music) audio.music(true);
-      },
-      { once: true },
-    );
+    cancelAudioGesture = onFirstAudioGesture(() => {
+      audio.unlock();
+      if (model.state.settings.music) audio.music(true);
+    });
     // Graphs kept out of the startup bundle, for the families this village already owns.
     await prepareHomeArt(model.buildings);
     const scene = new VillageScene(model, audio);
@@ -180,6 +178,7 @@ async function boot() {
       );
     }, 1000);
     window.addEventListener('pagehide', () => {
+      cancelAudioGesture();
       audio.samples.stopAll();
       clearInterval(economyTimer);
       model.tick(Date.now());
@@ -341,6 +340,7 @@ async function boot() {
       installDeveloperTools(model, scene);
     }
   } catch (error) {
+    cancelAudioGesture();
     releaseSession();
     throw error;
   }

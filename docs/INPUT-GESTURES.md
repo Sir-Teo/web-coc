@@ -58,6 +58,12 @@ cycle heroes or spend an ability after deployment. Camera and map-cursor movemen
 normal repeats. `tests/browser/spell-shortcuts.spec.ts` exercises every spell binding, uppercase
 letters, held keys, repeat toggles, hero abilities and the surrender dialog.
 
+A saved Music preference can start from a printable key, Tab or Enter as well as a pointer
+gesture. Modifier-only keys, Escape, browser chords and repeats leave that first activation
+available. Both listeners are removed after activation, or cancelled on page exit or failed
+boot. `tests/first-audio-gesture.test.ts` checks listener cleanup and key policy;
+`tests/browser/audio-activation.spec.ts` verifies keyboard startup after reloading saved settings.
+
 ## Browser gestures on phones
 
 October 1, 2026. Several browser gestures could take over during touch play. The canvas already set `touch-action: none`, but the HUD did not:

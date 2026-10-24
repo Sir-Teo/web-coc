@@ -112,7 +112,11 @@ export class AudioManager {
    */
   effect(effect: VillageEffect, tone: Tone) {
     this.feedback(tone);
-    if (!this.enabled || this.throttled(effect, 50)) return;
+    if (!this.enabled) {
+      if (this.musicOn) this.unlock();
+      return;
+    }
+    if (this.throttled(effect, 50)) return;
     this.unlock();
     if (!this.playEffect(effect)) this.tone(tone);
   }
@@ -126,7 +130,10 @@ export class AudioManager {
   feedback: (kind: Tone) => void = () => {};
   play(kind: Tone) {
     this.feedback(kind);
-    if (!this.enabled) return;
+    if (!this.enabled) {
+      if (this.musicOn) this.unlock();
+      return;
+    }
     // Battles can emit dozens of blips per second; throttle per kind
     // so overlapping volleys don't thrash the mixer.
     const throttleMs =

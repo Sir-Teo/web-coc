@@ -16,6 +16,9 @@ Campaign raids, ladder matches, practice attacks and replays all follow the same
 ## Playback
 
 - Music is off by default, as before, and nothing is downloaded until it is turned on.
+- A saved Music preference starts on the first pointer gesture, printable key, Tab or Enter.
+  Modifiers, Escape, browser chords and key repeat leave that activation available. Music-only
+  playback can also recover its audio context through feedback while effects stay muted.
 - The loops stream through one media element, so a three-minute track is never held decoded in memory. Each file is fetched whole and played from a blob URL: a media element's range requests bypass the service worker's cache, while a whole-file fetch is kept for offline play once heard.
 - The stings are seconds long and play through Web Audio.
 - Music plays at half volume under the effects. iOS ignores a media element's volume, so the Home and battle loops play at full volume there; the stings still follow it.
@@ -25,3 +28,8 @@ Campaign raids, ladder matches, practice attacks and replays all follow the same
 - Ogg Vorbis needs Safari 18.4 or later on iOS and macOS 15.4 or later; older Safari stays silent for the Ogg files and still plays the MP3 planning loop and stings.
 
 `tests/music.test.ts` checks the shipped bytes, scene selection, Home part order, the intro-then-planning sequence, silence while off, and pause and resume. `tests/audio-lifecycle.test.ts` covers delayed stings, scene changes, mute/re-enable races and stale completion callbacks. `tests/browser/music.spec.ts` follows a practice attack from planning to combat to its result; `tests/browser/audio-lifecycle.spec.ts` delays the real intro download until combat, checks that result music stops at home, and mutes native effects while the music loop keeps playing.
+
+`tests/first-audio-gesture.test.ts` checks first-gesture selection and cleanup.
+`tests/audio-activation.test.ts` checks music-only recovery and all-off silence.
+`tests/browser/audio-activation.spec.ts` reloads saved music-only preferences, starts playback
+with Tab after ignored keys, and resumes an interrupted context without playing effects.
