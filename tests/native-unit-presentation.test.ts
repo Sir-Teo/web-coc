@@ -439,6 +439,48 @@ describe('native defense zap readiness', () => {
   });
 });
 
+it('allows piercing hits again after their shot leaves the active list', () => {
+  const p = new NativeDefensePresentation({} as never, {} as never);
+  const state = p as unknown as {
+    renderPiercingHits(battle: Battle, project: typeof iso): void;
+    effectsFor(): { hit: string };
+    record(event: unknown): void;
+  };
+  vi.spyOn(p, 'pack').mockReturnValue({} as never);
+  state.effectsFor = () => ({ hit: 'Hit' });
+  const record = vi.fn();
+  state.record = record;
+  const b = battleOf([unit(4, 12, 13)]);
+  b.buildings = [makeBuilding(7, 'firespitter', 20, 20, 1)];
+  const shot: NonNullable<Battle['nativePiercing']>[number] = {
+    id: 'returning-shot',
+    sourceId: 7,
+    fromX: 21.5,
+    fromY: 21.5,
+    dirX: 1,
+    dirY: 0,
+    length: 6,
+    speed: 10,
+    launched: 0,
+    travelled: 1,
+    radius: 1,
+    hits: 0,
+    damage: 1,
+    hit: [4],
+  };
+  b.nativePiercing = [shot];
+  state.renderPiercingHits(b, iso);
+  state.renderPiercingHits(b, iso);
+  expect(record).toHaveBeenCalledTimes(1);
+  b.nativePiercing = [];
+  state.renderPiercingHits(b, iso);
+  b.elapsed += 0.05;
+  b.nativePiercing = [shot];
+  state.renderPiercingHits(b, iso);
+  expect(record).toHaveBeenCalledTimes(2);
+  expect(record.mock.calls[1][0]).toMatchObject({ ground: iso(12, 13) });
+});
+
 describe('native projectile impact readiness', () => {
   const effect = 'Merged Cannon Projectile Destroyed';
   function presentation() {

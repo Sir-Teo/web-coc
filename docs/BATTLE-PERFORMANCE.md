@@ -538,6 +538,26 @@ Validation passed all 2,975 tests across 327 files, type checks, documentation l
 production build. Chromium and WebKit matched the group snapshot's exact coordinates and
 both route witnesses (903 routes). The compiled Chromium online/offline smoke check passed.
 
+### Avoiding empty piercing-shot work
+
+The defense hit pass now returns immediately when there are no piercing shots, clearing
+its consumed-hit bookkeeping without allocating a live-shot set or requesting a building
+index. With active shots, projectile source lookup reuses the building index already read
+by the defense hit pass earlier in the frame. A regression check covers duplicate-hit
+suppression and a shot returning after an empty frame.
+
+A proposed audio source lookup change was left out. A Chromium sample of 500 frames with
+589 initial units compared the existing linear lookup with eagerly requesting the shared
+index for each sound event; both included the index build needed by the eventual draw.
+Repeated lookups with a stable army improved, but interleaving four appended units with
+32 events per frame increased the mean from about 34 to 103 ms by rebuilding the index
+several times in one tick. Audio sources retain their existing lookup.
+
+Validation passed all 2,976 tests across 327 files, type checks, documentation links and the
+production build. All five defense/projectile loading and retry cases passed in both
+Chromium and WebKit, including phone layouts. The compiled Chromium online/offline smoke
+check passed.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

@@ -13,6 +13,7 @@ import {
   type NativeProjectileRow,
 } from './native-projectile-poses';
 import { weaponFor } from './native-defenses';
+import { buildingIndex } from './battle-index';
 
 type Point = { x: number; y: number };
 const FLIGHT_DEPTH = 8000;
@@ -166,7 +167,7 @@ export class NativeProjectilePresentation {
     for (const shot of battle.nativePiercing ?? []) {
       const seen = this.history.get(`pierce:${shot.id}`);
       if (seen?.launched === shot.launched && seen.piercing?.length === shot.length) continue;
-      const tower = battle.buildings.find((b) => b.id === shot.sourceId);
+      const tower = buildingIndex(battle).get(shot.sourceId);
       const name = tower ? weaponFor(tower)?.projectile : undefined;
       const packPath = nativeProjectilePack(name);
       if (!name || !packPath) continue;
