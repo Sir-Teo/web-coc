@@ -498,6 +498,15 @@ production build. Both route witnesses (903 routes) matched in Chromium and WebK
 compiled Chromium online/offline smoke check passed. Mutation tests cover cached one-point,
 multi-point and empty routes, including independent waypoint objects on repeated reads.
 
+### Search experiments left out
+
+A four-way heap preserved both recorded battle hashes but raised mixed-army CPU means
+from 1524 to 1726 ms while improving the roster sample. Narrowing four index/order scratch
+arrays to 16 bits would save 72 KiB on the current map; it preserved the hashes and an
+exhaustive-grid search witness, but mixed-army means were slower in both trials. A repeat
+with more warmup and garbage collection outside timed steps remained noisy and did not
+establish a benefit. Neither experiment changes the runtime implementation.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
