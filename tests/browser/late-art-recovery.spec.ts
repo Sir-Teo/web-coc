@@ -1,9 +1,10 @@
 import { test, expect, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
-async function scoutLateVillage(page: Page) {
-  await page.evaluate(async () => {
+async function scoutLateVillage(page: Page, withDefender = false) {
+  await page.evaluate(async (withDefender) => {
     const { makeBuilding } = await import('/src/game/model.ts');
+    const { spawnGarrisonDefender } = await import('/src/game/garrison-combat.ts');
     const { model, scene } = window.__game;
     model.state.obstacles = [];
     model.state.buildings = [
@@ -13,13 +14,14 @@ async function scoutLateVillage(page: Page) {
     ];
     model.state.nextId = 1003;
     model.startBattle(0, true);
+    if (withDefender) spawnGarrisonDefender(model.battle!, 'archer', 9, 1000, 20, 20, 0);
     // The home village does not need the late bundle after this scout visit.
     model.state.buildings = model.state.buildings.filter(
       (building) => building.kind === 'townhall',
     );
     model.changed();
     scene.sync();
-  });
+  }, withDefender);
 }
 
 for (const online of [false, true]) {
@@ -141,7 +143,7 @@ for (const moduleName of ['late-campaign-scene', 'character-graphs'])
     await page.route(pattern, (route) =>
       route.fulfill({ status: 503, body: 'Temporary module outage' }),
     );
-    await scoutLateVillage(page);
+    await scoutLateVillage(page, moduleName === 'character-graphs');
     await page.waitForFunction(
       () => !!window.__game.scene.lateArtFailure && !window.__game.scene.lateArtLoading,
     );

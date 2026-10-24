@@ -31,7 +31,7 @@ import houndShots from '../../reference/characters/projectiles/lava-hound.json' 
 import type { CharacterGraph, CharacterGraphEntry } from './character-art';
 
 /**
- * The captured character and projectile graphs (about 2.7 MB of JSON). Only campaign Clan
+ * The captured character and projectile graphs (about 4 MB of JSON). Only campaign Clan
  * Castle defenders, their projectiles and the Defending Builder draw from them, so they load
  * with that art (character-art.ts `loadCharacterArt`) instead of at startup.
  */

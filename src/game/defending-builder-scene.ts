@@ -5,6 +5,7 @@ import type { LatePresentation, LateRenderContext } from './late-campaign-scene'
 import type { SampleCue } from './sample-audio';
 import { NativeSceneView } from './native-scene-view';
 import { defendingBuilderLayers } from './defending-builder-poses';
+import { characterArtLoaded } from './character-art';
 import { defendingBuilderPoisoned } from './defending-builder-poison';
 import { defendingBuilderFrozen } from './defending-builder-freeze';
 import { applyStatusTint } from './troop-native-scene';
@@ -28,6 +29,8 @@ export class DefendingBuilderPresentation implements LatePresentation {
     return undefined;
   }
   render({ battle, reduced, iso }: LateRenderContext): SampleCue[] {
+    // A home-loaded building presentation can meet replay workers before their first graph load.
+    if (!characterArtLoaded()) return [];
     const wanted = new Set<number>();
     for (const builder of battle?.late?.defendingBuilder?.builders ?? []) {
       const layers = defendingBuilderLayers(builder, battle!, reduced);

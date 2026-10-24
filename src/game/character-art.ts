@@ -13,7 +13,7 @@ type Graphs = typeof import('./character-graphs');
 let graphs: Graphs | undefined;
 let loading: Promise<Graphs> | undefined;
 /**
- * Fetches the character graphs once (the garrison and late campaign art wait for it); a failed
+ * Fetches the character graphs once (defender art waits for it); a failed
  * fetch can be retried by calling again.
  */
 export function loadCharacterArt(): Promise<Graphs> {

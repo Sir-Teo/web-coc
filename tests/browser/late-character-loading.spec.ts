@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 
 async function boot(page: Page) {
   await page.goto('/?lazyart');
@@ -187,24 +188,15 @@ test('a failed defender page retries after returning to a home village with late
   await page.waitForFunction(
     () => window.__game.scene.lateAssetsReady && !window.__game.scene.lateArtLoading,
   );
-  const target = await page.evaluate(async () => {
-    const resource = performance
-      .getEntriesByType('resource')
-      .find((entry) => entry.name.includes('/src/game/character-art.ts'))!.name;
-    const { characterArts } = await import(/* @vite-ignore */ resource);
-    type Art = {
-      prefix: string;
-      graph: { textures: Record<string, { path: string; width: number; height: number }> };
-    };
-    const art = (Object.values(characterArts()) as Art[]).find((art) =>
-      art.prefix.includes('electrodragon'),
-    )!;
-    const [id, texture] = Object.entries(art.graph.textures).find(
-      ([, texture]) =>
-        texture.path.includes('/characters-native/') && texture.width * texture.height > 1_000_000,
-    )!;
-    return { key: `${art.prefix}:mesh:${id}`, path: '/' + texture.path };
-  });
+  // Read the failure target without priming the character module that the home no longer needs.
+  const graph = JSON.parse(
+    await readFile('reference/characters/electro_dragon/electrodragon-lvl3.json', 'utf8'),
+  ) as { textures: Record<string, { path: string; width: number; height: number }> };
+  const [id, texture] = Object.entries(graph.textures).find(
+    ([, texture]) =>
+      texture.path.includes('/characters-native/') && texture.width * texture.height > 1_000_000,
+  )!;
+  const target = { key: `character-electrodragon-lvl3:mesh:${id}`, path: '/' + texture.path };
   let attempts = 0;
   page.on('request', (request) => {
     if (new URL(request.url()).pathname === target.path) attempts++;
@@ -439,9 +431,14 @@ test('automatic loading includes Ghost Trap bodies and armed hut workers before 
 test('a late battle with no possible defenders requests no character payload', async ({ page }) => {
   test.setTimeout(120000);
   let requests = 0;
+  let graphRequests = 0;
   page.on('request', (request) => {
     if (request.url().includes('/assets/characters-native/')) requests++;
+    if (new URL(request.url()).pathname === '/src/game/character-graphs.ts') graphRequests++;
   });
+  await page.route('**/src/game/character-graphs.ts*', (route) =>
+    route.fulfill({ status: 503, body: 'Unused character module unavailable' }),
+  );
   await boot(page);
   await addHomeBuilding(page, 'monolith');
   await page.waitForFunction(
@@ -455,12 +452,167 @@ test('a late battle with no possible defenders requests no character payload', a
     () => !window.__game.scene.lateArtLoading && !window.__game.scene.battleArtPending(),
   );
   expect(
+    await page.evaluate(async () => {
+      const { characterArtLoaded } = await import('/src/game/character-art.ts');
+      return {
+        battle: !!window.__game.model.battle,
+        characters: window.__game.scene.lateCharactersReady,
+        graphs: characterArtLoaded(),
+        keys: window.__game.scene.lateCharacterKeys.length,
+        error: window.__game.game.renderer.gl.getError(),
+      };
+    }),
+  ).toEqual({ battle: true, characters: false, graphs: false, keys: 0, error: 0 });
+  expect(requests).toBe(0);
+  expect(graphRequests).toBe(0);
+});
+
+test('a first defender module failure after home building loading honors backoff and reconnects', async ({
+  page,
+}) => {
+  test.setTimeout(120000);
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await boot(page);
+  await addHomeBuilding(page, 'monolith');
+  await page.waitForFunction(
+    () => window.__game.scene.lateAssetsReady && !window.__game.scene.lateArtLoading,
+  );
+  const pattern = '**/src/game/character-graphs.ts*';
+  let attempts = 0;
+  page.on('request', (request) => {
+    if (
+      request.method() === 'GET' &&
+      new URL(request.url()).pathname === '/src/game/character-graphs.ts'
+    )
+      attempts++;
+  });
+  await page.route(pattern, (route) =>
+    route.fulfill({ status: 503, body: 'Temporary defender module outage' }),
+  );
+  await scoutDefender(page);
+  await page.waitForFunction(
+    () => !!window.__game.scene.lateArtFailure && !window.__game.scene.lateArtLoading,
+  );
+  // Repeated refreshes and queued callers must share the module retry backoff even though
+  // the building phase has already succeeded.
+  await page.evaluate(async () => {
+    const { scene, model } = window.__game;
+    await Promise.all(Array.from({ length: 3 }, () => scene.loadLateAssets(true, model.battle)));
+  });
+  expect(attempts).toBe(1);
+  expect(
     await page.evaluate(() => ({
-      battle: !!window.__game.model.battle,
+      buildings: window.__game.scene.lateAssetsReady,
       characters: window.__game.scene.lateCharactersReady,
-      keys: window.__game.scene.lateCharacterKeys.length,
+      pending: window.__game.scene.battleArtPending(),
+      elapsed: window.__game.model.battle!.elapsed,
+    })),
+  ).toEqual({ buildings: true, characters: false, pending: true, elapsed: 0 });
+  await page.unroute(pattern);
+  await page.evaluate(() => window.dispatchEvent(new Event('online')));
+  await expect.poll(() => attempts, { timeout: 2000 }).toBeGreaterThan(1);
+  await page.waitForFunction(
+    () =>
+      window.__game.scene.lateCharactersReady &&
+      !window.__game.scene.lateArtLoading &&
+      !window.__game.scene.battleArtPending(),
+  );
+  await page.evaluate(() => window.__game.scene.drawOverlay(0));
+  expect(
+    await page.evaluate(() => ({
+      failure: window.__game.scene.lateArtFailure,
+      visible: [...window.__game.scene.garrisonPresentation.defenders.values()].some((view) =>
+        view.objects.some((object) => object.visible && object.alpha > 0),
+      ),
       error: window.__game.game.renderer.gl.getError(),
     })),
-  ).toEqual({ battle: true, characters: false, keys: 0, error: 0 });
-  expect(requests).toBe(0);
+  ).toEqual({ failure: undefined, visible: true, error: 0 });
+  expect(errors).toEqual([]);
+});
+
+test('an already spawned Builder waits for its first character module without stopping frames', async ({
+  page,
+}) => {
+  test.setTimeout(180000);
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => {
+    if (message.text().startsWith('Skipped drawing')) errors.push(message.text());
+  });
+  let releaseGraph!: () => void;
+  const heldGraph = new Promise<void>((resolve) => {
+    releaseGraph = resolve;
+  });
+  let graphRequests = 0;
+  await page.route('**/src/game/character-graphs.ts*', async (route) => {
+    graphRequests++;
+    await heldGraph;
+    await route.continue();
+  });
+  try {
+    await boot(page);
+    await addHomeBuilding(page, 'monolith');
+    const hutId = await addHomeBuilding(page, 'builder');
+    await page.waitForFunction(
+      () => window.__game.scene.lateAssetsReady && !window.__game.scene.lateArtLoading,
+    );
+    const spawned = await page.evaluate(async (hutId) => {
+      const { spawnDefendingBuilder } = await import('/src/game/defending-builder.ts');
+      const { spawnGarrisonDefender } = await import('/src/game/garrison-combat.ts');
+      const { characterArtLoaded } = await import('/src/game/character-art.ts');
+      const { model, scene, game } = window.__game;
+      const graphsBeforeBattle = characterArtLoaded();
+      model.startBattle(0, true);
+      const battle = model.battle!;
+      const hut = battle.buildings.find((building) => building.id === hutId)!;
+      const worker = spawnDefendingBuilder(battle, hut, 0);
+      const archer = spawnGarrisonDefender(battle, 'archer', 9, hut.id, 33, 32, 0);
+      battle.elapsed = 0.2;
+      model.changed();
+      scene.sync();
+      scene.drawOverlay(200);
+      return { worker: worker.id, archer: archer.id, graphsBeforeBattle, frame: game.loop.frame };
+    }, hutId);
+    expect(spawned.graphsBeforeBattle).toBe(false);
+    await expect.poll(() => graphRequests).toBe(1);
+    await page.waitForFunction((frame) => window.__game.game.loop.frame > frame + 2, spawned.frame);
+    expect(
+      await page.evaluate(() => ({
+        pending: window.__game.scene.battleArtPending(),
+        elapsed: window.__game.model.battle!.elapsed,
+      })),
+    ).toEqual({ pending: true, elapsed: 0.2 });
+    expect(errors).toEqual([]);
+    releaseGraph();
+    await page.waitForFunction(
+      () =>
+        window.__game.scene.lateCharactersReady &&
+        !window.__game.scene.lateArtLoading &&
+        !window.__game.scene.battleArtPending(),
+    );
+    await page.evaluate(() => window.__game.scene.drawOverlay(200));
+    const visible = await page.evaluate(
+      (ids) => ({
+        worker: window.__game.scene.children.list.filter(
+          (object) =>
+            object.visible &&
+            object.alpha > 0 &&
+            object.getData?.('defendingBuilder') === ids.worker,
+        ).length,
+        archer:
+          window.__game.scene.garrisonPresentation.defenders
+            .get(ids.archer)
+            ?.objects.filter((object) => object.visible && object.alpha > 0).length ?? 0,
+        error: window.__game.game.renderer.gl.getError(),
+      }),
+      spawned,
+    );
+    expect(visible.worker).toBeGreaterThan(0);
+    expect(visible.archer).toBeGreaterThan(0);
+    expect(visible.error).toBe(0);
+    expect(errors).toEqual([]);
+  } finally {
+    releaseGraph();
+  }
 });

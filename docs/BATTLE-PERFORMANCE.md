@@ -887,6 +887,39 @@ Validation: `npm run check` passed (2,995 tests in 329 files). The nine lifecycl
 six existing art-recovery cases passed in both Chromium and WebKit. The compiled Chromium
 online/offline release check passed with no page errors (cache `41a34c63248b`).
 
+### Deferring defender graph data until a defender needs it
+
+Building-only late-art requests now leave the character graph module unloaded. An empty
+defender demand also skips that import, including when the battle itself first loads the
+building bundle. Real defender demand and explicit full preloads still fetch the graphs before
+queuing their textures. The graph module contains 30 source JSON files totaling 4,037,148 bytes;
+source bytes describe the data set, rather than its compiled transfer size or retained heap.
+
+A late presentation created at home can meet an already-spawned Builder in a replay while its
+first character-module request is pending. The Builder presentation now waits for graph
+readiness, as the garrison presentation already does. A browser case holds that request, draws
+the pre-existing worker, checks that frames continue and the battle clock stays held, then
+releases the request and verifies visible Builder and Archer bodies. The empty-demand case
+serves the unused module as an error and verifies that it is never requested. The module
+recovery fixture stages an actual Archer so it continues to exercise a required dependency.
+Module failures also keep their retry backoff after the building phase is already ready;
+concurrent refreshes share that delay. Image failures retain their existing fallback behavior.
+Browser-only controls that disabled the two guards reproduced the original problems: five
+module downloads instead of one, and a pre-existing Builder throwing before its graph loaded.
+
+A compiled 390×844, 3× viewport comparison against the previous build requested the defender
+graph chunk once at home (1,817,507 uncompressed JavaScript response bytes). The new build
+requested it zero times. Chromium and WebKit both loaded the Monolith village without page or
+HTTP errors. These are decoded response bytes; hosting compression and retained JavaScript
+heap have different sizes. The earlier development probes also confirmed that a subsequent
+Archer battle loads the graphs successfully.
+
+Validation covered all 11 lifecycle cases and six existing recovery cases in both engines.
+`npm run check` passed with two CPUs available (2,995 tests in 329 files), and the compiled
+Chromium online/offline check passed with no page errors (cache `9e77ef3d56be`). An earlier
+parallel run exceeded two air-campaign sweeps' existing 60-second limits; both passed in an
+isolated run and the complete repeat. No timeout limit was changed.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

@@ -370,7 +370,7 @@ const ART_FAMILIES: ArtFamily[] = [
   LEGACY_KING_FAMILY,
   {
     // Campaign Clan Castle defenders, with their effects and sounds; a home Castle holds no
-    // reinforcements. Their graphs (about 2.7 MB of JSON) are fetched first.
+    // reinforcements. Their graphs (about 4 MB of JSON) are fetched first.
     draws: () => false,
     needed: (model) => !!model.battle?.garrisons?.length,
     prepare: loadCharacterArt,
@@ -707,7 +707,7 @@ export class VillageScene extends Phaser.Scene {
     ready: false,
   };
   private lateArtLoading = false;
-  private lateArtFailure?: { attempts: number; retryAt: number };
+  private lateArtFailure?: { attempts: number; retryAt: number; module: boolean };
   private lateBattle: { battle: GameModel['battle']; needed: boolean } = {
     battle: null,
     needed: false,
@@ -1368,6 +1368,7 @@ export class VillageScene extends Phaser.Scene {
   }
   private loadLateArtRequest(request: LateArtRequest): Promise<void> {
     const { withCharacters, expectedBattle, animations } = request;
+    const loadCharacters = withCharacters && animations?.size !== 0;
     const covered = this.charactersCovered(animations);
     if (this.lateAssets) {
       if (withCharacters && !covered)
@@ -1379,11 +1380,7 @@ export class VillageScene extends Phaser.Scene {
     }
     // A failed module leaves scouting held. Other scene refreshes must honor the retry
     // backoff now that completed requests no longer occupy `lateAssets`.
-    if (
-      !this.lateAssetsReady &&
-      this.lateArtFailure &&
-      this.lateArtFailure.retryAt > performance.now()
-    )
+    if (this.lateArtFailure?.module && this.lateArtFailure.retryAt > performance.now())
       return Promise.resolve();
     if (this.lateAssetsReady && (!withCharacters || covered) && !this.lateArtFailure)
       return Promise.resolve();
@@ -1404,7 +1401,10 @@ export class VillageScene extends Phaser.Scene {
       if (document.querySelector('#toast')?.textContent === LOADING_LATE_ART) this.model.notify('');
     };
     // The presentation code and its source graphs are a separate chunk, fetched with the art.
-    const loading = Promise.all([import('./late-campaign-scene'), loadCharacterArt()]).then(
+    const loading = Promise.all([
+      import('./late-campaign-scene'),
+      loadCharacters ? loadCharacterArt() : Promise.resolve(),
+    ]).then(
       ([{ LateCampaignPresentation, preloadLateCampaign }]) =>
         new Promise<void>((resolve) => {
           const kick = () => {
@@ -1426,7 +1426,7 @@ export class VillageScene extends Phaser.Scene {
               this.garrisonPresentation.clear();
               this.lateCampaign = new LateCampaignPresentation(this, this.audio);
               this.lateAssetsReady = true;
-              if (withCharacters) {
+              if (loadCharacters) {
                 this.lateCharactersReady = true;
                 if (animations)
                   for (const name of animations) this.lateCharacterAnimations.add(name);
@@ -1438,7 +1438,7 @@ export class VillageScene extends Phaser.Scene {
             });
             const queued = new Set(this.load.list);
             preloadLateCampaign(this);
-            if (withCharacters) {
+            if (loadCharacters) {
               const buildings = new Set(this.load.list);
               // Boot garrisons also use this death effect. Its family can have borrowed these
               // already-loaded pages, so keep them with the building/shared batch at home.
@@ -1476,7 +1476,7 @@ export class VillageScene extends Phaser.Scene {
       () => {
         settle();
         if (shutdown) return;
-        this.failLateArt();
+        this.failLateArt(true);
       },
     );
     this.lateAssets = loading.finally(() => {
@@ -1486,9 +1486,13 @@ export class VillageScene extends Phaser.Scene {
     });
     return this.lateAssets;
   }
-  private failLateArt() {
+  private failLateArt(module = false) {
     const attempts = (this.lateArtFailure?.attempts ?? 0) + 1;
-    this.lateArtFailure = { attempts, retryAt: performance.now() + artRetryDelay(attempts) };
+    this.lateArtFailure = {
+      attempts,
+      retryAt: performance.now() + artRetryDelay(attempts),
+      module,
+    };
     if (attempts === 1)
       this.model.notify('Some village art could not load. It will retry automatically.');
   }
