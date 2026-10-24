@@ -437,6 +437,29 @@ Validation passed all 2,970 tests across 327 files, type checks, documentation l
 production build. Chromium and WebKit retained the original 391-route digest. The compiled
 Chromium online/offline smoke check passed.
 
+### Skipping distant melee endpoint calculations
+
+A melee endpoint inside a cell must lie within its half-diagonal of the cell center, and
+within the attack range of the target rectangle. A center farther than `max(0, range)` plus
+one subtile step therefore cannot contain that endpoint. A* uses its already computed goal
+distance to skip the clamps, second distance calculation and endpoint allocation in those
+cells. The full-step bound is deliberately looser than the half-diagonal; the original
+endpoint calculation still decides every nearby case, including fractional point targets.
+
+With two warmup battles and six alternating measured runs per variant, full-roster CPU
+means fell from 2887 to 2642 ms (8.5%), and mixed-army means from 1254 to 1237 ms (1.4%).
+Medians were 2748 versus 2623 ms and 1223 versus 1158 ms respectively. Individual timings
+varied; these are workload-specific CPU observations. Both recorded battle hashes matched.
+
+An additional 512-route witness was captured before introducing the guard. It covers cell
+edges, fractional building and point goals, negative and zero ranges, and ranges on either
+side of a quarter tile and half tile. Its SHA-256 is
+`cdfd9daccad1c548fa0caa48196443b01387700049f1689a3ebe08d7d45cbde3`.
+
+Validation passed all 2,971 tests across 327 files, type checks, documentation links and the
+production build. Both route witnesses (903 routes total) matched in Chromium and WebKit.
+The compiled Chromium online/offline smoke check passed.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

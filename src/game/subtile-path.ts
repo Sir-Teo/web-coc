@@ -273,6 +273,10 @@ function searchSubtilePath(
   // Moving point targets retain the direct calculation; static building goals reuse axes.
   const axes = goalSize ? goalAxes.get(targetX, targetY, goalSize) : undefined;
   const step = 1 / SUBTILES;
+  // An approach point inside this cell is less than one step from its center and at
+  // most max(0, range) from the goal. Farther centers cannot contain that endpoint.
+  // Use a whole step rather than the half-diagonal to leave room at cell boundaries.
+  const approachLimit = Math.max(0, range) + step;
   stamp[first] = generation;
   prev[first] = -1;
   cost[first] = 0;
@@ -333,7 +337,7 @@ function searchSubtilePath(
       goal = current;
       break;
     }
-    if (range < 0.5 && !blocked[current]) {
+    if (range < 0.5 && heuristic[current] <= approachLimit && !blocked[current]) {
       const s = goalSize;
       const tx = Math.max(targetX, Math.min(hx, targetX + s));
       const ty = Math.max(targetY, Math.min(hy, targetY + s));

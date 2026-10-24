@@ -63,3 +63,30 @@ export function subtileRouteWitness(consume: (route: readonly { x: number; y: nu
   record({ x: 1.25, y: 1.25 }, target, obstacles, 1);
   return count;
 }
+
+/** Captured before the melee distance guard: cell edges, fractional goals and short ranges. */
+export function subtileMeleeBoundaryWitness(
+  consume: (route: readonly { x: number; y: number }[]) => void,
+) {
+  resetSubtileGrids();
+  let count = 0;
+  for (const offset of [0, 0.1, 0.25, 0.499999999]) {
+    const goal = makeBuilding(9000, 'goldstorage', 10 + offset, 10 + offset, 1);
+    for (const target of [goal, { x: 10 + offset, y: 10 + offset }])
+      for (const range of [-1, 0, 1e-7, 0.249999999, 0.25, 0.4, 0.499999999, 0.5])
+        for (const [x, y] of [
+          [9.25, 9.25],
+          [9.75, 9.75],
+          [10.25, 9.75],
+          [10.25, 10.25],
+          [13.25, 13.25],
+          [13.75, 13.75],
+          [14.25, 13.75],
+          [16.25, 9.25],
+        ]) {
+          consume(findSubtilePath({ x, y }, target, [], range));
+          count++;
+        }
+  }
+  return count;
+}

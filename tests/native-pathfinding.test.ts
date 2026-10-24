@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 import { createHash } from 'node:crypto';
 import { findPath } from '../src/game/model';
-import { subtileRouteWitness } from './fixtures/subtile-route-witness';
+import { subtileMeleeBoundaryWitness, subtileRouteWitness } from './fixtures/subtile-route-witness';
 import { nativeBuildings } from '../src/game/native-campaign';
 import { isTrap } from '../src/game/data';
 
@@ -36,5 +36,14 @@ it('preserves subtile route witnesses across grid changes, moving goals, evictio
   expect(count).toBe(391);
   expect(hash.digest('hex')).toBe(
     '51051fefba698e3b95134b5affb8f11e09570530d19d6ccb587fc8dc9965d583',
+  );
+});
+
+it('preserves melee endpoints around cell boundaries and fractional goals', () => {
+  const hash = createHash('sha256');
+  const count = subtileMeleeBoundaryWitness((route) => hash.update(JSON.stringify(route)));
+  expect(count).toBe(512);
+  expect(hash.digest('hex')).toBe(
+    'cdfd9daccad1c548fa0caa48196443b01387700049f1689a3ebe08d7d45cbde3',
   );
 });
