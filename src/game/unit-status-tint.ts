@@ -36,7 +36,8 @@ export function unitStatusTint(
   const e = u.native?.effects;
   if (lateUnitFrozen(u, at)) return tints.lateFrozen;
   if (e && (e.frozenUntil ?? 0) > at) return tints.frozen;
-  if (e?.poison && e.poison.until > at) return tints.poison;
+  if ((e?.poison?.until ?? 0) > at || (u.late?.garrison?.poison?.until ?? 0) > at)
+    return tints.poison;
   if ((u.spellRageUntil ?? 0) > at) return tints.spellRage;
   if (
     (u.hero && (battle.hero?.rageUntil ?? 0) > at) ||
