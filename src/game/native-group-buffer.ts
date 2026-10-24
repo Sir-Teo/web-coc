@@ -59,6 +59,9 @@ export function createGroupBuffer(scene: Phaser.Scene, width: number, height: nu
 
 /** Even, never a power of two (no REPEAT wrap or mipmaps), 32px buckets. */
 const bucket = (size: number) => Math.ceil(Math.max(1, size - 2) / 32) * 32 + 2;
+/** Shared retention limit: a buffer this large is still reusable for the requested buckets. */
+export const groupBufferAreaLimit = (width: number, height: number) =>
+  bucket(width) * bucket(height) * 4;
 /** Free buffers are destroyed after this long unused, or when the free set exceeds the byte cap. */
 const IDLE_MS = 2500;
 const FREE_BYTES = 48 << 20;
@@ -81,7 +84,8 @@ class GroupBufferPool {
    */
   acquire(width: number, height: number, colored = false): NativeGroupBuffer {
     const w = bucket(width),
-      h = bucket(height);
+      h = bucket(height),
+      areaLimit = groupBufferAreaLimit(width, height);
     let best = -1,
       bestArea = Infinity;
     for (let i = 0; i < this.free.length; i++) {
@@ -91,7 +95,7 @@ class GroupBufferPool {
         !!b.color === colored &&
         b.width >= width &&
         b.height >= height &&
-        area <= w * h * 4 &&
+        area <= areaLimit &&
         area < bestArea
       ) {
         best = i;

@@ -634,6 +634,36 @@ production build. Five village recovery/release cases also passed in each browse
 connectivity returns at home and while scouting, page release, and late request completion.
 The compiled Chromium online/offline smoke check passed with no page errors.
 
+### Releasing oversized animated blend buffers
+
+An animated group reset its shrink counter on every repaint, so it could keep a large
+offscreen texture indefinitely after zooming out or shrinking. The counter now survives
+repaints and resets when the allocation changes or content no longer qualifies. After the
+existing 120-render waiting period, both the composite and its color-filter source can shrink.
+Released textures follow the pool's existing idle/byte limits.
+
+The shrink threshold uses the same four-times-bucketed-area limit as pool reuse. Tiny content
+can keep the minimum 34×34 allocation without repeatedly attempting an impossible shrink.
+A large source alone also counts toward the waiting period.
+
+Both additive regression cases failed against the old code. In Chromium and WebKit, 140 smaller,
+changing animation samples reduced a 226×226 live buffer to 34×34, with the filtered case
+reducing both textures. Neither shrank during the first 60 samples; the resulting framebuffer
+matched a freshly allocated small render exactly. These allocation sizes describe the
+regression fixture, not whole-game memory or physical-phone FPS.
+The multiply-blend regression also preserves both output images after the buffer changes.
+
+A separate phone experiment lowered minimum blend-buffer sampling density from 1 to 0.5.
+It reduced painted area but gave inconsistent timings across two alternating runs on the
+software GPU, so sampling density remains unchanged.
+
+Validation passed all 2,983 tests across 327 files, type checks, documentation links and the
+production build. All three shrink cases passed in Chromium and WebKit. Existing Tesla
+source-pixel, alpha/lifecycle, WebGL restoration, mixed-batch and shared-wall checks passed
+in both engines. The lifecycle harness resolves the running modules' URLs so a Vite update
+cannot make it flush a separate copy of the buffer pool.
+The compiled Chromium online/offline smoke check passed with no page errors.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

@@ -3,7 +3,11 @@ import { NativeMeshView } from './native-mesh-scene';
 import { nativeBlendMode, nativeMultiplyModes } from './native-blend';
 import { NativeGroupColor } from './native-group-color';
 import { PART_DEPTH_STEP } from './unit-depth';
-import { groupBufferPool, type NativeGroupBuffer } from './native-group-buffer';
+import {
+  groupBufferAreaLimit,
+  groupBufferPool,
+  type NativeGroupBuffer,
+} from './native-group-buffer';
 import {
   configureNativeQuadColor,
   NATIVE_ADDITIVE_TINT_MODE,
@@ -222,7 +226,7 @@ export function flattenSingleLeafGroups(
   return result ?? poses;
 }
 
-/** Frames a shrinkable buffer must stay under a quarter used before it is swapped for a smaller one. */
+/** Frames content must stay small enough to fall outside the pool's buffer retention limit. */
 const SHRINK_FRAMES = 120;
 /** Renders a vanished group stays parked (hidden, buffer and meshes kept) before release. */
 const PARK_FRAMES = 30;
@@ -245,7 +249,7 @@ interface GroupEntry {
   top: number;
   width: number;
   height: number;
-  /** Consecutive frames the buffer was more than 4x the content area. */
+  /** Consecutive frames a buffer exceeded the pool's bucketed area limit. */
   oversized: number;
   multiply: number[];
   add: number[];
@@ -547,8 +551,12 @@ export class NativeSceneView {
     entry.lastDensity = density;
     entry.stamp = stamp;
     const buffer = entry.buffer!;
+    const areaLimit = groupBufferAreaLimit(entry.width, entry.height);
     entry.oversized =
-      buffer.width * buffer.height > 4 * entry.width * entry.height ? entry.oversized + 1 : 0;
+      buffer.width * buffer.height > areaLimit ||
+      (entry.source && entry.source.width * entry.source.height > areaLimit)
+        ? entry.oversized + 1
+        : 0;
     const image = buffer.image;
     const tint = colored && !filtered ? rgb(pose.multiply) : 0xffffff;
     const tint2 = colored && !filtered ? rgb(pose.add) : 0;
@@ -623,6 +631,7 @@ export class NativeSceneView {
     const pool = groupBufferPool(this.scene);
     const { width, height } = entry;
     const current = entry.buffer;
+    const shrink = entry.oversized > SHRINK_FRAMES;
     const fits = current && current.width >= width && current.height >= height;
     if (current && !fits) {
       // Grow in place with headroom: same framebuffer wrapper, no pool churn while content grows.
@@ -631,15 +640,16 @@ export class NativeSceneView {
         Math.max(current.width, Math.ceil(width * 1.25)),
         Math.max(current.height, Math.ceil(height * 1.25)),
       );
-    } else if (!current || entry.oversized > SHRINK_FRAMES) {
+      entry.oversized = 0;
+    } else if (!current || shrink) {
       if (current) pool.release(current);
       entry.buffer = pool.acquire(width, height);
       entry.image = entry.buffer.image;
       const image = entry.buffer.image;
       if (!this.detached) this.scene.add.existing(image);
       image.setVisible(true);
+      entry.oversized = 0;
     }
-    entry.oversized = 0;
     const buffer = entry.buffer!;
     if (buffer.cropWidth !== width || buffer.cropHeight !== height) {
       buffer.image.setCrop(0, 0, width, height);
@@ -649,7 +659,7 @@ export class NativeSceneView {
     if (filtered) {
       // The source only needs to cover the content; it is drawn unscaled at the buffer origin.
       let source = entry.source;
-      if (!source || source.width < width || source.height < height) {
+      if (!source || source.width < width || source.height < height || shrink) {
         if (source) pool.release(source);
         source = entry.source = pool.acquire(width, height, true);
         const image = source.image;
