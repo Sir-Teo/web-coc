@@ -967,6 +967,44 @@ existing character lifecycle/recovery coverage passed in Chromium and WebKit. Th
 online/offline release check passed in Chromium, and the compiled late-campaign replay passed
 in both engines with matching results and no page errors (cache `5ac717ae8ad0`).
 
+## Loading foundation garrison bodies independently
+
+Dragon 7 and Balloon 8 previously shared one deferred family with Clan Castle effects and
+sounds. Any garrison reserve, including an Archer-only reserve, loaded both large body pages.
+They now have separate family identities and load from the battle's defender demand. That
+includes unspawned reserve troops and existing defenders in recordings without a reserve.
+A warm scene can extend from Archer to Dragon to Balloon without reuploading earlier bodies;
+the home idle grace releases their source pages and resets each family's readiness.
+
+The shared death effect, particles and samples remain in their own family. If late character
+art loaded the common death pages first, the shared family takes release ownership when it
+borrows them. Releasing late art cannot delete those pages beneath a loaded foundation
+family. Deferred-family completion also clears garrison views that sampled missing pages,
+so a newly loaded body appears even when its pose is still unchanged.
+
+In isolated phone-viewport probes (390×844, 3× device scale, fixed 0.5 canvas density), an
+Archer 9 reserve allocated **4,336,336 B** of new textures instead of **26,962,416 B** in both
+Chromium/SwiftShader and WebKit's software renderer: **83.9% less**, or **21.6 MiB** avoided.
+The comparison forced both foundation bodies against the implemented automatic selection;
+all other requested families stayed the same. Dragon/Balloon source pages account for the
+entire 22,626,080 B difference. Both runs retained the visible Archer and reported no missing
+body textures, page errors or WebGL errors. These are nominal incremental RGBA allocations,
+not a measurement of total phone memory or physical-phone frame rate.
+
+For the same staged reserve fixture, the building selection and foundation-body selection
+steps together reduce new texture allocations from 120,950,588 B to 4,336,336 B (96.4%). This
+compares the same workload across the two changes; it does not add the separate Monolith
+fixture's savings.
+
+Four phone-sized browser cases cover roster extension, retained source textures, release and
+reload, recording defenders, independent failed-body recovery, and shared death ownership.
+
+Validation: `npm run check` passed all 3,001 tests in 330 files. Fifteen related browser cases
+passed in both engines, including live Dragon/Balloon death animations and replay seeks at
+1440px and 390px. Production checks passed online in Chromium and WebKit and offline in
+Chromium; the compiled late-campaign replay matched its recorded result in both engines
+(cache `8a20977f7d21`).
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

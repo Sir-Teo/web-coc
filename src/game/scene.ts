@@ -50,7 +50,9 @@ import { infernoPortrait } from './inferno-art';
 import { infernoArtLoaded, infernoBounds, loadInfernoArt } from './inferno-graph';
 import {
   garrisonNeedsLateArt,
-  preloadGarrisonCharacters,
+  BOOT_GARRISON_CHARACTERS,
+  preloadGarrisonCharacter,
+  preloadGarrisonDeath,
   preloadGarrisonTroops,
   preloadLateGarrisonTroops,
   GarrisonPresentation,
@@ -66,7 +68,8 @@ import {
   troopSoundCues,
 } from './troop-sounds';
 import { SPELL_SOURCE } from './spell-progression';
-import { garrisonStats } from './garrison-kinds';
+import { garrisonStats, isGarrisonKind } from './garrison-kinds';
+import { nativeMeshTexture } from './native-mesh';
 import { characterBarHeight } from './character-poses';
 import { characterArtLoaded, commonDeathArt, loadCharacterArt } from './character-art';
 import { preloadCastles, CastlePresentation } from './castle-scene';
@@ -371,21 +374,39 @@ const LEGACY_KING_FAMILY: ArtFamily = {
       });
   },
 };
+// Battle rosters include future summons and recording defenders. Cache their demand for the
+// family callbacks, just as the late loader caches it for the lifetime of a battle.
+const foundationDemand = new WeakMap<Battle, ReadonlySet<string>>();
+function foundationAnimations(battle: Battle) {
+  let wanted = foundationDemand.get(battle);
+  if (!wanted) foundationDemand.set(battle, (wanted = defenderAnimations(battle)));
+  return wanted;
+}
+const GARRISON_SHARED_FAMILY: ArtFamily = {
+  draws: () => false,
+  needed: (model) =>
+    !!model.battle &&
+    (!!model.battle.garrisons?.length ||
+      !!model.battle.defenders?.some((defender) => isGarrisonKind(defender.kind))),
+  prepare: loadCharacterArt,
+  prepared: characterArtLoaded,
+  preload: (scene) => {
+    preloadGarrisonDeath(scene);
+    preloadGarrisonTroops(scene);
+  },
+};
 const ART_FAMILIES: ArtFamily[] = [
   XBOW_FAMILY,
   LEGACY_KING_FAMILY,
-  {
-    // Campaign Clan Castle defenders, with their effects and sounds; a home Castle holds no
-    // reinforcements. Their graphs (about 4 MB of JSON) are fetched first.
+  // Shared effects precede the independent bodies, so the family owns their common pages.
+  GARRISON_SHARED_FAMILY,
+  ...BOOT_GARRISON_CHARACTERS.map((name): ArtFamily => ({
     draws: () => false,
-    needed: (model) => !!model.battle?.garrisons?.length,
+    needed: (model) => !!model.battle && foundationAnimations(model.battle).has(name),
     prepare: loadCharacterArt,
     prepared: characterArtLoaded,
-    preload: (scene) => {
-      preloadGarrisonCharacters(scene);
-      preloadGarrisonTroops(scene);
-    },
-  },
+    preload: (scene) => preloadGarrisonCharacter(scene, name),
+  })),
   // The Skeleton Trap's skeletons (two sheets, about 0.1 MB): with a village that has the trap.
   {
     draws: (b) => b.kind === 'skeletontrap',
@@ -869,6 +890,20 @@ export class VillageScene extends Phaser.Scene {
           owner === family && (owned.type === 'image' || owned.type === 'spritesheet'),
       )
       .map(([owned]) => owned.key);
+    this.trackFamilyTextures(family, keys);
+  }
+  private trackFamilyTextures(family: ArtFamily, keys: string[]) {
+    if (family === GARRISON_SHARED_FAMILY) {
+      const death = commonDeathArt();
+      const shared = Object.keys(death.graph.textures).map((id) =>
+        nativeMeshTexture(death.prefix, id),
+      );
+      keys = [...keys, ...shared];
+      // The late character batch may have loaded these first. Transfer release ownership
+      // even when Phaser borrows resident pages instead of adding files to its queue.
+      const sharedKeys = new Set(shared);
+      this.lateTextureKeys = this.lateTextureKeys.filter((key) => !sharedKeys.has(key));
+    }
     this.familyTextures.set(family, [
       ...new Set([...(this.familyTextures.get(family) ?? []), ...keys]),
     ]);
@@ -1934,6 +1969,7 @@ export class VillageScene extends Phaser.Scene {
             // Views drawn while the pages were missing cached their poses against absent
             // textures; their signatures would keep them blank until the building changed.
             this.clearBuildingPresentations();
+            this.garrisonPresentation.clear();
             // Restyle: fallback sprites hide now that native bodies draw.
             this.lastRevision = -1;
             resolve();
@@ -1949,9 +1985,7 @@ export class VillageScene extends Phaser.Scene {
               )
               .map((file) => file.key);
             // A retry lists only the pages still missing; keep the ones already resident too.
-            this.familyTextures.set(family, [
-              ...new Set([...(this.familyTextures.get(family) ?? []), ...added]),
-            ]);
+            this.trackFamilyTextures(family, added);
           }
           this.load.start();
         };
