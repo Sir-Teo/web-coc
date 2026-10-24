@@ -88,7 +88,10 @@ function nativeColorTint(node: Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQua
  * copy also writes the object's `tint2` color there (as its quad batcher does), which the native
  * color mode reads as the additive term. Everything else matches BatchHandlerTri.batchTriangles.
  */
-function batchTrianglesWithTint2(node: Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQuad) {
+function batchTrianglesWithTint2(
+  node: Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQuad,
+  asQuads = false,
+) {
   const getTint = Phaser.Renderer.WebGL.Utils.getTintAppendFloatAlpha;
   type Batcher = {
     instanceCount: number;
@@ -169,8 +172,11 @@ function batchTrianglesWithTint2(node: Phaser.Renderer.WebGL.RenderNodes.BatchHa
         textureDatum = this.batchTextures(sources[source].glTexture, renderOptions);
         lastSource = source;
       }
-      let offset = this.instanceCount * floatsPerInstance;
+      const baseOffset = this.instanceCount * floatsPerInstance;
       for (let corner = 0; corner < 3; corner++) {
+        // Sprite vertex order is BL, TL, BR, TR: b, a, c, c draws the original a, b, c.
+        const target = asQuads && corner < 2 ? 1 - corner : corner;
+        let offset = baseOffset + target * 7;
         const v = indices[i4 + corner] * 4;
         const vx = vertices[v],
           vy = vertices[v + 1];
@@ -195,6 +201,9 @@ function batchTrianglesWithTint2(node: Phaser.Renderer.WebGL.RenderNodes.BatchHa
         viewU32[offset++] = tint2;
         viewU32[offset++] = tint;
       }
+      if (asQuads)
+        // Copy all seven attribute words exactly; transform each source vertex only once.
+        viewU32.copyWithin(baseOffset + 21, baseOffset + 14, baseOffset + 21);
       this.instanceCount++;
       this.currentBatchEntry.count++;
       if (this.instanceCount === instancesPerBatch) {
@@ -311,6 +320,35 @@ export function configureNativeQuadColor(renderer: Phaser.Renderer.WebGL.WebGLRe
   }
   configuredQuadColor.set(renderer, supported);
   return supported;
+}
+
+const sharedTriangleNodes = new WeakMap<
+  Phaser.Renderer.WebGL.WebGLRenderer,
+  Phaser.Renderer.WebGL.RenderNodes.BatchHandlerTri | undefined
+>();
+/**
+ * Native triangles can share the sprite batch: one quad stores b, a, c, c, so its indexed
+ * triangles are a, b, c and the zero-area a, c, c. Source vertex order, UVs and color words
+ * stay intact. Interleaved images no longer force a separate mesh batch and shader switch.
+ */
+export function nativeQuadTriangleBatcher(renderer: Phaser.Renderer.WebGL.WebGLRenderer) {
+  if (sharedTriangleNodes.has(renderer)) return sharedTriangleNodes.get(renderer);
+  const quad = renderer.renderNodes?.getNode('BatchHandlerQuad') as
+    Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQuad | undefined;
+  // Presentation doubles without real buffers retain the ordinary triangle path.
+  if (
+    !quad?.indexBuffer?.dataBuffer ||
+    !quad.vertexBufferLayout?.buffer ||
+    !configureNativeQuadColor(renderer)
+  ) {
+    sharedTriangleNodes.set(renderer, undefined);
+    return undefined;
+  }
+  configureQuadRendering(renderer);
+  batchTrianglesWithTint2(quad, true);
+  const node = quad as Phaser.Renderer.WebGL.RenderNodes.BatchHandlerTri;
+  sharedTriangleNodes.set(renderer, node);
+  return node;
 }
 
 /** Keep Phaser's sprite batching, but avoid degenerate triangles between sprites. */

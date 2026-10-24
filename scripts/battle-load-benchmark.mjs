@@ -13,6 +13,7 @@
  * --msaa=on|off overrides canvas multisampling for comparisons; --freeze holds the rendered
  * battle after warmup to isolate GPU work; --profile saves a Chrome CPU profile alongside JSON.
  * --lazyart uses production's on-demand art loading instead of the eager developer preload.
+ * --mesh-batch=quad|tri compares frozen root meshes in the shared sprite or legacy triangle batch.
  */
 import { chromium } from '@playwright/test';
 import fs from 'node:fs/promises';
@@ -30,9 +31,13 @@ const freeze = process.argv.includes('--freeze');
 const msaa = arg('msaa', 'default');
 const profile = process.argv.includes('--profile');
 const lazyArt = process.argv.includes('--lazyart');
+const meshBatch = arg('mesh-batch', 'default');
 const base = process.env.GAME_URL ?? 'http://localhost:5173';
 if (!['roster', 'mixed', 'th18'].includes(army)) throw Error('Use --army=roster, mixed or th18.');
 if (!['default', 'on', 'off'].includes(msaa)) throw Error('Use --msaa=default, on or off.');
+if (!['default', 'quad', 'tri'].includes(meshBatch))
+  throw Error('Use --mesh-batch=default, quad or tri.');
+if (meshBatch !== 'default' && !freeze) throw Error('--mesh-batch requires --freeze.');
 
 const browser = await chromium.launch(
   process.platform === 'darwin' ? { args: ['--use-angle=metal'] } : {},
@@ -216,12 +221,38 @@ await page.evaluate((gl) => {
     }
   }
 }, gl);
+// A frozen renderer comparison must finish page uploads before its timed sample.
+if (freeze)
+  await page.waitForFunction(
+    () => {
+      const s = window.__game.scene;
+      return (
+        s.artSettled &&
+        !s.troopNativePresentation.pending.size &&
+        !s.troopNativePresentation.pendingLevels.size &&
+        !s.villageNativePresentation.pending.size &&
+        !s.villageNativePresentation.pendingLevels.size
+      );
+    },
+    {},
+    { timeout: 180000 },
+  );
 await page.waitForTimeout(warmup * 1000);
 if (freeze)
-  await page.evaluate(() => {
-    window.__game.scene.paused = true;
-    window.__game.scene.tweens.pauseAll();
-  });
+  await page.evaluate((meshBatch) => {
+    const { scene, game } = window.__game;
+    scene.paused = true;
+    scene.tweens.pauseAll();
+    game.loop.setFPSLimit(0);
+    if (meshBatch !== 'default') {
+      const node = game.renderer.renderNodes.getNode(
+        meshBatch === 'quad' ? 'BatchHandlerQuad' : 'BatchHandlerTri',
+      );
+      for (const child of scene.children.list)
+        if (child.type === 'Mesh2D' && child.renderAsTriangles)
+          child.customRenderNodes.BatchHandlerTriangles = node;
+    }
+  }, meshBatch);
 const census = () =>
   page.evaluate(() => {
     const s = window.__game.scene,
@@ -306,6 +337,7 @@ const report = {
   rendering,
   freeze,
   lazyArt,
+  meshBatch,
   army,
   level,
   stage,

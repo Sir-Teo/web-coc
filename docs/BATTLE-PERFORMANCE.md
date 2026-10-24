@@ -362,6 +362,19 @@ The compiled Chromium online/offline smoke check passed. An additional compiled-
 visited 227 levels across the same 16 families, released their GPU pages, then loaded an
 evicted Town Hall page while offline: four new image decodes completed with no page errors.
 
+### Sharing mesh and sprite batches
+
+Native triangle geometry now enters the sprite batch directly while preserving the original
+triangle vertices, UVs, colors and order. A repeated fourth vertex fills the sprite format;
+its extra triangle has zero area. This removes batch boundaries between native meshes and
+images without requiring a geometry search. [Sprite rendering](SPRITE-RENDERING.md) records
+the implementation, exact pixel regression and controlled draw-call comparisons.
+
+The frozen battle benchmark accepts `--mesh-batch=quad` or `--mesh-batch=tri` with `--freeze`
+to compare shared root meshes against the retained ordinary triangle handler. Frozen samples
+wait for pending native page uploads and run without a frame cap. Compare matching scene
+censuses and allow the renderer to warm up; software-renderer timing samples varied widely.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
