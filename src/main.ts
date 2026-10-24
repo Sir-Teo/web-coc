@@ -180,7 +180,7 @@ async function boot() {
       );
     }, 1000);
     window.addEventListener('pagehide', () => {
-      audio.samples.stop();
+      audio.samples.stopAll();
       clearInterval(economyTimer);
       model.tick(Date.now());
       // A raid in progress has already spent its troops; settle it before the state is stored.
@@ -199,7 +199,7 @@ async function boot() {
     document.addEventListener('visibilitychange', () => {
       if (!ownsSession) return;
       if (document.hidden) {
-        audio.samples.stop();
+        audio.samples.stopAll();
         void persist(true);
         audio.music(false);
       } else {

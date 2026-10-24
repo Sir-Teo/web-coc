@@ -78,6 +78,7 @@ export class MusicPlayer {
   private enabled = false;
   private urls = new Map<string, Promise<string | null>>();
   private stings = new Map<string, Promise<AudioBuffer | null>>();
+  private activeSting: { source: AudioBufferSourceNode; gain: GainNode } | null = null;
   /** Increments on every change, so a slow download cannot start a track no longer wanted. */
   private generation = 0;
   private host: MusicHost;
@@ -95,13 +96,17 @@ export class MusicPlayer {
     this.enabled = on;
     this.generation++;
     if (on) this.resume();
-    else this.el?.pause();
+    else {
+      this.el?.pause();
+      this.stopSting();
+    }
   }
   setScene(scene: MusicScene) {
     if (scene === this.scene) return;
     const previous = this.scene;
     this.scene = scene;
     this.generation++;
+    this.stopSting();
     const loop = scene === 'victory' || scene === 'defeat' ? null : scene;
     if (loop !== this.loop) {
       this.el?.pause();
@@ -155,7 +160,8 @@ export class MusicPlayer {
   }
   private sting(kind: Sting, then?: () => void) {
     const ctx = this.host.context();
-    const path = STINGS[kind];
+    const path = STINGS[kind],
+      generation = this.generation;
     if (!ctx) return then?.();
     let buffer = this.stings.get(path);
     if (!buffer) {
@@ -169,19 +175,36 @@ export class MusicPlayer {
       this.stings.set(path, buffer);
     }
     void buffer.then((decoded) => {
-      if (!decoded || !this.enabled) return then?.();
+      if (!this.enabled || generation !== this.generation) return;
+      if (!decoded) return then?.();
       const source = ctx.createBufferSource(),
         gain = ctx.createGain();
+      this.activeSting = { source, gain };
       gain.gain.value = MUSIC_VOLUME;
       source.buffer = decoded;
       source.connect(gain);
       gain.connect(ctx.destination);
       source.onended = () => {
+        if (this.activeSting?.source !== source) return;
+        this.activeSting = null;
         source.disconnect();
         gain.disconnect();
-        then?.();
+        if (this.enabled && generation === this.generation) then?.();
       };
       source.start();
     });
+  }
+  private stopSting() {
+    const node = this.activeSting;
+    if (!node) return;
+    this.activeSting = null;
+    node.source.onended = null;
+    try {
+      node.source.stop();
+    } catch {
+      // An already-ended source still needs its connections released.
+    }
+    node.source.disconnect();
+    node.gain.disconnect();
   }
 }

@@ -75,12 +75,13 @@ it('seeking rebuilds active offsets, silences future or expired cues, and ignore
   const { samples, context, sources, cue, unlock } = audio();
   await unlock();
   samples.sync([cue], 2, 1, true);
-  const first = sources[0];
+  const first = sources[0],
+    firstEnded = first.onended;
   context.currentTime = 0.1;
   samples.sync([cue], 3, 1, true);
   expect(first.stop).toHaveBeenCalledOnce();
   expect(sources[1].start).toHaveBeenCalledWith(0, 1);
-  first.onended();
+  firstEnded();
   samples.sync([cue], 3, 1, true);
   expect(sources).toHaveLength(2);
   samples.sync([cue], 0, 1, true);

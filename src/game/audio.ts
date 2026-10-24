@@ -22,6 +22,7 @@ export class AudioManager {
   /** Set by the first user gesture; a context is only created after one. */
   private unlocked = false;
   private musicOn = false;
+  private tones = new Map<OscillatorNode, GainNode>();
   /** The original client's Home and battle music; plays only while music is on. */
   readonly tracks = new MusicPlayer(() => (this.musicOn ? this.context : null));
   private lastPlay: Partial<Record<string, number>> = {};
@@ -37,7 +38,10 @@ export class AudioManager {
   set enabled(on: boolean) {
     if (this.soundOn === on) return;
     this.soundOn = on;
-    if (!on) this.samples.stop();
+    if (!on) {
+      this.samples.stopAll();
+      this.stopTones();
+    }
     this.updateContext();
   }
   /** True while anything may be heard: sound effects or music, on a visible page. */
@@ -51,7 +55,10 @@ export class AudioManager {
       if (!this.context) this.context = new AudioContext();
       if (this.context.state === 'suspended') void this.context.resume();
       this.samples.decode();
-    } else if (this.context?.state === 'running') void this.context.suspend();
+    } else {
+      this.stopTones();
+      if (this.context?.state === 'running') void this.context.suspend();
+    }
   }
   unlock() {
     this.unlocked = true;
@@ -114,7 +121,7 @@ export class AudioManager {
   /** The generated stand-in for a cue. */
   private tone(kind: Tone) {
     const ctx = this.context;
-    if (!ctx) return;
+    if (!ctx || !this.audible || ctx.state !== 'running') return;
     const settings = {
       click: [600, 0.04, 'sine'],
       collect: [1100, 0.18, 'sine'],
@@ -137,12 +144,27 @@ export class AudioManager {
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
     osc.connect(gain);
     gain.connect(ctx.destination);
+    this.tones.set(osc, gain);
     osc.start();
     osc.stop(ctx.currentTime + duration);
     osc.onended = () => {
+      if (!this.tones.delete(osc)) return;
       osc.disconnect();
       gain.disconnect();
     };
+  }
+  private stopTones() {
+    for (const [osc, gain] of this.tones) {
+      osc.onended = null;
+      try {
+        osc.stop();
+      } catch {
+        // An already-ended oscillator still needs its connections released.
+      }
+      osc.disconnect();
+      gain.disconnect();
+    }
+    this.tones.clear();
   }
   music(on: boolean) {
     this.musicOn = on;

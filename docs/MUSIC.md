@@ -19,8 +19,9 @@ Campaign raids, ladder matches, practice attacks and replays all follow the same
 - The loops stream through one media element, so a three-minute track is never held decoded in memory. Each file is fetched whole and played from a blob URL: a media element's range requests bypass the service worker's cache, while a whole-file fetch is kept for offline play once heard.
 - The stings are seconds long and play through Web Audio.
 - Music plays at half volume under the effects. iOS ignores a media element's volume, so the Home and battle loops play at full volume there; the stings still follow it.
-- Hiding the page or turning Music off pauses the current track in place, and it resumes from the same point.
+- Hiding the page or turning Music off pauses the current loop in place, and it resumes from the same point. Short intro/result stings stop immediately; they do not resume or spill into the next screen.
+- A sting that finishes downloading after its screen has changed stays silent, including after an off/on cycle. Its decoded bytes remain available for the next time that screen is entered.
 - A track that fails to download stays silent and is tried again on the next scene change.
 - Ogg Vorbis needs Safari 18.4 or later on iOS and macOS 15.4 or later; older Safari stays silent for the Ogg files and still plays the MP3 planning loop and stings.
 
-Verified October 5, 2026: `tests/music.test.ts` checks the shipped bytes, scene selection, Home part order, the intro-then-planning sequence, silence while off, pause and resume, and stale downloads. `tests/browser/music.spec.ts` turns Music on in Chromium and follows a practice attack from planning to combat to its result. WebKit was not available in this environment.
+`tests/music.test.ts` checks the shipped bytes, scene selection, Home part order, the intro-then-planning sequence, silence while off, and pause and resume. `tests/audio-lifecycle.test.ts` covers delayed stings, scene changes, mute/re-enable races and stale completion callbacks. `tests/browser/music.spec.ts` follows a practice attack from planning to combat to its result; `tests/browser/audio-lifecycle.spec.ts` delays the real intro download until combat, checks that result music stops at home, and mutes native effects while the music loop keeps playing.
