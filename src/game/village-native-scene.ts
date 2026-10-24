@@ -237,7 +237,18 @@ export class VillageNativePresentation {
    * defense body, no resource fill): while they hold, nothing in its views can change, so the
    * per-field signature strings are not even built. Walls are most of a large layout.
    */
-  private still = new Map<number, { fields: readonly string[]; level: number; density: number }>();
+  private still = new Map<
+    number,
+    {
+      fields: readonly string[];
+      kind: BuildingKind;
+      level: number;
+      density: number;
+      x: number;
+      y: number;
+      constructing: boolean;
+    }
+  >();
   /** Buildings whose views are currently hidden by the viewport cull. */
   private hidden = new Set<number>();
   private aims = new Map<number, Point>();
@@ -516,8 +527,12 @@ export class VillageNativePresentation {
         if (
           last &&
           last.fields === fields &&
+          last.kind === b.kind &&
           last.level === b.level &&
           last.density === density &&
+          last.x === earlyPoint.x &&
+          last.y === earlyPoint.y &&
+          last.constructing === !!b.constructing &&
           this.views.has(b.id)
         ) {
           seen.add(b.id);
@@ -525,7 +540,15 @@ export class VillageNativePresentation {
           if (fallback?.visible) fallback.setVisible(false);
           continue;
         }
-        this.still.set(b.id, { fields, level: b.level, density });
+        this.still.set(b.id, {
+          fields,
+          kind: b.kind,
+          level: b.level,
+          density,
+          x: earlyPoint.x,
+          y: earlyPoint.y,
+          constructing: !!b.constructing,
+        });
       }
       // Battle bodies (turret aim, attack, activation and mode) of the Town Hall 11-18 defenses.
       const source = (field: string, variant?: string) => {
@@ -557,7 +580,6 @@ export class VillageNativePresentation {
             )
           : undefined;
       if (body?.aim && b.id !== -1) this.aims.set(b.id, body.aim);
-      const root: NativeMatrix = [1.2, 0, 0, 0, 1.2, -32 * size];
       const tintedPreview = b.id === -1 && !this.placement?.valid;
       // Resolve fields to scene groups and their render signatures before sampling any pose.
       const groups = new Map<
@@ -651,6 +673,7 @@ export class VillageNativePresentation {
         const sampleKey = `${group.prefix}|${group.signature}|${size}`;
         let poses = tintedPreview ? undefined : this.frameSamples.get(sampleKey);
         if (!poses) {
+          const root: NativeMatrix = [1.2, 0, 0, 0, 1.2, -32 * size];
           const sampledPoses: NativeScenePose[] = [];
           for (const part of group.parts) {
             const sampled = nativeScenePoses(

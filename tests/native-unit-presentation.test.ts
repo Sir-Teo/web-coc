@@ -440,6 +440,33 @@ it('shares identical wall samples without mixing levels or placement preview tin
   expect(view(-1).lastPoses).not.toBe(view(1).lastPoses);
 });
 
+it('keeps static wall renders cached until their projected position changes', () => {
+  const pack = JSON.parse(fs.readFileSync('public/assets/village-native/wall/graph.json', 'utf8'));
+  const p = new VillageNativePresentation(
+    fakeScene(),
+    () => {},
+    () => 0,
+  );
+  const state = p as unknown as {
+    packs: Map<string, unknown>;
+    levelsReady: Map<string, Set<number>>;
+    views: Map<number, Map<string, { view: { renders: number; last: { x: number; y: number } } }>>;
+  };
+  state.packs.set('wall', pack);
+  state.levelsReady.set('wall', new Set([1]));
+  const wall = makeBuilding(1, 'wall', 10, 10, 1);
+  p.render([wall], null, 0, iso, new Map());
+  const view = [...state.views.get(1)!.values()][0].view;
+  p.render([wall], null, 1, iso, new Map());
+  expect(view.renders).toBe(1);
+  wall.x += 4;
+  p.render([wall], null, 2, iso, new Map());
+  expect(view.last).toMatchObject(iso(wall.x + 0.5, wall.y + 0.5));
+  expect(view.renders).toBe(2);
+  p.render([wall], null, 3, iso, new Map());
+  expect(view.renders).toBe(2);
+});
+
 it('keeps resource controls distinct when sharing building samples', () => {
   const pack = JSON.parse(
     fs.readFileSync('public/assets/village-native/goldmine/graph.json', 'utf8'),

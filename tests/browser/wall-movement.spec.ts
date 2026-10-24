@@ -4,8 +4,10 @@ test.use({ hasTouch: true });
 async function center(page: Page, x: number, y: number) {
   await page.waitForFunction(
     () =>
-      window.__game.scene.cameras.main.width === innerWidth &&
-      window.__game.scene.cameras.main.height === innerHeight,
+      window.__game.scene.cameras.main.width === window.__game.game.scale.width &&
+      window.__game.scene.cameras.main.height === window.__game.game.scale.height &&
+      window.__game.game.canvas.clientWidth === innerWidth &&
+      window.__game.game.canvas.clientHeight === innerHeight,
   );
   return page.evaluate(
     async ({ x, y }) => {
@@ -74,6 +76,55 @@ test.beforeEach(async ({ page }) => {
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').tap();
   await expect(page.locator('#loading')).toBeHidden();
+});
+
+test('moving one static wall on a phone updates its native body at the placed tile', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const id = await page.evaluate(
+    () =>
+      window.__game.model.state.buildings.find(
+        (b) => b.kind === 'wall' && b.x === 11 && b.y === 19,
+      )!.id,
+  );
+  await expect.poll(async () => (await nativeWallCounts(page, [id]))[0]).toBeGreaterThan(0);
+  const start = await center(page, 11, 19);
+  await page.touchscreen.tap(start.x, start.y);
+  await page.locator(`[data-action="move:${id}"]`).tap();
+  const target = await page.evaluate(() => {
+    const m = window.__game.model;
+    for (let y = 22; y >= 3; y--)
+      for (let x = 3; x < 24; x++)
+        if (m.canPlace('wall', x, y, m.moving!) && Math.hypot(x - 11, y - 19) > 4) return { x, y };
+    throw Error('No clear wall destination');
+  });
+  const end = await center(page, target.x, target.y);
+  await page.touchscreen.tap(end.x, end.y);
+  await expect.poll(() => positions(page, [id])).toEqual([{ id, ...target }]);
+  const expected = { x: 896 + (target.x - target.y) * 32, y: 112 + (target.x + target.y + 1) * 16 };
+  await expect
+    .poll(() =>
+      page.evaluate(
+        ({ id, expected }) => {
+          const meshes = window.__game.scene.children.list.filter(
+            (object) =>
+              object.type === 'Mesh2D' &&
+              object.visible &&
+              object.getData?.('nativeVillage') === id,
+          );
+          return (
+            meshes.length > 0 &&
+            meshes.every(
+              (mesh) =>
+                Math.abs(mesh.x - expected.x) < 1e-6 && Math.abs(mesh.y - expected.y) < 1e-6,
+            )
+          );
+        },
+        { id, expected },
+      ),
+    )
+    .toBe(true);
 });
 
 test('touch rotates and places a whole row atomically, with ghost cleanup and saved coordinates', async ({

@@ -664,6 +664,30 @@ in both engines. The lifecycle harness resolves the running modules' URLs so a V
 cannot make it flush a separate copy of the buffer pool.
 The compiled Chromium online/offline smoke check passed with no page errors.
 
+### Keeping static-building caches aligned with placement
+
+The static-building fast path now also checks the projected origin, building kind and
+construction opacity. Previously, moving a single static wall could leave its native body
+at the old position even though the model and fallback sprite moved. An unchanged wall still
+skips sampling and rendering. The regression failed before the fix and now verifies one
+initial render, one render after a move, and no repeated renders at either stable position.
+Phone touch checks in Chromium and WebKit verify that visible native meshes reach the
+placed tile, rather than checking only saved coordinates or object counts.
+
+Root-transform arrays are now created only when a pose sample is needed. The map hit for a
+matching building does not construct an unused transform.
+
+Broader render-description caching was rejected. It reduced export lookups from 5,330 to 10
+over five passes through 533 walls, but controlled alternating runs slowed Chromium while
+WebKit improved. Reusing the previously resolved level row also failed to show a portable
+timing benefit. These prototypes are not part of the runtime.
+
+Validation passed all 2,984 tests across 327 files, type checks, documentation links and the
+production build. Single-wall and row touch placement and animated-wall pixel comparisons
+passed in Chromium and WebKit. The row helper now distinguishes physical camera dimensions
+from CSS viewport dimensions, so adaptive density cannot leave it waiting for an impossible
+equality. The compiled Chromium online/offline smoke check passed with no page errors.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
