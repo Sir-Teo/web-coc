@@ -403,6 +403,7 @@ import {
   buildingImmune,
   hurtUnit,
   unitDamageScale,
+  unitEffects,
   unitFrozen,
   unitSpeedBonus,
   unitSpeedScale,
@@ -830,6 +831,10 @@ export interface Battle {
   nativeQueenVialDamage?: true;
   /** Version 81: Royal Champion charged spears retain range, damage, splash and hit counts. */
   nativeChampionRocketSpears?: true;
+  /** Version 82: Noble Iron grants the Prince's finite charged attacks on first deployment. */
+  nativePrinceNobleIron?: true;
+  /** Version 82: Recall preserves remaining finite-hit Hero attack effects. */
+  nativeChargedHeroRecall?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */
@@ -5019,6 +5024,12 @@ export class GameModel {
       spawnedAt: b.elapsed,
       native: initialNativeState(heroUnitKind(kind), hero.level),
     });
+    if (b.nativeChargedHeroRecall && hero.recalledAttackExtra) {
+      unitEffects(b.units.find((u) => u.id === hero.unitId)!).extraDamage = {
+        ...hero.recalledAttackExtra,
+      };
+      delete hero.recalledAttackExtra;
+    }
     if (hero.pet) {
       const pet = petTroopStats(hero.pet);
       const recalledPet = hero.recalledPetHp;
@@ -5829,6 +5840,14 @@ export class GameModel {
     if (roster) {
       roster.unitId = null;
       roster.recalledHp = u.hp;
+      const extra = u.native?.effects?.extraDamage;
+      if (
+        b.nativeChargedHeroRecall &&
+        extra?.hits !== undefined &&
+        extra.hits > 0 &&
+        extra.until > b.elapsed + 1e-9
+      )
+        roster.recalledAttackExtra = { ...extra };
       const pet = b.units.find((other) => other.id === roster.petId);
       if (pet) {
         (pet.native ??= {}).recalled = true;

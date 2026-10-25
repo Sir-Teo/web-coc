@@ -354,3 +354,26 @@ local interpretation described for the Vial. Versions 80 and earlier preserve th
 wall jumping, both defender layers, birth/death times, missing shooters and real portable backward
 seeks. `tests/browser/rocket-spear.spec.ts` checks uploaded rocket and ordinary spear art, charge
 depletion, captured final throws and historical playback on desktop and phone.
+
+## Version 82 Noble Iron deployment attacks and charged Recall
+
+Noble Iron now grants its finite attack effect immediately on the Prince's first deployment,
+without using the ability button. Combat reads the captured range, flat damage and native
+`TurboStartProjectile`, spending one charge per actual attack against a building or a ground/air
+defender. The final charged projectile keeps its launch snapshot; subsequent attacks use
+`MinionHeroAttackProjectile` and ordinary range/damage. The [source comparison](../reference/official-wiki/heroes-pets/noble-iron.md)
+gives +350 to +770 damage, 10 to 12 tiles and five to ten attacks. Levels 15–17 follow the pinned
+client's nine attacks rather than the wiki's eight. Existing passive attack speed remains in effect.
+
+Recall now retains remaining finite-hit Hero equipment effects, including Noble Iron and Rocket
+Spear, and restores those charges on redeployment. The [Recall reference](../reference/official-wiki/spells-siege-super/recall-spell.md)
+says recalled units keep their status effects; this implementation interprets that rule as retaining
+unspent equipment charges. Noble Iron's source `MaxActivations=1` is tracked on the Hero roster:
+redeployment never grants a fresh batch, including after all shots have been spent. This correction
+does not change timed buff retention, timer pausing or other Recall status rules. Versions 81 and
+earlier retain their previous deployment and Recall behavior.
+
+`tests/noble-iron.test.ts` covers source tiers, both defender layers, depletion, ability independence,
+spent and partially spent Recall, historical behavior and real portable backward seeks.
+`tests/browser/noble-iron.spec.ts` checks native Hero/projectile art, charged and ordinary shots,
+reduced-motion parity, Recall redeployment and historical playback on desktop and phone.

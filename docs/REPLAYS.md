@@ -211,3 +211,13 @@ removed; ordinary spears and Haste resume independently. Defender shots use nati
 and wall jumping. Rocket splash hits the primary defender once, follows its layer, and uses
 impact-time birth/death checks. Real charged and ordinary throws reconstruct through portable
 files and backward seeks. Versions 80 and earlier preserve their previous attacks and charges.
+
+## Version 82: Noble Iron deployment shots and charged Hero Recall
+
+Noble Iron starts on the Prince's first deployment without an ability input. Its finite attacks
+capture source range, projectile and extra damage; each actual building or defender attack spends
+one charge. Recall retains remaining finite-hit Hero equipment effects and restores them on the
+new unit. Noble Iron's once-per-roster grant prevents redeployment from refilling spent charges.
+Real deployment, depletion, Recall and redeployment inputs reconstruct through portable files and
+backward seeks. Versions 81 and earlier preserve their prior combat and Recall behavior. Timed
+buff retention and other Recall timer rules remain outside this correction.

@@ -200,14 +200,21 @@ export function statsFor(battle: Battle, u: Pick<Unit, 'kind' | 'level' | 'id'>)
 
 function completeHeroAttack(battle: Battle, unit: Unit) {
   if (
-    !(battle.nativeHeroLifeSteal || battle.nativeChampionRocketSpears) ||
+    !(
+      battle.nativeHeroLifeSteal ||
+      battle.nativeChampionRocketSpears ||
+      battle.nativePrinceNobleIron
+    ) ||
     !isHeroUnitKind(unit.kind)
   )
     return;
   const hero = heroOf(battle, unit);
   if (!hero) return;
   if (battle.nativeHeroLifeSteal) heroLifeSteal(battle, hero, unit);
-  if (battle.nativeChampionRocketSpears && hero.kind === 'champion')
+  if (
+    (battle.nativeChampionRocketSpears && hero.kind === 'champion') ||
+    (battle.nativePrinceNobleIron && hero.kind === 'prince')
+  )
     spendHeroCharge(unit, battle.elapsed);
 }
 
@@ -527,7 +534,13 @@ export function stepNativeUnit(
     u.kind === 'royalchampion' &&
     heroOf(battle, u)
   );
-  if (nativeChampion) {
+  const nativePrince = !!(
+    battle.nativePrinceNobleIron &&
+    u.kind === 'minionprince' &&
+    heroOf(battle, u)
+  );
+  const chargedHero = nativeChampion || nativePrince;
+  if (chargedHero) {
     const override = heroCombatOverrides(u, at);
     if (
       override.range !== undefined ||
@@ -556,8 +569,7 @@ export function stepNativeUnit(
   const speed = boosted.speed;
   const damage =
     boosted.damage * aloneScale(battle, u, s, state) +
-    ((battle.nativeQueenVialDamage && u.kind === 'archerqueen' && heroOf(battle, u)) ||
-    nativeChampion
+    ((battle.nativeQueenVialDamage && u.kind === 'archerqueen' && heroOf(battle, u)) || chargedHero
       ? heroExtraDamage(u, at)
       : 0);
   if (s.speed <= 0 && !s.summon && !s.bunker && s.range < 0.05) return;
@@ -587,9 +599,7 @@ export function stepNativeUnit(
         level: s.level,
         frost: { seconds: s.frostTime, percent: s.frostPercent },
       }
-    : ((battle.nativeHeadhunterCards && u.kind === 'headhunter') ||
-          poisonLizard ||
-          nativeChampion) &&
+    : ((battle.nativeHeadhunterCards && u.kind === 'headhunter') || poisonLizard || chargedHero) &&
         s.projectile
       ? { name: s.projectile, kind: u.kind, level: s.level }
       : undefined;

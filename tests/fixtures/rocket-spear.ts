@@ -1,4 +1,4 @@
-import { emptyArmy, emptySpells } from '../../src/game/army';
+import { defaultSpellLevels, emptyArmy, emptySpells } from '../../src/game/army';
 import { GameModel, makeBuilding } from '../../src/game/model';
 import { replayBattle, REPLAY_VERSION, type ReplayData } from '../../src/game/replay';
 import { heroStatsFor, type HeroItemSetup } from '../../src/game/native-heroes';
@@ -8,6 +8,7 @@ export function rocketSpearBattle(
   level = 1,
   version = REPLAY_VERSION,
   extraItems: HeroItemSetup[] = [],
+  recall = false,
 ) {
   const model = new GameModel();
   model.state.obstacles = [];
@@ -19,7 +20,8 @@ export function rocketSpearBattle(
   ];
   model.state.nextId = 1000;
   model.state.army = { ...emptyArmy(), giant: 1 };
-  model.state.spells = emptySpells();
+  model.state.spells = { ...emptySpells(), ...(recall ? { recall: 1 } : {}) };
+  model.state.spellLevels = defaultSpellLevels();
   model.state.king = undefined;
   model.startBattle(0, true);
   const recording = (model as unknown as { recording: ReplayData }).recording;

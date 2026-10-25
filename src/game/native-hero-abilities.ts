@@ -203,6 +203,19 @@ export function refreshHeroPassives(ctx: NativeTroopContext, hero: NativeBattleH
   for (const ability of heroAbilities(hero)) {
     if (!ability.passive) continue;
     const row = ability.row;
+    if (
+      ctx.battle.nativePrinceNobleIron &&
+      hero.kind === 'prince' &&
+      num(row, 'ExtraDamageFlat') > 0 &&
+      num(row, 'DeactivateAfterNumberOfHits') > 0
+    ) {
+      const state = (hero.charges ??= {});
+      const key = `deploy:${ability.name}`;
+      if (!state[key]) {
+        state[key] = 1;
+        applyAbility(ctx, hero, unit, ability, unit.spawnedAt ?? at);
+      }
+    }
     // Passive equipment auras start without spending the player's ability. Track
     // the unit id so Recall starts a fresh aura on the newly deployed unit.
     const aura = text(row, 'AuraSpell');

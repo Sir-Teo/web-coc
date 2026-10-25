@@ -11,7 +11,7 @@ import {
 } from './native-hero-data';
 import { flag, nativeRow, num, seconds, text, tiles } from './native-data';
 import { nativeUnitStats, spawnStatsAt, type NativeUnitStats } from './native-units';
-import { unitEffects } from './native-status';
+import { unitEffects, type UnitEffects } from './native-status';
 import type { Battle, Unit } from './model';
 
 /**
@@ -43,6 +43,8 @@ export interface NativeBattleHero extends HeroSetup {
   /** Hitpoints kept by a Recall Spell. */
   recalledHp?: number;
   recalledPetHp?: number;
+  /** Version 82: remaining finite-hit equipment retained while the Hero is recalled. */
+  recalledAttackExtra?: UnitEffects['extraDamage'];
   /** Extra attacks the ability granted (Rocket Spears, Noble Iron). */
   charges?: Record<string, number>;
 }
