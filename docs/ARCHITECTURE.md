@@ -47,7 +47,8 @@ ties, in-phase invalidation, alternating battles, replacement layouts and wide s
 The classic troop phase reuses its all-building ID map per battle. Each tick verifies array
 identity, object order and IDs before reuse; replacing or editing the layout creates a fresh
 map. Building state such as HP remains live through its object references, and duplicate IDs
-retain last-entry precedence. Native phases keep their separate filtered snapshots.
+retain last-entry precedence. Native phases build their separate filtered maps directly,
+without temporary entry-pair arrays.
 `tests/building-id-cache.test.ts` checks deaths, object/ID edits, reordering and replacement.
 
 Keep gameplay values separate from art graphs. A model import should not load

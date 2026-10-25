@@ -5795,10 +5795,12 @@ export class GameModel {
     shared: { wallTile: Map<number, Building> },
   ): NativeTroopContext {
     const buildings = b.buildings.filter((v) => !concealedTesla(b, v));
+    const buildingsById = new Map<number, Building>();
+    for (const building of buildings) buildingsById.set(building.id, building);
     return {
       battle: b,
       buildings,
-      buildingsById: new Map(buildings.map((v) => [v.id, v])),
+      buildingsById,
       wallTile: shared.wallTile,
       damageBuilding: (target, amount, at, spell) => this.damage(target, amount, at, spell),
       effect: (fx) => this.onEffect(fx),
@@ -5966,7 +5968,9 @@ export class GameModel {
     const breaches = openBreaches(b);
     if (native) {
       native.buildings = knownBuildings;
-      native.buildingsById = new Map(knownBuildings.map((v) => [v.id, v]));
+      const buildingsById = new Map<number, Building>();
+      for (const building of knownBuildings) buildingsById.set(building.id, building);
+      native.buildingsById = buildingsById;
       native.wallTile = shared.wallTile;
       native.breaches = breaches;
     }

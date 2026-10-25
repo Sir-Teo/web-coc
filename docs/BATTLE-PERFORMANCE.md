@@ -1834,6 +1834,42 @@ WebKit replay context blocks service workers to isolate replay controls from upd
 Standard production navigation/replay pass in both engines under their usual worker
 configuration. Chromium also passes offline reload/replay using cache `b144f681d1ec`.
 
+## Constructing native building maps directly
+
+The native phases still construct separate filtered building maps at their original phase
+boundaries. Filling each map directly removes the temporary array and entry-pair arrays from
+the previous `new Map(buildings.map(...))` construction. Order, duplicate-ID last-entry
+precedence, live building references and visibility predicates remain unchanged.
+
+Over the normal-capacity stage-61 simulation's 400 steps, all three building lookups still
+construct 801 maps and two snapshot arrays. Entry-pair arrays fall from 655,778 to zero.
+All measured final states match, and four layout/army scenarios match the original at every
+one of 1,600 individually hashed steps. All 114 focused targeting, Tesla, invisibility and
+spell tests pass.
+
+After eight warmups per variant and eight alternating-order measured runs per variant,
+Chromium simulation time averages 904.70 ms before and 830.84 ms after (8.2% lower).
+Chromium's aggregate renderer process CPU counter averages 1,008.75 ms before and 913.75 ms
+after (9.4% lower), including all renderer threads while the other benchmark page is idle.
+WebKit simulation time averages 766.00 ms before and 657.25 ms after (14.2% lower).
+These controlled software-browser measurements do not measure physical-phone frame rate
+or total memory.
+
+All 13 selected complete-state browser comparisons pass per engine: five Wizard Tower
+levels, five native campaign fixtures and three Inferno level/mode fixtures match Node
+at every simulation step.
+
+The full check passes 3,030 tests across 337 files, strict source/test typing, documentation
+validation and the production build.
+
+The compiled Wizard Tower check passes modern levels 1/5/8/10/17, the campaign fixture and
+the pinned version-34 recording in both engines, including projectile state, final results,
+portable export and reseek equality. Chromium also passes offline replay. The dedicated
+WebKit replay context blocks service workers to isolate replay controls from update banners.
+
+Standard production navigation/replay pass in both engines under their usual worker
+configuration. Chromium also passes offline reload/replay using cache `8c77ce408aa8`.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
