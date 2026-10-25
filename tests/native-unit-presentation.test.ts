@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import { makeBuilding, type Battle, type Unit } from '../src/game/model';
 import { defendingHero, stepDefendingHeroes } from '../src/game/defending-heroes';
-import { HERO_UNIT } from '../src/game/native-hero-data';
+import { HERO_UNIT, PET_UNIT } from '../src/game/native-hero-data';
 import { nativeUnitStats } from '../src/game/native-units';
 import { createGuardian, guardianStats, stepGuardian } from '../src/game/native-guardians';
 import type { NativeTroopContext } from '../src/game/native-troops';
@@ -310,6 +310,38 @@ describe('troop native presentation', () => {
 });
 
 describe('hero native presentation', () => {
+  for (const effect of ['poison', 'chill', 'boost'] as const)
+    it.each([
+      { pet: 'frosty' as const, frame: 2 },
+      { pet: 'lassi' as const, frame: 4 },
+      { pet: 'owl' as const, frame: 4 },
+      { pet: 'yak' as const, frame: 2 },
+    ])(`draws $pet 150 ms after a hit with ${effect}`, ({ pet, frame }) => {
+      const p = new HeroNativePresentation(fakeScene());
+      const atlas = JSON.parse(
+        fs.readFileSync(`public/assets/heroes-native/${pet}/atlas.json`, 'utf8'),
+      );
+      (p as unknown as { packs: Map<string, unknown> }).packs.set(`heroes-native/${pet}`, atlas);
+      const u = unit(1, 10, 10, { kind: PET_UNIT[pet], attacking: true, path: [], target: 2 });
+      u.native = {
+        effects:
+          effect === 'poison'
+            ? { poison: { until: 10, speed: -0.5, attackSpeed: -0.5, dps: 0, since: 0 } }
+            : effect === 'chill'
+              ? { chill: { until: 10, percent: 0.5 } }
+              : { boost: { until: 10, speed: 0, damage: 0, attackSpeed: 1 } },
+      };
+      u.cooldown = nativeUnitStats(u.kind, 1).rate * (effect === 'boost' ? 0.5 : 2) - 0.15;
+      const battle = battleOf([u]);
+      battle.elapsed = 0.15;
+      battle.buildings = [makeBuilding(2, 'wall', 11, 10, 1)];
+      p.render(battle, false, iso, 70, new Map(), new Map());
+      const sprite = (
+        p as unknown as { sprites: Map<number, { frame: { name: string } }> }
+      ).sprites.get(u.id)!;
+      const f = atlas.states.attack.frames[1][frame];
+      expect(sprite.frame.name).toBe(`${f.x}:${f.y}:${f.w}:${f.h}`);
+    });
   it.each([
     { kind: 'guardian', attackerId: 1000 },
     { kind: 'hero', attackerId: 9999 },

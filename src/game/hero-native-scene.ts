@@ -398,6 +398,6 @@ export class HeroNativePresentation {
     return hero
       ? heroAttackInterval(u, battle.elapsed, heroStatsFor(hero, battle.townhall ?? 18).rate) *
           unitAttackIntervalScale(u, battle.elapsed)
-      : TROOPS[u.kind].rate;
+      : TROOPS[u.kind].rate * unitAttackIntervalScale(u, battle.elapsed);
   }
 }

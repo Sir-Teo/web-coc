@@ -151,6 +151,15 @@ other's pose/motion history. Each now owns its own body through removal and repl
 The presentation regression covers both collisions; the recorded Guardian test also uses attacker
 `1000` and verifies the real distinct Guardian body.
 
+Attacking pet clips use the status-scaled interval that combat assigned to their cooldown, as
+attacking Heroes and native troops already did. Using only the pet's base interval held a poisoned
+pet on its first attack frame until the long cooldown fell below that base; attack-speed boosts
+could skip ahead instead. `tests/native-unit-presentation.test.ts` checks Frosty, L.A.S.S.I,
+Electro Owl and Mighty Yak under Poison, chill and an attack-speed boost. A real Spell Tower Poison
+attack in `tests/pet-animation.test.ts` and `tests/browser/pet-animation.spec.ts` checks source
+cooldowns, uploaded Frosty poses and green tint, portable backward seeks and reduced-motion toggles
+on desktop and phone. The correction changes presentation only.
+
 ## Version 60 defending hero Poison
 
 Defending heroes use the spell’s signed `SpeedBoost` and `AttackSpeedBoost` as slowdowns, matching native attacking units, and apply `HeroDamageMultiplier` to poison damage. In versions 60–66, level-1 Poison retains 74% movement speed; version 67 corrects this to 87% using the hero movement multiplier below. The attack clock retains 65%, and heroes take 5% of the ramping poison damage. The previous calculation subtracted negative modifiers, accelerating heroes, and applied full troop poison damage. Versions 52–59 preserve that calculation for replay compatibility. Guardians and ordinary garrison defenders retain their existing rules.
