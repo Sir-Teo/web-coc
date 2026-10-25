@@ -158,3 +158,14 @@ Freeze, Invisibility, Earthquake and related areas away from their visible circl
 strikes such as Electro Dragon death lightning retain their source scatter. Pulse and feedback cadence
 stay intact. Versions 74 and earlier preserve the shifted pulses. Real Giant deployment and Rage inputs
 at a wall reconstruct the aimed boundary through portable files and backward seeks.
+
+## Version 76: intrinsic attacker poison-on-hit
+
+Headhunter and Poison Lizard projectiles apply the intrinsic source spell's three-second on-hit
+poison to living defenders. The existing continuous on-hit damage interpretation uses the source's
+Hero/Guardian modifiers, strongest on-hit refresh and signed slow values. Area and on-hit slows
+choose their stronger component; Freeze retains visual priority. Poison Lizard uses its native spit
+and can engage nearby unalerted enemy units while preserving wall jumping. The projectile's source
+kind/level remains sufficient after Recall removes its owner. Real ground/air attacks, Recall and
+expiry reconstruct through portable files and backward seeks. Versions 75 and earlier preserve
+their direct-only hits and previous Lizard targeting/projectile.

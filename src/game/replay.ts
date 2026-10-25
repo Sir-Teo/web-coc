@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 75;
+export const REPLAY_VERSION = 76;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -103,7 +103,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 72 counts Monolith Arrow housing cumulatively, including heroes and siege machines.
  * Version 73 applies Headhunter Hero targeting, damage and wall-jumping against defenders.
  * Version 74 launches native Headhunter cards against defenders, including their flight speed.
- * Version 75 keeps non-strike spell pulses centered on their cast or following owner. */
+ * Version 75 keeps non-strike spell pulses centered on their cast or following owner.
+ * Version 76 applies intrinsic attacker poison-on-hit to defenders, including native Lizard spit. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -146,6 +147,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 72 ||
   version === 73 ||
   version === 74 ||
+  version === 75 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -294,6 +296,7 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 76 ? { nativeAttackerHitPoison: true as const } : {}),
     ...(version >= 75 ? { nativeSpellAreaCenters: true as const } : {}),
     ...(version >= 74 ? { nativeHeadhunterCards: true as const } : {}),
     ...(version >= 73 ? { nativeHeadhunterHeroRules: true as const } : {}),

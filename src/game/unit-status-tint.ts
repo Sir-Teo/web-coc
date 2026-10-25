@@ -52,7 +52,10 @@ export function unitStatusTint(
 export function defenderStatusTint(defender: Defender, at: number): UnitStatusTint | undefined {
   if (defender.hp <= 0) return undefined;
   if ((defender.frozenUntil ?? 0) > at) return tints.frozen;
-  return defender.poison && defender.poison.until > at ? tints.poison : undefined;
+  return (defender.poison && defender.poison.until > at) ||
+    (defender.hitPoison && defender.hitPoison.until > at)
+    ? tints.poison
+    : undefined;
 }
 
 /**

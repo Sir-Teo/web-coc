@@ -177,7 +177,7 @@ The [pinned source comparison](../reference/official-wiki/heroes-pets/monolith-a
 
 Attacking Headhunters now use the parsed `PreferHeroes`, `HeroDamageMultiplier=400` and `IsJumper` columns against defending Heroes. Previously the shared defender fight path ignored all three, so a frozen, unalerted Hero could be bypassed entirely and an alerted Hero took only normal damage. The [pinned Headhunter comparison](../reference/official-wiki/troops/headhunter.md) specifies Hero-first targeting across the battlefield, four-times direct damage, ground/air targeting and wall jumping.
 
-A valid defending Hero takes priority over nearby ordinary defenders and committed buildings, including outside the ordinary alert radius. Headhunters keep their current valid Hero target, select another after it falls and resume ordinary defender/building targeting once no valid Hero remains. They cross walls during the Hero chase. Level 1 now deals 252 direct damage to a Hero instead of 63; level 4 deals 324 instead of 81. Guardians and ordinary troops receive normal damage. Versions 72 and earlier retain the previous rules. This correction covers Headhunter targeting, direct damage and chase routing. Version 74 below adds native card projectiles; on-hit Poison remains separate fidelity work.
+A valid defending Hero takes priority over nearby ordinary defenders and committed buildings, including outside the ordinary alert radius. Headhunters keep their current valid Hero target, select another after it falls and resume ordinary defender/building targeting once no valid Hero remains. They cross walls during the Hero chase. Level 1 now deals 252 direct damage to a Hero instead of 63; level 4 deals 324 instead of 81. Guardians and ordinary troops receive normal damage. Versions 72 and earlier retain the previous rules. This correction covers Headhunter targeting, direct damage and chase routing. Version 74 below adds native card projectiles; version 76 adds on-hit Poison.
 
 `tests/headhunter-hero-rules.test.ts` covers all four troop levels, distant and unalerted Heroes, retargeting after spawn, ordinary defenders, Guardians, an unbroken wall, both Hero layers, portable backward seeks and the older rule. `tests/browser/headhunter-hero-rules.spec.ts` checks real recorded shots and native bodies on desktop and reduced-motion phone views.
 
@@ -185,6 +185,34 @@ A valid defending Hero takes priority over nearby ordinary defenders and committ
 
 Headhunters now use their level-specific `Headhunter_Card_lvl1` through `lvl4` projectile against defending troops, Heroes and Guardians, matching their existing building attacks. The [pinned client projectile](../reference/full-client/README.md) travels at `Speed=1400`, or 14 tiles per second. The previous shared defender path substituted a generic arrow at 18 tiles per second. All four rows share the shipped native card artwork.
 
-The native impact resolver now delivers the captured direct hit to its original ground or air defender. A missing shooter does not cancel the card, and a fallen target cannot transfer its damage to a replacement. Versions 73 and earlier retain their generic arrow and earlier impact time. On-hit Poison remains separate work.
+The native impact resolver now delivers the captured direct hit to its original ground or air defender. A missing shooter does not cancel the card, and a fallen target cannot transfer its damage to a replacement. Versions 73 and earlier retain their generic arrow and earlier impact time. Version 76 below adds on-hit Poison.
 
 `tests/headhunter-cards.test.ts` checks all four projectile rows, source speed, retained art, impact timing on both layers, a missing shooter and a fallen target. `tests/browser/headhunter-cards.spec.ts` checks uploaded native card textures and the flight/impact boundary on desktop and phone, including backward seeks and version 73.
+
+## Version 76 intrinsic attacker poison-on-hit
+
+Attacking Headhunters and Poison Lizard now apply their intrinsic `PoisonOnHitSpell` for the
+source's three-second duration when a projectile hits a living defender. The [Headhunter
+comparison](../reference/official-wiki/troops/headhunter.md) maps levels 1–4 to Poison levels 5–8;
+the [Poison Lizard comparison](../reference/official-wiki/heroes-pets/poison-lizard.md) maps its pet
+tiers to `PoisonLizardAttack`. Hit poison uses the existing local continuous on-hit interpretation
+used by defending Headhunters. Area Poison retains its separate pulse/ramp mechanism.
+
+Level-1 Headhunter poison uses 220 DPS before class modifiers: 11 DPS against a defending Hero
+and 66 against a Guardian. Its direct on-hit slow is 40% movement and 55% attack speed. Level-1
+Poison Lizard uses 80 DPS, 26% movement slow and 35% attack slow; its spell row has no Hero damage
+reduction. Guardian slow resistance still applies through the existing action-clock rules.
+Hits refresh the deadline and keep the strongest active on-hit damage and slow components.
+Area and on-hit slows use the stronger component, and full Freeze keeps its visual priority.
+
+Poison Lizard uses `fireIguanaProto` at the source speed, prefers nearby defending units even when
+unalerted, and jumps walls during that chase. Repairing Builders remain untargetable. Effects are
+resolved from the projectile's captured source kind/level, so a final spit can poison its target
+after Recall removes both pet and Hero. Damage clocks do not rewind; expiry clips damage to the
+scheduled deadline. Versions 75 and earlier retain their previous direct-only hits and Lizard path.
+
+`tests/attacker-hit-poison.test.ts` covers source levels, all defender classes, actual Hero/Guardian
+action clocks, overlap, exact expiry and real ground/air attacks through Recall and portable backward
+seeks. The older direct-hit fixtures stay on version 75. `tests/browser/attacker-hit-poison.spec.ts`
+checks native projectile names, damage after Recall, green status bodies and historical playback on
+desktop and reduced-motion phone views.

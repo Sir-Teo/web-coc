@@ -1,4 +1,5 @@
 import { poisonAvoidanceTarget } from './poison-avoidance';
+import { defenderHitPoisonScales } from './defender-hit-poison';
 import { TROOPS } from './data';
 import { heroRow, HERO_UNIT, type HeroKind } from './native-hero-data';
 import { nativeUnitStats } from './native-units';
@@ -78,9 +79,11 @@ export function stepDefendingHeroes(battle: Battle, dt: number, effect: (fx: FX)
     const point = target ?? escape ?? d.home,
       distance = distance2D(point.x - d.x, point.y - d.y);
     const poison = d.poison && d.poison.until > battle.elapsed ? d.poison : undefined;
-    const attackScale = battle.nativeDefendingHeroPoison
+    const hitPoison = defenderHitPoisonScales(d, battle.elapsed);
+    const areaAttackScale = battle.nativeDefendingHeroPoison
       ? Math.max(0.05, 1 + (poison?.attack ?? 0))
       : 1 - (poison?.attack ?? 0);
+    const attackScale = hitPoison ? Math.min(areaAttackScale, hitPoison.attack) : areaAttackScale;
     d.cooldown -= activeDt * attackScale;
     if (target && distance <= stats.range) {
       d.attacking = true;
@@ -107,9 +110,10 @@ export function stepDefendingHeroes(battle: Battle, dt: number, effect: (fx: FX)
       );
       d.pathAt = 1;
     }
-    const moveScale = battle.nativeDefendingHeroPoison
+    const areaMoveScale = battle.nativeDefendingHeroPoison
       ? Math.max(0, 1 + (poison?.speed ?? 0))
       : 1 - (poison?.speed ?? 0);
+    const moveScale = hitPoison ? Math.min(areaMoveScale, hitPoison.move) : areaMoveScale;
     let travel = stats.speed * activeDt * moveScale;
     while (travel > 0 && d.path.length) {
       const p = d.path[0],

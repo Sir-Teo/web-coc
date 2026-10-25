@@ -13,6 +13,11 @@ import {
 } from './data';
 import { EXTRA_TROOP_KINDS } from './extra-troops';
 import { damageDefenders, hurtDefender, stepAttackerVsDefenders } from './defenders';
+import {
+  applyDefenderHitPoison,
+  nativeHitPoison,
+  tickDefenderHitPoison,
+} from './defender-hit-poison';
 import { MAP_SIZE } from './grid';
 import { targetableBuilding } from './hidden-tesla';
 import { flag, nativeRow, num, seconds as nativeSeconds, text, tiles } from './native-data';
@@ -524,6 +529,8 @@ export function stepNativeUnit(
   }
   if (s.mergeTo && stepMerge(ctx, u, s, speed, dt)) return;
   const heroHunter = battle.nativeHeadhunterHeroRules && u.kind === 'headhunter';
+  const poisonLizard = battle.nativeAttackerHitPoison && u.kind === 'poisonlizard';
+  const jumpingChase = s.jumper && (heroHunter || poisonLizard);
   if (
     stepAttackerVsDefenders(
       battle,
@@ -542,17 +549,18 @@ export function stepNativeUnit(
         splash: s.splash || undefined,
         airTargets: s.airTargets,
         ...(heroHunter ? { preferHeroes: s.preferHeroes, heroDamageScale: s.heroMultiplier } : {}),
-        ...(battle.nativeHeadhunterCards && u.kind === 'headhunter' && s.projectile
+        ...(poisonLizard ? { seekUnalerted: true } : {}),
+        ...(((battle.nativeHeadhunterCards && u.kind === 'headhunter') || poisonLizard) &&
+        s.projectile
           ? { nativeProjectile: { name: s.projectile, kind: u.kind, level: s.level } }
           : {}),
       },
       ctx.isTargetable,
       {
-        buildings:
-          heroHunter && s.jumper
-            ? routeBuildings(ctx, true)
-            : (ctx.routableBuildings ?? ctx.buildings),
-        ...(heroHunter && s.jumper ? { jumpWalls: true } : {}),
+        buildings: jumpingChase
+          ? routeBuildings(ctx, true)
+          : (ctx.routableBuildings ?? ctx.buildings),
+        ...(jumpingChase ? { jumpWalls: true } : {}),
         wallTile: ctx.wallTile,
         passableWalls: ctx.passableWalls,
         budget: ctx.pathBudget,
@@ -1106,8 +1114,14 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
   // Version 74's native Headhunter cards retain the captured direct hit on either defender layer.
   if (p.targetDefender) {
     const defender = battle.defenders?.find((d) => d.id === p.targetId);
-    if (defender && defender.hp > 0 && defender.spawnedAt <= p.impact + 1e-9)
+    if (defender && defender.hp > 0 && defender.spawnedAt <= p.impact + 1e-9) {
+      if (battle.nativeAttackerHitPoison) tickDefenderHitPoison(defender, p.impact);
       hurtDefender(battle, defender, p.damage);
+      if (battle.nativeAttackerHitPoison && defender.hp > 0) {
+        const poison = nativeHitPoison(s);
+        if (poison) applyDefenderHitPoison(defender, poison, p.impact);
+      }
+    }
   }
   const target = p.targetBuilding ? battle.buildings.find((b) => b.id === p.targetId) : undefined;
   if (target && target.hp > 0) {
@@ -1667,6 +1681,8 @@ export function targetableUnit(battle: Battle, u: Unit) {
 
 export function stepNativeBattle(ctx: NativeTroopContext) {
   const battle = ctx.battle;
+  if (battle.nativeAttackerHitPoison)
+    for (const defender of battle.defenders ?? []) tickDefenderHitPoison(defender, battle.elapsed);
   // Clone Spell copies expire silently: no death damage, splits or spells.
   for (const u of battle.units)
     if (

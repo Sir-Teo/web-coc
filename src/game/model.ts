@@ -818,6 +818,8 @@ export interface Battle {
   nativeHeadhunterCards?: true;
   /** Version 75: visual scatter does not move non-strike spell areas away from their center. */
   nativeSpellAreaCenters?: true;
+  /** Version 76: Headhunter and Poison Lizard projectile hits poison defending units. */
+  nativeAttackerHitPoison?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */

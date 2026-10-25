@@ -2,7 +2,7 @@ import { defaultSpellLevels, emptyArmy, emptySpells } from '../../src/game/army'
 import { GameModel, makeBuilding } from '../../src/game/model';
 import { replayBattle, type ReplayData } from '../../src/game/replay';
 
-export function headhunterHeroBattle(level = 1, air = false) {
+export function headhunterHeroBattle(level = 1, air = false, version = 75) {
   const model = new GameModel();
   model.state.obstacles = [];
   model.state.buildings = [
@@ -17,17 +17,18 @@ export function headhunterHeroBattle(level = 1, air = false) {
   model.state.king = undefined;
   model.startBattle(0, true);
   const recording = (model as unknown as { recording: ReplayData }).recording;
+  recording.version = version;
   recording.initial.heroes = [];
   recording.initial.defendingHeroes = [
     { kind: air ? 'prince' : 'king', level: air ? 95 : 110, x: 7.5, y: 5 },
   ];
-  model.battle = replayBattle(recording.initial);
+  model.battle = replayBattle(recording.initial, version);
   return { model, battle: model.battle };
 }
 
 /** A real Headhunter deployment against a frozen defending Hero, before and after one shot. */
-export function headhunterHeroRecording(air = false) {
-  const { model, battle } = headhunterHeroBattle(1, air);
+export function headhunterHeroRecording(air = false, version = 75) {
+  const { model, battle } = headhunterHeroBattle(1, air, version);
   const until = (at: number) => {
     for (let remaining = 200; battle.elapsed < at - 1e-9; remaining--) {
       if (!remaining || battle.finished) throw Error('Headhunter checkpoint was not reached');

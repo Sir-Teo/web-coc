@@ -1,5 +1,6 @@
 import { poisonAvoidanceTarget, type DefenderPoisonArea } from './poison-avoidance';
 import { defenderPoisonScales } from './defender-poison';
+import type { DefenderHitPoison } from './defender-hit-poison';
 import type { HeroKind } from './native-hero-data';
 import { MAP_SIZE } from './grid';
 import { hurtUnit } from './native-status';
@@ -52,6 +53,8 @@ interface DefenderState {
   stunnedUntil?: number;
   /** Version 68: full Freeze cue, separate from Lightning and other short stuns. */
   frozenUntil?: number;
+  /** Version 76: intrinsic attacker poison-on-hit, separate from area-spell exposure. */
+  hitPoison?: DefenderHitPoison;
   /** Version 45 Poison Spell exposure: slows movement and attacks while it lasts. */
   poison?: {
     since: number;
@@ -358,11 +361,14 @@ export type DefenderFightTraits = Pick<
   airTargets?: boolean;
   preferHeroes?: boolean;
   heroDamageScale?: number;
+  /** Poison Lizard prefers nearby enemy units even when they have not engaged. */
+  seekUnalerted?: boolean;
   nativeProjectile?: CombatProjectile['native'];
 };
 const canFight = (unit: Unit, enemy: Defender, troop: DefenderFightTraits) =>
   !troop.healer &&
   !troop.wallBreaker &&
+  !(troop.seekUnalerted && enemy.kind === 'repairer') &&
   (enemy.mode === 'ground' ||
     (troop.airTargets ??
       (unit.kind === 'archer' || unit.kind === 'wizard' || unit.kind === 'dragon')));
@@ -407,8 +413,8 @@ function nearestAlertedDefender(battle: Battle, unit: Unit, troop: DefenderFight
   for (const d of battle.defenders ?? []) {
     if (
       d.hp <= 0 ||
-      (d.kind !== 'skeleton' && d.spawnedAt > battle.elapsed) ||
-      !d.alerted ||
+      ((d.kind !== 'skeleton' || troop.seekUnalerted) && d.spawnedAt > battle.elapsed) ||
+      (!d.alerted && !troop.seekUnalerted) ||
       !canFight(unit, d, troop) ||
       lateDefenderHidden(battle, d) ||
       !garrisonDefenderTargetable(battle, d)
@@ -552,7 +558,7 @@ export function stepAttackerVsDefenders(
       (d) =>
         d.id === unit.defenderTarget &&
         d.hp > 0 &&
-        (d.kind === 'skeleton' || d.spawnedAt <= battle.elapsed) &&
+        ((d.kind === 'skeleton' && !troop.seekUnalerted) || d.spawnedAt <= battle.elapsed) &&
         canFight(unit, d, troop) &&
         !lateDefenderHidden(battle, d) &&
         garrisonDefenderTargetable(battle, d),
