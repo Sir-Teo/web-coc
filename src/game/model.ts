@@ -4943,8 +4943,8 @@ export class GameModel {
     this.changed();
     return true;
   }
-  /** Hero setups for a version 46 battle: lineup order, equipped items and assigned pets. */
-  private heroSetups(): HeroSetup[] {
+  /** Snapshot the ready lineup, equipment and pets for battle setup and artwork prefetch. */
+  heroSetups(): HeroSetup[] {
     const gear = this.gear;
     const pets = this.petProgress;
     return this.heroLineup

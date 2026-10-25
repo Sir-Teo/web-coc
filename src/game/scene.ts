@@ -20,6 +20,7 @@ import {
 import { NativeArtPacks, type NativeArtPack } from './native-art-pack';
 import { NativeProjectilePresentation } from './native-projectile-scene';
 import { nativeUnitStats } from './native-units';
+import { heroProjectileNames } from './hero-projectile-prefetch';
 import { NativeDefensePresentation } from './native-defense-scene';
 import { nativeRow, tiles as nativeTiles } from './native-data';
 import {
@@ -2618,11 +2619,22 @@ export class VillageScene extends Phaser.Scene {
       this.armyPrefetchSignature = signature;
       if (kinds.length) this.troopNativePresentation?.prefetch(kinds, level);
     }
-    const projectiles = this.model.reducedMotion ? '' : signature;
+    const setups = this.model.reducedMotion
+      ? []
+      : [...this.model.heroSetups(), ...(this.model.battle?.nativeHeroes ?? [])];
+    const setupSignature = JSON.stringify(
+      setups.map(({ kind, level, items, pet }) => ({ kind, level, items, pet })),
+    );
+    const projectiles = this.model.reducedMotion ? '' : `${signature}|${setupSignature}`;
     if (projectiles !== this.projectilePrefetchSignature) {
       this.projectilePrefetchSignature = projectiles;
       this.nativeProjectiles?.prefetch(
-        projectiles ? kinds.map((kind) => nativeUnitStats(kind, level(kind)).projectile) : [],
+        projectiles
+          ? [
+              ...kinds.map((kind) => nativeUnitStats(kind, level(kind)).projectile),
+              ...heroProjectileNames(setups),
+            ]
+          : [],
       );
     }
     const heroes = this.wantedHeroArt();

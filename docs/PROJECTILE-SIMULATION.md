@@ -18,6 +18,14 @@ change replay rules. `tests/browser/battle-projectile-prefetch.spec.ts` checks h
 and native flight artwork on the first real shot at desktop and phone sizes. Reduced motion skips
 this flight-only prefetch; disabling it warms the current roster immediately.
 
+Hero and pet flight packs use the ready home lineup and the recorded hero setups, including item
+levels. Equipment projectile and reflection rows warm alongside the hero's base shot and its pet's
+shot. Changing a loadout refreshes the prefetch even when its hero kind is unchanged; Frozen Arrow
+and all three Monolith Arrow flight packs can therefore be ready before the first equipment shot.
+`tests/hero-projectile-prefetch.test.ts` checks the source names, and
+`tests/browser/hero-projectile-prefetch.spec.ts` checks cold requests, loadout changes and first-shot
+rendering on desktop and phone.
+
 Reduced motion suppresses flight graphics and muzzle flashes; stationary feedback still appears at the actual impact time. Temporary graphics are removed on impact or a scene transition. Intact building heights anchor shots even when a source or target changes to rubble.
 
 ## Local tuning

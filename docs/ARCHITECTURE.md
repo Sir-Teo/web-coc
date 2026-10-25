@@ -143,6 +143,14 @@ request before any troop is deployed, then verifies native art on the first shot
 Reduced motion skips flight-pack prefetch; disabling it warms the same roster without requiring
 an army change.
 
+Hero flight packs follow both the ready home lineup and the current recording's hero setups.
+The prefetch key includes hero levels, equipped item levels and assigned pets, so changing equipment
+warms new flight art even when the character atlas stays the same. Source ability `Projectile` and
+`ReflectProjectile` rows include Frozen Arrow, every Monolith Arrow stage and Revenge Deck; assigned
+pets contribute their own native shot. `heroSetups()` supplies the same ready-home snapshot used by
+battle creation. `tests/browser/hero-projectile-prefetch.spec.ts` holds actual equipment graphs,
+changes a home loadout, and checks the first native shot in a local attack and an imported phone replay.
+
 Village building graphs also recover from failed downloads: the pending marker clears
 after failure and retries back off from five seconds to five minutes. The fallback stays
 visible while the native graph or level pages are unavailable. Going online makes failed
