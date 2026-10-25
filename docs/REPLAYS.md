@@ -149,3 +149,12 @@ Headhunters prioritize valid defending Heroes across the battlefield, deal the s
 ## Version 74: native Headhunter cards against defenders
 
 Defender-targeted Headhunter shots now use the source’s level-specific card and 14-tile-per-second flight instead of a generic 18-tile-per-second arrow. The native impact resolver applies the captured hit to its original ground or air defender, including after the shooter leaves. Versions 73 and earlier preserve their previous arrow and impact time. Real shots reconstruct the flight and hit through portable backward seeks; an intermediate checkpoint verifies that version 73’s arrow has already landed while the new card is still airborne.
+
+## Version 75: aimed area-spell centers
+
+Non-strike native spell pulses now use the aimed center or their following owner's current position.
+The generic pulse path previously applied `RandomRadius` to field spells, moving Rage, healing,
+Freeze, Invisibility, Earthquake and related areas away from their visible circles. Direct positive-damage
+strikes such as Electro Dragon death lightning retain their source scatter. Pulse and feedback cadence
+stay intact. Versions 74 and earlier preserve the shifted pulses. Real Giant deployment and Rage inputs
+at a wall reconstruct the aimed boundary through portable files and backward seeks.

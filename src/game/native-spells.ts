@@ -201,7 +201,9 @@ function resolvePulse(ctx: NativeSpellContext, cast: NativeSpellCast, at: number
   const randomRadius = flag(row, 'RandomRadiusAffectsOnlyGfx') ? 0 : tiles(row, 'RandomRadius');
   let x = cast.x,
     y = cast.y;
-  if (randomRadius > 0) {
+  // Area buffs, healing and statuses use the aimed/following center. Positive-damage strikes
+  // (Electro Dragon death lightning) retain their actual scatter; repeat feedback keeps its cadence.
+  if (randomRadius > 0 && !(battle.nativeSpellAreaCenters && num(row, 'Damage') <= 0)) {
     const p = randomPoint(cast, cast.hits, randomRadius);
     x = p.x;
     y = p.y;
