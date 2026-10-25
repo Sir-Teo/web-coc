@@ -448,9 +448,33 @@ Stick Horse still owns its independent personal jump timer and expiry.
 Held cooldowns and Freeze cause no area hit. The exact ability deadline restores ordinary hits.
 Unrostered King copies receive no equipment splash. Versions 84 and earlier preserve their
 primary-only combat. This correction covers splash combat and its existing impact effect;
-Gauntlet growth scaling and the prolonged enlarged knockout pose remain presentation work.
+Gauntlet growth scaling and the prolonged enlarged knockout pose are described below.
 
 `tests/giant-gauntlet.test.ts` covers all ten duration/shield tiers, both hit origins, ground/air and
 birth checks, invisibility, immunity, Vampstache, Stick Horse expiry, copy exclusion and real
 portable backward seeks. `tests/browser/giant-gauntlet.spec.ts` checks native King art, actual
 adjacent-building damage, expiry, reduced-motion parity and historical playback on desktop and phone.
+
+## Gauntlet growth and knockout presentation
+
+The native King and his portrait fallback now grow during Giant Gauntlet. The pinned ability's
+`GrowthScale` 70 to 115 is interpreted as an added percentage, giving 1.70× to 2.15× normal size.
+This is a local visual interpretation of that source field; exact modern client transition curves
+are not available. Shrinking multiplies the enlarged body scale, and the health bar follows its
+height. Growth ends at the existing ability deadline, including during pause/resume and seeks.
+
+A King knocked out while Gauntlet is active keeps the enlarged final knockout pose until that
+original deadline, as described by the [Gauntlet reference](../reference/official-wiki/heroes-pets/giant-gauntlet.md).
+The approved King atlas aliases `die` to an upright attack-recovery frame, so this held frame uses
+the same static 70-degree collapse as its portrait fallback. This is a local pose approximation;
+an authored knockout animation remains an art improvement. The existing native 1.5-second fade
+then runs at normal size. The fallback portrait holds its
+static defeat pose and uses the same fade. Reduced motion holds a static final native pose.
+A later knockout, a copy outside the Hero roster, and a redeployed unit without the timed effect
+keep ordinary presentation. All decisions use battle time; no combat state or replay version changes.
+
+`tests/native-unit-presentation.test.ts` checks all ten growth tiers, reduced motion, Shrink
+composition, expiry, prolonged knockout, fade and backward rendering without battle mutation.
+`tests/hero-growth.test.ts` uses real cannon-fire knockouts through portable backward seeks.
+`tests/browser/gauntlet-growth.spec.ts` checks uploaded native poses and a deliberately unavailable
+atlas that exercises the portrait fallback on desktop and phone, with reduced motion and backward seeks.

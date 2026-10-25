@@ -4,6 +4,7 @@ import { HERO_UNIT, PET_UNIT } from './native-hero-data';
 import { heroStatsFor } from './native-heroes';
 import { nativeUnitStats } from './native-units';
 import { heroAttackInterval } from './native-hero-abilities';
+import { heroGrowthScale, heroKnockoutFadeAt } from './hero-growth';
 import { unitAttackIntervalScale } from './native-status';
 import type { Battle, Unit } from './model';
 import type { Defender } from './defenders';
@@ -262,6 +263,11 @@ export class HeroNativePresentation {
       const u = actor.unit,
         d = actor.defender;
       const body = (u ?? d)!;
+      const deathAt = body.defeatedAt ?? elapsed;
+      const deathAge = elapsed - deathAt;
+      const fadeAt = u ? heroKnockoutFadeAt(battle, u) : deathAt;
+      const fadeAge = elapsed - fadeAt;
+      const gauntletKnockout = body.hp <= 0 && fadeAt > deathAt + 1e-9;
       this.seen.add(actor.track);
       const fallback = u ? units.get(actor.id) : defenders.get(actor.id);
       const point = iso(body.x, body.y);
@@ -286,7 +292,7 @@ export class HeroNativePresentation {
       const moving = !body.attacking && motion.moving;
       const old = this.positions.get(actor.track);
       let heading: { x: number; y: number } | undefined;
-      if (body.attacking) {
+      if (body.attacking || gauntletKnockout) {
         if (u) {
           const enemy =
             typeof u.defenderTarget === 'number'
@@ -335,9 +341,8 @@ export class HeroNativePresentation {
         pack.states[stateName] ??
         pack.states.idle;
       if (!state) continue;
-      const deathAge = elapsed - (body.defeatedAt ?? elapsed);
       fallback?.setVisible(false);
-      if (body.hp <= 0 && deathAge > 1.5) continue;
+      if (body.hp <= 0 && fadeAge > 1.5) continue;
       const rate = u
         ? this.rate(battle, u)
         : d?.kind === 'hero'
@@ -353,7 +358,11 @@ export class HeroNativePresentation {
               : Math.max(0, rate - body.cooldown)
             : clock - since;
       if (pack.normalizedAttack && body.attacking && body.hp > 0) seconds /= Math.max(0.01, rate);
-      const frame = bakedFrame(state, direction, seconds);
+      const frames = state.frames[direction % state.frames.length];
+      const frame =
+        reduced && gauntletKnockout
+          ? frames[frames.length - 1]
+          : bakedFrame(state, direction, seconds);
       const texture = `baked:${actor.key}/${frame.image}`,
         name = `${frame.x}:${frame.y}:${frame.w}:${frame.h}`;
       // Guard every frame selection with a texture lookup: a miss would draw
@@ -365,17 +374,25 @@ export class HeroNativePresentation {
         sprite = this.scene.add.image(0, 0, texture, name).setData('nativeHero', actor.id);
         this.sprites.set(actor.track, sprite);
       }
-      const scale = u && isShrunk(u, elapsed) ? 0.5 : 1;
+      const scale =
+        (u && isShrunk(u, gauntletKnockout ? deathAt : elapsed) ? 0.5 : 1) *
+        (u ? heroGrowthScale(battle, u) : 1);
       const invisible = !!u && (u.native?.effects?.invisibleUntil ?? 0) > elapsed;
       // Unique per-actor depth, like troops (ids of units and defenders are separate spaces).
       const wantDepth = unitDepth(point.y, actor.id, actor.flying, 1.2);
       if (sprite.texture.key !== texture || sprite.frame.name !== name)
         sprite.setTexture(texture, name);
+      // The approved King atlas aliases die to attack recovery. Tilt that static
+      // frame into the same collapse used by its portrait fallback while held.
+      const angle = gauntletKnockout ? -70 : 0;
+      if (sprite.angle !== angle) sprite.setAngle(angle);
       sprite
         .setOrigin(frame.anchorX / frame.w, frame.anchorY / frame.h)
         .setPosition(point.x, point.y - (actor.flying ? lift : 0))
         .setScale((pack.scale ?? 0.6) * scale)
-        .setAlpha(body.hp <= 0 ? Math.max(0, 1 - deathAge / 1.5) : invisible ? 0.35 : 1);
+        .setAlpha(
+          body.hp <= 0 ? Math.min(1, Math.max(0, 1 - fadeAge / 1.5)) : invisible ? 0.35 : 1,
+        );
       // Attackers keep their shared status priority; defenders share the living Poison cue.
       const status =
         u && u.hp > 0

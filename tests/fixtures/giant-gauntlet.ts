@@ -7,6 +7,7 @@ export function gauntletBattle(
   level = 1,
   version = REPLAY_VERSION,
   extraItems: HeroItemSetup[] = [],
+  knockout = false,
 ) {
   const model = new GameModel();
   model.state.obstacles = [];
@@ -15,6 +16,13 @@ export function gauntletBattle(
     makeBuilding(2, 'clancastle', 7, 5, 14),
     makeBuilding(3, 'clancastle', 10, 5, 14),
     makeBuilding(4, 'clancastle', 14, 5, 14),
+    ...(knockout
+      ? [
+          [9, 9],
+          [12, 9],
+          [9, 12],
+        ].map(([x, y], index) => makeBuilding(20 + index, 'cannon', x, y, 21))
+      : []),
   ];
   model.state.nextId = 1000;
   model.state.army = { ...emptyArmy(), giant: 1 };
@@ -76,6 +84,48 @@ export function gauntletRecording(level = 1) {
     active,
     expired,
     ordinary,
+    deadline,
+    unitId: unit.id,
+  };
+}
+
+/** Actual defense fire knocks out an already-active King; reserve troops keep the clock running. */
+export function gauntletKnockoutRecording(level = 1) {
+  const { model, battle, unit } = gauntletBattle(level, undefined, [], true);
+  if (!model.activateNativeHeroAbility('king')) throw Error('Knockout Gauntlet activation failed');
+  const deadline = unit.native!.effects!.splash!.until;
+  const step = () => {
+    if (battle.elapsed > deadline + 3 || battle.finished)
+      throw Error('Gauntlet knockout checkpoint was not reached');
+    model.step(0.05);
+  };
+  const snapshots: { at: number; battle: unknown }[] = [];
+  const snapshot = () =>
+    snapshots.push({ at: battle.elapsed, battle: JSON.parse(JSON.stringify(battle)) });
+  while (battle.elapsed < 0.5 - 1e-9) step();
+  snapshot();
+  const alive = battle.elapsed;
+  while (unit.hp > 0) step();
+  if (unit.defeatedAt === undefined || unit.defeatedAt + 2 >= deadline)
+    throw Error('King did not fall early enough to hold the Gauntlet knockout');
+  while (battle.elapsed < unit.defeatedAt + 2 - 1e-9) step();
+  snapshot();
+  const held = battle.elapsed;
+  while (battle.elapsed < deadline + 0.75 - 1e-9) step();
+  snapshot();
+  const fading = battle.elapsed;
+  while (battle.elapsed < deadline + 1.6 - 1e-9) step();
+  snapshot();
+  const gone = battle.elapsed;
+  step();
+  model.finishBattle();
+  return {
+    data: JSON.parse(JSON.stringify(model.state.raidLog![0].replay!)) as ReplayData,
+    snapshots,
+    alive,
+    held,
+    fading,
+    gone,
     deadline,
     unitId: unit.id,
   };

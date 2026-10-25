@@ -121,6 +121,11 @@ const fakeScene = (
           x: 0,
           y: 0,
           depth: 0,
+          scaleX: 1,
+          scaleY: 1,
+          alpha: 1,
+          angle: 0,
+          visible: true,
           tintTopLeft: 0xffffff,
           tintMode: 0,
           texture: { key: '' },
@@ -133,13 +138,14 @@ const fakeScene = (
           },
           setOrigin: () => sprite,
           setPosition: (x: number, y: number) => ((sprite.x = x), (sprite.y = y), sprite),
-          setScale: () => sprite,
-          setAlpha: () => sprite,
+          setScale: (value: number) => ((sprite.scaleX = sprite.scaleY = value), sprite),
+          setAlpha: (value: number) => ((sprite.alpha = value), sprite),
+          setAngle: (value: number) => ((sprite.angle = value), sprite),
           setTint: (t: number) => ((sprite.tintTopLeft = t), sprite),
           setTintMode: (m: number) => ((sprite.tintMode = m), sprite),
           clearTint: () => ((sprite.tintTopLeft = 0xffffff), (sprite.tintMode = 0), sprite),
           setDepth: (d: number) => ((sprite.depth = d), sprite),
-          setVisible: () => sprite,
+          setVisible: (value: boolean) => ((sprite.visible = value), sprite),
           destroy: () => {},
         };
         return sprite;
@@ -310,6 +316,112 @@ describe('troop native presentation', () => {
 });
 
 describe('hero native presentation', () => {
+  it.each([
+    { level: 1, scale: 1.7, until: 14 },
+    { level: 3, scale: 1.75, until: 14.5 },
+    { level: 6, scale: 1.8, until: 15 },
+    { level: 9, scale: 1.85, until: 15.5 },
+    { level: 12, scale: 1.9, until: 16 },
+    { level: 15, scale: 1.95, until: 16.5 },
+    { level: 18, scale: 2, until: 17 },
+    { level: 21, scale: 2.05, until: 17.5 },
+    { level: 24, scale: 2.1, until: 18 },
+    { level: 27, scale: 2.15, until: 19 },
+  ])(
+    'draws source Gauntlet growth at level $level and restores size at expiry',
+    ({ level, scale, until }) => {
+      const p = new HeroNativePresentation(fakeScene());
+      const atlas = JSON.parse(
+        fs.readFileSync('public/assets/characters/king-v1/atlas.json', 'utf8'),
+      );
+      (p as unknown as { packs: Map<string, unknown> }).packs.set('heroes-native/king', atlas);
+      const king = unit(1, 10, 10, {
+        kind: 'barbarianking',
+        hero: 'king',
+        native: { effects: { splash: { until, radius: 2.5 } } },
+      });
+      const battle = battleOf([king]);
+      battle.nativeHeroes = [
+        {
+          kind: 'king',
+          level: 1,
+          unitId: 1,
+          items: [{ slug: 'giant-gauntlet', level }],
+          abilityAt: 0,
+          abilityUsed: true,
+        },
+      ];
+      const before = JSON.stringify(battle);
+      p.render(battle, false, iso, 70, new Map(), new Map());
+      const sprites = (p as unknown as { sprites: Map<number, { scaleX: number; alpha: number }> })
+        .sprites;
+      expect(sprites.get(1)!.scaleX).toBeCloseTo(atlas.scale * scale, 12);
+      expect(JSON.stringify(battle)).toBe(before);
+      p.render(battle, true, iso, 70, new Map(), new Map());
+      expect(sprites.get(1)!.scaleX).toBeCloseTo(atlas.scale * scale, 12);
+      king.shrink = { since: 0, until: 10, timeLost: 0 };
+      p.render(battle, false, iso, 70, new Map(), new Map());
+      expect(sprites.get(1)!.scaleX).toBeCloseTo(atlas.scale * scale * 0.5, 12);
+      delete king.shrink;
+      battle.elapsed = until;
+      p.render(battle, false, iso, 70, new Map(), new Map());
+      expect(sprites.get(1)!.scaleX).toBe(atlas.scale);
+    },
+  );
+
+  it.each([false, true])(
+    'holds the enlarged Gauntlet knockout before fading, reduced=%s',
+    (reduced) => {
+      const p = new HeroNativePresentation(fakeScene());
+      const atlas = JSON.parse(
+        fs.readFileSync('public/assets/characters/king-v1/atlas.json', 'utf8'),
+      );
+      (p as unknown as { packs: Map<string, unknown> }).packs.set('heroes-native/king', atlas);
+      const king = unit(1, 10, 10, {
+        kind: 'barbarianking',
+        hero: 'king',
+        hp: 0,
+        defeatedAt: 2,
+        native: { effects: { splash: { until: 14, radius: 2.5 } } },
+      });
+      const battle = battleOf([king]);
+      battle.nativeHeroes = [
+        {
+          kind: 'king',
+          level: 1,
+          unitId: 1,
+          items: [{ slug: 'giant-gauntlet', level: 1 }],
+          abilityAt: 0,
+          abilityUsed: true,
+        },
+      ];
+      const sprites = (
+        p as unknown as {
+          sprites: Map<
+            number,
+            { scaleX: number; alpha: number; angle: number; frame: { name: string } }
+          >;
+        }
+      ).sprites;
+      battle.elapsed = 5;
+      p.render(battle, reduced, iso, 70, new Map(), new Map());
+      expect(sprites.get(1)?.alpha).toBe(1);
+      expect(sprites.get(1)?.angle).toBe(-70);
+      expect(sprites.get(1)!.scaleX).toBeCloseTo(atlas.scale * 1.7, 12);
+      const frame = atlas.states.die.frames[2].at(-1);
+      expect(sprites.get(1)!.frame.name).toBe(`${frame.x}:${frame.y}:${frame.w}:${frame.h}`);
+      battle.elapsed = 14.75;
+      p.render(battle, reduced, iso, 70, new Map(), new Map());
+      expect(sprites.get(1)!.scaleX).toBe(atlas.scale);
+      expect(sprites.get(1)!.alpha).toBeCloseTo(0.5, 12);
+      battle.elapsed = 15.55;
+      p.render(battle, reduced, iso, 70, new Map(), new Map());
+      expect(sprites.has(1)).toBe(false);
+      battle.elapsed = 5;
+      p.render(battle, reduced, iso, 70, new Map(), new Map());
+      expect(sprites.get(1)?.alpha).toBe(1);
+    },
+  );
   for (const effect of ['poison', 'chill', 'boost'] as const)
     it.each([
       { pet: 'frosty' as const, frame: 2 },

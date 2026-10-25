@@ -91,6 +91,7 @@ import { santaTrapFrame } from './santa-art';
 import { preloadSanta, SantaPresentation } from './santa-scene';
 import { preloadShrinkTraps, ShrinkTrapPresentation } from './shrink-trap-scene';
 import { isShrunk } from './shrink-trap';
+import { heroGrowthScale, heroKnockoutFadeAt } from './hero-growth';
 import { loadShrinkArt, shrinkArtLoaded } from './shrink-trap-poses';
 import { preloadXbows, XbowPresentation } from './xbow-scene';
 import { XBOW_ART } from './xbow-art';
@@ -4899,8 +4900,8 @@ export class VillageScene extends Phaser.Scene {
       const statusTime = u.hp <= 0 ? (u.defeatedAt ?? battle.elapsed) : battle.elapsed;
       // Local visual half-scale; health, collision space and projectile speed are unchanged.
       const shrinkScale = isShrunk(u, statusTime) ? 0.5 : 1;
-      const width =
-        (u.hero ? KING_ART.width : TROOPS[u.kind].width * art.displayScale) * shrinkScale;
+      const bodyScale = shrinkScale * heroGrowthScale(battle, u);
+      const width = (u.hero ? KING_ART.width : TROOPS[u.kind].width * art.displayScale) * bodyScale;
       if (im.displayWidth !== width || im.displayHeight !== width) im.setDisplaySize(width, width);
       if (im.getData('shrinkScale') !== shrinkScale) im.setData('shrinkScale', shrinkScale);
       // A native view stands in for this unit and hides its sprite every frame: only the
@@ -4974,13 +4975,25 @@ export class VillageScene extends Phaser.Scene {
       }
       if (u.hp <= 0) {
         const at = u.defeatedAt ?? im.getData('defeatedAt') ?? battle.elapsed;
+        const fadeAt = u.defeatedAt === undefined ? at : heroKnockoutFadeAt(battle, u);
+        const gauntletKnockout = fadeAt > at + 1e-9;
         const pose = defeatPose(
-          battle.finished ? Infinity : battle.elapsed - at,
+          gauntletKnockout
+            ? Math.max(0, battle.elapsed - fadeAt)
+            : battle.finished
+              ? Infinity
+              : battle.elapsed - at,
           u.ejected ? 'spring' : flying ? 'air' : 'ground',
           im.getData('facing') ?? -1,
           reduced,
           AIR_LIFT,
         );
+        if (gauntletKnockout) {
+          pose.angle = (im.getData('facing') ?? -1) < 0 ? -70 : 70;
+          const fadeAge = Math.max(0, battle.elapsed - fadeAt);
+          pose.visible = fadeAge < 1.5;
+          pose.alpha = Math.max(0, 1 - fadeAge / 1.5);
+        }
         // One-time death styling; the animated fade values below are guarded so
         // a settled corpse writes nothing (any depth write re-sorts Phaser's
         // whole display list).
@@ -5080,7 +5093,7 @@ export class VillageScene extends Phaser.Scene {
       if (u.hp < u.maxHp)
         this.bar(
           p.x,
-          p.y - lift - (u.hero ? KING_ART.healthHeight * shrinkScale : im.displayHeight),
+          p.y - lift - (u.hero ? KING_ART.healthHeight * bodyScale : im.displayHeight),
           22,
           u.hp / u.maxHp,
           0x8dea68,
