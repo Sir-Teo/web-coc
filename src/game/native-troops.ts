@@ -32,6 +32,7 @@ import {
   type UnitEffects,
 } from './native-status';
 import { heroStatsFor } from './native-heroes';
+import { heroAttackInterval } from './native-hero-abilities';
 import {
   isHeroUnitKind,
   isPetUnitKind,
@@ -497,9 +498,11 @@ export function stepNativeUnit(
   dt: number,
 ) {
   const battle = ctx.battle;
-  const s = statsFor(battle, u);
+  let s = statsFor(battle, u);
   const state = (u.native ??= {});
   const at = battle.elapsed;
+  if (battle.nativeChampionHaste && u.kind === 'royalchampion')
+    s = { ...s, rate: heroAttackInterval(u, at, s.rate) };
   stepLifecycle(ctx, u, s, at);
   if (u.hp <= 0) return;
   if (unitFrozen(u, at)) {

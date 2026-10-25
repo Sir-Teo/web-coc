@@ -276,3 +276,23 @@ Frosty, Ice Hound Pups, all four defender action paths with Poison overlap, expi
 through Recall and portable backward seeks. `tests/browser/defender-frost.spec.ts` checks the
 uploaded native arrow, blue Hero bodies, expiry and historical playback on desktop and a
 reduced-motion phone.
+
+## Version 78 Royal Champion Haste Vial combat intervals
+
+Haste Vial now changes the Royal Champion's actual attack interval against buildings and both
+defender layers. The ability previously recorded an interval used by animation while combat kept
+the passive base rate. The [Haste Vial source comparison](../reference/official-wiki/heroes-pets/haste-vial.md)
+matches the active override divided by the equipped passive attack-speed bonus: level 1 uses
+750 ms / 1.05 = 0.714 s; level 18 uses 600 ms / 1.16 = 0.517 s. Intermediate tiers use the source
+666 ms override. Native Poison/chill and other attack-speed modifiers still apply afterward.
+
+Damage per hit keeps its existing passive value throughout activation and expiry. Each newly
+fired attack resets to the applicable interval; expiry returns subsequent attacks to the passive
+base rate. The existing target-acquisition delay remains in force. Versions 77 and earlier keep
+their original combat rate and uncombined animation override. Stick Horse deployment timing,
+extra-damage/limited-hit equipment and life steal remain separate follow-up work.
+
+`tests/champion-haste.test.ts` covers all override tiers, passive speed, unchanged hit damage,
+Poison, both defender layers, actual attacks through expiry and exact portable backward seeks.
+`tests/browser/champion-haste.spec.ts` checks level 1 and 18 attack poses, cooldowns, expiry and
+the historical rule on desktop and phone.

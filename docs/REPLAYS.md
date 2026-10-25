@@ -179,3 +179,11 @@ interpretation, independent of full Freeze/stun and with a blue status cue. Mono
 projectile override remains available without adding its building %-HP damage to defenders.
 Real ground/air Queen attacks reconstruct through portable files and backward seeks. Versions
 76 and earlier preserve their generic defender arrows and direct-only hits.
+
+## Version 78: Royal Champion Haste Vial intervals
+
+Haste Vial's active source interval now governs Royal Champion combat, divided by the equipped
+passive attack-speed bonus. Native status modifiers apply afterward. Damage per hit is preserved,
+and newly fired attacks return to the passive base interval after expiry. Real Haste activation,
+building hits and expiry reconstruct through portable files and backward seeks. Versions 77 and
+earlier retain their prior combat rate and uncombined animation override.

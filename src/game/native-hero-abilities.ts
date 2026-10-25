@@ -10,6 +10,7 @@ import {
   heroAbilities,
   heroAbilityHeal,
   heroStatsFor,
+  itemBonuses,
   type NativeBattleHero,
   type HeroAbility,
 } from './native-heroes';
@@ -65,7 +66,15 @@ function applyAbility(
       damage: Math.max(effects.boost?.damage ?? 0, damage),
       attackSpeed: effects.boost?.attackSpeed ?? 0,
     };
-    if (rate > 0) effects.attackInterval = { until: at + duration, seconds: rate };
+    if (rate > 0)
+      effects.attackInterval = {
+        until: at + duration,
+        seconds:
+          rate /
+          (battle.nativeChampionHaste && hero.kind === 'champion'
+            ? 1 + itemBonuses(hero).attackSpeed
+            : 1),
+      };
   }
   const shield = num(row, 'ShieldProtectionPercent') / 100;
   if (shield > 0 && duration > 0)
