@@ -151,6 +151,14 @@ pets contribute their own native shot. `heroSetups()` supplies the same ready-ho
 battle creation. `tests/browser/hero-projectile-prefetch.spec.ts` holds actual equipment graphs,
 changes a home loadout, and checks the first native shot in a local attack and an imported phone replay.
 
+Native battle pack loaders track ownership of the texture objects they upload or reuse. Destroying a loader
+releases its pages once the last live loader stops using them, while externally registered or
+replaced textures remain intact. A failed multi-page upload releases its partial pages and cancels
+late decode completions; obsolete requests cannot restart after destruction. A pack becomes ready
+only when every texture registration succeeds. The existing failure cooldown and reconnect retry
+still apply. `tests/native-art-pack-lifecycle.test.ts` covers ownership, cancellation and recovery;
+`tests/browser/native-pack-lifecycle.spec.ts` checks real shared GPU textures and a held second page.
+
 Village building graphs also recover from failed downloads: the pending marker clears
 after failure and retries back off from five seconds to five minutes. The fallback stays
 visible while the native graph or level pages are unavailable. Going online makes failed
