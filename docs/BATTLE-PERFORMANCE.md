@@ -1512,6 +1512,34 @@ with no page errors or developer hooks.
 Standard production checks pass online in both engines and offline in Chromium (cache
 `e8c86bf838ab`).
 
+## Phone previews load artwork on demand
+
+The default development page previously preloaded every deferred defense family and walk
+sheet even on a phone. Coarse-pointer previews now use the same demand loading and idle
+release policy as production. Desktop development keeps its visual gallery preload;
+`?eagerart` explicitly enables it on a phone, and `?lazyart` overrides either default.
+
+Fresh 390×844, 3×-density browser contexts show 391 GPU textures and about 290.8 MiB of
+nominal RGBA storage with the old eager preload, versus 92 textures and 33.4 MiB with demand
+loading in both Chromium and WebKit. This avoids 299 unused uploads and about 257.4 MiB
+(88.5%) of texture storage in a starter village. The same probes report no page errors or
+context loss. These are software-browser resource counts, not physical-phone FPS or total
+process-memory measurements. Production already uses demand loading; this change improves
+the phone development preview.
+
+The actual default page after the change holds the same 92 textures in both engines.
+Four loading cases per engine cover phone startup, a newly requested battle defense,
+the explicit gallery, lazy-over-eager precedence and the desktop default. Adjacent checks
+pass for army touch controls, battery saver and village objects, plus Chromium's two
+momentum-pan cases and WebKit's three browser-gesture cases (14 cases in Chromium and
+15 in WebKit overall). The pan checks compare the visible world center, since adaptive
+density changes physical camera offsets while preserving that view.
+
+The full check passes 3,012 tests across 334 files, strict types, documentation links and
+the production build. All 3,743 compiled files are byte-identical to the preceding validated
+wall checkpoint, including offline cache `e8c86bf838ab`; the production online checks in
+both engines and Chromium's offline checks therefore cover the exact same build.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

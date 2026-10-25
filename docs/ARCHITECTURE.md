@@ -70,8 +70,10 @@ pages load in one batch once the village appears. Each defense family the villag
 does not own (`ART_FAMILIES` in `scene.ts`, the X-Bow and Santa among them) loads the first time
 the home village, a battle or a placement draws it; a battle that needs one holds
 its clock and input until it lands, as it does for late campaign art. The dev
-server loads every family right after boot instead (the browser specs rely on it);
-`?lazyart` gives a dev page the production behavior. Families the home village
+server loads every family right after boot on desktop instead (visual browser specs rely
+on it). A coarse-pointer phone preview uses production's demand loading by default;
+`?eagerart` explicitly preloads the gallery on a phone, while `?lazyart` forces demand
+loading on any device and takes precedence if both are present. Families the home village
 does not draw, and the late campaign art, are released again after the player has
 been home for a while. A family can also be needed by something other than a
 building (`needed`): the Clan Castle garrison defenders load when a battle or replay with

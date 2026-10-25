@@ -334,11 +334,6 @@ interface LateArtRequest {
   /** Undefined preserves the explicit full preload. */
   animations?: ReadonlySet<string>;
 }
-/**
- * Whether every deferred family loads right after boot. The dev server does, which is what the
- * browser specs were written against (all families resident once boot settles); `?lazyart`
- * opts a dev page into the production behavior of loading each family on first use.
- */
 /** Idle home frame-rate ceiling (see VillageScene.updateIdleRate). */
 const IDLE_AFTER_MS = 5000;
 const IDLE_FPS = 30;
@@ -349,8 +344,16 @@ const SAVER_MAX_DENSITY = 2;
 const IDLE_WAKE_EVENTS = ['pointerdown', 'pointermove', 'wheel', 'keydown', 'touchstart'] as const;
 /** Bounded backoff for a failed art request: 5 s, 10 s, 20 s ... capped at five minutes. */
 const artRetryDelay = (attempts: number) => Math.min(300_000, 5000 * 2 ** (attempts - 1));
+/**
+ * Desktop development preloads every family for visual QA. Phones use production's demand
+ * loading to avoid hundreds of unused uploads. `?eagerart` explicitly enables the gallery
+ * preload; `?lazyart` always keeps demand loading, including on desktop.
+ */
 const EAGER_FAMILIES =
-  import.meta.env.DEV && typeof location !== 'undefined' && !location.search.includes('lazyart');
+  import.meta.env.DEV &&
+  typeof location !== 'undefined' &&
+  !location.search.includes('lazyart') &&
+  (location.search.includes('eagerart') || !globalThis.matchMedia?.('(pointer: coarse)').matches);
 const XBOW_FAMILY: ArtFamily = {
   draws: (b) => b.kind === 'xbow',
   prepare: loadXbowArt,
@@ -1716,7 +1719,7 @@ export class VillageScene extends Phaser.Scene {
    * Releases families the home village does not draw once the player has been
    * home for FAMILY_RELEASE_MS, as the late campaign art is: a few battles otherwise left every
    * defense family resident for the rest of the session. A later battle loads them again under
-   * the usual hold. Dev pages keep every family (EAGER_FAMILIES).
+   * the usual hold. Eager development pages keep every family (EAGER_FAMILIES).
    */
   private releaseIdleFamilies(time: number) {
     if (
@@ -2080,8 +2083,8 @@ export class VillageScene extends Phaser.Scene {
           (key) => this.deferredArt.loading(key),
         );
         this.load.start();
-        // The dev server (and so every browser spec) loads every family now, as all of them
-        // once loaded at boot; production loads each one when something first draws it.
+        // Desktop visual QA can keep every family resident. Phones and production only load
+        // the families something draws.
         if (EAGER_FAMILIES) void this.loadFamilies(this.deferredFamilies);
       };
       // The late-campaign bundle may own the loader; wait for it first.

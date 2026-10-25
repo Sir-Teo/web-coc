@@ -132,7 +132,7 @@ test('walk sheets load for the troops a village holds, others when first shown',
   page.on('request', (r) => requested.push(new URL(r.url()).pathname));
   page.on('pageerror', (e) => errors.push(e.message));
   await page.setViewportSize({ width: 390, height: 844 });
-  // `?lazyart` gives the production loading; the dev server otherwise loads every sheet.
+  // `?lazyart` gives production loading, including in desktop development.
   await page.goto('/?lazyart');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   const walks = () =>

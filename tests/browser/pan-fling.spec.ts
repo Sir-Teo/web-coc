@@ -10,7 +10,9 @@ test.use({
 const scroll = (page: Page) =>
   page.evaluate(() => {
     const c = window.__game.scene.cameras.main;
-    return { x: c.scrollX, y: c.scrollY };
+    // Adaptive density changes the physical viewport and scroll offset while preserving
+    // the world center. Compare the visible view across that resize.
+    return { x: c.scrollX + c.width / 2, y: c.scrollY + c.height / 2 };
   });
 
 async function boot(page: Page) {
