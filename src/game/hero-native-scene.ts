@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import { BUILDINGS, TROOPS } from './data';
 import { HERO_UNIT, PET_UNIT } from './native-hero-data';
 import { heroStatsFor } from './native-heroes';
+import { nativeUnitStats } from './native-units';
 import { heroAttackInterval } from './native-hero-abilities';
 import { unitAttackIntervalScale } from './native-status';
 import type { Battle, Unit } from './model';
@@ -336,7 +337,11 @@ export class HeroNativePresentation {
       const deathAge = elapsed - (body.defeatedAt ?? elapsed);
       fallback?.setVisible(false);
       if (body.hp <= 0 && deathAge > 1.5) continue;
-      const rate = u ? this.rate(battle, u) : 1;
+      const rate = u
+        ? this.rate(battle, u)
+        : d?.kind === 'hero'
+          ? nativeUnitStats(HERO_UNIT[d.hero], d.level).rate
+          : 1;
       let seconds = reduced
         ? 0
         : body.hp <= 0

@@ -127,6 +127,15 @@ See [the source record and exact prompts](../art/source/hero-redesign-v1/README.
 Run `npm run test:heroes:art` to verify the reproducible image imports. Original native hero
 assets remain preserved as references; this change only replaces the presentation.
 
+Defending Hero attack clips normalize against the Hero's source interval, matching the interval
+used to reset its combat cooldown. The former one-second rendering constant delayed the King and
+Warden's windup and advanced the Queen's. Poison and frost advance the same cooldown more slowly,
+so their body poses follow it without another speed multiplier. The correction changes presentation
+only; old recordings keep their combat rules. `tests/native-unit-presentation.test.ts` checks all
+six Hero atlases, slowed clocks, paused redraws and reduced motion. The real King/Queen exchanges
+in `tests/browser/defending-hero-animation.spec.ts` check first and repeat attack frames, portable
+backward seeks and motion-mode switching on desktop and phone.
+
 ## Version 60 defending hero Poison
 
 Defending heroes use the spell’s signed `SpeedBoost` and `AttackSpeedBoost` as slowdowns, matching native attacking units, and apply `HeroDamageMultiplier` to poison damage. In versions 60–66, level-1 Poison retains 74% movement speed; version 67 corrects this to 87% using the hero movement multiplier below. The attack clock retains 65%, and heroes take 5% of the ramping poison damage. The previous calculation subtracted negative modifiers, accelerating heroes, and applied full troop poison damage. Versions 52–59 preserve that calculation for replay compatibility. Guardians and ordinary garrison defenders retain their existing rules.

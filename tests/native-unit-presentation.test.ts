@@ -1,6 +1,9 @@
 import fs from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import { makeBuilding, type Battle, type Unit } from '../src/game/model';
+import { defendingHero, stepDefendingHeroes } from '../src/game/defending-heroes';
+import { HERO_UNIT } from '../src/game/native-hero-data';
+import { nativeUnitStats } from '../src/game/native-units';
 
 // Scene views are Phaser objects; record what the presentations ask them to draw instead.
 vi.mock('../src/game/native-scene-view', () => {
@@ -78,7 +81,7 @@ vi.mock('../src/game/native-mesh-scene', () => ({
 
 const { UnitMotionTracker, unitAnimationPhase } = await import('../src/game/unit-motion');
 const { TroopNativePresentation } = await import('../src/game/troop-native-scene');
-const { HeroNativePresentation } = await import('../src/game/hero-native-scene');
+const { HeroNativePresentation, heroArtDirectory } = await import('../src/game/hero-native-scene');
 const { NativeDefenseEventLog, NativeDefensePresentation, NATIVE_DEFENSE_SPELL_KIND } =
   await import('../src/game/native-defense-scene');
 const { NativeProjectilePresentation } = await import('../src/game/native-projectile-scene');
@@ -305,6 +308,57 @@ describe('troop native presentation', () => {
 });
 
 describe('hero native presentation', () => {
+  it.each([
+    { kind: 'king' as const, at: 0.45, frame: 2, slow: 'normal' },
+    { kind: 'queen' as const, at: 0.1, frame: 0, slow: 'normal' },
+    { kind: 'warden' as const, at: 0.45, frame: 1, slow: 'normal' },
+    { kind: 'champion' as const, at: 0.45, frame: 2, slow: 'normal' },
+    { kind: 'prince' as const, at: 0.1, frame: 0, slow: 'normal' },
+    { kind: 'duke' as const, at: 0.45, frame: 2, slow: 'normal' },
+    { kind: 'king' as const, at: 0.5, frame: 1, slow: 'poison' },
+    { kind: 'queen' as const, at: 0.5, frame: 1, slow: 'poison' },
+    { kind: 'king' as const, at: 0.4, frame: 1, slow: 'frost' },
+    { kind: 'queen' as const, at: 0.4, frame: 2, slow: 'frost' },
+  ])(
+    'draws defending $kind at its source phase after $at seconds with $slow speed',
+    ({ kind, at, frame, slow }) => {
+      const p = new HeroNativePresentation(fakeScene());
+      const atlas = JSON.parse(
+        fs.readFileSync(`public${heroArtDirectory(`heroes-native/${kind}`)}/atlas.json`, 'utf8'),
+      );
+      (p as unknown as { packs: Map<string, unknown> }).packs.set(`heroes-native/${kind}`, atlas);
+      const target = unit(1, 10.5, 10, { hp: 10000, maxHp: 10000, path: [] });
+      const battle = battleOf([target]);
+      const defender = defendingHero({ kind, level: 1, x: 10, y: 10 }, 0);
+      defender.cooldown = nativeUnitStats(HERO_UNIT[kind], 1).rate;
+      battle.nativeDefendingHeroPoison = true;
+      if (slow === 'poison') defender.poison = { since: 0, until: 5, speed: -0.4, attack: -0.55 };
+      if (slow === 'frost') defender.frost = { until: 5, percent: 0.25 };
+      battle.defenders = [defender];
+      battle.elapsed = at;
+      stepDefendingHeroes(battle, at, () => {});
+      expect(defender.attacking).toBe(true);
+      p.render(battle, false, iso, 70, new Map(), new Map());
+      const sprite = (
+        p as unknown as {
+          sprites: Map<number, { texture: { key: string }; frame: { name: string } }>;
+        }
+      ).sprites.get(-1 - defender.id)!;
+      const state =
+        atlas.states[defender.mode === 'air' ? 'alt_attack' : 'attack'] ?? atlas.states.attack;
+      const expected = state.frames[1][frame];
+      expect(sprite.texture.key).toBe(`baked:heroes-native/${kind}/${expected.image}`);
+      expect(sprite.frame.name).toBe(`${expected.x}:${expected.y}:${expected.w}:${expected.h}`);
+      // Paused redraws preserve the pose; reduced motion selects a static idle frame.
+      p.render(battle, false, iso, 70, new Map(), new Map());
+      expect(sprite.frame.name).toBe(`${expected.x}:${expected.y}:${expected.w}:${expected.h}`);
+      p.render(battle, true, iso, 70, new Map(), new Map());
+      const idle = (
+        atlas.states[defender.mode === 'air' ? 'alt_idle' : 'idle'] ?? atlas.states.idle
+      ).frames[1][0];
+      expect(sprite.frame.name).toBe(`${idle.x}:${idle.y}:${idle.w}:${idle.h}`);
+    },
+  );
   it('advances the walk clip between sim steps instead of restarting it', () => {
     const scene = fakeScene();
     const p = new HeroNativePresentation(scene);
