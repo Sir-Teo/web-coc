@@ -296,6 +296,14 @@ function harmDefense(
     if (distance2D(d.x - x, d.y - y) > radius + 1e-9) continue;
     if ((freeze > 0 && !overgrowth) || stun > 0)
       d.stunnedUntil = Math.max(d.stunnedUntil ?? 0, at + Math.max(freeze, stun));
+    if (
+      battle.nativeDefenderFreezeCue &&
+      freeze > 0 &&
+      freezePercent === 0 &&
+      stun === 0 &&
+      !overgrowth
+    )
+      d.frozenUntil = Math.max(d.frozenUntil ?? 0, at + freeze);
     if (quakeTroop > 0 && d.mode === 'ground') hurtDefender(battle, d, d.maxHp * quakeTroop);
     if (poison > 0) {
       poisonDefender(battle, d, row, at, cast.interval);

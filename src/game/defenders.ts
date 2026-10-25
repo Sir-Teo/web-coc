@@ -50,6 +50,8 @@ interface DefenderState {
   avoidingPoison?: true;
   defeatedAt?: number;
   stunnedUntil?: number;
+  /** Version 68: full Freeze cue, separate from Lightning and other short stuns. */
+  frozenUntil?: number;
   /** Version 45 Poison Spell exposure: slows movement and attacks while it lasts. */
   poison?: {
     since: number;

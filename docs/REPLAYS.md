@@ -121,3 +121,7 @@ Defensive native Poison pulses keep their shared attacker damage clock and slow 
 ## Version 67: Hero movement under native Poison spell clouds
 
 Native spell Poison movement modifiers now apply the client’s 50% hero multiplier with integer truncation on both sides of a battle. Spell Tower Poison retains 83% Hero movement speed instead of 65%; attack slow and poison damage stay unchanged. Direct Hero Hunter projectile poison retains its existing behavior. Versions 66 and earlier preserve their previous movement calculation. Recorded King deployments and Poison Spell Tower casts reconstruct exactly through portable files and backward seeks.
+
+## Version 68: distinct Freeze cues on defending units
+
+Full native freezes record a separate defender `frozenUntil` deadline for artwork, alongside the existing stun deadline used by combat. Heroes, Guardians, garrison troops and Skeleton Trap defenders can therefore show the same icy tint as attacking units without coloring Lightning or Totem stuns as Freeze. Freeze takes priority over Poison; thaw and death restore the remaining status or original artwork. Older recordings keep their previous state shape and appearance. Exact replay comparisons confirm that version 68 changes only the new visual fields, with damage, movement and attack timing identical to version 67.

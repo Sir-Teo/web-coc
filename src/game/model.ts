@@ -800,6 +800,8 @@ export interface Battle {
   nativeAttackerPoisonClock?: true;
   /** Version 67: native spell Poison movement modifiers use the client hero multiplier. */
   nativeHeroPoisonSpeed?: true;
+  /** Version 68: full native freezes carry a distinct visual deadline on defenders. */
+  nativeDefenderFreezeCue?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */

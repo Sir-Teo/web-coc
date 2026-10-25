@@ -48,11 +48,11 @@ export function unitStatusTint(
   return undefined;
 }
 
-/** Poison cue for living defenders; expiry and death restore their original artwork. */
+/** Living defenders share the attacker's Freeze-before-Poison priority. */
 export function defenderStatusTint(defender: Defender, at: number): UnitStatusTint | undefined {
-  return defender.hp > 0 && defender.poison && defender.poison.until > at
-    ? tints.poison
-    : undefined;
+  if (defender.hp <= 0) return undefined;
+  if ((defender.frozenUntil ?? 0) > at) return tints.frozen;
+  return defender.poison && defender.poison.until > at ? tints.poison : undefined;
 }
 
 /**

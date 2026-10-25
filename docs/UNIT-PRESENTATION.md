@@ -20,6 +20,8 @@ hero sprites are removed without WebGL errors.
 
 Living defending Heroes, Guardians, garrison troops and Skeleton Trap defenders now share the attacker’s green Poison cue while their native poison status is active. Native mesh colors compose with that tint, and expiry or defeat restores the original artwork or death styling. The cue reconstructs through replay seeks. `tests/browser/defender-poison-tint.spec.ts` checks each renderer on desktop and phone, including stable repeated renders, expiry, death and cleanup.
 
+From recording version 68, those same defender bodies show the attacker’s icy blue tint during a full native Freeze. A separate visual deadline distinguishes Freeze from Lightning and Totem stuns; it does not change damage, movement or attack timing. Freeze takes priority over Poison, and thaw restores the underlying Poison cue or original artwork. Death removes both cues. `tests/defender-freeze-tint.test.ts` checks exact portable seeks, overlap, expiry and unchanged version-67 combat state; `tests/browser/defender-freeze-tint.spec.ts` checks all four renderers on desktop and reduced-motion phone views.
+
 ## Earlier sprite artwork and feedback
 
 The starter melee troop now uses the [Barbarian name, portrait and four-frame atlas](BARBARIAN-ART.md), with a fixed idle frame and no procedural walk bob. Its internal save/replay key remains `swordsman`.
