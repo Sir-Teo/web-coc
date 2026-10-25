@@ -174,6 +174,15 @@ pages from every attempt; returning home can still release the whole unused bund
 in-flight retry cannot race that idle release. `tests/browser/late-art-recovery.spec.ts`
 checks fallback visibility, independent families, recovery and GPU-page release after retry.
 
+Dragon 7 and Golden Dragon retain separate animation graphs, presenter prefixes and shadow
+sets, while `nativeMeshTexture` resolves their identical atlas page to one Phaser texture key.
+The Dragon foundation family stays needed for either character and claims the resident page
+from both late-batch ownership lists if the late loader uploaded it first. This keeps late-art
+cleanup from deleting the shared page; an unused late-only preload still releases normally.
+The importer and atlas tests verify identical page dimensions, UVs and pixels before sharing.
+`tests/browser/shared-dragon-atlas.spec.ts` checks a single GPU allocation, separate shadows,
+both load orders, home release/reload, retained home buildings, reconnect and context restoration.
+
 Ghost Trap coffins belong to the shared Skeleton Trap art family, including a cold visit to
 Go to Bat, which has Ghost Traps and no ordinary Skeleton Traps. The presenter waits for both
 the armed and triggered atlases before hiding its fallback. The family retains any coffin

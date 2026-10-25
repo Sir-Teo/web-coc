@@ -1109,6 +1109,34 @@ A compiled phone-sized replay containing Dragon 5, Dragon 7 and Golden Dragon re
 both compact WebP pages and reaches the same recorded defender state in both engines,
 with no page errors or developer hooks (cache `2bfb804b9a64`).
 
+## Sharing the Dragon atlas between presenters
+
+A phone-sized battle containing both Dragon 7 and Golden Dragon uploaded their identical
+compact page twice, under separate presenter keys. Their page now resolves to one Phaser
+texture key. Each presenter retains its own graph, prefix, transforms, colors and shadow
+identification. The Dragon foundation family owns the page while either character needs it;
+if the late batch uploaded it first, ownership transfers out of both late release lists.
+An unused late-only preload can still release it, and returning home releases the foundation
+page after its existing grace period.
+
+At 390×844 and 3× device scale with canvas density fixed at 0.5, the Chromium probe reports
+one atlas allocation instead of two, saving 15,955,328 B (15.2 MiB) of nominal RGBA storage.
+All newly allocated texture wrappers in this fixture fall from 35,631,668 to 19,676,336 B
+(44.8%); a redundant four-byte color texture also disappears. Both native Dragons remain
+visible, with no missing textures, page errors or GL errors. These are allocation counts
+and dimensions, not driver memory or physical-phone frame-rate measurements.
+
+Phone regression checks exercise simultaneous Dragons with separate shadows, context
+restoration, late-first ownership transfer, complete home release and reload, late cleanup
+beside a retained home Monolith, and recovery after an atlas request returns HTTP 503.
+
+Validation: all 15 relevant browser cases pass in each engine (four new sharing cases,
+seven garrison-loading regressions and four recovery regressions). `npm run check` passes
+all 3,004 tests in 331 files, strict types and the production build. The compiled
+three-Dragon phone replay reaches exactly the earlier build's recorded defender state in
+both engines, with no page errors or developer hooks. Standard production checks pass
+online in both engines and offline in Chromium (cache `1b3b6a1bcd77`).
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

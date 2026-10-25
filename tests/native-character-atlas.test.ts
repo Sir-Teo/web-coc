@@ -5,6 +5,7 @@ import evidence from '../reference/characters/art.json';
 import dragon5 from '../reference/characters/dragon/dragon5.json';
 import golden from '../reference/characters/dragon/golden-dragon.json';
 import dragon7 from '../reference/garrison/dragon7.json';
+import { nativeMeshTexture } from '../src/game/native-mesh';
 
 const hash = (data: Buffer) => createHash('sha256').update(data).digest('hex');
 
@@ -84,4 +85,8 @@ for (const [name, runtime, bytes] of [
 it('shares the packed Golden Dragon page with Dragon 7', () => {
   expect(dragon7.textures).toEqual(golden.textures);
   expect(dragon7.shapes).toEqual(golden.shapes);
+  expect(nativeMeshTexture('character-golden-dragon', 0)).toBe(
+    nativeMeshTexture('garrison-dragon', '0'),
+  );
+  expect(nativeMeshTexture('character-golden-dragon', 1)).toBe('character-golden-dragon:mesh:1');
 });

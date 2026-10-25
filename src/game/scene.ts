@@ -72,7 +72,12 @@ import { SPELL_SOURCE } from './spell-progression';
 import { garrisonStats, isGarrisonKind } from './garrison-kinds';
 import { nativeMeshTexture } from './native-mesh';
 import { characterBarHeight } from './character-poses';
-import { characterArtLoaded, commonDeathArt, loadCharacterArt } from './character-art';
+import {
+  characterArt,
+  characterArtLoaded,
+  commonDeathArt,
+  loadCharacterArt,
+} from './character-art';
 import { preloadCastles, CastlePresentation } from './castle-scene';
 import { CASTLE_ART } from './castle-art';
 import { castleArtLoaded, castleBounds, loadCastleArt } from './castle-graph';
@@ -396,18 +401,33 @@ const GARRISON_SHARED_FAMILY: ArtFamily = {
     preloadGarrisonTroops(scene);
   },
 };
+const GARRISON_DRAGON_FAMILY: ArtFamily = {
+  draws: () => false,
+  needed: (model) => {
+    if (!model.battle) return false;
+    const animations = foundationAnimations(model.battle);
+    return animations.has('Dragon7') || animations.has('Golden Dragon');
+  },
+  prepare: loadCharacterArt,
+  prepared: characterArtLoaded,
+  preload: (scene) => preloadGarrisonCharacter(scene, 'Dragon7'),
+};
 const ART_FAMILIES: ArtFamily[] = [
   XBOW_FAMILY,
   LEGACY_KING_FAMILY,
   // Shared effects precede the independent bodies, so the family owns their common pages.
   GARRISON_SHARED_FAMILY,
-  ...BOOT_GARRISON_CHARACTERS.map((name): ArtFamily => ({
-    draws: () => false,
-    needed: (model) => !!model.battle && foundationAnimations(model.battle).has(name),
-    prepare: loadCharacterArt,
-    prepared: characterArtLoaded,
-    preload: (scene) => preloadGarrisonCharacter(scene, name),
-  })),
+  ...BOOT_GARRISON_CHARACTERS.map((name): ArtFamily =>
+    name === 'Dragon7'
+      ? GARRISON_DRAGON_FAMILY
+      : {
+          draws: () => false,
+          needed: (model) => !!model.battle && foundationAnimations(model.battle).has(name),
+          prepare: loadCharacterArt,
+          prepared: characterArtLoaded,
+          preload: (scene) => preloadGarrisonCharacter(scene, name),
+        },
+  ),
   // The Skeleton Trap's skeletons (two sheets, about 0.1 MB): with a village that has the trap.
   {
     draws: (b) => b.kind === 'skeletontrap',
@@ -894,16 +914,15 @@ export class VillageScene extends Phaser.Scene {
     this.trackFamilyTextures(family, keys);
   }
   private trackFamilyTextures(family: ArtFamily, keys: string[]) {
-    if (family === GARRISON_SHARED_FAMILY) {
-      const death = commonDeathArt();
-      const shared = Object.keys(death.graph.textures).map((id) =>
-        nativeMeshTexture(death.prefix, id),
-      );
+    if (family === GARRISON_SHARED_FAMILY || family === GARRISON_DRAGON_FAMILY) {
+      const art = family === GARRISON_SHARED_FAMILY ? commonDeathArt() : characterArt('Dragon7');
+      const shared = Object.keys(art.graph.textures).map((id) => nativeMeshTexture(art.prefix, id));
       keys = [...keys, ...shared];
       // The late character batch may have loaded these first. Transfer release ownership
       // even when Phaser borrows resident pages instead of adding files to its queue.
       const sharedKeys = new Set(shared);
       this.lateTextureKeys = this.lateTextureKeys.filter((key) => !sharedKeys.has(key));
+      this.lateCharacterKeys = this.lateCharacterKeys.filter((key) => !sharedKeys.has(key));
     }
     this.familyTextures.set(family, [
       ...new Set([...(this.familyTextures.get(family) ?? []), ...keys]),

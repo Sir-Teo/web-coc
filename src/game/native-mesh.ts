@@ -46,7 +46,13 @@ export interface NativeGroupPose {
 export type NativeScenePose = NativeMeshPose | NativeGroupPose;
 export const NATIVE_IDENTITY: NativeMatrix = [1, 0, 0, 0, 1, 0];
 /** Texture key of one retained source texture page inside a renderer namespace. */
-export const nativeMeshTexture = (prefix: string, id: string | number) => `${prefix}:mesh:${id}`;
+export const nativeMeshTexture = (prefix: string, id: string | number) => {
+  // Golden Dragon and Dragon 7 have separately posed graphs but exactly the same
+  // imported page and UVs. One Phaser key keeps them on a single GPU allocation.
+  if (prefix === 'character-golden-dragon' && (id === 0 || id === '0'))
+    return 'garrison-dragon:mesh:0';
+  return `${prefix}:mesh:${id}`;
+};
 
 export function nativeMatrix(a: readonly number[], b: readonly number[]): NativeMatrix {
   return [
