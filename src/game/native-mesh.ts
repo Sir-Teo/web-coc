@@ -1,3 +1,5 @@
+import { nativeSharedFrame } from './native-loop-period';
+
 /** Retained native scene data. Source UVs are normalized after lossless packing. */
 export interface NativeMeshGraph {
   exports: Record<string, number>;
@@ -174,7 +176,7 @@ function sharedPoses(
     (isolate ? 's|' : 'm|') +
     name +
     '|' +
-    sourceFrame(graph, id, seconds) +
+    nativeSharedFrame(graph, id, sourceFrame(graph, id, seconds)) +
     '|' +
     controlsKey(controls) +
     '|' +

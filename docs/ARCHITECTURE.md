@@ -129,6 +129,15 @@ wall drawing and new-wall previews share the canonical level-one source.
 `tests/browser/wall-art.spec.ts` covers materials, placement and context restoration, and
 `tests/browser/deferred-sprites.spec.ts` checks level-one fallback during higher-level loading.
 
+Native pose samples are read-only and share a bounded 512-entry cache per graph. Its frame
+keys can repeat only after the complete nested animation repeats: `native-loop-period.ts`
+includes continuously present children's independent FPS and loop lengths, and preserves the
+first loop's placement-age clamp. Analysis starts after that first source loop; clamped
+non-looping clips need none. Unsupported clocks and metadata beyond its budget keep raw
+frame keys. Period metadata uses weak graph ownership, while actual sampling always receives
+the caller's original clock. `tests/browser/native-loop-cache.spec.ts` checks a real Archer
+loop against independent pixels and WebGL restoration.
+
 Failed native troop graphs and hero/pet atlases wait five seconds before retrying,
 per asset key, as troop texture pages already do. Rendering keeps requesting missing
 art after the cooldown, so a temporary outage recovers within the same battle without

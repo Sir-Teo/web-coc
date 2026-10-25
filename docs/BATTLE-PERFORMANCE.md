@@ -1589,6 +1589,64 @@ hooks.
 Standard production checks pass online in both engines and offline in Chromium (cache
 `8449f6ef7353`).
 
+## Reusing complete animation loops
+
+Shared pose keys previously kept increasing with the source clock even when the complete
+animation repeated. The sampler now reuses the frame key after the parent and every
+continuously present child complete their independent loops. Removed children retain their
+placement-age reset; a warmup keeps the first loop's initial clamp distinct. The sampler
+still receives the original clock and returns the same read-only geometry and colors.
+
+Period metadata has weak graph ownership and bounded analysis: integer FPS up to 240,
+periods up to 4,096 source frames, warmup up to 65,536 frames and depth up to 32. Unsupported
+graphs and source frames above one billion retain their raw keys. First-loop draws bypass
+analysis, as do clamped non-looping animations. Cached lookups allocate no traversal set.
+The existing 512-entry pose-cache limit, control keys and root-transform keys are unchanged.
+
+The typed implementation matches 100,996 complete source-pose comparisons across 337 real
+animation exports, plus 18,306 cached-pose comparisons covering named controls, flipped and
+sheared roots, old clocks and rewinds. Seven unit cases cover nested loop periods, initial
+placement clocks, different FPS, controls and transforms, raw-key fallbacks, cyclic metadata
+and the existing cache bound.
+
+In an isolated repeated-sampling workload (59 troop exports, 600 source frames, two warmups
+and eight alternating samples), Chromium's mean falls from 170.26 to 27.26 ms and WebKit's
+from 242.25 to 42.88 ms. Both browser probes compare 2,034 cached outputs with the baseline.
+A separate first-draw check across 339 exports reports 5.87 ms mean for the baseline and
+5.30 ms for deferred analysis; first-use period analysis had cost extra work before it was
+deferred.
+
+A fixed 589-unit scene advances only its animation clock for 600 presentation calls, keeping
+simulation positions and the camera fixed. Alternating runs retain 24,806 pose arrays and
+97,269 top-level poses with raw keys, versus 4,706 arrays and 27,250 poses with repeat keys
+in both engines. That is 81.0% fewer arrays and 72.0% fewer top-level poses. Presentation CPU
+means remain close and variable (Chromium 11.90 versus 11.68 seconds, WebKit 26.17 versus
+26.07 seconds), so this does not establish a whole-game FPS gain.
+
+In the same Chromium scene, clearing the previous probe cache and collecting garbage before
+each variant, then collecting again before measuring retained heap, gives 167.5 MB with raw
+keys, 149.4 and 149.5 MB with repeat keys, and 169.1 MB after restoring raw keys. This is
+about 18–20 MB less retained JavaScript heap, not total browser or physical-phone memory.
+
+Settled framebuffer comparisons at 2, 7, 15 and 30 animation seconds match exactly when
+switching raw/repeat/raw keys in both engines. Initial repeated baseline draws had small
+one-byte differences before settling; the probe waits for complete staggered updates and
+compares pixel bytes inside the page. The real-Archer regression also checks visible output,
+shared array identity, immutability, independent sampling and context restoration.
+
+All nine relevant browser cases pass per engine, including the real-Archer regression,
+mixed batching pixels, shared animated walls and failed graph/image recovery. The full
+suite passes 3,020 tests across 335 files alongside strict test typing and documentation
+validation.
+
+The production build passes. Compiled phone checks import an Archer-garrison recording
+through the normal battle log, seek to completion and pan the field. Both engines match the
+preceding build's exact defender positions, health, targets and completion state, with no
+page errors or developer hooks.
+
+Standard production checks pass online in both engines and offline in Chromium (cache
+`be29162c6180`).
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
