@@ -810,6 +810,8 @@ export interface Battle {
   nativeDefenderSpellRules?: true;
   /** Version 71: native projectiles carry frost-on-hit values, including hero equipment. */
   nativeProjectileFrost?: true;
+  /** Version 72: cumulative Monolith Arrow housing, independent of losses and Recall. */
+  nativeMonolithHousing?: number;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */
@@ -4978,7 +4980,10 @@ export class GameModel {
     hero.unitId = this.state.nextId++;
     const recalled = hero.recalledHp;
     delete hero.recalledHp;
-    if (recalled === undefined) recordWakeSpace(b, heroWakeSpace());
+    if (recalled === undefined) {
+      recordWakeSpace(b, heroWakeSpace());
+      if (b.nativeMonolithHousing !== undefined) b.nativeMonolithHousing += 25;
+    }
     b.units.push({
       id: hero.unitId,
       kind: heroUnitKind(kind),
@@ -5068,7 +5073,10 @@ export class GameModel {
     h.unitId = this.state.nextId++;
     const recalled = h.recalledHp;
     delete h.recalledHp;
-    if (recalled === undefined) recordWakeSpace(b, heroWakeSpace());
+    if (recalled === undefined) {
+      recordWakeSpace(b, heroWakeSpace());
+      if (b.nativeMonolithHousing !== undefined) b.nativeMonolithHousing += 25;
+    }
     b.units.push({
       id: h.unitId,
       kind: 'swordsman',
@@ -5569,7 +5577,11 @@ export class GameModel {
     if (!b.practice && !b.fixedArmy) this.state.army[k]--;
     const d = this.troopStats(k);
     const recalled = b.recalledHp?.[k]?.shift();
-    if (recalled === undefined) recordWakeSpace(b, troopWakeSpace(TROOPS[k].space));
+    if (recalled === undefined) {
+      recordWakeSpace(b, troopWakeSpace(TROOPS[k].space));
+      if (b.nativeMonolithHousing !== undefined)
+        b.nativeMonolithHousing += isSiege(k) ? 1 : TROOPS[k].space;
+    }
     b.units.push({
       id: this.state.nextId++,
       kind: k,

@@ -137,3 +137,7 @@ Offensive spell pulses now honor the source’s Hero, Guardian and other-charact
 ## Version 71: projectile frost captured at launch
 
 Native building-targeted projectiles now carry their frost duration and percentage, including Frozen Arrow equipment values, instead of reconstructing that effect from the shooter’s base character row on impact. Frozen Arrow also selects its source projectile before other equipment projectile overrides. The captured frost survives Recall or a missing shooter and expires relative to the scheduled impact time. Versions 70 and earlier retain their previous projectile names and effect calculation. Actual Queen deployment and Recall inputs reproduce the airborne shot, hit and expiry through portable files and backward seeks.
+
+## Version 72: cumulative Monolith Arrow housing
+
+The Monolith Arrow stage now uses a persistent deployment counter: 25 per Hero, one per owned Siege Machine and normal housing for ordinary troops. Pets, summons and spells do not contribute. Losses and Recall cannot lower the counter, and recalled redeployments retain their original contribution. Exactly 180 and 250 retain the higher stage at each boundary. Recordings reconstruct the counter from deployment inputs; versions 71 and earlier preserve their previous unit-list selection. Real troop, Hero, Siege Machine and Recall inputs cover all three projectile tiers, their damage and exact portable backward seeks.

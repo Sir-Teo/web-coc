@@ -203,9 +203,11 @@ export function monolithArrow(ctx: NativeTroopContext, unit: Unit) {
   if (!ctx.battle.nativeContentExpansion) return undefined;
   const hero = ctx.battle.nativeHeroes?.find((h) => h.unitId === unit.id);
   if (!hero) return undefined;
-  const housing = ctx.battle.units
-    .filter((u) => !u.summoned && !u.hero)
-    .reduce((n, u) => n + TROOPS[u.kind].space, 0);
+  const housing =
+    ctx.battle.nativeMonolithHousing ??
+    ctx.battle.units
+      .filter((u) => !u.summoned && !u.hero)
+      .reduce((n, u) => n + TROOPS[u.kind].space, 0);
   return heroAbilities(hero)
     .filter(
       (a) =>
