@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 test.use({ hasTouch: true });
 test.beforeEach(async ({ page }) => {
-  await page.goto('/');
+  // These pose galleries manually pause/step the scene and need the complete art set.
+  await page.goto('/?eagerart');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   await page.locator('[data-action="skip-tutorial"]').click();

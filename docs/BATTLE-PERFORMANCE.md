@@ -1759,6 +1759,45 @@ End-of-replay assertions wait for bounded seeking to finish before checking the 
 Standard production navigation/replay pass in both engines under their usual worker
 configuration. Chromium also passes offline reload/replay using cache `50a96dca4ba1`.
 
+## Reusing trap search storage
+
+Trap trigger queries previously built a new position map and bucket arrays every phase,
+then a fresh result array for every nearby-unit query. The trap index now retains its map
+cells, bucket storage and query storage per battle, with explicit active counts. Rebuilds
+clear old unit references; in-phase movement still invalidates the grid before a later query.
+An unusually wide map clears its cached cells on the next rebuild instead of growing forever.
+
+A controlled stage-61 simulation runs 400 steps with the normal-capacity mixed army. After
+eight warmups per variant, an alternating-order Chromium repeat averages 1,007.25 ms before
+and 883.98 ms after (12.2% lower); WebKit averages 758.25 ms before and 670.25 ms after (11.6%
+lower). A first Chromium run was noisier. These isolate simulation CPU in software browsers;
+they do not measure physical-phone frame rate.
+
+Counting collection creation over those same steps gives 400 maps → one, 18,759 bucket arrays
+→ 62 and 57,499 nearby-result arrays → one. Both versions perform 57,499 queries and produce
+the same complete final battle state. Four army/layout scenarios match the original
+at all 1,600 individually hashed simulation steps. Five regressions cover shrinking/empty
+buckets, cross-cell ties, in-phase invalidation, alternating battles/replaced layouts and the
+wide-map cache bound; all 75 focused trap tests pass.
+
+All 23 selected browser cases pass per engine, including complete combat-state comparisons
+against Node in villages 64/66/81, native trap presentation, paid upgrade/reload, status recovery
+and replay/audio rewind. The visual fixtures explicitly preload their pose gallery, include
+the second source Shrink cast's status linger, compare keyed presentation maps in key order
+and wait for decoded audio buffers rather than treating sample-name sets as promises.
+
+The full check passes 3,025 tests across 336 files, strict source/test typing, documentation
+validation and the production build.
+
+The compiled Shrink Trap production check passes in both engines: active trap/troop status,
+final result, portable export and reseek equality, home-state isolation and source-asset
+decoding. Chromium also passes offline replay; the dedicated WebKit online check blocks
+service workers so update banners cannot cover replay controls. The delivery check uses the
+shipped WebP paths and waits for bounded seeking before asserting completion.
+
+Standard production navigation/replay pass in both engines under their usual worker
+configuration, with Chromium offline reload/replay using cache `56b0636f2a58`.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

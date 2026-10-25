@@ -37,6 +37,13 @@ references before rebuilding in unit order; new arrivals still wait until the ne
 The group witness in `tests/fixtures/native-group-snapshot.ts` checks exact movement across
 snapshot capture, arrivals, deaths and moved cells in Node and both browser engines.
 
+Trap trigger searches likewise keep their cell map, bucket arrays and nearby-query storage
+in the per-battle trap index. Active counts preserve array capacity while rebuilds clear old
+unit references; nearby-query references clear at phase end. Pushback/native trap events
+still invalidate the position grid before a later trigger search. More than 512 cached cells
+forces a fresh map on its next rebuild. `tests/trap-grid-reuse.test.ts` covers old bucket slots,
+ties, in-phase invalidation, alternating battles, replacement layouts and wide snapshots.
+
 Keep gameplay values separate from art graphs. A model import should not load
 Phaser, a scene class or multi-megabyte render data. `*-graph.ts` and `*-poses.ts`
 modules own render data; stats and rule modules expose the values simulation needs.

@@ -72,10 +72,16 @@ const nativeOwnedTrap = (battle: Battle, trap: Building) =>
  * Stats depend only on the trap row and the battle's catalog flags, so one row per battle
  * replaces a freshly spread object per trap per tick.
  */
+interface TrapBucket {
+  units: (Unit | undefined)[];
+  count: number;
+}
 interface TrapIndex {
   buildings: Building[];
   length: number;
   traps: { trap: Building; stats: ReturnType<typeof battleTrapStats> | null }[];
+  grid: Map<number, TrapBucket>;
+  nearby: (Unit | undefined)[];
 }
 const trapIndexes = new WeakMap<Battle, TrapIndex>();
 function trapIndex(battle: Battle): TrapIndex {
@@ -90,13 +96,20 @@ function trapIndex(battle: Battle): TrapIndex {
       if (stats) traps.push({ trap, stats });
     }
   }
-  const index = { buildings: battle.buildings, length: battle.buildings.length, traps };
+  const index: TrapIndex = {
+    buildings: battle.buildings,
+    length: battle.buildings.length,
+    traps,
+    grid: new Map(),
+    nearby: [],
+  };
   trapIndexes.set(battle, index);
   return index;
 }
 export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) {
   if (battle.finished) return false;
   let changed = false;
+  const index = trapIndex(battle);
   // Id lookup over the units present when the phase began (built on first use: most ticks
   // have no armed homing, air or spring trap to resolve).
   const unitsAtStart = battle.units,
@@ -116,29 +129,39 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
   const CELL = 4;
   // Numeric cell keys; units stay within a few tiles of the 48-tile map.
   const cellKey = (cx: number, cy: number) => (cx + 1024) * 4096 + (cy + 1024);
-  let grid: Map<number, Unit[]> | null = null;
+  let grid: TrapIndex['grid'] | null = null;
   const ensureGrid = () => {
     if (grid) return grid;
-    grid = new Map();
+    grid = index.grid;
+    // Keep normal map cells and array capacity across ticks, but drop unit references.
+    // An unusually wide snapshot must not leave an ever-growing set of cached cells.
+    if (grid.size > 512) grid.clear();
+    else
+      for (const bucket of grid.values()) {
+        for (let i = 0; i < bucket.count; i++) bucket.units[i] = undefined;
+        bucket.count = 0;
+      }
     for (const u of battle.units) {
       const key = cellKey(Math.floor(u.x / CELL), Math.floor(u.y / CELL));
       let list = grid.get(key);
-      if (!list) grid.set(key, (list = []));
-      list.push(u);
+      if (!list) grid.set(key, (list = { units: [], count: 0 }));
+      list.units[list.count++] = u;
     }
     return grid;
   };
-  const nearUnits = (x: number, y: number, r: number): Unit[] => {
+  let nearbyCount = 0;
+  const nearUnits = (x: number, y: number, r: number) => {
     const g = ensureGrid();
-    const out: Unit[] = [];
+    const out = index.nearby;
+    nearbyCount = 0;
     for (let cx = Math.floor((x - r) / CELL); cx <= Math.floor((x + r) / CELL); cx++)
       for (let cy = Math.floor((y - r) / CELL); cy <= Math.floor((y + r) / CELL); cy++) {
         const list = g.get(cellKey(cx, cy));
-        if (list) for (const u of list) out.push(u);
+        if (list) for (let i = 0; i < list.count; i++) out[nearbyCount++] = list.units[i];
       }
     return out;
   };
-  for (const { trap, stats } of trapIndex(battle).traps) {
+  for (const { trap, stats } of index.traps) {
     // From version 51 the native engine owns the Town Hall 11+ traps at home. A campaign
     // layout's own traps stay with the late family that has always stepped them.
     if (stats === null) {
@@ -172,7 +195,9 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       let pick: Unit | undefined;
       let pickSpace = -Infinity;
       let pickDist = Infinity;
-      for (const u of nearUnits(center.x, center.y, d.trigger)) {
+      const near = nearUnits(center.x, center.y, d.trigger);
+      for (let i = 0; i < nearbyCount; i++) {
+        const u = near[i]!;
         if (!eligible(u)) continue;
         const dist = distance2D(u.x - center.x, u.y - center.y);
         if (dist > d.trigger) continue;
@@ -355,5 +380,7 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       });
     }
   }
+  // Retain storage, not references to a previous phase's units.
+  for (let i = 0; i < index.nearby.length; i++) index.nearby[i] = undefined;
   return changed;
 }

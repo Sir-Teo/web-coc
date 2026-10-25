@@ -40,6 +40,8 @@ for (const viewport of [
       const hidden = traps.every((b) => !scene.sprites.get(b.id).visible);
       const absent = scene.shrinkTrapPresentation.bodies.size === 0;
       deployShrinkTrap(m);
+      // The retained source deployment crosses the trigger ring on its second tick.
+      m.step(0.05);
       m.step(0.05);
       scene.sync();
       scene.drawOverlay(0);
@@ -105,7 +107,8 @@ for (const viewport of [
       m.state.settings.reducedMotion = true;
       scene.drawOverlay(0);
       const keys = [...scene.shrinkTrapPresentation.effects.keys()];
-      for (let i = 0; i < 560; i++) m.step(0.05);
+      // The moving army reaches a second source trap; include its refreshed status linger.
+      for (let i = 0; i < 640; i++) m.step(0.05);
       scene.sync();
       scene.drawOverlay(0);
       const scales = m.battle.units
@@ -157,11 +160,10 @@ test('portable Magic Practice replay restores status, particles, audio and the h
       scene.drawOverlay(0);
       return JSON.stringify({
         battle: m.battle,
-        effects: [...scene.shrinkTrapPresentation.effects].map(([key, v]) => [
-          key,
-          [...v.meshes].map(([k, m]) => [k, m.vertices, m.alpha]),
-        ]),
-        bodies: [...scene.shrinkTrapPresentation.bodies.keys()],
+        effects: [...scene.shrinkTrapPresentation.effects]
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([key, v]) => [key, [...v.meshes].map(([k, m]) => [k, m.vertices, m.alpha])]),
+        bodies: [...scene.shrinkTrapPresentation.bodies.keys()].sort((a, b) => a - b),
         scales: [...scene.unitSprites].map(([id, v]) => [id, v.getData('shrinkScale')]),
       });
     };
@@ -178,10 +180,24 @@ test('portable Magic Practice replay restores status, particles, audio and the h
     seek(0.1);
     await audio.unlock();
     audio.samples.decode();
-    await Promise.all([...audio.samples.decoding.values()]);
     const { shrinkSoundCues } = await import('/src/game/shrink-trap-poses.ts');
     const trap = m.battle.buildings.find((b) => b.npc === 'shrink-trap' && m.battle.traps[b.id]);
     const cues = shrinkSoundCues(trap.id, m.battle.traps[trap.id]);
+    // `decoding` holds sample names, not promises. WebKit finishes decoding asynchronously.
+    await new Promise<void>((resolve, reject) => {
+      const until = performance.now() + 10000;
+      const check = () => {
+        if (
+          audio.context?.state === 'running' &&
+          cues.every((cue) => audio.samples.has(cue.sample))
+        )
+          resolve();
+        else if (performance.now() >= until)
+          reject(Error('Shrink replay audio did not become ready'));
+        else setTimeout(check, 10);
+      };
+      check();
+    });
     audio.samples.sync(cues, 0.1, 2, true);
     const sound = [...audio.samples.active].map(([key, v]) => [
       key,
