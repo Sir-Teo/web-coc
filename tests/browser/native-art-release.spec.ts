@@ -1,4 +1,5 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type Request } from '@playwright/test';
+import { expectCancelledTroopDecode, watchTroopImageDecodes } from './image-decode-watch';
 
 async function warmArmy(page: Page, actor: { stage: number; name: string }) {
   await page.evaluate(({ stage, name }) => {
@@ -31,14 +32,21 @@ for (const actor of [
   for (const phase of ['metadata', 'texture'] as const) {
     test(`returning home releases native ${actor.name} art still loading its ${phase}`, async ({
       page,
+      browserName,
     }) => {
       const errors: string[] = [];
       page.on('pageerror', (error) => errors.push(error.message));
+      await watchTroopImageDecodes(page);
       let release!: () => void;
       const gate = new Promise<void>((resolve) => {
         release = resolve;
       });
       let requested = false;
+      let intercepted: Request | undefined;
+      let cancelled = false;
+      page.on('requestfailed', (request) => {
+        if (request === intercepted) cancelled = true;
+      });
       let url = actor[phase];
       if (phase === 'texture' && actor.name === 'troop') {
         // Vite serves level-paged packs, whose texture URLs differ from the source JSON.
@@ -56,6 +64,7 @@ for (const actor of [
         url = `**/${texture.path}`;
       }
       await page.route(url, async (route) => {
+        intercepted = route.request();
         requested = true;
         await gate;
         await route.continue();
@@ -71,9 +80,13 @@ for (const actor of [
           model.returnHome();
           scene.sync();
         });
-        const response = page.waitForResponse(url);
+        const response = actor.name === 'hero' ? page.waitForResponse(url) : undefined;
+        if (actor.name === 'troop' && phase === 'texture')
+          await expectCancelledTroopDecode(page, url);
         release();
-        await (await response).finished();
+        if (response) await (await response).finished();
+        else if (phase === 'metadata' || browserName === 'chromium')
+          await expect.poll(() => cancelled).toBe(true);
         // Let completed metadata, decode work and any follow-up page requests settle.
         await page.waitForFunction(() => {
           const scene = window.__game.scene;
@@ -108,10 +121,17 @@ for (const actor of [
       releaseSecond = resolve;
     });
     let requests = 0;
+    let obsolete: Request | undefined;
+    let cancelled = false;
+    page.on('requestfailed', (request) => {
+      if (request === obsolete) cancelled = true;
+    });
     await page.route(actor.metadata, async (route) => {
       const number = ++requests;
-      if (number === 1) await first;
-      else if (number === 2) await second;
+      if (number === 1) {
+        obsolete = route.request();
+        await first;
+      } else if (number === 2) await second;
       await route.continue();
     });
     try {
@@ -127,9 +147,10 @@ for (const actor of [
       });
       await warmArmy(page, actor);
       await expect.poll(() => requests).toBe(2);
-      const oldResponse = page.waitForResponse(actor.metadata);
+      const oldResponse = actor.name === 'hero' ? page.waitForResponse(actor.metadata) : undefined;
       releaseFirst();
-      await (await oldResponse).finished();
+      if (oldResponse) await (await oldResponse).finished();
+      else await expect.poll(() => cancelled).toBe(true);
       await page.evaluate(async ({ name }) => {
         const scene = window.__game.scene;
         if (name === 'troop') scene.troopNativePresentation.prefetch(['giant'], () => 2);

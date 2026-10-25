@@ -1280,6 +1280,54 @@ and WebKit.
 Standard production checks pass online in both engines and offline in Chromium
 (cache `b1614d3641dc`).
 
+## Cancelling obsolete troop downloads and decodes
+
+Home army changes and returns from battle previously retired stale pack identities, but
+their metadata fetches and image decodes continued. Troop metadata now has an abort signal;
+level requests track their pending image elements and switch them to a local transparent
+pixel when released. This settles the old decode promise in both engines without another
+network request; simply removing the source can leave Chromium's promise pending.
+Shutdown does the same. Completed texture sources remain intact for drawing and graphics
+restoration. Request identity guards also cover level completion, so cancellation and a
+fresh selection cannot clear each other's work. A failed page cancels the other pending
+decodes in its batch before the existing retry path runs.
+
+This matters for large packs: the Electro Dragon source graph is 2,002,659 bytes, and its
+two source PNGs total 18,523,712 bytes. Savings depend on what is still pending and what the
+browser has already cached; these source sizes are not measured transfer savings.
+
+An actual streaming-image probe sends 1 KiB before withholding the remaining body. WebKit
+rejects the original image decode promise after source removal, but keeps fetching the
+image for its cache; empty and data-URL replacements behave the same. An aborted fetch
+closes the streaming response at 1 KiB. Chromium also closes image transfers at 1 KiB; a
+local replacement settles its pending decode promise. Browser tests check early decode
+rejection in both engines, metadata request cancellation in both, and image request cancellation in
+Chromium. They retain the GPU cleanup and immediate-reselection checks and exercise a
+shared siege page while one pending pack is cancelled and another is retained.
+
+Validation: all fifteen relevant browser cases pass per engine, including metadata/image
+retry, pending shared ownership, context restoration, phone fallbacks and scouting prefetch.
+`npm run check` passes all 3,006 tests across 332 files, strict types, documentation links
+and the production build.
+
+Compiled phone checks use the saved-army buttons to select Electro Dragon, switch to Archer
+while metadata or a body page is held, then select Electro Dragon again. Both engines keep
+the selected army correct, drop obsolete uploads and load the reselected troop without
+page errors or developer hooks. The response stays held until scene cleanup has occurred;
+the UI selection alone can update before the scene's next frame.
+Standard production checks pass online in both engines and offline in Chromium
+(cache `462aa6b907ee`).
+
+### Hero packing experiment
+
+A temporary lossless packing experiment would reduce all six heroes' nominal texture
+storage from 40,894,464 to 25,186,432 B (15.0 MiB, 38.4%), with compressed images growing
+1.6%. Every nontransparent source pixel reconstructs exactly, and all 156 unique frames
+render identically at native size in Chromium. Cropping the quad bounds changes scaled rasterization,
+however: the fractional-scale Chromium sample differs by up to 46/255 in individual
+channels; WebKit differences stay within 1/255. The experiment is not applied. Shipping
+hero sheets and their frame geometry remain unchanged.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

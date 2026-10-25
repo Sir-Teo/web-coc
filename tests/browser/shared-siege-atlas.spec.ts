@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { expectCancelledTroopDecode, watchTroopImageDecodes } from './image-decode-watch';
 
 const KINDS = ['battledrill', 'flameflinger', 'loglauncher', 'trooplauncher', 'wallwrecker'];
 const SHARED = 'troop:battledrill:characters:mesh:8';
@@ -103,13 +104,19 @@ test('five siege packs share one GPU page and preserve it while a different mach
 
 test('a released siege decode cannot resurrect the shared page after its last owner leaves', async ({
   page,
+  browserName,
 }) => {
+  await watchTroopImageDecodes(page);
   const path = '**/assets/troops-native/battledrill/characters/texture-8.png';
   let release!: () => void;
   const gate = new Promise<void>((resolve) => {
     release = resolve;
   });
   let requested = 0;
+  let cancelled = 0;
+  page.on('requestfailed', (request) => {
+    if (request.url().endsWith('/troops-native/battledrill/characters/texture-8.png')) cancelled++;
+  });
   await page.route(path, async (route) => {
     requested++;
     await gate;
@@ -125,9 +132,9 @@ test('a released siege decode cannot resurrect the shared page after its last ow
     );
     await expect.poll(() => requested).toBeGreaterThan(0);
     await page.evaluate(() => window.__game.scene.troopNativePresentation.releaseExcept());
-    const done = page.waitForResponse(path);
+    await expectCancelledTroopDecode(page, path);
     release();
-    await (await done).finished();
+    if (browserName === 'chromium') await expect.poll(() => cancelled).toBeGreaterThan(0);
     await page.evaluate(async () => {
       await new Promise<void>((resolve) =>
         requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
@@ -139,6 +146,47 @@ test('a released siege decode cannot resurrect the shared page after its last ow
     await page.unroute(path);
     await warm(page, ['loglauncher']);
     await expectShared(page);
+  } finally {
+    release();
+  }
+});
+
+test('cancelling one siege load keeps a shared image needed by a retained pending pack', async ({
+  page,
+}) => {
+  const path = '**/assets/troops-native/battledrill/characters/texture-8.png';
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(path, async (route) => {
+    await gate;
+    await route.continue();
+  });
+  try {
+    await boot(page);
+    await page.evaluate(() =>
+      window.__game.scene.troopNativePresentation.prefetch(
+        ['loglauncher', 'trooplauncher'],
+        () => 1,
+      ),
+    );
+    await page.waitForFunction(() => {
+      const pending = window.__game.scene.troopNativePresentation.pendingLevels;
+      return ['loglauncher#1', 'trooplauncher#1'].every((key) => pending.has(key));
+    });
+    await page.evaluate(() =>
+      window.__game.scene.troopNativePresentation.releaseExcept(new Set(['trooplauncher'])),
+    );
+    release();
+    await warm(page, ['trooplauncher']);
+    await expectShared(page);
+    expect(
+      await page.evaluate(() => [...window.__game.scene.troopNativePresentation.packs.keys()]),
+    ).toEqual(['trooplauncher']);
+    expect(errors).toEqual([]);
   } finally {
     release();
   }

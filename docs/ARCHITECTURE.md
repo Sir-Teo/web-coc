@@ -207,6 +207,14 @@ repopulate dropped packs. Battle updates retain their existing presentation life
 `tests/browser/home-army-art-release.spec.ts` covers recipe changes, empty armies,
 cancelled metadata/textures and preserving an active battle's native view.
 
+Troop requests also cancel their pending work when released or shut down. Metadata uses an
+`AbortController`; each level request owns only its not-yet-uploaded image elements, whose
+sources switch to a local transparent pixel on cancellation. Registered textures keep their
+decoded source for rendering and graphics-context recovery. Cancelled requests cannot retire
+a newer request or start a retry backoff. WebKit can continue the previous image's network
+transfer for its cache, while its decode promise rejects immediately; metadata cancellation
+stops the transfer in both engines. Shared siege pages remain available to retained pending packs.
+
 Home hero-lineup and pet-assignment changes follow the same policy for baked atlases.
 They clear obsolete hero sprites and release packs outside the new required hero/pet set,
 including partially uploaded requests, before prefetching replacements. Battle updates keep

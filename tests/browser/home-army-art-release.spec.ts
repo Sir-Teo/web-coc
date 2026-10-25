@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page, type Request } from '@playwright/test';
+import { expectCancelledTroopDecode, watchTroopImageDecodes } from './image-decode-watch';
 
 test.use({
   viewport: { width: 390, height: 844 },
@@ -75,9 +76,11 @@ test('changing the home army releases obsolete packs and an empty army releases 
 for (const phase of ['metadata', 'texture'])
   test(`changing the home army cancels obsolete ${phase} without repopulating its pages`, async ({
     page,
+    browserName,
   }) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
+    await watchTroopImageDecodes(page);
     await boot(page);
     let url = '**/assets/troops-native/electrodragon/graph.json';
     if (phase === 'texture') {
@@ -94,7 +97,13 @@ for (const phase of ['metadata', 'texture'])
       release = resolve;
     });
     let requested = false;
+    let cancelled = false;
+    let intercepted: Request | undefined;
+    page.on('requestfailed', (request) => {
+      if (request === intercepted) cancelled = true;
+    });
     await page.route(url, async (route) => {
+      intercepted = route.request();
       requested = true;
       await gate;
       await route.continue();
@@ -103,9 +112,11 @@ for (const phase of ['metadata', 'texture'])
       await army(page, 'electrodragon', false);
       await expect.poll(() => requested).toBe(true);
       await army(page, 'archer');
-      const done = page.waitForResponse(url);
+      if (phase === 'texture') await expectCancelledTroopDecode(page, url);
       release();
-      await (await done).finished();
+      // WebKit can finish an image transfer for its cache after cancelling its decode.
+      if (phase === 'metadata' || browserName === 'chromium')
+        await expect.poll(() => cancelled, { timeout: 2000 }).toBe(true);
       await page.waitForTimeout(250);
       expect(await resident(page)).toEqual({ kinds: ['archer'], bytes: 762_184, error: 0 });
       await page.unroute(url);

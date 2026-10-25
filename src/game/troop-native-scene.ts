@@ -32,6 +32,10 @@ interface Pack {
   /** Rows by level (first match, as `find` returned), built when the pack is decoded. */
   byLevel?: Map<number, Pack['levels'][number]>;
 }
+interface LevelRequest {
+  pack: Pack;
+  images: Set<HTMLImageElement>;
+}
 interface TroopView {
   scene: string;
   view: NativeSceneView;
@@ -66,9 +70,12 @@ const LOD_HYSTERESIS = 1.25;
 const LOD_CLOSE_ZOOM = 1.15;
 /** Distant units resample their pose every Nth frame (staggered by id). */
 const LOD_RESAMPLE_EVERY = 4;
+/** A local replacement also settles Chromium's old decode promise after stopping its transfer. */
+const CANCELLED_IMAGE =
+  'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 export class TroopNativePresentation {
   private packs = new Map<string, Pack>();
-  private pending = new Map<string, object>();
+  private pending = new Map<string, AbortController>();
   private packRetryAt = new Map<string, number>();
   /**
    * Levels whose textures are uploaded, by kind, and level loads in flight. A paged pack (see
@@ -76,7 +83,7 @@ export class TroopNativePresentation {
    * Barbarian uploads its own art rather than all thirteen levels'.
    */
   private levelsReady = new Map<string, Set<number>>();
-  private pendingLevels = new Map<string, Pack>();
+  private pendingLevels = new Map<string, LevelRequest>();
   private levelRetryAt = new Map<string, number>();
   private views = new Map<number, TroopView>();
   private motion = new UnitMotionTracker();
@@ -94,7 +101,12 @@ export class TroopNativePresentation {
   prefetch(kinds: Iterable<string>, levelOf: (kind: string) => number) {
     for (const kind of kinds) void this.load(kind).then(() => this.loadLevel(kind, levelOf(kind)));
   }
-  private async decodeTexture(key: string, path: string, current: () => boolean) {
+  private async decodeTexture(
+    key: string,
+    path: string,
+    current: () => boolean,
+    images: Set<HTMLImageElement>,
+  ) {
     if (!current() || this.scene.textures.exists(key)) return;
     // Keep a top-down image source, as Phaser's loader does. ImageBitmap uploads ignore
     // WebGL's UNPACK_FLIP_Y_WEBGL and UNPACK_PREMULTIPLY_ALPHA_WEBGL flags: the old fast
@@ -102,18 +114,25 @@ export class TroopNativePresentation {
     // decode() still completes asynchronously, and the retained image also works for color
     // bakes and context restoration without a second, flipped copy of the texture page.
     const image = new Image();
-    image.src = '/' + path;
-    await image.decode();
-    if (current() && !this.scene.textures.exists(key)) this.scene.textures.addImage(key, image);
+    images.add(image);
+    try {
+      image.src = '/' + path;
+      await image.decode();
+      if (current() && !this.scene.textures.exists(key)) this.scene.textures.addImage(key, image);
+    } finally {
+      images.delete(image);
+    }
   }
   private async load(kind: string) {
     if (!this.alive || this.pending.has(kind) || this.packs.has(kind)) return;
     if ((this.packRetryAt.get(kind) ?? 0) > performance.now()) return;
-    const request = {};
+    const request = new AbortController();
     this.pending.set(kind, request);
     const current = () => this.alive && this.pending.get(kind) === request;
     try {
-      const response = await fetch(`/assets/troops-native/${kind}/graph.json`);
+      const response = await fetch(`/assets/troops-native/${kind}/graph.json`, {
+        signal: request.signal,
+      });
       if (!current()) return;
       if (!response.ok) throw Error(`HTTP ${response.status}`);
       const pack = (await response.json()) as Pack;
@@ -142,15 +161,22 @@ export class TroopNativePresentation {
     )
       return;
     if ((this.levelRetryAt.get(job) ?? 0) > performance.now()) return;
-    this.pendingLevels.set(job, pack);
-    const current = () => this.alive && this.packs.get(kind) === pack;
+    const request: LevelRequest = { pack, images: new Set() };
+    this.pendingLevels.set(job, request);
+    const current = () =>
+      this.alive && this.packs.get(kind) === pack && this.pendingLevels.get(job) === request;
     try {
       await Promise.all(
         Object.entries(pack.scenes).flatMap(([name, g]) =>
           Object.entries(g.textures)
             .filter(([, t]) => !t.levels || t.levels.includes(level))
             .map(([id, t]) =>
-              this.decodeTexture(nativeMeshTexture(`troop:${kind}:${name}`, id), t.path, current),
+              this.decodeTexture(
+                nativeMeshTexture(`troop:${kind}:${name}`, id),
+                t.path,
+                current,
+                request.images,
+              ),
             ),
         ),
       );
@@ -164,8 +190,15 @@ export class TroopNativePresentation {
         console.error('Native troop animation', job, error);
       }
     } finally {
-      if (this.pendingLevels.get(job) === pack) this.pendingLevels.delete(job);
+      this.cancelLevel(job, request);
     }
+  }
+  private cancelLevel(job: string, request: LevelRequest) {
+    if (this.pendingLevels.get(job) === request) this.pendingLevels.delete(job);
+    // These images have not reached the texture manager. Retained textures keep their
+    // decoded source for rendering and context restoration.
+    for (const image of request.images) image.src = CANCELLED_IMAGE;
+    request.images.clear();
   }
   clear() {
     for (const { view } of this.views.values()) view.destroy();
@@ -179,7 +212,11 @@ export class TroopNativePresentation {
    * reload through the existing prefetch path; dropped views are already gone.
    */
   releaseExcept(keep?: ReadonlySet<string>) {
-    for (const kind of this.pending.keys()) if (!keep?.has(kind)) this.pending.delete(kind);
+    for (const [kind, request] of this.pending)
+      if (!keep?.has(kind)) {
+        this.pending.delete(kind);
+        request.abort();
+      }
     const retained = new Set<string>();
     for (const [kind, pack] of this.packs)
       if (keep?.has(kind))
@@ -196,12 +233,15 @@ export class TroopNativePresentation {
         }
       this.packs.delete(kind);
       this.levelsReady.delete(kind);
-      for (const [job, owner] of this.pendingLevels)
-        if (owner === pack) this.pendingLevels.delete(job);
+      for (const [job, request] of this.pendingLevels)
+        if (request.pack === pack) this.cancelLevel(job, request);
     }
   }
   destroy() {
     this.alive = false;
+    for (const request of this.pending.values()) request.abort();
+    this.pending.clear();
+    for (const [job, request] of this.pendingLevels) this.cancelLevel(job, request);
     this.clear();
   }
   /** Whether this unit's native mesh drew this frame (scene.ts skips its fallback marker). */
