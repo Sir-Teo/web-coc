@@ -26,9 +26,9 @@ import {
   type MortarHandling,
 } from './mortar-effects';
 
-export function preloadMortars(scene: Phaser.Scene) {
+export function preloadMortars(scene: Phaser.Scene, levels: readonly number[] = MORTAR_ART_LEVELS) {
   preloadNativeMeshes(scene, mortarGraph(), 'mortar');
-  for (const level of MORTAR_ART_LEVELS) scene.load.image(mortarTexture(level), mortarAsset(level));
+  for (const level of new Set(levels)) scene.load.image(mortarTexture(level), mortarAsset(level));
   for (const [path, sound] of Object.entries(MORTAR_SOUNDS))
     scene.load.binary(mortarSample(path), '/' + sound.path);
 }

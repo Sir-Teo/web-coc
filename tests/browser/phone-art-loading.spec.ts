@@ -57,6 +57,14 @@ test.describe('phone development preview', () => {
     const { requested, errors } = watch(page);
     await boot(page, '?eagerart');
     expect(await mortarLoaded(page)).toBe(true);
+    expect(
+      await page.evaluate(
+        () =>
+          window.__game.game.textures
+            .getTextureKeys()
+            .filter((key) => key === 'mortar' || key.startsWith('mortar-level-')).length,
+      ),
+    ).toBe(18);
     expect(requested.some((path) => path.endsWith('/mortar/runtime.json'))).toBe(true);
     expect(requested.some((path) => /\/characters\/walk\/giant/.test(path))).toBe(true);
     expect(errors).toEqual([]);

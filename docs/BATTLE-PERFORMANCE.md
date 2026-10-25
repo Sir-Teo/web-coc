@@ -1681,6 +1681,41 @@ upload follows. Opening the preview again then uploads 21 Mortar image sources t
 Standard production navigation and replay checks pass in Chromium and WebKit. Chromium also
 passes the offline reload and replay checks using cache `539ce27b6967`.
 
+## Loading Mortar portraits for the levels in use
+
+The native Mortar family previously uploaded all eighteen level portraits alongside its
+mesh pages. Ordinary play now batches only the current village's levels and the Level 1
+placement portrait. A later level fetches its portrait through `LazyTextures`; the full eager
+development gallery retains all eighteen. The first family batch owns its initial portraits,
+and idle release waits for any later portrait decode before removing the family's textures.
+
+In the same fresh 390×844, DPR 3 phone scenario in Chromium and WebKit, scouting stage 40
+draws two level-6 Mortars. The family drops from 23 textures / 20,882,148 nominal RGBA bytes
+to seven textures / 13,441,764 bytes. Its portraits drop from eighteen to two, saving
+7,440,384 bytes (about 7.1 MiB), with both native towers still drawn and no page errors.
+These are texture-storage measurements in software browsers, not physical-phone FPS.
+
+All 31 selected browser cases pass per engine, covering owned boot levels, individual later
+portraits, move-preview refresh, pending-decode release/reload, the eager phone/desktop
+gallery, deferred-family cancellation/retry and every Mortar level's original pixels and
+construction states, including WebGL context restoration.
+
+The full check passes 3,020 tests across 335 files, strict source/test typing, documentation
+validation and the production build.
+
+A compiled phone probe in both engines boots a valid village with level-6 and level-18
+Mortars. WebGL upload tracking sees only portraits 1, 6 and 18, totaling six sources /
+12,526,976 bytes in the Mortar URL namespace (two shared pages live under Bomb Tower URLs).
+Restoring a starter village through the normal import UI releases all six; restoring the
+Mortars reloads the same six, with no page errors or development game hooks.
+
+The dedicated Mortar production check passes in both engines, including level-18 modern
+replay, version-34 level-1/6/10 replays, export/reseek equality and Chromium offline replay.
+Its asset probe now requests the shipped WebP paths instead of the removed PNG copies.
+
+Standard production navigation and replay pass in Chromium and WebKit, including Chromium's
+offline reload/replay using cache `2bd738f1ed0e`.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

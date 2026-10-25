@@ -146,7 +146,7 @@ import { SWEEPER, sweeperAngle } from './air-control-stats';
 import { CAMERA_KEYS, isDefense, type SpellKind, type TroopKind } from './data';
 import { campTexture, campArt } from './camp-art';
 import { MAP_SIZE, BUILD_MIN, BUILD_MAX } from './grid';
-import { MORTAR_ART } from './mortar-art';
+import { MORTAR_ART, MORTAR_ART_LEVELS, mortarTexture } from './mortar-art';
 import { preloadMortars, MortarPresentation } from './mortar-scene';
 import { loadMortarArt, mortarArtLoaded, mortarBounds } from './mortar-poses';
 import { mortarShake } from './mortar-shake';
@@ -325,7 +325,11 @@ interface ArtFamily {
   prepare?: () => Promise<unknown>;
   /** Whether `prepare` has finished; families without it are always prepared. */
   prepared?: () => boolean;
-  preload: (scene: Phaser.Scene, fetching?: (key: string) => boolean) => void;
+  preload: (
+    scene: Phaser.Scene,
+    fetching?: (key: string) => boolean,
+    buildings?: readonly Building[],
+  ) => void;
 }
 interface LateArtRequest {
   withCharacters: boolean;
@@ -359,6 +363,18 @@ const XBOW_FAMILY: ArtFamily = {
   prepare: loadXbowArt,
   prepared: xbowArtLoaded,
   preload: preloadXbows,
+};
+const MORTAR_FAMILY: ArtFamily = {
+  draws: (b) => b.kind === 'mortar',
+  prepare: loadMortarArt,
+  prepared: mortarArtLoaded,
+  preload: (scene, _fetching, buildings = []) =>
+    preloadMortars(
+      scene,
+      EAGER_FAMILIES
+        ? undefined
+        : [1, ...buildings.filter((b) => b.kind === 'mortar').map((b) => b.level)],
+    ),
 };
 const SANTA_FAMILY: ArtFamily = { draws: (b) => b.npc === 'santa-trap', preload: preloadSanta };
 /** The seasonal campaign trap's sheet (about 0.2 MB) loads with the battle that places one. */
@@ -484,12 +500,7 @@ const ART_FAMILIES: ArtFamily[] = [
     prepare: loadSweeperArt,
     prepared: sweeperArtLoaded,
   },
-  {
-    draws: (b) => b.kind === 'mortar',
-    prepare: loadMortarArt,
-    prepared: mortarArtLoaded,
-    preload: preloadMortars,
-  },
+  MORTAR_FAMILY,
   {
     draws: (b) => b.kind === 'clancastle',
     preload: preloadCastles,
@@ -799,7 +810,7 @@ export class VillageScene extends Phaser.Scene {
         (family.prepared?.() ?? true)
       ) {
         const queued = new Set(this.load.list);
-        family.preload(this);
+        family.preload(this, undefined, home);
         for (const file of this.load.list)
           if (!queued.has(file)) this.bootFamilyFiles.set(file, family);
       } else this.deferredFamilies.push(family);
@@ -918,6 +929,9 @@ export class VillageScene extends Phaser.Scene {
     this.trackFamilyTextures(family, keys);
   }
   private trackFamilyTextures(family: ArtFamily, keys: string[]) {
+    // Per-level portraits may arrive through LazyTextures after the native batch. Own their
+    // keys before they arrive too, so releasing a family also releases those later uploads.
+    if (family === MORTAR_FAMILY) keys = [...keys, ...MORTAR_ART_LEVELS.map(mortarTexture)];
     if (family === GARRISON_SHARED_FAMILY || family === GARRISON_DRAGON_FAMILY) {
       const art = family === GARRISON_SHARED_FAMILY ? commonDeathArt() : characterArt('Dragon7');
       const shared = Object.keys(art.graph.textures).map((id) => nativeMeshTexture(art.prefix, id));
@@ -1740,6 +1754,7 @@ export class VillageScene extends Phaser.Scene {
     const idle = [...this.loadedFamilies].filter(
       (family) =>
         this.familyTextures.has(family) &&
+        !this.familyTextures.get(family)!.some((key) => this.deferredArt.loading(key)) &&
         !buildings.some(family.draws) &&
         !family.needed?.(this.model) &&
         !(placement && family.draws({ kind: placement } as Building)),
@@ -2034,7 +2049,7 @@ export class VillageScene extends Phaser.Scene {
           });
           for (const family of active) {
             const queued = new Set(this.load.list);
-            family.preload(this, (key) => this.deferredArt.loading(key));
+            family.preload(this, (key) => this.deferredArt.loading(key), this.model.buildings);
             // The texture keys this family added (keys already resident are never listed).
             const added = [...this.load.list]
               .filter(
@@ -3424,6 +3439,9 @@ export class VillageScene extends Phaser.Scene {
    */
   private deferrable(kind: BuildingKind, level: number, texture: string) {
     if (hasLateArt(kind)) return true;
+    // The first family batch owns its current levels. Later upgrades load just their new
+    // portrait, after the family can track and safely release that independent upload.
+    if (kind === 'mortar') return level > 1 && this.loadedFamilies.has(MORTAR_FAMILY);
     if (texture === kind) return this.deferredBases.has(kind);
     const family =
       kind === 'wall' ||

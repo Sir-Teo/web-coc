@@ -9,7 +9,7 @@ const assets = [
   ...Object.values(native.world.textures),
   ...Object.values(native.previews),
   ...Object.values(native.sounds),
-].map((value) => '/' + value.path);
+].map((value) => '/' + value.path.replace(/\.png$/, '.webp'));
 const live = true;
 let fixture;
 const historical = [];
@@ -151,7 +151,7 @@ try {
           expect(value.height).toBeGreaterThan(0);
         }
       }
-      expect(online.find((v) => v.path.endsWith('/level-18.png'))).toMatchObject({
+      expect(online.find((v) => v.path.endsWith('/level-18.webp'))).toMatchObject({
         width: 346,
         height: 336,
       });

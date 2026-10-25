@@ -95,6 +95,12 @@ development gallery keep loading. `tests/browser/obsolete-family.spec.ts` covers
 retained home/new-battle demand and both graph and image-loader queue boundaries.
 The Cannon and Tesla batches leave fallback sprites already being fetched by
 `LazyTextures` to that request, avoiding duplicate texture registration.
+The Mortar batch loads portraits for the current village's levels plus Level 1 for placement;
+the eager development gallery still loads all eighteen. Once the family is resident, a later
+level loads its own fallback portrait through `LazyTextures`. The family owns those possible
+portrait keys too and skips idle release while any of its portraits is still decoding, so a
+late upload cannot outlive its release. `tests/browser/mortar-portrait-loading.spec.ts` covers
+owned boot levels, scouting, a moving preview and delayed-decode cleanup/reload.
 
 Imported replay rosters also determine which garrison art is needed. Character body graphs
 load independently through the small catalog in `character-graphs.ts`; shared death and
