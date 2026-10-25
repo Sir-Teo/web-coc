@@ -1442,6 +1442,41 @@ Standard production checks pass online in both engines and offline in Chromium (
 `726080d8b5d7`). A separate cached Archer replay also reloads and completes offline with an
 exact state match and an uploaded body texture, with no page errors or developer hooks.
 
+## Sharing the troop skull page
+
+All 59 troop `characters` graphs that declare texture 2 reference the same 128×43 skull,
+ghost and blur page. They now use one canonical texture key, so the texture manager uploads
+it once while any retained pack needs it. Other scene namespaces and texture numbers keep
+their own keys. Source images, UVs and graph geometry do not change.
+
+The fixed 589-unit roster scene previously held 31 GPU copies of this 22,016-byte page:
+682,496 nominal RGBA bytes. The shared variant holds one copy (22,016 bytes), removing
+660,480 bytes, or 645 KiB, in both engines. Draw calls remain 110 per frame in this scene;
+this is a storage reduction, with no measured FPS claim.
+
+Within one frozen scene per engine, a baseline/shared/restored comparison redirects the 31
+source wrappers to one identical uploaded page and then restores them. All three raw canvas
+RGBA hashes match exactly, with zero changed channels and no page errors. Holding simulation,
+detail, tweens and sprite animations avoids time-based frame changes; independent cold loads
+still have small initial-presentation differences, so their pixel hashes are not compared as
+evidence for this change.
+
+The source regression checks every affected pack's path and dimensions and pins all 22,016
+RGBA bytes. Browser coverage checks shared ownership across troop changes, context restore,
+release after the last owner, cancelled decodes and a retained pack still waiting on the page.
+The served-graph check also verifies every remaining texture-2 slot after development paging,
+so a generated page cannot silently share the wrong image. All 15 relevant browser cases
+pass per engine. The full check passes 3,012 tests across 334 files, strict types, documentation
+links and the production build.
+
+Compiled phone checks load five troops through saved army presets, retain Witch alone, switch
+to Miner and clear the army through the normal toolbar. Both engines keep one 22,016-byte
+page, preserve its handle while Witch stays selected and remove it after clearing the army,
+with no page errors or developer hooks.
+
+Standard production checks pass online in both engines and offline in Chromium (cache
+`4b48a9d4a3e0`).
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

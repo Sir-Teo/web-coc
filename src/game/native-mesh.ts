@@ -47,6 +47,10 @@ export type NativeScenePose = NativeMeshPose | NativeGroupPose;
 export const NATIVE_IDENTITY: NativeMatrix = [1, 0, 0, 0, 1, 0];
 /** Texture key of one retained source texture page inside a renderer namespace. */
 export const nativeMeshTexture = (prefix: string, id: string | number) => {
+  // Every troop characters scene uses the same small skull/ghost page at texture 2.
+  // Keep one upload; pack ownership and pending loads use this canonical key too.
+  if ((id === 2 || id === '2') && prefix.startsWith('troop:') && prefix.endsWith(':characters'))
+    return 'troop:shared:characters:mesh:2';
   // Golden Dragon and Dragon 7 have separately posed graphs but exactly the same
   // imported page and UVs. One Phaser key keeps them on a single GPU allocation.
   if (prefix === 'character-golden-dragon' && (id === 0 || id === '0'))

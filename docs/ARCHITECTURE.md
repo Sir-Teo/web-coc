@@ -218,6 +218,13 @@ The existing request identities still prevent cancelled decodes from recreating 
 `tests/browser/shared-siege-atlas.spec.ts` covers allocation, retained-kind transitions,
 context restoration, release/reload and cancellation.
 
+Troop `characters` texture 2 also has one canonical key: all 59 declaring packs reference
+the identical 128×43 skull/ghost page. The same retained-key scan protects it while another
+pack needs it, including pending loads. Other scene namespaces and the garrison death family
+retain their own keys. `tests/native-troop-death-page.test.ts` pins every pack's metadata and
+the shared pixels; `tests/browser/shared-troop-death-page.spec.ts` covers ownership,
+context restoration and cancellation.
+
 Changing the home army also releases obsolete troop packs before prefetching the new kinds.
 Previously this cleanup ran only when the mode or battle changed, so repeated recipe edits
 could retain every army's GPU pages while the player stayed at home. The home-only path
