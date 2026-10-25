@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 72;
+export const REPLAY_VERSION = 73;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -100,7 +100,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 69 fixes equipment dash hits on stacked/unborn defenders and clips hero stun time.
  * Version 70 applies offensive spell defender immunities, hero damage scaling and spawn time.
  * Version 71 captures projectile frost and selects the native Frozen Arrow projectile.
- * Version 72 counts Monolith Arrow housing cumulatively, including heroes and siege machines. */
+ * Version 72 counts Monolith Arrow housing cumulatively, including heroes and siege machines.
+ * Version 73 applies Headhunter Hero targeting, damage and wall-jumping against defenders. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -140,6 +141,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 69 ||
   version === 70 ||
   version === 71 ||
+  version === 72 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -288,6 +290,7 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 73 ? { nativeHeadhunterHeroRules: true as const } : {}),
     ...(version >= 72 ? { nativeMonolithHousing: 0 } : {}),
     ...(version >= 71 ? { nativeProjectileFrost: true as const } : {}),
     ...(version >= 70 ? { nativeDefenderSpellRules: true as const } : {}),

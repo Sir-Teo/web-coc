@@ -812,6 +812,8 @@ export interface Battle {
   nativeProjectileFrost?: true;
   /** Version 72: cumulative Monolith Arrow housing, independent of losses and Recall. */
   nativeMonolithHousing?: number;
+  /** Version 73: attacking Headhunters prioritize Heroes, multiply their hits and jump walls. */
+  nativeHeadhunterHeroRules?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */

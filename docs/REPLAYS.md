@@ -141,3 +141,7 @@ Native building-targeted projectiles now carry their frost duration and percenta
 ## Version 72: cumulative Monolith Arrow housing
 
 The Monolith Arrow stage now uses a persistent deployment counter: 25 per Hero, one per owned Siege Machine and normal housing for ordinary troops. Pets, summons and spells do not contribute. Losses and Recall cannot lower the counter, and recalled redeployments retain their original contribution. Exactly 180 and 250 retain the higher stage at each boundary. Recordings reconstruct the counter from deployment inputs; versions 71 and earlier preserve their previous unit-list selection. Real troop, Hero, Siege Machine and Recall inputs cover all three projectile tiers, their damage and exact portable backward seeks.
+
+## Version 73: attacking Headhunter Hero rules
+
+Headhunters prioritize valid defending Heroes across the battlefield, deal the source’s four-times direct damage to them, and jump walls during that chase. Ordinary defenders and Guardians retain normal hit damage. Once no valid Hero remains, ordinary targeting resumes. Real Headhunter deployment and Freeze inputs record a shot against a ground or air Hero; portable files and backward seeks reconstruct its launch and impact exactly. Versions 72 and earlier retain their original targeting, damage and wall routing.

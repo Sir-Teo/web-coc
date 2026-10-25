@@ -523,6 +523,7 @@ export function stepNativeUnit(
     return;
   }
   if (s.mergeTo && stepMerge(ctx, u, s, speed, dt)) return;
+  const heroHunter = battle.nativeHeadhunterHeroRules && u.kind === 'headhunter';
   if (
     stepAttackerVsDefenders(
       battle,
@@ -540,10 +541,15 @@ export function stepNativeUnit(
         flying: s.flying || undefined,
         splash: s.splash || undefined,
         airTargets: s.airTargets,
+        ...(heroHunter ? { preferHeroes: s.preferHeroes, heroDamageScale: s.heroMultiplier } : {}),
       },
       ctx.isTargetable,
       {
-        buildings: ctx.routableBuildings ?? ctx.buildings,
+        buildings:
+          heroHunter && s.jumper
+            ? routeBuildings(ctx, true)
+            : (ctx.routableBuildings ?? ctx.buildings),
+        ...(heroHunter && s.jumper ? { jumpWalls: true } : {}),
         wallTile: ctx.wallTile,
         passableWalls: ctx.passableWalls,
         budget: ctx.pathBudget,

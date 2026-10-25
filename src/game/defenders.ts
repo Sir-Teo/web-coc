@@ -354,7 +354,7 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
 export type DefenderFightTraits = Pick<
   TroopDef,
   'prefersDefenses' | 'prefersResources' | 'healer' | 'wallBreaker' | 'flying' | 'splash'
-> & { airTargets?: boolean };
+> & { airTargets?: boolean; preferHeroes?: boolean; heroDamageScale?: number };
 const canFight = (unit: Unit, enemy: Defender, troop: DefenderFightTraits) =>
   !troop.healer &&
   !troop.wallBreaker &&
@@ -365,10 +365,35 @@ type AttackStats = Pick<TroopDef, 'damage' | 'speed' | 'range' | 'rate'>;
 /** Routing shared with the building chase: wall index, Jump breaches, A* budget. */
 export interface DefenderRoute {
   buildings: Building[];
+  /** Native jumpers route without walls and never attack one on the chase. */
+  jumpWalls?: boolean;
   wallTile?: Map<number, Building>;
   passableWalls?: Set<number>;
   budget?: { count: number; limit: number };
   breaches?: readonly { x: number; y: number }[];
+}
+/** Hero hunters ignore alert distance and ordinary defenders while a valid Hero remains. */
+function preferredHeroTarget(battle: Battle, unit: Unit, troop: DefenderFightTraits) {
+  let best: Defender | undefined;
+  let bestDist = Infinity;
+  for (const defender of battle.defenders ?? []) {
+    if (
+      defender.kind !== 'hero' ||
+      defender.hp <= 0 ||
+      defender.spawnedAt > battle.elapsed ||
+      !canFight(unit, defender, troop) ||
+      lateDefenderHidden(battle, defender) ||
+      !garrisonDefenderTargetable(battle, defender)
+    )
+      continue;
+    if (defender.id === unit.defenderTarget) return defender;
+    const dist = distance2D(defender.x - unit.x, defender.y - unit.y);
+    if (dist < bestDist || (dist === bestDist && defender.id > best!.id)) {
+      best = defender;
+      bestDist = dist;
+    }
+  }
+  return best;
 }
 /** Min-scan: identical winner to the old filter+sort (distance, then larger id). */
 function nearestAlertedDefender(battle: Battle, unit: Unit, troop: DefenderFightTraits) {
@@ -475,7 +500,7 @@ export function stepAttackerVsDefenders(
   /** Routing shared with the building chase: wall index, Jump breaches, A* budget. */
   route?: DefenderRoute,
 ) {
-  const troop = traits ?? TROOPS[unit.kind];
+  const troop: DefenderFightTraits = traits ?? TROOPS[unit.kind];
   const targetable = isTargetable ?? ((b: Building) => targetableBuilding(battle, b));
   if (troop.healer || troop.wallBreaker) {
     delete unit.defenderTarget;
@@ -502,9 +527,10 @@ export function stepAttackerVsDefenders(
   // computing when a defender could actually be engaged: an unengaged troop with no alerted
   // defender in reach returns here exactly as it would after the building checks.
   const wantsPreferred = !!troop.prefersDefenses || !!troop.prefersResources;
+  const preferredHero = troop.preferHeroes ? preferredHeroTarget(battle, unit, troop) : undefined;
   let nearest: Defender | undefined;
   let searched = false;
-  if (wantsPreferred) {
+  if (wantsPreferred && !preferredHero) {
     if (unit.defenderTarget === undefined) {
       nearest = nearestAlertedDefender(battle, unit, troop);
       searched = true;
@@ -515,15 +541,17 @@ export function stepAttackerVsDefenders(
       return false;
     }
   }
-  let target = (battle.defenders ?? []).find(
-    (d) =>
-      d.id === unit.defenderTarget &&
-      d.hp > 0 &&
-      (d.kind === 'skeleton' || d.spawnedAt <= battle.elapsed) &&
-      canFight(unit, d, troop) &&
-      !lateDefenderHidden(battle, d) &&
-      garrisonDefenderTargetable(battle, d),
-  );
+  let target =
+    preferredHero ??
+    (battle.defenders ?? []).find(
+      (d) =>
+        d.id === unit.defenderTarget &&
+        d.hp > 0 &&
+        (d.kind === 'skeleton' || d.spawnedAt <= battle.elapsed) &&
+        canFight(unit, d, troop) &&
+        !lateDefenderHidden(battle, d) &&
+        garrisonDefenderTargetable(battle, d),
+    );
   if (!target) {
     target = searched ? nearest : nearestAlertedDefender(battle, unit, troop);
     if (!target) {
@@ -535,6 +563,8 @@ export function stepAttackerVsDefenders(
       }
       return false;
     }
+  }
+  if (unit.defenderTarget !== target.id) {
     unit.defenderTarget = target.id;
     unit.path = [];
     unit.pathAt = 0;
@@ -544,8 +574,9 @@ export function stepAttackerVsDefenders(
     unit.attacking = true;
     if (unit.cooldown <= 0) {
       unit.cooldown = stats.rate;
+      const power = stats.damage * (target.kind === 'hero' ? (troop.heroDamageScale ?? 1) : 1);
       if (unit.kind === 'dragon') {
-        hurtDefender(battle, target, stats.damage);
+        hurtDefender(battle, target, power);
         damageDefenders(battle, target, stats.damage, troop.splash ?? 0, target.mode, target.id);
         if (target.mode === 'ground')
           for (const b of buildings)
@@ -578,13 +609,13 @@ export function stepAttackerVsDefenders(
             y: target.y,
             fromAir: troop.flying,
             toAir: target.mode === 'air',
-            damage: stats.damage,
+            damage: power,
             splash: troop.splash,
           },
           effect,
         );
       } else {
-        hurtDefender(battle, target, stats.damage);
+        hurtDefender(battle, target, power);
         effect({
           type: 'hit',
           targetDefender: true,
@@ -638,7 +669,10 @@ export function stepAttackerVsDefenders(
                   b.y === Math.floor(next.y),
               )
             : undefined));
-    const wall = hit && hit.hp > 0 && !route?.passableWalls?.has(hit.id) ? hit : undefined;
+    const wall =
+      !route?.jumpWalls && hit && hit.hp > 0 && !route?.passableWalls?.has(hit.id)
+        ? hit
+        : undefined;
     if (wall && distanceTo(unit, wall) <= stats.range) {
       unit.attacking = true;
       if (unit.cooldown <= 0) {
