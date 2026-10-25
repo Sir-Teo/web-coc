@@ -478,3 +478,26 @@ composition, expiry, prolonged knockout, fade and backward rendering without bat
 `tests/hero-growth.test.ts` uses real cannon-fire knockouts through portable backward seeks.
 `tests/browser/gauntlet-growth.spec.ts` checks uploaded native poses and a deliberately unavailable
 atlas that exercises the portrait fallback on desktop and phone, with reduced motion and backward seeks.
+
+## Version 86 source jumpers retain defender-chase routing
+
+Native units with `IsJumper=TRUE` now retain their wall-bypassing route when pursuing a defending
+unit. The building chase already read that flag, but defender pursuit enabled it only for a few
+named units. This left Lassi, ground Warden and other source jumpers attacking blocking walls.
+The [Lassi reference](../reference/official-wiki/heroes-pets/lassi.md) explicitly includes buildings
+and ground troops behind walls; the [Warden reference](../reference/official-wiki/heroes-pets/grand-warden.md)
+allows wall traversal in ground mode. Target preferences, ordinary ground routing and the existing
+special wall interactions keep their previous rules. Underground movement is a separate mechanism.
+
+An actual Lassi deployment now reaches a defending King across the barrier. The Warden recording
+first lures a defender into acquisition range, then hides its targets with Invisibility; the Warden
+retains the retreating target and follows it home across the wall. This uses recorded troop, Hero
+and spell inputs, without assigning a defender target in the live recording. The barrier stays
+standing; other attackers may still hit it. Versions 85 and earlier keep their previous routes,
+including the existing Headhunter, Poison Lizard, Champion and Stick Horse exceptions.
+
+`tests/jumper-defender-chase.test.ts` covers pets, ground Warden, Apprentice Warden and Hog Riders,
+ordinary ground controls, defense preference, earlier exceptions and exact portable backward seeks.
+`tests/browser/jumper-defender-chase.spec.ts` checks native actors, actual damage after crossing,
+reduced-motion parity and historical playback on desktop and phone. This correction changes
+routing, without adding a wall-leap animation or changing pet leash/target-selection rules.

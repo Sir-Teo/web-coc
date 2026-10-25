@@ -620,7 +620,12 @@ export function stepNativeUnit(
   const heroHunter = battle.nativeHeadhunterHeroRules && u.kind === 'headhunter';
   const poisonLizard = battle.nativeAttackerHitPoison && u.kind === 'poisonlizard';
   const jumpingChase =
-    s.jumper && (heroHunter || poisonLizard || nativeChampion || nativeStickHorse);
+    s.jumper &&
+    (battle.nativeSourceJumperChase ||
+      heroHunter ||
+      poisonLizard ||
+      nativeChampion ||
+      nativeStickHorse);
   const rangedFrost = battle.nativeDefenderFrost && s.frostTime > 0 && s.range > 2;
   const frostArrow = rangedFrost ? monolithArrow(ctx, u) : undefined;
   const defenderProjectile = rangedFrost

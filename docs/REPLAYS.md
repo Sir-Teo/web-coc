@@ -247,3 +247,11 @@ The effect grants no movement across walls; Stick Horse keeps its own timer. Exp
 ordinary hits, and copies outside the Hero roster gain no equipment splash. Actual activation,
 splash and expiry reconstruct through portable files and backward seeks. Versions 84 and earlier
 preserve primary-only combat and their previous stored metadata.
+
+## Version 86: native jumper routes during defender pursuit
+
+Every native source jumper now retains wall bypass during defender pursuit. Previously only
+specific units enabled it in that chase. Ordinary ground routes, target preferences and earlier
+special exceptions retain their existing behavior. Real Lassi deployment and Warden pursuit with
+recorded lure/Invisibility inputs reconstruct through portable files and backward seeks. Versions
+85 and earlier preserve their previous routes and results. Underground movement remains separate.
