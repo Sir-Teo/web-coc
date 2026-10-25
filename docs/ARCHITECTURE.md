@@ -200,6 +200,13 @@ repopulate dropped packs. Battle updates retain their existing presentation life
 `tests/browser/home-army-art-release.spec.ts` covers recipe changes, empty armies,
 cancelled metadata/textures and preserving an active battle's native view.
 
+Home hero-lineup and pet-assignment changes follow the same policy for baked atlases.
+They clear obsolete hero sprites and release packs outside the new required hero/pet set,
+including partially uploaded requests, before prefetching replacements. Battle updates keep
+their existing views and all required battle actors. `tests/browser/home-hero-art-release.spec.ts`
+checks lineup rotation, pet replacement/removal, cancelled metadata and partial King pages,
+and preservation of an active hero sprite and its battle pet.
+
 Ghost Trap coffins belong to the shared Skeleton Trap art family, including a cold visit to
 Go to Bat, which has Ghost Traps and no ordinary Skeleton Traps. The presenter waits for both
 the armed and triggered atlases before hiding its fallback. The family retains any coffin

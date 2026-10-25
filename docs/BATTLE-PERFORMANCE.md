@@ -1212,6 +1212,41 @@ the runner's four-CPU quota. The initially timed-out simulation checks also pass
 no timeout limits change. Standard production checks pass online in both engines and
 offline in Chromium (cache `76ae7fe35bdb`).
 
+## Releasing obsolete home heroes and pets
+
+Hero and pet prefetch had the same home-only retention gap: changing a four-slot lineup
+or reassigning a pet fetched replacements while keeping every previously loaded baked
+atlas until the mode changed. The scene now clears obsolete hero sprites and releases
+unneeded baked packs when the required home hero/pet set changes. The existing partial
+request ownership drops already-uploaded pages and prevents late responses from recreating
+them. Battle updates retain their existing actor views and battle pet requirements.
+
+The phone probe rotates through all six heroes using legal four-slot lineups, returns to
+King/Queen/Prince/Warden, then assigns L.A.S.S.I, Unicorn and Diggy to the King and removes
+the assignment. Before cleanup, the final four-hero/no-pet selection retained all six
+heroes and all three pets: 58,548,840 nominal RGBA bytes across 20 textures. The updated
+selection retains only its four heroes: 28,311,552 B across seven textures. That releases
+30,237,288 B (28.8 MiB), or 51.6% of the prior storage in this sequence.
+
+Individual pets retain only their current pages: King/Queen/Prince/Warden with L.A.S.S.I
+uses 33,040,400 B, with Unicorn 32,692,444 B, with Diggy 36,856,188 B, and with no pet
+28,311,552 B. These counters sum unique actual texture-wrapper dimensions at four bytes
+per texel; they do not describe browser RSS or physical-phone FPS. The viewport is
+390×844 at 3× device scale with canvas density fixed at 0.5. No atlas pixels, animations,
+equipment rules or simulation data change.
+
+Compiled phone checks repeat legal lineup and pet changes through saved-army buttons,
+tracking image uploads and texture deletion on the game canvas. The baseline retains
+58,548,840 B after returning to King/Queen/Prince/Warden with L.A.S.S.I. Both engines now retain
+33,040,400 B for that selection, releasing 25,508,440 B (24.3 MiB, 43.6%). The selected
+army remains correct, with no page errors or developer hooks.
+
+Validation: all ten relevant browser cases pass per engine (four new home-cleanup cases,
+three hero-release regressions, two hero/pet UI checks and one baked-art smoke check).
+`npm run check` passes all 3,005 tests in 332 files, strict types and the production build.
+Standard production checks pass online in both engines and offline in Chromium
+(cache `5796a2d4ced3`).
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

@@ -2908,6 +2908,10 @@ export class VillageScene extends Phaser.Scene {
     const heroSignature = [...heroes].sort().join(',');
     if (heroSignature !== this.heroPrefetchSignature) {
       this.heroPrefetchSignature = heroSignature;
+      if (!this.model.battle) {
+        this.heroNativePresentation?.clear();
+        this.heroNativePresentation?.releaseExcept(heroes);
+      }
       if (heroes.size) this.heroNativePresentation?.prefetch(heroes);
     }
   }
