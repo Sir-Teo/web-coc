@@ -69,6 +69,15 @@ export class NativeProjectilePresentation {
     this.packs = new NativeArtPacks<NativeProjectilePack>(scene);
     this.layer = new NativeEffectLayer(scene, effects, 'projectile');
   }
+  /** Warm original troop flight art alongside the carried army, before its first shot. */
+  prefetch(names: Iterable<string>) {
+    const paths = new Set<string>();
+    for (const name of names) {
+      const path = nativeProjectilePack(name);
+      if (path) paths.add(path);
+    }
+    for (const path of paths) this.packs.get(path);
+  }
   /** True when the native presentation already shows this shot's flight. */
   covers(id: string | undefined) {
     return !!id && this.covered.has(id);

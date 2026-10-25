@@ -134,6 +134,15 @@ fetching heroes the viewer does not own. Home pet prefetch follows the selected 
 lineup, leaving pets assigned to benched heroes cold. `tests/browser/battle-art-prefetch.spec.ts`
 checks first-deployment rendering and texture reuse across a Practice replay rewind.
 
+The same home/carried troop roster now warms each level's indexed native projectile flight pack.
+Shared card artwork is requested once even when several source rows use it. Importing a replay
+warms its provided troop levels before deployment; mode changes reuse completed packs. These
+requests use the existing pack loader, failure cooldown and fallback behavior and leave the combat
+clock unchanged. `tests/browser/battle-projectile-prefetch.spec.ts` holds the actual card graph
+request before any troop is deployed, then verifies native art on the first shot on desktop and phone.
+Reduced motion skips flight-pack prefetch; disabling it warms the same roster without requiring
+an army change.
+
 Village building graphs also recover from failed downloads: the pending marker clears
 after failure and retries back off from five seconds to five minutes. The fallback stays
 visible while the native graph or level pages are unavailable. Going online makes failed

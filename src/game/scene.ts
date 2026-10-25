@@ -19,6 +19,7 @@ import {
 } from './village-native-scene';
 import { NativeArtPacks, type NativeArtPack } from './native-art-pack';
 import { NativeProjectilePresentation } from './native-projectile-scene';
+import { nativeUnitStats } from './native-units';
 import { NativeDefensePresentation } from './native-defense-scene';
 import { nativeRow, tiles as nativeTiles } from './native-data';
 import {
@@ -640,6 +641,7 @@ export class VillageScene extends Phaser.Scene {
   private passiveRevision = -1;
   private pendingFx: FX[] = [];
   private armyPrefetchSignature = '';
+  private projectilePrefetchSignature = '';
   private heroPrefetchSignature = '';
   private seekingMinePresentation!: SeekingMinePresentation;
   private bombTowerPresentation!: BombTowerPresentation;
@@ -2616,6 +2618,13 @@ export class VillageScene extends Phaser.Scene {
       this.armyPrefetchSignature = signature;
       if (kinds.length) this.troopNativePresentation?.prefetch(kinds, level);
     }
+    const projectiles = this.model.reducedMotion ? '' : signature;
+    if (projectiles !== this.projectilePrefetchSignature) {
+      this.projectilePrefetchSignature = projectiles;
+      this.nativeProjectiles?.prefetch(
+        projectiles ? kinds.map((kind) => nativeUnitStats(kind, level(kind)).projectile) : [],
+      );
+    }
     const heroes = this.wantedHeroArt();
     const heroSignature = [...heroes].sort().join(',');
     if (heroSignature !== this.heroPrefetchSignature) {
@@ -2679,7 +2688,9 @@ export class VillageScene extends Phaser.Scene {
         this.heroNativePresentation.releaseExcept(this.wantedHeroArt());
         // Released packs must be fetched again: the prefetch below only runs on a
         // signature change, so a second battle would otherwise open on portraits.
-        this.armyPrefetchSignature = this.heroPrefetchSignature = '';
+        this.armyPrefetchSignature = '';
+        this.projectilePrefetchSignature = '';
+        this.heroPrefetchSignature = '';
       }
       this.nativeProjectiles.clear();
       this.nativeDefenses.clear();
