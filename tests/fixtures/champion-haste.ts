@@ -28,7 +28,7 @@ export function championHasteBattle(level = 18, version = REPLAY_VERSION) {
   const battle = model.battle;
   const hero = battle.nativeHeroes![0];
   const unit = battle.units.find((u) => u.id === hero.unitId)!;
-  return { model, battle, hero, unit, base: heroStatsFor(hero, 18) };
+  return { model, battle, hero, unit, base: heroStatsFor(hero, 18, version >= 84) };
 }
 
 /** Real Haste input and attacks across activation and expiry, with harmless ground targets. */

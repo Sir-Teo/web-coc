@@ -837,6 +837,8 @@ export interface Battle {
   nativeChargedHeroRecall?: true;
   /** Version 83: Stick Horse starts on deployment and controls King's attacks and routing. */
   nativeKingStickHorse?: true;
+  /** Version 84: passive equipment attack speed preserves Hero damage per hit. */
+  nativeHeroPassiveSpeedDamage?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */
@@ -1772,7 +1774,12 @@ export class GameModel {
     const battle = this.battle;
     if (battle?.nativeHeroes && u.id !== undefined) {
       const hero = heroOf(battle, { id: u.id });
-      if (hero) return heroTroopStats(hero, battle.townhall ?? this.townhallLevel);
+      if (hero)
+        return heroTroopStats(
+          hero,
+          battle.townhall ?? this.townhallLevel,
+          !!battle.nativeHeroPassiveSpeedDamage,
+        );
       const owner = petOwner(battle, { id: u.id });
       if (owner?.pet) return petTroopStats(owner.pet);
     }
@@ -5001,7 +5008,11 @@ export class GameModel {
     this.recordAction({ type: 'hero', hero: kind, x, y });
     const starting = !b.started;
     this.beginFight();
-    const stats = heroTroopStats(hero, b.townhall ?? this.townhallLevel);
+    const stats = heroTroopStats(
+      hero,
+      b.townhall ?? this.townhallLevel,
+      !!b.nativeHeroPassiveSpeedDamage,
+    );
     hero.unitId = this.state.nextId++;
     const recalled = hero.recalledHp;
     delete hero.recalledHp;

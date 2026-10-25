@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 83;
+export const REPLAY_VERSION = 84;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -111,7 +111,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 80 applies the Queen's Invisibility Vial flat bonus to ordinary attack damage.
  * Version 81 applies charged Royal Champion spear overrides and spends actual throws.
  * Version 82 grants Noble Iron on deployment and retains finite-hit Hero effects through Recall.
- * Version 83 applies Stick Horse's deployment timing, attack interval and personal wall jumping. */
+ * Version 83 applies Stick Horse's deployment timing, attack interval and personal wall jumping.
+ * Version 84 preserves Hero damage per hit while passive equipment shortens the attack interval. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -162,6 +163,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 80 ||
   version === 81 ||
   version === 82 ||
+  version === 83 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -310,6 +312,7 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 84 ? { nativeHeroPassiveSpeedDamage: true as const } : {}),
     ...(version >= 83 ? { nativeKingStickHorse: true as const } : {}),
     ...(version >= 82
       ? { nativePrinceNobleIron: true as const, nativeChargedHeroRecall: true as const }

@@ -229,3 +229,12 @@ temporary interval, including passive equipment speed and status scaling. Person
 now affects both chase paths; the cached route is discarded when that effect starts or expires.
 Real deployment, boosted attacks, expiry and intact-wall traversal reconstruct through portable
 files and backward seeks. Versions 82 and earlier retain their previous timing and wall blocking.
+
+## Version 84: passive Hero attack speed retains hit damage
+
+Passive equipment attack speed now preserves per-hit damage while shortening the attack interval,
+instead of reducing hit damage and cancelling its nominal DPS gain. The model's unit stats and
+native combat stats use the same version gate. Item speed percentages still add; Town Hall
+strength, charged shot bonuses and status intervals retain their existing order. Real hits and
+projectiles reconstruct through portable files and backward seeks. Versions 83 and earlier keep
+their original damage and results. The normal Hero panel shows the current calculation.

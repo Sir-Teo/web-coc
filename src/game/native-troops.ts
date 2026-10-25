@@ -195,7 +195,8 @@ export const unitLevel = (battle: Battle, u: Pick<Unit, 'kind' | 'level'>) =>
 export function statsFor(battle: Battle, u: Pick<Unit, 'kind' | 'level' | 'id'>) {
   if (battle.nativeHeroes && u.id !== undefined) {
     const hero = battle.nativeHeroes.find((entry) => entry.unitId === u.id);
-    if (hero) return heroStatsFor(hero, battle.townhall ?? 18);
+    if (hero)
+      return heroStatsFor(hero, battle.townhall ?? 18, !!battle.nativeHeroPassiveSpeedDamage);
   }
   return nativeUnitStats(u.kind, unitLevel(battle, u));
 }

@@ -35,7 +35,7 @@ export function rocketSpearBattle(
   const battle = model.battle;
   const hero = battle.nativeHeroes![0];
   const unit = battle.units.find((u) => u.id === hero.unitId)!;
-  return { model, battle, hero, unit, base: heroStatsFor(hero, 18) };
+  return { model, battle, hero, unit, base: heroStatsFor(hero, 18, version >= 84) };
 }
 
 /** Actual charged and ordinary throws, with a portable snapshot on the final charged flight. */

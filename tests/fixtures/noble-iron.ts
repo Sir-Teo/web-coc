@@ -28,7 +28,7 @@ export function nobleIronBattle(level = 1, version = REPLAY_VERSION, recall = fa
   const battle = model.battle;
   const hero = battle.nativeHeroes![0];
   const unit = battle.units.find((u) => u.id === hero.unitId)!;
-  return { model, battle, hero, unit, base: heroStatsFor(hero, 18) };
+  return { model, battle, hero, unit, base: heroStatsFor(hero, 18, version >= 84) };
 }
 
 export function nobleIronRecording(level = 1) {

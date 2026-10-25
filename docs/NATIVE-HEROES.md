@@ -404,3 +404,26 @@ retain the delayed initial boost, ordinary combat interval and previous wall blo
 status scaling, building/defender wall routes, exact expiry and real portable backward seeks.
 `tests/browser/stick-horse.spec.ts` checks native attack frames and actual cooldowns, expiry,
 intact-wall traversal, reduced-motion parity and historical playback on desktop and phone.
+
+## Version 84 passive attack speed preserves hit damage
+
+Passive equipment attack speed now shortens the interval without reducing damage per hit.
+Previously `heroStatsFor` multiplied the additive DPS by the already-shortened interval, cancelling
+that passive's nominal DPS gain. The [Vampstache comparison](../reference/official-wiki/heroes-pets/vampstache.md)
+supports retaining `(base DPS + item DPS) × base interval` as hit damage. This is a local engine
+interpretation supported by the wiki's combined-item DPS example; the table columns alone do not
+encode that multiplication order. Additive item speed, Town Hall strength and temporary/status
+interval rules keep their existing behavior.
+
+The correction covers Vampstache, Snake Bracelet, Haste Vial, Rage Gem, Dark Crown and Noble Iron,
+including paired items. At level 1 with maximum Vampstache, the King keeps 266.4 damage per hit
+and a `1.2 / 1.22` second interval. His nominal DPS is 270.84. Noble Iron's flat charged-shot bonus
+is added separately. The normal Hero panel now shows matching per-hit damage and nominal DPS;
+the fixed 20 Hz simulation still quantizes actual attack times. Unrostered copies and Heroes
+without passive equipment speed keep their existing stats. Versions 83 and earlier preserve the
+previous damage calculation through both the model and native combat stats paths.
+
+`tests/hero-passive-speed.test.ts` checks all six items, stacked speed, Town Hall scaling, ground
+Hero combat under Poison/frost, real building hits/projectiles and exact portable backward seeks.
+`tests/browser/hero-passive-speed.spec.ts` checks actual King/Champion combat, native art, reduced
+motion, historical playback and the normal Hero stats panel on desktop and phone.

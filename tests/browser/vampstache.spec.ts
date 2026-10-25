@@ -84,7 +84,8 @@ for (const { width, level } of [
     expect(first.hp - oldFirst.hp).toBe(expected.heal);
     const oldFinal = await seek(page, expected.final);
     expect(final.hp - oldFinal.hp).toBe(expected.total);
-    expect(oldFinal.defenderHp).toBe(final.defenderHp);
+    // Version 84 also preserves hit damage when passive attack speed shortens the interval.
+    expect(oldFinal.defenderHp).toBeGreaterThan(final.defenderHp);
     expect(oldFinal.cooldown).toBe(final.cooldown);
     expect(await page.evaluate(() => window.__game.game.renderer.gl.getError())).toBe(0);
     expect(errors).toEqual([]);
