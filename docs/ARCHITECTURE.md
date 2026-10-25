@@ -192,6 +192,14 @@ The existing request identities still prevent cancelled decodes from recreating 
 `tests/browser/shared-siege-atlas.spec.ts` covers allocation, retained-kind transitions,
 context restoration, release/reload and cancellation.
 
+Changing the home army also releases obsolete troop packs before prefetching the new kinds.
+Previously this cleanup ran only when the mode or battle changed, so repeated recipe edits
+could retain every army's GPU pages while the player stayed at home. The home-only path
+clears troop views and uses the same release/request-identity rules; late decodes cannot
+repopulate dropped packs. Battle updates retain their existing presentation lifecycle.
+`tests/browser/home-army-art-release.spec.ts` covers recipe changes, empty armies,
+cancelled metadata/textures and preserving an active battle's native view.
+
 Ghost Trap coffins belong to the shared Skeleton Trap art family, including a cold visit to
 Go to Bat, which has Ghost Traps and no ordinary Skeleton Traps. The presenter waits for both
 the armed and triggered atlases before hiding its fallback. The family retains any coffin

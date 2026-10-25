@@ -2896,6 +2896,12 @@ export class VillageScene extends Phaser.Scene {
     const signature = kinds.map((kind) => `${kind}:${level(kind)}`).join(',');
     if (signature !== this.armyPrefetchSignature) {
       this.armyPrefetchSignature = signature;
+      if (!this.model.battle) {
+        // Home recipes can change without a mode transition. Drop the previous
+        // army's pages before warming the next one, including pending decodes.
+        this.troopNativePresentation?.clear();
+        this.troopNativePresentation?.releaseExcept(new Set(kinds));
+      }
       if (kinds.length) this.troopNativePresentation?.prefetch(kinds, level);
     }
     const heroes = this.wantedHeroArt();

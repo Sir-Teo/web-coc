@@ -1170,6 +1170,48 @@ cases and three existing troop-release regressions. The compiled replay comparis
 in both engines. Standard production checks pass online in both engines and offline in
 Chromium (cache `16583ef3499b`). No source artwork, UVs or simulation data change.
 
+## Releasing obsolete home armies
+
+Army prefetch refreshed when the home army changed, but troop-pack cleanup ran only on a
+mode or battle transition. Repeated home recipe changes therefore accumulated old graphs
+and GPU pages. The scene now clears obsolete troop views and releases packs outside the
+new home army before warming it. Pending loads keep their existing ownership guards;
+obsolete metadata and image decodes cannot recreate the released pages. This cleanup
+runs only at home, preserving the active battle's views and retained army.
+
+At 390×844 and 3× device scale, switching home armies through Electro Dragon, Flame
+Flinger, Archer and then empty produced these identical results in Chromium and WebKit:
+
+| Selected home army | Before (RGBA bytes) | After (RGBA bytes) |
+| --- | ---: | ---: |
+| Electro Dragon | 88,203,616 | 86,187,200 |
+| Flame Flinger | 143,832,368 | 55,628,752 |
+| Archer | 143,832,368 | 762,184 |
+| Empty | 143,832,368 | 0 |
+
+The Archer-only case uses 99.5% less troop-page storage, and emptying the army releases
+all 137.2 MiB previously retained by these troop packs. The counters sum actual unique
+Phaser texture-wrapper dimensions at four RGBA bytes per texel; they exclude village and
+other textures and do not measure process memory or physical-phone FPS. Canvas density
+was fixed at 0.5 for comparison. No artwork, animation or simulation data changes.
+
+Phone checks cover returning to an earlier army, emptying it, cancelling obsolete graph
+and texture loads, and preserving the same active native view when a home-army update
+arrives during battle. Existing troop-release and Cookbook UI behavior are also exercised.
+
+Compiled phone checks repeat the sequence through saved-army buttons in both engines.
+Tracking uploads and deletions on the game canvas confirms that obsolete large body
+atlases are deleted and the selected army stays correct, with no page errors or developer
+hooks. These production counters omit small textures replaced by typed-array color
+corrections; the complete wrapper-based measurements are in the table above.
+
+Validation: all nine relevant browser cases pass per engine (four new home-cleanup cases,
+three troop-release regressions and two Cookbook UI checks). `npm run check` passes all
+3,005 tests in 332 files, strict types and the production build with three workers within
+the runner's four-CPU quota. The initially timed-out simulation checks also pass isolated;
+no timeout limits change. Standard production checks pass online in both engines and
+offline in Chromium (cache `76ae7fe35bdb`).
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
