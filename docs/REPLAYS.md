@@ -125,3 +125,7 @@ Native spell Poison movement modifiers now apply the client’s 50% hero multipl
 ## Version 68: distinct Freeze cues on defending units
 
 Full native freezes record a separate defender `frozenUntil` deadline for artwork, alongside the existing stun deadline used by combat. Heroes, Guardians, garrison troops and Skeleton Trap defenders can therefore show the same icy tint as attacking units without coloring Lightning or Totem stuns as Freeze. Freeze takes priority over Poison; thaw and death restore the remaining status or original artwork. Older recordings keep their previous state shape and appearance. Exact replay comparisons confirm that version 68 changes only the new visual fields, with damage, movement and attack timing identical to version 67.
+
+## Version 69: equipment dash contacts and defending Hero thaw timing
+
+Penetrating equipment such as Rocket Backpack now damages each contacted defender directly once. The previous zero-radius area hit could damage multiple defenders at one position for each member of the stack. Defenders that have not spawned yet neither take damage nor consume a dash contact. Defending Heroes also use only the part of an update after their stun or Freeze deadline for movement, cooldown and path timers; the update ending exactly on that deadline stays fully held. Versions 68 and earlier retain their previous damage and timing. Actual Duke activation and Freeze inputs reproduce both rules through portable files, backward seeks and desktop/phone browser checks.

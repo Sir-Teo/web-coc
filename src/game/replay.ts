@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 68;
+export const REPLAY_VERSION = 69;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -96,7 +96,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 65 adds idle hero and Skeleton Trap avoidance, holding heroes clear of poisoned homes.
  * Version 66 prevents overdue defensive Poison pulses from rewinding the attacker damage clock.
  * Version 67 applies the client hero movement multiplier to native spell Poison slows.
- * Version 68 records distinct full-freeze deadlines for defender status artwork. */
+ * Version 68 records distinct full-freeze deadlines for defender status artwork.
+ * Version 69 fixes equipment dash hits on stacked/unborn defenders and clips hero stun time. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -132,6 +133,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 65 ||
   version === 66 ||
   version === 67 ||
+  version === 68 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -280,6 +282,9 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 69
+      ? { nativeEquipmentDashHits: true as const, nativeDefendingHeroStunTime: true as const }
+      : {}),
     ...(version >= 68 ? { nativeDefenderFreezeCue: true as const } : {}),
     ...(version >= 67 ? { nativeHeroPoisonSpeed: true as const } : {}),
     ...(version >= 66 ? { nativeAttackerPoisonClock: true as const } : {}),

@@ -4,7 +4,7 @@ import { heroAbilities, type NativeBattleHero, type HeroAbility } from './native
 import { castNativeSpell } from './native-spells';
 import { healUnit, unitEffects } from './native-status';
 import { launchProjectile } from './projectiles';
-import { damageDefenders } from './defenders';
+import { damageDefenders, hurtDefender } from './defenders';
 import { distanceTo, type Unit } from './model';
 import { distance2D } from './distance';
 import type { NativeTroopContext } from './native-troops';
@@ -178,11 +178,13 @@ export function stepEquipmentDash(ctx: NativeTroopContext, unit: Unit, dt: numbe
     for (const d of ctx.battle.defenders ?? [])
       if (
         d.hp > 0 &&
+        (!ctx.battle.nativeEquipmentDashHits || d.spawnedAt <= ctx.battle.elapsed) &&
         !dash.hit.includes(d.id) &&
         distance2D(d.x - unit.x, d.y - unit.y) <= dash.radius
       ) {
         dash.hit.push(d.id);
-        damageDefenders(ctx.battle, d, dash.damage, 0, 'both');
+        if (ctx.battle.nativeEquipmentDashHits) hurtDefender(ctx.battle, d, dash.damage);
+        else damageDefenders(ctx.battle, d, dash.damage, 0, 'both');
       }
   }
   unit.attacking = false;

@@ -68,9 +68,11 @@ it.each(['Lightning', 'Totem Spell'])('does not give %s stuns a Freeze cue', (na
 });
 
 it.each(['hero', 'skeleton', 'garrison', 'guardian'] as const)(
-  'reconstructs %s Freeze cues through portable backward seeks without changing combat',
+  'reconstructs version-68 %s Freeze cues without changing version-67 combat',
   (kind) => {
-    const { data, defenderId, frozen, expired } = defenderFreezeTintRecording(kind);
+    const { data: recording, defenderId, frozen, expired } = defenderFreezeTintRecording(kind);
+    // Pin the visual-only release: later combat versions deliberately change Hero timing.
+    const data = { ...recording, version: 68 };
     expect(validateReplay(data)).toBe(true);
     expect(replayBattle(data.initial, 68).nativeDefenderFreezeCue).toBe(true);
     expect(replayBattle(data.initial, 67).nativeDefenderFreezeCue).toBeUndefined();
