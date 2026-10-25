@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 65;
+export const REPLAY_VERSION = 66;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -93,7 +93,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 62 caps aggregate poison damage on defenders, including staggered clouds.
  * Version 63 prevents overdue poison pulses from rewinding the shared allowance clock.
  * Version 64 lets idle garrison troops avoid active offensive poison clouds.
- * Version 65 adds idle hero and Skeleton Trap avoidance, holding heroes clear of poisoned homes. */
+ * Version 65 adds idle hero and Skeleton Trap avoidance, holding heroes clear of poisoned homes.
+ * Version 66 prevents overdue defensive Poison pulses from rewinding the attacker damage clock. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -126,6 +127,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 62 ||
   version === 63 ||
   version === 64 ||
+  version === 65 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -274,6 +276,7 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 66 ? { nativeAttackerPoisonClock: true as const } : {}),
     ...(version >= 65 ? { nativeIdlePoisonAvoidance: true as const } : {}),
     ...(version >= 64 ? { nativePoisonAvoidance: true as const } : {}),
     ...(version >= 63 ? { nativePoisonClock: true as const } : {}),

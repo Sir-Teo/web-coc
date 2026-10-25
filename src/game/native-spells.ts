@@ -730,7 +730,9 @@ function harmAttackers(
       const last = e.poison?.tickAt;
       const exposure = last !== undefined && last > at - interval ? at - last : interval;
       e.poison = {
-        until: at + Math.max(seconds(row, 'BoostTimeMS'), interval),
+        until: battle.nativeAttackerPoisonClock
+          ? Math.max(e.poison?.until ?? 0, at + Math.max(seconds(row, 'BoostTimeMS'), interval))
+          : at + Math.max(seconds(row, 'BoostTimeMS'), interval),
         speed: Math.min(
           e.poison && e.poison.until > at ? e.poison.speed : 0,
           num(row, 'SpeedBoost') / 100,
@@ -741,7 +743,9 @@ function harmAttackers(
         ),
         dps: Math.max(poison, e.poison && e.poison.until > at ? e.poison.dps : 0),
         since,
-        tickAt: at,
+        // Cast-order catch-up can visit an older pulse after a later cloud's pulse.
+        // Keep the paid-through time monotonic so that time cannot be charged twice.
+        tickAt: battle.nativeAttackerPoisonClock ? Math.max(at, last ?? at) : at,
       };
       const ramp = flag(row, 'PoisonIncreaseSlowly') ? Math.min(1, (at - since + interval) / 5) : 1;
       if (exposure > 0) hurtUnit(battle, u, poison * exposure * ramp * scale, at);

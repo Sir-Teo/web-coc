@@ -796,6 +796,8 @@ export interface Battle {
   nativePoisonAvoidance?: true;
   /** Version 65: idle heroes and Skeleton Trap defenders avoid Poison clouds too. */
   nativeIdlePoisonAvoidance?: true;
+  /** Version 66: overdue defensive Poison pulses cannot rewind the shared damage clock. */
+  nativeAttackerPoisonClock?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */

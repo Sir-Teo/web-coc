@@ -113,3 +113,7 @@ Idle released garrison troops now leave offensive Poison clouds when they have n
 ## Version 65: idle Hero and Skeleton Trap Poison avoidance
 
 Idle defending Heroes and Skeleton Trap defenders now use the Poison avoidance rule too. Heroes stay clear while their home point is covered, then resume their original return-home behavior when the cloud ends. These defenders retain static cloud positions through the native final-pulse boost deadline, independently of their last damage exposure. Combat still takes priority and Freeze still holds movement. Skeleton health and speed are unchanged, so a low-level Skeleton can start fleeing and still die before crossing a large cloud. Versions 64 and earlier retain their original behavior.
+
+## Version 66: defensive Poison clocks across larger updates
+
+Defensive native Poison pulses keep their shared attacker damage clock and slow deadline at the latest processed pulse. Catching up multiple clouds in cast order can no longer move either timestamp backward and charge the same exposure time twice. Two staggered Poison Spell Towers now deal the same damage with one-second updates as with 20 Hz updates, including their native hero multiplier. Versions 65 and earlier keep their original calculation. `tests/attacker-poison-clock.test.ts` covers update sizes, actual Spell Tower casts, portable replay files and exact backward seeks.
