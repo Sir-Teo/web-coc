@@ -59,6 +59,9 @@ SHARED_TEXTURES = {
     'assets/garrison-native/dragon7/texture/texture-0.png': SharedTexture(
         'assets/characters-native/dragon/golden-dragon/texture/texture-0.png', (2030, 2748),
         '1964189f257c421168295fe90f6f8defc484163a2c8d18fdb988072e69a783ab'),
+    'assets/garrison-native/dragon7/texture/texture-0-compact-v1.png': SharedTexture(
+        'assets/characters-native/dragon/golden-dragon/texture/texture-0-compact-v1.png', (992, 4021),
+        '757a20fd505440b401eb7ba3997e96c978d4137a63a008b6376e659cb8c4956b'),
     'assets/dark-drill-native/portrait/1.png': SharedTexture(
         'assets/catalog-native/dark-elixir-drill/level-1.png', (109, 119),
         'c04e8def6de79ff1e256ffba3a615c0bcd01691f6bc892756a7ca6b825232417'),

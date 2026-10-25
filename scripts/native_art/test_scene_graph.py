@@ -123,6 +123,39 @@ class SceneGraphTests(unittest.TestCase):
         self.assertEqual(textures['7']['bounds'], [0, 0, 3, 5])
         self.assertEqual(outputs['edge/texture-7.png'].tobytes(), im.tobytes())
 
+    def test_compaction_keeps_legacy_layout_when_no_smaller_page_exists(self):
+        graph = dict(shapes={'2': [[7, [0, 0, 0, 0, 0, 1, 0, 65535, 1, 0, 65535, 0, 1, 1, 65535, 65535]]]})
+        image = Image.new('RGBA', (3, 5), (73, 16, 201, 47))
+        original = crop_textures(graph, {7: image}, 'small')
+        compact = crop_textures(graph, {7: image}, 'small', compact=True)
+        self.assertEqual(compact[1:], original[1:])
+        self.assertEqual(set(compact[0]), set(original[0]))
+        self.assertEqual(compact[0]['small/texture-7.png'].tobytes(), image.tobytes())
+
+    def test_compacted_overlapping_regions_keep_source_pixels_clamps_and_legacy_page(self):
+        pixels = np.random.default_rng(441).integers(0, 256, (256, 256, 4), dtype=np.uint8)
+        pixels[::2, ::2, 3] = 0
+        a = np.array([[0, 0, 0, 0], [0, 5, 0, 12000], [5, 0, 12000, 0], [5, 5, 12000, 12000]])
+        b, c = a.copy(), a.copy()
+        b[:, 2:] += 3000
+        c[:, 2:] = np.where(c[:, 2:] == 0, 62535, 65535)
+        graph = dict(shapes={str(i): [[7, v.reshape(-1).tolist()]] for i, v in enumerate([a, b, c])})
+        original_outputs, original_textures, _ = crop_textures(graph, {7: Image.fromarray(pixels)}, 'overlap')
+        outputs, textures, runtime = crop_textures(graph, {7: Image.fromarray(pixels)}, 'overlap', compact=True)
+        t, legacy = textures['7'], original_textures['7']
+        self.assertLess(t['width'] * t['height'], legacy['width'] * legacy['height'])
+        self.assertEqual(t['legacy']['path'], legacy['path'])
+        self.assertEqual(outputs[legacy['path']].tobytes(), original_outputs[legacy['path']].tobytes())
+        self.assertTrue(t['path'].endswith('-compact-v1.png'))
+        packed = np.array(outputs[t['path']]) / 255
+        for i, source in enumerate([a, b, c]):
+            actual = np.array(runtime['shapes'][str(i)][0][1]).reshape(-1, 4)
+            actual[:, 2:] *= 65535
+            matrix, color = np.diag([3, 3, 1]), (np.ones(4), np.zeros(4))
+            before = rasterize([(7, source, matrix, color)], {7: pixels / 255}, (0, 0, 15, 15))
+            after = rasterize([(7, actual, matrix, color)], {7: packed}, (0, 0, 15, 15))
+            self.assertEqual(before.tobytes(), after.tobytes())
+
     def test_packed_distant_regions_keep_independent_fractional_samples(self):
         pixels = np.random.default_rng(531).integers(0, 256, (128, 128, 4), dtype=np.uint8)
         a = np.array([[0, 0, 1000, 1000], [0, 5, 1000, 3900], [5, 0, 3900, 1000], [5, 5, 3900, 3900]])

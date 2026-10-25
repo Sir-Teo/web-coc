@@ -77,7 +77,8 @@ def build():
         images = {t: decode_sctx(source('sc/' + sc.textures[t]['external'], PINS)) for t in used}
         for t, image in images.items():
             require(image.size == (sc.textures[t]['width'], sc.textures[t]['height']), 'Texture dimensions differ')
-        assets, textures, runtime = crop_textures(graph, images, f'{PREFIX}/{family}/texture')
+        assets, textures, runtime = crop_textures(
+            graph, images, f'{PREFIX}/{family}/texture', compact=family == 'dragon7')
         outputs.update(assets)
         worlds[family] = dict(source=path, graph=graph, textures=textures,
             sourceTextures={str(t): 'sc/' + sc.textures[t]['external'] for t in used})

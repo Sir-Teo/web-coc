@@ -4,7 +4,8 @@ import { GameModel } from '../src/game/model';
 import { spawnGarrisonDefender } from '../src/game/garrison-combat';
 import { garrisonPoses } from '../src/game/garrison-poses';
 import { garrisonLayers } from '../src/game/garrison-layers';
-import { loadCharacterArt } from '../src/game/character-art';
+import { characterArt, loadCharacterArt } from '../src/game/character-art';
+import sourceArt from '../reference/garrison/art.json';
 
 // The character graphs load on demand, as the garrison art does.
 await loadCharacterArt();
@@ -12,7 +13,9 @@ await loadCharacterArt();
 /**
  * Frozen before the generic character presentation replaced the Dragon/Balloon-specific
  * pose code: No Flight Zone's original meshes, facing, windup, death and shadow layers
- * must remain byte-identical across this state matrix.
+ * must remain byte-identical across this state matrix. Atlas UVs are translated back
+ * to the original layout before hashing; native-garrison-art.test.ts and the browser
+ * pixel witnesses independently check the current UVs and sampled pixels.
  */
 const FROZEN_DIGEST = '9d318c3deabeed7e60044f7e206b0976ec0d7bd38b42b4c6ce0b219804e0294c';
 
@@ -24,8 +27,32 @@ function battle() {
   return b;
 }
 it('keeps Dragon 7 and Balloon 8 poses and shadow layers byte-identical', () => {
+  const original = sourceArt.worlds.dragon7;
+  const legacyVertices = new WeakMap<number[], number[]>();
+  for (const [id, commands] of Object.entries(original.graph.shapes))
+    for (const [index, [textureId, vertices]] of (commands as [number, number[]][]).entries()) {
+      const texture = original.textures[textureId],
+        legacy = texture.legacy;
+      legacyVertices.set(
+        characterArt('Dragon7').graph.shapes[id][index][1],
+        vertices.map((v, i) => {
+          if (i % 4 < 2) return v;
+          const axis = (i % 4) - 2;
+          return (
+            ((v / 65535) * texture.sourceSize[axis] - texture.bounds[axis]) /
+            (axis === 0 ? legacy.width : legacy.height)
+          );
+        }),
+      );
+    }
   const hash = createHash('sha256');
-  const add = (label: string, value: unknown) => hash.update(label).update(JSON.stringify(value));
+  const add = (label: string, value: unknown) =>
+    hash.update(label).update(
+      JSON.stringify(value, (key, entry) => {
+        const legacy = key === 'vertices' ? legacyVertices.get(entry) : undefined;
+        return legacy ? entry.map((v: number, i: number) => (i % 4 < 2 ? v : legacy[i])) : entry;
+      }),
+    );
   const b = battle();
   // Dragon: target directions, last-attack fallback, default facing, wing timeline and death.
   for (const reduced of [false, true]) {

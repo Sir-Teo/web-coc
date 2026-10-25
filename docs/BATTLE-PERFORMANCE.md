@@ -1067,6 +1067,48 @@ module checks and existing garrison, worker, Ghost Trap, loading and recovery be
 standard production checks passed online in both engines and offline in Chromium; compiled
 late-campaign replays matched their recorded results in both engines (cache `57d689d7db3c`).
 
+## Compact Dragon texture pages
+
+Dragon 5 and Golden Dragon/Dragon 7 now pack overlapping source sampling regions into
+versioned atlases. Bounded clustering retains nearby pieces together for compression,
+while exact pixel copies, sampling guards and UV translations preserve the native art.
+No polygons, transforms, animation clips or simulation data change. The importers retain
+the byte-identical original pages for cached modules whose UVs use the previous layout.
+
+| Atlas | Original decoded RGBA | Compact decoded RGBA | Reduction |
+| --- | ---: | ---: | ---: |
+| Dragon 5 | 21,404,320 B | 13,329,792 B | 37.7% |
+| Golden Dragon / Dragon 7 (shared) | 22,313,760 B | 15,955,328 B | 28.5% |
+
+The production lossless WebP cost increases by 6,660 B (0.5%) and 38,438 B (2.8%)
+respectively. These measurements describe atlas storage and decoded image size, rather
+than device memory usage or physical-phone FPS. The importer checks every source region's
+RGBA hash after packing, including transparent RGB. Regression checks compare both
+compact and legacy layouts against those regions, preserve graph data and mesh coordinates,
+and verify that Dragon 7 and Golden Dragon still share their atlas.
+
+A live Dragon 7 reserve at 390×844 and 3× device scale, with canvas density fixed at
+0.5 for comparison, produced the same allocation result in Chromium and WebKit: the
+atlas fell from 22,313,760 to 15,955,328 B. All newly allocated texture wrappers in this
+fixture fell from 24,784,416 to 18,425,984 B (25.7%), with eight visible native body parts,
+no missing textures, zero GL errors and no page errors in both runs. The original-pixel
+witness checks passed all 181 troop poses in both engines, including 99 Dragon 7 poses;
+forcing single-texture batching and restoring a lost graphics context changed zero
+framebuffer bytes. Source PNGs and comparison thresholds remain unchanged.
+The frozen Dragon/Balloon presentation digest also remains unchanged: its test translates
+only Dragon UVs back to the legacy layout before hashing, while retaining the actual
+posed geometry, transforms, colors, blend groups, timing and shadow separation.
+
+Validation: both source importers reproduce the generated JSON/PNG files byte-for-byte;
+25 Python importer tests pass. `npm run check` passes all 3,004 tests in 331 files, strict
+types and the production build. Five relevant rendering/lineup browser cases pass per
+engine. Production delivery checks decode 47 current and compatibility images in both
+engines, compare WebP pixels with the source PNGs and reload identically offline in
+Chromium. Standard production checks pass online in both engines and offline in Chromium.
+A compiled phone-sized replay containing Dragon 5, Dragon 7 and Golden Dragon requests
+both compact WebP pages and reaches the same recorded defender state in both engines,
+with no page errors or developer hooks (cache `2bfb804b9a64`).
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
