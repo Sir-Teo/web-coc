@@ -19,8 +19,9 @@ Campaign raids, ladder matches, practice attacks and replays all follow the same
 - The loops stream through one media element, so a three-minute track is never held decoded in memory. Each file is fetched whole and played from a blob URL: a media element's range requests bypass the service worker's cache, while a whole-file fetch is kept for offline play once heard.
 - The stings are seconds long and play through Web Audio.
 - Music plays at half volume under the effects. iOS ignores a media element's volume, so the Home and battle loops play at full volume there; the stings still follow it.
-- Hiding the page or turning Music off pauses the current track in place, and it resumes from the same point.
+- Hiding the page or turning Music off pauses the current loop in place, and it resumes from the same point. Active intro and result stings stop immediately; they do not restart when music returns. Sound effects keep their own sources.
+- Leaving a screen cancels its active sting and prevents a delayed download or decode from starting it afterward. A cancelled intro cannot restart the planning loop over combat or Home music.
 - A track that fails to download stays silent and is tried again on the next scene change.
 - Ogg Vorbis needs Safari 18.4 or later on iOS and macOS 15.4 or later; older Safari stays silent for the Ogg files and still plays the MP3 planning loop and stings.
 
-Verified October 5, 2026: `tests/music.test.ts` checks the shipped bytes, scene selection, Home part order, the intro-then-planning sequence, silence while off, pause and resume, and stale downloads. `tests/browser/music.spec.ts` turns Music on in Chromium and follows a practice attack from planning to combat to its result. WebKit was not available in this environment.
+`tests/music.test.ts` checks the shipped bytes, scene selection, Home part order, the intro-then-planning sequence, silence while off, loop pause/resume, active sting cancellation and delayed downloads. `tests/browser/music.spec.ts` follows a practice attack from planning through combat to its result, confirms sting cancellation while the effects context stays running, and holds the actual intro request while leaving for Home or combat. The October 5, 2026 baseline ran in Chromium; WebKit was not available then.

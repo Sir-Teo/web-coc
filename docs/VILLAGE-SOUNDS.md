@@ -23,4 +23,6 @@ Generic Pick Up and Boost Start are imported too, for moments this game does not
 
 They are fetched after the first gesture with sound on, never at boot, and decoded like the other native samples. Until a sound is decoded, or where a browser cannot decode Ogg, the generated tone it replaces plays instead. Vibration follows the same moments either way. A sample plays at the client's volume scaled as every native sample is (`volume × 0.12`), and at most eight interface sounds overlap.
 
+Turning Sound effects off immediately stops battle cues, interface samples and generated fallback tones, including when Music keeps the shared audio context running. Replay pause and seeking stop battle cues separately, so they do not cut off interface feedback. Turning effects back on allows new cues and retains decoded samples. `tests/sample-audio.test.ts` checks voice cleanup and the separate pause behavior; `tests/browser/music.spec.ts` checks the actual Sound effects switch with an active sample and tone while music continues.
+
 `tests/village-sounds.test.ts` checks the pinned rows and files and the one-shot player; `tests/browser/village-sounds.spec.ts` checks that nothing is fetched before the first gesture and that collecting Gold plays the client's coin sound.

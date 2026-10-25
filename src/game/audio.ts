@@ -25,6 +25,7 @@ export class AudioManager {
   /** The original client's Home and battle music; plays only while music is on. */
   readonly tracks = new MusicPlayer(() => (this.musicOn ? this.context : null));
   private lastPlay: Partial<Record<string, number>> = {};
+  private tones = new Map<OscillatorNode, GainNode>();
   /** The village sounds load once, after the first gesture with sound on (about 200 KB). */
   private villageLoad?: Promise<void>;
   constructor() {
@@ -37,7 +38,20 @@ export class AudioManager {
   set enabled(on: boolean) {
     if (this.soundOn === on) return;
     this.soundOn = on;
-    if (!on) this.samples.stop();
+    if (!on) {
+      this.samples.stopAll();
+      for (const [osc, gain] of this.tones) {
+        osc.onended = null;
+        try {
+          osc.stop();
+        } catch {
+          // It may have finished before its ended event is delivered.
+        }
+        osc.disconnect();
+        gain.disconnect();
+      }
+      this.tones.clear();
+    }
     this.updateContext();
   }
   /** True while anything may be heard: sound effects or music, on a visible page. */
@@ -139,7 +153,9 @@ export class AudioManager {
     gain.connect(ctx.destination);
     osc.start();
     osc.stop(ctx.currentTime + duration);
+    this.tones.set(osc, gain);
     osc.onended = () => {
+      this.tones.delete(osc);
       osc.disconnect();
       gain.disconnect();
     };

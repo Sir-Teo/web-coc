@@ -43,7 +43,7 @@ export class SampleAudio {
   >();
   private ended = new Set<string>();
   /** Interface one-shots, outside the simulation clock (see `shot`). */
-  private shots = new Set<AudioBufferSourceNode>();
+  private shots = new Map<AudioBufferSourceNode, GainNode>();
   private last?: { elapsed: number; wall: number; speed: number };
   constructor(private context: () => AudioContext | null) {}
   /**
@@ -90,7 +90,7 @@ export class SampleAudio {
     gain.gain.value = volume * 0.12;
     source.connect(gain);
     gain.connect(ctx.destination);
-    this.shots.add(source);
+    this.shots.set(source, gain);
     source.onended = () => {
       this.shots.delete(source);
       source.disconnect();
@@ -115,6 +115,17 @@ export class SampleAudio {
     this.active.clear();
     this.ended.clear();
     this.last = undefined;
+  }
+  /** Sound off cancels interface one-shots too; replay pause only calls `stop`. */
+  stopAll() {
+    this.stop();
+    for (const [source, gain] of this.shots) {
+      source.onended = null;
+      SampleAudio.safeStop(source);
+      source.disconnect();
+      gain.disconnect();
+    }
+    this.shots.clear();
   }
   sync(cues: SampleCue[], elapsed: number, speed: number, playing: boolean) {
     const ctx = this.context();

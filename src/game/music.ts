@@ -67,8 +67,8 @@ const browserHost: MusicHost = {
 /**
  * Loops stream through one media element, so a three-minute track never sits decoded in
  * memory; Home plays its three parts in order and starts over. Stings are seconds long and
- * play through Web Audio. Turning music off pauses in place, so a hidden page or the setting
- * resumes where it stopped.
+ * play through Web Audio. Turning music off pauses loops in place and cancels stings, so a
+ * hidden page or the setting resumes the loop where it stopped.
  */
 export class MusicPlayer {
   private el: MusicElement | null = null;
@@ -78,6 +78,7 @@ export class MusicPlayer {
   private enabled = false;
   private urls = new Map<string, Promise<string | null>>();
   private stings = new Map<string, Promise<AudioBuffer | null>>();
+  private voices = new Set<{ source: AudioBufferSourceNode; gain: GainNode }>();
   /** Increments on every change, so a slow download cannot start a track no longer wanted. */
   private generation = 0;
   private host: MusicHost;
@@ -95,13 +96,17 @@ export class MusicPlayer {
     this.enabled = on;
     this.generation++;
     if (on) this.resume();
-    else this.el?.pause();
+    else {
+      this.el?.pause();
+      this.stopStings();
+    }
   }
   setScene(scene: MusicScene) {
     if (scene === this.scene) return;
     const previous = this.scene;
     this.scene = scene;
     this.generation++;
+    this.stopStings();
     const loop = scene === 'victory' || scene === 'defeat' ? null : scene;
     if (loop !== this.loop) {
       this.el?.pause();
@@ -156,6 +161,7 @@ export class MusicPlayer {
   private sting(kind: Sting, then?: () => void) {
     const ctx = this.host.context();
     const path = STINGS[kind];
+    const generation = this.generation;
     if (!ctx) return then?.();
     let buffer = this.stings.get(path);
     if (!buffer) {
@@ -169,6 +175,8 @@ export class MusicPlayer {
       this.stings.set(path, buffer);
     }
     void buffer.then((decoded) => {
+      // A download or decode can finish after leaving this screen, or after off/on.
+      if (generation !== this.generation) return;
       if (!decoded || !this.enabled) return then?.();
       const source = ctx.createBufferSource(),
         gain = ctx.createGain();
@@ -176,12 +184,30 @@ export class MusicPlayer {
       source.buffer = decoded;
       source.connect(gain);
       gain.connect(ctx.destination);
+      const voice = { source, gain };
+      this.voices.add(voice);
       source.onended = () => {
+        this.voices.delete(voice);
         source.disconnect();
         gain.disconnect();
-        then?.();
+        if (generation === this.generation && this.enabled) then?.();
       };
       source.start();
     });
+  }
+  /** Stops only music stings; sound effects keep their own sources and context. */
+  private stopStings() {
+    for (const { source, gain } of this.voices) {
+      // Cancellation must not run the intro's completion callback and start planning music.
+      source.onended = null;
+      try {
+        source.stop();
+      } catch {
+        // The source may have ended before its queued ended event is delivered.
+      }
+      source.disconnect();
+      gain.disconnect();
+    }
+    this.voices.clear();
   }
 }
