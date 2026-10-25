@@ -30,7 +30,7 @@ export class DefendingBuilderPresentation implements LatePresentation {
   }
   render({ battle, reduced, iso }: LateRenderContext): SampleCue[] {
     // A home-loaded building presentation can meet replay workers before their first graph load.
-    if (!characterArtLoaded()) return [];
+    if (!characterArtLoaded('Defending Builder')) return [];
     const wanted = new Set<number>();
     for (const builder of battle?.late?.defendingBuilder?.builders ?? []) {
       const layers = defendingBuilderLayers(builder, battle!, reduced);

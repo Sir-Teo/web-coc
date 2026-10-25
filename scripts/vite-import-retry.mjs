@@ -1,7 +1,7 @@
 import path from 'node:path';
 
 const KEY = 'crown-clan.import-retry';
-const REQUIRED_TARGETS = ['late-campaign-scene', 'character-graphs'];
+const REQUIRED_TARGETS = ['late-campaign-scene', 'character-graphs', 'character-shared-graphs'];
 const TARGETS = [
   ...REQUIRED_TARGETS,
   'spell-tower-scene',

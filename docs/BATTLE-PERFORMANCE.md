@@ -1328,6 +1328,47 @@ however: the fractional-scale Chromium sample differs by up to 46/255 in individ
 channels; WebKit differences stay within 1/255. The experiment is not applied. Shipping
 hero sheets and their frame geometry remain unchanged.
 
+## Loading only requested character graphs
+
+Texture loading already selected the required defender bodies, but the first character
+request still imported every character graph. A compiled phone replay with one Archer 9
+downloaded a 1,819,883-byte character module in both engines, plus the required 177,876-byte
+castle module. The character module held 30 source JSON files totaling 4,039,524 bytes.
+
+The loader catalog now imports each of its 22 body graphs independently. Shared death and
+projectiles remain one lazy module; these eight JSON files total 458,386 source bytes, and
+the Archer body adds 54,530. Automatic battle requests use their transitive defender demand;
+the foundation families request shared data, Dragon 7 or Balloon 8 explicitly. An omitted
+roster retains the full preload. Successful entries retain identity and catalog order;
+concurrent body requests share their promise and failed requests remain retryable.
+
+Readiness is per body as well as shared data. A ready shared module cannot make a pending
+worker or Archer graph look available. The pose and bar-height guards keep rendering frames
+while the battle clock waits for all required art. Shared and body graph imports retain the
+retry wrapper, including a production-build assertion for the new shared module. Captured
+graph contents, texture namespaces, shadow sets and simulation data do not change.
+
+The same compiled Archer replay now loads a 4,354-byte loader catalog, a 183,216-byte shared
+module and a 25,165-byte Archer graph: 212,735 bytes of character JavaScript, 88.3% less.
+Including the unchanged castle module, newly loaded replay JavaScript falls from 1,997,759
+to 390,611 bytes (80.4%). Both engines report the same payload sizes and exactly matching
+defender identifiers, positions, health, targets and finished state, with no page errors or
+developer hooks. These are decoded JavaScript payload sizes, not compressed network bytes
+or physical-phone FPS. The character path uses three small requests instead of one large
+request; startup precaching remains 15 files and 7.4 MB.
+
+All 22 loading cases pass per browser engine. They cover the requested raw graph URLs,
+roster extension, full preload during a selective load, held bodies after shared data is
+ready, worker presentation, backoff/reconnect, returns home and recordings without reserves.
+Unit coverage preserves alias entry identity and catalog order and retains the frozen
+character and garrison presentation witnesses.
+`npm run check` passes all 3,009 tests across 333 files, strict types, documentation links
+and the production build, including the required shared-module retry wrapper.
+Standard production checks pass online in both engines and offline in Chromium
+(cache `5d87fe0ca84f`). A separate compiled phone check reloads offline and imports the
+same cached Archer replay: its battle state matches exactly and its body texture uploads
+from cached assets, with no page errors or developer hooks.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

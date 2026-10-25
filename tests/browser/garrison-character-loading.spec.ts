@@ -108,10 +108,23 @@ test('phone garrisons load only their bodies, extend a warm roster, and reload a
 }) => {
   test.setTimeout(240000);
   const errors: string[] = [];
+  const bodyGraphs = new Set<string>();
   page.on('pageerror', (error) => errors.push(error.message));
+  page.on('request', (request) => {
+    const path = new URL(request.url()).pathname;
+    if (
+      (path.startsWith('/reference/characters/') &&
+        path.endsWith('.json') &&
+        !path.includes('/projectiles/') &&
+        !path.endsWith('/catalog.json')) ||
+      /\/reference\/garrison\/(dragon7|balloon8)\.json$/.test(path)
+    )
+      bodyGraphs.add(path);
+  });
   await boot(page);
   await visible(page, await scout(page, 'archer'));
   expect(await resident(page)).toEqual({ dragon: false, balloon: false, death: true, gl: 0 });
+  expect([...bodyGraphs]).toEqual(['/reference/characters/archer/archer9.json']);
   await visible(page, await scout(page, 'dragon'));
   expect(await resident(page)).toEqual({ dragon: true, balloon: false, death: true, gl: 0 });
   await page.evaluate(() => {
@@ -122,6 +135,11 @@ test('phone garrisons load only their bodies, extend a warm roster, and reload a
   });
   await visible(page, await scout(page, 'balloon'));
   expect(await resident(page)).toEqual({ dragon: true, balloon: true, death: true, gl: 0 });
+  expect([...bodyGraphs].sort()).toEqual([
+    '/reference/characters/archer/archer9.json',
+    '/reference/garrison/balloon8.json',
+    '/reference/garrison/dragon7.json',
+  ]);
   expect(
     await page.evaluate(() =>
       window.__dragonSources.every(

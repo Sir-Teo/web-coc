@@ -394,7 +394,7 @@ const GARRISON_SHARED_FAMILY: ArtFamily = {
     !!model.battle &&
     (!!model.battle.garrisons?.length ||
       !!model.battle.defenders?.some((defender) => isGarrisonKind(defender.kind))),
-  prepare: loadCharacterArt,
+  prepare: () => loadCharacterArt(new Set()),
   prepared: characterArtLoaded,
   preload: (scene) => {
     preloadGarrisonDeath(scene);
@@ -408,8 +408,8 @@ const GARRISON_DRAGON_FAMILY: ArtFamily = {
     const animations = foundationAnimations(model.battle);
     return animations.has('Dragon7') || animations.has('Golden Dragon');
   },
-  prepare: loadCharacterArt,
-  prepared: characterArtLoaded,
+  prepare: () => loadCharacterArt(new Set(['Dragon7'])),
+  prepared: () => characterArtLoaded('Dragon7'),
   preload: (scene) => preloadGarrisonCharacter(scene, 'Dragon7'),
 };
 const ART_FAMILIES: ArtFamily[] = [
@@ -423,8 +423,8 @@ const ART_FAMILIES: ArtFamily[] = [
       : {
           draws: () => false,
           needed: (model) => !!model.battle && foundationAnimations(model.battle).has(name),
-          prepare: loadCharacterArt,
-          prepared: characterArtLoaded,
+          prepare: () => loadCharacterArt(new Set([name])),
+          prepared: () => characterArtLoaded(name),
           preload: (scene) => preloadGarrisonCharacter(scene, name),
         },
   ),
@@ -1508,7 +1508,7 @@ export class VillageScene extends Phaser.Scene {
             return presentation;
           })
         : Promise.resolve(undefined),
-      loadCharacters ? loadCharacterArt() : Promise.resolve(),
+      loadCharacters ? loadCharacterArt(animations) : Promise.resolve(),
     ]).then(
       ([presentation]) =>
         new Promise<void>((resolve) => {

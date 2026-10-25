@@ -88,7 +88,21 @@ releasing and reloading a family does not accumulate callbacks across attacks.
 The Cannon and Tesla batches leave fallback sprites already being fetched by
 `LazyTextures` to that request, avoiding duplicate texture registration.
 
-Imported replay rosters also determine whether later garrison art is needed. A supported troop such as Dragon 5 loads the late character bundle even when its village contains only ordinary buildings. The original No Flight Zone Dragon 7 and Balloon 8 retain their smaller character batch. The existing battle wait, retry and home-time release rules own these pages; backward seeks reuse them. `tests/browser/garrison-late-replay-art.spec.ts` checks actual uploaded textures and native bodies on desktop and phone.
+Imported replay rosters also determine which garrison art is needed. Character body graphs
+load independently through the small catalog in `character-graphs.ts`; shared death and
+projectile graphs load through `character-shared-graphs.ts`. `loadCharacterArt(animations)`
+fetches only those bodies, an empty set fetches shared data alone, and an omitted set retains
+the explicit full preload. Aliases keep their original graph, texture prefix and shadow set.
+The registry preserves catalog order and reuses concurrent requests and successful entries.
+
+`characterArtLoaded(name)` checks that body and shared data; without a name it checks shared
+data alone. Poses, bar heights and workers guard their own body readiness while other graphs
+are already resident. The battle still waits for its complete roster, including future
+summons, Ghost Traps and workers. Body and shared module failures use the existing retry
+wrapper and scene backoff. Existing release rules own GPU pages; backward seeks reuse them,
+and JavaScript modules stay warm. `tests/browser/character-graph-loading.spec.ts` checks held
+bodies and reconnect recovery; `tests/browser/garrison-late-replay-art.spec.ts` checks actual
+uploaded textures and native bodies on desktop and phone.
 
 Boot files also record their owning art family. Successful boot families join the same
 release-and-reload cycle, so importing a different village can free the original village's
