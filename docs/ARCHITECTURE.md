@@ -236,6 +236,13 @@ their existing views and all required battle actors. `tests/browser/home-hero-ar
 checks lineup rotation, pet replacement/removal, cancelled metadata and partial King pages,
 and preservation of an active hero sprite and its battle pet.
 
+Each baked hero/pet request also owns its abort controller, pending image decodes and newly
+uploaded texture keys. Release and shutdown cancel its fetch/decodes and remove only those
+partial uploads. Genuine failures keep the existing retry backoff and cancel the remaining
+pending pages in their batch. Completed textures retain their source images. Troops and
+baked actors share `cancel-image-decodes.ts`, including the browser-specific promise behavior
+described above; WebKit may still finish a cancelled image transfer for its cache.
+
 Ghost Trap coffins belong to the shared Skeleton Trap art family, including a cold visit to
 Go to Bat, which has Ghost Traps and no ordinary Skeleton Traps. The presenter waits for both
 the armed and triggered atlases before hiding its fallback. The family retains any coffin

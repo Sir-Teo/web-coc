@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page, type Request } from '@playwright/test';
+import { expectCancelledImageDecode, watchImageDecodes } from './image-decode-watch';
 
 const FIRST = ['king', 'queen', 'prince', 'warden'];
 test.use({
@@ -105,9 +106,13 @@ test('home hero lineups and pet assignments release obsolete atlases', async ({ 
 });
 
 for (const phase of ['metadata', 'texture'])
-  test(`home lineup changes cancel obsolete King ${phase} and partial pages`, async ({ page }) => {
+  test(`home lineup changes cancel obsolete King ${phase} and partial pages`, async ({
+    page,
+    browserName,
+  }) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
+    await watchImageDecodes(page, ['/assets/characters/king-v1/']);
     const initial = ['queen', 'prince', 'warden', 'champion'];
     const next = ['king', 'prince', 'warden', 'champion'];
     await boot(page, initial);
@@ -124,7 +129,13 @@ for (const phase of ['metadata', 'texture'])
       release = resolve;
     });
     let requested = false;
+    let intercepted: Request | undefined;
+    let cancelled = false;
+    page.on('requestfailed', (request) => {
+      if (request === intercepted) cancelled = true;
+    });
     await page.route(url, async (route) => {
+      intercepted = route.request();
       requested = true;
       await gate;
       await route.continue();
@@ -135,12 +146,14 @@ for (const phase of ['metadata', 'texture'])
       if (phase === 'texture')
         await page.waitForFunction(
           () =>
-            window.__game.scene.heroNativePresentation.pending.get('heroes-native/king')?.size > 0,
+            window.__game.scene.heroNativePresentation.pending.get('heroes-native/king')?.textures
+              .size > 0,
         );
       await lineup(page, initial);
-      const done = page.waitForResponse(url);
+      if (phase === 'texture') await expectCancelledImageDecode(page, url);
       release();
-      await (await done).finished();
+      if (phase === 'metadata' || browserName === 'chromium')
+        await expect.poll(() => cancelled).toBe(true);
       await page.waitForTimeout(250);
       expect(await resident(page)).toEqual({
         packs: [...initial].sort(),

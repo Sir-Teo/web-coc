@@ -1,4 +1,5 @@
 import { isPetUnitKind } from './native-units';
+import { cancelImageDecodes } from './cancel-image-decodes';
 import type Phaser from 'phaser';
 import { TROOPS, type TroopKind } from './data';
 import type { Battle, Building } from './model';
@@ -70,9 +71,6 @@ const LOD_HYSTERESIS = 1.25;
 const LOD_CLOSE_ZOOM = 1.15;
 /** Distant units resample their pose every Nth frame (staggered by id). */
 const LOD_RESAMPLE_EVERY = 4;
-/** A local replacement also settles Chromium's old decode promise after stopping its transfer. */
-const CANCELLED_IMAGE =
-  'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 export class TroopNativePresentation {
   private packs = new Map<string, Pack>();
   private pending = new Map<string, AbortController>();
@@ -197,8 +195,7 @@ export class TroopNativePresentation {
     if (this.pendingLevels.get(job) === request) this.pendingLevels.delete(job);
     // These images have not reached the texture manager. Retained textures keep their
     // decoded source for rendering and context restoration.
-    for (const image of request.images) image.src = CANCELLED_IMAGE;
-    request.images.clear();
+    cancelImageDecodes(request.images);
   }
   clear() {
     for (const { view } of this.views.values()) view.destroy();

@@ -1,5 +1,5 @@
 import { test, expect, type Page, type Request } from '@playwright/test';
-import { expectCancelledTroopDecode, watchTroopImageDecodes } from './image-decode-watch';
+import { expectCancelledImageDecode, watchImageDecodes } from './image-decode-watch';
 
 async function warmArmy(page: Page, actor: { stage: number; name: string }) {
   await page.evaluate(({ stage, name }) => {
@@ -36,7 +36,11 @@ for (const actor of [
     }) => {
       const errors: string[] = [];
       page.on('pageerror', (error) => errors.push(error.message));
-      await watchTroopImageDecodes(page);
+      await watchImageDecodes(page, [
+        '/troops-native/',
+        '/assets/native-pages/',
+        '/assets/characters/king-v1/',
+      ]);
       let release!: () => void;
       const gate = new Promise<void>((resolve) => {
         release = resolve;
@@ -80,12 +84,9 @@ for (const actor of [
           model.returnHome();
           scene.sync();
         });
-        const response = actor.name === 'hero' ? page.waitForResponse(url) : undefined;
-        if (actor.name === 'troop' && phase === 'texture')
-          await expectCancelledTroopDecode(page, url);
+        if (phase === 'texture') await expectCancelledImageDecode(page, url);
         release();
-        if (response) await (await response).finished();
-        else if (phase === 'metadata' || browserName === 'chromium')
+        if (phase === 'metadata' || browserName === 'chromium')
           await expect.poll(() => cancelled).toBe(true);
         // Let completed metadata, decode work and any follow-up page requests settle.
         await page.waitForFunction(() => {
@@ -147,10 +148,8 @@ for (const actor of [
       });
       await warmArmy(page, actor);
       await expect.poll(() => requests).toBe(2);
-      const oldResponse = actor.name === 'hero' ? page.waitForResponse(actor.metadata) : undefined;
       releaseFirst();
-      if (oldResponse) await (await oldResponse).finished();
-      else await expect.poll(() => cancelled).toBe(true);
+      await expect.poll(() => cancelled).toBe(true);
       await page.evaluate(async ({ name }) => {
         const scene = window.__game.scene;
         if (name === 'troop') scene.troopNativePresentation.prefetch(['giant'], () => 2);

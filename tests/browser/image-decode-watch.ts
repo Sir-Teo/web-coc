@@ -1,15 +1,18 @@
 import { expect, type Page } from '@playwright/test';
 
 /** Observe the original decode promise, including cancellation before a gated body arrives. */
-export async function watchTroopImageDecodes(page: Page) {
-  await page.addInitScript(() => {
-    window.__troopImageDecodes = [];
+export async function watchImageDecodes(
+  page: Page,
+  prefixes = ['/troops-native/', '/assets/native-pages/'],
+) {
+  await page.addInitScript((prefixes) => {
+    window.__imageDecodes = [];
     const decode = HTMLImageElement.prototype.decode;
     HTMLImageElement.prototype.decode = function () {
       const promise = decode.call(this);
-      if (this.src.includes('/troops-native/') || this.src.includes('/assets/native-pages/')) {
+      if (prefixes.some((prefix) => this.src.includes(prefix))) {
         const entry = { src: this.src, outcome: 'pending' };
-        window.__troopImageDecodes.push(entry);
+        window.__imageDecodes.push(entry);
         promise.then(
           () => {
             entry.outcome = 'fulfilled';
@@ -21,15 +24,15 @@ export async function watchTroopImageDecodes(page: Page) {
       }
       return promise;
     };
-  });
+  }, prefixes);
 }
 
-export async function expectCancelledTroopDecode(page: Page, glob: string) {
+export async function expectCancelledImageDecode(page: Page, glob: string) {
   await expect
     .poll(() =>
       page.evaluate(
         (suffix) => {
-          const requests = window.__troopImageDecodes.filter((entry) => entry.src.endsWith(suffix));
+          const requests = window.__imageDecodes.filter((entry) => entry.src.endsWith(suffix));
           return requests.length
             ? requests
                 .filter((entry) => entry.outcome !== 'rejected')
@@ -41,3 +44,6 @@ export async function expectCancelledTroopDecode(page: Page, glob: string) {
     )
     .toEqual([]);
 }
+
+export const watchTroopImageDecodes = watchImageDecodes;
+export const expectCancelledTroopDecode = expectCancelledImageDecode;

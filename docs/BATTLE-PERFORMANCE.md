@@ -1369,6 +1369,36 @@ Standard production checks pass online in both engines and offline in Chromium
 same cached Archer replay: its battle state matches exactly and its body texture uploads
 from cached assets, with no page errors or developer hooks.
 
+## Cancelling obsolete hero and pet work
+
+Baked hero and pet requests had the same pending-work gap as troops. Changing a home lineup
+or leaving a battle dropped stale request identities and partial uploads, but the metadata
+fetch and pending image decodes still completed. Each baked request now owns an abort
+controller, its pending image elements and the texture keys it uploaded. Release or shutdown
+invalidates that request before cancelling its fetch and decodes and removing its partial
+textures. An old completion cannot clear a fresh request for the same actor.
+
+Troops and baked actors share the local-image cancellation helper. Only unregistered image
+elements are replaced; completed texture sources remain intact for drawing and context
+restoration. A genuine failed atlas still backs off and retries, while cancelling the other
+pending pages in the batch. WebKit's image-cache transfer limitation remains: decode work
+stops immediately, but the browser may complete the image transfer for its cache.
+
+The stronger King metadata and image checks both fail against the original loader. They now
+require a cancelled metadata request or a rejected decode before the held image body arrives,
+retain the partial-upload byte checks, and reselect the King immediately. Its four source
+strips total 9,437,184 nominal RGBA bytes; actual avoided work depends on which pages were
+pending and which the browser already cached. No atlas pixels or simulation values change.
+
+The full check passes all 3,009 tests across 333 files, with 26 relevant browser checks per
+engine covering cancellation, retries, shared pages and retained battle actors. A production
+phone-viewport probe switches saved lineups through normal preset controls while metadata or
+an image body is held. Both engines reject obsolete decode work, leave no obsolete King atlas
+uploads and reload the King when reselected, with no page errors or developer hooks. Chromium
+also aborts the held image transfer; WebKit may finish that transfer for its cache.
+Standard production checks pass online in both engines and offline in Chromium with cache
+`ac69fd388156`.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
