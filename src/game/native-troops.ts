@@ -31,8 +31,8 @@ import {
   unitFrozen,
   type UnitEffects,
 } from './native-status';
-import { heroStatsFor } from './native-heroes';
-import { heroAttackInterval } from './native-hero-abilities';
+import { heroOf, heroStatsFor } from './native-heroes';
+import { heroAttackInterval, heroLifeSteal } from './native-hero-abilities';
 import {
   isHeroUnitKind,
   isPetUnitKind,
@@ -190,6 +190,12 @@ export function statsFor(battle: Battle, u: Pick<Unit, 'kind' | 'level' | 'id'>)
     if (hero) return heroStatsFor(hero, battle.townhall ?? 18);
   }
   return nativeUnitStats(u.kind, unitLevel(battle, u));
+}
+
+function healHeroAttack(battle: Battle, unit: Unit) {
+  if (!battle.nativeHeroLifeSteal || !isHeroUnitKind(unit.kind)) return;
+  const hero = heroOf(battle, unit);
+  if (hero) heroLifeSteal(battle, hero, unit);
 }
 
 /** Client building names used by preferred-target columns. */
@@ -547,6 +553,7 @@ export function stepNativeUnit(
     : ((battle.nativeHeadhunterCards && u.kind === 'headhunter') || poisonLizard) && s.projectile
       ? { name: s.projectile, kind: u.kind, level: s.level }
       : undefined;
+  const readyToAttack = u.cooldown <= 0;
   if (
     stepAttackerVsDefenders(
       battle,
@@ -580,8 +587,10 @@ export function stepNativeUnit(
         breaches: ctx.breaches,
       },
     )
-  )
+  ) {
+    if (readyToAttack && u.cooldown > 0) healHeroAttack(battle, u);
     return;
+  }
   let target = ctx.buildingsById.get(u.target ?? -1);
   const targetable = ctx.isTargetable ?? ((b: Building) => targetableBuilding(battle, b));
   if (!target || !targetable(target)) target = undefined;
@@ -887,6 +896,7 @@ function strike(
   }
   state.lastAttackAt = battle.elapsed;
   state.attacks = (state.attacks ?? 0) + 1;
+  healHeroAttack(battle, u);
   // A throwing golem's single attack ends in a split rather than its own defeat.
   if (s.secondaryOnAttack && s.secondary) {
     splitOnThrow(ctx, u, s, center);

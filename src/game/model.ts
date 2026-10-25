@@ -824,6 +824,8 @@ export interface Battle {
   nativeDefenderFrost?: true;
   /** Version 78: Royal Champion Haste overrides combat intervals with passive speed applied. */
   nativeChampionHaste?: true;
+  /** Version 79: equipped Hero life steal heals once after a completed attack. */
+  nativeHeroLifeSteal?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */

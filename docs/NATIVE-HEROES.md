@@ -290,9 +290,23 @@ Damage per hit keeps its existing passive value throughout activation and expiry
 fired attack resets to the applicable interval; expiry returns subsequent attacks to the passive
 base rate. The existing target-acquisition delay remains in force. Versions 77 and earlier keep
 their original combat rate and uncombined animation override. Stick Horse deployment timing,
-extra-damage/limited-hit equipment and life steal remain separate follow-up work.
+extra-damage/limited-hit equipment remain separate follow-up work. Version 79 below adds life steal.
 
 `tests/champion-haste.test.ts` covers all override tiers, passive speed, unchanged hit damage,
 Poison, both defender layers, actual attacks through expiry and exact portable backward seeks.
 `tests/browser/champion-haste.spec.ts` checks level 1 and 18 attack poses, cooldowns, expiry and
 the historical rule on desktop and phone.
+
+## Version 79 Vampstache healing on actual attacks
+
+Equipped Hero life steal now runs after a completed building, wall or defender attack. The existing
+helper was never called by combat. The [Vampstache source comparison](../reference/official-wiki/heroes-pets/vampstache.md)
+maps its seven healing tiers to `SelfDamagePerHit`: 60, 90, 120, 160, 200, 250 and 300 HP. Each
+actual swing heals once, capped at maximum HP. Approach steps, held cooldowns, ability spell hits
+and fallen Heroes cannot generate healing. Damage and attack intervals retain their existing rules.
+Versions 78 and earlier preserve their no-life-steal attacks.
+
+`tests/vampstache.test.ts` covers all tiers, buildings, walls, defenders, health caps, held/dead
+units, real King duels and portable backward seeks. `tests/browser/vampstache.spec.ts` checks
+level 1 and 18 duels with two distinct bodies and their health bars on desktop and a reduced-motion
+phone, including exact health differences against version 78.
