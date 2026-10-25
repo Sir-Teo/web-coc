@@ -129,3 +129,7 @@ Full native freezes record a separate defender `frozenUntil` deadline for artwor
 ## Version 69: equipment dash contacts and defending Hero thaw timing
 
 Penetrating equipment such as Rocket Backpack now damages each contacted defender directly once. The previous zero-radius area hit could damage multiple defenders at one position for each member of the stack. Defenders that have not spawned yet neither take damage nor consume a dash contact. Defending Heroes also use only the part of an update after their stun or Freeze deadline for movement, cooldown and path timers; the update ending exactly on that deadline stays fully held. Versions 68 and earlier retain their previous damage and timing. Actual Duke activation and Freeze inputs reproduce both rules through portable files, backward seeks and desktop/phone browser checks.
+
+## Version 70: native spell defender immunities and Hero damage
+
+Offensive spell pulses now honor the source’s Hero, Guardian and other-character immunity flags for defending units. This keeps Root Rider’s wall aura from damaging defenders and Driller surfacing from stunning them. Direct damage uses the source `HeroDamageMultiplier` on defending Heroes and the pulse’s scheduled spawn check, matching the existing native status-effect gates. Electro Titan/Electro Boots auras now deal 25% damage to Heroes; Dragon Duke’s dash aura deals 10%. Version 69 and earlier retain their original rules. Actual Root Rider and Electro Boots inputs reconstruct both versions exactly through portable files and backward seeks.

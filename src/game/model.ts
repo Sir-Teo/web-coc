@@ -806,6 +806,8 @@ export interface Battle {
   nativeEquipmentDashHits?: true;
   /** Version 69: defending heroes act only for the unfrozen/unstunned part of a step. */
   nativeDefendingHeroStunTime?: true;
+  /** Version 70: offensive spell pulses honor defender immunities, hero scaling and spawn time. */
+  nativeDefenderSpellRules?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */

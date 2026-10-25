@@ -141,6 +141,17 @@ export function buildingSpellImmune(row: NativeRow, b: Building) {
       flag(row, 'ImmunityOtherBuildings'))
   );
 }
+/** Native spells distinguish Heroes, Guardians and ordinary defending characters. */
+function defenderSpellImmune(row: NativeRow, defender: Defender) {
+  return flag(
+    row,
+    defender.kind === 'hero'
+      ? 'ImmunityHeroes'
+      : defender.kind === 'guardian'
+        ? 'ImmunityGuardians'
+        : 'ImmunityOtherCharacters',
+  );
+}
 export const footprintDistance = (x: number, y: number, b: Building) => {
   const size = BUILDINGS[b.kind].size;
   return distance2D(Math.max(b.x - x, 0, x - b.x - size), Math.max(b.y - y, 0, y - b.y - size));
@@ -289,11 +300,20 @@ function harmDefense(
       }
     }
   }
-  if (damage > 0) damageDefenders(battle, { x, y }, damage, radius, 'both');
+  if (damage > 0 && !battle.nativeDefenderSpellRules)
+    damageDefenders(battle, { x, y }, damage, radius, 'both');
   for (const d of battle.defenders ?? []) {
     // Defenders still inside their coffin or hut take nothing.
     if (d.hp <= 0 || d.spawnedAt > at + 1e-9) continue;
     if (distance2D(d.x - x, d.y - y) > radius + 1e-9) continue;
+    if (battle.nativeDefenderSpellRules) {
+      if (defenderSpellImmune(row, d)) continue;
+      if (damage > 0) {
+        const scale = d.kind === 'hero' ? num(row, 'HeroDamageMultiplier', 100) / 100 : 1;
+        hurtDefender(battle, d, damage * scale);
+        if (d.hp <= 0) continue;
+      }
+    }
     if ((freeze > 0 && !overgrowth) || stun > 0)
       d.stunnedUntil = Math.max(d.stunnedUntil ?? 0, at + Math.max(freeze, stun));
     if (
