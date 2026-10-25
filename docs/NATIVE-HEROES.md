@@ -329,3 +329,28 @@ against other modern client effects and the boosted orange-arrow visual remain s
 copy exclusion, expiry and shots landing after Recall through portable backward seeks.
 `tests/browser/queen-vial.spec.ts` checks native arrow art, invisibility opacity, captured damage,
 expiry/Recall and historical playback on desktop and a reduced-motion phone.
+
+## Version 81 Royal Champion charged spear attacks
+
+Rocket Spear now uses its source `AttackRange=1005` (10.05 tiles), native `RocketSpearProjectile`,
+flat shot bonus and finite throw count. Activation previously stored these fields without combat
+reading them or spending a charge. The [source comparison](../reference/official-wiki/heroes-pets/rocket-spear.md)
+maps level 1/9/18/27 to 7/8/9/10 throws and +350/+560/+770/+980 damage. The pinned client uses
+`DamageRadius=90`, or 0.9 tiles; the wiki lists 0.8. Each actual throw spends one charge. Approach,
+target-acquisition waits and held cooldowns spend none. The final rocket keeps its launch snapshot;
+the next throw returns to the ordinary spear, range and damage without clearing Haste Vial.
+
+Royal Champion shots against defenders now use native spear packets throughout charged and ordinary
+combat, and her source wall jumping remains available during that chase. Rocket splash damages
+the primary defender once and nearby defenders on the struck layer. Buildings keep the existing
+native splash footprint rule. Birth checks and lethal defender timestamps use the scheduled impact
+time, including an overdue sample. A missing shooter cannot cancel the captured rocket.
+The layer convention is corroborated by the pinned [older client reconstruction's projectile
+damage path](https://github.com/bns34/Supercell.Magic-my-turn/blob/52c5953f5e5802c64ac36e53d5599f8700976085/Supercell.Magic.Logic/GameObject/LogicProjectile.cs);
+it is not modern client source code. Flat-bonus ordering against other modern boosts retains the
+local interpretation described for the Vial. Versions 80 and earlier preserve the previous behavior.
+
+`tests/rocket-spear.test.ts` checks all four count tiers, range, damage, depletion, Haste pairing,
+wall jumping, both defender layers, birth/death times, missing shooters and real portable backward
+seeks. `tests/browser/rocket-spear.spec.ts` checks uploaded rocket and ordinary spear art, charge
+depletion, captured final throws and historical playback on desktop and phone.

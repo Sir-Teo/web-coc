@@ -45,6 +45,8 @@ export interface UnitEffects {
     hits?: number;
     range?: number;
     projectile?: string;
+    /** Version 81: charged projectile splash captured from the ability row. */
+    splash?: number;
   };
   /** Splash and wall jumping while an ability is active (Giant Gauntlet). */
   splash?: { until: number; radius: number; jumper?: boolean };

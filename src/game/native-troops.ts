@@ -32,7 +32,13 @@ import {
   type UnitEffects,
 } from './native-status';
 import { heroOf, heroStatsFor } from './native-heroes';
-import { heroAttackInterval, heroExtraDamage, heroLifeSteal } from './native-hero-abilities';
+import {
+  heroAttackInterval,
+  heroCombatOverrides,
+  heroExtraDamage,
+  heroLifeSteal,
+  spendHeroCharge,
+} from './native-hero-abilities';
 import {
   isHeroUnitKind,
   isPetUnitKind,
@@ -192,10 +198,17 @@ export function statsFor(battle: Battle, u: Pick<Unit, 'kind' | 'level' | 'id'>)
   return nativeUnitStats(u.kind, unitLevel(battle, u));
 }
 
-function healHeroAttack(battle: Battle, unit: Unit) {
-  if (!battle.nativeHeroLifeSteal || !isHeroUnitKind(unit.kind)) return;
+function completeHeroAttack(battle: Battle, unit: Unit) {
+  if (
+    !(battle.nativeHeroLifeSteal || battle.nativeChampionRocketSpears) ||
+    !isHeroUnitKind(unit.kind)
+  )
+    return;
   const hero = heroOf(battle, unit);
-  if (hero) heroLifeSteal(battle, hero, unit);
+  if (!hero) return;
+  if (battle.nativeHeroLifeSteal) heroLifeSteal(battle, hero, unit);
+  if (battle.nativeChampionRocketSpears && hero.kind === 'champion')
+    spendHeroCharge(unit, battle.elapsed);
 }
 
 /** Client building names used by preferred-target columns. */
@@ -509,6 +522,25 @@ export function stepNativeUnit(
   const at = battle.elapsed;
   if (battle.nativeChampionHaste && u.kind === 'royalchampion')
     s = { ...s, rate: heroAttackInterval(u, at, s.rate) };
+  const nativeChampion = !!(
+    battle.nativeChampionRocketSpears &&
+    u.kind === 'royalchampion' &&
+    heroOf(battle, u)
+  );
+  if (nativeChampion) {
+    const override = heroCombatOverrides(u, at);
+    if (
+      override.range !== undefined ||
+      override.projectile !== undefined ||
+      override.splash !== undefined
+    )
+      s = {
+        ...s,
+        range: override.range ?? s.range,
+        projectile: override.projectile ?? s.projectile,
+        splash: override.splash ?? s.splash,
+      };
+  }
   stepLifecycle(ctx, u, s, at);
   if (u.hp <= 0) return;
   if (unitFrozen(u, at)) {
@@ -524,7 +556,8 @@ export function stepNativeUnit(
   const speed = boosted.speed;
   const damage =
     boosted.damage * aloneScale(battle, u, s, state) +
-    (battle.nativeQueenVialDamage && u.kind === 'archerqueen' && heroOf(battle, u)
+    ((battle.nativeQueenVialDamage && u.kind === 'archerqueen' && heroOf(battle, u)) ||
+    nativeChampion
       ? heroExtraDamage(u, at)
       : 0);
   if (s.speed <= 0 && !s.summon && !s.bunker && s.range < 0.05) return;
@@ -544,7 +577,7 @@ export function stepNativeUnit(
   if (s.mergeTo && stepMerge(ctx, u, s, speed, dt)) return;
   const heroHunter = battle.nativeHeadhunterHeroRules && u.kind === 'headhunter';
   const poisonLizard = battle.nativeAttackerHitPoison && u.kind === 'poisonlizard';
-  const jumpingChase = s.jumper && (heroHunter || poisonLizard);
+  const jumpingChase = s.jumper && (heroHunter || poisonLizard || nativeChampion);
   const rangedFrost = battle.nativeDefenderFrost && s.frostTime > 0 && s.range > 2;
   const frostArrow = rangedFrost ? monolithArrow(ctx, u) : undefined;
   const defenderProjectile = rangedFrost
@@ -554,7 +587,10 @@ export function stepNativeUnit(
         level: s.level,
         frost: { seconds: s.frostTime, percent: s.frostPercent },
       }
-    : ((battle.nativeHeadhunterCards && u.kind === 'headhunter') || poisonLizard) && s.projectile
+    : ((battle.nativeHeadhunterCards && u.kind === 'headhunter') ||
+          poisonLizard ||
+          nativeChampion) &&
+        s.projectile
       ? { name: s.projectile, kind: u.kind, level: s.level }
       : undefined;
   const readyToAttack = u.cooldown <= 0;
@@ -592,7 +628,7 @@ export function stepNativeUnit(
       },
     )
   ) {
-    if (readyToAttack && u.cooldown > 0) healHeroAttack(battle, u);
+    if (readyToAttack && u.cooldown > 0) completeHeroAttack(battle, u);
     return;
   }
   let target = ctx.buildingsById.get(u.target ?? -1);
@@ -900,7 +936,7 @@ function strike(
   }
   state.lastAttackAt = battle.elapsed;
   state.attacks = (state.attacks ?? 0) + 1;
-  healHeroAttack(battle, u);
+  completeHeroAttack(battle, u);
   // A throwing golem's single attack ends in a split rather than its own defeat.
   if (s.secondaryOnAttack && s.secondary) {
     splitOnThrow(ctx, u, s, center);
@@ -1138,12 +1174,15 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
   const battle = ctx.battle;
   const source = p.native!;
   const s = nativeUnitStats(source.kind, source.level);
+  const rocketSplash = !!(
+    battle.nativeChampionRocketSpears && source.name === 'RocketSpearProjectile'
+  );
   // Native defender-targeted shots retain their captured direct hit on either defender layer.
   if (p.targetDefender) {
     const defender = battle.defenders?.find((d) => d.id === p.targetId);
     if (defender && defender.hp > 0 && defender.spawnedAt <= p.impact + 1e-9) {
       if (battle.nativeAttackerHitPoison) tickDefenderHitPoison(defender, p.impact);
-      hurtDefender(battle, defender, p.damage);
+      hurtDefender(battle, defender, p.damage, rocketSplash ? p.impact : undefined);
       if (battle.nativeDefenderFrost && source.frost)
         applyDefenderFrost(defender, source.frost, p.impact);
       if (battle.nativeAttackerHitPoison && defender.hp > 0) {
@@ -1168,7 +1207,16 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
     for (const b of battle.buildings)
       if (b.id !== p.targetId && b.hp > 0 && !isTrap(b.kind) && distanceTo(p, b) <= p.splash)
         ctx.damageBuilding(b, p.damage * damageMultiplier(s, b), p.impact);
-  if (p.splash) damageDefenders(battle, p, p.damage, p.splash, 'ground');
+  if (p.splash)
+    damageDefenders(
+      battle,
+      p,
+      p.damage,
+      p.splash,
+      rocketSplash && p.toAir ? 'air' : 'ground',
+      rocketSplash && p.targetDefender ? p.targetId : undefined,
+      rocketSplash ? p.impact : undefined,
+    );
   const projectile = nativeRow('projectiles', source.name);
   const hitSpell = text(projectile, 'HitSpell');
   if (hitSpell)

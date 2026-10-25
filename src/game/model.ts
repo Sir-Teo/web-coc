@@ -828,6 +828,8 @@ export interface Battle {
   nativeHeroLifeSteal?: true;
   /** Version 80: Invisibility Vial adds its captured flat bonus to the Queen's ordinary shots. */
   nativeQueenVialDamage?: true;
+  /** Version 81: Royal Champion charged spears retain range, damage, splash and hit counts. */
+  nativeChampionRocketSpears?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */

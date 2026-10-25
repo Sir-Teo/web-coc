@@ -202,3 +202,12 @@ hits on buildings and committed defending units. The damage survives ability exp
 new shots after expiry return to ordinary damage. Copies outside the Hero roster receive no Vial
 bonus. Real activation, expiry and Recall inputs reconstruct through portable backward seeks.
 Versions 79 and earlier retain their invisibility without the extra shot damage.
+
+## Version 81: Royal Champion charged spear combat
+
+Rocket Spear activation now supplies range, projectile, flat damage and splash, and each actual
+throw consumes one charge. The last charged projectile keeps its snapshot after the effect is
+removed; ordinary spears and Haste resume independently. Defender shots use native spear packets
+and wall jumping. Rocket splash hits the primary defender once, follows its layer, and uses
+impact-time birth/death checks. Real charged and ordinary throws reconstruct through portable
+files and backward seeks. Versions 80 and earlier preserve their previous attacks and charges.

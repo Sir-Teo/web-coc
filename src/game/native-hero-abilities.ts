@@ -93,6 +93,11 @@ function applyAbility(
       hits: hits > 0 ? hits : undefined,
       range: tiles(row, 'AttackRange') || undefined,
       projectile: text(row, 'Projectile') || undefined,
+      ...(battle.nativeChampionRocketSpears &&
+      hero.kind === 'champion' &&
+      tiles(row, 'DamageRadius') > 0
+        ? { splash: tiles(row, 'DamageRadius') }
+        : {}),
     };
   }
   const splash = tiles(row, 'DamageRadius');
@@ -305,7 +310,12 @@ export function heroCombatOverrides(unit: Unit, at: number) {
   return {
     range: extra && extra.until > at + EPS ? extra.range : undefined,
     projectile: extra && extra.until > at + EPS ? extra.projectile : undefined,
-    splash: splash && splash.until > at + EPS ? splash.radius : undefined,
+    splash:
+      extra && extra.until > at + EPS && extra.splash !== undefined
+        ? extra.splash
+        : splash && splash.until > at + EPS
+          ? splash.radius
+          : undefined,
     jumper: splash && splash.until > at + EPS ? splash.jumper : undefined,
   };
 }

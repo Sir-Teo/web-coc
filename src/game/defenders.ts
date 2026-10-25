@@ -145,12 +145,14 @@ export type Defender =
 /** A Clan Castle defender: the skeleton, Guardian and repair families have their own rules. */
 export const isGarrisonDefender = (d: Defender): d is GarrisonDefender =>
   d.kind !== 'skeleton' && d.kind !== 'guardian' && d.kind !== 'repairer' && d.kind !== 'hero';
-export function hurtDefender(battle: Battle, defender: Defender, power: number) {
+export function hurtDefender(battle: Battle, defender: Defender, power: number, hitAt?: number) {
+  const at = hitAt ?? battle.elapsed;
   if (defender.hp <= 0 || defender.kind === 'repairer') return;
-  if (defender.kind !== 'skeleton' && defender.spawnedAt > battle.elapsed) return;
+  if (defender.kind !== 'skeleton' && defender.spawnedAt > at + (hitAt === undefined ? 0 : 1e-9))
+    return;
   defender.hp = Math.max(0, defender.hp - power);
   if (!defender.hp) {
-    defender.defeatedAt = battle.elapsed;
+    defender.defeatedAt = at;
     defender.attacking = false;
   }
 }
@@ -161,15 +163,17 @@ export function damageDefenders(
   radius: number,
   targets: 'ground' | 'air' | 'both' = 'ground',
   skipId?: number,
+  hitAt?: number,
 ) {
   for (const enemy of battle.defenders ?? [])
     if (
       enemy.id !== skipId &&
       enemy.hp > 0 &&
+      (hitAt === undefined || enemy.spawnedAt <= hitAt + 1e-9) &&
       (targets === 'both' || enemy.mode === targets) &&
       distance2D(enemy.x - point.x, enemy.y - point.y) <= radius
     )
-      hurtDefender(battle, enemy, power);
+      hurtDefender(battle, enemy, power, hitAt);
 }
 export function spawnSkeleton(battle: Battle, source: Building, at: number, index: number) {
   const mode = source.skeletonMode ?? 'ground',
