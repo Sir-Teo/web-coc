@@ -52,12 +52,12 @@ for (const kind of ['longshot', 'smasher', 'logger'] as const) {
           const scene = window.__game.scene;
           scene.drawOverlay(0);
           const presentation = scene.heroNativePresentation;
-          const sprite = presentation.sprites.get(-1 - id);
+          const sprite = presentation.sprites.get(id);
           return (
             sprite?.visible &&
             sprite.alpha > 0 &&
             sprite.texture.key.startsWith(`baked:guardians-native/${kind}/`) &&
-            presentation.positions.get(-1 - id)?.state === state
+            presentation.positions.get(id)?.state === state
           );
         },
         { id, kind, state },
@@ -65,7 +65,7 @@ for (const kind of ['longshot', 'smasher', 'logger'] as const) {
       );
       return page.evaluate((id) => {
         const { scene, game } = window.__game;
-        const sprite = scene.heroNativePresentation.sprites.get(-1 - id);
+        const sprite = scene.heroNativePresentation.sprites.get(id);
         return {
           texture: sprite.texture.key,
           frame: sprite.frame.name,
@@ -124,7 +124,7 @@ for (const kind of ['longshot', 'smasher', 'logger'] as const) {
     });
     await expect
       .poll(() =>
-        page.evaluate((id) => window.__game.scene.heroNativePresentation.sprites.has(-1 - id), id),
+        page.evaluate((id) => window.__game.scene.heroNativePresentation.sprites.has(id), id),
       )
       .toBe(false);
     expect(errors).toEqual([]);

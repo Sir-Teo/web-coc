@@ -4,6 +4,8 @@ import { makeBuilding, type Battle, type Unit } from '../src/game/model';
 import { defendingHero, stepDefendingHeroes } from '../src/game/defending-heroes';
 import { HERO_UNIT } from '../src/game/native-hero-data';
 import { nativeUnitStats } from '../src/game/native-units';
+import { createGuardian, guardianStats, stepGuardian } from '../src/game/native-guardians';
+import type { NativeTroopContext } from '../src/game/native-troops';
 
 // Scene views are Phaser objects; record what the presentations ask them to draw instead.
 vi.mock('../src/game/native-scene-view', () => {
@@ -309,6 +311,119 @@ describe('troop native presentation', () => {
 
 describe('hero native presentation', () => {
   it.each([
+    { kind: 'guardian', attackerId: 1000 },
+    { kind: 'hero', attackerId: 9999 },
+  ])(
+    'keeps $kind bodies distinct from attacker $attackerId through removal',
+    ({ kind, attackerId }) => {
+      const p = new HeroNativePresentation(fakeScene());
+      const packs = (p as unknown as { packs: Map<string, unknown> }).packs;
+      for (const [key, path] of [
+        ['heroes-native/king', 'public/assets/characters/king-v1/atlas.json'],
+        ['heroes-native/queen', 'public/assets/characters/hero-redesign-v1/queen/atlas.json'],
+        ['guardians-native/longshot', 'public/assets/guardians-native/longshot/atlas.json'],
+      ])
+        packs.set(key, JSON.parse(fs.readFileSync(path, 'utf8')));
+      const king = unit(attackerId, 10, 10, { kind: 'barbarianking', path: [] });
+      const battle = battleOf([king]);
+      battle.nativeRoster = true;
+      const defender =
+        kind === 'hero'
+          ? defendingHero({ kind: 'queen', level: 1, x: 10.5, y: 10 }, 0)
+          : createGuardian(
+              battle,
+              { ...makeBuilding(1, 'townhall', 10, 10, 18), guardian: 'longshot' },
+              -1001,
+            )!;
+      Object.assign(defender, { x: 10.5, y: 10, spawnedAt: 0 });
+      battle.defenders = [defender];
+      p.render(battle, false, iso, 70, new Map(), new Map());
+      const sprites = (p as unknown as { sprites: Map<number, { texture: { key: string } }> })
+        .sprites;
+      expect(sprites.size).toBe(2);
+      expect(sprites.get(attackerId)).not.toBe(sprites.get(defender.id));
+      expect(sprites.get(attackerId)!.texture.key).toContain('baked:heroes-native/king/');
+      expect(sprites.get(defender.id)!.texture.key).toContain(
+        kind === 'hero' ? 'baked:heroes-native/queen/' : 'baked:guardians-native/longshot/',
+      );
+      battle.units = [];
+      p.render(battle, false, iso, 70, new Map(), new Map());
+      expect(p.drewUnit(attackerId)).toBe(false);
+      expect(sprites.size).toBe(1);
+      expect(sprites.has(defender.id)).toBe(true);
+      battle.defenders = [];
+      p.render(battle, false, iso, 70, new Map(), new Map());
+      expect(sprites.size).toBe(0);
+    },
+  );
+  for (const slow of ['normal', 'poison', 'frost'])
+    it.each(['longshot', 'smasher', 'logger'] as const)(
+      `restarts %s windups on its action clock with ${slow} speed`,
+      (kind) => {
+        const p = new HeroNativePresentation(fakeScene());
+        const atlas = JSON.parse(
+          fs.readFileSync(`public/assets/guardians-native/${kind}/atlas.json`, 'utf8'),
+        );
+        (p as unknown as { packs: Map<string, unknown> }).packs.set(
+          `guardians-native/${kind}`,
+          atlas,
+        );
+        const target = unit(1, 10.5, 10, { hp: 1e9, maxHp: 1e9, path: [] });
+        const battle = battleOf([target]);
+        battle.nativeRoster = true;
+        battle.elapsed = 0;
+        const th = { ...makeBuilding(1, 'townhall', 10, 10, 18), guardian: kind };
+        battle.buildings = [th];
+        const g = createGuardian(battle, th, -20000)!;
+        Object.assign(g, { phase: 'fighting', spawnedAt: 0, x: 10, y: 10 });
+        if (slow === 'poison') g.poison = { since: 0, until: 100, speed: -0.4, attack: -0.55 };
+        if (slow === 'frost') g.frost = { until: 100, percent: 0.5 };
+        battle.defenders = [g];
+        const ctx: NativeTroopContext = {
+          battle,
+          buildings: battle.buildings,
+          buildingsById: new Map([[1, th]]),
+          passableWalls: new Set(),
+          nextId: () => 1000,
+          troopLevel: () => 1,
+          damageBuilding: () => {},
+          effect: () => {},
+        };
+        let tick = 0;
+        const step = () => {
+          battle.elapsed = ++tick * 0.05;
+          stepGuardian(ctx, g, 0.05);
+          p.render(battle, false, iso, 70, new Map(), new Map());
+        };
+        step();
+        const start = g.clock!;
+        const drawn = () =>
+          (p as unknown as { sprites: Map<number, { frame: { name: string } }> }).sprites.get(g.id)!
+            .frame.name;
+        const frameName = (frame: number) => {
+          const f = atlas.states.attack.frames[1][frame];
+          return `${f.x}:${f.y}:${f.w}:${f.h}`;
+        };
+        expect(drawn()).toBe(frameName(0));
+        const sample = (cycle: number) => {
+          const at = start + cycle * guardianStats(kind, 1).interval + 0.25;
+          for (let remaining = 300; g.clock! < at - 1e-9; remaining--) {
+            if (!remaining) throw Error('Guardian action clock did not advance');
+            step();
+          }
+          const age = g.clock! - start - cycle * guardianStats(kind, 1).interval;
+          const expected = frameName(Math.floor(age * atlas.states.attack.fps));
+          expect(drawn()).toBe(expected);
+          p.render(battle, false, iso, 70, new Map(), new Map());
+          expect(drawn()).toBe(expected);
+          return expected;
+        };
+        sample(0);
+        sample(1);
+        sample(2);
+      },
+    );
+  it.each([
     { kind: 'king' as const, at: 0.45, frame: 2, slow: 'normal' },
     { kind: 'queen' as const, at: 0.1, frame: 0, slow: 'normal' },
     { kind: 'warden' as const, at: 0.45, frame: 1, slow: 'normal' },
@@ -343,7 +458,7 @@ describe('hero native presentation', () => {
         p as unknown as {
           sprites: Map<number, { texture: { key: string }; frame: { name: string } }>;
         }
-      ).sprites.get(-1 - defender.id)!;
+      ).sprites.get(defender.id)!;
       const state =
         atlas.states[defender.mode === 'air' ? 'alt_attack' : 'attack'] ?? atlas.states.attack;
       const expected = state.frames[1][frame];

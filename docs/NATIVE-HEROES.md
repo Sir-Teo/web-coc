@@ -136,6 +136,21 @@ six Hero atlases, slowed clocks, paused redraws and reduced motion. The real Kin
 in `tests/browser/defending-hero-animation.spec.ts` check first and repeat attack frames, portable
 backward seeks and motion-mode switching on desktop and phone.
 
+Guardian attack clips use their combat action clock and next strike deadline. Their native
+non-looping clips hold their final follow-through pose during the remaining cooldown, then restart
+for the next windup instead of holding that pose indefinitely. Poison and ranged frost slow the
+same action clock, so animation and damage stay together. Walk, leap and death clips retain their
+existing clocks. `tests/native-unit-presentation.test.ts` checks all three Guardians over three
+cycles at normal, Poison and frost speeds. `tests/browser/guardian-animation.spec.ts` checks real
+recorded attacks, uploaded bodies, Poison, portable backward seeks and reduced-motion toggles.
+
+Native attacking Hero/Pet IDs remain positive render keys, while defending Hero/Guardian IDs stay
+negative. The former sign-flipping defender key mapped Guardian `-1001` onto attacker `1000`, and
+defending Hero `-10000` onto attacker `9999`. The two actors could reuse one sprite and corrupt each
+other's pose/motion history. Each now owns its own body through removal and replay reconstruction.
+The presentation regression covers both collisions; the recorded Guardian test also uses attacker
+`1000` and verifies the real distinct Guardian body.
+
 ## Version 60 defending hero Poison
 
 Defending heroes use the spell’s signed `SpeedBoost` and `AttackSpeedBoost` as slowdowns, matching native attacking units, and apply `HeroDamageMultiplier` to poison damage. In versions 60–66, level-1 Poison retains 74% movement speed; version 67 corrects this to 87% using the hero movement multiplier below. The attack clock retains 65%, and heroes take 5% of the ramping poison damage. The previous calculation subtracted negative modifiers, accelerating heroes, and applied full troop poison damage. Versions 52–59 preserve that calculation for replay compatibility. Guardians and ordinary garrison defenders retain their existing rules.

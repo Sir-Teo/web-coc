@@ -11,6 +11,7 @@ import { buildingIndex, defenderIndex, unitIndex } from './battle-index';
 import { isShrunk } from './shrink-trap';
 import { unitDepth } from './unit-depth';
 import { UnitMotionTracker } from './unit-motion';
+import { guardianAttackAnimationTime } from './guardian-animation';
 import {
   TINT_MULTIPLY,
   defenderStatusTint,
@@ -22,7 +23,7 @@ import {
 interface Actor {
   /** Unit id, or the defender id for guardians and defending heroes. */
   id: number;
-  /** Motion/state key: unit ids as-is, defender ids mapped below zero (separate id spaces). */
+  /** Native attacker IDs are positive; native Hero/Guardian defender IDs are negative. */
   track: number;
   unit?: Unit;
   defender?: Defender;
@@ -210,7 +211,7 @@ export class HeroNativePresentation {
         if (d.kind !== 'guardian' && d.kind !== 'hero') continue;
         const actor = (actorPool[count++] ??= { id: 0, track: 0, key: '', flying: false });
         actor.id = d.id;
-        actor.track = -1 - d.id;
+        actor.track = d.id;
         actor.unit = undefined;
         actor.defender = d;
         actor.key =
@@ -346,8 +347,10 @@ export class HeroNativePresentation {
         ? 0
         : body.hp <= 0
           ? deathAge
-          : body.attacking && d?.kind !== 'guardian'
-            ? Math.max(0, rate - body.cooldown)
+          : body.attacking
+            ? d?.kind === 'guardian'
+              ? guardianAttackAnimationTime(d)
+              : Math.max(0, rate - body.cooldown)
             : clock - since;
       if (pack.normalizedAttack && body.attacking && body.hp > 0) seconds /= Math.max(0.01, rate);
       const frame = bakedFrame(state, direction, seconds);
