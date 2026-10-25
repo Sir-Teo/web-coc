@@ -34,13 +34,16 @@ import {
 } from './wizard-tower-poses';
 import { battleBuilding } from './battle-index';
 
-export function preloadWizardTowers(scene: Phaser.Scene) {
+export function preloadWizardTowers(
+  scene: Phaser.Scene,
+  levels: readonly number[] = WIZARD_TOWER_ART_LEVELS,
+) {
   preloadNativeMeshes(scene, wizardTowerGraph(), 'wizardtower');
   preloadNativeMeshes(scene, towerWizardGraph(), 'tower-wizard');
   preloadNativeMeshes(scene, wizardEffectGraph(), 'wizardtower-effects');
   for (const [path, sound] of Object.entries(WIZARD_TOWER_SOUNDS))
     scene.load.binary(wizardTowerSample(path), '/' + sound.path);
-  for (const level of WIZARD_TOWER_ART_LEVELS)
+  for (const level of new Set(levels))
     if (level > 1) scene.load.image(wizardTowerTexture(level), wizardTowerAsset(level));
 }
 export class WizardTowerPresentation {

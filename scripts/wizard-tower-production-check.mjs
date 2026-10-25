@@ -11,7 +11,7 @@ const requiredAssets = [
   ...Object.values(native.effectArt.textures),
   ...Object.values(native.previews),
   ...Object.values(native.sounds),
-].map((value) => '/' + value.path);
+].map((value) => '/' + value.path.replace(/\.png$/, '.webp'));
 // Unchanged export from bf2f169, before native presentation was integrated.
 const historicalBytes = await fs.readFile('tests/fixtures/wizard-tower-v34.crown-replay.json');
 const historicalSha256 = createHash('sha256').update(historicalBytes).digest('hex');
@@ -32,6 +32,7 @@ try {
     '/tests/fixtures/seeking-mine-battle.ts',
   );
   const { makeReplayFile } = await modules.ssrLoadModule('/src/game/replay-file.ts');
+  const { GameModel } = await modules.ssrLoadModule('/src/game/model.ts');
   const { validateSave } = await modules.ssrLoadModule('/src/game/save.ts');
   const village = seekingMineVillage();
   village.nativeCampaign.stars[56] = 1;
@@ -65,16 +66,36 @@ try {
       file: makeReplayFile(m.state.raidLog[0].replay),
     });
   }
+  // Historical recordings keep their own rules and roster. Compare compiled playback with
+  // that recording's headless playback, rather than a newly recorded modern battle.
+  const historical = new GameModel();
+  expect(historical.openReplay(historicalReplay.replay)).toBe(true);
+  historical.replay.paused = false;
+  let flightAt, flight;
+  for (let i = 0; i < 6000 && !historical.battle.finished; i++) {
+    historical.step(0.05);
+    if (
+      flightAt === undefined &&
+      historical.battle.projectiles.some((projectile) => projectile.weapon === 'arcane') &&
+      historical.battle.elapsed >= 0.25
+    ) {
+      flightAt = historical.battle.elapsed;
+      flight = JSON.parse(JSON.stringify(historical.battle.projectiles));
+    }
+  }
+  if (!historical.battle.finished || flightAt === undefined)
+    throw Error('Historical Wizard Tower fixture did not fire and finish');
+  fixtures.push({
+    label: 'historical-v34',
+    level: 10,
+    flightAt,
+    flight,
+    result: structuredClone(historical.battle.result),
+    file: historicalReplay,
+  });
 } finally {
   await modules.close();
 }
-const currentLevelTen = fixtures.find((fixture) => fixture.level === 10);
-// This fixture has no Mortar: only the newly recorded rules version changes.
-expect({
-  ...currentLevelTen.file,
-  replay: { ...currentLevelTen.file.replay, version: 34 },
-}).toEqual(historicalReplay);
-fixtures.push({ ...currentLevelTen, label: 'historical-v34', file: historicalReplay });
 
 const server = await preview({
   preview: { host: '127.0.0.1', port: 0, strictPort: true },
@@ -97,6 +118,9 @@ try {
       const context = await browser.newContext({
         viewport: { width: 390, height: 844 },
         deviceScaleFactor: 2,
+        // Chromium below covers worker/offline behavior. Keep WebKit's online replay input
+        // independent of worker update banners over the bottom replay controls.
+        ...(name === 'webkit' ? { serviceWorkers: 'block' } : {}),
       });
       const page = await context.newPage(),
         errors = [],
@@ -110,6 +134,28 @@ try {
       await page.locator('[data-action="skip-tutorial"]').click();
       await page.locator('#loading').waitFor({ state: 'detached' });
       expect(requiredAssets).toHaveLength(31);
+      // Production loads only the village's levels. Verify delivery of every source asset
+      // explicitly without requiring unused portraits to occupy scene textures at startup.
+      await page.evaluate(async (paths) => {
+        const audio = new AudioContext();
+        try {
+          await Promise.all(
+            paths.map(async (path) => {
+              const response = await fetch(path);
+              if (!response.ok) throw Error(`Missing source asset: ${path}`);
+              if (path.endsWith('.ogg')) {
+                await audio.decodeAudioData(await response.arrayBuffer());
+              } else {
+                const image = new Image();
+                image.src = path;
+                await image.decode();
+              }
+            }),
+          );
+        } finally {
+          await audio.close();
+        }
+      }, requiredAssets);
       expect(requiredAssets.filter((path) => !loaded.has(path))).toEqual([]);
       expect(await page.evaluate(() => window.__game)).toBeUndefined();
       await page.locator('#import-file').setInputFiles({
@@ -171,6 +217,11 @@ try {
           animations: 'disabled',
         });
         await page.getByRole('slider', { name: 'Replay position' }).press('End');
+        // End seeks run in bounded simulation chunks; software WebKit can need several
+        // frames before the completion label changes. Wait for the actual seek first.
+        await expect
+          .poll(async () => (await read()).replay.seeking, { timeout: 30000 })
+          .toBe(false);
         await expect(page.locator('.replay-status')).toContainText('Replay complete');
         expect((await read()).battle.result).toEqual(fixture.result);
         const download = page.waitForEvent('download');
@@ -216,6 +267,9 @@ try {
           );
           expect((await seek(fixture.flightAt)).battle.projectiles).toEqual(fixture.flight);
           await page.getByRole('slider', { name: 'Replay position' }).press('End');
+          await expect
+            .poll(async () => (await read()).replay.seeking, { timeout: 30000 })
+            .toBe(false);
           await expect(page.locator('.replay-status')).toContainText('Replay complete');
           expect((await read()).battle.result).toEqual(fixture.result);
           await page.locator('[data-action="replay-exit"]').click();

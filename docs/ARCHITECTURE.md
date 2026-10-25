@@ -101,6 +101,12 @@ level loads its own fallback portrait through `LazyTextures`. The family owns th
 portrait keys too and skips idle release while any of its portraits is still decoding, so a
 late upload cannot outlive its release. `tests/browser/mortar-portrait-loading.spec.ts` covers
 owned boot levels, scouting, a moving preview and delayed-decode cleanup/reload.
+X-Bow and Wizard Tower batches likewise limit their per-level portraits to current levels
+and placement Level 1; X-Bow retains both modes at those levels. Later portraits join the
+same family ownership and decode-aware release policy. X-Bow lazy URLs follow the requested
+portrait's mode. Their existing base-sprite loading remains separate, and eager galleries
+still preload every level. `tests/browser/defense-portrait-loading.spec.ts` covers both
+families' owned boot, later move previews and pending-decode release/reload.
 
 Imported replay rosters also determine which garrison art is needed. Character body graphs
 load independently through the small catalog in `character-graphs.ts`; shared death and

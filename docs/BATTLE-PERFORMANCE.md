@@ -1716,6 +1716,49 @@ Its asset probe now requests the shipped WebP paths instead of the removed PNG c
 Standard production navigation and replay pass in Chromium and WebKit, including Chromium's
 offline reload/replay using cache `2bd738f1ed0e`.
 
+## Loading X-Bow and Wizard Tower portraits for the levels in use
+
+X-Bow and Wizard Tower batches now select the current village's levels plus placement Level 1.
+X-Bow includes both ground and ground-and-air modes for each selected level; later lazy
+portraits use the requested mode's URL. The eager development gallery retains every level.
+Both families own their possible later portrait keys and use the decode-aware idle release
+policy already used by Mortars.
+
+Fresh 390×844, DPR 3 phone probes each boot a valid village with one level-6 defense. In
+Chromium and WebKit, the X-Bow family drops from 29 textures / 40,374,876 nominal RGBA bytes
+to seven / 28,406,876 bytes: four portraits replace 26, saving 11,968,000 bytes (11.4 MiB).
+The Wizard Tower probe in both engines drops from 23 textures / 15,934,492 bytes to eight /
+7,726,492 bytes: one higher-level portrait replaces sixteen, saving 8,208,000 bytes (7.8 MiB).
+These counts cover family-owned native pages and per-level portraits; existing separate base
+sprites are outside that census. They measure texture storage,
+not physical-phone FPS.
+
+All 42 selected browser cases pass per engine, covering current-level boot, later move-preview
+portraits, pending-decode release/reload, eager galleries, mode persistence, failed graph/page
+recovery, village restore/undo, battle timing and replay rewind. Native X-Bow source-pixel
+and context-restoration checks and all seventeen Wizard Tower assembly comparisons pass.
+
+The full check passes 3,020 tests across 335 files, strict source/test typing, documentation
+validation and the production build.
+
+Compiled phone probes in both engines boot owned levels 6 and 13 for X-Bow, or 6 and 17 for
+Wizard Tower. WebGL portrait tracking sees seven X-Bow uploads / 3,808,000 bytes (six selected
+level/mode portraits and the existing base sprite), or three Wizard Tower uploads / 1,641,600
+bytes (two higher-level portraits and its base). Normal village imports to a starter release
+all family portraits, leaving one base sprite per kind. Restoring the defenses reloads the
+same counts and paths, without page errors or development game hooks.
+
+The dedicated Wizard Tower production check passes modern levels 1/5/8/10/17, the campaign
+fixture and the pinned version-34 recording in both engines, including projectile state,
+final result, export and reseek equality. Chromium also passes offline replay. WebKit's
+dedicated online replay context blocks service workers to keep update banners from covering
+replay controls. Asset delivery is explicitly decoded from the shipped WebP URLs, and the
+historical reference comes from headless playback of the unchanged, checksum-pinned recording.
+End-of-replay assertions wait for bounded seeking to finish before checking the result.
+
+Standard production navigation/replay pass in both engines under their usual worker
+configuration. Chromium also passes offline reload/replay using cache `50a96dca4ba1`.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

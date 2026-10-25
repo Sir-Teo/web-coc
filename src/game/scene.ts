@@ -108,7 +108,8 @@ import { preloadShrinkTraps, ShrinkTrapPresentation } from './shrink-trap-scene'
 import { isShrunk } from './shrink-trap';
 import { loadShrinkArt, shrinkArtLoaded } from './shrink-trap-poses';
 import { preloadXbows, XbowPresentation } from './xbow-scene';
-import { XBOW_ART } from './xbow-art';
+import { XBOW_ART, xbowTexture } from './xbow-art';
+import { XBOW_LEVELS } from './xbow-stats';
 import { buildingRange } from './building-range';
 import { battleTrapStats } from './traps';
 import { BOMB_TOWER_ART } from './bomb-tower-art';
@@ -119,7 +120,7 @@ import {
   bombTowerMuzzle,
   loadBombTowerArt,
 } from './bomb-tower-poses';
-import { WIZARD_TOWER_ART } from './wizard-tower-art';
+import { WIZARD_TOWER_ART, WIZARD_TOWER_ART_LEVELS, wizardTowerTexture } from './wizard-tower-art';
 import { preloadWizardTowers, WizardTowerPresentation } from './wizard-tower-scene';
 import { loadWizardTowerArt, wizardTowerArtLoaded, wizardTowerBounds } from './wizard-tower-poses';
 import {
@@ -362,7 +363,25 @@ const XBOW_FAMILY: ArtFamily = {
   draws: (b) => b.kind === 'xbow',
   prepare: loadXbowArt,
   prepared: xbowArtLoaded,
-  preload: preloadXbows,
+  preload: (scene, _fetching, buildings = []) =>
+    preloadXbows(
+      scene,
+      EAGER_FAMILIES
+        ? undefined
+        : [1, ...buildings.filter((b) => b.kind === 'xbow').map((b) => b.level)],
+    ),
+};
+const WIZARD_TOWER_FAMILY: ArtFamily = {
+  draws: (b) => b.kind === 'wizardtower',
+  prepare: loadWizardTowerArt,
+  prepared: wizardTowerArtLoaded,
+  preload: (scene, _fetching, buildings = []) =>
+    preloadWizardTowers(
+      scene,
+      EAGER_FAMILIES
+        ? undefined
+        : [1, ...buildings.filter((b) => b.kind === 'wizardtower').map((b) => b.level)],
+    ),
 };
 const MORTAR_FAMILY: ArtFamily = {
   draws: (b) => b.kind === 'mortar',
@@ -488,12 +507,7 @@ const ART_FAMILIES: ArtFamily[] = [
     prepared: bombTowerArtLoaded,
     preload: preloadBombTowers,
   },
-  {
-    draws: (b) => b.kind === 'wizardtower',
-    prepare: loadWizardTowerArt,
-    prepared: wizardTowerArtLoaded,
-    preload: preloadWizardTowers,
-  },
+  WIZARD_TOWER_FAMILY,
   {
     draws: (b) => b.kind === 'airsweeper',
     preload: preloadSweepers,
@@ -932,6 +946,16 @@ export class VillageScene extends Phaser.Scene {
     // Per-level portraits may arrive through LazyTextures after the native batch. Own their
     // keys before they arrive too, so releasing a family also releases those later uploads.
     if (family === MORTAR_FAMILY) keys = [...keys, ...MORTAR_ART_LEVELS.map(mortarTexture)];
+    if (family === WIZARD_TOWER_FAMILY)
+      keys = [
+        ...keys,
+        ...WIZARD_TOWER_ART_LEVELS.filter((level) => level > 1).map(wizardTowerTexture),
+      ];
+    if (family === XBOW_FAMILY)
+      keys = [
+        ...keys,
+        ...XBOW_LEVELS.flatMap(({ level }) => [xbowTexture(level), xbowTexture(level, 'both')]),
+      ];
     if (family === GARRISON_SHARED_FAMILY || family === GARRISON_DRAGON_FAMILY) {
       const art = family === GARRISON_SHARED_FAMILY ? commonDeathArt() : characterArt('Dragon7');
       const shared = Object.keys(art.graph.textures).map((id) => nativeMeshTexture(art.prefix, id));
@@ -3443,6 +3467,8 @@ export class VillageScene extends Phaser.Scene {
     // portrait, after the family can track and safely release that independent upload.
     if (kind === 'mortar') return level > 1 && this.loadedFamilies.has(MORTAR_FAMILY);
     if (texture === kind) return this.deferredBases.has(kind);
+    if (kind === 'xbow') return this.loadedFamilies.has(XBOW_FAMILY);
+    if (kind === 'wizardtower') return this.loadedFamilies.has(WIZARD_TOWER_FAMILY);
     const family =
       kind === 'wall' ||
       kind === 'camp' ||
@@ -3460,6 +3486,8 @@ export class VillageScene extends Phaser.Scene {
     spellTowerWeapon?: string,
   ) {
     if (hasLateArt(kind)) return lateAsset(kind, level, spellTowerWeapon);
+    if (kind === 'xbow' && texture !== kind)
+      return asset(kind, level, undefined, texture.endsWith('-both') ? 'both' : 'ground');
     if (texture.endsWith('-tier3')) return asset(kind, TIER3_LEVEL);
     return texture === kind ? baseAsset(kind) : asset(kind, level);
   }

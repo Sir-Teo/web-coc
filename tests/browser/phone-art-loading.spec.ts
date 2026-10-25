@@ -65,6 +65,22 @@ test.describe('phone development preview', () => {
             .filter((key) => key === 'mortar' || key.startsWith('mortar-level-')).length,
       ),
     ).toBe(18);
+    expect(
+      await page.evaluate(
+        () =>
+          window.__game.game.textures
+            .getTextureKeys()
+            .filter((key) => /^xbow-\d+-(ground|both)$/.test(key)).length,
+      ),
+    ).toBe(26);
+    expect(
+      await page.evaluate(
+        () =>
+          window.__game.game.textures
+            .getTextureKeys()
+            .filter((key) => /^wizardtower-\d+$/.test(key)).length,
+      ),
+    ).toBe(16);
     expect(requested.some((path) => path.endsWith('/mortar/runtime.json'))).toBe(true);
     expect(requested.some((path) => /\/characters\/walk\/giant/.test(path))).toBe(true);
     expect(errors).toEqual([]);
