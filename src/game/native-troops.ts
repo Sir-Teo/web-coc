@@ -370,6 +370,8 @@ interface GroupWeights {
   space: Float64Array;
   /** Cell → indices into the snapshot arrays. */
   grid: Map<number, number[]>;
+  /** Empty cell lists kept for the next snapshot. */
+  buckets: number[][];
   /** Snapshot index per living unit id. */
   index: Map<number, number>;
   /** Cluster weight per unit id, measured on demand from the snapshot. */
@@ -389,18 +391,38 @@ function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats, following: boo
   if (!cached || cached.tick !== battle.elapsed || cached.radius !== s.groupRadius) {
     let living = 0;
     for (const other of battle.units) if (other.hp > 0) living++;
-    cached = {
-      tick: battle.elapsed,
-      radius: s.groupRadius,
-      x: new Float64Array(living),
-      y: new Float64Array(living),
-      space: new Float64Array(living),
-      grid: new Map(),
-      index: new Map(),
-      weights: new Map(),
-      anchors: [],
-    };
-    groupWeightCache.set(battle, cached);
+    if (!cached) {
+      cached = {
+        tick: battle.elapsed,
+        radius: s.groupRadius,
+        x: new Float64Array(living),
+        y: new Float64Array(living),
+        space: new Float64Array(living),
+        grid: new Map(),
+        buckets: [],
+        index: new Map(),
+        weights: new Map(),
+        anchors: [],
+      };
+      groupWeightCache.set(battle, cached);
+    } else {
+      cached.tick = battle.elapsed;
+      cached.radius = s.groupRadius;
+      if (cached.x.length < living) {
+        const capacity = living * 2;
+        cached.x = new Float64Array(capacity);
+        cached.y = new Float64Array(capacity);
+        cached.space = new Float64Array(capacity);
+      }
+      for (const list of cached.grid.values()) {
+        list.length = 0;
+        cached.buckets.push(list);
+      }
+      cached.grid.clear();
+      cached.index.clear();
+      cached.weights.clear();
+      cached.anchors.length = 0;
+    }
     const cell = Math.max(1, s.groupRadius);
     let i = 0;
     for (const other of battle.units) {
@@ -411,7 +433,7 @@ function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats, following: boo
       cached.index.set(other.id, i);
       const key = groupCell(Math.floor(other.x / cell), Math.floor(other.y / cell));
       let list = cached.grid.get(key);
-      if (!list) cached.grid.set(key, (list = []));
+      if (!list) cached.grid.set(key, (list = cached.buckets.pop() ?? []));
       list.push(i);
       // Anchor candidates in unit order: units that do not follow a group themselves. Units
       // missing from the snapshot (spawned later this tick) could never win a weight of 0.

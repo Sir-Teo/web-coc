@@ -30,6 +30,13 @@ between steps, but must not change simulation results. Replay seeking reconstruc
 state from recorded inputs, so a mechanic's timing and random choices must be
 reproducible. See [replays](REPLAYS.md) and [effect timing](EFFECT-TIMING.md).
 
+Native group followers share a position/housing snapshot captured by the first follower
+each tick. Its buffers, maps and empty cell lists are reused per battle, with capacity
+growing for new waves. Refresh clears cell contents, unit indices, weights and anchor
+references before rebuilding in unit order; new arrivals still wait until the next snapshot.
+The group witness in `tests/fixtures/native-group-snapshot.ts` checks exact movement across
+snapshot capture, arrivals, deaths and moved cells in Node and both browser engines.
+
 Keep gameplay values separate from art graphs. A model import should not load
 Phaser, a scene class or multi-megabyte render data. `*-graph.ts` and `*-poses.ts`
 modules own render data; stats and rule modules expose the values simulation needs.

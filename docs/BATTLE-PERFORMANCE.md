@@ -1247,6 +1247,39 @@ three hero-release regressions, two hero/pet UI checks and one baked-art smoke c
 Standard production checks pass online in both engines and offline in Chromium
 (cache `5796a2d4ced3`).
 
+## Reusing support-group snapshot storage
+
+The refreshed phone battle profile still shows group-following support selection as CPU
+work. Each tick previously allocated a new snapshot object, three position/housing arrays,
+three maps, an anchor list and arrays for occupied cells. The cache now reuses that storage
+within its battle. Typed buffers grow when living units exceed capacity; empty cell lists
+return to a pool. Every refresh clears the old cells, indices, weights and anchor references
+before rebuilding the same snapshot in unit order. The first-follower capture time, distance
+arithmetic and tie order stay unchanged.
+
+A focused moving-support probe runs 32 Apprentice Wardens with 96 Giant allies for 1,000
+fixed steps. After 20 warmups per variant, six alternating samples per variant averaged
+177.1 to 157.6 ms in Chromium (11.0% less) and 102.2 to 93.7 ms in WebKit (8.3% less).
+These are isolated loop timings on the runner, not physical-phone FPS. All samples retain
+SHA-256 `ca8df6ca1101b71bd368ebffde2c0cfb1664264dbaf3a94945091369ed2b4115`.
+The standard TH18 and full-roster fixed-step battle hashes also remain unchanged; their
+timing variation does not establish a whole-game improvement.
+
+The shared lifecycle witness records movement from the original implementation. It checks
+an arrival wave within the current tick and the following tick, buffer growth, deaths that
+shrink the living set, and replacement anchors in different cells. Both browser engines
+pass it and the existing first-follower snapshot witness with exact coordinates.
+
+A separate indexed-weight lookup experiment was discarded. It helped Node and WebKit,
+but the longer Chromium run regressed from 167.3 to 175.6 ms. Plain-array weights also
+regressed, so the existing map-based lookup remains.
+
+Validation: `npm run check` passes 3,006 tests across 332 files, strict types, documentation
+links and the production build. Both exact-coordinate group browser cases pass in Chromium
+and WebKit.
+Standard production checks pass online in both engines and offline in Chromium
+(cache `b1614d3641dc`).
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
