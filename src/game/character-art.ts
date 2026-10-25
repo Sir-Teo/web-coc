@@ -80,10 +80,15 @@ export async function loadCharacterArt(animations?: ReadonlySet<string>): Promis
         return key;
       })
     : Object.keys(module.CHARACTER_LOADERS);
-  await Promise.all([sharedLoading, ...[...new Set(keys)].map((key) => loadBody(key, module))]);
+  await Promise.all([
+    sharedLoading.then((value) => value.loadProjectileGroups(animations)),
+    ...[...new Set(keys)].map((key) => loadBody(key, module)),
+  ]);
 }
 export const characterArtLoaded = (animation?: string) =>
-  !!shared && (animation === undefined || bodies.has(graphKey(animation) ?? ''));
+  !!shared &&
+  (animation === undefined ||
+    (bodies.has(graphKey(animation) ?? '') && shared.projectileGroupsLoaded(animation)));
 const loaded = () => {
   if (!shared) throw new Error('Character art is not loaded yet');
   return shared;
@@ -100,12 +105,24 @@ export const projectileArts = (): Record<string, CharacterGraphEntry> => loaded(
 export const projectileGroupArts = (): Record<string, CharacterGraphEntry> =>
   loaded().PROJECTILE_GROUP_ART;
 const projectileCache = new Map<string, CharacterGraphEntry>();
+const projectileGroups = new Map<string, string | undefined>();
+const projectileGroup = (name: string) => {
+  if (projectileGroups.has(name)) return projectileGroups.get(name);
+  const group = Object.entries(PROJECTILE_GROUPS).find(([, names]) => names.includes(name))?.[0];
+  projectileGroups.set(name, group);
+  return group;
+};
+/** Recorded shots can exist while their character's independent graph is still pending. */
+export const projectileArtLoaded = (name: string, swf: string) => {
+  const group = projectileGroup(name);
+  return !!shared && !!(group ? shared.PROJECTILE_GROUP_ART[group] : shared.PROJECTILE_ART[swf]);
+};
 /** The graph holding a projectile row's export: its later group, else its original file. */
 export function projectileArt(name: string, swf: string) {
   const cacheKey = `${name}\n${swf}`;
   const known = projectileCache.get(cacheKey);
   if (known) return known;
-  const group = Object.entries(PROJECTILE_GROUPS).find(([, names]) => names.includes(name))?.[0];
+  const group = projectileGroup(name);
   const art = group ? projectileGroupArts()[group] : projectileArts()[swf];
   if (!art) throw Error(`Missing native projectile art: ${name}`);
   projectileCache.set(cacheKey, art);

@@ -91,18 +91,23 @@ The Cannon and Tesla batches leave fallback sprites already being fetched by
 Imported replay rosters also determine which garrison art is needed. Character body graphs
 load independently through the small catalog in `character-graphs.ts`; shared death and
 projectile graphs load through `character-shared-graphs.ts`. `loadCharacterArt(animations)`
-fetches only those bodies, an empty set fetches shared data alone, and an omitted set retains
-the explicit full preload. Aliases keep their original graph, texture prefix and shadow set.
+fetches only those bodies and their later projectile groups. An empty set fetches common
+death and original projectile data alone; an omitted set retains the explicit full preload.
+Bowler, Witch and Lava Hound projectile graphs import independently when catalog rows for a
+requested animation use them. Aliases keep their original graph, texture prefix and shadow set.
 The registry preserves catalog order and reuses concurrent requests and successful entries.
 
-`characterArtLoaded(name)` checks that body and shared data; without a name it checks shared
-data alone. Poses, bar heights and workers guard their own body readiness while other graphs
-are already resident. The battle still waits for its complete roster, including future
+`characterArtLoaded(name)` checks that body, common data and its later projectile groups;
+without a name it checks common data alone. Poses, bar heights and workers guard their own
+body readiness while other graphs are already resident. The battle still waits for its
+complete roster, including future
 summons, Ghost Traps and workers. Body and shared module failures use the existing retry
 wrapper and scene backoff. Existing release rules own GPU pages; backward seeks reuse them,
 and JavaScript modules stay warm. `tests/browser/character-graph-loading.spec.ts` checks held
-bodies and reconnect recovery; `tests/browser/garrison-late-replay-art.spec.ts` checks actual
-uploaded textures and native bodies on desktop and phone.
+bodies, held projectile groups, recorded shots and reconnect recovery. Pending projectile
+groups leave recorded shots guarded until the complete roster is ready.
+`tests/browser/garrison-late-replay-art.spec.ts` checks actual uploaded textures and native
+bodies on desktop and phone.
 
 Boot files also record their owning art family. Successful boot families join the same
 release-and-reload cycle, so importing a different village can free the original village's

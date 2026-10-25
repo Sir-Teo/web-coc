@@ -7,6 +7,7 @@ import { makeBuilding } from '../src/game/model';
 import { ghostTrapSource } from '../src/game/ghost-trap';
 import { defendingBuilderStats, hutBuilderLevel } from '../src/game/defending-builder';
 import { lateTrapArena } from './fixtures/late-trap-battle';
+import { characterProjectileGroups, PROJECTILE_GROUPS } from '../src/game/character-catalog';
 
 it('needs no character bodies for a late defense without defenders', () => {
   const { b } = lateTrapArena([makeBuilding(1, 'monolith', 20, 20)]);
@@ -68,4 +69,17 @@ it('deduplicates repeated defenders without changing combat state', () => {
   const before = JSON.stringify(b);
   expect([...defenderAnimations(b)].sort()).toEqual(['Necromancer_lvl2', 'Skeleton'].sort());
   expect(JSON.stringify(b)).toBe(before);
+});
+
+it('covers every captured later projectile group for each supported defender animation', () => {
+  for (const [kind, definition] of Object.entries(GARRISON_KINDS))
+    for (const level of Object.keys(definition.levels).map(Number)) {
+      const stats = garrisonStats(kind as GarrisonKind, level);
+      const expected = Object.entries(PROJECTILE_GROUPS)
+        .filter(([, names]) => stats.projectile && names.includes(stats.projectile))
+        .map(([group]) => group);
+      expect([...characterProjectileGroups(stats.animation)]).toEqual(expected);
+    }
+  expect([...characterProjectileGroups('Archer9')]).toEqual([]);
+  expect([...characterProjectileGroups('Defending Builder')]).toEqual([]);
 });

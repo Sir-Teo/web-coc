@@ -1399,6 +1399,49 @@ also aborts the held image transfer; WebKit may finish that transfer for its cac
 Standard production checks pass online in both engines and offline in Chromium with cache
 `ac69fd388156`.
 
+### Further pathfinding experiments
+
+A fresh 589-unit phone-viewport profile still identifies subtile A* as the largest single
+simulation function. Precomputed grid neighbors preserve all 903 recorded routes, but add
+90 KiB of scratch storage for only about 1–2% improvement in the paired whole-battle CPU
+samples; that experiment is not applied. Moving heuristic initialization to first discovery
+also preserves the routes and whole-battle hashes. Variants that remove redundant predecessor
+and cost initialization improve some Node and WebKit samples but slow Chromium's mixed-army
+workload. They are not applied. The existing pathfinder remains unchanged.
+
+## Loading later projectile graphs with their characters
+
+The first character request still imported the Bowler, Witch and Lava Hound projectile graphs
+inside the shared module, even for an Archer-only roster. These three graphs now import
+independently. Catalog character rows determine which groups each requested animation uses;
+the existing transitive roster includes summons and secondary troops. Common death and the
+original projectile files remain shared. An explicit full character preload still loads all
+three groups.
+
+Concurrent requests share each group's promise; successful entries retain their identity and
+the original group order, and failures clear their pending marker for the existing retry
+policy. Body readiness includes its required groups. Recorded shots independently guard
+their projectile and shadow graphs while loading is held. No graph contents, texture keys,
+projectile timing or simulation values change.
+
+The compiled phone-viewport Archer replay loads a 71,788-byte common module instead of
+183,216 bytes. Including the unchanged 4,354-byte catalog and 25,165-byte Archer body,
+character JavaScript falls from 212,735 to 101,307 bytes (52.4%). Including the unchanged
+177,876-byte castle module, newly loaded replay JavaScript falls from 390,611 to 279,183
+bytes (28.5%). Chromium and WebKit report identical payload sizes and exactly matching
+defender identifiers, positions, health, targets and finished state, with no page errors or
+developer hooks. These are decoded JavaScript payload bytes, not compressed transfers or
+physical-phone FPS. Startup still precaches 15 files and 7.4 MB.
+
+All 26 loading cases pass per browser engine, including held projectile graphs and recorded
+shots for each group, projectile reconnect recovery, body failures, roster extension and
+explicit full preload. The full check passes 3,011 tests across 333 files, strict types,
+documentation links and the production build. Unit coverage checks independent group
+extension, retained entry identity and projectile demand for every supported defender level.
+Standard production checks pass online in both engines and offline in Chromium (cache
+`726080d8b5d7`). A separate cached Archer replay also reloads and completes offline with an
+exact state match and an uploaded body texture, with no page errors or developer hooks.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

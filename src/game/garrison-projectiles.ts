@@ -1,5 +1,5 @@
 import { projectileRow, sourceFlag, sourceNumber } from './character-catalog';
-import { projectileArt } from './character-art';
+import { projectileArt, projectileArtLoaded } from './character-art';
 import { CHARACTER_SCALE, characterFacing } from './character-poses';
 import { garrisonStats } from './garrison-kinds';
 import { distance2D } from './distance';
@@ -37,6 +37,11 @@ export function garrisonShotPose(
 ): GarrisonShotPose | null {
   if (elapsed < shot.launched) return null;
   const row = projectileRow(shot.projectile);
+  if (
+    !projectileArtLoaded(shot.projectile, row.SWF) ||
+    (row.ShadowExportName && !projectileArtLoaded(shot.projectile, row.ShadowSWF))
+  )
+    return null;
   const art = projectileArt(shot.projectile, row.SWF);
   const travelled = distance2D(shot.flight.x - shot.fromX, shot.flight.y - shot.fromY);
   const dx = shot.x - shot.flight.x,
