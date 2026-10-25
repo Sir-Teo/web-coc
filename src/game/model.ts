@@ -798,6 +798,8 @@ export interface Battle {
   nativeIdlePoisonAvoidance?: true;
   /** Version 66: overdue defensive Poison pulses cannot rewind the shared damage clock. */
   nativeAttackerPoisonClock?: true;
+  /** Version 67: native spell Poison movement modifiers use the client hero multiplier. */
+  nativeHeroPoisonSpeed?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */

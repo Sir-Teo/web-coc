@@ -117,3 +117,7 @@ Idle defending Heroes and Skeleton Trap defenders now use the Poison avoidance r
 ## Version 66: defensive Poison clocks across larger updates
 
 Defensive native Poison pulses keep their shared attacker damage clock and slow deadline at the latest processed pulse. Catching up multiple clouds in cast order can no longer move either timestamp backward and charge the same exposure time twice. Two staggered Poison Spell Towers now deal the same damage with one-second updates as with 20 Hz updates, including their native hero multiplier. Versions 65 and earlier keep their original calculation. `tests/attacker-poison-clock.test.ts` covers update sizes, actual Spell Tower casts, portable replay files and exact backward seeks.
+
+## Version 67: Hero movement under native Poison spell clouds
+
+Native spell Poison movement modifiers now apply the client’s 50% hero multiplier with integer truncation on both sides of a battle. Spell Tower Poison retains 83% Hero movement speed instead of 65%; attack slow and poison damage stay unchanged. Direct Hero Hunter projectile poison retains its existing behavior. Versions 66 and earlier preserve their previous movement calculation. Recorded King deployments and Poison Spell Tower casts reconstruct exactly through portable files and backward seeks.

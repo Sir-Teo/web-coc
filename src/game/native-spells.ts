@@ -68,6 +68,16 @@ export interface NativeSpellContext {
 export const spellRow = (name: string, level: number): NativeRow =>
   nativeRow('spells', name, level);
 
+/** The client scales hero movement boosts (including signed Poison slows) with integer truncation. */
+function poisonMoveBoost(battle: Battle, row: NativeRow, hero: boolean) {
+  const speed = num(row, 'SpeedBoost');
+  return (
+    (hero && battle.nativeHeroPoisonSpeed
+      ? Math.trunc((speed * nativeGlobal('HERO_RAGE_SPEED_MULTIPLIER', 50)) / 100)
+      : speed) / 100
+  );
+}
+
 /** Client timeline: deploy, charge and hit delays precede the first pulse. */
 export function castNativeSpell(
   battle: Battle,
@@ -347,9 +357,10 @@ function poisonDefender(battle: Battle, d: Defender, row: NativeRow, at: number,
   if (state.until + 6 < at) state.since = at;
   const until = at + Math.max(seconds(row, 'BoostTimeMS'), tick);
   state.until = battle.nativeDefenderPoisonOverlap ? Math.max(state.until, until) : until;
+  const speed = poisonMoveBoost(battle, row, d.kind === 'hero');
   state.speed = battle.nativeDefenderPoisonOverlap
-    ? Math.min(active ? state.speed : 0, num(row, 'SpeedBoost') / 100)
-    : num(row, 'SpeedBoost') / 100;
+    ? Math.min(active ? state.speed : 0, speed)
+    : speed;
   state.attack = battle.nativeDefenderPoisonOverlap
     ? Math.min(active ? state.attack : 0, num(row, 'AttackSpeedBoost') / 100)
     : num(row, 'AttackSpeedBoost') / 100;
@@ -735,7 +746,7 @@ function harmAttackers(
           : at + Math.max(seconds(row, 'BoostTimeMS'), interval),
         speed: Math.min(
           e.poison && e.poison.until > at ? e.poison.speed : 0,
-          num(row, 'SpeedBoost') / 100,
+          poisonMoveBoost(battle, row, !!u.hero),
         ),
         attackSpeed: Math.min(
           e.poison && e.poison.until > at ? e.poison.attackSpeed : 0,
