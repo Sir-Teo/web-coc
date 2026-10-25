@@ -51,6 +51,16 @@ export const nativeMeshTexture = (prefix: string, id: string | number) => {
   // imported page and UVs. One Phaser key keeps them on a single GPU allocation.
   if (prefix === 'character-golden-dragon' && (id === 0 || id === '0'))
     return 'garrison-dragon:mesh:0';
+  // The pinned siege packs share this complete characters page. Other scenes
+  // and pages retain their own keys, including each machine's body atlas.
+  if (id === 8 || id === '8')
+    switch (prefix) {
+      case 'troop:flameflinger:characters':
+      case 'troop:loglauncher:characters':
+      case 'troop:trooplauncher:characters':
+      case 'troop:wallwrecker:characters':
+        return 'troop:battledrill:characters:mesh:8';
+    }
   return `${prefix}:mesh:${id}`;
 };
 

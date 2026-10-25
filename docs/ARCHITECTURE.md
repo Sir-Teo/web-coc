@@ -183,6 +183,15 @@ The importer and atlas tests verify identical page dimensions, UVs and pixels be
 `tests/browser/shared-dragon-atlas.spec.ts` checks a single GPU allocation, separate shadows,
 both load orders, home release/reload, retained home buildings, reconnect and context restoration.
 
+The five siege packs for Battle Drill, Flame Flinger, Log Launcher, Troop Launcher and Wall
+Wrecker also resolve their identical `characters` page 8 to one GPU texture key. Their body
+atlases keep separate keys. Before releasing troop packs, `releaseExcept` gathers the texture
+keys referenced by retained packs, preserving shared pages while another kind needs them.
+The existing request identities still prevent cancelled decodes from recreating released pages.
+`tests/native-siege-atlas.test.ts` pins the shared page's metadata and RGBA bytes;
+`tests/browser/shared-siege-atlas.spec.ts` covers allocation, retained-kind transitions,
+context restoration, release/reload and cancellation.
+
 Ghost Trap coffins belong to the shared Skeleton Trap art family, including a cold visit to
 Go to Bat, which has Ghost Traps and no ordinary Skeleton Traps. The presenter waits for both
 the armed and triggered atlases before hiding its fallback. The family retains any coffin

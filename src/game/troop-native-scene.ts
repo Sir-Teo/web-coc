@@ -180,12 +180,19 @@ export class TroopNativePresentation {
    */
   releaseExcept(keep?: ReadonlySet<string>) {
     for (const kind of this.pending.keys()) if (!keep?.has(kind)) this.pending.delete(kind);
+    const retained = new Set<string>();
+    for (const [kind, pack] of this.packs)
+      if (keep?.has(kind))
+        for (const [name, graph] of Object.entries(pack.scenes))
+          for (const id of Object.keys(graph.textures))
+            retained.add(nativeMeshTexture(`troop:${kind}:${name}`, id));
     for (const [kind, pack] of this.packs) {
       if (keep?.has(kind)) continue;
       for (const [name, graph] of Object.entries(pack.scenes))
         for (const id of Object.keys(graph.textures)) {
           const key = nativeMeshTexture(`troop:${kind}:${name}`, id);
-          if (this.scene.textures.exists(key)) this.scene.textures.remove(key);
+          if (!retained.has(key) && this.scene.textures.exists(key))
+            this.scene.textures.remove(key);
         }
       this.packs.delete(kind);
       this.levelsReady.delete(kind);

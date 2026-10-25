@@ -1137,6 +1137,39 @@ three-Dragon phone replay reaches exactly the earlier build's recorded defender 
 both engines, with no page errors or developer hooks. Standard production checks pass
 online in both engines and offline in Chromium (cache `1b3b6a1bcd77`).
 
+## Sharing the common siege page
+
+The full-roster phone probe found five GPU copies of a single 950×958 characters page,
+one for each of Battle Drill, Flame Flinger, Log Launcher, Troop Launcher and Wall Wrecker.
+Their source metadata already referenced the same pinned PNG; separate per-kind keys
+caused the uploads. These five references now use one texture key, while each machine's
+body pages remain separate. Troop cleanup collects retained keys before releasing packs,
+so dropping one machine preserves any page another retained machine still references.
+
+That page drops from 18,202,000 to 3,640,400 nominal RGBA bytes when all five packs are warm:
+14,561,600 B (13.9 MiB) saved, or 80% of this page's previous allocation. The 589-unit
+390×844/DPR-3 roster probe confirms a single upload after the change and reports no errors.
+Its animation snapshot changes other buffers' footprints, so the comparison uses this
+immutable page rather than attributing the entire texture-memory difference to sharing.
+
+Phone browser cases verify one GPU allocation for all five packs, preserving it while
+different retained machines replace one another, context restoration, complete release and
+reload, and cancelled late decodes. The source test checks the complete page's pinned
+RGBA hash, dimensions and path, and ensures other scene/page keys remain independent.
+
+A compiled phone-sized replay carries the normal three-machine reserve (Flame Flinger,
+Log Launcher and Wall Wrecker), deploys one machine and reaches its recorded endpoint.
+Instrumenting `texImage2D` on the game canvas confirms three uploads of the shared page
+in the previous build and one in the updated build, in both Chromium and WebKit. That is
+7,280,800 B (6.9 MiB) less nominal storage in this reserve case. Both engines retain exactly
+the earlier troop state and remaining reserve, with no page errors or developer hooks.
+
+Validation: `npm run check` passes all 3,005 tests in 332 files, strict types and the
+production build. Five relevant browser cases pass per engine: two new sharing/lifetime
+cases and three existing troop-release regressions. The compiled replay comparison passes
+in both engines. Standard production checks pass online in both engines and offline in
+Chromium (cache `16583ef3499b`). No source artwork, UVs or simulation data change.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
