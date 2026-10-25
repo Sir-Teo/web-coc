@@ -843,6 +843,8 @@ export interface Battle {
   nativeKingGauntletSplash?: true;
   /** Version 86: all native source jumpers retain wall bypass while chasing defenders. */
   nativeSourceJumperChase?: true;
+  /** Version 87: burrowers pursue defenders underground and surface before striking. */
+  nativeUndergroundDefenderChase?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */

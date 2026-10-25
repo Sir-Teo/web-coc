@@ -221,6 +221,25 @@ function completeHeroAttack(battle: Battle, unit: Unit) {
     spendHeroCharge(unit, battle.elapsed);
 }
 
+/** Shared building/defender surfacing transition; the Drill burst runs once per emergence. */
+function surfaceUndergroundUnit(ctx: NativeTroopContext, unit: Unit, at: number) {
+  const state = unit.native!;
+  if (!state.surfaced && unit.kind === 'battledrill') {
+    const row = nativeRow('abilities', 'BattleDrillStunOnSurface');
+    castNativeSpell(
+      ctx.battle,
+      text(row, 'SelfSpell'),
+      num(row, 'SelfSpellLevel', 1),
+      'attack',
+      unit.x,
+      unit.y,
+      { at, owner: unit.id },
+    );
+  }
+  state.surfaced = true;
+  state.burrowed = false;
+}
+
 /** Client building names used by preferred-target columns. */
 const BUILDING_NAME: Partial<Record<BuildingKind, string>> = {
   airdefense: 'Air Defense',
@@ -640,6 +659,7 @@ export function stepNativeUnit(
       ? { name: s.projectile, kind: u.kind, level: s.level }
       : undefined;
   const readyToAttack = u.cooldown <= 0;
+  const undergroundChase = battle.nativeUndergroundDefenderChase && s.underground;
   if (
     stepAttackerVsDefenders(
       battle,
@@ -661,6 +681,7 @@ export function stepNativeUnit(
         ...(poisonLizard ? { seekUnalerted: true } : {}),
         ...(defenderProjectile ? { nativeProjectile: defenderProjectile } : {}),
         ...(gauntletSplash > 0 ? { nativeMeleeSplash: gauntletSplash } : {}),
+        ...(undergroundChase ? { underground: true } : {}),
       },
       ctx.isTargetable,
       {
@@ -668,6 +689,7 @@ export function stepNativeUnit(
           ? routeBuildings(ctx, true)
           : (ctx.routableBuildings ?? ctx.buildings),
         ...(jumpingChase ? { jumpWalls: true } : {}),
+        ...(undergroundChase ? { enterRange: () => surfaceUndergroundUnit(ctx, u, at) } : {}),
         wallTile: ctx.wallTile,
         passableWalls: ctx.passableWalls,
         budget: ctx.pathBudget,
@@ -675,6 +697,10 @@ export function stepNativeUnit(
       },
     )
   ) {
+    if (undergroundChase && !u.attacking) {
+      state.surfaced = false;
+      state.burrowed = true;
+    }
     if (readyToAttack && u.cooldown > 0) completeHeroAttack(battle, u);
     return;
   }
@@ -735,22 +761,7 @@ export function stepNativeUnit(
   }
   if (distance <= s.range + 1e-6) {
     u.attacking = true;
-    if (s.underground) {
-      if (!state.surfaced && u.kind === 'battledrill') {
-        const row = nativeRow('abilities', 'BattleDrillStunOnSurface');
-        castNativeSpell(
-          battle,
-          text(row, 'SelfSpell'),
-          num(row, 'SelfSpellLevel', 1),
-          'attack',
-          u.x,
-          u.y,
-          { at, owner: u.id },
-        );
-      }
-      state.surfaced = true;
-      state.burrowed = false;
-    }
+    if (s.underground) surfaceUndergroundUnit(ctx, u, at);
     if (at + 1e-9 < (state.targetAt ?? 0) + s.newTargetDelay) return;
     if (u.cooldown > 0) return;
     u.cooldown = s.rate * unitAttackIntervalScale(u, at);

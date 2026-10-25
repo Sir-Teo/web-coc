@@ -374,6 +374,8 @@ export type DefenderFightTraits = Pick<
   nativeProjectile?: CombatProjectile['native'];
   /** Radius of a source-backed melee area hit; never grants air targeting. */
   nativeMeleeSplash?: number;
+  /** Ground burrowers move directly below obstacles without becoming airborne. */
+  underground?: boolean;
 };
 const canFight = (unit: Unit, enemy: Defender, troop: DefenderFightTraits) =>
   !troop.healer &&
@@ -392,6 +394,8 @@ export interface DefenderRoute {
   passableWalls?: Set<number>;
   budget?: { count: number; limit: number };
   breaches?: readonly { x: number; y: number }[];
+  /** Prepare native targetability before a unit can strike its chosen defender. */
+  enterRange?(): void;
 }
 /** Hero hunters ignore alert distance and ordinary defenders while a valid Hero remains. */
 function preferredHeroTarget(battle: Battle, unit: Unit, troop: DefenderFightTraits) {
@@ -593,6 +597,7 @@ export function stepAttackerVsDefenders(
   const distance = distance2D(unit.x - target.x, unit.y - target.y);
   if (distance <= stats.range + 1e-6) {
     unit.attacking = true;
+    route?.enterRange?.();
     if (unit.cooldown <= 0) {
       unit.cooldown = stats.rate;
       const power = stats.damage * (target.kind === 'hero' ? (troop.heroDamageScale ?? 1) : 1);
@@ -672,7 +677,7 @@ export function stepAttackerVsDefenders(
         });
       }
     }
-  } else if (troop.flying) {
+  } else if (troop.flying || troop.underground) {
     const move = Math.min(stats.speed * dt, distance);
     unit.x += ((target.x - unit.x) / distance) * move;
     unit.y += ((target.y - unit.y) / distance) * move;

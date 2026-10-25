@@ -501,3 +501,11 @@ ordinary ground controls, defense preference, earlier exceptions and exact porta
 `tests/browser/jumper-defender-chase.spec.ts` checks native actors, actual damage after crossing,
 reduced-motion parity and historical playback on desktop and phone. This correction changes
 routing, without adding a wall-leap animation or changing pet leash/target-selection rules.
+
+## Version 87 Diggy defender-chase exposure
+
+Diggy now uses underground movement during defender pursuit and surfaces before a defender hit.
+It no longer remains invulnerable while attacking a defender because of the missing transition. On leaving range it burrows again; source ground targeting and existing
+master-selection rules remain unchanged. Defending troops and Heroes receive no surfacing stun.
+See [underground defender pursuit](NATIVE-GRID.md#version-87-underground-defender-pursuit) for
+scope, source references, replay compatibility and verification.

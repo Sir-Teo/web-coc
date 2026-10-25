@@ -255,3 +255,11 @@ specific units enabled it in that chase. Ordinary ground routes, target preferen
 special exceptions retain their existing behavior. Real Lassi deployment and Warden pursuit with
 recorded lure/Invisibility inputs reconstruct through portable files and backward seeks. Versions
 85 and earlier preserve their previous routes and results. Underground movement remains separate.
+
+## Version 87: underground defender pursuit and attack exposure
+
+Burrowers now bypass obstacles during defender pursuit, surface before hitting, and burrow again
+when the target moves out of range. Surfaced units can be targeted and damaged, including while
+waiting for their next attack. The Battle Drill surfacing transition is shared with building
+combat. Real Miner and Diggy attacks and enemy retaliation reconstruct through portable files and
+backward seeks. Versions 86 and earlier preserve their previous ground routes and hidden attacks.
