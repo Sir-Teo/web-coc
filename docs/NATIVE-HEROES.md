@@ -310,3 +310,22 @@ Versions 78 and earlier preserve their no-life-steal attacks.
 units, real King duels and portable backward seeks. `tests/browser/vampstache.spec.ts` checks
 level 1 and 18 duels with two distinct bodies and their health bars on desktop and a reduced-motion
 phone, including exact health differences against version 78.
+
+## Version 80 Invisibility Vial shot damage
+
+The Queen's ordinary attacks now add the active Invisibility Vial's `ExtraDamageFlat` value to
+their existing boosted base damage. The [source comparison](../reference/official-wiki/heroes-pets/invisibility-vial.md)
+gives +340 per shot for 4.2 seconds at level 1 and +1,740 for 7.8 seconds at level 18. Invisibility
+was already applied, but combat never called the flat-damage helper. Buildings and already-acquired
+ground/air defenders receive the launch-time bonus. Ability spell hits and unrostered Queen copies
+do not gain it. Frozen Arrow keeps its captured frost when paired with the Vial.
+
+Projectiles keep their damage after the Vial expires or Recall removes the Queen; new shots after
+expiry return to ordinary damage. Versions 79 and earlier retain their invisibility without the
+Vial shot bonus. This correction covers damage; target acquisition, extra-damage boost ordering
+against other modern client effects and the boosted orange-arrow visual remain separate audits.
+
+`tests/queen-vial.test.ts` checks source tiers, committed defender targets, Frozen Arrow pairing,
+copy exclusion, expiry and shots landing after Recall through portable backward seeks.
+`tests/browser/queen-vial.spec.ts` checks native arrow art, invisibility opacity, captured damage,
+expiry/Recall and historical playback on desktop and a reduced-motion phone.

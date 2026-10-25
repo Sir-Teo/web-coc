@@ -32,7 +32,7 @@ import {
   type UnitEffects,
 } from './native-status';
 import { heroOf, heroStatsFor } from './native-heroes';
-import { heroAttackInterval, heroLifeSteal } from './native-hero-abilities';
+import { heroAttackInterval, heroExtraDamage, heroLifeSteal } from './native-hero-abilities';
 import {
   isHeroUnitKind,
   isPetUnitKind,
@@ -522,7 +522,11 @@ export function stepNativeUnit(
   }
   // The model already folded boosts, poison and chill into these values.
   const speed = boosted.speed;
-  const damage = boosted.damage * aloneScale(battle, u, s, state);
+  const damage =
+    boosted.damage * aloneScale(battle, u, s, state) +
+    (battle.nativeQueenVialDamage && u.kind === 'archerqueen' && heroOf(battle, u)
+      ? heroExtraDamage(u, at)
+      : 0);
   if (s.speed <= 0 && !s.summon && !s.bunker && s.range < 0.05) return;
   if (s.heal > 0 && s.dps <= 0 && !isSiege(u.kind)) {
     stepNativeHealer(ctx, u, s, boosted.heal ?? s.heal, speed, dt);

@@ -826,6 +826,8 @@ export interface Battle {
   nativeChampionHaste?: true;
   /** Version 79: equipped Hero life steal heals once after a completed attack. */
   nativeHeroLifeSteal?: true;
+  /** Version 80: Invisibility Vial adds its captured flat bonus to the Queen's ordinary shots. */
+  nativeQueenVialDamage?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */

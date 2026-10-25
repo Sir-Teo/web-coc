@@ -194,3 +194,11 @@ Vampstache's source heal applies once after each actual attack on a building, wa
 Healing caps at maximum HP and cannot revive a fallen Hero. Approach steps and held cooldowns
 do not heal. Recorded King duels reconstruct source healing through portable files and backward
 seeks. Versions 78 and earlier retain their attacks without life steal.
+
+## Version 80: Invisibility Vial shot damage
+
+The Queen's ordinary attacks capture the active Vial's flat damage bonus at launch, including
+hits on buildings and committed defending units. The damage survives ability expiry and Recall;
+new shots after expiry return to ordinary damage. Copies outside the Hero roster receive no Vial
+bonus. Real activation, expiry and Recall inputs reconstruct through portable backward seeks.
+Versions 79 and earlier retain their invisibility without the extra shot damage.
