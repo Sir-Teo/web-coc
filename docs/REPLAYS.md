@@ -221,3 +221,11 @@ new unit. Noble Iron's once-per-roster grant prevents redeployment from refillin
 Real deployment, depletion, Recall and redeployment inputs reconstruct through portable files and
 backward seeks. Versions 81 and earlier preserve their prior combat and Recall behavior. Timed
 buff retention and other Recall timer rules remain outside this correction.
+
+## Version 83: Stick Horse deployment timing and combat
+
+Stick Horse starts before the King's first combat sample. Building and defender attacks use its
+temporary interval, including passive equipment speed and status scaling. Personal wall jumping
+now affects both chase paths; the cached route is discarded when that effect starts or expires.
+Real deployment, boosted attacks, expiry and intact-wall traversal reconstruct through portable
+files and backward seeks. Versions 82 and earlier retain their previous timing and wall blocking.

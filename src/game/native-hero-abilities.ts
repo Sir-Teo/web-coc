@@ -71,7 +71,8 @@ function applyAbility(
         until: at + duration,
         seconds:
           rate /
-          (battle.nativeChampionHaste && hero.kind === 'champion'
+          ((battle.nativeChampionHaste && hero.kind === 'champion') ||
+          (battle.nativeKingStickHorse && hero.kind === 'king')
             ? 1 + itemBonuses(hero).attackSpeed
             : 1),
       };
@@ -195,7 +196,7 @@ export function stepHeroAbilities(
     stepPassive(ctx, hero, unit, ability, at, townhall);
   }
 }
-/** Recompute continuous effects before combat so new air deployments count immediately. */
+/** Prime deployment abilities and recompute continuous effects before combat. */
 export function refreshHeroPassives(ctx: NativeTroopContext, hero: NativeBattleHero, unit: Unit) {
   if (!ctx.battle.nativeHeroPassives || unit.hp <= 0 || unit.ejected || unit.native?.recalled)
     return;
@@ -204,10 +205,14 @@ export function refreshHeroPassives(ctx: NativeTroopContext, hero: NativeBattleH
     if (!ability.passive) continue;
     const row = ability.row;
     if (
-      ctx.battle.nativePrinceNobleIron &&
-      hero.kind === 'prince' &&
-      num(row, 'ExtraDamageFlat') > 0 &&
-      num(row, 'DeactivateAfterNumberOfHits') > 0
+      (ctx.battle.nativePrinceNobleIron &&
+        hero.kind === 'prince' &&
+        num(row, 'ExtraDamageFlat') > 0 &&
+        num(row, 'DeactivateAfterNumberOfHits') > 0) ||
+      (ctx.battle.nativeKingStickHorse &&
+        hero.kind === 'king' &&
+        flag(row, 'IsJumper') &&
+        seconds(row, 'DeactivateAfterTime') > 0)
     ) {
       const state = (hero.charges ??= {});
       const key = `deploy:${ability.name}`;

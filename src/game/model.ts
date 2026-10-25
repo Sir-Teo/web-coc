@@ -835,6 +835,8 @@ export interface Battle {
   nativePrinceNobleIron?: true;
   /** Version 82: Recall preserves remaining finite-hit Hero attack effects. */
   nativeChargedHeroRecall?: true;
+  /** Version 83: Stick Horse starts on deployment and controls King's attacks and routing. */
+  nativeKingStickHorse?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */

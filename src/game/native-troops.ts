@@ -108,6 +108,8 @@ export interface NativeUnitState {
   merged?: boolean;
   /** Last attack time; merging units only merge while not fighting. */
   lastAttackAt?: number;
+  /** Version 83: personal equipment jump mode, used to discard routes at expiry. */
+  equipmentJumping?: true;
   /** Battle time of the last lifetime drain sample (Furnace). */
   drainAt?: number;
   /** Ruin Witch rubble cycle: seek, vacuum, wind up and rest. */
@@ -527,8 +529,25 @@ export function stepNativeUnit(
   let s = statsFor(battle, u);
   const state = (u.native ??= {});
   const at = battle.elapsed;
-  if (battle.nativeChampionHaste && u.kind === 'royalchampion')
+  const nativeStickHorse = !!(
+    battle.nativeKingStickHorse &&
+    u.kind === 'barbarianking' &&
+    heroOf(battle, u)
+  );
+  if ((battle.nativeChampionHaste && u.kind === 'royalchampion') || nativeStickHorse)
     s = { ...s, rate: heroAttackInterval(u, at, s.rate) };
+  if (nativeStickHorse) {
+    const jumping = (state.effects?.jumpUntil ?? 0) > at + 1e-9;
+    if (jumping !== !!state.equipmentJumping) {
+      u.path = [];
+      u.pathAt = 0;
+      if (jumping) {
+        state.equipmentJumping = true;
+        if (ctx.buildingsById.get(u.target ?? -1)?.kind === 'wall') u.target = null;
+      } else delete state.equipmentJumping;
+    }
+    if (jumping) s = { ...s, jumper: true };
+  }
   const nativeChampion = !!(
     battle.nativeChampionRocketSpears &&
     u.kind === 'royalchampion' &&
@@ -589,7 +608,8 @@ export function stepNativeUnit(
   if (s.mergeTo && stepMerge(ctx, u, s, speed, dt)) return;
   const heroHunter = battle.nativeHeadhunterHeroRules && u.kind === 'headhunter';
   const poisonLizard = battle.nativeAttackerHitPoison && u.kind === 'poisonlizard';
-  const jumpingChase = s.jumper && (heroHunter || poisonLizard || nativeChampion);
+  const jumpingChase =
+    s.jumper && (heroHunter || poisonLizard || nativeChampion || nativeStickHorse);
   const rangedFrost = battle.nativeDefenderFrost && s.frostTime > 0 && s.range > 2;
   const frostArrow = rangedFrost ? monolithArrow(ctx, u) : undefined;
   const defenderProjectile = rangedFrost

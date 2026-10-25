@@ -377,3 +377,30 @@ earlier retain their previous deployment and Recall behavior.
 spent and partially spent Recall, historical behavior and real portable backward seeks.
 `tests/browser/noble-iron.spec.ts` checks native Hero/projectile art, charged and ordinary shots,
 reduced-motion parity, Recall redeployment and historical playback on desktop and phone.
+
+## Version 83 Stick Horse combat and wall traversal
+
+Stick Horse now starts before the King's first simulation sample, without an ability input.
+Its stored attack interval previously affected presentation alone; combat now uses the same
+interval for building and defender attacks. The [source comparison](../reference/official-wiki/heroes-pets/stick-horse.md)
+gives 1.170 to 0.900 seconds, a 12 to 30 second duration, and +1.2 to +3 tiles/second. Movement
+already used those additive speed values after the first sample. Poison and frost continue to
+scale the temporary interval. Hit damage is unchanged by this correction.
+
+With Vampstache, the interval follows the pinned override divided by passive equipment speed,
+consistent with Haste Vial: maximum Stick Horse and Vampstache use `0.900 / 1.22`, approximately
+0.738 seconds. The wiki instead adds rounded percentages and gives 0.774 seconds; this remains
+a documented interpretation difference rather than a claim about modern client stacking.
+
+The King's personal `IsJumper` effect now allows routes through intact walls toward buildings
+and defending units. A change in personal jump mode discards the cached path, so expiry cannot
+leave him following a route through a wall he can no longer cross. This correction uses the
+existing movement presentation; it does not add a separate horse or wall-leap animation.
+The once-per-roster deployment key prevents the ability button or Recall from granting a new
+boost. Timed buff retention through Recall remains outside this change. Versions 82 and earlier
+retain the delayed initial boost, ordinary combat interval and previous wall blocking.
+
+`tests/stick-horse.test.ts` covers all ten source tiers, first-sample movement, Vampstache pairing,
+status scaling, building/defender wall routes, exact expiry and real portable backward seeks.
+`tests/browser/stick-horse.spec.ts` checks native attack frames and actual cooldowns, expiry,
+intact-wall traversal, reduced-motion parity and historical playback on desktop and phone.
