@@ -87,6 +87,12 @@ placeholder.
 
 Art batches remove their temporary scene-shutdown listeners when they settle, so
 releasing and reloading a family does not accumulate callbacks across attacks.
+Queued families recheck current building, placement and extra `needed` demand before graph
+preparation, after it completes and when the Phaser loader becomes available. A family no
+longer needed drops its pending request without starting images or creating a retry failure;
+a later village or battle can request it normally. Still-needed families and the eager
+development gallery keep loading. `tests/browser/obsolete-family.spec.ts` covers cancellation,
+retained home/new-battle demand and both graph and image-loader queue boundaries.
 The Cannon and Tesla batches leave fallback sprites already being fetched by
 `LazyTextures` to that request, avoiding duplicate texture registration.
 

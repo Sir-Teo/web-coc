@@ -1948,18 +1948,37 @@ export class VillageScene extends Phaser.Scene {
     let shutdown = false;
     const onShutdown = () => (shutdown = true);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, onShutdown);
+    // A queued graph or loader batch may outlive the battle or placement that requested it.
+    // Drop its request before starting more work; a later use can request it normally.
+    const currentDemand = (families: ArtFamily[]) => {
+      if (!shutdown && EAGER_FAMILIES) return families;
+      const buildings = this.model.buildings;
+      const placement = this.model.placement;
+      return families.filter((family) => {
+        const needed =
+          !shutdown &&
+          (buildings.some(family.draws) ||
+            !!family.needed?.(this.model) ||
+            (!!placement && family.draws({ kind: placement } as Building)));
+        if (!needed) this.requestedFamilies.delete(family);
+        return needed;
+      });
+    };
     const run = async () => {
+      const queued = currentDemand(wanted);
+      if (!queued.length) return;
       // Graphs first: a family whose graph cannot be fetched fails like a failed page.
       const prepared = await Promise.all(
-        wanted.map((family) =>
+        queued.map((family) =>
           (family.prepare?.() ?? Promise.resolve()).then(
             () => true,
             () => false,
           ),
         ),
       );
-      for (const [i, family] of wanted.entries())
-        if (!prepared[i]) {
+      const needed = new Set(currentDemand(queued));
+      for (const [i, family] of queued.entries())
+        if (needed.has(family) && !prepared[i]) {
           this.requestedFamilies.delete(family);
           const attempts = (this.failedFamilies.get(family)?.attempts ?? 0) + 1;
           this.failedFamilies.set(family, {
@@ -1967,11 +1986,13 @@ export class VillageScene extends Phaser.Scene {
             retryAt: performance.now() + artRetryDelay(attempts),
           });
         }
-      const ready = wanted.filter((_, i) => prepared[i]);
+      const ready = queued.filter((family, i) => needed.has(family) && prepared[i]);
       if (!ready.length) return;
       await new Promise<void>((resolve) => {
         if (shutdown) return resolve();
         const kick = () => {
+          const active = currentDemand(ready);
+          if (!active.length) return resolve();
           const failedKeys = new Set<string>();
           const failure = (file: Phaser.Loader.File) => failedKeys.add(file.key);
           this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, failure);
@@ -1979,10 +2000,10 @@ export class VillageScene extends Phaser.Scene {
             this.load.off(Phaser.Loader.Events.FILE_LOAD_ERROR, failure);
             if (shutdown) return resolve();
             // Attribute each failed file to its family; a file no family claims fails them all.
-            const claimed = new Set(ready.flatMap((f) => this.familyTextures.get(f) ?? []));
+            const claimed = new Set(active.flatMap((f) => this.familyTextures.get(f) ?? []));
             const unclaimed = [...failedKeys].some((key) => !claimed.has(key));
             let anyFailed = false;
-            for (const family of ready) {
+            for (const family of active) {
               this.requestedFamilies.delete(family);
               const failed =
                 unclaimed || (this.familyTextures.get(family) ?? []).some((k) => failedKeys.has(k));
@@ -2011,7 +2032,7 @@ export class VillageScene extends Phaser.Scene {
             this.lastRevision = -1;
             resolve();
           });
-          for (const family of ready) {
+          for (const family of active) {
             const queued = new Set(this.load.list);
             family.preload(this, (key) => this.deferredArt.loading(key));
             // The texture keys this family added (keys already resident are never listed).

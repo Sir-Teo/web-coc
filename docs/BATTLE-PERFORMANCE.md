@@ -1647,6 +1647,40 @@ page errors or developer hooks.
 Standard production checks pass online in both engines and offline in Chromium (cache
 `be29162c6180`).
 
+## Dropping obsolete queued family loads
+
+A deferred family could finish preparing its graph after the player left a battle, then
+fetch, decode and upload every image even though the home village did not draw it. Families
+now recheck current demand before preparation, after preparation and before starting a batch
+that waited for the Phaser loader. Obsolete requests are removed without setting loaded or
+failure flags. Later uses request them normally; home buildings, new battles and extra
+`needed` demand retain their families. Eager development galleries retain their full preload.
+
+A 390×844, 3×-density probe scouts stage 40 while holding the Mortar graph request, returns
+home through the normal button and then releases the graph. Both engines previously started
+54 image requests after returning home. The unneeded Mortar family alone uploaded 23 textures
+totaling 20,882,148 nominal RGBA bytes (about 19.9 MiB). After the demand checks, both engines
+start zero image requests and retain zero Mortar uploads in that scenario, with no page errors.
+This avoids queued work; already-started image batches retain their existing loading policy.
+
+Browser regressions cover loading the canceled family in a later battle, a retained home
+building, a new battle retaining an old request, a prepared family waiting for the loader and
+a canceled placement queued behind another graph skipping its own import entirely.
+
+All 16 relevant browser cases pass per engine, including the existing first-use, retry,
+release/reload, garrison and explicit eager/lazy gallery cases.
+
+The full suite passes 3,020 tests across 335 files, strict test typing and documentation
+validation.
+
+The production build passes. In both engines, a compiled phone probe opens a Mortar preview
+through the Shop while its graph chunk is held, cancels it and releases the chunk: no Mortar
+upload follows. Opening the preview again then uploads 21 Mortar image sources totaling
+19,502,336 nominal RGBA bytes normally, with no page errors or developer hooks.
+
+Standard production navigation and replay checks pass in Chromium and WebKit. Chromium also
+passes the offline reload and replay checks using cache `539ce27b6967`.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
