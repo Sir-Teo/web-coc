@@ -828,7 +828,8 @@ export class VillageScene extends Phaser.Scene {
     for (const k of Object.keys(BUILDINGS)) {
       // Late campaign kinds render from their own per-level art, loaded with the late families.
       if (hasLateArt(k)) continue;
-      if (k !== 'mortar' && k !== 'cannon') {
+      // The per-level wall preload already owns its shared Level 1/base texture.
+      if (k !== 'mortar' && k !== 'cannon' && k !== 'wall') {
         if (ownedKinds.has(k)) this.load.image(k, baseAsset(k));
         else this.deferredBases.add(k);
       }

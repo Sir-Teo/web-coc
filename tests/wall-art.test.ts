@@ -2,12 +2,16 @@ import { describe, it, expect } from 'vitest';
 import sharp from 'sharp';
 import { createHash } from 'node:crypto';
 import { wallArt, wallAsset, wallTexture, WALL_ART_LEVELS } from '../src/game/wall-art';
-import { asset, BUILDINGS } from '../src/game/data';
+import { asset, buildingTexture, BUILDINGS } from '../src/game/data';
 
 describe('wall level artwork', () => {
   it('maps every supported level to distinct art and preserves a safe legacy fallback', () => {
     expect(WALL_ART_LEVELS).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
     expect(new Set(WALL_ART_LEVELS.map(wallTexture)).size).toBe(8);
+    expect(wallTexture(1)).toBe('wall');
+    expect(buildingTexture('wall', 1)).toBe('wall');
+    expect(asset('wall', 1)).toBe(wallAsset(1));
+    expect(wallTexture(0)).toBe('wall');
     expect(WALL_ART_LEVELS.map((l) => wallArt(l).material)).toEqual([
       'wood',
       'rubble',

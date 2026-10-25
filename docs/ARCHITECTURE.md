@@ -120,6 +120,13 @@ Trap modes and a home X-Bow, including reconnects and successful boot-image owne
 `tests/browser/boot-family-release.spec.ts` covers replacement and undo of a village whose
 X-Bow art loaded successfully at boot.
 
+The base wall and level-one fallback use the same `wall` texture key. The per-level wall
+preload always owns that image, so the generic building-base preload skips walls instead of
+uploading the identical 192×256 image twice. Wall levels 2–8 keep their distinct keys; normal
+wall drawing and new-wall previews share the canonical level-one source.
+`tests/browser/wall-art.spec.ts` covers materials, placement and context restoration, and
+`tests/browser/deferred-sprites.spec.ts` checks level-one fallback during higher-level loading.
+
 Failed native troop graphs and hero/pet atlases wait five seconds before retrying,
 per asset key, as troop texture pages already do. Rendering keeps requesting missing
 art after the cooldown, so a temporary outage recovers within the same battle without

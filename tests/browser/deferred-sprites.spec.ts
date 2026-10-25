@@ -42,7 +42,7 @@ test('per-level fallback sprites load when a level first draws, not at boot', as
     await scene.prefetchDeferredArt([wall, mine]);
     return { first, ids: [wall.id, mine.id] };
   });
-  expect(keys.first).toEqual(['wall-level-1', 'goldmine']);
+  expect(keys.first).toEqual(['wall', 'goldmine']);
   await expect
     .poll(() =>
       page.evaluate(
@@ -67,7 +67,7 @@ test('a kind the village lacks loads its base sprite when one first draws', asyn
   expect(kinds).toBeGreaterThan(5);
   // No Blacksmith, Laboratory, Air Defense or Crafting Station art for a starter village.
   const lacking = (path: string) =>
-    /\/assets\/buildings\/(blacksmith|laboratory|airdefense-v2)\.|\/assets\/crafted\/|crafting-station/.test(
+    /\/assets\/buildings\/(blacksmith|laboratory|airdefense-v2)\.|\/assets\/crafted(?:-native)?\/|crafting-station/.test(
       path,
     );
   expect(requested.filter(lacking)).toEqual([]);
@@ -94,7 +94,7 @@ test('a kind the village lacks loads its base sprite when one first draws', asyn
   const keys = () =>
     page.evaluate((ids) => ids.map((id) => window.__game.scene.sprites.get(id)!.texture.key), ids);
   expect((await keys()).every((key) => key !== '__MISSING')).toBe(true);
-  await expect.poll(keys).toEqual(['blacksmith', 'crafted-cake']);
+  await expect.poll(keys).toEqual(['blacksmith', 'crafted-cake-tier-1']);
   expect(requested.filter(lacking).length).toBe(2);
 });
 

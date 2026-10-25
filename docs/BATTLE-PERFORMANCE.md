@@ -1477,6 +1477,41 @@ with no page errors or developer hooks.
 Standard production checks pass online in both engines and offline in Chromium (cache
 `4b48a9d4a3e0`).
 
+### Group distance precheck experiment
+
+A bounding-box rejection before the existing exact group-following distance checks preserves
+the focused support-unit battle hash, but slows both Chromium and WebKit in the warmed
+32-Warden/96-Giant workload. The extra comparisons are not applied; the existing distance
+checks remain unchanged.
+
+## Sharing the level-one wall upload
+
+The base `wall` texture and `wall-level-1` both uploaded the same 192×256 image with identical
+single-frame definitions, premultiplied alpha and Y orientation. Level-one walls and placement
+previews now use the existing `wall` key. Their per-level preload owns that image, and the
+generic building-base preload skips walls. Levels 2–8 keep their distinct keys and artwork.
+
+The duplicate previously held two GPU textures totaling 393,216 nominal RGBA bytes. One
+upload uses 196,608 bytes, removing 192 KiB. A baseline/shared/restored comparison within
+the same frozen scene in each browser redirects the level-one source to the base upload
+and restores it. All raw canvas hashes match exactly, with no page or WebGL errors. No
+image bytes, frame geometry, material colors or wall positions change.
+
+Unit coverage checks canonical level-one and invalid-level keys alongside the existing
+eight-image pixel checks. Browser coverage checks all materials, instant upgrades, mixed
+movement, destruction, high-level movement, new-wall placement, deferred fallback sprites
+and the single upload before and after WebGL context restoration on a phone viewport.
+All 11 relevant browser cases pass per engine, including native wall movement and placing
+a free wall run that survives reload. The full check passes 3,012 tests across 334 files,
+strict types, documentation links and the production build.
+
+A compiled phone probe uses the normal Shop and placement controls. Startup, new-wall
+preview, cancellation and reload each retain one 196,608-byte wall source in both engines,
+with no page errors or developer hooks.
+
+Standard production checks pass online in both engines and offline in Chromium (cache
+`e8c86bf838ab`).
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
