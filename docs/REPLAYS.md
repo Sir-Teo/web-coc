@@ -145,3 +145,7 @@ The Monolith Arrow stage now uses a persistent deployment counter: 25 per Hero, 
 ## Version 73: attacking Headhunter Hero rules
 
 Headhunters prioritize valid defending Heroes across the battlefield, deal the source’s four-times direct damage to them, and jump walls during that chase. Ordinary defenders and Guardians retain normal hit damage. Once no valid Hero remains, ordinary targeting resumes. Real Headhunter deployment and Freeze inputs record a shot against a ground or air Hero; portable files and backward seeks reconstruct its launch and impact exactly. Versions 72 and earlier retain their original targeting, damage and wall routing.
+
+## Version 74: native Headhunter cards against defenders
+
+Defender-targeted Headhunter shots now use the source’s level-specific card and 14-tile-per-second flight instead of a generic 18-tile-per-second arrow. The native impact resolver applies the captured hit to its original ground or air defender, including after the shooter leaves. Versions 73 and earlier preserve their previous arrow and impact time. Real shots reconstruct the flight and hit through portable backward seeks; an intermediate checkpoint verifies that version 73’s arrow has already landed while the new card is still airborne.

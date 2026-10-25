@@ -12,7 +12,7 @@ import {
   type UnitKind,
 } from './data';
 import { EXTRA_TROOP_KINDS } from './extra-troops';
-import { damageDefenders, stepAttackerVsDefenders } from './defenders';
+import { damageDefenders, hurtDefender, stepAttackerVsDefenders } from './defenders';
 import { MAP_SIZE } from './grid';
 import { targetableBuilding } from './hidden-tesla';
 import { flag, nativeRow, num, seconds as nativeSeconds, text, tiles } from './native-data';
@@ -542,6 +542,9 @@ export function stepNativeUnit(
         splash: s.splash || undefined,
         airTargets: s.airTargets,
         ...(heroHunter ? { preferHeroes: s.preferHeroes, heroDamageScale: s.heroMultiplier } : {}),
+        ...(battle.nativeHeadhunterCards && u.kind === 'headhunter' && s.projectile
+          ? { nativeProjectile: { name: s.projectile, kind: u.kind, level: s.level } }
+          : {}),
       },
       ctx.isTargetable,
       {
@@ -1100,6 +1103,12 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
   const battle = ctx.battle;
   const source = p.native!;
   const s = nativeUnitStats(source.kind, source.level);
+  // Version 74's native Headhunter cards retain the captured direct hit on either defender layer.
+  if (p.targetDefender) {
+    const defender = battle.defenders?.find((d) => d.id === p.targetId);
+    if (defender && defender.hp > 0 && defender.spawnedAt <= p.impact + 1e-9)
+      hurtDefender(battle, defender, p.damage);
+  }
   const target = p.targetBuilding ? battle.buildings.find((b) => b.id === p.targetId) : undefined;
   if (target && target.hp > 0) {
     ctx.damageBuilding(target, p.damage * damageMultiplier(s, target), p.impact);

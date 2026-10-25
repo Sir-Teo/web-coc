@@ -814,6 +814,8 @@ export interface Battle {
   nativeMonolithHousing?: number;
   /** Version 73: attacking Headhunters prioritize Heroes, multiply their hits and jump walls. */
   nativeHeadhunterHeroRules?: true;
+  /** Version 74: Headhunter shots against defenders use their native card and flight speed. */
+  nativeHeadhunterCards?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */

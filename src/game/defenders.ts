@@ -17,7 +17,7 @@ import type { GarrisonKind } from './garrison-kinds';
 import { stepGarrisonStatus } from './garrison-status';
 import { TROOPS, isDefense, isResourceBuilding, isTrap, type TroopDef } from './data';
 import { findPath, distanceTo, type Battle, type Building, type Unit, type FX } from './model';
-import { launchProjectile } from './projectiles';
+import { launchProjectile, type CombatProjectile } from './projectiles';
 import { targetableBuilding } from './hidden-tesla';
 // Late campaign Spell Tower Rage and Invisibility, and activated late Defense classes
 // (all neutral without version 44 late state).
@@ -354,7 +354,12 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
 export type DefenderFightTraits = Pick<
   TroopDef,
   'prefersDefenses' | 'prefersResources' | 'healer' | 'wallBreaker' | 'flying' | 'splash'
-> & { airTargets?: boolean; preferHeroes?: boolean; heroDamageScale?: number };
+> & {
+  airTargets?: boolean;
+  preferHeroes?: boolean;
+  heroDamageScale?: number;
+  nativeProjectile?: CombatProjectile['native'];
+};
 const canFight = (unit: Unit, enemy: Defender, troop: DefenderFightTraits) =>
   !troop.healer &&
   !troop.wallBreaker &&
@@ -598,7 +603,14 @@ export function stepAttackerVsDefenders(
         launchProjectile(
           battle,
           {
-            weapon: troop.flying ? 'bomb' : unit.kind === 'wizard' ? 'fireball' : 'arrow',
+            weapon: troop.nativeProjectile
+              ? 'native'
+              : troop.flying
+                ? 'bomb'
+                : unit.kind === 'wizard'
+                  ? 'fireball'
+                  : 'arrow',
+            ...(troop.nativeProjectile ? { native: troop.nativeProjectile } : {}),
             sourceId: unit.id,
             targetId: target.id,
             targetBuilding: false,
