@@ -1,5 +1,6 @@
 import { nonWallBuildings } from './building-lists';
 import { defenderHitPoisonScales } from './defender-hit-poison';
+import { defenderFrostScales } from './defender-frost';
 import { distance2D } from './distance';
 import { BUILDINGS, TROOPS } from './data';
 import type { Defender, GuardianDefender } from './defenders';
@@ -263,6 +264,7 @@ export function stepGuardian(ctx: NativeTroopContext, g: GuardianDefender, dt: n
   const poison = g.poison && g.poison.until > at ? g.poison : undefined;
   const scale = guardianPoisonScale();
   const hitPoison = defenderHitPoisonScales(g, at, scale);
+  const frost = defenderFrostScales(g, at);
   const areaMove = poison ? Math.max(0, 1 + poison.speed * scale) : 1;
   const areaTempo = poison ? Math.max(0.05, 1 + poison.attack * scale) : 1;
   const boost = g.boost && g.boost.until > at ? g.boost : undefined;
@@ -271,8 +273,9 @@ export function stepGuardian(ctx: NativeTroopContext, g: GuardianDefender, dt: n
     (poison ? 1 : 1);
   const speed =
     (stats.speed + Math.max(g.enraged ? stats.homeRage!.speed : 0, boost?.speed ?? 0)) *
-    (hitPoison ? Math.min(areaMove, hitPoison.move) : areaMove);
-  const tempo = hitPoison ? Math.min(areaTempo, hitPoison.attack) : areaTempo;
+    (hitPoison ? Math.min(areaMove, hitPoison.move) : areaMove) *
+    frost.move;
+  const tempo = (hitPoison ? Math.min(areaTempo, hitPoison.attack) : areaTempo) * frost.attack;
   // Sticky target while it stays in search range; otherwise closest by distance then id.
   let sticky: Unit | undefined;
   let best: Unit | undefined;

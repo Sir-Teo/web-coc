@@ -161,7 +161,7 @@ Defending Heroes now receive each direct-damage spell’s `HeroDamageMultiplier`
 
 Frozen Arrow now selects the client’s `QueenFrostyProjectile` and captures its frost duration and strength when fired. The impact resolver previously reloaded the Queen’s base stats, losing the equipment effect entirely. Level 1 applies the pinned 25% building attack slow for 0.75 seconds after impact; level 27 uses 65% for three seconds. The [source comparison](../reference/official-wiki/heroes-pets/frozen-arrow.md) records the projectile and frost columns. Monolith Arrow retains its projectile override while carrying the frost effect when both items are equipped.
 
-The captured effect survives the Queen’s Recall or disappearance. Its expiry follows the scheduled impact time, so a late update cannot extend it. Intrinsic native projectile frost uses the same snapshot path. Version 70 and earlier retain their previous projectile and frost calculation. This correction covers building impacts; frost against defending units still needs a separate behavior audit.
+The captured effect survives the Queen’s Recall or disappearance. Its expiry follows the scheduled impact time, so a late update cannot extend it. Intrinsic native projectile frost uses the same snapshot path. Version 70 and earlier retain their previous projectile and frost calculation. This correction covers building impacts; version 77 below adds ranged frost against defending units.
 
 `tests/frozen-arrow-impact.test.ts` covers launch, impact, Recall, expiry, maximum level, Monolith Arrow and exact portable backward seeks. `tests/browser/frozen-arrow-impact.spec.ts` checks the actual native projectile on desktop and phone, plus reduced motion and the older replay rule.
 
@@ -216,3 +216,30 @@ action clocks, overlap, exact expiry and real ground/air attacks through Recall 
 seeks. The older direct-hit fixtures stay on version 75. `tests/browser/attacker-hit-poison.spec.ts`
 checks native projectile names, damage after Recall, green status bodies and historical playback on
 desktop and reduced-motion phone views.
+
+## Version 77 ranged frost against defenders
+
+Frozen Arrow and intrinsic ranged frost now carry their native projectile and launch-time frost
+values into hits on defending troops, Heroes and Guardians. The [Frozen Arrow source
+comparison](../reference/official-wiki/heroes-pets/frozen-arrow.md) explicitly includes defending
+troops and Heroes; [Frosty](../reference/official-wiki/heroes-pets/frosty.md) supplies four-second,
+50% frost on his own attacks. Ice Hound Pups use their intrinsic two-second, 50% frost as well.
+Previously these defender attacks substituted a generic arrow and discarded frost entirely.
+Monolith Arrow keeps its projectile override when paired with Frozen Arrow; its building %-HP
+damage is not added to a defender hit.
+
+Partial frost has its own deadline and blue body cue, independent of full Freeze/stun. It uses
+the existing local native-unit chill interpretation for movement and attack clocks, multiplying
+the retained Poison scales. The wiki's generic “slow down” wording does not establish the modern
+client's exact attack-clock implementation or overlapping slow rules. As with building frost,
+the latest hit replaces the frost deadline and strength. No Poison-specific Hero or Guardian
+resistance is applied to frost. Impact uses its scheduled time and captured values after Recall;
+dead or unborn targets cannot receive or transfer the effect. Versions 76 and earlier keep their
+generic defender shots and direct-only damage. Melee frost and slowed death animation remain
+outside this ranged-hit correction.
+
+`tests/defender-frost.test.ts` checks equipment levels, source projectiles, Monolith pairing,
+Frosty, Ice Hound Pups, all four defender action paths with Poison overlap, expiry, missing owners and real ground/air Queen shots
+through Recall and portable backward seeks. `tests/browser/defender-frost.spec.ts` checks the
+uploaded native arrow, blue Hero bodies, expiry and historical playback on desktop and a
+reduced-motion phone.

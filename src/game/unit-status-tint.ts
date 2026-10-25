@@ -48,10 +48,11 @@ export function unitStatusTint(
   return undefined;
 }
 
-/** Living defenders share the attacker's Freeze-before-Poison priority. */
+/** Living defenders show full Freeze or ranged frost before Poison. */
 export function defenderStatusTint(defender: Defender, at: number): UnitStatusTint | undefined {
   if (defender.hp <= 0) return undefined;
   if ((defender.frozenUntil ?? 0) > at) return tints.frozen;
+  if (defender.frost && defender.frost.until > at) return tints.frozen;
   return (defender.poison && defender.poison.until > at) ||
     (defender.hitPoison && defender.hitPoison.until > at)
     ? tints.poison

@@ -13,6 +13,7 @@ import {
 } from './data';
 import { EXTRA_TROOP_KINDS } from './extra-troops';
 import { damageDefenders, hurtDefender, stepAttackerVsDefenders } from './defenders';
+import { applyDefenderFrost } from './defender-frost';
 import {
   applyDefenderHitPoison,
   nativeHitPoison,
@@ -531,6 +532,18 @@ export function stepNativeUnit(
   const heroHunter = battle.nativeHeadhunterHeroRules && u.kind === 'headhunter';
   const poisonLizard = battle.nativeAttackerHitPoison && u.kind === 'poisonlizard';
   const jumpingChase = s.jumper && (heroHunter || poisonLizard);
+  const rangedFrost = battle.nativeDefenderFrost && s.frostTime > 0 && s.range > 2;
+  const frostArrow = rangedFrost ? monolithArrow(ctx, u) : undefined;
+  const defenderProjectile = rangedFrost
+    ? {
+        name: (frostArrow && text(frostArrow, 'Projectile')) || s.frostProjectile || s.projectile,
+        kind: u.kind,
+        level: s.level,
+        frost: { seconds: s.frostTime, percent: s.frostPercent },
+      }
+    : ((battle.nativeHeadhunterCards && u.kind === 'headhunter') || poisonLizard) && s.projectile
+      ? { name: s.projectile, kind: u.kind, level: s.level }
+      : undefined;
   if (
     stepAttackerVsDefenders(
       battle,
@@ -550,10 +563,7 @@ export function stepNativeUnit(
         airTargets: s.airTargets,
         ...(heroHunter ? { preferHeroes: s.preferHeroes, heroDamageScale: s.heroMultiplier } : {}),
         ...(poisonLizard ? { seekUnalerted: true } : {}),
-        ...(((battle.nativeHeadhunterCards && u.kind === 'headhunter') || poisonLizard) &&
-        s.projectile
-          ? { nativeProjectile: { name: s.projectile, kind: u.kind, level: s.level } }
-          : {}),
+        ...(defenderProjectile ? { nativeProjectile: defenderProjectile } : {}),
       },
       ctx.isTargetable,
       {
@@ -1111,12 +1121,14 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
   const battle = ctx.battle;
   const source = p.native!;
   const s = nativeUnitStats(source.kind, source.level);
-  // Version 74's native Headhunter cards retain the captured direct hit on either defender layer.
+  // Native defender-targeted shots retain their captured direct hit on either defender layer.
   if (p.targetDefender) {
     const defender = battle.defenders?.find((d) => d.id === p.targetId);
     if (defender && defender.hp > 0 && defender.spawnedAt <= p.impact + 1e-9) {
       if (battle.nativeAttackerHitPoison) tickDefenderHitPoison(defender, p.impact);
       hurtDefender(battle, defender, p.damage);
+      if (battle.nativeDefenderFrost && source.frost)
+        applyDefenderFrost(defender, source.frost, p.impact);
       if (battle.nativeAttackerHitPoison && defender.hp > 0) {
         const poison = nativeHitPoison(s);
         if (poison) applyDefenderHitPoison(defender, poison, p.impact);

@@ -169,3 +169,13 @@ and can engage nearby unalerted enemy units while preserving wall jumping. The p
 kind/level remains sufficient after Recall removes its owner. Real ground/air attacks, Recall and
 expiry reconstruct through portable files and backward seeks. Versions 75 and earlier preserve
 their direct-only hits and previous Lizard targeting/projectile.
+
+## Version 77: ranged frost on defending units
+
+Frozen Arrow, Frosty and intrinsic ranged frost use their native projectile and retain frost
+strength/duration at launch when attacking defenders. Scheduled impacts apply partial frost
+after Recall removes the shooter. Movement and attack clocks use the existing local chill
+interpretation, independent of full Freeze/stun and with a blue status cue. Monolith Arrow's
+projectile override remains available without adding its building %-HP damage to defenders.
+Real ground/air Queen attacks reconstruct through portable files and backward seeks. Versions
+76 and earlier preserve their generic defender arrows and direct-only hits.

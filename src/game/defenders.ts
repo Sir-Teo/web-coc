@@ -1,6 +1,7 @@
 import { poisonAvoidanceTarget, type DefenderPoisonArea } from './poison-avoidance';
 import { defenderPoisonScales } from './defender-poison';
 import type { DefenderHitPoison } from './defender-hit-poison';
+import { defenderFrostScales, type DefenderFrost } from './defender-frost';
 import type { HeroKind } from './native-hero-data';
 import { MAP_SIZE } from './grid';
 import { hurtUnit } from './native-status';
@@ -55,6 +56,8 @@ interface DefenderState {
   frozenUntil?: number;
   /** Version 76: intrinsic attacker poison-on-hit, separate from area-spell exposure. */
   hitPoison?: DefenderHitPoison;
+  /** Version 77: partial frost from a native ranged hit, independent of full Freeze. */
+  frost?: DefenderFrost;
   /** Version 45 Poison Spell exposure: slows movement and attacks while it lasts. */
   poison?: {
     since: number;
@@ -279,9 +282,10 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
     const wasAvoiding = !!defender.avoidingPoison;
     delete defender.avoidingPoison;
     const poison = defenderPoisonScales(battle, defender);
-    const moveDt = activeDt * poison.move;
+    const frost = defenderFrostScales(defender, battle.elapsed);
+    const moveDt = activeDt * poison.move * frost.move;
     const cooling = defender.cooldown > 0;
-    defender.cooldown -= activeDt * poison.attack;
+    defender.cooldown -= activeDt * poison.attack * frost.attack;
     defender.pathAt -= activeDt;
     if (!target) {
       defender.target = null;

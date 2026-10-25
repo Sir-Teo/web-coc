@@ -1,5 +1,6 @@
 import { poisonAvoidanceTarget } from './poison-avoidance';
 import { defenderPoisonScales } from './defender-poison';
+import { defenderFrostScales } from './defender-frost';
 import { TROOPS } from './data';
 import { nonWallBuildings } from './building-lists';
 import { distance2D, distanceSquared2D } from './distance';
@@ -358,8 +359,10 @@ export function stepGarrisonDefender(
   const raged = !!(tantrum && defender.tantrum);
   // Attack speed boosts advance the attack timer faster, as in the older engine's hit timer.
   const poison = defenderPoisonScales(battle, defender);
-  const attackDt = (raged ? activeDt * tantrum!.attackScale : activeDt) * poison.attack;
-  const moveDt = activeDt * poison.move;
+  const frost = defenderFrostScales(defender, battle.elapsed);
+  const attackDt =
+    (raged ? activeDt * tantrum!.attackScale : activeDt) * poison.attack * frost.attack;
+  const moveDt = activeDt * poison.move * frost.move;
   if (stats.split) defender.recovery = Math.max(0, (defender.recovery ?? 0) - attackDt);
   if (stats.summon) {
     // The summon check reads the target held going into this step (a 50 ms local offset).
