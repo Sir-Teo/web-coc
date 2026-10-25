@@ -47,7 +47,14 @@ export interface CombatProjectile {
   /** Actual position of a tracking Cannon shot, tower arrow or X-Bow bolt at the last simulation sample. */
   flight?: { x: number; y: number; at: number };
   /** Version 45+ native roster projectile: client projectile row, shooter kind/level and bounce index. */
-  native?: { name: string; kind: string; level: number; bounce?: number };
+  native?: {
+    name: string;
+    kind: string;
+    level: number;
+    bounce?: number;
+    /** Version 71: frost captured at launch, retained after the shooter leaves. */
+    frost?: { seconds: number; percent: number };
+  };
   /** Version 45+ defense shot rules resolved on impact (bounces, hit spells, %-hitpoint bonus). */
   defense?: NativeDefenseShot;
 }

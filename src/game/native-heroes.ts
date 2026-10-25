@@ -94,6 +94,7 @@ function heroItemTraits(hero: HeroSetup): Partial<NativeUnitStats> {
       if (num(row, 'FrostOnHitTime') && !flag(row, 'ActiveAfterPlayerInput')) {
         traits.frostTime = seconds(row, 'FrostOnHitTime');
         traits.frostPercent = num(row, 'FrostOnHitPercent') / 100;
+        traits.frostProjectile = text(row, 'Projectile') || undefined;
       }
       if (num(row, 'ChainAttackFactor')) {
         traits.chainDistance = tiles(row, 'ChainAttackDistance');

@@ -218,6 +218,8 @@ export interface NativeUnitStats {
   bounceDistance: number;
   frostTime: number;
   frostPercent: number;
+  /** Passive equipment projectile, selected by the version-71 attack path. */
+  frostProjectile?: string;
   preferHeroes: boolean;
   groups: boolean;
   groupRadius: number;

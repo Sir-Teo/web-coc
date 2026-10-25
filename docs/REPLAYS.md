@@ -133,3 +133,7 @@ Penetrating equipment such as Rocket Backpack now damages each contacted defende
 ## Version 70: native spell defender immunities and Hero damage
 
 Offensive spell pulses now honor the source’s Hero, Guardian and other-character immunity flags for defending units. This keeps Root Rider’s wall aura from damaging defenders and Driller surfacing from stunning them. Direct damage uses the source `HeroDamageMultiplier` on defending Heroes and the pulse’s scheduled spawn check, matching the existing native status-effect gates. Electro Titan/Electro Boots auras now deal 25% damage to Heroes; Dragon Duke’s dash aura deals 10%. Version 69 and earlier retain their original rules. Actual Root Rider and Electro Boots inputs reconstruct both versions exactly through portable files and backward seeks.
+
+## Version 71: projectile frost captured at launch
+
+Native building-targeted projectiles now carry their frost duration and percentage, including Frozen Arrow equipment values, instead of reconstructing that effect from the shooter’s base character row on impact. Frozen Arrow also selects its source projectile before other equipment projectile overrides. The captured frost survives Recall or a missing shooter and expires relative to the scheduled impact time. Versions 70 and earlier retain their previous projectile names and effect calculation. Actual Queen deployment and Recall inputs reproduce the airborne shot, hit and expiry through portable files and backward seeks.

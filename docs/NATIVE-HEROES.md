@@ -39,8 +39,8 @@ passive columns apply for the whole battle:
 - `AttackSpeedBonus` divides the attack interval (`rate / (1 + bonus)`), it does not subtract from
   it; a 20% bonus is 1/1.2 of the interval, matching the wiki's listed attack speeds.
 - `FrostOnHitTime`, `ChainAttackFactor` and the other combat columns are read straight from
-  `special_abilities.csv` and handed to the shared troop rules, so a hero freezes or chains exactly
-  as a troop with those columns would.
+  `special_abilities.csv` and handed to the shared troop rules. Version 71 repairs the missing
+  projectile frost snapshot for equipment hits against buildings; see the follow-up below.
 
 Ability activation is one press per battle. It triggers the hero's own ability _and_ the active
 ability of both equipped items at once, which is what the wiki means by "abilities activate
@@ -156,3 +156,11 @@ Offensive native spells now honor `ImmunityHeroes`, `ImmunityOtherCharacters` an
 Defending Heroes now receive each direct-damage spell’s `HeroDamageMultiplier`, as attacking Heroes already did. Electro Titan and Electro Boots auras deal 25% damage to them; Dragon Duke’s dash aura deals 10%. Level-1 Electro Boots therefore deals 13.25 damage per pulse to a defending Hero instead of 53. Ordinary troops and Guardians retain the full damage of those auras. These values and immunities come from the pinned spell rows; the [Electro Boots source comparison](../reference/official-wiki/heroes-pets/electro-boots.md) also records the hidden 25% modifier. Versions 69 and earlier preserve the previous behavior.
 
 `tests/defender-spell-rules.test.ts` covers source values, building damage, all defender classes, spawn deadlines and exact portable seeks using actual Root Rider and Electro Boots deployments. `tests/browser/defender-spell-rules.spec.ts` checks both recorded interactions and native bodies on desktop and reduced-motion phone views.
+
+## Version 71 Frozen Arrow building impacts
+
+Frozen Arrow now selects the client’s `QueenFrostyProjectile` and captures its frost duration and strength when fired. The impact resolver previously reloaded the Queen’s base stats, losing the equipment effect entirely. Level 1 applies the pinned 25% building attack slow for 0.75 seconds after impact; level 27 uses 65% for three seconds. The [source comparison](../reference/official-wiki/heroes-pets/frozen-arrow.md) records the projectile and frost columns. Monolith Arrow retains its projectile override while carrying the frost effect when both items are equipped.
+
+The captured effect survives the Queen’s Recall or disappearance. Its expiry follows the scheduled impact time, so a late update cannot extend it. Intrinsic native projectile frost uses the same snapshot path. Version 70 and earlier retain their previous projectile and frost calculation. This correction covers building impacts; frost against defending units still needs a separate behavior audit.
+
+`tests/frozen-arrow-impact.test.ts` covers launch, impact, Recall, expiry, maximum level, Monolith Arrow and exact portable backward seeks. `tests/browser/frozen-arrow-impact.spec.ts` checks the actual native projectile on desktop and phone, plus reduced motion and the older replay rule.

@@ -786,6 +786,8 @@ function strike(
 ) {
   const battle = ctx.battle;
   const state = (u.native ??= {});
+  if (battle.nativeProjectileFrost && s.frostProjectile)
+    s = { ...s, projectile: s.frostProjectile };
   const arrow = monolithArrow(ctx, u);
   if (arrow) {
     s = { ...s, projectile: text(arrow, 'Projectile') };
@@ -812,7 +814,14 @@ function strike(
       battle,
       {
         weapon: 'native',
-        native: { name: s.projectile, kind: u.kind, level: s.level },
+        native: {
+          name: s.projectile,
+          kind: u.kind,
+          level: s.level,
+          ...(battle.nativeProjectileFrost && s.frostTime > 0
+            ? { frost: { seconds: s.frostTime, percent: s.frostPercent } }
+            : {}),
+        },
         sourceId: u.id,
         targetId: target.id,
         targetBuilding: true,
@@ -974,10 +983,15 @@ function stepMerge(
 /** The wiki describes the merged golem as briefly invulnerable; the client row names no duration. */
 const MERGE_INVULNERABLE_SECONDS = 1;
 
-function applyFrost(battle: Battle, s: NativeUnitStats, target: Building) {
+function applyFrost(
+  battle: Battle,
+  s: Pick<NativeUnitStats, 'frostTime' | 'frostPercent'>,
+  target: Building,
+  at = battle.elapsed,
+) {
   if (!s.frostTime) return;
   const e = buildingEffects(battle, target);
-  e.frost = { until: battle.elapsed + s.frostTime, percent: s.frostPercent };
+  e.frost = { until: at + s.frostTime, percent: s.frostPercent };
 }
 
 /** Chain lightning: primary hit now, each hop after the native delay with reduced damage. */
@@ -1083,7 +1097,14 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
   const target = p.targetBuilding ? battle.buildings.find((b) => b.id === p.targetId) : undefined;
   if (target && target.hp > 0) {
     ctx.damageBuilding(target, p.damage * damageMultiplier(s, target), p.impact);
-    applyFrost(battle, s, target);
+    if (battle.nativeProjectileFrost && source.frost)
+      applyFrost(
+        battle,
+        { frostTime: source.frost.seconds, frostPercent: source.frost.percent },
+        target,
+        p.impact,
+      );
+    else applyFrost(battle, s, target);
   }
   if (p.splash)
     for (const b of battle.buildings)

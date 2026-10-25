@@ -808,6 +808,8 @@ export interface Battle {
   nativeDefendingHeroStunTime?: true;
   /** Version 70: offensive spell pulses honor defender immunities, hero scaling and spawn time. */
   nativeDefenderSpellRules?: true;
+  /** Version 71: native projectiles carry frost-on-hit values, including hero equipment. */
+  nativeProjectileFrost?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */

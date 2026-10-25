@@ -6,6 +6,8 @@ Arrows, cannonballs, rockets, fireballs, arcane shots, and Balloon bombs apply d
 
 A launched shot survives destruction of its source. Direct shots follow their original target and cannot redirect damage to a replacement when that target dies. Splash shots retain their last target position if the target dies. Attack damage, including Rage, is captured at launch. Impacts due in one simulation step resolve in impact-time order. The last attacker dying does not end the raid while shots remain airborne. Surrender, timeout, full destruction, and a new battle discard pending shots. Long frames stop at the 180-second deadline.
 
+From recording version 71, native building-targeted shots also capture their frost-on-hit values at launch. Frozen Arrow uses its client projectile and equipment slow, including when the Queen is recalled before it lands. Frost expiry follows the scheduled impact rather than the later update that processes it. `tests/frozen-arrow-impact.test.ts` and `tests/browser/frozen-arrow-impact.spec.ts` cover that sequence and preserve the older replay rule.
+
 Reduced motion suppresses flight graphics and muzzle flashes; stationary feedback still appears at the actual impact time. Temporary graphics are removed on impact or a scene transition. Intact building heights anchor shots even when a source or target changes to rubble.
 
 ## Local tuning
