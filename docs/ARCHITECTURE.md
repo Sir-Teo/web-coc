@@ -44,6 +44,12 @@ still invalidate the position grid before a later trigger search. More than 512 
 forces a fresh map on its next rebuild. `tests/trap-grid-reuse.test.ts` covers old bucket slots,
 ties, in-phase invalidation, alternating battles, replacement layouts and wide snapshots.
 
+The classic troop phase reuses its all-building ID map per battle. Each tick verifies array
+identity, object order and IDs before reuse; replacing or editing the layout creates a fresh
+map. Building state such as HP remains live through its object references, and duplicate IDs
+retain last-entry precedence. Native phases keep their separate filtered snapshots.
+`tests/building-id-cache.test.ts` checks deaths, object/ID edits, reordering and replacement.
+
 Keep gameplay values separate from art graphs. A model import should not load
 Phaser, a scene class or multi-megabyte render data. `*-graph.ts` and `*-poses.ts`
 modules own render data; stats and rule modules expose the values simulation needs.

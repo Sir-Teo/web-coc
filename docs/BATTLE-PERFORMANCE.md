@@ -1798,6 +1798,42 @@ shipped WebP paths and waits for bounded seeking before asserting completion.
 Standard production navigation/replay pass in both engines under their usual worker
 configuration, with Chromium offline reload/replay using cache `56b0636f2a58`.
 
+## Reusing the classic building lookup
+
+The classic troop phase previously constructed an all-building ID map from fresh entry-pair
+arrays every tick. It now retains the map per battle and checks the building array, object
+order and IDs before reuse. HP and other object state stay live. Changed membership creates
+a new map, preserving earlier phase snapshots and duplicate-ID last-entry precedence.
+The native phases' separate filtered maps are unchanged.
+
+In the same stage-61, normal-capacity 400-step simulation, this lookup creates 400 maps and
+328,000 entry-pair arrays before, versus one map, no entry-pair arrays and two snapshot arrays
+after. All complete final battle states match. Four layout/army scenarios also match at all
+1,600 individually hashed steps. Five functional tests cover deaths, same-ID object replacement,
+in-place ID edits, duplicate-ID reordering and replacement lists in separate models.
+
+After eight warmups per variant, an alternating-order Chromium repeat averages 1,022.55 ms
+before and 862.98 ms after (15.6% lower). An eight-sample-per-variant WebKit repeat averages
+827.50 ms before and 699.63 ms after (15.5% lower). Initial runs were noisier. These controlled
+software-browser simulation timings do not measure physical-phone frame rate or total memory.
+
+All 28 selected browser cases pass per engine, including complete combat-state comparisons
+against Node, Tesla presentation/replay/audio, touch construction and phone-preview demand
+loading. The Tesla gallery explicitly requests eager artwork; replay snapshots compare keyed
+meshes in key order, and listener accounting begins after home-to-battle view cleanup.
+Both corrected assertion failures reproduce with the unchanged simulation baseline.
+
+The full check passes 3,030 tests across 337 files, strict source/test typing, documentation
+validation and the production build.
+
+The compiled Wizard Tower check passes modern levels 1/5/8/10/17, the campaign fixture and
+the pinned version-34 recording in both engines, including projectile state, final results,
+portable export and reseek equality. Chromium also passes offline replay. The dedicated
+WebKit replay context blocks service workers to isolate replay controls from update banners.
+
+Standard production navigation/replay pass in both engines under their usual worker
+configuration. Chromium also passes offline reload/replay using cache `b144f681d1ec`.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

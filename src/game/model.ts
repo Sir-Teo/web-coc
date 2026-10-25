@@ -5748,6 +5748,40 @@ export class GameModel {
   private supportOnly(b: Battle, kind: UnitKind) {
     return !!TROOPS[kind].healer && !isSiege(kind) && !(b.nativeRoster && kind === 'druid');
   }
+  private readonly buildingIdCache = new WeakMap<
+    Battle,
+    {
+      buildings: Building[];
+      refs: Building[];
+      ids: number[];
+      map: Map<number, Building>;
+    }
+  >();
+  /** All-building lookup: membership stays fixed through this phase; object state stays live. */
+  private buildingIds(b: Battle): Map<number, Building> {
+    const hit = this.buildingIdCache.get(b);
+    if (hit && hit.buildings === b.buildings && hit.refs.length === b.buildings.length) {
+      let same = true;
+      for (let i = 0; i < hit.refs.length; i++) {
+        if (hit.refs[i] !== b.buildings[i] || hit.ids[i] !== b.buildings[i].id) {
+          same = false;
+          break;
+        }
+      }
+      if (same) return hit.map;
+    }
+    // A new map preserves earlier phase snapshots if a layout changes. Last id wins,
+    // exactly as in the previous Map constructed from an array of entry pairs.
+    const map = new Map<number, Building>();
+    for (const building of b.buildings) map.set(building.id, building);
+    this.buildingIdCache.set(b, {
+      buildings: b.buildings,
+      refs: b.buildings.slice(),
+      ids: b.buildings.map((building) => building.id),
+      map,
+    });
+    return map;
+  }
   /** Walls by tile for per-waypoint lookups; callers verify hp live at each hit. */
   private sharedWalls(b: Battle) {
     const wallTile = new Map<number, Building>();
@@ -5974,7 +6008,7 @@ export class GameModel {
     // The legacy loop spends from the shared budget the native phase used first.
     const repathState = pathBudget ?? { count: 0, limit: Number.POSITIVE_INFINITY };
     // All-buildings scope (concealed included): distinct from the native maps above.
-    const buildingById = new Map(b.buildings.map((v) => [v.id, v]));
+    const buildingById = this.buildingIds(b);
     // Per-tick targetability for the non-hp reasons (trap, concealment, hiding).
     // hp is checked live at each use so mid-tick kills keep exact semantics.
     const untargetableStatus = new Set<number>();
