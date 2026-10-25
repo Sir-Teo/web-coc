@@ -238,3 +238,12 @@ native combat stats use the same version gate. Item speed percentages still add;
 strength, charged shot bonuses and status intervals retain their existing order. Real hits and
 projectiles reconstruct through portable files and backward seeks. Versions 83 and earlier keep
 their original damage and results. The normal Hero panel shows the current calculation.
+
+## Version 85: Giant Gauntlet melee splash
+
+Active Giant Gauntlet now applies ground splash around the primary building or defender. Nearby
+buildings and ground defenders take one hit, with birth checks and existing building immunity.
+The effect grants no movement across walls; Stick Horse keeps its own timer. Expiry restores
+ordinary hits, and copies outside the Hero roster gain no equipment splash. Actual activation,
+splash and expiry reconstruct through portable files and backward seeks. Versions 84 and earlier
+preserve primary-only combat and their previous stored metadata.

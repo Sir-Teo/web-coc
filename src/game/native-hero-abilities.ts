@@ -103,7 +103,11 @@ function applyAbility(
   }
   const splash = tiles(row, 'DamageRadius');
   if (splash > 0 && duration > 0 && num(row, 'GrowthScale'))
-    effects.splash = { until: at + duration, radius: splash, jumper: true };
+    effects.splash = {
+      until: at + duration,
+      radius: splash,
+      ...(battle.nativeKingGauntletSplash && hero.kind === 'king' ? {} : { jumper: true }),
+    };
   const self = text(row, 'SelfSpell');
   if (self)
     castNativeSpell(battle, self, num(row, 'SelfSpellLevel', 1) || 1, 'attack', unit.x, unit.y, {

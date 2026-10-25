@@ -20,7 +20,7 @@ import { stepGarrisonStatus } from './garrison-status';
 import { TROOPS, isDefense, isResourceBuilding, isTrap, type TroopDef } from './data';
 import { findPath, distanceTo, type Battle, type Building, type Unit, type FX } from './model';
 import { launchProjectile, type CombatProjectile } from './projectiles';
-import { targetableBuilding } from './hidden-tesla';
+import { presentBuilding, targetableBuilding } from './hidden-tesla';
 // Late campaign Spell Tower Rage and Invisibility, and activated late Defense classes
 // (all neutral without version 44 late state).
 import { lateActivatedDefense, lateDefenderHidden, lateDefenderStats } from './late-campaign';
@@ -372,6 +372,8 @@ export type DefenderFightTraits = Pick<
   /** Poison Lizard prefers nearby enemy units even when they have not engaged. */
   seekUnalerted?: boolean;
   nativeProjectile?: CombatProjectile['native'];
+  /** Radius of a source-backed melee area hit; never grants air targeting. */
+  nativeMeleeSplash?: number;
 };
 const canFight = (unit: Unit, enemy: Defender, troop: DefenderFightTraits) =>
   !troop.healer &&
@@ -642,6 +644,22 @@ export function stepAttackerVsDefenders(
         );
       } else {
         hurtDefender(battle, target, power);
+        if (troop.nativeMeleeSplash && target.mode === 'ground') {
+          const radius = troop.nativeMeleeSplash;
+          damageDefenders(
+            battle,
+            target,
+            stats.damage,
+            radius,
+            'ground',
+            target.id,
+            battle.elapsed,
+          );
+          for (const b of buildings)
+            if (presentBuilding(battle, b) && distanceTo(target, b) <= radius)
+              damage(b, stats.damage);
+          effect({ type: 'blast', x: target.x, y: target.y, radius, sourceId: unit.id });
+        }
         effect({
           type: 'hit',
           targetDefender: true,

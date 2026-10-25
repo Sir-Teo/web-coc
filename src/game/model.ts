@@ -839,6 +839,8 @@ export interface Battle {
   nativeKingStickHorse?: true;
   /** Version 84: passive equipment attack speed preserves Hero damage per hit. */
   nativeHeroPassiveSpeedDamage?: true;
+  /** Version 85: Giant Gauntlet melee hits damage nearby ground units and buildings. */
+  nativeKingGauntletSplash?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */

@@ -427,3 +427,30 @@ previous damage calculation through both the model and native combat stats paths
 Hero combat under Poison/frost, real building hits/projectiles and exact portable backward seeks.
 `tests/browser/hero-passive-speed.spec.ts` checks actual King/Champion combat, native art, reduced
 motion, historical playback and the normal Hero stats panel on desktop and phone.
+
+## Version 85 Giant Gauntlet ground splash
+
+The King's active Giant Gauntlet now applies its stored 2.5-tile splash radius to actual melee
+hits. The [source comparison](../reference/official-wiki/heroes-pets/giant-gauntlet.md) specifies
+14 to 19 seconds of ground splash, with 20% to 60% damage reduction. Shielding and regeneration
+keep their existing behavior. A building hit now reaches nearby buildings and ground defenders;
+a defender hit reaches nearby ground defenders and building footprints. The primary target is
+hit once, airborne and unborn defenders are excluded, and Vampstache heals once per swing.
+
+Splash uses the primary target's center and the existing local building-footprint distance rule.
+The target-centered convention is corroborated by the pinned [older client reconstruction's
+melee area-damage path](https://github.com/bns34/Supercell.Magic-my-turn/blob/52c5953f5e5802c64ac36e53d5599f8700976085/Supercell.Magic.Logic/GameObject/Component/LogicCombatComponent.cs);
+it is not modern client code. Splash reaches invisible buildings, leaves buried Teslas and traps
+intact, and respects Overgrowth immunity. Hits can reach over a wall without changing the King's
+movement. The incorrect stored `jumper` metadata is omitted for new Gauntlet activations;
+Stick Horse still owns its independent personal jump timer and expiry.
+
+Held cooldowns and Freeze cause no area hit. The exact ability deadline restores ordinary hits.
+Unrostered King copies receive no equipment splash. Versions 84 and earlier preserve their
+primary-only combat. This correction covers splash combat and its existing impact effect;
+Gauntlet growth scaling and the prolonged enlarged knockout pose remain presentation work.
+
+`tests/giant-gauntlet.test.ts` covers all ten duration/shield tiers, both hit origins, ground/air and
+birth checks, invisibility, immunity, Vampstache, Stick Horse expiry, copy exclusion and real
+portable backward seeks. `tests/browser/giant-gauntlet.spec.ts` checks native King art, actual
+adjacent-building damage, expiry, reduced-motion parity and historical playback on desktop and phone.

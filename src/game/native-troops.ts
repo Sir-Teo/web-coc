@@ -20,7 +20,7 @@ import {
   tickDefenderHitPoison,
 } from './defender-hit-poison';
 import { MAP_SIZE } from './grid';
-import { targetableBuilding } from './hidden-tesla';
+import { presentBuilding, targetableBuilding } from './hidden-tesla';
 import { flag, nativeRow, num, seconds as nativeSeconds, text, tiles } from './native-data';
 import { castNativeSpell, stepNativeSpells, type NativeSpellContext } from './native-spells';
 import {
@@ -560,6 +560,16 @@ export function stepNativeUnit(
     heroOf(battle, u)
   );
   const chargedHero = nativeChampion || nativePrince;
+  const gauntlet = state.effects?.splash;
+  const gauntletSplash =
+    battle.nativeKingGauntletSplash &&
+    u.kind === 'barbarianking' &&
+    heroOf(battle, u) &&
+    gauntlet &&
+    gauntlet.until > at + 1e-9
+      ? gauntlet.radius
+      : 0;
+  if (gauntletSplash > 0) s = { ...s, splash: gauntletSplash };
   if (chargedHero) {
     const override = heroCombatOverrides(u, at);
     if (
@@ -645,6 +655,7 @@ export function stepNativeUnit(
         ...(heroHunter ? { preferHeroes: s.preferHeroes, heroDamageScale: s.heroMultiplier } : {}),
         ...(poisonLizard ? { seekUnalerted: true } : {}),
         ...(defenderProjectile ? { nativeProjectile: defenderProjectile } : {}),
+        ...(gauntletSplash > 0 ? { nativeMeleeSplash: gauntletSplash } : {}),
       },
       ctx.isTargetable,
       {
@@ -948,11 +959,26 @@ function strike(
   } else if (s.chainDepth > 0) {
     zapChain(ctx, u, s, target, damage);
   } else {
+    const gauntlet =
+      battle.nativeKingGauntletSplash &&
+      u.kind === 'barbarianking' &&
+      s.splash > 0 &&
+      heroOf(battle, u);
     ctx.damageBuilding(target, damage * damageMultiplier(s, target), battle.elapsed);
     if (s.splash)
       for (const b of battle.buildings)
-        if (b.id !== target.id && b.hp > 0 && !isTrap(b.kind) && distanceTo(center, b) <= s.splash)
+        if (
+          b.id !== target.id &&
+          b.hp > 0 &&
+          !isTrap(b.kind) &&
+          (!gauntlet || presentBuilding(battle, b)) &&
+          distanceTo(center, b) <= s.splash
+        )
           ctx.damageBuilding(b, damage * damageMultiplier(s, b), battle.elapsed);
+    if (gauntlet) {
+      damageDefenders(battle, center, damage, s.splash, 'ground', undefined, battle.elapsed);
+      ctx.effect({ type: 'blast', x: center.x, y: center.y, radius: s.splash, sourceId: u.id });
+    }
     applyFrost(battle, s, target);
     ctx.effect({
       type: 'hit',
