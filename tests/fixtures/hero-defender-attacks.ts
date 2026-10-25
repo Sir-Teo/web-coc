@@ -16,7 +16,7 @@ export function heroDefenderBattle(
   model.state.obstacles = [];
   model.state.buildings = [makeBuilding(1, 'townhall', 36, 36, 18)];
   model.state.nextId = 1000;
-  model.state.army = { ...emptyArmy(), giant: 1, goblin: 1 };
+  model.state.army = { ...emptyArmy(), giant: 1, goblin: 1, ...(air ? { golem: 1 } : {}) };
   model.state.spells = { ...emptySpells(), freeze: 1, recall: 1 };
   model.state.spellLevels = defaultSpellLevels();
   model.state.king = undefined;
@@ -31,15 +31,21 @@ export function heroDefenderBattle(
   return { model, battle: model.battle, recording };
 }
 
-export function heroDefenderRecording(kind: 'queen' | 'warden' | 'duke', recall = false) {
-  const { model, battle } = heroDefenderBattle(kind);
+export function heroDefenderRecording(
+  kind: 'queen' | 'warden' | 'duke',
+  recall = false,
+  items: HeroItemSetup[] = [],
+  air = false,
+) {
+  const { model, battle } = heroDefenderBattle(kind, 1, items, undefined, air);
   const enemy = battle.defenders!.find((d) => d.kind === 'hero')!;
   const step = () => {
     if (battle.elapsed > 12 || battle.finished)
-      throw Error('Hero defender attack checkpoint was not reached');
+      throw Error(`Hero defender attack checkpoint was not reached at ${battle.elapsed}s`);
     model.step(0.05);
   };
-  model.activeTroop = 'goblin';
+  // The high-level Prince can kill a Goblin before Freeze lands; a Golem holds that lure.
+  model.activeTroop = air ? 'golem' : 'goblin';
   if (!model.deploy(14, 6.5)) throw Error('Hero attack alert deployment failed');
   step();
   model.activeSpell = 'freeze';

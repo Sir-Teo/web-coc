@@ -17,7 +17,7 @@ import {
   NATIVE_POISON_TINT,
 } from '../src/game/unit-status-tint';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
-import { validateReplay, replayBattle, type ReplayData } from '../src/game/replay';
+import { validateReplay, replayBattle, REPLAY_VERSION, type ReplayData } from '../src/game/replay';
 import { defenderFrostRecording } from './fixtures/defender-frost';
 import type { HeroItemSetup } from '../src/game/native-heroes';
 
@@ -61,9 +61,9 @@ function arena(version?: number) {
 function shot(
   kind: 'archerqueen' | 'frostypet' | 'icehoundpup' = 'archerqueen',
   items: HeroItemSetup[] = [{ slug: 'frozen-arrow', level: 1 }],
-  old = false,
+  version = REPLAY_VERSION,
 ) {
-  const { battle, ctx } = arena(old ? 76 : undefined);
+  const { battle, ctx } = arena(version);
   const actor = unit(kind, kind === 'icehoundpup' ? 5.5 : 5, 5);
   actor.cooldown = 0;
   battle.units = [actor];
@@ -89,12 +89,16 @@ it.each([
   expect(target.frost).toBeUndefined();
 });
 
-it('keeps the Monolith projectile override without adding building HP damage to a defender', () => {
-  const { projectile } = shot('archerqueen', [
-    { slug: 'frozen-arrow', level: 1 },
-    { slug: 'monolith-arrow', level: 1 },
-  ]);
-  const ordinary = shot().projectile;
+it('preserves the version 88 Monolith projectile and frost without its later HP bonus', () => {
+  const { projectile } = shot(
+    'archerqueen',
+    [
+      { slug: 'frozen-arrow', level: 1 },
+      { slug: 'monolith-arrow', level: 1 },
+    ],
+    88,
+  );
+  const ordinary = shot('archerqueen', undefined, 88).projectile;
   expect(projectile.native?.name).toBe('ArcherQueenMonolithProjectile3');
   expect(projectile.native?.frost).toEqual({ seconds: 0.75, percent: 0.25 });
   expect(projectile.damage).toBe(ordinary.damage);
@@ -142,7 +146,7 @@ it('does not frost a dead or unborn target, or redirect a missed arrow to anothe
 });
 
 it('preserves the generic arrow and direct-only hit before version 77', () => {
-  const { projectile } = shot('archerqueen', undefined, true);
+  const { projectile } = shot('archerqueen', undefined, 76);
   expect(projectile.weapon).toBe('arrow');
   expect(projectile.native).toBeUndefined();
 });

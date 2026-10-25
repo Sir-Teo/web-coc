@@ -378,6 +378,8 @@ export type DefenderFightTraits = Pick<
   underground?: boolean;
   /** A source hit without a projectile, including ranged or flying Heroes. */
   nativeDirectHit?: boolean;
+  /** Fraction of the primary target's max HP, added after attack damage boosts. */
+  nativeTargetHpBonus?: number;
 };
 const canFight = (unit: Unit, enemy: Defender, troop: DefenderFightTraits) =>
   !troop.healer &&
@@ -602,7 +604,9 @@ export function stepAttackerVsDefenders(
     route?.enterRange?.();
     if (unit.cooldown <= 0) {
       unit.cooldown = stats.rate;
-      const power = stats.damage * (target.kind === 'hero' ? (troop.heroDamageScale ?? 1) : 1);
+      const power =
+        stats.damage * (target.kind === 'hero' ? (troop.heroDamageScale ?? 1) : 1) +
+        target.maxHp * (troop.nativeTargetHpBonus ?? 0);
       if (unit.kind === 'dragon') {
         hurtDefender(battle, target, power);
         damageDefenders(battle, target, stats.damage, troop.splash ?? 0, target.mode, target.id);

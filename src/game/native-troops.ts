@@ -691,6 +691,9 @@ export function stepNativeUnit(
         ...(gauntletSplash > 0 ? { nativeMeleeSplash: gauntletSplash } : {}),
         ...(undergroundChase ? { underground: true } : {}),
         ...(nativeHeroAttack && !s.projectile ? { nativeDirectHit: true } : {}),
+        ...(battle.nativeMonolithDefenderDamage && frostArrow
+          ? { nativeTargetHpBonus: num(frostArrow, 'DamagePermilHp') / 1000 }
+          : {}),
       },
       ctx.isTargetable,
       {

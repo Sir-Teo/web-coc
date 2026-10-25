@@ -520,12 +520,33 @@ the pinned Hero rows and now hit directly, instead of launching generic arrows o
 The King stays ground-only; existing Prince and Champion projectiles retain their source rules.
 Hero copies receive their base attack shape without borrowing roster equipment.
 
-These shapes follow the pinned [Hero tables](../reference/full-client/README.md). This correction
-does not resolve Monolith Arrow's percentage-HP bonus against defenders, which needs a separate
-target-rule audit. Native Hero lethal impacts use their scheduled deadline, including when the
+These shapes follow the pinned [Hero tables](../reference/full-client/README.md). Version 88
+left Monolith Arrow's percentage-HP defender bonus for the version 89 audit below.
+Native Hero lethal impacts use their scheduled deadline, including when the
 resolver samples later; versions 87 and earlier preserve their previous packets and timestamps.
 
 `tests/hero-defender-attacks.test.ts` checks all six Heroes, ground and air targets, arrow tiers,
 Recall, copies, birth/death timing and exact portable backward seeks. The matching browser spec
 checks native Queen arrows and Hero bodies, direct Warden/Duke damage, reduced motion and
 historical playback on desktop and phone.
+
+## Version 89 Monolith Arrow defender damage
+
+Monolith Arrow now adds its percentage of the primary defender's maximum HP when the Queen
+fires, including against ground and airborne Heroes, garrison troops, Skeletons and Guardians.
+The [pinned equipment reference](../reference/official-wiki/heroes-pets/monolith-arrow.md)
+describes the bonus as target-max-HP damage without a building-only restriction; the three
+source abilities supply `DamagePermilHp`, projectile and deployment thresholds. At level 1,
+the bonus is 9.5%, 7% or 4%; level 27 uses 14%, 10% or 5%. Exactly 180 and 250 housing retain
+the higher stage, using the version 72 cumulative counter.
+
+The bonus adds after ordinary attack damage boosts, so Rage and difficulty damage scaling
+do not multiply it. An airborne arrow keeps its captured bonus, stage and frost after Recall,
+equipment removal or a later housing change. Copies outside the Hero roster receive no item
+bonus. Version 88 and earlier retain their previous defender damage.
+
+`tests/monolith-defender-damage.test.ts` checks both housing boundaries, both Hero layers,
+actual defender families, damage scaling, capture, copies, legacy damage and real Recall inputs
+through portable backward seeks. `tests/browser/monolith-defender-damage.spec.ts` verifies
+native Monolith projectiles, post-Recall damage, frost, reduced motion and historical playback
+on desktop and phone.

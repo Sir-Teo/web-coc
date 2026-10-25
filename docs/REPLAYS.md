@@ -273,3 +273,12 @@ Captured damage and frost persist after Recall, and lethal native Hero impacts u
 scheduled deadlines. Copies retain base shapes without roster equipment. Actual attacks and
 Recall reconstruct through portable files and backward seeks. Versions 87 and earlier retain
 their previous generic packets and sampled lethal timestamps.
+
+## Version 89: Monolith Arrow target-max-HP damage against defenders
+
+The Queen's Monolith Arrow now captures its primary defender's maximum-HP bonus at launch,
+using the cumulative housing stage. This applies to ground and air defenders. The bonus adds
+after ordinary attack damage scaling and persists alongside captured frost after Recall or
+later housing changes. Copies gain no roster item bonus. Actual ground/air Hero hits and Recall
+reconstruct through portable files and backward seeks. Versions 88 and earlier preserve their
+previous defender damage.
