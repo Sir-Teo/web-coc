@@ -509,3 +509,23 @@ It no longer remains invulnerable while attacking a defender because of the miss
 master-selection rules remain unchanged. Defending troops and Heroes receive no surfacing stun.
 See [underground defender pursuit](NATIVE-GRID.md#version-87-underground-defender-pursuit) for
 scope, source references, replay compatibility and verification.
+
+## Version 88 Hero attacks against defenders
+
+Hero attacks against defending troops, Heroes and Guardians now use the same source projectile
+selection as building combat. The Queen fires her level-specific native arrow at 16.5 tiles per
+second; Monolith Arrow selects its current housing-stage projectile even without Frozen Arrow.
+Captured frost and damage survive Recall. The Warden and Dragon Duke have no `Projectile` in
+the pinned Hero rows and now hit directly, instead of launching generic arrows or bombs.
+The King stays ground-only; existing Prince and Champion projectiles retain their source rules.
+Hero copies receive their base attack shape without borrowing roster equipment.
+
+These shapes follow the pinned [Hero tables](../reference/full-client/README.md). This correction
+does not resolve Monolith Arrow's percentage-HP bonus against defenders, which needs a separate
+target-rule audit. Native Hero lethal impacts use their scheduled deadline, including when the
+resolver samples later; versions 87 and earlier preserve their previous packets and timestamps.
+
+`tests/hero-defender-attacks.test.ts` checks all six Heroes, ground and air targets, arrow tiers,
+Recall, copies, birth/death timing and exact portable backward seeks. The matching browser spec
+checks native Queen arrows and Hero bodies, direct Warden/Duke damage, reduced motion and
+historical playback on desktop and phone.

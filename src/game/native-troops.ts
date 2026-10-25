@@ -646,7 +646,8 @@ export function stepNativeUnit(
       nativeChampion ||
       nativeStickHorse);
   const rangedFrost = battle.nativeDefenderFrost && s.frostTime > 0 && s.range > 2;
-  const frostArrow = rangedFrost ? monolithArrow(ctx, u) : undefined;
+  const nativeHeroAttack = battle.nativeHeroDefenderAttacks && isHeroUnitKind(u.kind);
+  const frostArrow = rangedFrost || nativeHeroAttack ? monolithArrow(ctx, u) : undefined;
   const defenderProjectile = rangedFrost
     ? {
         name: (frostArrow && text(frostArrow, 'Projectile')) || s.frostProjectile || s.projectile,
@@ -654,9 +655,16 @@ export function stepNativeUnit(
         level: s.level,
         frost: { seconds: s.frostTime, percent: s.frostPercent },
       }
-    : ((battle.nativeHeadhunterCards && u.kind === 'headhunter') || poisonLizard || chargedHero) &&
+    : ((battle.nativeHeadhunterCards && u.kind === 'headhunter') ||
+          poisonLizard ||
+          chargedHero ||
+          nativeHeroAttack) &&
         s.projectile
-      ? { name: s.projectile, kind: u.kind, level: s.level }
+      ? {
+          name: (frostArrow && text(frostArrow, 'Projectile')) || s.projectile,
+          kind: u.kind,
+          level: s.level,
+        }
       : undefined;
   const readyToAttack = u.cooldown <= 0;
   const undergroundChase = battle.nativeUndergroundDefenderChase && s.underground;
@@ -682,6 +690,7 @@ export function stepNativeUnit(
         ...(defenderProjectile ? { nativeProjectile: defenderProjectile } : {}),
         ...(gauntletSplash > 0 ? { nativeMeleeSplash: gauntletSplash } : {}),
         ...(undergroundChase ? { underground: true } : {}),
+        ...(nativeHeroAttack && !s.projectile ? { nativeDirectHit: true } : {}),
       },
       ctx.isTargetable,
       {
@@ -1255,7 +1264,14 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
     const defender = battle.defenders?.find((d) => d.id === p.targetId);
     if (defender && defender.hp > 0 && defender.spawnedAt <= p.impact + 1e-9) {
       if (battle.nativeAttackerHitPoison) tickDefenderHitPoison(defender, p.impact);
-      hurtDefender(battle, defender, p.damage, rocketSplash ? p.impact : undefined);
+      hurtDefender(
+        battle,
+        defender,
+        p.damage,
+        rocketSplash || (battle.nativeHeroDefenderAttacks && isHeroUnitKind(source.kind))
+          ? p.impact
+          : undefined,
+      );
       if (battle.nativeDefenderFrost && source.frost)
         applyDefenderFrost(defender, source.frost, p.impact);
       if (battle.nativeAttackerHitPoison && defender.hp > 0) {

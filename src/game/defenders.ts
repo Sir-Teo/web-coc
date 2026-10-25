@@ -376,6 +376,8 @@ export type DefenderFightTraits = Pick<
   nativeMeleeSplash?: number;
   /** Ground burrowers move directly below obstacles without becoming airborne. */
   underground?: boolean;
+  /** A source hit without a projectile, including ranged or flying Heroes. */
+  nativeDirectHit?: boolean;
 };
 const canFight = (unit: Unit, enemy: Defender, troop: DefenderFightTraits) =>
   !troop.healer &&
@@ -620,7 +622,7 @@ export function stepAttackerVsDefenders(
           fromAir: true,
           toAir: target.mode === 'air',
         });
-      } else if (stats.range > 2 || troop.flying) {
+      } else if (!troop.nativeDirectHit && (stats.range > 2 || troop.flying)) {
         launchProjectile(
           battle,
           {

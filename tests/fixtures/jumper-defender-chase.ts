@@ -56,7 +56,11 @@ export function jumperChaseRecording(kind: 'lassi' | 'warden') {
   const attacks: { at: number; impact: number }[] = [];
   model.onEffect = (effect) => {
     if (effect.sourceId !== subjectId) return;
-    if (kind === 'lassi' && effect.type === 'hit' && effect.targetDefender)
+    if (
+      (kind === 'lassi' || battle.nativeHeroDefenderAttacks) &&
+      effect.type === 'hit' &&
+      effect.targetDefender
+    )
       attacks.push({ at: battle.elapsed, impact: battle.elapsed });
     if (kind === 'warden' && effect.type === 'projectile') {
       const p = battle.projectiles!.find((p) => p.id === effect.projectileId)!;

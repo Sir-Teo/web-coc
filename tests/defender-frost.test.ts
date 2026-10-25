@@ -17,7 +17,7 @@ import {
   NATIVE_POISON_TINT,
 } from '../src/game/unit-status-tint';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
-import { validateReplay } from '../src/game/replay';
+import { validateReplay, replayBattle, type ReplayData } from '../src/game/replay';
 import { defenderFrostRecording } from './fixtures/defender-frost';
 import type { HeroItemSetup } from '../src/game/native-heroes';
 
@@ -37,10 +37,13 @@ const unit = (kind: Unit['kind'] = 'giant', x = 14, y = 10): Unit => ({
   native: {},
 });
 
-function arena() {
+function arena(version?: number) {
   const model = new GameModel();
   model.startBattle(0, true);
-  const battle = model.battle!;
+  const battle =
+    version === undefined
+      ? model.battle!
+      : replayBattle((model as unknown as { recording: ReplayData }).recording.initial, version);
   battle.buildings = [makeBuilding(1, 'townhall', 36, 36, 18)];
   const ctx: NativeTroopContext = {
     battle,
@@ -60,8 +63,7 @@ function shot(
   items: HeroItemSetup[] = [{ slug: 'frozen-arrow', level: 1 }],
   old = false,
 ) {
-  const { battle, ctx } = arena();
-  if (old) delete battle.nativeDefenderFrost;
+  const { battle, ctx } = arena(old ? 76 : undefined);
   const actor = unit(kind, kind === 'icehoundpup' ? 5.5 : 5, 5);
   actor.cooldown = 0;
   battle.units = [actor];

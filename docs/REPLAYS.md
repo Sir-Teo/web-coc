@@ -263,3 +263,13 @@ when the target moves out of range. Surfaced units can be targeted and damaged, 
 waiting for their next attack. The Battle Drill surfacing transition is shared with building
 combat. Real Miner and Diggy attacks and enemy retaliation reconstruct through portable files and
 backward seeks. Versions 86 and earlier preserve their previous ground routes and hidden attacks.
+
+## Version 88: Hero defender attack shapes
+
+Heroes now use their source projectile or direct hit against defenders. The Queen fires native
+level-specific arrows, including Monolith Arrow's housing-stage selection without paired frost;
+the Warden and Dragon Duke deal direct hits because their source rows have no projectile.
+Captured damage and frost persist after Recall, and lethal native Hero impacts use their
+scheduled deadlines. Copies retain base shapes without roster equipment. Actual attacks and
+Recall reconstruct through portable files and backward seeks. Versions 87 and earlier retain
+their previous generic packets and sampled lethal timestamps.
