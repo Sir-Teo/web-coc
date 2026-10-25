@@ -1540,6 +1540,55 @@ the production build. All 3,743 compiled files are byte-identical to the precedi
 wall checkpoint, including offline cache `e8c86bf838ab`; the production online checks in
 both engines and Chromium's offline checks therefore cover the exact same build.
 
+## Linear animation age setup
+
+The native pose sampler records how long each child has been present in a looping source
+timeline. Its first request previously walked backward from every visible frame, taking
+quadratic work for a continuously present child. It now finds an absence once and makes one
+circular pass. A child present throughout the loop keeps the existing `-1` marker and its
+continuous clock; disappearing children retain their wrapped ages and initial-frame clamp.
+The graph/clip/slot cache and every sampled pose stay unchanged.
+
+An exhaustive comparison covers all 8,191 binary presence patterns of lengths 0–12. Real
+asset coverage compares 339 exports across 160 troop and defense graphs at six timestamps,
+including 1,000 seconds: all 2,034 complete poses match in Node, Chromium and WebKit. The
+Node pose hash is `cf4121fdcf26320ab62738d45ab212f50eacee0c6b2c7c11e8739c9a90162527`.
+
+Warmed JavaScript engines sample each export at three times using a fresh graph wrapper,
+so its age tables are cold. Alternating baseline/candidate runs report these mean setup and
+sampling totals; image loading and rendering are excluded:
+
+| Engine | Backward scans | Circular pass | Reduction |
+| --- | ---: | ---: | ---: |
+| Node, six samples | 24.18 ms | 12.36 ms | 48.9% |
+| Chromium, eight samples | 21.73 ms | 6.79 ms | 68.8% |
+| WebKit, eight samples | 12.38 ms | 6.63 ms | 46.5% |
+
+This removes first-use setup work; cached frame sampling already reuses the table. These
+isolated CPU timings do not establish a physical-phone FPS gain. The regression case checks
+continuous and reappearing nested children, mismatched parent/child loop lengths, a very old
+clock and rewinding. All 47 focused source-pose and composition cases pass before and after.
+
+Repeated sampling with already-cached tables was checked separately. Chromium's longer,
+alternating runs varied around parity; WebKit's samples were lower with the circular pass.
+An alternate packed-table allocation did not establish a portable improvement and is not
+applied. No warmed-sampling speedup is claimed.
+
+All eight relevant browser cases pass per engine: exact mixed triangle/sprite pixels across
+pages, flushes and WebGL restoration; shared animated-wall pixels and preview tints; failed
+X-Bow and Wizard Tower graphs; and failed troop/hero metadata and images recovering in place.
+
+The full check passes 3,013 tests across 334 files, strict types, documentation links and
+the production build.
+
+Compiled phone checks import an Archer-garrison recording through the normal battle log,
+seek to completion and pan the field. Both engines reproduce the preceding build's exact
+defender positions, health, targets and completion state, with no page errors or developer
+hooks.
+
+Standard production checks pass online in both engines and offline in Chromium (cache
+`8449f6ef7353`).
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

@@ -90,12 +90,19 @@ function placementAges(graph: NativeMeshGraph, id: number, slot: number) {
   if (result) return result;
   const clip = graph.clips[id];
   const present = clip.timeline.map((i) => clip.frames[i].some((p) => p[0] === slot));
-  result = present.map((exists, f) => {
-    if (!exists) return 0;
-    let age = 0;
-    while (age < present.length && present[(f - age - 1 + present.length) % present.length]) age++;
-    return age === present.length ? -1 : age;
-  });
+  const absent = present.indexOf(false);
+  result = new Array<number>(present.length);
+  if (absent < 0) result.fill(-1);
+  else {
+    // Start after an absence so a run spanning the loop boundary has its full age.
+    // One circular pass avoids scanning backwards from every visible source frame.
+    let frame = absent,
+      age = 0;
+    for (let count = 0; count < present.length; count++) {
+      if (++frame === present.length) frame = 0;
+      result[frame] = present[frame] ? age++ : (age = 0);
+    }
+  }
   bySlot.set(slot, result);
   return result;
 }

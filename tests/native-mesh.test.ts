@@ -100,6 +100,68 @@ it('bounds placement lookup by the source timeline even at a very old battle clo
   expect(reads).toBeLessThan(100);
 });
 
+it('preserves continuous and reappearing child clocks across source loops and rewinds', () => {
+  const visible = [true, true, false, true, true, true];
+  const source: NativeMeshGraph = {
+    exports: { test: 1 },
+    shapes: { 3: [[0, [0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0]]] },
+    clips: {
+      1: {
+        fps: 1,
+        children: [2, 2],
+        names: ['continuous', 'reappearing'],
+        blending: [0, 0],
+        frames: visible.map((shown) =>
+          shown
+            ? [
+                [0, 0, 0],
+                [1, 0, 0],
+              ]
+            : [[0, 0, 0]],
+        ),
+        timeline: [0, 1, 2, 3, 4, 5],
+      },
+      2: {
+        fps: 1,
+        children: [3],
+        names: [''],
+        blending: [0],
+        frames: Array.from({ length: 8 }, (_, frame) => [[0, frame, 0]]),
+        timeline: [0, 1, 2, 3, 4, 5, 6, 7],
+      },
+    },
+    matrices: Array.from({ length: 8 }, (_, frame) => [1, 0, frame * 10, 0, 1, 0]),
+    colors: [[1, 1, 1, 1, 0, 0, 0, 0]],
+    textures: {},
+  };
+  // The second child disappears at frame 2. Its age wraps across the parent loop, while
+  // the always-present child's eight-frame clock continues beyond that six-frame loop.
+  const cases = [
+    [0, 0],
+    [1, 1],
+    [2, null],
+    [3, 0],
+    [4, 1],
+    [5, 2],
+    [6, 3],
+    [7, 4],
+    [8, null],
+    [9, 0],
+    [10, 1],
+    [11, 2],
+    [1_000_000_000, 1],
+    [6, 3],
+    [0, 0],
+  ] as const;
+  for (const [frame, reappearing] of cases) {
+    const poses = nativeMeshPoses(source, 'test', frame);
+    expect(poses.find((pose) => pose.key === '1/0/0:0')!.matrix[2]).toBe((frame % 8) * 10);
+    expect(poses.find((pose) => pose.key === '1/1/0:0')?.matrix[2] ?? null).toBe(
+      reappearing === null ? null : reappearing * 10,
+    );
+  }
+});
+
 it('rejects unsupported composition and missing exports without silently approximating them', () => {
   expect(() => nativeMeshPoses(graph, 'missing', 0)).toThrow('Unknown native export');
   const altered = structuredClone(graph);
