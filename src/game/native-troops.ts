@@ -24,6 +24,7 @@ import { mergeBoost } from './native-boost';
 import { rampedDamage, finishRampingHit, type NativeDamageRamp } from './native-damage-ramp';
 import { recordInfernoDragonTransition } from './inferno-dragon-transitions';
 import { friendlyCombatant, healingEligible } from './friendly-unit';
+import { healerContribution } from './healing';
 import {
   applyDefenderHitPoison,
   nativeHitPoison,
@@ -1908,14 +1909,18 @@ function stepNativeHealer(
     !a.ejected &&
     (a.spawnedAt ?? 0) <= battle.elapsed + 1e-9 &&
     healingEligible(battle, a);
-  let target: Unit | undefined;
-  if (u.healTarget !== undefined)
+  const boundMaster =
+    battle.nativeUnicornController && u.kind === 'unicorn' ? petAnchor(battle, u)?.hero : undefined;
+  let target = boundMaster && ally(boundMaster) ? boundMaster : undefined;
+  const bound = !!target;
+  if (bound) u.healTarget = target!.id;
+  if (!bound && u.healTarget !== undefined)
     for (const a of units)
       if (a.id === u.healTarget && ally(a)) {
         target = a;
         break;
       }
-  if (!target || target.hp >= target.maxHp) {
+  if (!bound && (!target || target.hp >= target.maxHp)) {
     // The first of the old sort by (already full, distance, id): a single pass over the
     // roster keeps the same winner without the filtered copy and the O(n log n) sort.
     target = undefined;
@@ -1972,8 +1977,12 @@ function stepNativeHealer(
   }
   for (const ally of hits) {
     const scale = ally.hero ? s.heroMultiplier : 1;
+    const contribution =
+      battle.nativeUnicornController && u.kind === 'unicorn'
+        ? healerContribution(battle, ally, u.id)
+        : 1;
     if (!nativeUnitStats(ally.kind, unitLevel(battle, ally)).immuneToHealing)
-      healUnit(battle, ally, heal * scale);
+      healUnit(battle, ally, heal * scale * contribution);
   }
   ctx.effect({
     type: 'hit',

@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 98;
+export const REPLAY_VERSION = 99;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -126,7 +126,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 95 runs Phoenix's waiting Egg, hatch and temporary Hero revival, and excludes pets from Clone.
  * Version 96 respects friendly participation and native healing immunity across support paths.
  * Version 97 gives Mighty Yak its source Hero-death boost once per raid.
- * Version 98 captures each Healer level's source Hero healing ratio in its pulse. */
+ * Version 98 captures each Healer level's source Hero healing ratio in its pulse.
+ * Version 99 binds Unicorn healing to its living Hero and applies its single-target support rules. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -192,6 +193,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 95 ||
   version === 96 ||
   version === 97 ||
+  version === 98 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -340,6 +342,7 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 99 ? { nativeUnicornController: true as const } : {}),
     ...(version >= 98 ? { nativeHealerHeroScaling: true as const } : {}),
     ...(version >= 97 ? { nativeYakMasterRage: true as const } : {}),
     ...(version >= 96 ? { nativeFriendlyEligibility: true as const } : {}),

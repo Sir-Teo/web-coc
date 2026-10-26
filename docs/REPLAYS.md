@@ -371,3 +371,13 @@ healing and stacking. Ordinary nearby troops retain full healing. Real Cannon wo
 Hero recovery reproduce through portable files and backward seeks. Versions 97 and earlier
 keep the fixed 55% and their original packet shape. See
 [source and validation details](LATE-TROOPS.md#version-98-source-hero-healing-ratios).
+
+## Version 99: Unicorn ownership and support
+
+Unicorn prioritizes its own living Hero even when another ally is injured, and rebinds after
+Revive or Recall. Its single-target pulse uses the shared healing curve and contributes
+only to its recipient within 2.5 tiles. A surviving Unicorn keeps a battle open under the
+normal deadline. Actual Cannon wounds to a different ally reproduce that priority with
+ground and air Heroes through portable reverse seeks. Versions 98 and earlier keep their
+original selection, allocation and completion rules. See
+[source and validation details](NATIVE-HEROES.md#version-99-unicorn-ownership-and-support-rules).

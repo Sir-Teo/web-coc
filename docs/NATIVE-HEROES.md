@@ -849,3 +849,30 @@ Rage and Wall damage. Real Cannon attacks knock out the Hero while the Yak survi
 the source boost window. Portable reverse seeks and desktop/phone browser checks reproduce
 the native pet, active/expired tint, reduced motion and historical version 96 behavior.
 Versions 96 and earlier retain their previous unboosted Yak behavior.
+
+## Version 99 Unicorn ownership and support rules
+
+The [Unicorn reference](../reference/official-wiki/heroes-pets/unicorn.md) describes healing
+its assigned Hero, on the ground or in the air, at full rate within 2.5 tiles. Unicorn now
+keeps that living eligible Hero even at full HP, overriding a cached injured ally. It
+rebinds when the Hero returns through Revive or Recall/redeployment. When no eligible living
+master exists, the existing generic healing fallback remains; this does not claim the
+client's full fallback selection algorithm.
+
+The pet's single-target healing now uses the existing shared diminishing curve. Unicorn
+contributes to that allocation only for its actual recipient within its own 2.5-tile range;
+it no longer occupies a neighboring unit's splash-healing slot. Recalled or waiting sources
+do not count as active sources. Launched ordinary Healer pulses retain their independent
+contribution after caster death. The existing local source-ID allocation remains a
+deterministic interpretation, rather than a reconstruction of native allocation timing.
+
+Unlike ordinary Healers, a surviving Unicorn no longer ends a raid just because it is the
+last unit. The normal battle deadline and manual end still apply. This follows the dossier's
+explicit distinction between Unicorn and ordinary Healers.
+
+`tests/native-unicorn.test.ts` checks all Hero assignments, source healing tiers, invisible
+masters, full-health priority, generic fallback, Revive/Recall rebinding, single-target/range
+allocation, shared diminishing returns, recalled sources and last-pet completion. Actual
+Cannon wounds to another ally reproduce ownership priority with a ground King and airborne
+Warden through portable files, reverse seeks, reduced motion and desktop/phone rendering.
+Versions 98 and earlier retain their previous selection, allocation and completion rules.

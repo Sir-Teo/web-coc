@@ -3,7 +3,7 @@ import { TROOPS } from './data';
 import type { Battle, Unit } from './model';
 import { launchProjectile } from './projectiles';
 import type { FX } from './model';
-import { healingEligible } from './friendly-unit';
+import { friendlyCombatant, healingEligible } from './friendly-unit';
 import { nativeUnitStats } from './native-units';
 
 /** Supercell's HEAL_STACK_PERCENT and Healer records; see docs/LATE-TROOPS.md. */
@@ -149,7 +149,19 @@ export function healerContribution(battle: Battle, recipient: Unit, sourceId: nu
   const sources = new Set([sourceId]);
   for (const healer of battle.units) {
     if (!TROOPS[healer.kind].healer || healer.hp <= 0) continue;
+    if (battle.nativeUnicornController && !friendlyCombatant(healer, battle.elapsed)) continue;
     const target = byId.get(healer.healTarget ?? -1);
+    if (battle.nativeUnicornController && healer.kind === 'unicorn') {
+      const range = TROOPS.unicorn.range + 1e-9;
+      if (
+        target &&
+        healingEligible(battle, target) &&
+        target.id === recipient.id &&
+        distanceSq(healer, target) <= range * range
+      )
+        sources.add(healer.id);
+      continue;
+    }
     if (!target || !groundAlly(battle, target)) continue;
     const healerRange = TROOPS.healer.range + 1e-9;
     if (

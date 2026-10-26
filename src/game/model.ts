@@ -875,6 +875,8 @@ export interface Battle {
   nativeYakMasterRage?: true;
   /** Version 98: Healer pulses capture their source level's Hero healing ratio. */
   nativeHealerHeroScaling?: true;
+  /** Version 99: Unicorn binds to its living Hero and uses single-target support rules. */
+  nativeUnicornController?: true;
   /** Recent detached troop stage effects; presentation only, retired deterministically. */
   infernoDragonTransitions?: InfernoDragonTransition[];
   /** Version 53: passive hero auras and Royal Rampage. */
@@ -5856,9 +5858,14 @@ export class GameModel {
     this.deployChanged(starting);
     return true;
   }
-  /** Pure healers never keep a battle open; a Druid does, because it becomes a fighting Bear. */
+  /** Ordinary Healers cannot hold the battle open; Druid and native Unicorn have explicit rules. */
   private supportOnly(b: Battle, kind: UnitKind) {
-    return !!TROOPS[kind].healer && !isSiege(kind) && !(b.nativeRoster && kind === 'druid');
+    return (
+      !!TROOPS[kind].healer &&
+      !isSiege(kind) &&
+      !(b.nativeRoster && kind === 'druid') &&
+      !(b.nativeUnicornController && kind === 'unicorn')
+    );
   }
   /** Walls by tile for per-waypoint lookups; callers verify hp live at each hit. */
   private sharedWalls(b: Battle) {
