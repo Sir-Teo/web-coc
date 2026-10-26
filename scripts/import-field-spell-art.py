@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Retain original Rage, Haste, Healing and Poison fields, reusing verified source packs.
+"""Retain original spell fields, reusing verified source packs.
 
 PYTHONPATH=scripts python scripts/import-field-spell-art.py [--check] [--download-missing]
 """
@@ -41,11 +41,12 @@ def main():
     art.read = read
     existing = json.loads((ROOT / 'reference/full-client/effect-art.json').read_text())
     effects, packs, spells, external = {}, {}, {}, {}
-    for spell, key in [('Rage', 'rage'), ('Haste', 'haste'), ('Healing', 'heal'), ('Poison', 'poison')]:
+    for spell, key in [('Rage', 'rage'), ('Haste', 'haste'), ('Healing', 'heal'), ('Poison', 'poison'),
+                       ('Clone', 'clone'), ('Invisibility', 'invisibility')]:
         profiles, current, names = [], {}, set()
         for level, row in enumerate(lib.table('logic/spells.csv')[spell], 1):
             current.update(row)
-            profile = {k: current[k] for k in ['PreDeployEffect', 'DeployEffect', 'DeployEffect2']}
+            profile = {k: current[k] for k in ['PreDeployEffect', 'DeployEffect', 'DeployEffect2'] if current.get(k)}
             profile.update(level=level, deploySeconds=int(current['DeployTimeMS']) / 1000,
                            pulseSeconds=sum(int(current[k]) for k in ['DeployTimeMS', 'ChargingTimeMS', 'HitTimeMS']) / 1000)
             if current.get('HitEffect'):

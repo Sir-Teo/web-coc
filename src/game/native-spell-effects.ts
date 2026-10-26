@@ -6,7 +6,7 @@ export interface SpellEffectProfile {
   deploySeconds: number;
   PreDeployEffect: string;
   DeployEffect: string;
-  DeployEffect2: string;
+  DeployEffect2?: string;
   HitEffect?: string;
   hitRadiusTiles?: number;
   graphicsOnlyRadius?: boolean;
@@ -31,7 +31,7 @@ export function spellCastEffectEvents(
       ['deploy', row.DeployEffect, cast.castAt + row.deploySeconds],
       ['deploy2', row.DeployEffect2, cast.castAt + row.deploySeconds],
     ] as const) {
-      if (elapsed + 1e-9 < at || elapsed - at > (duration(effect) ?? 30)) continue;
+      if (!effect || elapsed + 1e-9 < at || elapsed - at > (duration(effect) ?? 30)) continue;
       events.push({
         key: `spell:${cast.id}:${phase}`,
         effect,

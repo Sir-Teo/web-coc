@@ -107,7 +107,10 @@ it.each([1, 12])(
         while (model.replay!.seeking) model.step(0.05);
         const actual = JSON.parse(JSON.stringify(model.battle)) as Battle,
           expected = JSON.parse(JSON.stringify(snapshot.battle)) as Battle;
-        if (version === 118) delete expected.nativeSpellPulsePresentation;
+        if (version === 118) {
+          delete expected.nativeSpellPulsePresentation;
+          expected.nativeSpellArt = ['Jump', 'Rage', 'Haste', 'Healing', 'Poison'];
+        }
         expect(actual).toEqual(expected);
         expect(pulses(actual).length > 0).toBe(version !== 118 && snapshot.at >= r.healed);
       }

@@ -30,7 +30,15 @@
     "Heal spell": "heal",
     "Toxic deploy ground halloween": "poison",
     "Toxic deploy halloween": "poison",
-    "toxic_Predeploy": "poison"
+    "toxic_Predeploy": "poison",
+    "Clone deploy": "clone",
+    "Clone deploy top": "clone",
+    "Clone_Predeploy": "clone",
+    "Invisibility area lvl1": "invisibility",
+    "Invisibility area lvl2": "invisibility",
+    "Invisibility area lvl3": "invisibility",
+    "Invisibility area lvl4": "invisibility",
+    "Invisibility_Predeploy": "invisibility"
   },
   "packs": {
     "rage": {
@@ -52,6 +60,16 @@
       "path": "assets/field-spells-native/poison/graph.json",
       "sha256": "e3d0ddf8df1e94bfde463acf8704c0d938c5fcef7391cf7a792c8d3c28abf7ac",
       "bytes": 292020
+    },
+    "clone": {
+      "path": "assets/field-spells-native/clone/graph.json",
+      "sha256": "05ee92059bb09877cf29ad86bcc397be07607ae9ad794037f99de99d31d5e872",
+      "bytes": 43494
+    },
+    "invisibility": {
+      "path": "assets/field-spells-native/invisibility/graph.json",
+      "sha256": "13d0239d5b2861d2a646c9fc2d7698a479b089e98ec75dcabe720c526a936788",
+      "bytes": 150035
     }
   },
   "spells": {
@@ -410,6 +428,116 @@
           "DeployEffect": "Toxic deploy ground halloween",
           "DeployEffect2": "Toxic deploy halloween",
           "level": 12,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        }
+      ]
+    },
+    "Clone": {
+      "key": "clone",
+      "levels": [
+        {
+          "PreDeployEffect": "Clone_Predeploy",
+          "DeployEffect": "Clone deploy",
+          "DeployEffect2": "Clone deploy top",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Clone_Predeploy",
+          "DeployEffect": "Clone deploy",
+          "DeployEffect2": "Clone deploy top",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Clone_Predeploy",
+          "DeployEffect": "Clone deploy",
+          "DeployEffect2": "Clone deploy top",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Clone_Predeploy",
+          "DeployEffect": "Clone deploy",
+          "DeployEffect2": "Clone deploy top",
+          "level": 4,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Clone_Predeploy",
+          "DeployEffect": "Clone deploy",
+          "DeployEffect2": "Clone deploy top",
+          "level": 5,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Clone_Predeploy",
+          "DeployEffect": "Clone deploy",
+          "DeployEffect2": "Clone deploy top",
+          "level": 6,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Clone_Predeploy",
+          "DeployEffect": "Clone deploy",
+          "DeployEffect2": "Clone deploy top",
+          "level": 7,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Clone_Predeploy",
+          "DeployEffect": "Clone deploy",
+          "DeployEffect2": "Clone deploy top",
+          "level": 8,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Clone_Predeploy",
+          "DeployEffect": "Clone deploy",
+          "DeployEffect2": "Clone deploy top",
+          "level": 9,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        }
+      ]
+    },
+    "Invisibility": {
+      "key": "invisibility",
+      "levels": [
+        {
+          "PreDeployEffect": "Invisibility_Predeploy",
+          "DeployEffect": "Invisibility area lvl1",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Invisibility_Predeploy",
+          "DeployEffect": "Invisibility area lvl2",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Invisibility_Predeploy",
+          "DeployEffect": "Invisibility area lvl3",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Invisibility_Predeploy",
+          "DeployEffect": "Invisibility area lvl4",
+          "level": 4,
           "deploySeconds": 0.8,
           "pulseSeconds": 1.5
         }

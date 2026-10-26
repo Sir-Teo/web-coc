@@ -3,10 +3,19 @@ import { emptyArmy, emptySpells } from '../../src/game/army';
 import { replayBattle, type ReplayData } from '../../src/game/replay';
 import { spellEndTime } from '../../src/game/native-spells';
 export function nativeFieldSpellRecording(
-  name: 'Rage' | 'Haste' | 'Healing' | 'Poison',
+  name: 'Rage' | 'Haste' | 'Healing' | 'Poison' | 'Clone' | 'Invisibility',
   level = 1,
 ) {
-  const key = ({ Rage: 'rage', Haste: 'haste', Healing: 'heal', Poison: 'poison' } as const)[name],
+  const key = (
+      {
+        Rage: 'rage',
+        Haste: 'haste',
+        Healing: 'heal',
+        Poison: 'poison',
+        Clone: 'clone',
+        Invisibility: 'invisibility',
+      } as const
+    )[name],
     model = new GameModel();
   model.state.king = undefined;
   model.state.obstacles = [];

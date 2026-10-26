@@ -1715,3 +1715,42 @@ limits, short tails, reduced motion and read-only sampling. Actual Cannon wounds
 unchanged health and combat state against version 118 and portable forward/reverse seeks.
 Browser checks cover cold history loading, original meshes and Web Audio on phone and
 desktop, version-118 field-only playback, and paused recovery after a held/failed pack.
+
+## Version 120 original Clone and Invisibility fields
+
+Clone's nine levels use the source `Clone_Predeploy`, `Clone deploy` and `Clone deploy top`
+phases. The original bottle, range ring and dark mist share a 43,494-byte pack.
+The pinned `clone_twirl01` export is empty and remains a source placeholder.
+The three field emitters live for 20 seconds from the 800 ms deployment phase. Physical
+cloning still begins at 1.5 seconds and resolves 60 pulses at 300 ms spacing; capturing
+the ended cast lets the source particles finish without extending cloning or copy life.
+
+Invisibility's four levels use `Invisibility_Predeploy` and their own `Invisibility area
+lvl1` through `lvl4` effects in a 150,035-byte pack. The source declares no `DeployEffect2`.
+The shared profile, sampler and prefetch path now omit absent phases, so a missing upper
+phase cannot keep a complete pack in fallback. Original rings, flashes, sparks and light
+rays keep their level-specific source lifetimes and finite emission tails. Source
+deployment still starts at 800 ms while concealment retains its existing 1.5-second
+first hit, 250 ms pulse interval and 600 ms linger. Rendering does not alter targets or
+projectiles already in flight.
+
+The shared `nativeSpellArt` capability list enables both spells in version 120. No new
+Battle history structure is needed. `Spell Tower Invisibility` remains a separate spell
+name and continues through its own presentation. Version 119 retains its earlier list
+and Healing pulse capability. Reduced motion uses stationary fallback presentation.
+Carried or captured casts warm only their required pack, with atomic fallback handoff
+and paused reconnect recovery through the existing loader revision.
+
+Complete new packs total 193,529 bytes, including textures. Existing field packs and the
+reused Rage top remain unchanged. The importer verifies pinned source graphs, decoded
+pixels and exact file sets. Audio uses existing original cast keys and samples: Clone
+deployment is 95% volume at 0.97 pitch; Invisibility is 90% volume at 1.0 pitch. The
+catalog remains at 340 files and 357 effects.
+
+Tests sample all 13 level profiles, declared phases, finite tails, original audio and
+reduced motion. Actual Giant deployment and Clone inputs verify copy housing and expiry,
+and actual Invisibility inputs verify concealment of buildings and defenders with
+committed projectiles. Spell Tower inputs guard the separate defensive path. These
+recordings reconstruct through portable forward/reverse seeks and match version-119
+physical states after removing presentation metadata. Browser cases cover phone and
+desktop meshes, original Web Audio, cold retained history and failed-pack recovery.

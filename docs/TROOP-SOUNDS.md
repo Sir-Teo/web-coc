@@ -190,3 +190,9 @@ Version 119 draws Healing's original pulse graphics with the existing
 `spell:<id>:hit:<index>` sound keys. It adds no cues, samples or voices; pulse volume,
 pitch and timing remain unchanged. See
 [Healing pulse graphics](NATIVE-HEROES.md#version-119-original-healing-pulse-graphics).
+
+Version 120 retains Clone and Invisibility cast audio in the shared history. Both use
+their existing bottle cue at 80% volume and 0.95 pitch. Deployment remains 95%/0.97 for
+Clone and 90%/1.0 for Invisibility. Source field art adds no cues or samples; the catalog
+remains at 340 files and 357 effects. See
+[Clone and Invisibility fields](NATIVE-HEROES.md#version-120-original-clone-and-invisibility-fields).
