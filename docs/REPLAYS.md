@@ -679,3 +679,13 @@ seconds. Its long-lived source paint remains visible through captured history, w
 preference and ability expiry remain unchanged. Version 126 and earlier keep their
 former presentation and sound timing and request neither new pack. See
 [source and adapter details](NATIVE-HEROES.md#version-127-original-totem-and-delayed-angry-spell-effects).
+
+## Version 128: original Ice Block platform and melting sequence
+
+The source-spell presentation list adds `Ice Block`. Its bottle, 800-ms impact,
+100-ms-delayed platform and resolved end effect reconstruct from captured history.
+The end effect begins after the single 1.5-second pulse; its own 6300-ms emitter delay
+places the melt at 7.8 seconds. Source particle tails remain finite and independent of
+the unchanged seven-second protection and defense freeze. Earlier recordings retain
+their former presentation and request no new pack. See
+[source and adapter details](NATIVE-HEROES.md#version-128-original-ice-block-platform-and-melting-sequence).

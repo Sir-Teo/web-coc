@@ -23,7 +23,9 @@ async function boot(
             r.snapshots.find(
               (s) =>
                 s.at ===
-                (r.name === 'Earthquake' || r.name === 'AngrySpell' ? r.steady : r.afterLive),
+                (r.name === 'Earthquake' || r.name === 'AngrySpell' || r.name === 'Ice Block'
+                  ? r.steady
+                  : r.afterLive),
             ).battle,
           )
         : replayBattle(r.data.initial, version);
@@ -125,6 +127,8 @@ for (const { name, level, width } of [
   { name: 'Totem Spell', level: 4, width: 390 },
   { name: 'AngrySpell', level: 1, width: 390 },
   { name: 'AngrySpell', level: 4, width: 1440 },
+  { name: 'Ice Block', level: 1, width: 1440 },
+  { name: 'Ice Block', level: 6, width: 390 },
 ] as const)
   test(`original ${name} level ${level} fields and audio survive cold portable seeks at ${width}px`, async ({
     page,
@@ -158,6 +162,7 @@ for (const { name, level, width } of [
       'bat',
       'totem',
       'angry',
+      'iceblock',
     ])
       if (key !== r.key)
         expect(requests).not.toContain(`/assets/field-spells-native/${key}/graph.json`);
@@ -180,6 +185,11 @@ for (const { name, level, width } of [
           bottle: 'invisibility_bottleDrop',
           ground: `invisibility_lvl${level}_ring`,
           upper: `invisibility_lvl${level}_ring2`,
+        },
+        'Ice Block': {
+          bottle: 'IceBlock_bottleDrop',
+          ground: 'e_spells_iceblock_Surface',
+          upper: 'e_spells_iceblock_FloatingRocks',
         },
         'Totem Spell': {
           bottle: 'e_spells_meteortotem_bottledrop',
@@ -311,6 +321,7 @@ for (const { name, level, width } of [
         'Bat Spell': 0.6,
         'Totem Spell': 1,
         AngrySpell: 0.8,
+        'Ice Block': 1,
       }[name],
       keys =
         name === 'AngrySpell'
@@ -356,6 +367,7 @@ for (const { name, level, width } of [
           Earthquake: 0.97,
           'Bat Spell': 1,
           AngrySpell: 1,
+          'Ice Block': 1,
         }[name],
       );
     expect(sound.rate).toBeCloseTo(sound.pitch, 6);
@@ -378,6 +390,14 @@ for (const { name, level, width } of [
           };
         }),
       ).toEqual({ chainReady: true, born: 1.4, fallback: 0, unchanged: true });
+    }
+    if (name === 'Ice Block') {
+      const melt = await seek(page, r.nearEnd);
+      expect(melt).toMatchObject({ unchanged: true, gl: 0 });
+      await visible(page, ['e_spells_iceblock_Melt']);
+      await page.screenshot({
+        path: `output/playtest/native-iceblock-melting-${level}-${width}.png`,
+      });
     }
     const steady = await seek(page, r.steady);
     await visible(page, [ground]);
@@ -416,21 +436,23 @@ for (const { name, level, width } of [
       ).toEqual({ pulse: undefined, meshes: 0 });
     }
     const oldVersion =
-      name === 'Totem Spell' || name === 'AngrySpell'
-        ? 126
-        : name === 'Skeleton Spell' || name === 'Bat Spell'
-          ? 125
-          : name === 'Earthquake'
-            ? 124
-            : name === 'Lightning'
-              ? 123
-              : name === 'Recall'
-                ? 120
-                : name === 'Clone' || name === 'Invisibility'
-                  ? 119
-                  : name === 'Healing' || name === 'Poison'
-                    ? 117
-                    : 116;
+      name === 'Ice Block'
+        ? 127
+        : name === 'Totem Spell' || name === 'AngrySpell'
+          ? 126
+          : name === 'Skeleton Spell' || name === 'Bat Spell'
+            ? 125
+            : name === 'Earthquake'
+              ? 124
+              : name === 'Lightning'
+                ? 123
+                : name === 'Recall'
+                  ? 120
+                  : name === 'Clone' || name === 'Invisibility'
+                    ? 119
+                    : name === 'Healing' || name === 'Poison'
+                      ? 117
+                      : 116;
     await open(page, oldVersion);
     await seek(page, r.steady);
     expect(
@@ -448,7 +470,7 @@ for (const { name, level, width } of [
       ready: false,
       views: 0,
       names:
-        oldVersion === 126
+        oldVersion === 127
           ? [
               'Jump',
               'Rage',
@@ -462,8 +484,10 @@ for (const { name, level, width } of [
               'Earthquake',
               'Skeleton Spell',
               'Bat Spell',
+              'Totem Spell',
+              'AngrySpell',
             ]
-          : oldVersion === 125
+          : oldVersion === 126
             ? [
                 'Jump',
                 'Rage',
@@ -475,8 +499,10 @@ for (const { name, level, width } of [
                 'Recall',
                 'Lightning',
                 'Earthquake',
+                'Skeleton Spell',
+                'Bat Spell',
               ]
-            : oldVersion === 124
+            : oldVersion === 125
               ? [
                   'Jump',
                   'Rage',
@@ -487,21 +513,49 @@ for (const { name, level, width } of [
                   'Invisibility',
                   'Recall',
                   'Lightning',
+                  'Earthquake',
                 ]
-              : oldVersion === 123
-                ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison', 'Clone', 'Invisibility', 'Recall']
-                : oldVersion === 120
-                  ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison', 'Clone', 'Invisibility']
-                  : oldVersion === 119
-                    ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison']
-                    : oldVersion === 117
-                      ? ['Jump', 'Rage', 'Haste']
-                      : ['Jump'],
+              : oldVersion === 124
+                ? [
+                    'Jump',
+                    'Rage',
+                    'Haste',
+                    'Healing',
+                    'Poison',
+                    'Clone',
+                    'Invisibility',
+                    'Recall',
+                    'Lightning',
+                  ]
+                : oldVersion === 123
+                  ? [
+                      'Jump',
+                      'Rage',
+                      'Haste',
+                      'Healing',
+                      'Poison',
+                      'Clone',
+                      'Invisibility',
+                      'Recall',
+                    ]
+                  : oldVersion === 120
+                    ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison', 'Clone', 'Invisibility']
+                    : oldVersion === 119
+                      ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison']
+                      : oldVersion === 117
+                        ? ['Jump', 'Rage', 'Haste']
+                        : ['Jump'],
       history: undefined,
     });
     expect(errors).toEqual([]);
   });
 for (const { name, path, heldEffect, otherEffect } of [
+  {
+    name: 'Ice Block',
+    path: 'field-spells-native/iceblock',
+    heldEffect: 'ps_spells_iceblock_Despawn',
+    otherEffect: undefined,
+  },
   {
     name: 'Totem Spell',
     path: 'field-spells-native/totem',
@@ -704,6 +758,7 @@ for (const { name, path, heldEffect, otherEffect } of [
         'Bat Spell': 'bat_summon_area_edge1',
         'Totem Spell': 'e_spells_meteortotem_ring',
         AngrySpell: 'e_spell_angryspell_centre_splat_next',
+        'Ice Block': 'e_spells_iceblock_Surface',
       }[name],
     ]);
     if (name === 'Healing') await visible(page, ['heal_ring_effect', 'heal_ring_effect2']);
@@ -798,3 +853,24 @@ for (const name of ['Totem Spell', 'AngrySpell'] as const)
     ).toEqual({ ready: false, views: 0, chainReady: false, cast: false });
     expect(requests).not.toContain(`/assets/field-spells-native/${r.key}/graph.json`);
   });
+
+test('version-127 Ice Block playback keeps its previous fields and never requests the new pack', async ({
+  page,
+}) => {
+  const r = nativeFieldSpellRecording('Ice Block'),
+    requests: string[] = [];
+  page.on('request', (request) => requests.push(new URL(request.url()).pathname));
+  await boot(page, r, false, 127);
+  await open(page, 127);
+  await seek(page, r.steady);
+  expect(
+    await page.evaluate(() => ({
+      ready: window.__game.scene.fieldSpellPresentations
+        .get('Ice Block')
+        .hasArt(window.__game.model.battle, false),
+      views: window.__game.scene.fieldSpellPresentations.get('Ice Block').layer.views.size,
+      cast: window.__game.model.castSpell(11.5, 11.5),
+    })),
+  ).toEqual({ ready: false, views: 0, cast: false });
+  expect(requests).not.toContain('/assets/field-spells-native/iceblock/graph.json');
+});

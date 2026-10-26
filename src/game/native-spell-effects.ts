@@ -1,5 +1,5 @@
 import type { Battle } from './model';
-import { randomPoint, type NativeSpellCast } from './native-spells';
+import { randomPoint, spellEndTime, type NativeSpellCast } from './native-spells';
 import type { NativeEffectEvent } from './native-effects';
 export interface SpellEffectProfile {
   level: number;
@@ -11,6 +11,7 @@ export interface SpellEffectProfile {
   ChargingEffect?: string;
   chargingTargeted?: boolean;
   HitEffect?: string;
+  EndEffect?: string;
   hitRadiusTiles?: number;
   graphicsOnlyRadius?: boolean;
 }
@@ -38,6 +39,7 @@ export function spellCastEffectEvents(
         cast.castAt + row.deploySeconds + (row.deploy2DelaySeconds ?? 0),
       ],
       ['charging', row.ChargingEffect, cast.castAt + row.deploySeconds],
+      ['end', cast.hits >= cast.total ? row.EndEffect : undefined, spellEndTime(cast)],
     ] as const) {
       if (!effect || elapsed + 1e-9 < at || elapsed - at > (duration(effect) ?? 30)) continue;
       events.push({

@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 127;
+export const REPLAY_VERSION = 128;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -155,7 +155,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 124 enables original Lightning bottle, charging and impact presentation.
  * Version 125 retains original Earthquake fields and durable ground scars.
  * Version 126 retains original Skeleton and Bat spell summon fields.
- * Version 127 enables Totem and delayed Angry spell presentation. */
+ * Version 127 enables Totem and delayed Angry spell presentation.
+ * Version 128 retains the original Ice Block platform and delayed melt sequence. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -250,6 +251,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 124 ||
   version === 125 ||
   version === 126 ||
+  version === 127 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -415,6 +417,7 @@ export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
             ...(version >= 125 ? ['Earthquake'] : []),
             ...(version >= 126 ? ['Skeleton Spell', 'Bat Spell'] : []),
             ...(version >= 127 ? ['Totem Spell', 'AngrySpell'] : []),
+            ...(version >= 128 ? ['Ice Block'] : []),
           ],
           nativeSpellEffectTimelines: true as const,
         }

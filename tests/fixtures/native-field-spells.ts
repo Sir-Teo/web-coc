@@ -17,7 +17,8 @@ export function nativeFieldSpellRecording(
     | 'Skeleton Spell'
     | 'Bat Spell'
     | 'Totem Spell'
-    | 'AngrySpell',
+    | 'AngrySpell'
+    | 'Ice Block',
   level = 1,
 ) {
   const key = (
@@ -35,6 +36,7 @@ export function nativeFieldSpellRecording(
         'Bat Spell': 'bat',
         'Totem Spell': 'totem',
         AngrySpell: 'angry',
+        'Ice Block': 'iceblock',
       } as const
     )[name],
     summons = name === 'Skeleton Spell' || name === 'Bat Spell',
@@ -63,10 +65,11 @@ export function nativeFieldSpellRecording(
           spellEndTime(cast),
           cast.firstHit + seconds(spellRow(name, level), 'SpawnDuration'),
         )
-      : spellEndTime(cast);
+      : spellEndTime(cast) +
+        (name === 'Ice Block' ? seconds(spellRow(name, level), 'FreezeTimeMS') : 0);
   const times = {
     bottle: 0.4,
-    landing: name === 'AngrySpell' ? 1.25 : 0.9,
+    landing: name === 'AngrySpell' || name === 'Ice Block' ? 1.25 : 0.9,
     beforeHit: battle.nativeSpells![0].firstHit - 0.05,
     pulsing:
       name === 'Lightning'

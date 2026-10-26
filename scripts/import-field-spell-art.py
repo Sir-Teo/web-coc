@@ -61,17 +61,19 @@ def main():
                        ('Clone', 'clone'), ('Invisibility', 'invisibility'), ('Recall', 'recall'),
                        ('Lightning', 'lightning'), ('Earthquake', 'earthquake'),
                        ('Skeleton Spell', 'skeleton'), ('Bat Spell', 'bat'),
-                       ('Totem Spell', 'totem'), ('AngrySpell', 'angry')]:
+                       ('Totem Spell', 'totem'), ('AngrySpell', 'angry'), ('Ice Block', 'iceblock')]:
         profiles, current, names = [], {}, set()
         for level, row in enumerate(lib.table('logic/spells.csv')[spell], 1):
             current.update(row)
-            profile = {k: current[k] for k in ['PreDeployEffect', 'DeployEffect', 'DeployEffect2', 'ChargingEffect'] if current.get(k)}
+            profile = {k: current[k] for k in ['PreDeployEffect', 'DeployEffect', 'DeployEffect2', 'ChargingEffect', 'EndEffect'] if current.get(k)}
             profile.update(level=level, deploySeconds=int(current['DeployTimeMS']) / 1000,
                            pulseSeconds=sum(int(current[k]) for k in ['DeployTimeMS', 'ChargingTimeMS', 'HitTimeMS']) / 1000)
             if int(current.get('DeployEffect2Delay') or 0):
                 profile['deploy2DelaySeconds'] = int(current['DeployEffect2Delay']) / 1000
             if current.get('ChargingEffect'):
                 profile['chargingTargeted'] = any(row.get('Targeted') == 'TRUE' for row in lib.effects[current['ChargingEffect']])
+            if current.get('EndEffect'):
+                require(not any(row.get('Sound') for row in lib.effects[current['EndEffect']]), 'End sound needs an explicit audio binding')
             if current.get('HitEffect'):
                 profile['HitEffect'] = current['HitEffect']
                 radius = int(current.get('RandomRadius', '0'))
@@ -88,7 +90,7 @@ def main():
                 if not any(row.get(column) for row in child_rows for column in effect_columns):
                     require(silent_children.setdefault(child, spell) == spell, f'Ambiguous silent child: {child}')
             profiles.append(profile)
-            names.update(profile[k] for k in ['PreDeployEffect', 'DeployEffect', 'DeployEffect2', 'ChargingEffect', 'HitEffect'] if profile.get(k))
+            names.update(profile[k] for k in ['PreDeployEffect', 'DeployEffect', 'DeployEffect2', 'ChargingEffect', 'HitEffect', 'EndEffect'] if profile.get(k))
         spells[spell] = dict(key=key, levels=profiles)
         collector = Collector(lib)
         for name in sorted(names):

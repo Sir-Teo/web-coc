@@ -2044,3 +2044,44 @@ chained spawning and health drain against an Air Defense. Portable forward/rever
 seeks preserve version-126 physical state. Browser cases cover phone/desktop meshes,
 original Web Audio, chained feedback, cold persistent paint, reduced motion, legacy
 requests and natural paused recovery from held/failed packs.
+
+## Version 128 original Ice Block platform and melting sequence
+
+All six Ice Block levels now use their original falling bottle, snowburst, ice clouds,
+shards, frosted surface, floating rocks and melting effects. The 1,109,185-byte lazy pack
+retains the declared source records, `sc/buildings.sc` and `sc/vfx_spells.sc` graphs,
+original decoded pixels, particle variants and layers. Earlier spell packs remain
+byte-identical.
+
+Impact begins at 800 ms. The declared 100-ms upper-phase delay starts the platform at
+900 ms, with its own 300-ms surface-emitter delay preserved. Source snow, rocks, wind,
+sparks and decals use their original finite lifetimes. Captured history reconstructs
+the field after the live primary cast disappears.
+
+The declared `EndEffect` starts only after the captured final pulse resolves, at 1.5
+seconds. Its own emitter delays remain authoritative: clouds, shards, snow and glow
+burst at that event, while the main melt waits another 6300 ms and plays at 7.8 seconds.
+This preserves the original sequence without applying a second arbitrary delay to the
+entire effect. The end effect's conservative duration is 6.501 seconds; the platform's
+longest bound ends at 8.401 seconds after casting. Existing last-pulse-plus-ten-second
+history retention covers every tail.
+
+Optional end phases share the existing finite-effect loader and renderer. Unresolved
+pulses cannot show their end art, exact boundaries normalize the presentation clock,
+and default profiles without an end effect retain their prior sampling. The importer
+also verifies that a captured end effect has no unbound source sound. Ice Block's end
+record is silent; the existing bottle and complete original impact audio keep their
+two stable keys, volume and pitch. No sound catalog entries or files change.
+
+The model still resolves its single pulse at 1.5 seconds and gives the same seven-second
+freeze and protection. Shield protection remains 86–96% by source level; visuals do not
+change incoming damage, positions, expiry or defense targeting. Reduced motion omits
+moving source effects. Pending/failed art keeps existing feedback until the complete
+pack recovers, including paused playback.
+
+Tests sample every level, resolved/end boundaries, the delayed melt, finite tails and
+original audio. A real Giant under continuing fire from a Cannon outside the spell
+area verifies stationary protection, reduced incoming damage and movement after expiry.
+Portable forward/reverse seeks preserve version-127 physical state. Browser cases cover
+phone/desktop meshes, original Web Audio, cold post-pulse fields, the late melt, reduced
+motion, legacy requests and natural paused recovery from a held/failed pack.

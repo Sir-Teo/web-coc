@@ -10,6 +10,7 @@
     "sc/buildings_66.sctx": "c65a2f6e362edfd51d5fc634d5a6c30ec353bd936fa06fa8775b856aeb7baff0",
     "sc/vfx_spells.sc": "01e6556059ed1a80dda2df6366ad7dcf6305bf7c7ebccaa2128843e534c100e7",
     "sc/vfx_spells_0.sctx": "f7758db085e837a7ab23f9911c1f3d87a4998bc46057cd68de63f8005042b9e1",
+    "sc/vfx_spells_2.sctx": "9d7443c66a982441694d5ecf083441beaddaa2472287f39347247214052e0caf",
     "sc/vfx_spells_3.sctx": "6379872091cf1d7d61425c79514de9234dbe059386c5033af5bda5b2fbf77e19"
   },
   "effects": {
@@ -83,7 +84,11 @@
     "ps_spells_meteortotem_predeploy": "totem",
     "AngrySpell_area_Start": "angry",
     "AngrySpell_area_top": "angry",
-    "ps_spells_angryspell_predeploy": "angry"
+    "ps_spells_angryspell_predeploy": "angry",
+    "IceBlock predeploy": "iceblock",
+    "ps_spells_iceblock_Area": "iceblock",
+    "ps_spells_iceblock_Despawn": "iceblock",
+    "ps_spells_iceblock_explode": "iceblock"
   },
   "packs": {
     "rage": {
@@ -150,6 +155,11 @@
       "path": "assets/field-spells-native/angry/graph.json",
       "sha256": "75d55da6b02b026778aefc4eed3abfee22443cf63f6654c14aaf41912c2e3594",
       "bytes": 259331
+    },
+    "iceblock": {
+      "path": "assets/field-spells-native/iceblock/graph.json",
+      "sha256": "1cf70976bd15c0d9f6dcaa94f066dea25e923b7668a7194c71235d8d21ba0585",
+      "bytes": 1109185
     }
   },
   "spells": {
@@ -1135,6 +1145,71 @@
           "pulseSeconds": 1.5,
           "deploy2DelaySeconds": 0.3,
           "retainSeconds": 201.2
+        }
+      ]
+    },
+    "Ice Block": {
+      "key": "iceblock",
+      "levels": [
+        {
+          "PreDeployEffect": "IceBlock predeploy",
+          "DeployEffect": "ps_spells_iceblock_explode",
+          "DeployEffect2": "ps_spells_iceblock_Area",
+          "EndEffect": "ps_spells_iceblock_Despawn",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "deploy2DelaySeconds": 0.1
+        },
+        {
+          "PreDeployEffect": "IceBlock predeploy",
+          "DeployEffect": "ps_spells_iceblock_explode",
+          "DeployEffect2": "ps_spells_iceblock_Area",
+          "EndEffect": "ps_spells_iceblock_Despawn",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "deploy2DelaySeconds": 0.1
+        },
+        {
+          "PreDeployEffect": "IceBlock predeploy",
+          "DeployEffect": "ps_spells_iceblock_explode",
+          "DeployEffect2": "ps_spells_iceblock_Area",
+          "EndEffect": "ps_spells_iceblock_Despawn",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "deploy2DelaySeconds": 0.1
+        },
+        {
+          "PreDeployEffect": "IceBlock predeploy",
+          "DeployEffect": "ps_spells_iceblock_explode",
+          "DeployEffect2": "ps_spells_iceblock_Area",
+          "EndEffect": "ps_spells_iceblock_Despawn",
+          "level": 4,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "deploy2DelaySeconds": 0.1
+        },
+        {
+          "PreDeployEffect": "IceBlock predeploy",
+          "DeployEffect": "ps_spells_iceblock_explode",
+          "DeployEffect2": "ps_spells_iceblock_Area",
+          "EndEffect": "ps_spells_iceblock_Despawn",
+          "level": 5,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "deploy2DelaySeconds": 0.1
+        },
+        {
+          "PreDeployEffect": "IceBlock predeploy",
+          "DeployEffect": "ps_spells_iceblock_explode",
+          "DeployEffect2": "ps_spells_iceblock_Area",
+          "EndEffect": "ps_spells_iceblock_Despawn",
+          "level": 6,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "deploy2DelaySeconds": 0.1
         }
       ]
     }
