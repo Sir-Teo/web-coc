@@ -913,3 +913,24 @@ limits, impact-time selection and exact bounce reach. Real Cannon wounds in
 files and reverse seeks. Phone/desktop browser checks verify original visible art,
 read-only rendering and reduced motion; pet audio checks remain covered separately.
 Combat versions 99 and earlier retain immediate native healing.
+
+## Version 101 ground healer routes
+
+Unicorn and Druid are ground units with source `IsJumper=TRUE`. Their ally-following
+movement now uses the existing point-target pathfinder, avoiding standing building
+footprints while crossing walls. Flying healing units retain direct flight. Selection,
+source movement speed and healing range remain unchanged.
+
+Routes refresh every 0.3 seconds for a moving ally, following the existing defender-chase
+adapter. Changing or losing the recipient drops the old route immediately; entering
+healing range clears leftover waypoints. Searches share the per-sample A* budget and
+reuse the normal route grids. This is the game's existing collision/path adapter, rather
+than a reconstruction of all client path-choice heuristics.
+
+`tests/native-healer-routing.test.ts` covers both ground healers, tile and native half-tile
+collision, jumping, moving and lost recipients, shared search budgets, stopping at range
+and historical movement. A real deployment in `tests/fixtures/native-healer-route.ts`
+follows an airborne Lava Hound around an untouched storage, with portable reverse seeks.
+Phone/desktop browser checks verify its visible original body, reduced motion and
+version 100 movement alongside the healing-flight regression.
+Versions 100 and earlier retain their former straight-line native healer following.

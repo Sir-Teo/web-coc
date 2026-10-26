@@ -879,6 +879,8 @@ export interface Battle {
   nativeUnicornController?: true;
   /** Version 100: native healing resolves through source projectile travel and chain hops. */
   nativeHealingProjectiles?: true;
+  /** Version 101: ground healing units follow allies around buildings, crossing jumpable walls. */
+  nativeHealerRoutes?: true;
   /** Recent detached troop stage effects; presentation only, retired deterministically. */
   infernoDragonTransitions?: InfernoDragonTransition[];
   /** Version 53: passive hero auras and Royal Rampage. */

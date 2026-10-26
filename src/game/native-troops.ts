@@ -1905,6 +1905,7 @@ function stepNativeHealer(
 ) {
   const battle = ctx.battle;
   const units = battle.units;
+  const previousTarget = u.healTarget;
   const ally = (a: Unit) =>
     a.id !== u.id &&
     a.hp > 0 &&
@@ -1943,6 +1944,10 @@ function stepNativeHealer(
     }
     u.healTarget = target?.id;
   }
+  if (battle.nativeHealerRoutes && previousTarget !== target?.id) {
+    u.path = [];
+    u.pathAt = 0;
+  }
   if (!target) {
     u.attacking = false;
     return;
@@ -1950,9 +1955,41 @@ function stepNativeHealer(
   const distance = distance2D(target.x - u.x, target.y - u.y);
   if (distance > s.range + 1e-9) {
     u.attacking = false;
-    moveToward(u, target, Math.min(speed * dt, distance - s.range));
+    if (battle.nativeHealerRoutes && !s.flying) {
+      if (!u.path.length || u.pathAt <= 0) {
+        if (ctx.pathBudget && ctx.pathBudget.count >= ctx.pathBudget.limit) {
+          u.pathAt = Math.min(Math.max(u.pathAt, 0.05), 0.15);
+        } else {
+          if (ctx.pathBudget) ctx.pathBudget.count++;
+          // A friendly unit is a point, even if its kind also names a building.
+          u.path = findPath(
+            u,
+            { x: target.x, y: target.y },
+            routeBuildings(ctx, s.jumper),
+            s.range,
+            !!battle.nativeSubtiles,
+          );
+          u.pathAt = 0.3;
+        }
+      }
+      let travel = Math.min(speed * dt, distance - s.range);
+      while (u.path.length && travel > 0) {
+        const point = u.path[0],
+          length = distance2D(point.x - u.x, point.y - u.y);
+        if (length <= travel) {
+          u.x = point.x;
+          u.y = point.y;
+          u.path.shift();
+          travel -= length;
+        } else {
+          moveToward(u, point, travel);
+          travel = 0;
+        }
+      }
+    } else moveToward(u, target, Math.min(speed * dt, distance - s.range));
     return;
   }
+  if (battle.nativeHealerRoutes) u.path = [];
   u.attacking = true;
   if (u.cooldown > 0) return;
   u.cooldown = s.rate * unitAttackIntervalScale(u, battle.elapsed);

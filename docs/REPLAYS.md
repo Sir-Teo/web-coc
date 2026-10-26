@@ -391,3 +391,12 @@ death or transformation; an invalid recipient ends the chain. Original flight ar
 captured friendly sound identity follow the same packets. See the
 [source and adapter timing details](NATIVE-HEROES.md#version-100-native-healing-flights).
 Versions 99 and earlier retain immediate native healing.
+
+## Version 101: ground healer routes
+
+Unicorn and Druid follow allies around buildings with the existing point-target
+pathfinder, crossing walls with their source jumper property. Routes refresh for moving
+recipients and clear immediately when the recipient changes or disappears. The shared
+pathfinding budget also covers these searches. See the
+[source and adapter details](NATIVE-HEROES.md#version-101-ground-healer-routes).
+Versions 100 and earlier retain straight-line native healer following.
