@@ -10,6 +10,7 @@ import {
   craftedTexture,
 } from './crafted-defenses';
 import { HERO_KINDS, heroPortraitImage, type HeroKind } from './native-hero-data';
+import { heroUnitKind, petUnitKind } from './native-heroes';
 import { TroopNativePresentation } from './troop-native-scene';
 import { DecorationNativePresentation } from './decoration-native-scene';
 import { invalidateLostFramebuffers } from './native-scene-view';
@@ -4170,6 +4171,14 @@ export class VillageScene extends Phaser.Scene {
     const kinds = new Set<string>(battle.units.map((u) => u.kind));
     const spells = new Set<string>(battle.nativeSpells?.map((cast) => cast.name));
     if (battle !== this.troopSoundBattle) {
+      for (const hero of battle.nativeHeroes ?? []) {
+        kinds.add(heroUnitKind(hero.kind));
+        if (hero.pet) {
+          kinds.add(petUnitKind(hero.pet.kind));
+          if (battle.nativePhoenixResurrection && hero.pet.kind === 'phoenix')
+            kinds.add('phoenixegg');
+        }
+      }
       for (const [kind, count] of Object.entries(battle.remaining)) if (count) kinds.add(kind);
       for (const [kind, count] of Object.entries(battle.spells))
         if (count) spells.add(SPELL_SOURCE[kind as SpellKind]);
@@ -4231,7 +4240,7 @@ export class VillageScene extends Phaser.Scene {
         fx.type === 'impact' ||
         fx.type === 'breath') &&
       fx.sourceId !== undefined &&
-      (fx.targetBuilding || fx.targetDefender)
+      (fx.targetBuilding || fx.targetDefender || fx.weapon === 'healing')
     ) {
       const u = battle.units.find((v) => v.id === fx.sourceId);
       if (!u) return;

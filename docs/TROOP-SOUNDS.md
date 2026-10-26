@@ -5,18 +5,19 @@ at 30% volume and 1.0/1.2/1.4 pitch. Per-hit attack starts are suppressed for th
 Pause, seek, replay speed, retargeting and mute use the shared sample player's loop lifecycle.
 See the [pinned beam and sound reference](../reference/inferno-dragon/README.md).
 
-Sound preloading uses the battle's carried army, including fixed armies and portable replays,
-so the viewing village's home army cannot delay the recording's first attack samples.
+Sound preloading uses the battle's carried army and Hero/pet roster, including fixed armies
+and portable replays, so the viewing village's home army cannot delay the recording's first
+attack or pet deployment samples.
 
-Attacking troops play the client's own sounds when they are deployed, when they attack and when they fall. Spells play theirs as the bottle falls, lands and pulses, and a destroyed building plays the client's crash. They replace the generated tones that stood in before; a tone still plays until its sound has been decoded, and vibration follows the same moments either way.
+Attacking troops and pets play the client's own sounds when they are deployed, when they attack and when they fall. Spells play theirs as the bottle falls, lands and pulses, and a destroyed building plays the client's crash. They replace the generated tones that stood in before; a tone still plays until its sound has been decoded, and vibration follows the same moments either way.
 
 ## Source
 
-`python3 scripts/import-native-troop-sounds.py` reads the pinned client's `logic/characters.csv`, `logic/heroes.csv` and `logic/effects.csv`. It covers the 78 trainable and spawned units in `src/game/native-units.ts` (`TROOP_SOURCE` and `SPAWN_SOURCE`) and the heroes (`HERO_UNIT_SOURCE`). For each one it records the `DeployEffect`, the `AttackEffect`, the `HitEffect` (the impact on its target) and the `DieEffect`, and for each effect the rows that name a `Sound`, with their volume, pitch range and delay. The heroes' rows name only a hit, and only four of the six name one with a sound: the Barbarian King, Archer Queen, Grand Warden and Royal Champion. That makes 82 units with sounds.
+`python3 scripts/import-native-troop-sounds.py` reads the pinned client's `logic/characters.csv`, `logic/heroes.csv`, `logic/pets.csv` and `logic/effects.csv`. It covers the 78 trainable/spawned units, heroes and thirteen pet actors (including Phoenix Egg) in `src/game/native-units.ts` (`TROOP_SOURCE`, `SPAWN_SOURCE`, `HERO_UNIT_SOURCE`, `PET_UNIT_SOURCE`). For each one it records the `DeployEffect`, the `AttackEffect`, the `HitEffect` (the impact on its target) and the `DieEffect`, and for each effect the rows that name a `Sound`, with their volume, pitch range and delay. The heroes' rows name only a hit, and only four of the six name one with a sound: the Barbarian King, Archer Queen, Grand Warden and Royal Champion. That makes 95 unit actors with sounds.
 
 It also covers the 18 spells this game casts, from `logic/spells.csv`. For each spell it records the `PreDeployEffect` (the bottle falling), the `DeployEffect` and `DeployEffect2` (it landing), the `ChargingEffect` and the `HitEffect` (each pulse). Some of these change with level; Freeze, for example, has one deploy effect per level.
 
-The importer copies the 292 Ogg files (4.2 MB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`.
+The importer copies 329 Ogg files (4.73 MiB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`. An already shipped sample can supply a missing local source only when its SHA-256 matches that same source pin. Edited outputs cannot supply trusted source bytes; corrupt authoritative cache entries still fail validation.
 
 | Troop     | Deploy                                                     | Attack                                                                                          | Death                                           |
 | --------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------- |
@@ -54,7 +55,25 @@ The cues join the defenses' cues in the shared battle-clock player (`SampleAudio
 
 ## Loading
 
-Nothing is fetched at boot. When a battle opens with sound on, the scene fetches the sounds of the army's troops, its spells and the destroyed-building effect. It then fetches each new unit kind's or spell's sounds the first time one appears. A troop's sounds are about 30–60 KB (the Barbarian's eight files are 58 KB). A failed download is requested again the next time a battle needs it.
+Nothing is fetched at boot. When a battle opens with sound on, the scene fetches the sounds of the army's troops, its carried Heroes/pets, spells and the destroyed-building effect. It then fetches each new unit kind's or spell's sounds the first time one appears. A troop's sounds are about 30–60 KB (the Barbarian's eight files are 58 KB). A failed download is requested again the next time a battle needs it.
+
+## Pet and friendly healing cues
+
+Pet deploy/attack/hit/death effects now come from their own `pets.csv` rows. Phoenix's waiting
+bird remains silent until its controller resets `spawnedAt` at hatch. Removing the Egg is
+not a casualty and produces no false death sound; its row names only a death effect.
+Native healing effects identify their healing weapon, so friendly casts and impacts reach
+the same sound logger as attacks. Unicorn plays its original `clash_pet_horse_heal_01.ogg`
+cast at 80% volume and 0.95–1.05 pitch, plus its source hit effect. Phoenix's hatch uses
+`pet_phoenix_deploy_01.ogg` at 90% and fixed pitch 1. These use the existing local simulation
+event times; this presentation change does not change combat or advance the replay version.
+
+The shared sample player supplies pause, mute, speed, seek offsets and voice caps. Browser
+checks verify cold carried-pet loading with no actors deployed, actual Unicorn healing and
+Phoenix hatch nodes, pause/resume, speed, mute and cleanup. Unit checks cover all pet actors,
+source sample parameters, lifetimes, silent waiting Phoenix and the healing effect path.
+`tests/test_native_troop_sound_import.py` checks verified offline reuse, altered outputs,
+corrupt cache entries and unpinned paths.
 
 ## Tests
 
@@ -71,4 +90,4 @@ Nothing is fetched at boot. When a battle opens with sound on, the scene fetches
 
 `tests/browser/troop-sounds.spec.ts` runs at phone size. It checks that boot fetches no troop sound and that a Barbarian-only battle fetches only the Barbarian's sounds. It then checks that the deploy, hit and death sounds and a Rage Spell's falling bottle actually start playing.
 
-Not included: the heroes' other sounds and the pets' (the client's hero rows name only hits, so the rest presumably play from their animations), the Siege Machines' special effects, and the movement and ability effects.
+Not included: the heroes' other sounds (the client's hero rows name only hits, so the rest presumably play from their animations), Siege Machine special effects, movement sounds and ability-specific effects beyond the imported ordinary event rows.

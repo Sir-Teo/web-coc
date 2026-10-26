@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Import the attacking troops' and spells' own sounds: deploying, attacking, dying and casting.
+"""Import original deploy, attack, death and cast sounds for troops, Heroes, pets and spells.
 
-Each troop row of `logic/characters.csv` names its `DeployEffect`, `AttackEffect`, `HitEffect`
+Each troop or pet row of `logic/characters.csv` / `logic/pets.csv` names its `DeployEffect`, `AttackEffect`, `HitEffect`
 (the impact on its target) and `DieEffect`, and each hero row of `logic/heroes.csv` the same
 columns (heroes name only a hit sound). Each effect's rows in `logic/effects.csv` that name a
 `Sound` give the Ogg file, its volume, pitch range and delay. Those rows are alternative takes of one sound (the files are
@@ -15,7 +15,7 @@ Each spell row of `logic/spells.csv` names its `PreDeployEffect` (the bottle fal
 those that vary by level keep one effect per level, as troops do.
 
 The troops are the trainable, spawned and hero units of src/game/native-units.ts
-(`TROOP_SOURCE`, `SPAWN_SOURCE` and `HERO_UNIT_SOURCE`); the spells are those of reference/troops/catalog.json and the native roster in
+(`TROOP_SOURCE`, `SPAWN_SOURCE`, `HERO_UNIT_SOURCE` and `PET_UNIT_SOURCE`); the spells are those of reference/troops/catalog.json and the native roster in
 src/game/troop-progression.ts (`NATIVE_SPELL_NAMES`). The Ogg files are copied unchanged to public/assets/audio/troops-native and
 every source must match its SHA-256 in reference/full-client/manifest.json. Sources are read
 from the local client archive when present (art/source/native-client-18.400.21/files),
@@ -63,6 +63,13 @@ def source(path, pins):
     else:
         target = CACHE / path
         if not target.exists():
+            # Reuse an already shipped original only after verifying the same source pin.
+            # This keeps rebuilds offline for existing samples, without trusting edited audio.
+            shipped = ROOT / 'public' / AUDIO / Path(path).name
+            if path.startswith('sfx/') and shipped.is_file():
+                data = shipped.read_bytes()
+                if hashlib.sha256(data).hexdigest() == pins[path]:
+                    return data
             target.parent.mkdir(parents=True, exist_ok=True)
             temporary = target.with_suffix(target.suffix + '.part')
             subprocess.run(['curl', '--fail', '--silent', '--show-error', '--retry', '2',
@@ -120,6 +127,7 @@ def build():
     pins = {f['path']: f['sha256'] for f in manifest['files']}
     characters = records(source('logic/characters.csv', pins))
     heroes = records(source('logic/heroes.csv', pins))
+    pets = records(source('logic/pets.csv', pins))
     spells_table = records(source('logic/spells.csv', pins))
     effects = records(source('logic/effects.csv', pins))
 
@@ -150,6 +158,7 @@ def build():
     troops = {}
     roster = {key: (name, characters) for key, name in units('TROOP_SOURCE', 'SPAWN_SOURCE').items()}
     roster.update({key: (name, heroes) for key, name in units('HERO_UNIT_SOURCE').items()})
+    roster.update({key: (name, pets) for key, name in units('PET_UNIT_SOURCE').items()})
     require(len(roster) > 80, 'Too few units read from native-units.ts')
     for key, (name, table) in sorted(roster.items()):
         rows = table.get(name)
@@ -173,7 +182,7 @@ def build():
         target = f'{AUDIO}/{path.split("/")[-1]}'
         files[ROOT / 'public' / target] = blob
         sounds[path] = dict(path=target, bytes=len(blob), sha256=pins[path])
-    sources = {p: pins[p] for p in ['logic/characters.csv', 'logic/heroes.csv', 'logic/spells.csv',
+    sources = {p: pins[p] for p in ['logic/characters.csv', 'logic/heroes.csv', 'logic/pets.csv', 'logic/spells.csv',
                                     'logic/effects.csv', *sounds]}
     catalog = dict(clientVersion='18.400.21', bundle=BUNDLE, baseUrl=BASE, sources=sources,
                    troops=troops, spells=spells, destroyed=DESTROYED,

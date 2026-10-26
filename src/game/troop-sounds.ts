@@ -6,7 +6,7 @@ import { spellRow } from './native-spells';
 import { seconds } from './native-data';
 
 /**
- * The attacking troops' own deploy, attack and death sounds, the spells' cast and pulse sounds
+ * The attacking troops' and pets' own deploy, attack and death sounds, the spells' cast and pulse sounds
  * and the client's Building Destroyed sound (reference/troop-sounds, imported by
  * scripts/import-native-troop-sounds.py). Each effect
  * lists alternative takes; one is chosen per event from the event's key, so a replay picks the

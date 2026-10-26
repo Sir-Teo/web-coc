@@ -37,8 +37,8 @@ const spot = (m: GameModel) => {
 
 describe('troop sounds', () => {
   it('reads every troop’s deploy, attack and death effects from the client', () => {
-    // 78 troops and spawned units, and the four heroes whose rows name a sound.
-    expect(Object.keys(source.troops)).toHaveLength(82);
+    // 78 troops/spawns, four sounding Heroes, and all thirteen pet actors (including the Egg).
+    expect(Object.keys(source.troops)).toHaveLength(95);
     expect(source.troops.swordsman).toEqual({
       name: 'Barbarian',
       deploy: 'Barbarian Deploy',

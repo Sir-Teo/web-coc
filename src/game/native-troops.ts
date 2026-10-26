@@ -1993,6 +1993,7 @@ function stepNativeHealer(
     sourceId: u.id,
     targetId: target.id,
     color: 0x8dff8a,
+    weapon: 'healing',
   });
 }
 
