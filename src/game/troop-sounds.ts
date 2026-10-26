@@ -278,6 +278,7 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
   const cues: SampleCue[] = [];
   const elapsed = battle.elapsed;
   for (const u of battle.units) {
+    if (u.native?.phoenixWaiting) continue;
     // Units another unit, spell or ability summons arrive without a deploy call.
     const arrived = u.summoned ? -Infinity : log.arrived(battle, u);
     if (cueAudible(arrived, elapsed)) {

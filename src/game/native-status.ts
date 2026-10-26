@@ -35,6 +35,8 @@ export interface UnitEffects {
     sources?: Record<number, { until: number; capacity: number }>;
   };
   immortalUntil?: number;
+  /** Version 95: temporary Phoenix life cannot be healed and ends at this deadline. */
+  phoenixRevive?: { until: number; duration: number };
   /** Defensive earthquake casts already felt, for 1/(2n-1) repeated damage. */
   quakeCasts?: number[];
   /** Hero ability attack-interval override (Haste Vial, Stick Horse). */
@@ -84,6 +86,13 @@ export const buildingImmune = (
 ) => (battle.buildingEffects?.[building.id]?.overgrownUntil ?? 0) > at + 1e-9;
 
 export const unitEffects = (unit: Unit): UnitEffects => ((unit.native ??= {}).effects ??= {});
+/** Local life bar for temporary Phoenix revival; ordinary hitpoints do not measure this time. */
+export function phoenixLifeFraction(unit: Unit, at: number) {
+  const life = unit.native?.effects?.phoenixRevive;
+  return life && life.until > at + 1e-9
+    ? Math.max(0, Math.min(1, (life.until - at) / Math.max(1e-9, life.duration)))
+    : undefined;
+}
 export const buildingEffects = (battle: Battle, building: Pick<Building, 'id'>): BuildingEffects =>
   ((battle.buildingEffects ??= {})[building.id] ??= {});
 
@@ -91,6 +100,7 @@ export const buildingEffects = (battle: Battle, building: Pick<Building, 'id'>):
 export const unitHidden = (unit: Unit, at: number) =>
   !!unit.native &&
   (!!unit.native.burrowed ||
+    !!unit.native.untargetable ||
     !!unit.native.recalled ||
     (unit.native.effects?.invisibleUntil ?? 0) > at + 1e-9);
 /** Burrowed movers and units whose client row disables trap triggers pass over armed traps. */
@@ -169,7 +179,7 @@ export function hurtUnit(
   if (!(amount > 0) || unit.hp <= 0) return 0;
   const state = battle.nativeRoster ? unit.native : undefined;
   // Burrowed and recalled units cannot be damaged at all.
-  if (state?.burrowed || state?.recalled) return 0;
+  if (state?.burrowed || state?.recalled || state?.untargetable) return 0;
   const e = state?.effects;
   if (e) {
     if (trap && e.rampage) amount *= Math.max(0, 1 - e.rampage.trapProtection);
@@ -188,8 +198,9 @@ export function hurtUnit(
   unit.hp -= amount;
   return amount;
 }
-export function healUnit(_battle: Battle, unit: Unit, amount: number) {
+export function healUnit(battle: Battle, unit: Unit, amount: number) {
   if (!(amount > 0) || unit.hp <= 0) return 0;
+  if ((unit.native?.effects?.phoenixRevive?.until ?? 0) > battle.elapsed + 1e-9) return 0;
   const before = unit.hp;
   unit.hp = Math.min(unit.maxHp, unit.hp + amount);
   return unit.hp - before;

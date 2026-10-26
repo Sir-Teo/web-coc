@@ -330,3 +330,16 @@ clears heat. Source attacks without projectiles resolve directly, and Inferno Dr
 its 0.6-second recovery after a target dies. Real recordings reach all stages and restart
 against another target through portable files and backward seeks. Versions 93 and earlier
 retain their old behavior. See [source and validation details](NATIVE-HEROES.md#version-94-increasing-troop-damage).
+
+## Version 95: Phoenix Egg and temporary revival
+
+Phoenix now waits behind its visible, untargetable Egg until its own Hero is knocked out
+after automatic ability activation. It hatches once, launches the source 0.5-second
+resurrection projectile and protects the revived Hero for 6/7/8 seconds, matching the bird's
+6.5/7.5/8.5-second protection window from knockout. Temporary life cannot be healed and ends
+at its deadline. Recall pauses the remaining revival time and does not grant another hatch.
+The original Egg, bird and resurrection art, a local countdown bar, and actual Cannon/Recall
+recordings reproduce through portable files and backward seeks. Versions 94 and earlier
+retain their prior Phoenix behavior. Version 95 also excludes every pet, including the Egg,
+from Clone without spending Clone housing; older versions preserve their previous selection.
+See [source and validation details](NATIVE-HEROES.md#version-95-phoenix-egg-and-revival).

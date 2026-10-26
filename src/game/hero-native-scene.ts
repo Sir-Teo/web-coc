@@ -202,7 +202,13 @@ export class HeroNativePresentation {
     if (battle) {
       for (const u of battle.units) {
         const key = KEYS[u.kind] ?? (u.hero ? 'king' : undefined);
-        if (!key || u.ejected || u.native?.recalled || (u.spawnedAt ?? 0) > battle.elapsed)
+        if (
+          !key ||
+          u.ejected ||
+          u.native?.recalled ||
+          u.native?.phoenixWaiting ||
+          (u.spawnedAt ?? 0) > battle.elapsed
+        )
           continue;
         const actor = (actorPool[count++] ??= { id: 0, track: 0, key: '', flying: false });
         actor.id = actor.track = u.id;

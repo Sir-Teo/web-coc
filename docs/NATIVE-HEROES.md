@@ -739,3 +739,56 @@ An independent source rerender matches every checked egg pixel exactly. Hash/bou
 native presentation tests and desktop/phone browser previews verify the original frames,
 ground registration, reduced motion and unchanged battle state. This artwork prepares the
 Phoenix egg and revival controller; it does not itself change pet deployment or combat rules.
+
+## Version 95 Phoenix Egg and revival
+
+The [Phoenix dossier](../reference/official-wiki/heroes-pets/phoenix.md) and pinned client rows
+now drive its waiting, hatch and revival controller. The bird (`SpawnDelay=400000`) waits
+without attacking or drawing; `SpawnPhoenixEggAbility` creates the separate ground Egg.
+The Egg's `PhoenixEggInvulnerableAbility` makes it untargetable and invulnerable. It follows
+its Hero using the Egg's source speed and local leash/range interpretation. The waiting
+pair do not take part in local crowd separation. On hatch, removing the Egg does not count
+as lost troop housing for Dark Crown.
+
+Only its assigned Hero can trigger the hatch, once per raid. The existing automatic Hero
+ability runs first and can prevent the knockout. `PhoenixResurrect.FixedTravelTime=500`
+delays the Hero's return by 0.5 seconds. `PhoenixSpawnAbility` protects the bird for
+6.5/7.5/8.5 seconds at pet levels 1–4/5–9/10. `TroopImmortality` protects the revived Hero
+for 6/7/8 seconds after impact, so both windows end together. This distinguishes the source
+projectile transition from the dossier's combined duration. Existing active abilities
+continue; a newly activated ability cannot restore health during temporary life.
+
+The runtime uses one positive hitpoint to represent an acting, temporarily revived Hero;
+it is not recovered health. Shared healing, legacy Healer projectiles and direct ability
+recovery are blocked during that life. The controller forces knockout at its deadline even
+without damage. A local pale life bar shows remaining time instead of that implementation
+hitpoint, and the Hero card says **Reviving** during flight and **Phoenix revival** afterward.
+These are local readability cues, not a claim to the client's exact HUD styling.
+
+The [Recall reference](../reference/official-wiki/spells-siege-super/recall-spell.md) explicitly
+pauses Phoenix revival timers in the bar. Recall returns the waiting Egg with its Hero, or
+preserves a revived Hero's remaining life and the bird's remaining protection. Redeployment
+restores those timers and their original countdown scale without creating a second Egg.
+The pet keeps its used hatch even if the Hero is later revived again. A pending Phoenix
+resurrection is not selected by a separate Revive Spell.
+
+The Egg itself retains `TriggersTraps=FALSE`; the waiting bird retains its separate air-unit
+`TriggersTraps=TRUE`. Thus the source two-actor model can trip an air mine without exposing
+the Egg to ground traps or damage. The dossier flags the Egg/air-trap wording as ambiguous;
+this implementation follows the distinct source rows. Ordinary defenses cannot select
+either waiting actor. After hatching the bird follows its living Hero's eligible target and
+uses the original `PhoenixProjectile`, including same-layer splash without a duplicate
+primary hit against defending units. It continues fighting when temporary Hero life ends.
+
+The [Clone reference](../reference/official-wiki/spells-siege-super/clone-spell.md) excludes
+all pets. Version 95 repairs that eligibility rule for every pet, including the new Egg:
+an ineligible pet consumes no Clone housing, so nearby eligible troops keep the budget.
+Version 94 and earlier retain their previous Clone selection.
+
+Original Egg and resurrection flight art warm with a carried Phoenix. The bird's deploy
+sound is delayed until hatch. Rendering, reduced motion and paused frames do not mutate the
+controller. `tests/native-phoenix.test.ts` checks source tiers, all six Hero kinds, immunity,
+traps, automatic ability ordering, healing, projectile/splash rules, Recall, historical rules
+and real portable backward seeks. Desktop/phone browser recordings verify native actors,
+the life bar and card states, expiry, Recall-paused time, reduced motion and version 94
+playback. Versions 94 and earlier keep their previous immediate-bird behavior.

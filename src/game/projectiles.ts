@@ -54,6 +54,8 @@ export interface CombatProjectile {
     bounce?: number;
     /** Version 71: frost captured at launch, retained after the shooter leaves. */
     frost?: { seconds: number; percent: number };
+    /** Version 95: a Phoenix Egg revives its own Hero at this packet's fixed-time impact. */
+    phoenixRevive?: { heroId: number; birdId: number; spellLevel: number };
   };
   /** Version 45+ defense shot rules resolved on impact (bounces, hit spells, %-hitpoint bonus). */
   defense?: NativeDefenseShot;
@@ -312,6 +314,7 @@ export function stepProjectiles(
           unit.hp > 0 &&
           (unit.spawnedAt ?? 0) <= p.impact + 1e-9 &&
           !TROOPS[unit.kind].flying &&
+          !((unit.native?.effects?.phoenixRevive?.until ?? 0) > p.impact + 1e-9) &&
           distance2D(unit.x - p.x, unit.y - p.y) <= (p.splash ?? 0)
         )
           unit.hp = Math.min(

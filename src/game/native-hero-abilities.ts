@@ -38,7 +38,8 @@ export function activateHero(
   hero.spawned = {};
   // The ability rescues a hero that has just been knocked out, so healing ignores the zero floor.
   const heal = heroAbilityHeal(hero, townhall);
-  if (heal > 0) unit.hp = Math.min(unit.maxHp, unit.hp + heal);
+  if (heal > 0 && (unit.native?.effects?.phoenixRevive?.until ?? 0) <= at + 1e-9)
+    unit.hp = Math.min(unit.maxHp, unit.hp + heal);
   for (const ability of activeAbilities(hero)) applyAbility(ctx, hero, unit, ability, at);
   ctx.effect({ type: 'trap', x: unit.x, y: unit.y, text: abilityLabel(hero), color: 0xffcc4d });
 }

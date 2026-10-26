@@ -1,4 +1,5 @@
 import { isSiege, superOriginal, superMinimum, superLicence } from '../game/special-troops';
+import { phoenixLifeFraction } from '../game/native-status';
 import { archerTowerPortrait } from './archer-tower-portrait';
 import { positionBattleToast } from './battle-toast';
 import { infernoStats, type InfernoMode } from '../game/inferno-weapon';
@@ -3478,9 +3479,15 @@ export class HUD {
       battle = m.battle!,
       hero = battle.nativeHeroes!.find((h) => h.kind === kind)!;
     const unit = battle.units.find((u) => u.id === hero.unitId);
-    const defeated = !!unit && unit.hp <= 0;
+    const pending = !!hero.phoenix?.pending;
+    const phoenixLife = unit
+      ? phoenixLifeFraction(unit, battle.elapsed)
+      : hero.phoenix?.pausedRevive
+        ? hero.phoenix.pausedRevive / hero.phoenix.reviveDuration!
+        : undefined;
+    const defeated = !!unit && unit.hp <= 0 && !pending;
     const ready = hero.unitId === null;
-    const disabled = defeated || (!ready && !!hero.abilityUsed) || !!m.replay;
+    const disabled = defeated || pending || (!ready && !!hero.abilityUsed) || !!m.replay;
     const name = HERO_SOURCE[hero.kind];
     const short = name
       .replace('Barbarian ', '')
@@ -3491,13 +3498,17 @@ export class HUD {
       .replace('Dragon ', '');
     const label = ready
       ? `Deploy ${short}`
-      : defeated
-        ? 'Defeated'
-        : hero.abilityUsed
-          ? 'Ability used'
-          : 'Activate ability';
+      : pending
+        ? 'Reviving'
+        : defeated
+          ? 'Defeated'
+          : hero.abilityUsed
+            ? phoenixLife === undefined
+              ? 'Ability used'
+              : 'Phoenix revival'
+            : 'Activate ability';
     const selected = m.activeHeroKind === hero.kind;
-    return `<button class="troop-card hero-card ${selected ? 'selected' : ''}" data-hero-state="${hero.kind}:${ready}:${defeated}:${!!hero.abilityUsed}:${selected}" data-action="hero-select:${hero.kind}" aria-label="${name}, ${label}" ${disabled ? 'disabled' : ''}>${hotkey ? '<kbd class="troop-key">H</kbd>' : ''}<img src="${heroPortrait(hero.kind)}" alt=""><span class="troop-level">★ ${hero.level}</span><span class="hero-health"><i style="width:${unit ? pct((unit.hp / unit.maxHp) * 100) : '100%'}"></i></span><span class="troop-name">${label}</span></button>`;
+    return `<button class="troop-card hero-card ${selected ? 'selected' : ''}" data-hero-state="${hero.kind}:${ready}:${defeated}:${!!hero.abilityUsed}:${selected}${pending ? '|reviving' : ''}${phoenixLife === undefined ? '' : '|phoenix'}" data-action="hero-select:${hero.kind}" aria-label="${name}, ${label}" ${disabled ? 'disabled' : ''}>${hotkey ? '<kbd class="troop-key">H</kbd>' : ''}<img src="${heroPortrait(hero.kind)}" alt=""><span class="troop-level">★ ${hero.level}</span><span class="hero-health"><i style="width:${phoenixLife !== undefined ? pct(phoenixLife * 100) : unit ? pct((unit.hp / unit.maxHp) * 100) : '100%'}${phoenixLife === undefined ? '' : ';background:#fff2bf'}"></i></span><span class="troop-name">${label}</span></button>`;
   }
   /** Home village tray: the saved lineup with levels; opens the Hero Hall. */
   private rosterCards() {
@@ -5189,7 +5200,13 @@ export class HUD {
         const hero = m.battle.nativeHeroes.find((h) => h.kind === kind);
         if (!hero) continue;
         const unit = m.battle.units.find((u) => u.id === hero.unitId);
-        const state = `${hero.kind}:${hero.unitId === null}:${!!unit && unit.hp <= 0}:${!!hero.abilityUsed}:${m.activeHeroKind === hero.kind}`;
+        const pending = !!hero.phoenix?.pending;
+        const phoenixLife = unit
+          ? phoenixLifeFraction(unit, m.battle.elapsed)
+          : hero.phoenix?.pausedRevive
+            ? hero.phoenix.pausedRevive / hero.phoenix.reviveDuration!
+            : undefined;
+        const state = `${hero.kind}:${hero.unitId === null}:${!!unit && unit.hp <= 0 && !pending}:${!!hero.abilityUsed}:${m.activeHeroKind === hero.kind}${pending ? '|reviving' : ''}${phoenixLife === undefined ? '' : '|phoenix'}`;
         if (card.dataset.heroState !== state) {
           const focused = document.activeElement === card;
           const order = m.battle.nativeHeroes.map((h) => h.kind);
@@ -5203,7 +5220,7 @@ export class HUD {
         } else {
           const health = card.querySelector<HTMLElement>('.hero-health i');
           if (health && unit) {
-            const width = pct((unit.hp / unit.maxHp) * 100);
+            const width = pct((phoenixLife ?? unit.hp / unit.maxHp) * 100);
             if (health.style.width !== width) health.style.width = width;
           }
         }

@@ -1,4 +1,5 @@
 import { builderHutArt } from './builder-hut-art';
+import { phoenixLifeFraction } from './native-status';
 import { HeroNativePresentation } from './hero-native-scene';
 import { typingTarget } from '../ui/keyboard';
 import {
@@ -2605,6 +2606,8 @@ export class VillageScene extends Phaser.Scene {
     for (const hero of this.model.battle?.nativeHeroes ?? []) {
       wanted.add(`heroes-native/${hero.kind}`);
       if (hero.pet) wanted.add(`heroes-native/${hero.pet.kind}`);
+      if (this.model.battle?.nativePhoenixResurrection && hero.pet?.kind === 'phoenix')
+        wanted.add('heroes-native/phoenixegg');
     }
     for (const defender of this.model.battle?.defenders ?? []) {
       if (defender.kind === 'hero' && defender.hero) wanted.add(`heroes-native/${defender.hero}`);
@@ -2631,14 +2634,16 @@ export class VillageScene extends Phaser.Scene {
     const setupSignature = JSON.stringify(
       setups.map(({ kind, level, items, pet }) => ({ kind, level, items, pet })),
     );
-    const projectiles = this.model.reducedMotion ? '' : `${signature}|${setupSignature}`;
+    const projectiles = this.model.reducedMotion
+      ? ''
+      : `${signature}|${setupSignature}|phoenix:${!!this.model.battle?.nativePhoenixResurrection}`;
     if (projectiles !== this.projectilePrefetchSignature) {
       this.projectilePrefetchSignature = projectiles;
       this.nativeProjectiles?.prefetch(
         projectiles
           ? [
               ...kinds.map((kind) => nativeUnitStats(kind, level(kind)).projectile),
-              ...heroProjectileNames(setups),
+              ...heroProjectileNames(setups, !!this.model.battle?.nativePhoenixResurrection),
             ]
           : [],
       );
@@ -4846,7 +4851,7 @@ export class VillageScene extends Phaser.Scene {
       // Recalled units leave the battle at once; drop their sprite here instead
       // of waiting for a mode change, or a frozen frame is left behind.
       // (The mesh presentations skip/prune them in their own passes below.)
-      if (u.native?.recalled) {
+      if (u.native?.recalled || u.native?.phoenixWaiting) {
         const recalled = this.unitSprites.get(u.id);
         if (recalled) {
           recalled.destroy();
@@ -4855,6 +4860,7 @@ export class VillageScene extends Phaser.Scene {
         continue;
       }
       const art = troopArt(u.kind);
+      const phoenixLife = phoenixLifeFraction(u, battle.elapsed);
       const flying = !!TROOPS[u.kind].flying;
       this.interpolation.projectInto(p, u.x, u.y);
       let im = this.unitSprites.get(u.id);
@@ -4947,7 +4953,14 @@ export class VillageScene extends Phaser.Scene {
             0.28,
           );
         if (u.hp < u.maxHp)
-          this.bar(p.x, p.y - lift - width, 22, u.hp / u.maxHp, 0x8dea68, this.unitBars);
+          this.bar(
+            p.x,
+            p.y - lift - width,
+            22,
+            phoenixLife ?? u.hp / u.maxHp,
+            phoenixLife === undefined ? 0x8dea68 : 0xfff2bf,
+            this.unitBars,
+          );
         continue;
       }
       const defenderTarget =
@@ -5105,8 +5118,8 @@ export class VillageScene extends Phaser.Scene {
           p.x,
           p.y - lift - (u.hero ? KING_ART.healthHeight * bodyScale : im.displayHeight),
           22,
-          u.hp / u.maxHp,
-          0x8dea68,
+          phoenixLife ?? u.hp / u.maxHp,
+          phoenixLife === undefined ? 0x8dea68 : 0xfff2bf,
           this.unitBars,
         );
     }

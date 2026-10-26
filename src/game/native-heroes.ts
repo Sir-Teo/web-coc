@@ -31,6 +31,15 @@ export interface HeroSetup {
   pet?: { kind: PetKind; level: number };
 }
 export interface NativeBattleHero extends HeroSetup {
+  /** Version 95: one Phoenix hatch per raid, including Recall-paused temporary revival. */
+  phoenix?: {
+    used: boolean;
+    eggId: number | null;
+    pending?: true;
+    pausedRevive?: number;
+    pausedProtection?: number;
+    reviveDuration?: number;
+  };
   /** Deployed unit, or null while the hero is still in the bar. */
   unitId: number | null;
   petId?: number | null;

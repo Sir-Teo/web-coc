@@ -1,6 +1,16 @@
 import { expect, it } from 'vitest';
 import { heroProjectileNames } from '../src/game/hero-projectile-prefetch';
 
+it('warms the Phoenix Egg resurrection packet only with the versioned controller', () => {
+  const heroes = [
+    { kind: 'king' as const, level: 1, items: [], pet: { kind: 'phoenix' as const, level: 10 } },
+  ];
+  expect(heroProjectileNames(heroes)).not.toContain('PhoenixResurrect');
+  expect(heroProjectileNames(heroes, true)).toEqual(
+    expect.arrayContaining(['PhoenixProjectile', 'PhoenixResurrect']),
+  );
+});
+
 it('warms Frozen Arrow and every Monolith Arrow stage alongside the Queen base shot', () => {
   expect(
     new Set(

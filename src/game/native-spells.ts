@@ -20,7 +20,7 @@ import { freezeDefendingBuilders } from './defending-builder-freeze';
 import { recordPoisonArea } from './poison-avoidance';
 import { poisonDefendingBuilders } from './defending-builder-poison';
 import { defendingBuilderLightning } from './defending-builder-lightning';
-import { unitKindForName, isHeroUnitKind, nativeUnitStats } from './native-units';
+import { unitKindForName, isHeroUnitKind, isPetUnitKind, nativeUnitStats } from './native-units';
 import { tornadoPulse } from './native-traps';
 import { SPELL_SPEED_SCALE } from './spell-progression';
 import type { Battle, Building, FX, Unit } from './model';
@@ -161,7 +161,11 @@ export const footprintDistance = (x: number, y: number, b: Building) => {
 };
 const isTotem = (u: Unit) => u.kind === 'totem';
 const liveAttacker = (u: Unit, at: number) =>
-  u.hp > 0 && !u.ejected && !u.native?.recalled && (u.spawnedAt ?? 0) <= at + 1e-9;
+  u.hp > 0 &&
+  !u.ejected &&
+  !u.native?.recalled &&
+  !u.native?.phoenixWaiting &&
+  (u.spawnedAt ?? 0) <= at + 1e-9;
 /** Stationary units (Furnace, Totem) and spawned units never return to the deployment bar. */
 const deployable = (u: Unit) => !!u.hero || u.level === undefined;
 const housing = (u: Unit) => (u.hero ? 25 : TROOPS[u.kind].space);
@@ -635,6 +639,7 @@ function cloneUnits(
       (u) =>
         liveAttacker(u, at) &&
         !u.hero &&
+        !(ctx.battle.nativePetCloneImmunity && isPetUnitKind(u.kind)) &&
         !isTotem(u) &&
         !u.native?.siege &&
         distance2D(u.x - cast.x, u.y - cast.y) <= radius + 1e-9,
@@ -693,7 +698,12 @@ function reviveHero(ctx: NativeSpellContext, row: NativeRow, x: number, y: numbe
   const reach = tiles(row, 'TargetingRadius');
   const fallen = ctx.battle.units
     .filter(
-      (u) => u.hero && u.hp <= 0 && !u.ejected && distance2D(u.x - x, u.y - y) <= reach + 1e-9,
+      (u) =>
+        u.hero &&
+        u.hp <= 0 &&
+        !u.ejected &&
+        !ctx.battle.nativeHeroes?.some((h) => h.unitId === u.id && h.phoenix?.pending) &&
+        distance2D(u.x - x, u.y - y) <= reach + 1e-9,
     )
     .sort((a, b) => distance2D(a.x - x, a.y - y) - distance2D(b.x - x, b.y - y) || a.id - b.id)[0];
   if (!fallen) return;

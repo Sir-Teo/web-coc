@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 94;
+export const REPLAY_VERSION = 95;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -122,7 +122,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 91 follows the living Hero's eligible target with Diggy.
  * Version 92 conceals building and defending-unit targets with Invisibility.
  * Version 93 applies source Rage coverage, movement, healing and independent source expiries.
- * Version 94 applies per-target native troop damage stages to buildings and defenders. */
+ * Version 94 applies per-target native troop damage stages to buildings and defenders.
+ * Version 95 runs Phoenix's waiting Egg, hatch and temporary Hero revival, and excludes pets from Clone. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -184,6 +185,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 91 ||
   version === 92 ||
   version === 93 ||
+  version === 94 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -332,6 +334,8 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 95 ? { nativePhoenixResurrection: true as const } : {}),
+    ...(version >= 95 ? { nativePetCloneImmunity: true as const } : {}),
     ...(version >= 94 ? { nativeTroopDamageRamp: true as const } : {}),
     ...(version >= 93 ? { nativeRageRules: true as const } : {}),
     ...(version >= 92 ? { nativeInvisibilityTargets: true as const } : {}),

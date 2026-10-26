@@ -505,6 +505,7 @@ import {
   type NativeBattleHero,
 } from './native-heroes';
 import { activateHero, refreshHeroPassives, stepHeroAbilities } from './native-hero-abilities';
+import { initializePhoenix, stepPhoenix, hatchPhoenix, recallPhoenix } from './native-phoenix';
 
 /** What a Book finishes: a building's running upgrade, the research, a hero's or the pets'. */
 export type BookTarget =
@@ -859,6 +860,10 @@ export interface Battle {
   nativeRageRules?: true;
   /** Version 94: per-target native troop damage stages against buildings and defenders. */
   nativeTroopDamageRamp?: true;
+  /** Version 95: Phoenix waits as an Egg and grants its Hero one temporary revival. */
+  nativePhoenixResurrection?: true;
+  /** Version 95: pets, including the waiting Egg, cannot be duplicated by Clone. */
+  nativePetCloneImmunity?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */
@@ -5084,6 +5089,16 @@ export class GameModel {
         spawnedAt: b.elapsed,
         native: initialNativeState(petUnitKind(hero.pet.kind), hero.pet.level),
       });
+      if (b.nativePhoenixResurrection && hero.pet.kind === 'phoenix') {
+        const native = this.nativeContext(b, this.sharedWalls(b));
+        initializePhoenix(
+          native,
+          hero,
+          b.units.find((u) => u.id === hero.unitId)!,
+          b.units.at(-1)!,
+          (k, level, px, py, at, owner) => spawnNativeUnit(native, k, level, px, py, at, owner),
+        );
+      }
     }
     hero.deployed = true;
     if (b.nativeHeroPassives) {
@@ -5871,6 +5886,7 @@ export class GameModel {
     u.attacking = false;
     const roster = b.nativeHeroes?.find((hero) => hero.unitId === u.id);
     if (roster) {
+      recallPhoenix(b, roster, u);
       roster.unitId = null;
       roster.recalledHp = u.hp;
       const extra = u.native?.effects?.extraDamage;
@@ -5953,6 +5969,7 @@ export class GameModel {
     // One wall index per tick, shared by the native context and the legacy loop below.
     const shared = this.sharedWalls(b);
     const native = b.nativeRoster ? this.nativeContext(b, shared) : null;
+    if (native) stepPhoenix(native, dt);
     // Shared per-tick A* budget, spent by native units first and the legacy
     // loop after. Only enforced for large battles so small-battle determinism
     // (historical hashes) is unchanged.
@@ -6614,6 +6631,7 @@ export class GameModel {
         // A knocked-out hero fires its ability automatically (SimulatePlayerInputOnDeath).
         if (unit.hp <= 0 && !unit.spent && !hero.abilityUsed)
           this.activateNativeHeroAbility(hero.kind, true);
+        hatchPhoenix(native, hero, unit);
         // Waves stop when the hero falls; the automatic activation above still fires once.
         if (unit.hp > 0)
           stepHeroAbilities(
@@ -7963,14 +7981,16 @@ export function separateUnits(
 ) {
   // Fewer than two living units cannot push each other; skip the collision rebuild.
   let living = 0;
-  for (const u of units) if (u.hp > 0 && ++living > 1) break;
+  for (const u of units)
+    if (u.hp > 0 && !u.native?.phoenixWaiting && !u.native?.phoenixEgg && ++living > 1) break;
   if (living < 2) return;
   // Version-44 native campaign crowds use the same sub-tile building collision as routes.
   // Whole-tile battles read the route grid for the list: blocked or walled is solid.
   const lanes = subtiles ? subtileSolid(buildings) : undefined;
   const tiles = lanes ? undefined : tileGridFor(buildings, []);
   const alive: Unit[] = [];
-  for (const u of units) if (u.hp > 0) alive.push(u);
+  for (const u of units)
+    if (u.hp > 0 && !u.native?.phoenixWaiting && !u.native?.phoenixEgg) alive.push(u);
   const count = alive.length;
   if (separationNext.length < count) {
     separationNext = new Int32Array(count * 2);

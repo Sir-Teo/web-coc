@@ -40,6 +40,7 @@ import {
   type UnitEffects,
 } from './native-status';
 import { heroOf, heroStatsFor, petAnchor } from './native-heroes';
+import { resolvePhoenixRevive } from './native-phoenix';
 import {
   heroAttackInterval,
   heroCombatOverrides,
@@ -62,6 +63,10 @@ import { breachTarget, distanceTo, findPath, type Battle, type Building, type Un
 
 /** Version 45+ native roster behavior state, created lazily on the unit. */
 export interface NativeUnitState {
+  /** Version 95: the source waiting bird and its separately drawn Egg. */
+  phoenixWaiting?: true;
+  phoenixEgg?: true;
+  untargetable?: true;
   effects?: UnitEffects;
   /** Hitpoints actually lost, for damage-triggered spawns. */
   damageTaken?: number;
@@ -393,9 +398,13 @@ function hash(seed: number, index: number) {
   return ((v ^ (v >>> 16)) >>> 0) / 0x100000000;
 }
 
-/** Diggy borrows only its own living Hero's eligible target; other pets keep their rules. */
-function followDiggyMaster(ctx: NativeTroopContext, unit: Unit, s: NativeUnitStats) {
-  if (!(ctx.battle.nativeDiggyMasterTarget && unit.kind === 'diggy' && s.preferMasterTarget))
+/** Source master-target pets borrow only their own living Hero's eligible target. */
+function followPetMaster(ctx: NativeTroopContext, unit: Unit, s: NativeUnitStats) {
+  if (!(
+    ((ctx.battle.nativeDiggyMasterTarget && unit.kind === 'diggy') ||
+      (ctx.battle.nativePhoenixResurrection && unit.kind === 'phoenix')) &&
+    s.preferMasterTarget
+  ))
     return false;
   const hero = petAnchor(ctx.battle, unit)?.hero;
   if (!hero || hero.ejected || hero.native?.recalled) return false;
@@ -404,8 +413,10 @@ function followDiggyMaster(ctx: NativeTroopContext, unit: Unit, s: NativeUnitSta
     unit.path = [];
     unit.pathAt = 0;
     unit.native!.targetAt = at;
-    unit.native!.surfaced = false;
-    unit.native!.burrowed = true;
+    if (s.underground) {
+      unit.native!.surfaced = false;
+      unit.native!.burrowed = true;
+    }
   };
   const wall = ctx.buildingsById.get(hero.native?.wallTarget ?? -1);
   const blocker =
@@ -681,6 +692,10 @@ export function stepNativeUnit(
   }
   stepLifecycle(ctx, u, s, at);
   if (u.hp <= 0) return;
+  if (state.phoenixWaiting || state.phoenixEgg) {
+    u.attacking = false;
+    return;
+  }
   if (unitFrozen(u, at)) {
     u.attacking = false;
     return;
@@ -735,6 +750,7 @@ export function stepNativeUnit(
     : ((battle.nativeHeadhunterCards && u.kind === 'headhunter') ||
           poisonLizard ||
           chargedHero ||
+          (battle.nativePhoenixResurrection && u.kind === 'phoenix') ||
           nativeHeroAttack) &&
         s.projectile
       ? {
@@ -745,7 +761,7 @@ export function stepNativeUnit(
       : undefined;
   const readyToAttack = u.cooldown <= 0;
   const undergroundChase = battle.nativeUndergroundDefenderChase && s.underground;
-  const masterBuilding = followDiggyMaster(ctx, u, s);
+  const masterBuilding = followPetMaster(ctx, u, s);
   if (
     !masterBuilding &&
     stepAttackerVsDefenders(
@@ -1356,12 +1372,14 @@ export function stepNativeChains(ctx: NativeTroopContext) {
 
 /** Native projectile arrival: damage, splash, bounces and on-hit spells. */
 export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile) {
+  if (resolvePhoenixRevive(ctx, p)) return;
   const battle = ctx.battle;
   const source = p.native!;
   const s = nativeUnitStats(source.kind, source.level);
   const rocketSplash = !!(
     battle.nativeChampionRocketSpears && source.name === 'RocketSpearProjectile'
   );
+  const phoenixSplash = !!(battle.nativePhoenixResurrection && source.kind === 'phoenix');
   // Native defender-targeted shots retain their captured direct hit on either defender layer.
   if (p.targetDefender) {
     const defender = battle.defenders?.find((d) => d.id === p.targetId);
@@ -1371,7 +1389,9 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
         battle,
         defender,
         p.damage,
-        rocketSplash || (battle.nativeHeroDefenderAttacks && isHeroUnitKind(source.kind))
+        rocketSplash ||
+          phoenixSplash ||
+          (battle.nativeHeroDefenderAttacks && isHeroUnitKind(source.kind))
           ? p.impact
           : undefined,
       );
@@ -1395,7 +1415,7 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
       );
     else applyFrost(battle, s, target);
   }
-  if (p.splash)
+  if (p.splash && !(phoenixSplash && p.toAir))
     for (const b of battle.buildings)
       if (b.id !== p.targetId && b.hp > 0 && !isTrap(b.kind) && distanceTo(p, b) <= p.splash)
         ctx.damageBuilding(b, p.damage * damageMultiplier(s, b), p.impact);
@@ -1405,9 +1425,9 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
       p,
       p.damage,
       p.splash,
-      rocketSplash && p.toAir ? 'air' : 'ground',
-      rocketSplash && p.targetDefender ? p.targetId : undefined,
-      rocketSplash ? p.impact : undefined,
+      (rocketSplash || phoenixSplash) && p.toAir ? 'air' : 'ground',
+      (rocketSplash || phoenixSplash) && p.targetDefender ? p.targetId : undefined,
+      rocketSplash || phoenixSplash ? p.impact : undefined,
     );
   const projectile = nativeRow('projectiles', source.name);
   const hitSpell = text(projectile, 'HitSpell');
@@ -1954,6 +1974,7 @@ function stepNativeHealer(
 export function targetableUnit(battle: Battle, u: Unit) {
   if (u.hp <= 0) return false;
   if (!battle.nativeRoster || !u.native) return true;
+  if (u.native.untargetable) return false;
   if ((u.native.effects?.invisibleUntil ?? 0) > battle.elapsed + 1e-9) return false;
   if (nativeBehavior(battle, u.kind) && statsFor(battle, u).underground && !u.native.surfaced)
     return false;
