@@ -42,6 +42,8 @@ export interface CombatProjectile {
   impact: number;
   damage: number;
   splash?: number;
+  /** Version 98: the casting Healer's source Hero healing ratio, captured before flight. */
+  healingHeroScale?: number;
   /** Native Cannon/Archer Tower/X-Bow level or Wizard Tower projectile tier; X-Bow ammunition sequence. */
   variant?: number;
   sequence?: number;
@@ -324,7 +326,7 @@ export function stepProjectiles(
             unit.hp +
               p.damage *
                 healerContribution(battle, unit, p.sourceId) *
-                (unit.hero ? HEALER_HERO_SCALE : 1),
+                (unit.hero ? (p.healingHeroScale ?? HEALER_HERO_SCALE) : 1),
           );
     } else if (p.targetDefender) {
       if (p.splash) {

@@ -4,6 +4,7 @@ import type { Battle, Unit } from './model';
 import { launchProjectile } from './projectiles';
 import type { FX } from './model';
 import { healingEligible } from './friendly-unit';
+import { nativeUnitStats } from './native-units';
 
 /** Supercell's HEAL_STACK_PERCENT and Healer records; see docs/LATE-TROOPS.md. */
 export const HEALER_STACK = [1, 1, 0.9, 0.9, 0.7, 0.4, 0.1, 0] as const;
@@ -117,6 +118,14 @@ export function stepHealer(
       fromAir: true,
       damage: stats.heal ?? 0,
       splash: HEALER_RADIUS,
+      ...(battle.nativeHealerHeroScaling
+        ? {
+            healingHeroScale: nativeUnitStats(
+              'healer',
+              healer.level ?? battle.troopLevels?.healer ?? 1,
+            ).heroMultiplier,
+          }
+        : {}),
     },
     emit,
   );

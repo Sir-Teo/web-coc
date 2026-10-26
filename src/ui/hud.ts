@@ -1,5 +1,6 @@
 import { isSiege, superOriginal, superMinimum, superLicence } from '../game/special-troops';
 import { phoenixLifeFraction } from '../game/native-status';
+import { nativeUnitStats } from '../game/native-units';
 import { archerTowerPortrait } from './archer-tower-portrait';
 import { positionBattleToast } from './battle-toast';
 import { infernoStats, type InfernoMode } from '../game/inferno-weapon';
@@ -4450,8 +4451,15 @@ export class HUD {
   private troopInfo() {
     const kind = this.inspectedTroop,
       d = this.model.troopStats(kind);
+    const healingStats = d.healer ? nativeUnitStats(kind, this.model.troopLevel(kind)) : undefined;
+    const heroHealingScale =
+      kind === 'healer' && this.model.battle && !this.model.battle.nativeHealerHeroScaling
+        ? 0.55
+        : (healingStats?.heroMultiplier ?? 1);
     const target = d.healer
-      ? 'Friendly ground troops'
+      ? healingStats?.airTargets
+        ? 'Friendly ground and air troops'
+        : 'Friendly ground troops'
       : d.wallBreaker
         ? 'Walls (40× damage)'
         : d.prefersResources
@@ -4460,7 +4468,9 @@ export class HUD {
             ? 'Defenses'
             : 'Any building';
     const tactic = d.healer
-      ? 'Deploy behind a ground army. Healing pulses land where the ally was when cast, restoring nearby ground troops. Heroes receive 55% healing. Additional Healers have diminishing effectiveness; eight or more add no further healing to the same group.'
+      ? kind === 'druid'
+        ? `Heals friendly ground and air troops with bouncing pulses, then transforms into a Bear. Heroes receive ${Math.round(heroHealingScale * 100)}% healing.`
+        : `Deploy behind a ground army. Healing pulses land where the ally was when cast, restoring nearby ground troops. Heroes receive ${Math.round(heroHealingScale * 100)}% healing. Additional Healers have diminishing effectiveness; eight or more add no further healing to the same group.`
       : kind === 'dragon'
         ? 'Fly over walls and burn clustered buildings. Dragons have no favorite target, so clear outer buildings to guide them toward Air Defenses.'
         : kind === 'pekka'
@@ -4490,7 +4500,8 @@ export class HUD {
       [d.healer ? 'Healing interval' : 'Attack interval', `${d.rate}s`],
     ];
     if (d.splash) rows.push([d.healer ? 'Healing radius' : 'Attack splash', `${d.splash} tiles`]);
-    if (d.healer) rows.push(['Hero healing per second', damageNumber((d.heal! / d.rate) * 0.55)]);
+    if (d.healer)
+      rows.push(['Hero healing per second', damageNumber((d.heal! / d.rate) * heroHealingScale)]);
     if (d.deathDamage) {
       rows.push(['Damage on destruction', damageNumber(d.deathDamage)]);
       rows.push(['Death blast radius', `${d.deathRadius} tiles`]);

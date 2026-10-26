@@ -362,3 +362,12 @@ stronger Rage. Recall does not trigger it, and later Revive/Recall/redeployment 
 grant another use. Real Cannon knockouts and boost expiry reproduce through portable
 files and backward seeks. Versions 96 and earlier preserve their original Yak behavior.
 See [source and validation details](NATIVE-HEROES.md#version-97-mighty-yak-hero-death-rage).
+
+## Version 98: level-dependent Healer healing on Heroes
+
+Healer pulses capture their caster's source Hero healing ratio: 55% at levels 1–4, rising
+to 108% at level 11. The captured value survives caster death and combines once with outgoing
+healing and stacking. Ordinary nearby troops retain full healing. Real Cannon wounds and
+Hero recovery reproduce through portable files and backward seeks. Versions 97 and earlier
+keep the fixed 55% and their original packet shape. See
+[source and validation details](LATE-TROOPS.md#version-98-source-hero-healing-ratios).

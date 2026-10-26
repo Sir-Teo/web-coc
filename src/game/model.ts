@@ -873,6 +873,8 @@ export interface Battle {
   nativeFriendlyEligibility?: true;
   /** Version 97: Mighty Yak uses its source BoostSelf once when its own Hero falls. */
   nativeYakMasterRage?: true;
+  /** Version 98: Healer pulses capture their source level's Hero healing ratio. */
+  nativeHealerHeroScaling?: true;
   /** Recent detached troop stage effects; presentation only, retired deterministically. */
   infernoDragonTransitions?: InfernoDragonTransition[];
   /** Version 53: passive hero auras and Royal Rampage. */
