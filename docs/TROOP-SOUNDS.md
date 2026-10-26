@@ -17,7 +17,7 @@ Attacking troops and pets play the client's own sounds when they are deployed, w
 
 It also covers the 18 spells this game casts, from `logic/spells.csv`. For each spell it records the `PreDeployEffect` (the bottle falling), the `DeployEffect` and `DeployEffect2` (it landing), the `ChargingEffect` and the `HitEffect` (each pulse). Some of these change with level; Freeze, for example, has one deploy effect per level.
 
-The importer copies 340 Ogg files (4.85 MiB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`. An already shipped sample can supply a missing local source only when its SHA-256 matches that same source pin. Edited outputs cannot supply trusted source bytes; corrupt authoritative cache entries still fail validation.
+The importer copies 341 Ogg files (4.87 MiB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`. An already shipped sample can supply a missing local source only when its SHA-256 matches that same source pin. Edited outputs cannot supply trusted source bytes; corrupt authoritative cache entries still fail validation.
 
 | Troop     | Deploy                                                     | Attack                                                                                          | Death                                           |
 | --------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------- |
@@ -201,3 +201,11 @@ Version 121 retains Recall's original cast cues after its single live pulse ends
 The bottle remains 80%/0.95 pitch; the landing belongs to `deploy2` at 100%/1.0 pitch.
 Cold retained-history views warm the existing samples, with no new catalog entries. See
 [Recall cast effects](NATIVE-HEROES.md#version-121-original-recall-cast-effects).
+
+Version 122 adds the original Recall return cue `RecallRedeployAuraTop` and its
+13,999-byte `recall_spell_back_01.ogg` sample. Captured primary redeployment events
+produce one stable cue each, at 100% volume and 1.0 pitch; disappearance remains silent.
+The loader warms this separate effect only when the new transition capability needs
+it, leaving version 121's cast sound list unchanged. The catalog contains 341 files
+and 358 effects. See
+[unit Recall transitions](NATIVE-HEROES.md#version-122-original-unit-recall-transitions).

@@ -516,6 +516,7 @@ import {
 } from './native-heroes';
 import { activateHero, refreshHeroPassives, stepHeroAbilities } from './native-hero-abilities';
 import { initializePhoenix, stepPhoenix, hatchPhoenix, recallPhoenix } from './native-phoenix';
+import { recordRecallEvent, type RecallEvent } from './native-recall';
 
 /** What a Book finishes: a building's running upgrade, the research, a hero's or the pets'. */
 export type BookTarget =
@@ -920,6 +921,9 @@ export interface Battle {
   nativeSpellArt?: readonly string[];
   /** Version 118: static spell particle exports scale their animated descendants. */
   nativeSpellEffectTimelines?: true;
+  /** Version 122: primary Recall transitions retain their actual positions for source presentation. */
+  nativeRecallPresentation?: true;
+  nativeRecallEvents?: RecallEvent[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */
   nativeSpellPulsePresentation?: true;
   nativeSpellCastHistory?: NativeSpellCast[];
@@ -1090,6 +1094,7 @@ export type FX = {
     | 'mortar-cancel'
     | 'collect'
     | 'spawn'
+    | 'recall-unit'
     | 'upgrade'
     | 'spell'
     | 'blast'
@@ -5187,7 +5192,16 @@ export class GameModel {
         b.units.find((u) => u.id === hero.unitId)!,
       );
     }
-    this.onEffect({ type: 'spawn', x, y });
+    this.onEffect(
+      recalled !== undefined &&
+        recordRecallEvent(
+          b,
+          b.units.find((u) => u.id === hero.unitId)!,
+          'redeploy',
+        )
+        ? { type: 'recall-unit', sourceId: hero.unitId, text: 'redeploy', x, y }
+        : { type: 'spawn', x, y },
+    );
     this.guidePlaced({ hero: kind });
     this.deployChanged(starting);
     return true;
@@ -5246,7 +5260,11 @@ export class GameModel {
       pathAt: 0,
       attacking: false,
     });
-    this.onEffect({ type: 'spawn', x, y });
+    this.onEffect(
+      recalled !== undefined && recordRecallEvent(b, b.units.at(-1)!, 'redeploy')
+        ? { type: 'recall-unit', sourceId: h.unitId, text: 'redeploy', x, y }
+        : { type: 'spawn', x, y },
+    );
     this.deployChanged(starting);
     return true;
   }
@@ -5751,7 +5769,11 @@ export class GameModel {
       attacking: false,
       ...(nativeBehavior(b, k) ? { native: initialNativeState(k, this.troopLevel(k)) } : {}),
     });
-    this.onEffect({ type: 'spawn', x, y });
+    this.onEffect(
+      recalled !== undefined && recordRecallEvent(b, b.units.at(-1)!, 'redeploy')
+        ? { type: 'recall-unit', sourceId: b.units.at(-1)!.id, text: 'redeploy', x, y }
+        : { type: 'spawn', x, y },
+    );
     this.guidePlaced({ troop: k });
     this.deployChanged(starting);
     return true;
@@ -5953,7 +5975,7 @@ export class GameModel {
       nextId: () => this.state.nextId++,
       troopLevel: (kind) => this.troopLevel(kind),
       passableWalls: new Set(),
-      recall: (u) => this.recallUnit(b, u),
+      recall: (u, at) => this.recallUnit(b, u, at),
     };
   }
   /** Troops that would divert onto a newly revealed Hidden Tesla. */
@@ -5964,7 +5986,8 @@ export class GameModel {
     return s.preferredClass === 'Defense' || !!s.preferredBuilding;
   }
   /** Recall Spell: the unit leaves the field and its card returns with the same health. */
-  private recallUnit(b: Battle, u: Unit) {
+  private recallUnit(b: Battle, u: Unit, at = b.elapsed) {
+    const original = recordRecallEvent(b, u, 'disappear', at);
     (u.native ??= {}).recalled = true;
     u.attacking = false;
     const roster = b.nativeHeroes?.find((hero) => hero.unitId === u.id);
@@ -5995,7 +6018,11 @@ export class GameModel {
       if (!b.practice && !b.fixedArmy) this.state.army[kind]++;
       ((b.recalledHp ??= {})[kind] ??= []).push(u.hp);
     }
-    this.onEffect({ type: 'spawn', x: u.x, y: u.y });
+    this.onEffect(
+      original
+        ? { type: 'recall-unit', sourceId: u.id, text: 'disappear', x: u.x, y: u.y }
+        : { type: 'spawn', x: u.x, y: u.y },
+    );
   }
   private beginFight() {
     const b = this.battle!;

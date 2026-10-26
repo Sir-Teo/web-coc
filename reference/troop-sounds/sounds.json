@@ -245,6 +245,7 @@
     "sfx/pet_phoenix_deploy_01.ogg": "16467a78f0684335e2e75b3adfbc3224e2cd7fa5756f629450f0ca378e19f35d",
     "sfx/pet_phoenix_die_01.ogg": "356a4752c4136850c7f653d69a80cfc338028c52cbbed5232a1b6877fc11f1e0",
     "sfx/recall_spell_01.ogg": "2bc4bf96e8acd77461b3d9bfd91357bdd1cd5018347e98542386e537a34ec418",
+    "sfx/recall_spell_back_01.ogg": "f33ba969015987619d4a052c3678337b8e9d5595ca1e05f3bd96bcff60bc33ad",
     "sfx/rg_atk_hit_01.ogg": "830adf5ff581cf5008e932c5b4bac03a5f8b6bc5ef84bf8c90fc3be97f0df528",
     "sfx/rock_troll_dep_02.ogg": "4a4b05793ada952085cdb757d09cee4c351320d18d41625bb5e36f07292385d9",
     "sfx/root_rider_atk_01.ogg": "e3dc599c922f28d2a49b1e7af35c3b5c9dc3e1f9439a4352d92d204ce86ce391",
@@ -3383,6 +3384,15 @@
         "delay": 0.0
       }
     ],
+    "RecallRedeployAuraTop": [
+      {
+        "sound": "sfx/recall_spell_back_01.ogg",
+        "volume": 1.0,
+        "minPitch": 1.0,
+        "maxPitch": 1.0,
+        "delay": 0.0
+      }
+    ],
     "Recall_Predeploy": [
       {
         "sound": "sfx/vial_fall_02.ogg",
@@ -6292,6 +6302,11 @@
       "path": "assets/audio/troops-native/recall_spell_01.ogg",
       "bytes": 19136,
       "sha256": "2bc4bf96e8acd77461b3d9bfd91357bdd1cd5018347e98542386e537a34ec418"
+    },
+    "sfx/recall_spell_back_01.ogg": {
+      "path": "assets/audio/troops-native/recall_spell_back_01.ogg",
+      "bytes": 13999,
+      "sha256": "f33ba969015987619d4a052c3678337b8e9d5595ca1e05f3bd96bcff60bc33ad"
     },
     "sfx/rg_atk_hit_01.ogg": {
       "path": "assets/audio/troops-native/rg_atk_hit_01.ogg",

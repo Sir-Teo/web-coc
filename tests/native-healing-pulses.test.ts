@@ -109,6 +109,8 @@ it.each([1, 12])(
           expected = JSON.parse(JSON.stringify(snapshot.battle)) as Battle;
         if (version === 118) {
           delete expected.nativeSpellPulsePresentation;
+          delete expected.nativeRecallPresentation;
+          delete expected.nativeRecallEvents;
           expected.nativeSpellArt = ['Jump', 'Rage', 'Haste', 'Healing', 'Poison'];
         }
         expect(actual).toEqual(expected);

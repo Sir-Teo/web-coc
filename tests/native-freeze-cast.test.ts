@@ -116,6 +116,8 @@ it('cast capture leaves physical spell behavior and frozen status deadlines unch
   delete now.nativeFreezeCasts;
   delete now.nativeFreezeCastPresentation;
   delete now.nativeSpellArt;
+  delete now.nativeRecallPresentation;
+  delete now.nativeRecallEvents;
   delete now.nativeSpellPulsePresentation;
   delete now.nativeSpellEffectTimelines;
   expect(now).toEqual(JSON.parse(JSON.stringify(b.model.battle)));

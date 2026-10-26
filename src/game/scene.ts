@@ -1,5 +1,7 @@
 import { FIELD_SPELL_PROFILES } from './field-spell-effects';
 import { NativeSpellCastPresentation } from './native-spell-cast-scene';
+import { NativeRecallPresentation } from './native-recall-scene';
+import { needsRecallPresentation } from './native-recall';
 import { JumpSpellPresentation } from './jump-spell-scene';
 import { FreezeSpellPresentation } from './freeze-spell-scene';
 import { OvergrowthPresentation } from './overgrowth-scene';
@@ -684,6 +686,7 @@ export class VillageScene extends Phaser.Scene {
   private freezeSpellPresentation!: FreezeSpellPresentation;
   private jumpSpellPresentation!: JumpSpellPresentation;
   private fieldSpellPresentations = new Map<string, NativeSpellCastPresentation>();
+  private recallPresentation!: NativeRecallPresentation;
   private nativeProjectiles!: NativeProjectilePresentation;
   private nativeDefenses!: NativeDefensePresentation;
   private darkDrillPresentation!: DarkDrillPresentation;
@@ -957,6 +960,8 @@ export class VillageScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
       this.decorationNativePresentation.destroy(),
     );
+    this.recallPresentation = new NativeRecallPresentation(this, this.nativeEffectPacks);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.recallPresentation.destroy());
     for (const [name, config] of Object.entries(FIELD_SPELL_PROFILES))
       this.fieldSpellPresentations.set(
         name,
@@ -2700,6 +2705,7 @@ export class VillageScene extends Phaser.Scene {
     this.freezeSpellPresentation?.prefetch(this.model.battle);
     this.jumpSpellPresentation?.prefetch(this.model.battle);
     for (const view of this.fieldSpellPresentations.values()) view.prefetch(this.model.battle);
+    this.recallPresentation?.prefetch(this.model.battle);
     const setups = this.model.reducedMotion
       ? []
       : [...this.model.heroSetups(), ...(this.model.battle?.nativeHeroes ?? [])];
@@ -2792,6 +2798,7 @@ export class VillageScene extends Phaser.Scene {
       this.freezeSpellPresentation.clear();
       this.jumpSpellPresentation.clear();
       for (const view of this.fieldSpellPresentations.values()) view.clear();
+      this.recallPresentation?.clear();
       this.nativeDefenses.clear();
       this.villageArcherTowers.clear();
       this.archerTowerProjectiles.clear();
@@ -4233,6 +4240,7 @@ export class VillageScene extends Phaser.Scene {
   private troopSoundOvergrowthCasts = -1;
   private troopSoundFreezeCasts = -1;
   private troopSoundSpellHistory = -1;
+  private troopSoundRecallHistory = -1;
   /**
    * Fetches the sounds of the army and its spells, of every unit kind on the field and of every
    * spell cast, once each.
@@ -4242,7 +4250,8 @@ export class VillageScene extends Phaser.Scene {
       roots = battle.nativeOvergrowthRoots?.length ?? 0,
       overgrowthCasts = battle.nativeOvergrowthCasts?.length ?? 0,
       freezeCasts = battle.nativeFreezeCasts?.length ?? 0,
-      history = battle.nativeSpellCastHistory?.length ?? 0;
+      history = battle.nativeSpellCastHistory?.length ?? 0,
+      recallHistory = battle.nativeRecallEvents?.length ?? 0;
     if (
       battle === this.troopSoundBattle &&
       battle.units.length === this.troopSoundUnits &&
@@ -4250,7 +4259,8 @@ export class VillageScene extends Phaser.Scene {
       roots === this.troopSoundRoots &&
       overgrowthCasts === this.troopSoundOvergrowthCasts &&
       freezeCasts === this.troopSoundFreezeCasts &&
-      history === this.troopSoundSpellHistory
+      history === this.troopSoundSpellHistory &&
+      recallHistory === this.troopSoundRecallHistory
     )
       return;
     const kinds = new Set<string>(battle.units.map((u) => u.kind));
@@ -4281,7 +4291,12 @@ export class VillageScene extends Phaser.Scene {
     this.troopSoundOvergrowthCasts = overgrowthCasts;
     this.troopSoundFreezeCasts = freezeCasts;
     this.troopSoundSpellHistory = history;
-    this.troopSoundLoader.need(kinds, spells);
+    this.troopSoundRecallHistory = recallHistory;
+    this.troopSoundLoader.need(
+      kinds,
+      spells,
+      needsRecallPresentation(battle) ? ['RecallRedeployAuraTop'] : [],
+    );
   }
   /** Whether a spell's falling bottle is decoded, so it replaces the generated tones. */
   private spellReady(kind: SpellKind) {
@@ -4421,6 +4436,7 @@ export class VillageScene extends Phaser.Scene {
     this.jumpSpellPresentation.render(battle ?? null, reduced, iso);
     for (const view of this.fieldSpellPresentations.values())
       view.render(battle ?? null, reduced, iso);
+    this.recallPresentation.render(battle ?? null, reduced, iso);
     for (const [ring, name] of this.spellFallbacks) {
       if (!battle || this.spellArtReady(name)) {
         ring.destroy();
@@ -5709,6 +5725,11 @@ export class VillageScene extends Phaser.Scene {
       }
     }
     const p = iso(fx.x, fx.y);
+    if (fx.type === 'recall-unit') {
+      if (!this.recallPresentation.hasArt(this.model.battle, this.model.reducedMotion))
+        this.sparks(p.x, p.y - 8, 0xefffc5, 5);
+      return;
+    }
     if (fx.type === 'quake') {
       this.combatEffects.quake(p, fx.radius ?? 8, this.model.reducedMotion);
       this.audio.play('hit');

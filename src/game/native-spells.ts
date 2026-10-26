@@ -28,6 +28,7 @@ import { defendingBuilderLightning } from './defending-builder-lightning';
 import { unitKindForName, isHeroUnitKind, isPetUnitKind, nativeUnitStats } from './native-units';
 import { tornadoPulse } from './native-traps';
 import { SPELL_SPEED_SCALE } from './spell-progression';
+import { retireRecallEvents } from './native-recall';
 import type { Battle, Building, FX, Unit } from './model';
 
 /** Buildings immune to storage/Town Hall flags, following the client's building classes. */
@@ -70,7 +71,7 @@ export interface NativeSpellContext {
   /** Creates a housing-free unit; supplied by the troop context. */
   spawn?(kind: UnitKind, level: number, x: number, y: number, at: number, owner?: number): Unit;
   /** Returns a unit to the deployment bar; supplied by the model. */
-  recall?(unit: Unit): void;
+  recall?(unit: Unit, at?: number): void;
 }
 
 export const spellRow = (name: string, level: number): NativeRow =>
@@ -185,6 +186,7 @@ export function stepNativeSpells(ctx: NativeSpellContext) {
   const battle = ctx.battle;
   retireOvergrowthRoots(battle);
   retireOvergrowthCasts(battle);
+  retireRecallEvents(battle);
   if (battle.nativeFreezeCastPresentation && battle.nativeFreezeCasts)
     battle.nativeFreezeCasts = battle.nativeFreezeCasts.filter(
       (cast) =>
@@ -714,7 +716,7 @@ function recallUnits(ctx: NativeSpellContext, cast: NativeSpellCast, at: number,
     const space = housing(u);
     if (space > (cast.budget ?? 0)) continue;
     cast.budget! -= space;
-    ctx.recall(u);
+    ctx.recall(u, at);
   }
 }
 

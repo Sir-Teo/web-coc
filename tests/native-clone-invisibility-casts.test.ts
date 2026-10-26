@@ -19,6 +19,8 @@ function verify(r: Pick<ReturnType<typeof nativeCloneSpellRecording>, 'data' | '
         expect(actual.nativeSpellArt).toEqual(['Jump', 'Rage', 'Haste', 'Healing', 'Poison']);
         delete actual.nativeSpellArt;
         delete expected.nativeSpellArt;
+        delete expected.nativeRecallPresentation;
+        delete expected.nativeRecallEvents;
         delete actual.nativeSpellCastHistory;
         delete expected.nativeSpellCastHistory;
       }

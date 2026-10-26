@@ -116,6 +116,8 @@ it('cast capture leaves physical spell behavior and root lifetimes unchanged', (
   delete now.nativeOvergrowthCasts;
   delete now.nativeFreezeCastPresentation;
   delete now.nativeSpellArt;
+  delete now.nativeRecallPresentation;
+  delete now.nativeRecallEvents;
   delete now.nativeSpellPulsePresentation;
   delete now.nativeSpellEffectTimelines;
   delete now.nativeOvergrowthCastPresentation;

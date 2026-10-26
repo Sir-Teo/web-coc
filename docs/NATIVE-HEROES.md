@@ -1787,3 +1787,47 @@ summon ownership, and actual Queen arrows verify impacts committed before Recall
 ground and air defenders. These physical states match version 120 after presentation
 metadata is removed. Browser cases verify phone/desktop meshes and original Web Audio,
 cold ended-cast loading, old playback and paused recovery after a failed pack.
+
+## Version 122 original unit Recall transitions
+
+Primary bodies now play the named source `Recall Disappear`, `RecallRedeployAuraGround`
+and `RecallRedeployAuraTop` effects at their actual transition positions. This is an
+explicit adapter from the model's existing Recall and redeployment events to those
+source records. The 104,436-byte lazy pack remains separate from the 54,956-byte cast
+pack, so version 121 does not request the new art. The importer verifies the pinned
+effect/emitter records, original graphs, decoded pixels and exact file set.
+
+The disappearance wave uses the source `recall_unit_wave` timeline: 40 frames at 24 fps,
+70% effect scale and the Top layer. Redeployment uses the reverse ground/top circles
+and 30 sparks with two original variants. Both effect records specify `LifeTimeScale`
+111%; the transition presenter maps battle age to source age by dividing by 1.11 and
+scales the duration bound accordingly. Raw duration caches and legacy sampling remain
+unchanged. The reverse ground effect can last 5.55111 seconds, and the top sparkle tail
+can last 6.105 seconds. Imported source limits remain in the records; this adapter uses
+the shared renderer rather than reconstructing the client's global effect budget.
+
+Version 122 adds `nativeRecallPresentation` and a short `nativeRecallEvents` journal.
+Each entry captures the primary unit ID, phase, time and map position, using stable
+`recall:<body-id>:<phase>` keys. A recalled Hero's pet retains the existing owner-driven
+removal/redeployment behavior; it does not create another primary return cue. Stored
+health, troop counts, Hero state, Phoenix handling and living summon ownership are
+unchanged. Events retire after ten seconds, covering every declared source tail.
+
+The source `recall_spell_back_01.ogg` adds one 13,999-byte original sample and one sound
+effect. A primary redeployment plays it once at 100% volume and 1.0 pitch. It is warmed
+from carried Recall, captured transitions or troops waiting in the bar; the ordinary
+Recall cast sound list remains unchanged. The catalog now contains 341 files and 358
+effects. Version 121 requests neither this sample nor the transition pack.
+
+Reduced motion omits the moving source effects. Generic spawn feedback covers a pending
+or failed pack; a completed upload or reconnect redraws paused history through the
+shared art revision. Rendering reads captured events without moving units or consuming
+simulation RNG. Cold replay views can show return effects after the original cast
+history has already expired.
+
+Tests use actual Cannon wounds, Freeze, Recall and Giant redeployment, including an
+11-second wait in the bar. Health restoration, history retirement and exact physical
+equivalence with version 121 survive portable forward/reverse seeks. Hero/pet records
+guard primary event counts and summon ownership. Browser cases verify phone/desktop
+meshes, original Web Audio gain/pitch, cold transition-only history, reduced motion,
+version-121 requests and natural paused recovery from a held/failed pack.

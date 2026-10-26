@@ -48,6 +48,7 @@ SPELL_EVENTS = {
     'charging': 'ChargingEffect', 'hit': 'HitEffect',
 }
 DESTROYED = 'Building Destroyed'
+EXTRA_EFFECTS = ['RecallRedeployAuraTop']
 
 
 def require(condition, message):
@@ -194,6 +195,9 @@ def build():
         if entry:
             spells[name] = dict(key=key, **entry)
     used[DESTROYED] = takes(DESTROYED)
+    for name in EXTRA_EFFECTS:
+        used[name] = takes(name)
+        require(used[name], f'{name} names no sound')
     require(used[DESTROYED], 'Building Destroyed names no sound')
 
     files, sounds = {}, {}

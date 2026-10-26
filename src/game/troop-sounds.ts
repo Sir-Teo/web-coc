@@ -69,6 +69,7 @@ export const spellSoundFiles = (name: string) =>
     'rootStop3',
     'rootStop4',
   ]);
+export const effectSoundFiles = (name: string) => (EFFECTS[name] ?? []).map((take) => take.sound);
 /** Stable selection in [0, 1) for a key, the same after seeks and in replays. */
 function fraction(key: string) {
   let h = 2166136261;
@@ -301,6 +302,13 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
   if (!battle) return logged;
   const cues: SampleCue[] = [];
   const elapsed = battle.elapsed;
+  if (battle.nativeRecallPresentation)
+    for (const event of battle.nativeRecallEvents ?? []) {
+      if (event.phase !== 'redeploy' || event.at > elapsed + 1e-9 || !cueAudible(event.at, elapsed))
+        continue;
+      const cue = effectCue('RecallRedeployAuraTop', `${event.key}:sound`, event.at);
+      if (cue) cues.push(cue);
+    }
   for (const u of battle.units) {
     if (u.native?.phoenixWaiting) continue;
     // Units another unit, spell or ability summons arrive without a deploy call.
@@ -417,7 +425,7 @@ export class TroopSoundLoader {
    * Starts loading what these troop kinds, these spells (client names) and the
    * destroyed-building effect need.
    */
-  need(kinds: Iterable<string>, spells: Iterable<string> = []) {
+  need(kinds: Iterable<string>, spells: Iterable<string> = [], effects: Iterable<string> = []) {
     for (const kind of kinds) {
       if (this.kinds.has(kind)) continue;
       this.kinds.add(kind);
@@ -427,6 +435,11 @@ export class TroopSoundLoader {
       if (this.kinds.has(`spell:${name}`)) continue;
       this.kinds.add(`spell:${name}`);
       for (const path of spellSoundFiles(name)) this.fetch(path);
+    }
+    for (const name of effects) {
+      if (this.kinds.has(`effect:${name}`)) continue;
+      this.kinds.add(`effect:${name}`);
+      for (const path of effectSoundFiles(name)) this.fetch(path);
     }
     for (const take of EFFECTS[DESTROYED_EFFECT]) this.fetch(take.sound);
   }
@@ -447,7 +460,9 @@ export class TroopSoundLoader {
           for (const kind of this.kinds) {
             const paths = kind.startsWith('spell:')
               ? spellSoundFiles(kind.slice(6))
-              : troopSoundFiles(kind);
+              : kind.startsWith('effect:')
+                ? effectSoundFiles(kind.slice(7))
+                : troopSoundFiles(kind);
             if (paths.includes(path)) this.kinds.delete(kind);
           }
         },

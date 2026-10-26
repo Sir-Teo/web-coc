@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 121;
+export const REPLAY_VERSION = 122;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -149,7 +149,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 118 enables original Healing and Poison cast fields.
  * Version 119 reconstructs original Healing pulse graphics from captured cast seeds.
  * Version 120 enables original Clone and Invisibility cast fields.
- * Version 121 retains original Recall cast effects and audio after its live pulse ends. */
+ * Version 121 retains original Recall cast effects and audio after its live pulse ends.
+ * Version 122 captures primary unit Recall disappearance and redeployment presentation. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -238,6 +239,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 118 ||
   version === 119 ||
   version === 120 ||
+  version === 121 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -386,6 +388,7 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 122 ? { nativeRecallPresentation: true as const } : {}),
     ...(version >= 119 ? { nativeSpellPulsePresentation: true as const } : {}),
     ...(version >= 118
       ? {
