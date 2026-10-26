@@ -4,6 +4,7 @@ import { HERO_UNIT, PET_UNIT } from './native-hero-data';
 import { heroStatsFor } from './native-heroes';
 import { nativeUnitStats } from './native-units';
 import { heroAttackInterval } from './native-hero-abilities';
+import { sneezySpawner, sneezySummon, SNEEZY_SPAWNER_SCALE } from './native-sneezy';
 import { heroGrowthScale, heroKnockoutFadeAt } from './hero-growth';
 import { unitAttackIntervalScale } from './native-status';
 import type { Battle, Unit } from './model';
@@ -62,9 +63,12 @@ export const heroArtDirectory = (key: string) => {
   return `/assets/${key}`;
 };
 const KEYS: Record<string, string> = Object.fromEntries(
-  [...Object.entries(HERO_UNIT), ...Object.entries(PET_UNIT), ['phoenixegg', 'phoenixegg']].map(
-    ([key, unit]) => [unit, key],
-  ),
+  [
+    ...Object.entries(HERO_UNIT),
+    ...Object.entries(PET_UNIT),
+    ['phoenixegg', 'phoenixegg'],
+    ['booger', 'booger'],
+  ].map(([key, unit]) => [unit, key]),
 );
 /** The baker's direction order is screen E, SE, S, SW, W, NW, N, NE. */
 export const bakedDirection = (dx: number, dy: number) =>
@@ -329,6 +333,8 @@ export class HeroNativePresentation {
         : moving && motion.heading
           ? bakedDirection(motion.dx, motion.dy)
           : (old?.direction ?? 2);
+      const summon = u ? sneezySummon(battle, u) : undefined;
+      const spawner = !!u && sneezySpawner(battle, u);
       const stateName =
         body.hp <= 0
           ? 'die'
@@ -336,11 +342,13 @@ export class HeroNativePresentation {
             ? 'idle'
             : d?.kind === 'guardian' && d.phase === 'leaping'
               ? 'jump'
-              : body.attacking
-                ? 'attack'
-                : moving
-                  ? 'walk'
-                  : 'idle';
+              : summon
+                ? 'attack2'
+                : body.attacking
+                  ? 'attack'
+                  : moving
+                    ? 'walk'
+                    : 'idle';
       // Animation clock: shrink and late campaign freezes hold a unit's frame.
       const clock = u ? unitAnimationClock(u, elapsed) : elapsed;
       // `since` survives frames without a sim step: only a real state change restarts a clip.
@@ -367,11 +375,13 @@ export class HeroNativePresentation {
         ? 0
         : body.hp <= 0
           ? deathAge
-          : body.attacking
-            ? d?.kind === 'guardian'
-              ? guardianAttackAnimationTime(d)
-              : Math.max(0, rate - body.cooldown)
-            : clock - since;
+          : summon
+            ? elapsed - summon.at
+            : body.attacking
+              ? d?.kind === 'guardian'
+                ? guardianAttackAnimationTime(d)
+                : Math.max(0, rate - body.cooldown)
+              : clock - since;
       if (pack.normalizedAttack && body.attacking && body.hp > 0) seconds /= Math.max(0.01, rate);
       const frames = state.frames[direction % state.frames.length];
       const frame =
@@ -390,6 +400,7 @@ export class HeroNativePresentation {
         this.sprites.set(actor.track, sprite);
       }
       const scale =
+        (spawner ? SNEEZY_SPAWNER_SCALE : 1) *
         (u && isShrunk(u, gauntletKnockout ? deathAt : elapsed) ? 0.5 : 1) *
         (u ? heroGrowthScale(battle, u) : 1);
       const invisible = !!u && (u.native?.effects?.invisibleUntil ?? 0) > elapsed;

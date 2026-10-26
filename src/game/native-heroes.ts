@@ -33,6 +33,8 @@ export interface HeroSetup {
 export interface NativeBattleHero extends HeroSetup {
   /** Version 97: the pet's Hero-death boost is spent for this raid, including later Revive. */
   petHeroDeathUsed?: true;
+  /** Version 102: Sneezy's one-use spawner transform stays deactivated after Revive/Recall. */
+  sneezyTransformed?: true;
   /** Version 95: one Phoenix hatch per raid, including Recall-paused temporary revival. */
   phoenix?: {
     used: boolean;

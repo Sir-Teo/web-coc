@@ -400,3 +400,13 @@ recipients and clear immediately when the recipient changes or disappears. The s
 pathfinding budget also covers these searches. See the
 [source and adapter details](NATIVE-HEROES.md#version-101-ground-healer-routes).
 Versions 100 and earlier retain straight-line native healer following.
+
+## Version 102: Sneezy modes and Boogers
+
+Sneezy remains a zero-DPS spawner at its source five-tile standoff until its Hero falls,
+then switches to its base short-range attack and once-per-raid source self-boost. Its
+original Boogers now exist as spawned troops, with a two-living-unit limit, summon
+wind-up, trap immunity and Castle-pull exclusion. Original character clips, body scale
+and carried-roster asset/audio warming follow these states. See the
+[source, source/wiki differences and adapter timing](NATIVE-HEROES.md#version-102-sneezy-modes-and-boogers).
+Versions 101 and earlier retain their former Sneezy and missing-Booger behavior.

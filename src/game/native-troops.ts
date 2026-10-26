@@ -1,5 +1,6 @@
 import { monolithArrow, stepEquipmentDash } from './native-equipment-effects';
 import { isSiege } from './special-troops';
+import { sneezyCombatStats, sneezySpawner, sneezySummon } from './native-sneezy';
 import { distance2D } from './distance';
 import {
   BUILDINGS,
@@ -96,6 +97,8 @@ export interface NativeUnitState {
   wallTarget?: number;
   /** Next scheduled periodic summon and lifetime summon count. */
   summonAt?: number;
+  /** Version 102: original Sneezy attack2 wind-up, separate from ordinary attack cooldown. */
+  sneezySummon?: { at: number; until: number };
   summoned?: number;
   /** Bunker spawns released so far. */
   released?: number;
@@ -219,7 +222,7 @@ export function statsFor(battle: Battle, u: Pick<Unit, 'kind' | 'level' | 'id'>)
     if (hero)
       return heroStatsFor(hero, battle.townhall ?? 18, !!battle.nativeHeroPassiveSpeedDamage);
   }
-  return nativeUnitStats(u.kind, unitLevel(battle, u));
+  return sneezyCombatStats(battle, u, nativeUnitStats(u.kind, unitLevel(battle, u)));
 }
 
 function completeHeroAttack(battle: Battle, unit: Unit) {
@@ -713,6 +716,10 @@ export function stepNativeUnit(
     u.attacking = false;
     return;
   }
+  if (sneezySummon(battle, u)) {
+    u.attacking = true;
+    return;
+  }
   if (battle.nativeDiggyMasterTarget && isHeroUnitKind(u.kind)) delete state.wallTarget;
   if (stepEquipmentDash(ctx, u, dt)) return;
   if (s.ability === 'DisableAttacking') {
@@ -741,6 +748,26 @@ export function stepNativeUnit(
     return;
   }
   if (s.mergeTo && stepMerge(ctx, u, s, speed, dt)) return;
+  if (sneezySpawner(battle, u)) {
+    // The ability's zero-DPS void attack carries no visible projectile or damage event.
+    delete u.defenderTarget;
+    let target = ctx.buildingsById.get(u.target ?? -1);
+    const targetable = ctx.isTargetable ?? ((b: Building) => targetableBuilding(battle, b));
+    if (!target || !targetable(target)) target = chooseTarget(ctx, u, s);
+    u.target = target?.id ?? null;
+    u.attacking = false;
+    if (target) {
+      const distance = distanceTo(u, target);
+      if (distance > s.range + 1e-9) {
+        const edge = {
+          x: Math.max(target.x, Math.min(u.x, target.x + BUILDINGS[target.kind].size)),
+          y: Math.max(target.y, Math.min(u.y, target.y + BUILDINGS[target.kind].size)),
+        };
+        moveToward(u, edge, Math.min(speed * dt, distance - s.range));
+      }
+    }
+    return;
+  }
   const heroHunter = battle.nativeHeadhunterHeroRules && u.kind === 'headhunter';
   const poisonLizard = battle.nativeAttackerHitPoison && u.kind === 'poisonlizard';
   const jumpingChase =
@@ -764,6 +791,7 @@ export function stepNativeUnit(
           poisonLizard ||
           chargedHero ||
           (battle.nativePhoenixResurrection && u.kind === 'phoenix') ||
+          (battle.nativeSneezyController && u.kind === 'sneezy') ||
           nativeHeroAttack) &&
         s.projectile
       ? {
@@ -1579,9 +1607,12 @@ function stepSummons(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: n
   const state = u.native!;
   state.summonAt ??= (u.spawnedAt ?? at) + s.summonDelay;
   const kind = unitKindForName(s.summon) as UnitKind | undefined;
-  if (!kind) return;
+  if (!kind || (kind === 'booger' && !battle.nativeSneezyController)) return;
   while (state.summonAt <= at + 1e-9 && u.hp > 0) {
-    const alive = battle.units.filter((m) => m.hp > 0 && m.native?.owner === u.id).length;
+    let alive = 0;
+    for (const member of battle.units) if (member.hp > 0 && member.native?.owner === u.id) alive++;
+    if (battle.nativeSneezyController && u.kind === 'sneezy')
+      for (const spawn of battle.nativePendingSpawns ?? []) if (spawn.owner === u.id) alive++;
     const lifetime = state.summoned ?? 0;
     if (s.summonLifetimeLimit > 0 && lifetime >= s.summonLifetimeLimit) {
       if (s.diesWhenSpawnLimitReached) {
@@ -1592,9 +1623,25 @@ function stepSummons(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: n
     }
     const room = Math.max(0, (s.summonLimit || Infinity) - alive);
     const count = Math.min(s.summonCount || 1, room);
+    if (battle.nativeSneezyController && u.kind === 'sneezy') {
+      // A full roster keeps the cooldown ready; a later vacancy starts a fresh wind-up now.
+      if (count <= 0) break;
+      if (state.summonAt < at - 1e-9) state.summonAt = at;
+    }
+    if (battle.nativeSneezyController && u.kind === 'sneezy' && count > 0)
+      state.sneezySummon = { at: state.summonAt, until: state.summonAt + s.summonTime };
     for (let i = 0; i < count; i++) {
       const p = ringPoint(battle, u, lifetime + i, count, s.secondaryDistance || 1, false);
-      spawnNativeUnit(ctx, kind, s.summonLevel, p.x, p.y, state.summonAt + s.summonTime, u.id);
+      if (battle.nativeSneezyController && u.kind === 'sneezy')
+        (battle.nativePendingSpawns ??= []).push({
+          kind,
+          level: s.summonLevel,
+          x: p.x,
+          y: p.y,
+          at: state.summonAt + s.summonTime,
+          owner: u.id,
+        });
+      else spawnNativeUnit(ctx, kind, s.summonLevel, p.x, p.y, state.summonAt + s.summonTime, u.id);
     }
     state.summoned = lifetime + count;
     state.summonAt += s.summonCooldown + s.summonTime;

@@ -78,6 +78,16 @@ SKIN_EFFECT_COLUMNS = ('DeployEffect', 'AttackEffect', 'AttackEffect2', 'AttackE
                        'DieEffect', 'AbilityTriggerEffect', 'AbilityEffect', 'AbilityActivationEffect', 'AbilityHitEffect',
                        'ParticleEffect3D', 'AbilityEffect3D', 'CelebrateSfx', 'GunBone', 'ShadowBone', 'ProjectileVis')
 SETS = dict(
+    booger=dict(
+        characters=[('booger', 'logic/characters.csv', 'Booger')], skinColumn='DefaultSkin',
+        states=BASE_STATES, required=BASE_STATES, output=OUTPUT,
+        index=ROOT / 'reference/full-client/booger-art.json', work=ROOT / 'output/native3d-booger-work',
+        checkKey='booger', generator='scripts/native3d/bake_hero_art.py --set booger',
+        extraFields=True, cameraFrom=INDEX,
+        notes=dict(states='Original AirSplitPetSpawn walk, idle, attack and die rows. Booger is a spawned troop, '
+                          'not a selectable Hero pet. Rendered through the shared baked-character presentation.',
+                   shading='Same pinned geometry, textures and approximate character shading as the hero baker; '
+                           '3D particles, bloom and ground shadows are not baked.')),
     phoenix_egg=dict(
         characters=[('phoenixegg', 'logic/pets.csv', 'Phoenix Egg')], skinColumn='DefaultSkin',
         states=('walk', 'attack'), required=('walk', 'attack'), output=OUTPUT,

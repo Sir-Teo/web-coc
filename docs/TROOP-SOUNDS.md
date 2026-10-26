@@ -13,11 +13,11 @@ Attacking troops and pets play the client's own sounds when they are deployed, w
 
 ## Source
 
-`python3 scripts/import-native-troop-sounds.py` reads the pinned client's `logic/characters.csv`, `logic/heroes.csv`, `logic/pets.csv` and `logic/effects.csv`. It covers the 78 trainable/spawned units, heroes and thirteen pet actors (including Phoenix Egg) in `src/game/native-units.ts` (`TROOP_SOURCE`, `SPAWN_SOURCE`, `HERO_UNIT_SOURCE`, `PET_UNIT_SOURCE`). For each one it records the `DeployEffect`, the `AttackEffect`, the `HitEffect` (the impact on its target) and the `DieEffect`, and for each effect the rows that name a `Sound`, with their volume, pitch range and delay. The heroes' rows name only a hit, and only four of the six name one with a sound: the Barbarian King, Archer Queen, Grand Warden and Royal Champion. That makes 95 unit actors with sounds.
+`python3 scripts/import-native-troop-sounds.py` reads the pinned client's `logic/characters.csv`, `logic/heroes.csv`, `logic/pets.csv` and `logic/effects.csv`. It covers the 79 trainable/spawned units, heroes and thirteen pet actors (including Phoenix Egg) in `src/game/native-units.ts` (`TROOP_SOURCE`, `SPAWN_SOURCE`, `HERO_UNIT_SOURCE`, `PET_UNIT_SOURCE`). For each one it records the `DeployEffect`, the `AttackEffect`, the `HitEffect` (the impact on its target) and the `DieEffect`, and for each effect the rows that name a `Sound`, with their volume, pitch range and delay. The heroes' rows name only a hit, and only four of the six name one with a sound: the Barbarian King, Archer Queen, Grand Warden and Royal Champion. That makes 96 unit actors with sounds.
 
 It also covers the 18 spells this game casts, from `logic/spells.csv`. For each spell it records the `PreDeployEffect` (the bottle falling), the `DeployEffect` and `DeployEffect2` (it landing), the `ChargingEffect` and the `HitEffect` (each pulse). Some of these change with level; Freeze, for example, has one deploy effect per level.
 
-The importer copies 329 Ogg files (4.73 MiB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`. An already shipped sample can supply a missing local source only when its SHA-256 matches that same source pin. Edited outputs cannot supply trusted source bytes; corrupt authoritative cache entries still fail validation.
+The importer copies 333 Ogg files (4.78 MiB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`. An already shipped sample can supply a missing local source only when its SHA-256 matches that same source pin. Edited outputs cannot supply trusted source bytes; corrupt authoritative cache entries still fail validation.
 
 | Troop     | Deploy                                                     | Attack                                                                                          | Death                                           |
 | --------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------- |
@@ -74,6 +74,10 @@ Phoenix hatch nodes, pause/resume, speed, mute and cleanup. Unit checks cover al
 source sample parameters, lifetimes, silent waiting Phoenix and the healing effect path.
 `tests/test_native_troop_sound_import.py` checks verified offline reuse, altered outputs,
 corrupt cache entries and unpinned paths.
+
+Booger adds its four unchanged source deploy/attack/hit/death samples. A carried Sneezy
+warms these before deployment in combat version 102, alongside the pet's own samples.
+Browser checks verify the Booger deploy cue reaches Web Audio at its recorded birth time.
 
 ## Tests
 

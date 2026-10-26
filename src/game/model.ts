@@ -881,6 +881,8 @@ export interface Battle {
   nativeHealingProjectiles?: true;
   /** Version 101: ground healing units follow allies around buildings, crossing jumpable walls. */
   nativeHealerRoutes?: true;
+  /** Version 102: Sneezy spawns without attacking until its Hero falls, and pauses to sneeze. */
+  nativeSneezyController?: true;
   /** Recent detached troop stage effects; presentation only, retired deterministically. */
   infernoDragonTransitions?: InfernoDragonTransition[];
   /** Version 53: passive hero auras and Royal Rampage. */

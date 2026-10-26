@@ -2611,6 +2611,8 @@ export class VillageScene extends Phaser.Scene {
       if (hero.pet) wanted.add(`heroes-native/${hero.pet.kind}`);
       if (this.model.battle?.nativePhoenixResurrection && hero.pet?.kind === 'phoenix')
         wanted.add('heroes-native/phoenixegg');
+      if (this.model.battle?.nativeSneezyController && hero.pet?.kind === 'sneezy')
+        wanted.add('heroes-native/booger');
     }
     for (const defender of this.model.battle?.defenders ?? []) {
       if (defender.kind === 'hero' && defender.hero) wanted.add(`heroes-native/${defender.hero}`);
@@ -4177,6 +4179,7 @@ export class VillageScene extends Phaser.Scene {
           kinds.add(petUnitKind(hero.pet.kind));
           if (battle.nativePhoenixResurrection && hero.pet.kind === 'phoenix')
             kinds.add('phoenixegg');
+          if (battle.nativeSneezyController && hero.pet.kind === 'sneezy') kinds.add('booger');
         }
       }
       for (const [kind, count] of Object.entries(battle.remaining)) if (count) kinds.add(kind);

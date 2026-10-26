@@ -6,6 +6,7 @@ import {
   releaseGarrisonTroop,
   type GarrisonReserve,
   type GarrisonTroop,
+  type GarrisonTarget,
 } from './garrison-reserve';
 
 export interface GarrisonSetup {
@@ -59,7 +60,10 @@ export function stepGarrisonReleases(battle: Battle) {
   const bunkers = new Map<number, Building>();
   for (const b of battle.buildings) if (isGarrisonBunker(b)) bunkers.set(b.id, b);
   // One snapshot per tick: defender spawns below never touch battle.units.
-  const targets = battle.units.map((unit) => ({ ...unit, flying: !!TROOPS[unit.kind].flying }));
+  // Sneezy's spawned Boogers can fight released defenders but cannot pull the reserve.
+  const targets: GarrisonTarget[] = [];
+  for (const unit of battle.units)
+    if (unit.kind !== 'booger') targets.push({ ...unit, flying: !!TROOPS[unit.kind].flying });
   for (const reserve of garrisons) {
     const castle = bunkers.get(reserve.castleId);
     if (!castle) continue;

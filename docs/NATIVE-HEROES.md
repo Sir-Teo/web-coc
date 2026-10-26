@@ -934,3 +934,62 @@ follows an airborne Lava Hound around an untouched storage, with portable revers
 Phone/desktop browser checks verify its visible original body, reduced motion and
 version 100 movement alongside the healing-flight regression.
 Versions 100 and earlier retain their former straight-line native healer following.
+
+## Version 102 Sneezy modes and Boogers
+
+The [Sneezy reference](../reference/official-wiki/heroes-pets/sneezy.md) and pinned
+`FlyingSpawnerTransformAbility` give its living-master mode `DPS=0`, a five-tile range
+and `pet_sneezy_void_attack`. Sneezy now approaches its existing selected building to
+that standoff distance without firing damaging attacks or drawing fake void bolts.
+This uses the existing building-selection adapter; it does not add a general pet leash
+or reconstruct the client's complete target-choice logic.
+
+After its own Hero's automatic ability has had a chance to save the Hero, a real knockout
+retires the spawner transform. Sneezy uses its base defense preference, 2.5-tile range,
+270–450 DPS, 0.8-second interval and original shockwave projectile. Its `BoostSelf`
+`VisualRage` adds 1% damage without movement or attack-speed bonuses. The pinned spell
+says **300 seconds**, whereas the wiki says 30 seconds; the source row wins here, as it
+does for the source five/2.5-tile ranges instead of the wiki's 5.5/1.5. The boost joins
+the independent source ledger and does not leak to allies. Its spent trigger and the
+one-use transform retirement remain on the Hero/pet association through Revive and
+Recall, following the existing once-per-raid pet controller adapter. Recall alone does
+not retire the transform.
+
+Booger was absent from the spawned-unit catalog, so the old summon lookup produced no
+unit. It now uses all ten original `characters.Booger` tiers: 1,100–2,000 HP,
+105–150 DPS, one-second attacks, 0.9-tile range, two tiles/second and four housing,
+with both ground and air targets. It cannot trigger traps or pull a Clan Castle reserve;
+it can fight released defenders and reveal Hidden Teslas after arrival. Each Sneezy
+counts its own living and already scheduled Boogers toward the source limit of two.
+
+The existing summon adapter uses the source one-second initial delay, 1.5-second
+wind-up and ten-second cooldown after that wind-up. Sneezy pauses movement and attacks
+while the summon completes, before or after transformation. A full Booger roster holds
+its next summon ready; a later vacancy starts a fresh wind-up instead of backdating a
+spawn. As with the existing summon adapter, a committed future arrival survives its
+creator and lifecycle timers continue while frozen. These timing choices are explicit
+adapter behavior, rather than a reconstruction of every client summoning transition.
+
+The `PetBatDefault` skin's `AirSplitPetNoAttack` rows reuse the same fly, idle and
+attack2 clips as `AirSplitPet`, at source scale 120 instead of 100. Presentation reuses
+those original frames at 1.2x scale and uses the original 45-frame attack2 clip for the
+summon, with its own battle-clock origin. Transformation restores base scale and the
+ordinary attack clip. Existing reduced-motion behavior remains read-only.
+
+Booger uses the original `PetBatBubbleDefault` geometry, textures and four-state
+`AirSplitPetSpawn` animation block. Its eight-direction atlas is reproduced with
+`PYTHONPATH=scripts NATIVE_ART_CHROMIUM_PATH=/usr/bin/chromium python3 scripts/native3d/bake_hero_art.py --set booger --check`
+(with the baker's Python dependencies installed). Source hashes, clip timing and the
+existing approximate character-shader limitations are retained in
+[booger-art.json](../reference/full-client/booger-art.json). Its four original Ogg samples
+use the shared importer and are warmed, with its atlas, by the carried Sneezy roster.
+
+`tests/native-sneezy.test.ts` covers tiers, source modes, standoff, silent void attacks,
+Hero assignments and rescue, ownership, rage expiry, stronger boosts, Recall/Revive,
+wind-up, summon limits, replenishment, traps, Tesla birth gating and Castle release.
+Real Cannon knockouts in `tests/fixtures/native-sneezy.ts` record the first summon,
+Booger arrival and boosted shockwave through portable reverse seeks. Phone/desktop
+browser checks verify original clips, mode scale, the Booger body, projectile art,
+actual Web Audio birth cues, reduced motion and historical playback. Versions 101 and
+earlier retain their prior Sneezy attacks, missing Booger lookup, summon presentation
+and absent Sneezy Hero-death boost.

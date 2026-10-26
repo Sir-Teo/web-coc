@@ -288,7 +288,8 @@ export class TroopNativePresentation {
     const nearEvery = detail ? 2 : 1;
     const elapsed = battle?.elapsed ?? 0;
     for (const u of battle?.units ?? []) {
-      if (u.hero || isPetUnitKind(u.kind) || u.ejected) continue;
+      // Booger shares the baked 3D character layer with Sneezy.
+      if (u.hero || isPetUnitKind(u.kind) || u.kind === 'booger' || u.ejected) continue;
       // Recalled units are gone: drop their meshes now, or a frozen frame stays.
       if (u.native?.recalled) {
         const owned = this.views.get(u.id);

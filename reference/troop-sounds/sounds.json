@@ -15,6 +15,10 @@
     "sfx/Pet_Sneezy_Attack_Hit.ogg": "83e41ef310b7825efbc14fae1d4da72765f5734e019fd32ddf0e212269627ab7",
     "sfx/Pet_Sneezy_Deploy.ogg": "0d834c2e5a7c203a83581877b910bba8810d8f749779cc453b5956697462f2cf",
     "sfx/Pet_Sneezy_Die.ogg": "c816c6621e52b8bb42577964adf610ce1eaf5288e90d7831edd4e640577494ea",
+    "sfx/Pet_Sneezy_Spirit_Attack.ogg": "f2ccb14503c465c876e7e0d06929bbf68d544e44973358b6575f6ca5432cfa0b",
+    "sfx/Pet_Sneezy_Spirit_Attack_Hit.ogg": "8d1bcbbeb4d47f5b06bd093e4a109995d14d717dcc165f94b2c02781316f2a38",
+    "sfx/Pet_Sneezy_Spirit_Deploy.ogg": "632f4e1fb0cc26312a978515c920576709b6fe36ec63572e974b6335718cc3cf",
+    "sfx/Pet_Sneezy_Spirit_Die.ogg": "d935b7b284fb8cbf5b75b697ce9e0638971defd84cbbf5bbd36c67e48f6560fd",
     "sfx/Spell_Revive_Activate.ogg": "6585b34f634127f00c6518c9680452d46c8363a55b62197a7f162abe55b703f6",
     "sfx/Spell_Revive_Deploy.ogg": "27a21d98b7e397417d7f1b654ed3b6a51fe98afb0443b3ba0439b763f8a700ac",
     "sfx/Spell_de_IceBlock_All.ogg": "e5466d63d04fe3df0ebab25a9dca4759ca98be96598d28e0616b266022f48fd2",
@@ -407,6 +411,13 @@
       "attack": "Giant Skeleton Attack",
       "hit": "Giant Hit",
       "die": "Giant Skeleton Die"
+    },
+    "booger": {
+      "name": "Booger",
+      "deploy": "ps_pet_sneezy_spirit_Deploy",
+      "attack": "ps_pet_sneezy_spirit_Attack",
+      "hit": "ps_pet_sneezy_spirit_AttackHit",
+      "die": "ps_pet_sneezy_spirit_die"
     },
     "bowler": {
       "name": "Bowler",
@@ -4872,6 +4883,42 @@
         "delay": 0.0
       }
     ],
+    "ps_pet_sneezy_spirit_Attack": [
+      {
+        "sound": "sfx/Pet_Sneezy_Spirit_Attack.ogg",
+        "volume": 0.4,
+        "minPitch": 0.9,
+        "maxPitch": 1.1,
+        "delay": 0.0
+      }
+    ],
+    "ps_pet_sneezy_spirit_AttackHit": [
+      {
+        "sound": "sfx/Pet_Sneezy_Spirit_Attack_Hit.ogg",
+        "volume": 0.5,
+        "minPitch": 0.9,
+        "maxPitch": 1.1,
+        "delay": 0.0
+      }
+    ],
+    "ps_pet_sneezy_spirit_Deploy": [
+      {
+        "sound": "sfx/Pet_Sneezy_Spirit_Deploy.ogg",
+        "volume": 1.0,
+        "minPitch": 0.9,
+        "maxPitch": 1.1,
+        "delay": 0.0
+      }
+    ],
+    "ps_pet_sneezy_spirit_die": [
+      {
+        "sound": "sfx/Pet_Sneezy_Spirit_Die.ogg",
+        "volume": 1.0,
+        "minPitch": 0.9,
+        "maxPitch": 1.1,
+        "delay": 0.0
+      }
+    ],
     "ps_spells_angryspell_predeploy": [
       {
         "sound": "sfx/vial_fall_02.ogg",
@@ -4985,6 +5032,26 @@
       "path": "assets/audio/troops-native/Pet_Sneezy_Die.ogg",
       "bytes": 10431,
       "sha256": "c816c6621e52b8bb42577964adf610ce1eaf5288e90d7831edd4e640577494ea"
+    },
+    "sfx/Pet_Sneezy_Spirit_Attack.ogg": {
+      "path": "assets/audio/troops-native/Pet_Sneezy_Spirit_Attack.ogg",
+      "bytes": 10694,
+      "sha256": "f2ccb14503c465c876e7e0d06929bbf68d544e44973358b6575f6ca5432cfa0b"
+    },
+    "sfx/Pet_Sneezy_Spirit_Attack_Hit.ogg": {
+      "path": "assets/audio/troops-native/Pet_Sneezy_Spirit_Attack_Hit.ogg",
+      "bytes": 9679,
+      "sha256": "8d1bcbbeb4d47f5b06bd093e4a109995d14d717dcc165f94b2c02781316f2a38"
+    },
+    "sfx/Pet_Sneezy_Spirit_Deploy.ogg": {
+      "path": "assets/audio/troops-native/Pet_Sneezy_Spirit_Deploy.ogg",
+      "bytes": 11581,
+      "sha256": "632f4e1fb0cc26312a978515c920576709b6fe36ec63572e974b6335718cc3cf"
+    },
+    "sfx/Pet_Sneezy_Spirit_Die.ogg": {
+      "path": "assets/audio/troops-native/Pet_Sneezy_Spirit_Die.ogg",
+      "bytes": 11702,
+      "sha256": "d935b7b284fb8cbf5b75b697ce9e0638971defd84cbbf5bbd36c67e48f6560fd"
     },
     "sfx/Spell_Revive_Activate.ogg": {
       "path": "assets/audio/troops-native/Spell_Revive_Activate.ogg",

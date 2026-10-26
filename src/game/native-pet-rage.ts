@@ -6,15 +6,15 @@ import { rageModifiers } from './native-rage';
 import { mergeBoost } from './native-boost';
 import { unitEffects } from './native-status';
 
-/** Mighty Yak's once-per-raid BoostSelf runs after the Hero's automatic ability can save it. */
+/** Pet Hero-death controllers run after the Hero's automatic ability can save it. */
 export function ragePetAfterHeroDeath(battle: Battle, owner: NativeBattleHero, hero: Unit) {
+  if (hero.hp > 0 || hero.ejected || hero.native?.recalled) return;
+  const sneezy = battle.nativeSneezyController && owner.pet?.kind === 'sneezy';
+  if (sneezy) owner.sneezyTransformed = true;
   if (
-    !battle.nativeYakMasterRage ||
-    owner.pet?.kind !== 'yak' ||
+    !((battle.nativeYakMasterRage && owner.pet?.kind === 'yak') || sneezy) ||
     owner.petHeroDeathUsed ||
-    hero.hp > 0 ||
-    hero.ejected ||
-    hero.native?.recalled
+    !owner.pet
   )
     return;
   const pet = battle.units.find((u) => u.id === owner.petId);

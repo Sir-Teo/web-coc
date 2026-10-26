@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 101;
+export const REPLAY_VERSION = 102;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -129,7 +129,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 98 captures each Healer level's source Hero healing ratio in its pulse.
  * Version 99 binds Unicorn healing to its living Hero and applies its single-target support rules.
  * Version 100 resolves native healing through source projectile travel and chain hops.
- * Version 101 routes ground healing units around buildings while allowing their wall jumps. */
+ * Version 101 routes ground healing units around buildings while allowing their wall jumps.
+ * Version 102 gives Sneezy its source spawner/attacker modes and summon wind-up. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -198,6 +199,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 98 ||
   version === 99 ||
   version === 100 ||
+  version === 101 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -346,6 +348,7 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 102 ? { nativeSneezyController: true as const } : {}),
     ...(version >= 101 ? { nativeHealerRoutes: true as const } : {}),
     ...(version >= 100 ? { nativeHealingProjectiles: true as const } : {}),
     ...(version >= 99 ? { nativeUnicornController: true as const } : {}),
