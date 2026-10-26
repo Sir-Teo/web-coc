@@ -25,6 +25,7 @@ import { rampedDamage, finishRampingHit, type NativeDamageRamp } from './native-
 import { recordInfernoDragonTransition } from './inferno-dragon-transitions';
 import { friendlyCombatant, healingEligible } from './friendly-unit';
 import { healerContribution } from './healing';
+import { launchNativeHealing, resolveNativeHealing } from './native-healing';
 import {
   applyDefenderHitPoison,
   nativeHitPoison,
@@ -1387,6 +1388,7 @@ export function stepNativeChains(ctx: NativeTroopContext) {
 /** Native projectile arrival: damage, splash, bounces and on-hit spells. */
 export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile) {
   if (resolvePhoenixRevive(ctx, p)) return;
+  if (resolveNativeHealing(ctx, p)) return;
   const battle = ctx.battle;
   const source = p.native!;
   const s = nativeUnitStats(source.kind, source.level);
@@ -1954,6 +1956,10 @@ function stepNativeHealer(
   u.attacking = true;
   if (u.cooldown > 0) return;
   u.cooldown = s.rate * unitAttackIntervalScale(u, battle.elapsed);
+  if (battle.nativeHealingProjectiles && s.projectile) {
+    launchNativeHealing(ctx, u, s, target, heal);
+    return;
+  }
   const hits = [target];
   const bounceReach =
     tiles(nativeRow('projectiles', s.projectile || 'BattleDruidProjectile'), 'MaxBounceDistance') ||

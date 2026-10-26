@@ -876,3 +876,40 @@ allocation, shared diminishing returns, recalled sources and last-pet completion
 Cannon wounds to another ally reproduce ownership priority with a ground King and airborne
 Warden through portable files, reverse seeks, reduced motion and desktop/phone rendering.
 Versions 98 and earlier retain their previous selection, allocation and completion rules.
+
+## Version 100 native healing flights
+
+The pinned client rows give Unicorn `UnicornHealEnergy` and Druid
+`BattleDruidProjectile`, both at `Speed=1200` (12 tiles/second). Recovery now happens
+when those friendly projectiles arrive. Druid's `ProjectileBounces=3` allows four
+distinct recipients, with each next injured eligible ally selected at impact within
+`MaxBounceDistance=450` (4.5 tiles). Ground and air recipients remain supported.
+The caster and previously visited recipients cannot receive a later hop.
+
+Flights capture the caster kind, tier and outgoing healing, including its launch-time
+Rage multiplier. Caster death, removal or Druid's transformation does not cancel a
+launched pulse or substitute Bear stats. Hero recovery uses the captured healer tier.
+A dead, removed, recalled, ejected, waiting or healing-immune recipient receives no
+recovery and ends that chain. A full-health recipient can still pass on a Druid chain.
+These are friendly recovery packets; they never enter enemy damage or splash handling.
+
+The existing projectile adapter tracks the original recipient's location while retaining
+its launch-distance arrival time. Short healing flights use its 10-ms minimum rather
+than the ordinary native attack's 120-ms minimum. A continuation is dated from the
+preceding impact, then processed on a subsequent simulation sample like other native
+ricochets. Those adapter timing choices do not reconstruct the client's full tracking
+integrator. Unicorn retains version 99's contribution allocation, evaluated at impact;
+Druid's existing healing amounts and allocation remain unchanged.
+
+The presentation uses the already imported original `healerenergy` and
+`battledruidprojectile` packs. Captured friendly event identity preserves the original
+cast/hit samples after the caster changes or disappears. Continuations produce hit
+samples without inventing another caster attack.
+
+`tests/native-healing-projectiles.test.ts` checks source speed, short flights, tracking,
+invalid recipients, captured tiers and boosts, Hero scaling, air chains, four-recipient
+limits, impact-time selection and exact bounce reach. Real Cannon wounds in
+`tests/fixtures/native-healing.ts` reproduce recovery and a Druid bounce through portable
+files and reverse seeks. Phone/desktop browser checks verify original visible art,
+read-only rendering and reduced motion; pet audio checks remain covered separately.
+Combat versions 99 and earlier retain immediate native healing.

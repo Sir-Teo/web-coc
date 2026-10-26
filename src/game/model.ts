@@ -877,6 +877,8 @@ export interface Battle {
   nativeHealerHeroScaling?: true;
   /** Version 99: Unicorn binds to its living Hero and uses single-target support rules. */
   nativeUnicornController?: true;
+  /** Version 100: native healing resolves through source projectile travel and chain hops. */
+  nativeHealingProjectiles?: true;
   /** Recent detached troop stage effects; presentation only, retired deterministically. */
   infernoDragonTransitions?: InfernoDragonTransition[];
   /** Version 53: passive hero auras and Royal Rampage. */
@@ -1081,6 +1083,11 @@ export type FX = {
   targetId?: number;
   targetBuilding?: boolean;
   targetDefender?: boolean;
+  /** Friendly native healing retains its caster identity through death, Recall and evolution. */
+  targetFriendly?: true;
+  sourceKind?: UnitKind;
+  sourceLevel?: number;
+  projectileBounce?: number;
   sourceDefender?: boolean;
   /** Marks either end of a projectile as airborne so the scene can lift it. */
   fromAir?: boolean;
@@ -6707,7 +6714,7 @@ export class GameModel {
       b.destruction === 100 ||
       (timedBattle(b) && b.elapsed >= BATTLE_SECONDS) ||
       (!b.shells.length &&
-        !b.projectiles?.some((p) => p.weapon !== 'healing') &&
+        !b.projectiles?.some((p) => p.weapon !== 'healing' && !p.native?.healing) &&
         !Object.values(b.deathBombs ?? {}).some((bomb) => !bomb.resolved && !bomb.cancelled) &&
         !lateCampaignPending(b) &&
         !b.units.some(

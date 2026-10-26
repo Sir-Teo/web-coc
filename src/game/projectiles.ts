@@ -4,7 +4,7 @@ import { recordCannonFlight, recordCannonHit } from './cannon-attack';
 import { distance2D } from './distance';
 import { recordBombTowerHit } from './bomb-tower-attack';
 import { recordWizardTowerHit } from './wizard-tower-attack';
-import { BUILDINGS, TROOPS, isTrap } from './data';
+import { BUILDINGS, TROOPS, isTrap, type UnitKind } from './data';
 import type { Battle, Building, FX, Unit } from './model';
 import { healerContribution, HEALER_HERO_SCALE } from './healing';
 import { damageDefenders, hurtDefender, type Defender } from './defenders';
@@ -59,6 +59,8 @@ export interface CombatProjectile {
     frost?: { seconds: number; percent: number };
     /** Version 95: a Phoenix Egg revives its own Hero at this packet's fixed-time impact. */
     phoenixRevive?: { heroId: number; birdId: number; spellLevel: number };
+    /** Version 100: friendly recovery and per-chain visited recipients, captured at launch. */
+    healing?: { remaining: number; hit: number[] };
   };
   /** Version 45+ defense shot rules resolved on impact (bounces, hit spells, %-hitpoint bonus). */
   defense?: NativeDefenseShot;
@@ -156,6 +158,7 @@ export function launchProjectile(
             nativeCannon(shot) ||
               nativeArcherTower(shot) ||
               shot.weapon === 'healing' ||
+              !!shot.native?.healing ||
               shot.weapon === 'towerbomb' ||
               shot.weapon === 'fireball' ||
               shot.weapon === 'arcane' ||
@@ -211,6 +214,14 @@ export function projectileEffect(p: CombatProjectile, type: 'projectile' | 'impa
     targetId: p.targetId,
     targetBuilding: p.targetBuilding,
     targetDefender: p.targetDefender,
+    ...(p.native?.healing
+      ? {
+          targetFriendly: true as const,
+          sourceKind: p.native.kind as UnitKind,
+          sourceLevel: p.native.level,
+          projectileBounce: p.native.bounce ?? 0,
+        }
+      : {}),
     fromAir: p.fromAir,
     toAir: p.toAir,
     radius: p.splash,

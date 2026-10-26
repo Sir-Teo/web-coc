@@ -108,7 +108,7 @@ it('keeps Phoenix silent in the Egg and plays deployment at hatch without an Egg
   expect(JSON.stringify(hatched)).toBe(before);
 });
 
-it('labels native healing pulses for the friendly sound path', () => {
+it('labels native healing flights for the friendly sound path', () => {
   const { battle, unit } = arena();
   const pet = unit('unicorn'),
     hero = unit('barbarianking', 1001);
@@ -128,8 +128,10 @@ it('labels native healing pulses for the friendly sound path', () => {
   stepNativeUnit(ctx, pet, nativeUnitStats('unicorn', 1), 0.05);
   expect(events).toContainEqual(
     expect.objectContaining({
-      type: 'hit',
-      weapon: 'healing',
+      type: 'projectile',
+      weapon: 'native',
+      targetFriendly: true,
+      sourceKind: 'unicorn',
       sourceId: pet.id,
       targetId: hero.id,
     }),

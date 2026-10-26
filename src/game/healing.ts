@@ -174,8 +174,9 @@ export function healerContribution(battle: Battle, recipient: Unit, sourceId: nu
   // A launched pulse remains a contributor if its source dies before landing.
   for (const shot of battle.projectiles ?? [])
     if (
-      shot.weapon === 'healing' &&
-      distance2D(shot.x - recipient.x, shot.y - recipient.y) <= HEALER_RADIUS
+      (shot.weapon === 'healing' &&
+        distance2D(shot.x - recipient.x, shot.y - recipient.y) <= HEALER_RADIUS) ||
+      (shot.native?.healing && shot.targetId === recipient.id)
     )
       sources.add(shot.sourceId);
   const rank = [...sources].sort((a, b) => a - b).indexOf(sourceId);

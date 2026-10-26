@@ -8,7 +8,9 @@ import {
   initialNativeState,
   stepNativeUnit,
   type NativeTroopContext,
+  resolveNativeImpact,
 } from '../src/game/native-troops';
+import { stepProjectiles } from '../src/game/projectiles';
 import { healerContribution } from '../src/game/healing';
 import { nativeUnicornRecording } from './fixtures/native-unicorn';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
@@ -79,6 +81,11 @@ function arena(
   const heal = () => {
     pet.cooldown = 0;
     stepNativeUnit(ctx, pet, nativeUnitStats('unicorn', level), 0.05);
+    const shot = battle.projectiles?.find((p) => p.native?.healing && p.sourceId === pet.id);
+    if (shot) {
+      battle.elapsed = shot.impact;
+      stepProjectiles(battle, ctx.damageBuilding, ctx.effect, (p) => resolveNativeImpact(ctx, p));
+    }
   };
   const until = (at: number) => {
     for (let count = 0; battle.elapsed < at - 1e-9; count++) {

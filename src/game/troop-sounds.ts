@@ -180,7 +180,11 @@ export class BattleSoundLog {
    * A troop's attack (its swing or launch) or hit (the impact on its target), at the moment
    * the combat event was reported.
    */
-  attack(battle: Battle, u: Unit, event: 'attack' | 'hit' = 'attack') {
+  attack(
+    battle: Battle,
+    u: Pick<Unit, 'id' | 'kind' | 'level'>,
+    event: 'attack' | 'hit' = 'attack',
+  ) {
     this.sync(battle);
     // Version 94's beam owns a sustained loop; do not restart the same clip every damage tick.
     if (battle.nativeTroopDamageRamp && u.kind === 'infernodragon' && event === 'attack') return;

@@ -381,3 +381,13 @@ normal deadline. Actual Cannon wounds to a different ally reproduce that priorit
 ground and air Heroes through portable reverse seeks. Versions 98 and earlier keep their
 original selection, allocation and completion rules. See
 [source and validation details](NATIVE-HEROES.md#version-99-unicorn-ownership-and-support-rules).
+
+## Version 100: native healing projectiles
+
+Unicorn and Druid apply recovery on arrival of their source projectiles, at 12 tiles/second.
+Druid selects each next injured ally at the preceding impact, within 4.5 tiles and up to
+four distinct recipients. Pulses retain caster tier and outgoing healing after caster
+death or transformation; an invalid recipient ends the chain. Original flight art and
+captured friendly sound identity follow the same packets. See the
+[source and adapter timing details](NATIVE-HEROES.md#version-100-native-healing-flights).
+Versions 99 and earlier retain immediate native healing.

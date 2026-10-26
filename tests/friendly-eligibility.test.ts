@@ -8,6 +8,7 @@ import {
   initialNativeState,
   stepNativeUnit,
   type NativeTroopContext,
+  resolveNativeImpact,
 } from '../src/game/native-troops';
 import { replayBattle, REPLAY_VERSION, type ReplayData } from '../src/game/replay';
 import { prepareHealerTargets, stepHealer } from '../src/game/healing';
@@ -16,6 +17,16 @@ import { launchProjectile, stepProjectiles } from '../src/game/projectiles';
 import { refreshHeroPassives } from '../src/game/native-hero-abilities';
 import { nativeFriendlyRecording } from './fixtures/native-friendly';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
+
+function settleNativeHealing(ctx: NativeTroopContext) {
+  for (let count = 0; ; count++) {
+    const shots = ctx.battle.projectiles?.filter((p) => p.native?.healing) ?? [];
+    if (!shots.length) return;
+    if (count > 8) throw Error('Healing chain did not settle');
+    ctx.battle.elapsed = Math.min(...shots.map((p) => p.impact));
+    stepProjectiles(ctx.battle, ctx.damageBuilding, ctx.effect, (p) => resolveNativeImpact(ctx, p));
+  }
+}
 
 function arena(version = REPLAY_VERSION) {
   const model = new GameModel();
@@ -157,6 +168,7 @@ for (const state of ['waiting-bird', 'egg', 'recalled', 'future', 'ejected'] as 
     const stats = nativeUnitStats('druid', 1);
     stepNativeUnit(ctx, druid, stats, 0.05);
     expect(druid.healTarget).toBe(giant.id);
+    settleNativeHealing(ctx);
     expect(giant.hp).toBe(100 + stats.heal);
     expect(invalid.hp).toBe(100);
   });
@@ -173,6 +185,7 @@ it('retargets native healing away from an immune unit without wasting a chain ho
   const stats = nativeUnitStats('druid', 1);
   stepNativeUnit(ctx, druid, stats, 0.05);
   expect(druid.healTarget).toBe(a.id);
+  settleNativeHealing(ctx);
   expect([a.hp, b.hp]).toEqual([100 + stats.heal, 100 + stats.heal]);
   expect(siege.hp).toBe(100);
 });

@@ -4240,14 +4240,23 @@ export class VillageScene extends Phaser.Scene {
         fx.type === 'impact' ||
         fx.type === 'breath') &&
       fx.sourceId !== undefined &&
-      (fx.targetBuilding || fx.targetDefender || fx.weapon === 'healing')
+      (fx.targetBuilding || fx.targetDefender || fx.targetFriendly || fx.weapon === 'healing')
     ) {
-      const u = battle.units.find((v) => v.id === fx.sourceId);
+      const u =
+        fx.targetFriendly && fx.sourceKind
+          ? { id: fx.sourceId, kind: fx.sourceKind, level: fx.sourceLevel }
+          : battle.units.find((v) => v.id === fx.sourceId);
       if (!u) return;
       // A melee blow is the swing and the impact at once; a shot swings at its launch and
       // lands at its impact.
       const events: ('attack' | 'hit')[] =
-        fx.type === 'hit' ? ['attack', 'hit'] : fx.type === 'impact' ? ['hit'] : ['attack'];
+        fx.type === 'hit'
+          ? ['attack', 'hit']
+          : fx.type === 'impact'
+            ? ['hit']
+            : fx.targetFriendly && (fx.projectileBounce ?? 0) > 0
+              ? []
+              : ['attack'];
       for (const event of events) this.battleSounds.attack(battle, u, event);
       this.fxSounded = events.some((event) =>
         this.cueReady(troopCue(battle, u, event, 'ready', 0)),
@@ -5820,7 +5829,13 @@ export class VillageScene extends Phaser.Scene {
       const nativeGarrison =
         fx.sourceDefender &&
         this.model.battle?.defenders?.some((d) => d.id === fx.sourceId && d.kind !== 'skeleton');
-      if (!nativeGarrison && !this.fxSounded && fx.weapon !== 'healing' && Math.random() < 0.2)
+      if (
+        !nativeGarrison &&
+        !this.fxSounded &&
+        fx.weapon !== 'healing' &&
+        !fx.targetFriendly &&
+        Math.random() < 0.2
+      )
         this.audio.play('hit');
       return;
     }
