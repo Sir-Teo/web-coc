@@ -231,3 +231,39 @@ it('keeps a pack unavailable if the texture manager rejects registration', async
   expect(packs.get(path)).toBeUndefined();
   expect(w.textures.size).toBe(0);
 });
+
+it('invalidates a paused presentation only after every page of a pack is drawable', async () => {
+  const w = world(),
+    page = deferred<void>();
+  w.control.decode = () => page.promise;
+  const packs = w.create();
+  expect(packs.revision).toBe(0);
+  packs.get(path);
+  await vi.waitFor(() => expect(w.images).toHaveLength(1));
+  expect(packs.revision).toBe(0);
+  page.resolve();
+  await w.ready(packs);
+  expect(packs.revision).toBe(1);
+  packs.get(path);
+  expect(packs.revision).toBe(1);
+});
+it('invalidates paused frames once when backoff expires and again after reconnecting or loading', async () => {
+  let now = 1000;
+  vi.spyOn(performance, 'now').mockImplementation(() => now);
+  const w = world();
+  w.fetcher.mockResolvedValueOnce({ ok: false, status: 503, json: async () => w.pack });
+  const packs = w.create();
+  packs.get(path);
+  await vi.waitFor(() => expect(packs.unavailable(path)).toBe(true));
+  expect(packs.revision).toBe(0);
+  now = 5999;
+  expect(packs.revision).toBe(0);
+  now = 6000;
+  expect(packs.revision).toBe(1);
+  expect(packs.revision).toBe(1);
+  w.online.dispatchEvent(new Event('online'));
+  expect(packs.revision).toBe(2);
+  await w.ready(packs);
+  expect(packs.revision).toBe(3);
+  expect(w.fetcher).toHaveBeenCalledTimes(2);
+});

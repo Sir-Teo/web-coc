@@ -90,20 +90,27 @@ for (const { level, width } of [
       await expect
         .poll(() => requests.includes(`/assets/overgrowth-native/${size}x${size}/graph.json`))
         .toBe(true);
-    await page.waitForFunction(async () => {
-      const { model, scene, audio } = window.__game,
-        { spellSoundFiles, troopSample } = await import('/src/game/troop-sounds.ts');
-      return (
-        model.battle.units.length === 0 &&
-        !scene.battleArtPending() &&
-        spellSoundFiles('Overgrowth').every((f) => audio.samples.has(troopSample(f))) &&
-        scene.overgrowthPresentation.hasCastArt(model.battle, false) &&
-        [2, 3, 4].every(
-          (s) =>
-            scene.overgrowthPresentation.layer.status(`entangle_spell_start_${s}x${s}`) === 'ready',
-        )
-      );
-    });
+    await expect
+      .poll(
+        () =>
+          page.evaluate(async () => {
+            const { model, scene, audio } = window.__game,
+              { spellSoundFiles, troopSample } = await import('/src/game/troop-sounds.ts');
+            return (
+              model.battle.units.length === 0 &&
+              !scene.battleArtPending() &&
+              spellSoundFiles('Overgrowth').every((f) => audio.samples.has(troopSample(f))) &&
+              scene.overgrowthPresentation.hasCastArt(model.battle, false) &&
+              [2, 3, 4].every(
+                (s) =>
+                  scene.overgrowthPresentation.layer.status(`entangle_spell_start_${s}x${s}`) ===
+                  'ready',
+              )
+            );
+          }),
+        { timeout: 30_000 },
+      )
+      .toBe(true);
     await open(page);
     expect((await seek(page, r.bottle)).battle).toBe(
       JSON.stringify(r.snapshots.find((s) => s.at === r.bottle)!.battle),

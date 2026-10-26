@@ -172,3 +172,10 @@ from retained history even after all live and remaining Jump spells disappear. E
 Jump bottle and deployment samples retain their original source parameters; the catalog
 remains at 340 files and 357 effects. See
 [Jump cast presentation](NATIVE-HEROES.md#version-116-original-jump-spell-fields).
+
+Version 117 adds Rage and Haste to the versioned captured-cast presentation list. Original
+bottle and deployment cues reconstruct from the shared history without duplicate live
+log entries. Cold late-history views request samples even with no live or remaining
+spells or deployed actors. Source volume/pitch remain 90%/0.75 for Rage's deployment and
+70%/0.97 for Haste's. No samples or sound effects are added: 340 files and 357 effects
+remain. See [field presentation](NATIVE-HEROES.md#version-117-original-rage-and-haste-fields).

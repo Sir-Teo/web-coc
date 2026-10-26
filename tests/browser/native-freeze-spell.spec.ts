@@ -59,15 +59,21 @@ async function seek(page: Page, at: number) {
   }, at);
 }
 async function ready(page: Page) {
-  await page.waitForFunction(async () => {
-    const { model, scene, audio } = window.__game,
-      { spellSoundFiles, troopSample } = await import('/src/game/troop-sounds.ts');
-    scene.drawOverlay(0);
-    return (
-      scene.freezeSpellPresentation.hasArt(model.battle, false) &&
-      spellSoundFiles('Freeze').every((f) => audio.samples.has(troopSample(f)))
-    );
-  });
+  await expect
+    .poll(
+      () =>
+        page.evaluate(async () => {
+          const { model, scene, audio } = window.__game,
+            { spellSoundFiles, troopSample } = await import('/src/game/troop-sounds.ts');
+          scene.drawOverlay(0);
+          return (
+            scene.freezeSpellPresentation.hasArt(model.battle, false) &&
+            spellSoundFiles('Freeze').every((f) => audio.samples.has(troopSample(f)))
+          );
+        }),
+      { timeout: 30_000 },
+    )
+    .toBe(true);
 }
 async function visible(page: Page, names: string[]) {
   await expect

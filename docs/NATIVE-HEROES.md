@@ -1585,3 +1585,51 @@ level-5 portable recordings reconstruct exactly through forward/reverse seeks pa
 100 seconds. Phone/desktop Chromium checks cover cold late-history loading, original
 bottle/field meshes and Web Audio, reduced motion, historical fallback and held/failed/
 reconnected downloads. Shared-renderer regressions cover Freeze and Overgrowth.
+
+## Version 117 original Rage and Haste fields
+
+Rage and Haste now use original bottles, range markers, glows, smoke, lines and sparks
+for all seven levels of each spell. `scripts/import-field-spell-art.py --check` verifies
+source pins, graph bytes and decoded texture pixels against client 18.400.21. New Rage
+and Haste packs add 262,068 and 169,017 bytes respectively (431,085 combined). Rage's
+upper effect reuses the existing 54,656-byte `rage-deploy-top` pack; the importer also
+reproduces that pack read-only against source and verifies its existing pins. Existing
+effect lookup order and historical troop-art paths remain unchanged.
+
+Source profiles keep their exact level mappings. Haste levels 5 and 6 share deployment
+effects; level 7 uses the next effect, which reuses level-5 emitters at 125% scale.
+Rage's field phases are shared across levels. Bottles start at cast time and deployment
+art starts after 800 ms. Original finite emission, lifetime, fade, scale and layer rows
+remain unchanged under the existing native particle adapters. Finite fields use source
+duration bounds, including Haste particles beyond the generic 30-second safety cap.
+Physical pulses still start after 1.5 seconds; boosts, movement, damage and expiry keep
+their prior rules.
+
+Version 117 extends `nativeSpellArt` to Jump, Rage and Haste. The existing shared cast
+history preserves resolving objects and retains them until ten seconds after their
+last scheduled pulse. Native cast cues bypass the scene's live log and keep their
+original keys once each. Retained history warms art and samples with no live or remaining
+spells and no deployed actors. Existing Rage and Haste deployment samples retain source
+volume/pitch (Rage 90% at 0.75 pitch; Haste 70% at 0.97 pitch). The catalog remains at
+340 files and 357 effects.
+
+A common finite-field presenter serves Jump, Rage and Haste. It warms one representative
+effect per unique pack, avoiding repeated phase/level requests and unused spell art.
+All phase packs must be ready before source art draws and replaces generic rings/auras.
+This matters for Rage's separate reused upper pack: either pack can remain pending or
+fail without a partial handoff. Reconnect retries recover at the current battle time
+and retire the fallback ring. Completed packs and newly due retry deadlines invalidate
+the cached paused battle frame once; recovery needs no simulation tick, camera movement
+or forced draw. Reduced motion keeps stationary fallbacks. Earlier recordings retain
+their previous capabilities and exact physical state.
+
+Tests cover every source level, reused pack pins/sizes, original source cue parameters,
+late Haste particles, bounded/mixed cast history and identical boosts/movement against
+version 116 using actual deployed units. Actor-free level-1 and level-7 casts produce
+portable recordings with exact forward/reverse checkpoints. Chromium phone/desktop
+checks verify cold late-history loading, original meshes and Web Audio, unused-art
+laziness, reduced motion and historical behavior. Held/failed/reconnected downloads test
+each Rage pack independently and Haste's pack during a genuinely paused replay without
+forcing presentation draws. Loader tests cover complete-upload revisions and one-shot
+backoff/reconnect invalidation; shared regressions cover Jump, Freeze,
+Overgrowth, projectile loading and troop audio.

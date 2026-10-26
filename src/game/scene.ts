@@ -1,3 +1,5 @@
+import { FIELD_SPELL_PROFILES } from './field-spell-effects';
+import { NativeSpellCastPresentation } from './native-spell-cast-scene';
 import { JumpSpellPresentation } from './jump-spell-scene';
 import { FreezeSpellPresentation } from './freeze-spell-scene';
 import { OvergrowthPresentation } from './overgrowth-scene';
@@ -681,6 +683,7 @@ export class VillageScene extends Phaser.Scene {
   private overgrowthPresentation!: OvergrowthPresentation;
   private freezeSpellPresentation!: FreezeSpellPresentation;
   private jumpSpellPresentation!: JumpSpellPresentation;
+  private fieldSpellPresentations = new Map<string, NativeSpellCastPresentation>();
   private nativeProjectiles!: NativeProjectilePresentation;
   private nativeDefenses!: NativeDefensePresentation;
   private darkDrillPresentation!: DarkDrillPresentation;
@@ -954,6 +957,17 @@ export class VillageScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
       this.decorationNativePresentation.destroy(),
     );
+    for (const [name, config] of Object.entries(FIELD_SPELL_PROFILES))
+      this.fieldSpellPresentations.set(
+        name,
+        new NativeSpellCastPresentation(
+          this,
+          this.nativeEffectPacks,
+          name,
+          config.key as SpellKind,
+          config.levels,
+        ),
+      );
     this.jumpSpellPresentation = new JumpSpellPresentation(this, this.nativeEffectPacks);
     this.freezeSpellPresentation = new FreezeSpellPresentation(this, this.nativeEffectPacks);
     this.overgrowthPresentation = new OvergrowthPresentation(this, this.nativeEffectPacks);
@@ -963,6 +977,7 @@ export class VillageScene extends Phaser.Scene {
       this.overgrowthPresentation.destroy();
       this.freezeSpellPresentation.destroy();
       this.jumpSpellPresentation.destroy();
+      for (const view of this.fieldSpellPresentations.values()) view.destroy();
       this.nativeProjectiles.destroy();
       this.nativeDefenses.destroy();
       this.nativeEffectPacks.destroy();
@@ -2684,6 +2699,7 @@ export class VillageScene extends Phaser.Scene {
     this.overgrowthPresentation?.prefetch(this.model.battle);
     this.freezeSpellPresentation?.prefetch(this.model.battle);
     this.jumpSpellPresentation?.prefetch(this.model.battle);
+    for (const view of this.fieldSpellPresentations.values()) view.prefetch(this.model.battle);
     const setups = this.model.reducedMotion
       ? []
       : [...this.model.heroSetups(), ...(this.model.battle?.nativeHeroes ?? [])];
@@ -2775,6 +2791,7 @@ export class VillageScene extends Phaser.Scene {
       this.overgrowthPresentation.clear();
       this.freezeSpellPresentation.clear();
       this.jumpSpellPresentation.clear();
+      for (const view of this.fieldSpellPresentations.values()) view.clear();
       this.nativeDefenses.clear();
       this.villageArcherTowers.clear();
       this.archerTowerProjectiles.clear();
@@ -4158,7 +4175,7 @@ export class VillageScene extends Phaser.Scene {
   private sameBattleFrame(battle: NonNullable<GameModel['battle']>) {
     const key = this.frameKey,
       cam = this.cameras.main;
-    const art = `${this.heavyArtReady}:${this.deferredArtSettled}:${this.lateAssetsReady}:${this.cannonPresentation.artRevision}:${this.villageArcherTowers.artRevision}:${this.villageNativePresentation.artRevision}`;
+    const art = `${this.heavyArtReady}:${this.deferredArtSettled}:${this.lateAssetsReady}:${this.cannonPresentation.artRevision}:${this.villageArcherTowers.artRevision}:${this.villageNativePresentation.artRevision}:${this.nativeEffectPacks.revision}`;
     const same =
       !this.fxDrained &&
       // The grace window after the finish animates on the presentation clock, not elapsed.
@@ -4370,7 +4387,8 @@ export class VillageScene extends Phaser.Scene {
         ? this.freezeSpellPresentation.hasArt(battle, reduced)
         : name === 'Jump'
           ? this.jumpSpellPresentation.hasArt(battle, reduced)
-          : false;
+          : name !== undefined &&
+            (this.fieldSpellPresentations.get(name)?.hasArt(battle, reduced) ?? false);
   }
   private trackSpellFallback(ring: Phaser.GameObjects.Ellipse, name: string | undefined) {
     if (
@@ -4401,6 +4419,8 @@ export class VillageScene extends Phaser.Scene {
     this.overgrowthPresentation.render(battle ?? null, reduced, iso);
     this.freezeSpellPresentation.render(battle ?? null, reduced, iso);
     this.jumpSpellPresentation.render(battle ?? null, reduced, iso);
+    for (const view of this.fieldSpellPresentations.values())
+      view.render(battle ?? null, reduced, iso);
     for (const [ring, name] of this.spellFallbacks) {
       if (!battle || this.spellArtReady(name)) {
         ring.destroy();

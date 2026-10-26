@@ -56,11 +56,27 @@ export class NativeArtPacks<T extends { scenes: Record<string, NativeMeshGraph> 
   private pending = new Set<string>();
   private ownedTextures = new Map<string, () => void>();
   /** Packs whose last request failed, and when (performance.now ms) to request them again. */
-  private failed = new Map<string, { attempts: number; retryAt: number }>();
+  private failed = new Map<string, { attempts: number; retryAt: number; notified?: boolean }>();
   private alive = true;
+  private artRevision = 0;
+  /** A completed pack or newly due retry invalidates paused battle presentation once. */
+  get revision() {
+    if (this.failed.size) {
+      const now = performance.now();
+      for (const failure of this.failed.values())
+        if (!failure.notified && now >= failure.retryAt) {
+          failure.notified = true;
+          this.artRevision++;
+        }
+    }
+    return this.artRevision;
+  }
   /** Back online: every failed pack is due for another request. */
   private online = () => {
-    for (const failure of this.failed.values()) failure.retryAt = 0;
+    for (const failure of this.failed.values()) {
+      failure.retryAt = 0;
+      failure.notified = false;
+    }
   };
   constructor(private scene: Phaser.Scene) {
     if (typeof window !== 'undefined') window.addEventListener('online', this.online);
@@ -115,6 +131,7 @@ export class NativeArtPacks<T extends { scenes: Record<string, NativeMeshGraph> 
       if (this.alive) {
         this.packs.set(path, pack);
         this.failed.delete(path);
+        this.artRevision++;
       }
     } catch (error) {
       active = false;

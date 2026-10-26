@@ -1,0 +1,176 @@
+{
+  "clientVersion": "18.400.21",
+  "generator": "scripts/import-field-spell-art.py",
+  "sources": {
+    "csv/particle_emitters.csv": "8d80bbf714386c4f24e6aed8f2eef671a2eac5c3b3ad41e4d275b757ced64cef",
+    "logic/effects.csv": "5c6d5b67d6407345123b8d55872ed77ee6697b466d20d1fa21e25a723c511e9f",
+    "logic/spells.csv": "385159e00327e6a1567cd91f1585b4ed0717d3f4475f0823398243482598289d",
+    "sc/buildings.sc": "f73ec949fc070bc03175d6bb3af8b62d8f607094bf2b343c9846a499a35be0ed",
+    "sc/buildings_39.sctx": "dd27d9612fe135c3be364840eeabe45b53a229b24192246b56a08fa0606fdb16"
+  },
+  "effects": {
+    "Rage deploy": "rage",
+    "Rage predeploy": "rage",
+    "Speedup_deploy_lvl1": "haste",
+    "Speedup_deploy_lvl2": "haste",
+    "Speedup_deploy_lvl3": "haste",
+    "Speedup_deploy_lvl4": "haste",
+    "Speedup_deploy_lvl5": "haste",
+    "Speedup_deploy_lvl6": "haste",
+    "Speedup_deploy_top_lvl1": "haste",
+    "Speedup_deploy_top_lvl2": "haste",
+    "Speedup_deploy_top_lvl3": "haste",
+    "Speedup_deploy_top_lvl4": "haste",
+    "Speedup_deploy_top_lvl5": "haste",
+    "Speedup_deploy_top_lvl6": "haste",
+    "speedup_Predeploy": "haste"
+  },
+  "packs": {
+    "rage": {
+      "path": "assets/field-spells-native/rage/graph.json",
+      "sha256": "1f79f596058f7a004eb55dd114a79f609552b43ae520c56b9ca90285c7137ba6",
+      "bytes": 262068
+    },
+    "haste": {
+      "path": "assets/field-spells-native/haste/graph.json",
+      "sha256": "bcff8f4333a2535cf8ca2dd1751605ae9477d550c8d4c115e7b55c230eab8381",
+      "bytes": 169017
+    }
+  },
+  "spells": {
+    "Rage": {
+      "key": "rage",
+      "levels": [
+        {
+          "PreDeployEffect": "Rage predeploy",
+          "DeployEffect": "Rage deploy",
+          "DeployEffect2": "Rage deploy top",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Rage predeploy",
+          "DeployEffect": "Rage deploy",
+          "DeployEffect2": "Rage deploy top",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Rage predeploy",
+          "DeployEffect": "Rage deploy",
+          "DeployEffect2": "Rage deploy top",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Rage predeploy",
+          "DeployEffect": "Rage deploy",
+          "DeployEffect2": "Rage deploy top",
+          "level": 4,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Rage predeploy",
+          "DeployEffect": "Rage deploy",
+          "DeployEffect2": "Rage deploy top",
+          "level": 5,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Rage predeploy",
+          "DeployEffect": "Rage deploy",
+          "DeployEffect2": "Rage deploy top",
+          "level": 6,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Rage predeploy",
+          "DeployEffect": "Rage deploy",
+          "DeployEffect2": "Rage deploy top",
+          "level": 7,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        }
+      ]
+    },
+    "Haste": {
+      "key": "haste",
+      "levels": [
+        {
+          "PreDeployEffect": "speedup_Predeploy",
+          "DeployEffect": "Speedup_deploy_lvl1",
+          "DeployEffect2": "Speedup_deploy_top_lvl1",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "speedup_Predeploy",
+          "DeployEffect": "Speedup_deploy_lvl2",
+          "DeployEffect2": "Speedup_deploy_top_lvl2",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "speedup_Predeploy",
+          "DeployEffect": "Speedup_deploy_lvl3",
+          "DeployEffect2": "Speedup_deploy_top_lvl3",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "speedup_Predeploy",
+          "DeployEffect": "Speedup_deploy_lvl4",
+          "DeployEffect2": "Speedup_deploy_top_lvl4",
+          "level": 4,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "speedup_Predeploy",
+          "DeployEffect": "Speedup_deploy_lvl5",
+          "DeployEffect2": "Speedup_deploy_top_lvl5",
+          "level": 5,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "speedup_Predeploy",
+          "DeployEffect": "Speedup_deploy_lvl5",
+          "DeployEffect2": "Speedup_deploy_top_lvl5",
+          "level": 6,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "speedup_Predeploy",
+          "DeployEffect": "Speedup_deploy_lvl6",
+          "DeployEffect2": "Speedup_deploy_top_lvl6",
+          "level": 7,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        }
+      ]
+    }
+  },
+  "externalEffects": {
+    "Rage deploy top": {
+      "path": "assets/effects-native/rage-deploy-top/graph.json",
+      "sha256": "89855ac57b50b9c40561c0445e14b0981b41d3e29972bdfc97252d2c0cad64ad",
+      "bytes": 54656
+    }
+  },
+  "conventions": {
+    "lifecycle": "Source cast phases retain original finite emitter lifetimes; combat pulse timing is unchanged.",
+    "reuse": "Existing effects are verified against source without modifying their packs.",
+    "placement": "Source offsets use the shared native isometric projection adapter."
+  }
+}

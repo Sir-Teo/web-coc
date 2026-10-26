@@ -1,3 +1,4 @@
+import type { Battle } from './model';
 import type { NativeSpellCast } from './native-spells';
 import type { NativeEffectEvent } from './native-effects';
 export interface SpellEffectProfile {
@@ -37,4 +38,23 @@ export function spellCastEffectEvents(
     }
   }
   return events;
+}
+
+/** Only names enabled by this recording use the additional captured history. */
+export function capturedSpellEffectEvents(
+  battle: Battle | null,
+  name: string,
+  profiles: readonly SpellEffectProfile[],
+  iso: (x: number, y: number) => { x: number; y: number },
+  reduced: boolean,
+  duration: (name: string) => number | undefined,
+) {
+  if (!battle?.nativeSpellArt?.includes(name) || reduced) return [];
+  return spellCastEffectEvents(
+    battle.nativeSpellCastHistory?.filter((cast) => cast.name === name) ?? [],
+    battle.elapsed,
+    profiles,
+    iso,
+    duration,
+  );
 }

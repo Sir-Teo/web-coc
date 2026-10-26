@@ -6,7 +6,7 @@ import manifest from '../reference/full-client/manifest.json';
 import type { Battle } from '../src/game/model';
 import type { NativeArtPack } from '../src/game/native-art-pack';
 import { nativeEffectDuration, nativeEffectPoses } from '../src/game/native-effects';
-import { JUMP_SPELL_EFFECTS, jumpSpellEffectEvents } from '../src/game/jump-spell-effects';
+import { capturedSpellEffectEvents } from '../src/game/native-spell-effects';
 import { BattleSoundLog, troopSoundCues } from '../src/game/troop-sounds';
 import { GameModel } from '../src/game/model';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
@@ -27,7 +27,7 @@ it('original Jump art reproduces source pins, graph bytes and complete pack size
       return sum + (statSync(p).isDirectory() ? size(new URL(name + '/', dir)) : statSync(p).size);
     }, 0);
   expect(size(new URL('./', file))).toBe(record.bytes);
-  expect(JUMP_SPELL_EFFECTS).toHaveLength(11);
+  expect(Object.keys(source.effects)).toHaveLength(11);
 });
 it.each([1, 2, 3, 4, 5])(
   'level %s samples the original bottle, range/glow and natural retirement',
@@ -37,7 +37,14 @@ it.each([1, 2, 3, 4, 5])(
     const sample = (at: number, reduced = false) => {
       const battle = r.snapshots.find((s) => s.at === at)!.battle as Battle,
         before = JSON.stringify(battle),
-        events = jumpSpellEffectEvents(battle, iso, reduced, duration),
+        events = capturedSpellEffectEvents(
+          battle,
+          'Jump',
+          source.spellLevels,
+          iso,
+          reduced,
+          duration,
+        ),
         poses = events.flatMap((e) => nativeEffectPoses(pack, e, e.sampleAt, reduced));
       expect(JSON.stringify(battle)).toBe(before);
       return { battle, events, poses };
@@ -65,7 +72,7 @@ it('landing art and audio share the tolerant source deadline without admitting f
   const r = nativeJumpRecording(),
     b = structuredClone(r.snapshots[0].battle) as Battle;
   b.elapsed = 0.8 - 1e-13;
-  const event = jumpSpellEffectEvents(b, iso, false, duration).find(
+  const event = capturedSpellEffectEvents(b, 'Jump', source.spellLevels, iso, false, duration).find(
     (e) => e.effect === 'Jump deploy lvl1',
   )!;
   expect(event.sampleAt).toBe(0.8);
@@ -75,7 +82,9 @@ it('landing art and audio share the tolerant source deadline without admitting f
   );
   b.elapsed = 0.79;
   expect(
-    jumpSpellEffectEvents(b, iso, false, duration).some((e) => e.effect === 'Jump deploy lvl1'),
+    capturedSpellEffectEvents(b, 'Jump', source.spellLevels, iso, false, duration).some(
+      (e) => e.effect === 'Jump deploy lvl1',
+    ),
   ).toBe(false);
   expect(troopSoundCues(b, new BattleSoundLog()).some((c) => c.key === 'spell:1:deploy')).toBe(
     false,
