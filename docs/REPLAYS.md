@@ -433,8 +433,18 @@ Versions 103 and earlier retain their original missing summon lookup.
 
 Yetimites and Firemites spend themselves on a delayed ballistic leap against defenders,
 with primary-once splash on both layers. Their source Castle-pull immunity now applies.
-All three mite jump families use the source 0.01-second minimum flight time. Version 104
+All three mite jump families use the shared 0.01-second simulation floor. Version 104
 retains its repeated Yetimite/Firemite melee attacks and 0.12-second Frostmite minimum.
 Portable recordings cover natural parent spawns, original jump presentation and sound,
 and the retained Firemite burn through reverse seeks. See the
 [source and adapter details](NATIVE-HEROES.md#version-105-yetimite-and-firemite-defender-jumps).
+
+## Version 106: activated defense preference
+
+Native troops include activated Town Hall weapons and armed Builder's Huts in Defense
+preferences, named-favorite fallback and defender priority. Preferred-target damage uses
+the same class at projectile impact time, including Yetimite's combined defense/resource
+modifier against an activated Town Hall. Sleeping or unarmed buildings remain outside the
+class. Versions 105 and earlier retain their previous static checks. Real Earthquake and
+Super Giant inputs cover this change through portable reverse seeks and historical playback.
+See the [source and adapter details](NATIVE-HEROES.md#version-106-activated-defense-preference).

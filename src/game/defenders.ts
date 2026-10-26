@@ -1,3 +1,4 @@
+import { preferredDefense } from './native-defense-preference';
 import { poisonAvoidanceTarget, type DefenderPoisonArea } from './poison-avoidance';
 import { defenderPoisonScales } from './defender-poison';
 import type { DefenderHitPoison } from './defender-hit-poison';
@@ -514,7 +515,12 @@ function preferenceIndex(
   let byId: Map<number, Building> | null = new Map();
   for (const b of buildings) {
     // Weapon and hut entries are created by the late phases, never inside the unit loop.
-    if (isDefense(b.kind) || (battle.late && (weapons?.[b.id] || huts?.[b.id]))) defenses.push(b);
+    if (
+      isDefense(b.kind) ||
+      (battle.nativeActivatedPreference && (b.kind === 'townhall' || b.kind === 'builder')) ||
+      (battle.late && (weapons?.[b.id] || huts?.[b.id]))
+    )
+      defenses.push(b);
     if (isResourceBuilding(b.kind) && b.npc !== 'goblin-castle') resources.push(b);
     if (byId) {
       if (byId.has(b.id)) byId = null;
@@ -536,7 +542,11 @@ function preferredOrCommitted(
   const index = preferenceIndex(battle, buildings, targetable);
   if (troop.prefersDefenses)
     for (const b of index.defenses)
-      if (b.hp > 0 && targetable(b) && (isDefense(b.kind) || lateActivatedDefense(battle, b)))
+      if (
+        b.hp > 0 &&
+        targetable(b) &&
+        (preferredDefense(battle, b) || lateActivatedDefense(battle, b))
+      )
         return true;
   if (troop.prefersResources)
     for (const b of index.resources) if (b.hp > 0 && targetable(b)) return true;

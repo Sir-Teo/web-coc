@@ -889,6 +889,8 @@ export interface Battle {
   nativeFrostmites?: true;
   /** Version 105: Yetimite and Firemite defender attacks retain their one-use ballistic bodies. */
   nativeSingleUseMiteJumps?: true;
+  /** Version 106: activated native weapons count for preferred targets and damage. */
+  nativeActivatedPreference?: true;
   /** Recent detached troop stage effects; presentation only, retired deterministically. */
   infernoDragonTransitions?: InfernoDragonTransition[];
   /** Version 53: passive hero auras and Royal Rampage. */

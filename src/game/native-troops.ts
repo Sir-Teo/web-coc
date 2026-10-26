@@ -1,3 +1,4 @@
+import { preferredDefense } from './native-defense-preference';
 import { monolithArrow, stepEquipmentDash } from './native-equipment-effects';
 import { isSiege } from './special-troops';
 import { nativeMiteJump } from './native-mite-jumps';
@@ -6,7 +7,6 @@ import { distance2D } from './distance';
 import {
   BUILDINGS,
   TROOPS,
-  isDefense,
   isResourceBuilding,
   isTrap,
   type BuildingKind,
@@ -292,11 +292,11 @@ const BUILDING_NAME: Partial<Record<BuildingKind, string>> = {
   wall: 'Wall',
 };
 const buildingName = (kind: BuildingKind) => BUILDING_NAME[kind] ?? BUILDINGS[kind].name;
-const matchesPreferred = (s: NativeUnitStats, b: Building) =>
+const matchesPreferred = (battle: Battle, s: NativeUnitStats, b: Building, at = battle.elapsed) =>
   s.preferredBuilding
     ? buildingName(b.kind) === s.preferredBuilding
     : s.preferredClass === 'Defense'
-      ? isDefense(b.kind) && b.npc !== 'tutorial-cannon'
+      ? preferredDefense(battle, b, at) && b.npc !== 'tutorial-cannon'
       : s.preferredClass === 'Resource'
         ? isResourceBuilding(b.kind)
         : s.preferredClass === 'Wall'
@@ -484,13 +484,17 @@ function chooseTarget(ctx: NativeTroopContext, u: Unit, base: NativeUnitStats) {
       best = b;
       bestDistance = d;
     }
-    if (wantPreferred && matchesPreferred(s, b) && nearer(d, favoriteDistance, b, favorite)) {
+    if (
+      wantPreferred &&
+      matchesPreferred(battle, s, b) &&
+      nearer(d, favoriteDistance, b, favorite)
+    ) {
       favorite = b;
       favoriteDistance = d;
     }
     if (
       wantDefense &&
-      isDefense(b.kind) &&
+      preferredDefense(battle, b) &&
       b.npc !== 'tutorial-cannon' &&
       nearer(d, defenseDistance, b, defense)
     ) {
@@ -1098,8 +1102,8 @@ function aloneScale(battle: Battle, u: Unit, s: NativeUnitStats, state: NativeUn
   return 1 + num(row, 'BoostDamagePercentage') / 100;
 }
 
-function damageMultiplier(s: NativeUnitStats, b: Building) {
-  let scale = matchesPreferred(s, b) ? s.preferredMultiplier : 1;
+function damageMultiplier(battle: Battle, s: NativeUnitStats, b: Building, at = battle.elapsed) {
+  let scale = matchesPreferred(battle, s, b, at) ? s.preferredMultiplier : 1;
   if (s.damageMultiplierTarget && buildingName(b.kind) === s.damageMultiplierTarget)
     scale *= s.damageMultiplier;
   if (s.storageReduction && isResourceBuilding(b.kind)) scale *= 1 - s.storageReduction;
@@ -1136,7 +1140,7 @@ function strike(
         targetableBuilding(battle, b) &&
         distanceTo(u, b) <= radius + 1e-9
       )
-        ctx.damageBuilding(b, damage * damageMultiplier(s, b), battle.elapsed);
+        ctx.damageBuilding(b, damage * damageMultiplier(battle, s, b), battle.elapsed);
     damageDefenders(battle, u, damage, radius, 'ground');
     ctx.effect({ type: 'blast', x: u.x, y: u.y, radius, sourceId: u.id });
   } else if (s.projectile && s.range >= 1) {
@@ -1173,7 +1177,7 @@ function strike(
       u.kind === 'barbarianking' &&
       s.splash > 0 &&
       heroOf(battle, u);
-    ctx.damageBuilding(target, damage * damageMultiplier(s, target), battle.elapsed);
+    ctx.damageBuilding(target, damage * damageMultiplier(battle, s, target), battle.elapsed);
     if (s.splash)
       for (const b of battle.buildings)
         if (
@@ -1183,7 +1187,7 @@ function strike(
           (!gauntlet || presentBuilding(battle, b)) &&
           distanceTo(center, b) <= s.splash
         )
-          ctx.damageBuilding(b, damage * damageMultiplier(s, b), battle.elapsed);
+          ctx.damageBuilding(b, damage * damageMultiplier(battle, s, b), battle.elapsed);
     if (gauntlet) {
       damageDefenders(battle, center, damage, s.splash, 'ground', undefined, battle.elapsed);
       ctx.effect({ type: 'blast', x: center.x, y: center.y, radius: s.splash, sourceId: u.id });
@@ -1474,7 +1478,7 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
   }
   const target = p.targetBuilding ? battle.buildings.find((b) => b.id === p.targetId) : undefined;
   if (target && target.hp > 0) {
-    ctx.damageBuilding(target, p.damage * damageMultiplier(s, target), p.impact);
+    ctx.damageBuilding(target, p.damage * damageMultiplier(battle, s, target, p.impact), p.impact);
     if (battle.nativeProjectileFrost && source.frost)
       applyFrost(
         battle,
@@ -1487,7 +1491,7 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
   if (p.splash && !(phoenixSplash && p.toAir))
     for (const b of battle.buildings)
       if (b.id !== p.targetId && b.hp > 0 && !isTrap(b.kind) && distanceTo(p, b) <= p.splash) {
-        ctx.damageBuilding(b, p.damage * damageMultiplier(s, b), p.impact);
+        ctx.damageBuilding(b, p.damage * damageMultiplier(battle, s, b, p.impact), p.impact);
         if (frostmiteSplash) applyFrost(battle, s, b, p.impact);
       }
   if (p.splash)
@@ -1534,7 +1538,7 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
       const along = (bx * dx + by * dy) / length;
       const across = Math.abs(bx * dy - by * dx) / length;
       if (along >= 0 && along <= reach && across <= radius + BUILDINGS[b.kind].size / 2)
-        ctx.damageBuilding(b, p.damage * damageMultiplier(s, b), p.impact);
+        ctx.damageBuilding(b, p.damage * damageMultiplier(battle, s, b, p.impact), p.impact);
     }
   }
   const bounced = source.bounce ?? 0;

@@ -272,13 +272,13 @@ const wakeTime = (battle: Battle, space: number) =>
   battle.nativeDeployments?.find((entry) => entry.space >= space)?.at;
 
 /** Whether a Town Hall or Builder's Hut currently counts as a defense for troop targeting. */
-export function activeAsDefense(battle: Battle, b: Building) {
+export function activeAsDefense(battle: Battle, b: Building, at = battle.elapsed) {
   if (!battle.nativeRoster || b.npc) return isDefense(b.kind);
   if (b.kind === 'spelltower') return true;
   if (b.kind !== 'townhall' && b.kind !== 'builder') return isDefense(b.kind);
   if (b.constructing || b.upgradeEnd || !weaponFor(b)) return false;
   const state = battle.nativeDefenses?.[b.id];
-  return state?.awakeAt !== undefined && state.awakeAt <= battle.elapsed + EPS;
+  return state?.awakeAt !== undefined && state.awakeAt <= at + EPS;
 }
 
 /**

@@ -1076,8 +1076,10 @@ pulse arrives 0.5 seconds after impact, with 25 total hits at 0.4-second interva
 This change does not alter the burn's boost or overlap rules. Furnace has four
 source tiers although the standalone Firemite source table has five.
 
-All three mite jump families now use the source 0.01-second minimum projectile duration,
-including short Frostmite jumps. Version 104 preserves Frostmite's former 0.12-second
+All three mite jump families now use the shared 0.01-second simulation floor, so short
+leaps retain their source four-tiles/second speed. This floor is an adapter; the source
+projectile tables do not specify a minimum duration. Version 104 preserves Frostmite's
+former 0.12-second
 minimum; Yetimite and Firemite retain their previous repeated melee and Castle-pull
 behavior in that version. Older recordings keep their existing rules.
 
@@ -1090,3 +1092,30 @@ Real Yeti wound-spawns and Furnace timer-spawns in `tests/fixtures/native-mite-j
 fight a defending Queen through portable forward and reverse seeks. Desktop and phone
 browser checks verify cold roster warming, original bodies and ballistic art, actual
 Web Audio at launch, burn arrival, reduced motion and version 104 playback.
+
+## Version 106 activated defense preference
+
+Native troops previously checked only static building kinds for their Defense preference.
+They now include activated Town Hall weapons and armed Builder's Huts, using the existing
+source weapon and activation state. Sleeping, unarmed, constructing or upgrading buildings
+do not acquire this class. A troop with a named favorite such as Air Defense uses the same
+classification for its fallback defense pool. Existing building commitments remain intact.
+
+Defense-first troops also ignore released defenders while an eligible activated building
+stands. The shared preference index includes potential Town Hall and Builder's Hut weapons
+before they wake, then checks their current eligibility at use time. This preserves the
+live behavior without rescanning every building for every attacker.
+
+Preferred-target damage uses the same classification, independently for each building in
+an area hit. Projectile damage checks activation at the packet's impact time. A Yetimite's
+fourfold defense bonus and 50% resource reduction therefore produce twice its base damage
+against an activated Town Hall; a dormant Hall retains only the resource reduction.
+Versions 105 and earlier preserve their static native preference and damage results.
+
+`tests/native-activated-preference.test.ts` covers source weapon tiers, sleeping and armed
+buildings, upgrades, named-favorite fallback, defender priority, live index activation and
+impact timing. An actual Earthquake input wakes a Town Hall in
+`tests/fixtures/native-activated-preference.ts`: a newly deployed Super Giant chooses it while
+the first Super Giant keeps its committed storage target. Portable forward/reverse seeks and
+phone/desktop browser checks verify the original bodies, read-only rendering, reduced
+motion and historical version 105 targeting.
