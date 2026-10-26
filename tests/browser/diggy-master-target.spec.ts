@@ -85,6 +85,32 @@ for (const { mode, width } of [
         }),
       )
       .toBe(true);
+    if (mode !== 'defense') {
+      await expect
+        .poll(() =>
+          page.evaluate(async () => {
+            const { model, scene } = window.__game;
+            scene.drawOverlay(0);
+            const r = window.__diggyMaster;
+            const master = model.battle.units.find((u) => u.id === r.masterId);
+            const wall = model.battle.buildings.find((b) => b.id === r.targetId);
+            const { bakedDirection } = await import('/src/game/hero-native-scene.ts');
+            const direction = bakedDirection(wall.x + 0.5 - master.x, wall.y + 0.5 - master.y);
+            const p = scene.heroNativePresentation;
+            const atlas = p.packs.get('heroes-native/king');
+            const sprite = p.sprites.get(master.id);
+            return (
+              !!sprite &&
+              atlas.states.attack.frames[direction].some(
+                (f) =>
+                  sprite.texture.key === `baked:heroes-native/king/${f.image}` &&
+                  sprite.frame.name === `${f.x}:${f.y}:${f.w}:${f.h}`,
+              )
+            );
+          }),
+        )
+        .toBe(true);
+    }
     await page.screenshot({ path: `output/playtest/diggy-master-${mode}-${width}.png` });
     const following = await seek(page, times.following);
     expect(following.target).toBe(times.targetId);

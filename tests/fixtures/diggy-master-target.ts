@@ -7,7 +7,7 @@ export function diggyMasterBattle(mode: DiggyMasterMode = 'defense', version = R
   const model = new GameModel();
   model.state.obstacles = [];
   model.state.buildings = [
-    makeBuilding(1, 'townhall', 36, 5, 18),
+    makeBuilding(1, 'townhall', 36, mode === 'wall' ? 36 : 5, 18),
     ...(mode !== 'defense'
       ? Array.from({ length: 48 }, (_, y) => makeBuilding(100 + y, 'wall', 8, y, 18))
       : [makeBuilding(2, 'cannon', 14, 5, 21), makeBuilding(3, 'goldstorage', 8, 5, 15)]),

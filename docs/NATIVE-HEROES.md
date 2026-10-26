@@ -594,3 +594,13 @@ ground/air restrictions, dead/hidden/unborn targets, copies and unavailable Hero
 and Champion deployments, plus a recorded Freeze to hold an enemy behind a Wall, reconstruct
 through portable backward seeks. The matching browser spec checks native Diggy art, actual
 Wall and defense damage, reduced motion and historical playback on desktop and phone.
+
+### Facing a blocking Wall
+
+Native Hero attack directions and fallback target selection now use the recorded blocker before
+the route's building or defender destination. A Hero hitting a nearby Wall faces that actual
+impact point, including when its destination lies at another angle. Missing blocker metadata
+retains destination-facing behavior. This is presentation only and uses version 91's existing
+metadata without a combat-version change. Unit presentation checks cover distinct directions,
+missing blockers, paused and backward redraws, reduced motion and simulation-state invariance.
+The real Wall recording includes a diagonal destination to verify the rendered attack atlas.

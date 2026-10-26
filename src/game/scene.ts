@@ -4944,9 +4944,10 @@ export class VillageScene extends Phaser.Scene {
       const defenderTarget =
         u.defenderTarget !== undefined ? defenderById.get(u.defenderTarget) : undefined;
       const liveDefender = defenderTarget && defenderTarget.hp > 0 ? defenderTarget : undefined;
+      const wallTarget = buildingById.get(u.native?.wallTarget ?? -1);
       const target = TROOPS[u.kind].healer
         ? unitById.get(u.healTarget ?? -1)
-        : (liveDefender ?? buildingById.get(u.target ?? -1));
+        : (wallTarget ?? liveDefender ?? buildingById.get(u.target ?? -1));
       // Fallback sprites are invisible by design; a ground marker stands in (after the
       // native pass, only if no mesh drew the unit).
       // A walk sheet that arrived after the unit was made replaces its stand-in.

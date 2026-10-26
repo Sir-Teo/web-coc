@@ -316,6 +316,62 @@ describe('troop native presentation', () => {
 });
 
 describe('hero native presentation', () => {
+  for (const destination of ['building', 'defender'] as const) {
+    it.each([undefined, 2, 999])(
+      `faces the actual Wall before its ${destination} destination, wall id=%s`,
+      (wallId) => {
+        const p = new HeroNativePresentation(fakeScene());
+        const atlas = JSON.parse(
+          fs.readFileSync('public/assets/characters/king-v1/atlas.json', 'utf8'),
+        );
+        (p as unknown as { packs: Map<string, unknown> }).packs.set('heroes-native/king', atlas);
+        const king = unit(1, 10, 10, {
+          kind: 'barbarianking',
+          hero: 'king',
+          target: 3,
+          path: [],
+          attacking: true,
+          cooldown: 1.2,
+          native: wallId === undefined ? {} : { wallTarget: wallId },
+        });
+        const battle = battleOf([king]);
+        battle.townhall = 18;
+        battle.buildings = [
+          makeBuilding(2, 'wall', 10, 12, 18),
+          makeBuilding(3, 'townhall', 16, 4, 18),
+        ];
+        battle.nativeHeroes = [{ kind: 'king', level: 1, items: [], unitId: king.id }];
+        if (destination === 'defender') {
+          const enemy = defendingHero({ kind: 'king', level: 1, x: 16, y: 10 }, 0);
+          battle.defenders = [enemy];
+          king.defenderTarget = enemy.id;
+        }
+        // These three points occupy distinct atlas directions: Wall SW, building E, enemy SE.
+        const direction = wallId === 2 ? 3 : destination === 'building' ? 0 : 1;
+        const sprites = (
+          p as unknown as {
+            sprites: Map<number, { frame: { name: string } }>;
+          }
+        ).sprites;
+        for (const at of [1, 1, 0.5]) {
+          battle.elapsed = at;
+          const before = JSON.stringify(battle);
+          p.render(battle, false, iso, 70, new Map(), new Map());
+          const frame = atlas.states.attack.frames[direction][0];
+          expect(sprites.get(1)!.frame.name).toBe(`${frame.x}:${frame.y}:${frame.w}:${frame.h}`);
+          expect(JSON.stringify(battle)).toBe(before);
+          p.render(battle, true, iso, 70, new Map(), new Map());
+          const reduced = (atlas.normalizedAttack ? atlas.states.idle : atlas.states.attack).frames[
+            direction
+          ][0];
+          expect(sprites.get(1)!.frame.name).toBe(
+            `${reduced.x}:${reduced.y}:${reduced.w}:${reduced.h}`,
+          );
+          expect(JSON.stringify(battle)).toBe(before);
+        }
+      },
+    );
+  }
   it.each([
     { level: 1, scale: 1.7, until: 14 },
     { level: 3, scale: 1.75, until: 14.5 },

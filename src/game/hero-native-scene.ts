@@ -294,14 +294,19 @@ export class HeroNativePresentation {
       let heading: { x: number; y: number } | undefined;
       if (body.attacking || gauntletKnockout) {
         if (u) {
+          const wall =
+            typeof u.native?.wallTarget === 'number'
+              ? buildingIndex(battle).get(u.native.wallTarget)
+              : undefined;
           const enemy =
             typeof u.defenderTarget === 'number'
               ? defenderIndex(battle).get(u.defenderTarget)
               : undefined;
           const target =
-            typeof u.target === 'number' ? buildingIndex(battle).get(u.target) : undefined;
+            wall ??
+            (typeof u.target === 'number' ? buildingIndex(battle).get(u.target) : undefined);
           heading =
-            enemy ??
+            (!wall ? enemy : undefined) ??
             (target
               ? {
                   x: target.x + BUILDINGS[target.kind].size / 2,
