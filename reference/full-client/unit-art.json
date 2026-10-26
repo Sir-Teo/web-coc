@@ -18,6 +18,8 @@
     "sc/chr_elite_barbarian_0.sctx": "eafa2366edc1f0f648917ae6b6d9273eac62599352c64c575cec7e2d324e0b39",
     "sc/chr_elite_giant.sc": "2ee24a3433b1a144ef1b03e2130b27f49eb4118e2e44d3b9c34ac470bce0ddde",
     "sc/chr_elite_giant_0.sctx": "d11c7b555069aebacec269c42c211b98508fa45fd78b170e4b99054d1a6edfa3",
+    "sc/chr_frostmite.sc": "cbc6d909d0b0c0db561af0802c85edd479e19fabcc534debb1e3b99063f1ded4",
+    "sc/chr_frostmite_0.sctx": "f84db02c47847b04f1f3016391ae98999eb076373adf618632d98370c6c1935c",
     "sc/chr_furnace.sc": "85d6cb909e0ce8abc7eb7d7e984497778078a975c49d639ec0c49402c767a6e9",
     "sc/chr_furnace_0.sctx": "7db3fc8e8a56daa224d8692c24112388df3e3bb95edbd2bfca3da893a2d54ebc",
     "sc/chr_golem.sc": "0e2fb6935e7cee3a2dcd36ccd0d3a5e74ee618978fef71e94d732815f4819abc",
@@ -406,6 +408,19 @@
         "celebrate",
         "die",
         "spawn"
+      ]
+    },
+    "frostmite": {
+      "path": "assets/troops-native/frostmite/graph.json",
+      "sha256": "e3ca29d38ff663ed7846cabdca7a4aa176be08d86fcb0eedc5b14c97f2a7a028",
+      "levels": 1,
+      "clientName": "Icemite",
+      "states": [
+        "walk",
+        "idle",
+        "attack",
+        "celebrate",
+        "die"
       ]
     },
     "wallwrecker": {

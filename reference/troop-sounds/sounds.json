@@ -160,6 +160,8 @@
     "sfx/explosive_arrow_01v2.ogg": "2743212b46001112a8dedbc1aee1c944389d21f3f1144ba9e1c5edf3a9b79e4e",
     "sfx/fire_siege_fire_01.ogg": "4185767e854a23b68f362c53a5bfd6a80ca6b58a9a2b7ec9d78facb7b77d319c",
     "sfx/freeze_spell_01.ogg": "5af71f1c5dd30d27173649ee585021ba0f08572b28097c280bdcaeff11885c50",
+    "sfx/frostmite_atk_01.ogg": "e976777c4decbcd29126f5d09f9b929b14589675c0d2029e043db5f3f4cda0da",
+    "sfx/frostmite_die_01.ogg": "e27530bec9215ee4ce14ffa0d201b14cf70a87fec16842a782a410e7481b9da8",
     "sfx/garg_attack_01.ogg": "b63cf9571aea371a003db483d285d670e0db7e4bad26b5e8b97c953d4e53424a",
     "sfx/garg_deploy_02.ogg": "5afca23213da1870fbba082f301f0c8caace8dd351e4a6739244d3d65dd09851",
     "sfx/garg_die_01.ogg": "0221a3232d95b4cc9b9d514ecc1a7d194539f11f612c70f58efcbef4b81175bc",
@@ -490,6 +492,11 @@
       "attack": "Catapult Attack",
       "hit": "Catapult Hit",
       "die": "Siege Ram Die"
+    },
+    "frostmite": {
+      "name": "Icemite",
+      "deploy": "Frostmite Deploy",
+      "die": "Frostmite Jump"
     },
     "frostypet": {
       "name": "Frosty",
@@ -2227,6 +2234,24 @@
         "volume": 0.8,
         "minPitch": 0.95,
         "maxPitch": 0.95,
+        "delay": 0.0
+      }
+    ],
+    "Frostmite Deploy": [
+      {
+        "sound": "sfx/frostmite_atk_01.ogg",
+        "volume": 0.8,
+        "minPitch": 0.95,
+        "maxPitch": 1.05,
+        "delay": 0.0
+      }
+    ],
+    "Frostmite Jump": [
+      {
+        "sound": "sfx/frostmite_die_01.ogg",
+        "volume": 0.7,
+        "minPitch": 0.95,
+        "maxPitch": 1.05,
         "delay": 0.0
       }
     ],
@@ -5757,6 +5782,16 @@
       "path": "assets/audio/troops-native/freeze_spell_01.ogg",
       "bytes": 22874,
       "sha256": "5af71f1c5dd30d27173649ee585021ba0f08572b28097c280bdcaeff11885c50"
+    },
+    "sfx/frostmite_atk_01.ogg": {
+      "path": "assets/audio/troops-native/frostmite_atk_01.ogg",
+      "bytes": 10060,
+      "sha256": "e976777c4decbcd29126f5d09f9b929b14589675c0d2029e043db5f3f4cda0da"
+    },
+    "sfx/frostmite_die_01.ogg": {
+      "path": "assets/audio/troops-native/frostmite_die_01.ogg",
+      "bytes": 9830,
+      "sha256": "e27530bec9215ee4ce14ffa0d201b14cf70a87fec16842a782a410e7481b9da8"
     },
     "sfx/garg_attack_01.ogg": {
       "path": "assets/audio/troops-native/garg_attack_01.ogg",

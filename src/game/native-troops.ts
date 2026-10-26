@@ -768,6 +768,7 @@ export function stepNativeUnit(
     }
     return;
   }
+  const frostmite = battle.nativeFrostmites && u.kind === 'frostmite';
   const heroHunter = battle.nativeHeadhunterHeroRules && u.kind === 'headhunter';
   const poisonLizard = battle.nativeAttackerHitPoison && u.kind === 'poisonlizard';
   const jumpingChase =
@@ -780,26 +781,27 @@ export function stepNativeUnit(
   const rangedFrost = battle.nativeDefenderFrost && s.frostTime > 0 && s.range > 2;
   const nativeHeroAttack = battle.nativeHeroDefenderAttacks && isHeroUnitKind(u.kind);
   const frostArrow = rangedFrost || nativeHeroAttack ? monolithArrow(ctx, u) : undefined;
-  const defenderProjectile = rangedFrost
-    ? {
-        name: (frostArrow && text(frostArrow, 'Projectile')) || s.frostProjectile || s.projectile,
-        kind: u.kind,
-        level: s.level,
-        frost: { seconds: s.frostTime, percent: s.frostPercent },
-      }
-    : ((battle.nativeHeadhunterCards && u.kind === 'headhunter') ||
-          poisonLizard ||
-          chargedHero ||
-          (battle.nativePhoenixResurrection && u.kind === 'phoenix') ||
-          (battle.nativeSneezyController && u.kind === 'sneezy') ||
-          nativeHeroAttack) &&
-        s.projectile
+  const defenderProjectile =
+    rangedFrost || frostmite
       ? {
-          name: (frostArrow && text(frostArrow, 'Projectile')) || s.projectile,
+          name: (frostArrow && text(frostArrow, 'Projectile')) || s.frostProjectile || s.projectile,
           kind: u.kind,
           level: s.level,
+          frost: { seconds: s.frostTime, percent: s.frostPercent },
         }
-      : undefined;
+      : ((battle.nativeHeadhunterCards && u.kind === 'headhunter') ||
+            poisonLizard ||
+            chargedHero ||
+            (battle.nativePhoenixResurrection && u.kind === 'phoenix') ||
+            (battle.nativeSneezyController && u.kind === 'sneezy') ||
+            nativeHeroAttack) &&
+          s.projectile
+        ? {
+            name: (frostArrow && text(frostArrow, 'Projectile')) || s.projectile,
+            kind: u.kind,
+            level: s.level,
+          }
+        : undefined;
   const readyToAttack = u.cooldown <= 0;
   const undergroundChase = battle.nativeUndergroundDefenderChase && s.underground;
   const masterBuilding = followPetMaster(ctx, u, s);
@@ -839,6 +841,17 @@ export function stepNativeUnit(
           : (ctx.routableBuildings ?? ctx.buildings),
         ...(jumpingChase ? { jumpWalls: true } : {}),
         ...(undergroundChase ? { enterRange: () => surfaceUndergroundUnit(ctx, u, at) } : {}),
+        ...(frostmite
+          ? {
+              targetAcquired: () => {
+                state.targetAt = at;
+              },
+              attackReady: () => {
+                state.targetAt ??= at;
+                return at + 1e-9 >= state.targetAt + s.newTargetDelay;
+              },
+            }
+          : {}),
         ...(battle.nativeDiggyMasterTarget && isHeroUnitKind(u.kind)
           ? {
               enterWallRange: (wall: Building) => {
@@ -858,7 +871,15 @@ export function stepNativeUnit(
       state.surfaced = false;
       state.burrowed = true;
     }
-    if (readyToAttack && u.cooldown > 0) completeHeroAttack(battle, u);
+    if (readyToAttack && u.cooldown > 0) {
+      completeHeroAttack(battle, u);
+      if (frostmite) {
+        state.attacks = (state.attacks ?? 0) + 1;
+        u.hp = 0;
+        u.spent = true;
+        u.defeatedAt = at;
+      }
+    }
     return;
   }
   let target = ctx.buildingsById.get(u.target ?? -1);
@@ -1424,6 +1445,7 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
     battle.nativeChampionRocketSpears && source.name === 'RocketSpearProjectile'
   );
   const phoenixSplash = !!(battle.nativePhoenixResurrection && source.kind === 'phoenix');
+  const frostmiteSplash = !!(battle.nativeFrostmites && source.kind === 'frostmite');
   // Native defender-targeted shots retain their captured direct hit on either defender layer.
   if (p.targetDefender) {
     const defender = battle.defenders?.find((d) => d.id === p.targetId);
@@ -1435,6 +1457,7 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
         p.damage,
         rocketSplash ||
           phoenixSplash ||
+          frostmiteSplash ||
           (battle.nativeHeroDefenderAttacks && isHeroUnitKind(source.kind))
           ? p.impact
           : undefined,
@@ -1461,18 +1484,26 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
   }
   if (p.splash && !(phoenixSplash && p.toAir))
     for (const b of battle.buildings)
-      if (b.id !== p.targetId && b.hp > 0 && !isTrap(b.kind) && distanceTo(p, b) <= p.splash)
+      if (b.id !== p.targetId && b.hp > 0 && !isTrap(b.kind) && distanceTo(p, b) <= p.splash) {
         ctx.damageBuilding(b, p.damage * damageMultiplier(s, b), p.impact);
+        if (frostmiteSplash) applyFrost(battle, s, b, p.impact);
+      }
   if (p.splash)
     damageDefenders(
       battle,
       p,
       p.damage,
       p.splash,
-      (rocketSplash || phoenixSplash) && p.toAir ? 'air' : 'ground',
-      (rocketSplash || phoenixSplash) && p.targetDefender ? p.targetId : undefined,
-      rocketSplash || phoenixSplash ? p.impact : undefined,
+      frostmiteSplash ? 'both' : (rocketSplash || phoenixSplash) && p.toAir ? 'air' : 'ground',
+      (rocketSplash || phoenixSplash || frostmiteSplash) && p.targetDefender
+        ? p.targetId
+        : undefined,
+      rocketSplash || phoenixSplash || frostmiteSplash ? p.impact : undefined,
     );
+  if (frostmiteSplash && p.splash)
+    for (const defender of battle.defenders ?? [])
+      if (distance2D(defender.x - p.x, defender.y - p.y) <= p.splash)
+        applyDefenderFrost(defender, { seconds: s.frostTime, percent: s.frostPercent }, p.impact);
   const projectile = nativeRow('projectiles', source.name);
   const hitSpell = text(projectile, 'HitSpell');
   if (hitSpell)
@@ -1607,7 +1638,12 @@ function stepSummons(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: n
   const state = u.native!;
   state.summonAt ??= (u.spawnedAt ?? at) + s.summonDelay;
   const kind = unitKindForName(s.summon) as UnitKind | undefined;
-  if (!kind || (kind === 'booger' && !battle.nativeSneezyController)) return;
+  if (
+    !kind ||
+    (kind === 'booger' && !battle.nativeSneezyController) ||
+    (kind === 'frostmite' && !battle.nativeFrostmites)
+  )
+    return;
   const owner =
     battle.nativePetSummonRecall && isPetUnitKind(u.kind)
       ? battle.nativeHeroes?.find((hero) => hero.petId === u.id)

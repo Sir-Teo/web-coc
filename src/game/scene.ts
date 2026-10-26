@@ -2595,6 +2595,11 @@ export class VillageScene extends Phaser.Scene {
       if (!army) continue;
       for (const [kind, count] of Object.entries(army)) if (count > 0) wanted.add(kind);
     }
+    if (
+      this.model.battle?.nativeFrostmites &&
+      this.model.battle.nativeHeroes?.some((hero) => hero.pet?.kind === 'frosty')
+    )
+      wanted.add('frostmite');
     return [...wanted].sort();
   }
   /** Baked character atlases the home lineup or current battle needs. */
@@ -4180,6 +4185,7 @@ export class VillageScene extends Phaser.Scene {
           if (battle.nativePhoenixResurrection && hero.pet.kind === 'phoenix')
             kinds.add('phoenixegg');
           if (battle.nativeSneezyController && hero.pet.kind === 'sneezy') kinds.add('booger');
+          if (battle.nativeFrostmites && hero.pet.kind === 'frosty') kinds.add('frostmite');
         }
       }
       for (const [kind, count] of Object.entries(battle.remaining)) if (count) kinds.add(kind);

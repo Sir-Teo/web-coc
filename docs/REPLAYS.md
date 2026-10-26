@@ -418,3 +418,13 @@ redeployment creates a new unit body. Sneezy's earlier Boogers therefore continu
 to occupy its two summon slots, and later replacements stay in the same family.
 See the [Recall ownership details](NATIVE-HEROES.md#version-103-pet-summon-ownership-after-recall).
 Versions 102 and earlier retain per-body ownership and its original summon counts.
+
+## Version 104: Frosty Frostmites
+
+Frosty summons its source Frostmites on the existing eight-second adapter schedule,
+with per-level wave sizes and concurrent limits. Each wall-jumping Frostmite spends
+itself on one native ballistic leap, applies primary-once area damage across both
+defender layers, and chills affected targets for four seconds at 50%. Original art
+and audio warm from the carried Frosty roster. See the
+[source and adapter details](NATIVE-HEROES.md#version-104-frosty-frostmites).
+Versions 103 and earlier retain their original missing summon lookup.

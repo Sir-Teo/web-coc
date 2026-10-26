@@ -885,6 +885,8 @@ export interface Battle {
   nativeSneezyController?: true;
   /** Version 103: a recalled pet retains the same logical ownership of living/queued summons. */
   nativePetSummonRecall?: true;
+  /** Version 104: Frosty summons source Frostmites with a single-use area frost jump. */
+  nativeFrostmites?: true;
   /** Recent detached troop stage effects; presentation only, retired deterministically. */
   infernoDragonTransitions?: InfernoDragonTransition[];
   /** Version 53: passive hero auras and Royal Rampage. */

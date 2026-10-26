@@ -76,6 +76,7 @@ export const TROOP_SOURCE = {
 } as const;
 /** Units that never occupy army housing: created by other units, spells or equipment. */
 export const SPAWN_SOURCE = {
+  frostmite: 'Icemite',
   booger: 'Booger',
   golemite: 'Golemite',
   lavapup: 'Lava Pup',

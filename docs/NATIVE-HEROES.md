@@ -1013,3 +1013,45 @@ inputs in `tests/fixtures/pet-summon-recall.ts` keep both children alive against
 unarmed Town Hall, then redeploy their pet. Portable reverse seeks and phone/desktop
 browser checks preserve their original bodies, the cap and reduced motion. Versions
 102 and earlier retain their former per-body summon ownership.
+
+## Version 104 Frosty Frostmites
+
+The pinned `pets.Frosty` row summons `characters.Icemite`, which was missing from the
+spawned-unit mapping. Frosty now releases its original Frostmites: one per wave at
+levels 1–4, two at 5–14, and three at 15. The source eight-second schedule and limits
+of 4/8/10/12 follow the existing concurrent-summon adapter; the wiki does not distinguish
+an alive limit from a lifetime limit. The zero-delay first wave uses the existing
+immediate-summon adapter. Pet summon ownership also follows version 103 through Recall.
+
+Frostmites use the source 450 HP, 15 damage, three tiles/second, two-tile range, defense
+preference, wall jumping, trap immunity and `DoesNotOpenCC` exclusion. They can fight
+released defenders on either layer. Acquiring a new target starts the source 0.5-second
+attack delay. The one-use attack spends the creature at launch and hands its body to
+the original ballistic `FrostmiteJump`, at four tiles/second. A committed leap retains
+its outgoing damage after the caster disappears or a boost expires.
+
+At impact, the 0.8-tile blast hits its primary defender once, damages both defender
+layers and nearby buildings, and applies the source four-second, 50% slow to affected
+living defenders and structures. Storage damage reduction applies separately to each
+structure. Future defenders are excluded at impact time. The existing two-dimensional
+splash adapter governs coverage; this does not reconstruct vertical collision volumes.
+
+The original `IceSpirit` movement/idle/attack/death timelines, direction roots and 130%
+scale are imported from `sc/chr_frostmite.sc`; the jump and `Frostmite Splat` particle art
+were already retained. A carried Frosty now warms its summon body, projectile and two
+original audio samples. The source deploy effect uses `frostmite_atk_01.ogg` at 80%; its
+jump-death effect uses `frostmite_die_01.ogg` at 70%, both at 0.95–1.05 pitch.
+
+`PYTHONPATH=scripts python3 scripts/import-native-unit-art.py --only frostmite --check`
+reproduces the selected unit while preserving the other indexed units. `--download-missing`
+can fetch fingerprint-verified source files into the existing client cache. A full import
+still reproduces the complete index. Fingerprints may come from the source archive or the
+pinned client cache. The shared troop-sound importer verifies the unchanged Ogg bytes.
+
+`tests/native-frostmite.test.ts` checks all wave/cap breakpoints, replenishment, target
+delay, one-use ownership, wall crossing, captured boosts, primary-once damage, ground/air
+splash, radius, storage reduction, slow expiry, future targets, traps and Castle release.
+Real deployments in `tests/fixtures/native-frostmite.ts` cross a standing wall line and
+chill a Cannon through portable reverse seeks. Phone/desktop browser checks verify
+original body, leap, impact art, actual Web Audio, reduced motion and historical playback.
+Versions 103 and earlier retain the missing Frostmite lookup and their original results.

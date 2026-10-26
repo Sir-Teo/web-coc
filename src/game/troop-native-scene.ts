@@ -399,7 +399,10 @@ export class TroopNativePresentation {
           TROOPS[u.kind].rate * unitAttackIntervalScale(u, elapsed),
           u.cooldown,
         );
-        seconds = Math.max(0, interval - u.cooldown);
+        seconds =
+          u.kind === 'frostmite' && battle?.nativeFrostmites && u.native?.targetAt !== undefined
+            ? Math.max(0, elapsed - u.native.targetAt)
+            : Math.max(0, interval - u.cooldown);
       } else
         seconds =
           // Shrink and late campaign freezes hold the clock; loops get a per-unit phase.

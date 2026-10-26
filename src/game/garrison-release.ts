@@ -60,10 +60,11 @@ export function stepGarrisonReleases(battle: Battle) {
   const bunkers = new Map<number, Building>();
   for (const b of battle.buildings) if (isGarrisonBunker(b)) bunkers.set(b.id, b);
   // One snapshot per tick: defender spawns below never touch battle.units.
-  // Sneezy's spawned Boogers can fight released defenders but cannot pull the reserve.
+  // Boogers and source DoesNotOpenCC Frostmites fight defenders without pulling the reserve.
   const targets: GarrisonTarget[] = [];
   for (const unit of battle.units)
-    if (unit.kind !== 'booger') targets.push({ ...unit, flying: !!TROOPS[unit.kind].flying });
+    if (unit.kind !== 'booger' && unit.kind !== 'frostmite')
+      targets.push({ ...unit, flying: !!TROOPS[unit.kind].flying });
   for (const reserve of garrisons) {
     const castle = bunkers.get(reserve.castleId);
     if (!castle) continue;

@@ -427,6 +427,9 @@ export interface DefenderRoute {
   breaches?: readonly { x: number; y: number }[];
   /** Prepare native targetability before a unit can strike its chosen defender. */
   enterRange?(): void;
+  /** Source attack delay can begin when a new defender is acquired, before the chase. */
+  targetAcquired?(id: number): void;
+  attackReady?(): boolean;
   /** Observe the actual blocker while a routed attacker keeps its defender destination. */
   enterWallRange?(wall: Building): void;
 }
@@ -614,6 +617,7 @@ export function stepAttackerVsDefenders(
   }
   if (unit.defenderTarget !== target.id) {
     unit.defenderTarget = target.id;
+    route?.targetAcquired?.(target.id);
     unit.path = [];
     unit.pathAt = 0;
   }
@@ -623,7 +627,7 @@ export function stepAttackerVsDefenders(
     if (troop.nativeDamageRamp)
       recordInfernoDragonTransition(battle, unit, troop.nativeDamageRamp, target.id, true);
     route?.enterRange?.();
-    if (unit.cooldown <= 0) {
+    if (unit.cooldown <= 0 && (route?.attackReady?.() ?? true)) {
       unit.cooldown = stats.rate;
       const hitDamage = troop.nativeDamageRamp
         ? rampedDamage(unit, troop.nativeDamageRamp, stats.damage, target.id, true, battle.elapsed)
@@ -650,7 +654,10 @@ export function stepAttackerVsDefenders(
           fromAir: true,
           toAir: target.mode === 'air',
         });
-      } else if (!troop.nativeDirectHit && (stats.range > 2 || troop.flying)) {
+      } else if (
+        !troop.nativeDirectHit &&
+        (stats.range > 2 || troop.flying || !!troop.nativeProjectile)
+      ) {
         launchProjectile(
           battle,
           {
