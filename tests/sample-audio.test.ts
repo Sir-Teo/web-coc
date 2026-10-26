@@ -155,3 +155,12 @@ it('keeps interface samples through replay pause but stops every voice on sound 
   for (let i = 0; i < 8; i++) expect(samples.shot('native', 1)).toBe(true);
   expect(sources).toHaveLength(11);
 });
+it('starts a cue at zero offset across clock roundoff, while keeping genuinely future cues silent', async () => {
+  const { samples, sources, cue, unlock } = audio();
+  await unlock();
+  samples.sync([cue], cue.at - 0.001, 1, true);
+  expect(sources).toHaveLength(0);
+  samples.sync([cue], cue.at - 1e-13, 1, true);
+  expect(sources).toHaveLength(1);
+  expect(sources[0].start).toHaveBeenCalledWith(0, 0);
+});

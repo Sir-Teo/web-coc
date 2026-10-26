@@ -17,7 +17,7 @@ Attacking troops and pets play the client's own sounds when they are deployed, w
 
 It also covers the 18 spells this game casts, from `logic/spells.csv`. For each spell it records the `PreDeployEffect` (the bottle falling), the `DeployEffect` and `DeployEffect2` (it landing), the `ChargingEffect` and the `HitEffect` (each pulse). Some of these change with level; Freeze, for example, has one deploy effect per level.
 
-The importer copies 339 Ogg files (4.84 MiB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`. An already shipped sample can supply a missing local source only when its SHA-256 matches that same source pin. Edited outputs cannot supply trusted source bytes; corrupt authoritative cache entries still fail validation.
+The importer copies 340 Ogg files (4.85 MiB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`. An already shipped sample can supply a missing local source only when its SHA-256 matches that same source pin. Edited outputs cannot supply trusted source bytes; corrupt authoritative cache entries still fail validation.
 
 | Troop     | Deploy                                                     | Attack                                                                                          | Death                                           |
 | --------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------- |
@@ -124,6 +124,15 @@ Version 111 captures Super Archer launches for its full piercing flight. One ori
 through caster removal and replay seeks. Its character hit effect is silent; crossing
 targets add particles without inventing an impact sound. The existing 339-file catalog
 is unchanged. Node-generated phone/desktop replay checks exercise the actual firing node.
+
+Version 113 adds the unchanged `overgrowth_spell_retract_01.ogg` sample, bringing the
+catalog to 340 files (4.85 MiB) and 357 effects. The original 2×2, 3×3 and 4×4 root stop
+records all use that sample at 80% volume and pitch 0.8–1. Captured root deadlines schedule
+one deterministic cue per structure, retaining ten seconds of expired history for reverse
+seeks. Overlapping casts extend the same deadline; later root cycles receive new keys.
+Carried Overgrowth and retained roots warm the sample before it is needed. The shared
+player normalizes sub-nanosecond clock roundoff at a cue boundary; future cues remain
+silent. Browser checks exercise actual retraction nodes at the expiry tick.
 
 ## Tests
 

@@ -1,3 +1,4 @@
+import { OvergrowthPresentation } from './overgrowth-scene';
 import { SUPER_ARCHER_EFFECTS } from './super-archer-effects';
 import { SUPER_WIZARD_EFFECTS } from './super-wizard-effects';
 import { ELECTRO_DRAGON_EFFECTS } from './electro-dragon-effects';
@@ -675,6 +676,7 @@ export class VillageScene extends Phaser.Scene {
   private villageNativePresentation!: VillageNativePresentation;
   private decorationNativePresentation!: DecorationNativePresentation;
   private nativeEffectPacks!: NativeArtPacks<NativeArtPack>;
+  private overgrowthPresentation!: OvergrowthPresentation;
   private nativeProjectiles!: NativeProjectilePresentation;
   private nativeDefenses!: NativeDefensePresentation;
   private darkDrillPresentation!: DarkDrillPresentation;
@@ -948,9 +950,11 @@ export class VillageScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
       this.decorationNativePresentation.destroy(),
     );
+    this.overgrowthPresentation = new OvergrowthPresentation(this, this.nativeEffectPacks);
     this.nativeProjectiles = new NativeProjectilePresentation(this, this.nativeEffectPacks);
     this.nativeDefenses = new NativeDefensePresentation(this, this.nativeEffectPacks);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.overgrowthPresentation.destroy();
       this.nativeProjectiles.destroy();
       this.nativeDefenses.destroy();
       this.nativeEffectPacks.destroy();
@@ -2669,6 +2673,7 @@ export class VillageScene extends Phaser.Scene {
       kinds.includes('superarcher')
     )
       this.nativeProjectiles?.prefetchEffects(SUPER_ARCHER_EFFECTS);
+    this.overgrowthPresentation?.prefetch(this.model.battle);
     const setups = this.model.reducedMotion
       ? []
       : [...this.model.heroSetups(), ...(this.model.battle?.nativeHeroes ?? [])];
@@ -2757,6 +2762,7 @@ export class VillageScene extends Phaser.Scene {
         this.heroPrefetchSignature = '';
       }
       this.nativeProjectiles.clear();
+      this.overgrowthPresentation.clear();
       this.nativeDefenses.clear();
       this.villageArcherTowers.clear();
       this.archerTowerProjectiles.clear();
@@ -4194,20 +4200,24 @@ export class VillageScene extends Phaser.Scene {
   private troopSoundBattle: Battle | null = null;
   private troopSoundUnits = -1;
   private troopSoundCasts = -1;
+  private troopSoundRoots = -1;
   /**
    * Fetches the sounds of the army and its spells, of every unit kind on the field and of every
    * spell cast, once each.
    */
   private needTroopSounds(battle: Battle) {
-    const casts = battle.nativeSpells?.length ?? 0;
+    const casts = battle.nativeSpells?.length ?? 0,
+      roots = battle.nativeOvergrowthRoots?.length ?? 0;
     if (
       battle === this.troopSoundBattle &&
       battle.units.length === this.troopSoundUnits &&
-      casts === this.troopSoundCasts
+      casts === this.troopSoundCasts &&
+      roots === this.troopSoundRoots
     )
       return;
     const kinds = new Set<string>(battle.units.map((u) => u.kind));
     const spells = new Set<string>(battle.nativeSpells?.map((cast) => cast.name));
+    if (roots) spells.add('Overgrowth');
     if (battle !== this.troopSoundBattle) {
       for (const hero of battle.nativeHeroes ?? []) {
         kinds.add(heroUnitKind(hero.kind));
@@ -4227,6 +4237,7 @@ export class VillageScene extends Phaser.Scene {
     this.troopSoundBattle = battle;
     this.troopSoundUnits = battle.units.length;
     this.troopSoundCasts = casts;
+    this.troopSoundRoots = roots;
     this.troopSoundLoader.need(kinds, spells);
   }
   /** Whether a spell's falling bottle is decoded, so it replaces the generated tones. */
@@ -4338,6 +4349,7 @@ export class VillageScene extends Phaser.Scene {
     if (!this.model.placement || !hasVillageNativeArt(this.model.placement))
       this.villageNativePresentation.preview();
     this.drawProjectiles();
+    this.overgrowthPresentation.render(battle ?? null, reduced, iso);
     // One visible-building pass per frame; every presentation below filters by kind.
     const visible = this.visibleScratch;
     visible.length = 0;
@@ -4758,7 +4770,10 @@ export class VillageScene extends Phaser.Scene {
         const e = battle.buildingEffects[v.id];
         if (!e || v.hp <= 0) continue;
         const frozen = (e.frozenUntil ?? 0) > battle.elapsed;
-        const rooted = (e.overgrownUntil ?? 0) > battle.elapsed;
+        const rooted =
+          (e.overgrownUntil ?? 0) >
+            battle.elapsed + (battle.nativeOvergrowthPresentation ? 1e-9 : 0) &&
+          !this.overgrowthPresentation.covers(v.id);
         if (!frozen && !rooted) continue;
         const size = BUILDINGS[v.kind].size;
         const pts = this.diamondPoints;

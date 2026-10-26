@@ -229,6 +229,7 @@
     "sfx/miner_dig_oneshot_01.ogg": "eea806e20ab439a7f13675c16b1b7edb67c02bd20c452ab32c8aeeeea1d6bf0b",
     "sfx/mortar_hit_01.ogg": "3d54d10262b8ac7b59faef7a4c75a62c161855bb78ed90a2a02fb414f317d4cc",
     "sfx/overgrowth_spell_01.ogg": "51a198e32f63e6699f7643bd9db128d1c6bf3791606acb3757218a2b48bbcb0e",
+    "sfx/overgrowth_spell_retract_01.ogg": "8d76d07a5c305930d2c6fc8c72ccfb60476bb408052e853e19a1c05960716ed1",
     "sfx/pekka_attack_02v2.ogg": "3469fd98c9e1ee5e19b630e470e525b15eb53e14a79c0aaccd1a3b2f9d4f44d9",
     "sfx/pekka_attack_hit_02.ogg": "ca497e4a04b162e96009dbae7318b70f4329d967d17649e59f90a17671219f72",
     "sfx/pekka_death_06.ogg": "5aabff914b581b4ac1ada84ffea983e51a390087f6393beb643adcccf25e5fa7",
@@ -1136,7 +1137,10 @@
         "entangle_spell_circle_radius_lvl3",
         "entangle_spell_circle_radius_lvl4",
         "entangle_spell_circle_radius_lvl5"
-      ]
+      ],
+      "rootStop2": "entangle_spell_stop_2x2",
+      "rootStop3": "entangle_spell_stop_3x3",
+      "rootStop4": "entangle_spell_stop_4x4"
     },
     "Poison": {
       "key": "poison",
@@ -4710,6 +4714,33 @@
         "delay": 0.0
       }
     ],
+    "entangle_spell_stop_2x2": [
+      {
+        "sound": "sfx/overgrowth_spell_retract_01.ogg",
+        "volume": 0.8,
+        "minPitch": 0.8,
+        "maxPitch": 1.0,
+        "delay": 0.0
+      }
+    ],
+    "entangle_spell_stop_3x3": [
+      {
+        "sound": "sfx/overgrowth_spell_retract_01.ogg",
+        "volume": 0.8,
+        "minPitch": 0.8,
+        "maxPitch": 1.0,
+        "delay": 0.0
+      }
+    ],
+    "entangle_spell_stop_4x4": [
+      {
+        "sound": "sfx/overgrowth_spell_retract_01.ogg",
+        "volume": 0.8,
+        "minPitch": 0.8,
+        "maxPitch": 1.0,
+        "delay": 0.0
+      }
+    ],
     "firespirit_attack": [
       {
         "sound": "sfx/Troop_Furnace_FireSpirit_Attack.ogg",
@@ -6181,6 +6212,11 @@
       "path": "assets/audio/troops-native/overgrowth_spell_01.ogg",
       "bytes": 52702,
       "sha256": "51a198e32f63e6699f7643bd9db128d1c6bf3791606acb3757218a2b48bbcb0e"
+    },
+    "sfx/overgrowth_spell_retract_01.ogg": {
+      "path": "assets/audio/troops-native/overgrowth_spell_retract_01.ogg",
+      "bytes": 15056,
+      "sha256": "8d76d07a5c305930d2c6fc8c72ccfb60476bb408052e853e19a1c05960716ed1"
     },
     "sfx/pekka_attack_02v2.ogg": {
       "path": "assets/audio/troops-native/pekka_attack_02v2.ogg",

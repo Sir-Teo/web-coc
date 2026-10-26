@@ -1421,3 +1421,49 @@ checks and Node-generated phone/desktop browser recordings verify those states, 
 lightning and actual absorbed-hop Web Audio, read-only rendering, reduced motion and
 historical version 111 behavior. Existing Electromite and Super Wizard browser checks
 cover the shared selector. No assets or sound files are added.
+
+## Version 113 original Overgrowth roots
+
+Overgrowth now draws the client's original roots around 2×2, 3×3 and 4×4 structures,
+replacing the green status footprint once native art is ready. The source provides
+separate `entangle_spell_start`, `entangle_spell_deployed` and `entangle_spell_stop`
+effects for each footprint. Their original offsets, meshes, particles and textures remain
+unchanged. Unsupported footprints, historical recordings and pending/failed downloads
+keep the existing status fallback. Reduced motion holds a static deployed root without
+playing the growth or retraction animation.
+
+`scripts/import-overgrowth-art.py --check` reproduces three lazy packs, one per footprint,
+with graph-byte and decoded-pixel verification against client 18.400.21. Together they
+add 1,002,214 bytes. Growth lasts 18 frames at 30 fps (0.6 seconds); deployed clips cycle
+for 24, 25 and 24 frames respectively; retraction lasts 23 frames. The raw effects mark
+`Looping` false, so an explicit caller-owned sustain adapter repeats the deployed source
+clip and emitters until the captured root deadline. This external lifecycle control is
+an adapter, not a change to the source rows. Existing particle projection and fade
+adapters still apply, including the original size-specific effect offsets.
+
+The new presentation flag captures a root's building, position, footprint, start and end
+at the actual spell pulse. An overlapping cast extends the active root without restarting
+its growth. A cast landing after expiry starts a new cycle. Ended records remain for the
+ten-second sound seek horizon, preserving retraction through direct and reverse seeks.
+Version 112 and earlier omit these records and keep their former presentation. Immunity,
+targeting and spell duration are unchanged. The root phases use the same deadline tolerance
+as immunity; sample playback normalizes tiny negative clock roundoff to zero offset while
+keeping genuinely future cues silent.
+
+The original `overgrowth_spell_retract_01.ogg` adds one unchanged sample, bringing the
+catalog to 340 files and 357 effects. Each footprint's stop effect retains its own source
+record, all naming that sample at 80% volume and 0.8–1 pitch. Captured root keys select
+stable cues at expiry through the shared sample player's pause, speed, seek and voice-cap
+rules. Carried Overgrowth warms all root packs and existing spell/retraction samples before
+casting, including with no deployed actors. Retained roots also request their sounds when
+a viewer arrives after the spell's live cast record has ended.
+
+`tests/native-overgrowth.test.ts` covers source pulse timing, all footprints, overlapping
+and expired recasts, history retirement and identical physical spell behavior against
+version 112. Asset checks cover pins, complete pack sizes, original cycles, sustained
+visibility, static reduced-motion poses, exact expiry boundaries and original cue parameters.
+Actual level-1 and level-5 casts provide portable forward/reverse recordings through expiry.
+Node-to-Chromium phone/desktop checks verify original grow/deployed/retract meshes, long
+steady visibility, actual retract Web Audio on the expiry tick, read-only rendering and
+historical fallback. Held and failed downloads verify the status-to-native handoff and
+reconnection recovery without changing combat.

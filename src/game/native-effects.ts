@@ -29,8 +29,10 @@ export interface NativeEffectEvent {
   facing?: Point;
   /** Targeted and Beam rows: projected end point, already lifted. */
   target?: Point;
-  /** Looping rows keep emitting until this battle time. */
+  /** Looping rows and externally sustained effects end at this battle time. */
   until?: number;
+  /** A caller-owned lifecycle repeats a source clip/emitter until this event ends. */
+  sustain?: true;
   /** Object-layer depth override, e.g. air effects above every rooftop. */
   depth?: number;
 }
@@ -287,7 +289,7 @@ export function nativeEffectPoses(
       y:
         event.ground.y + (ox + oy) * 0.16 - (event.lift ?? 0) - n(row, 'OffsetZ') * NATIVE_ALTITUDE,
     };
-    const looping = row.Looping === 'TRUE' && event.until !== undefined;
+    const looping = (row.Looping === 'TRUE' || event.sustain === true) && event.until !== undefined;
     const delay = n(row, 'EmitterDelayMs') / 1000;
     const age = elapsed - event.at - delay;
     if (age < 0) continue;
@@ -295,7 +297,13 @@ export function nativeEffectPoses(
       const graph = pack.scenes[nativeSceneId(row.SWF)];
       if (graph?.exports[row.ExportName] !== undefined) {
         const duration = nativeClipDuration(graph, row.ExportName);
-        if (looping ? elapsed <= event.until! : age < duration) {
+        if (
+          looping
+            ? event.sustain
+              ? elapsed < event.until! - 1e-9
+              : elapsed <= event.until!
+            : age < duration
+        ) {
           result.push({
             key: `${event.key}:${index}:timeline`,
             scene: nativeSceneId(row.SWF),

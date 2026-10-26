@@ -1,3 +1,4 @@
+import type { OvergrowthRoot } from './native-overgrowth';
 import type { ArcherPiercingShot } from './native-super-archer';
 import type { SuperWizardBranch, SuperWizardZap } from './native-super-wizard';
 import type { ElectroDragonArc, ElectroDragonZap } from './native-electro-dragon';
@@ -907,6 +908,9 @@ export interface Battle {
   nativeArcherPiercing?: true;
   /** Version 112: deterministic chain distances and rooted secondary-hop absorption. */
   nativeChainGeometry?: true;
+  /** Version 113: captured roots select original grow, deployed and retract presentation. */
+  nativeOvergrowthPresentation?: true;
+  nativeOvergrowthRoots?: OvergrowthRoot[];
   nativeArcherShots?: ArcherPiercingShot[];
   nativeSuperWizardBranches?: SuperWizardBranch[];
   nativeSuperWizardZaps?: SuperWizardZap[];

@@ -147,8 +147,9 @@ export class SampleAudio {
       voices.set(node.sample, (voices.get(node.sample) ?? 0) + 1);
     for (const cue of cues) {
       const buffer = this.buffers.get(cue.sample),
-        age = (elapsed - cue.at) * cue.pitch;
-      if (!buffer || age < 0 || (!cue.loop && age >= buffer.duration) || buffer.duration <= 0)
+        delta = elapsed - cue.at,
+        age = Math.max(0, delta * cue.pitch);
+      if (!buffer || delta < -1e-9 || (!cue.loop && age >= buffer.duration) || buffer.duration <= 0)
         continue;
       wanted.add(cue.key);
       // Audio can finish between fixed simulation ticks. Do not replay its final tail.

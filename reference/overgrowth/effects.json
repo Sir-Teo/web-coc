@@ -1,0 +1,115 @@
+{
+  "clientVersion": "18.400.21",
+  "generator": "scripts/import-overgrowth-art.py",
+  "sources": {
+    "csv/particle_emitters.csv": "8d80bbf714386c4f24e6aed8f2eef671a2eac5c3b3ad41e4d275b757ced64cef",
+    "logic/effects.csv": "5c6d5b67d6407345123b8d55872ed77ee6697b466d20d1fa21e25a723c511e9f",
+    "logic/spells.csv": "385159e00327e6a1567cd91f1585b4ed0717d3f4475f0823398243482598289d",
+    "sc/buildings.sc": "f73ec949fc070bc03175d6bb3af8b62d8f607094bf2b343c9846a499a35be0ed",
+    "sc/buildings_20.sctx": "a36a9b146cf32160140da3f2d41ffbfa66144bfd43c1de56762607a506dd5793",
+    "sc/buildings_39.sctx": "dd27d9612fe135c3be364840eeabe45b53a229b24192246b56a08fa0606fdb16"
+  },
+  "effects": {
+    "entangle_spell_start_2x2": "2",
+    "entangle_spell_deployed_2x2": "2",
+    "entangle_spell_stop_2x2": "2",
+    "entangle_spell_start_3x3": "3",
+    "entangle_spell_deployed_3x3": "3",
+    "entangle_spell_stop_3x3": "3",
+    "entangle_spell_start_4x4": "4",
+    "entangle_spell_deployed_4x4": "4",
+    "entangle_spell_stop_4x4": "4"
+  },
+  "packs": {
+    "2": {
+      "path": "assets/overgrowth-native/2x2/graph.json",
+      "sha256": "ade5330d86aeb38d7ee67eb1e33907762fae0168413b62f1f31d99a642f58707",
+      "bytes": 262929
+    },
+    "3": {
+      "path": "assets/overgrowth-native/3x3/graph.json",
+      "sha256": "1b24caaf75c10f4db817f4bccbca9b279c524d55fbaadd977cc3c1eb1603c537",
+      "bytes": 245457
+    },
+    "4": {
+      "path": "assets/overgrowth-native/4x4/graph.json",
+      "sha256": "af7b71a1299253bb2f12bca3c4c6052970268375914b1f8ce614f887934c29b6",
+      "bytes": 493828
+    }
+  },
+  "phases": {
+    "2": {
+      "start": {
+        "effect": "entangle_spell_start_2x2",
+        "export": "entangle_root_2x2",
+        "frames": 18,
+        "fps": 30,
+        "seconds": 0.6
+      },
+      "deployed": {
+        "effect": "entangle_spell_deployed_2x2",
+        "export": "entangle_root_deployed_2x2",
+        "frames": 24,
+        "fps": 30,
+        "seconds": 0.8
+      },
+      "stop": {
+        "effect": "entangle_spell_stop_2x2",
+        "export": "entangle_root_stop_2x2",
+        "frames": 23,
+        "fps": 30,
+        "seconds": 0.7666666666666667
+      }
+    },
+    "3": {
+      "start": {
+        "effect": "entangle_spell_start_3x3",
+        "export": "entangle_root_3x3",
+        "frames": 18,
+        "fps": 30,
+        "seconds": 0.6
+      },
+      "deployed": {
+        "effect": "entangle_spell_deployed_3x3",
+        "export": "entangle_root_deployed_3x3",
+        "frames": 25,
+        "fps": 30,
+        "seconds": 0.8333333333333334
+      },
+      "stop": {
+        "effect": "entangle_spell_stop_3x3",
+        "export": "entangle_root_stop_3x3",
+        "frames": 23,
+        "fps": 30,
+        "seconds": 0.7666666666666667
+      }
+    },
+    "4": {
+      "start": {
+        "effect": "entangle_spell_start_4x4",
+        "export": "entangle_root_4x4",
+        "frames": 18,
+        "fps": 30,
+        "seconds": 0.6
+      },
+      "deployed": {
+        "effect": "entangle_spell_deployed_4x4",
+        "export": "entangle_root_deployed_4x4",
+        "frames": 24,
+        "fps": 30,
+        "seconds": 0.8
+      },
+      "stop": {
+        "effect": "entangle_spell_stop_4x4",
+        "export": "entangle_root_stop_4x4",
+        "frames": 23,
+        "fps": 30,
+        "seconds": 0.7666666666666667
+      }
+    }
+  },
+  "conventions": {
+    "lifecycle": "The original root clips are retained unchanged. External root lifetime selects start, deployed and stop phases.",
+    "placement": "Source effect offsets use the shared native isometric projection adapter."
+  }
+}

@@ -185,6 +185,12 @@ def build():
         rows = spells_table.get(name)
         require(rows, f'Absent spell {name}')
         entry = entries(rows, SPELL_EVENTS)
+        if name == 'Overgrowth':
+            for size in [2, 3, 4]:
+                effect = f'entangle_spell_stop_{size}x{size}'
+                require(takes(effect), f'No source retract sound: {effect}')
+                entry[f'rootStop{size}'] = effect
+                used[effect] = takes(effect)
         if entry:
             spells[name] = dict(key=key, **entry)
     used[DESTROYED] = takes(DESTROYED)

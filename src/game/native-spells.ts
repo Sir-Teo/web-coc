@@ -1,3 +1,4 @@
+import { recordOvergrowthRoot, retireOvergrowthRoots } from './native-overgrowth';
 import { distance2D } from './distance';
 import { BUILDINGS, TROOPS, isTrap, type BuildingKind, type UnitKind } from './data';
 import { damageDefenders, hurtDefender, isGarrisonDefender, type Defender } from './defenders';
@@ -173,6 +174,7 @@ const housing = (u: Unit) => (u.hero ? 25 : TROOPS[u.kind].space);
 /** Resolve every pulse whose scheduled time has been reached, in cast order. */
 export function stepNativeSpells(ctx: NativeSpellContext) {
   const battle = ctx.battle;
+  retireOvergrowthRoots(battle);
   for (const cast of battle.nativeSpells ?? []) {
     if (cast.ended) continue;
     while (cast.hits < cast.total) {
@@ -220,7 +222,7 @@ function resolvePulse(ctx: NativeSpellContext, cast: NativeSpellCast, at: number
   if (cast.side === 'attack') {
     harmDefense(ctx, cast, row, at, x, y, radius);
     supportAttackers(ctx, cast, row, at, x, y, radius);
-    if (flag(row, 'Overgrowth')) overgrow(battle, row, at, x, y, radius);
+    if (flag(row, 'Overgrowth')) overgrow(battle, row, at, x, y, radius, cast.id);
     if (num(row, 'DuplicateHousing')) cloneUnits(ctx, cast, row, at, radius);
     if (num(row, 'RecallHousing')) recallUnits(ctx, cast, at, radius);
     if (num(row, 'ResurrectHitpointPercentage')) reviveHero(ctx, row, x, y);
@@ -601,6 +603,7 @@ function overgrow(
   x: number,
   y: number,
   radius: number,
+  castId: number,
 ) {
   const duration = seconds(row, 'ShieldTime') || seconds(row, 'FreezeTimeMS');
   for (const b of battle.buildings) {
@@ -613,6 +616,7 @@ function overgrow(
       continue;
     const e = buildingEffects(battle, b);
     e.overgrownUntil = Math.max(e.overgrownUntil ?? 0, at + duration);
+    recordOvergrowthRoot(battle, b, at, e.overgrownUntil, castId);
     battle.defenseStuns[b.id] = Math.max(battle.defenseStuns[b.id] ?? 0, e.overgrownUntil);
     delete battle.defenseTargets[b.id];
   }

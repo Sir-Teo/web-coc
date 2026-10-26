@@ -14,7 +14,8 @@ import { seconds } from './native-data';
  */
 export type TroopSoundEvent =
   'deploy' | 'attack' | 'hit' | 'die' | 'projectileHit' | 'preAttack' | 'chain';
-export type SpellSoundEvent = 'preDeploy' | 'deploy' | 'deploy2' | 'charging' | 'hit';
+export type SpellSoundEvent =
+  'preDeploy' | 'deploy' | 'deploy2' | 'charging' | 'hit' | 'rootStop2' | 'rootStop3' | 'rootStop4';
 type Named = string | (string | null)[];
 type Take = { sound: string; volume: number; minPitch: number; maxPitch: number; delay: number };
 const TROOPS = source.troops as Record<
@@ -58,7 +59,16 @@ export const troopSoundFiles = (kind: string) =>
 export const spellSoundEffect = (name: string, level: number, event: SpellSoundEvent) =>
   atLevel(SPELLS[name]?.[event], level);
 export const spellSoundFiles = (name: string) =>
-  files(SPELLS[name], ['preDeploy', 'deploy', 'deploy2', 'charging', 'hit']);
+  files(SPELLS[name], [
+    'preDeploy',
+    'deploy',
+    'deploy2',
+    'charging',
+    'hit',
+    'rootStop2',
+    'rootStop3',
+    'rootStop4',
+  ]);
 /** Stable selection in [0, 1) for a key, the same after seeks and in replays. */
 function fraction(key: string) {
   let h = 2166136261;
@@ -363,6 +373,13 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
     if (shot.launched > elapsed || !cueAudible(shot.launched, elapsed)) continue;
     const actor = { id: shot.sourceId, kind: 'superarcher' as const, level: shot.level };
     const cue = troopCue(battle, actor, 'attack', `${shot.id}:attack`, shot.launched);
+    if (cue) cues.push(cue);
+  }
+  for (const root of battle.nativeOvergrowthRoots ?? []) {
+    if (root.until > elapsed + 1e-9 || !cueAudible(root.until, elapsed)) continue;
+    const size = root.size <= 2 ? 2 : root.size <= 3 ? 3 : 4;
+    const event = `rootStop${size}` as SpellSoundEvent;
+    const cue = spellCue('Overgrowth', 1, event, `${root.key}:stop`, root.until);
     if (cue) cues.push(cue);
   }
   for (const cue of logged) cues.push(cue);
