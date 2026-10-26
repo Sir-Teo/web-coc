@@ -23,7 +23,8 @@ import { launchProjectile, type CombatProjectile } from './projectiles';
 import { presentBuilding, targetableBuilding } from './hidden-tesla';
 // Late campaign Spell Tower Rage and Invisibility, and activated late Defense classes
 // (all neutral without version 44 late state).
-import { lateActivatedDefense, lateDefenderHidden, lateDefenderStats } from './late-campaign';
+import { lateActivatedDefense, lateDefenderStats } from './late-campaign';
+import { defenderHidden } from './defender-visibility';
 import { untargetable } from './spell-effects';
 import {
   SKELETON_TRAP,
@@ -54,6 +55,8 @@ interface DefenderState {
   stunnedUntil?: number;
   /** Version 68: full Freeze cue, separate from Lightning and other short stuns. */
   frozenUntil?: number;
+  /** Version 92: concealment from native Invisibility pulses, independent of stun. */
+  invisibleUntil?: number;
   /** Version 76: intrinsic attacker poison-on-hit, separate from area-spell exposure. */
   hitPoison?: DefenderHitPoison;
   /** Version 77: partial frost from a native ranged hit, independent of full Freeze. */
@@ -402,7 +405,7 @@ export function attackerDefenderTarget(
       d.hp > 0 &&
       ((d.kind === 'skeleton' && !troop.seekUnalerted) || d.spawnedAt <= battle.elapsed) &&
       canFight(unit, d, troop) &&
-      !lateDefenderHidden(battle, d) &&
+      !defenderHidden(battle, d) &&
       garrisonDefenderTargetable(battle, d),
   );
 }
@@ -431,7 +434,7 @@ function preferredHeroTarget(battle: Battle, unit: Unit, troop: DefenderFightTra
       defender.hp <= 0 ||
       defender.spawnedAt > battle.elapsed ||
       !canFight(unit, defender, troop) ||
-      lateDefenderHidden(battle, defender) ||
+      defenderHidden(battle, defender) ||
       !garrisonDefenderTargetable(battle, defender)
     )
       continue;
@@ -454,7 +457,7 @@ function nearestAlertedDefender(battle: Battle, unit: Unit, troop: DefenderFight
       ((d.kind !== 'skeleton' || troop.seekUnalerted) && d.spawnedAt > battle.elapsed) ||
       (!d.alerted && !troop.seekUnalerted) ||
       !canFight(unit, d, troop) ||
-      lateDefenderHidden(battle, d) ||
+      defenderHidden(battle, d) ||
       !garrisonDefenderTargetable(battle, d)
     )
       continue;

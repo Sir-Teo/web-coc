@@ -251,6 +251,8 @@ function harmDefense(
   const quakeTroop = num(row, 'TroopDamagePermil') / 1000;
   const poison = num(row, 'PoisonDPS');
   const overgrowth = flag(row, 'Overgrowth');
+  const invisible =
+    battle.nativeInvisibilityTargets && !overgrowth ? seconds(row, 'InvisibilityTime') : 0;
   if (poison > 0)
     poisonDefendingBuilders(
       battle,
@@ -266,7 +268,14 @@ function harmDefense(
     defendingBuilderLightning(battle, x, y, radius, at);
   if (freeze > 0 && freezePercent === 0 && !overgrowth)
     freezeDefendingBuilders(battle, x, y, radius, at, freeze);
-  if (damage > 0 || (freeze > 0 && !overgrowth) || stun > 0 || quakeBuilding > 0 || poison > 0) {
+  if (
+    damage > 0 ||
+    (freeze > 0 && !overgrowth) ||
+    stun > 0 ||
+    quakeBuilding > 0 ||
+    poison > 0 ||
+    invisible > 0
+  ) {
     for (const b of battle.buildings) {
       if (b.hp <= 0 || buildingSpellImmune(row, b) || concealedTesla(battle, b)) continue;
       if (footprintDistance(x, y, b) > radius + 1e-9) continue;
@@ -300,6 +309,10 @@ function harmDefense(
         battle.defenseStuns[b.id] = Math.max(battle.defenseStuns[b.id] ?? 0, e.stunUntil);
         delete battle.defenseTargets[b.id];
       }
+      if (invisible > 0) {
+        const e = buildingEffects(battle, b);
+        e.invisibleUntil = Math.max(e.invisibleUntil ?? 0, at + invisible);
+      }
     }
   }
   if (damage > 0 && !battle.nativeDefenderSpellRules)
@@ -318,6 +331,7 @@ function harmDefense(
     }
     if ((freeze > 0 && !overgrowth) || stun > 0)
       d.stunnedUntil = Math.max(d.stunnedUntil ?? 0, at + Math.max(freeze, stun));
+    if (invisible > 0) d.invisibleUntil = Math.max(d.invisibleUntil ?? 0, at + invisible);
     if (
       battle.nativeDefenderFreezeCue &&
       freeze > 0 &&
@@ -822,6 +836,15 @@ function supportDefense(
           speed: num(row, 'SpeedBoost') / SPELL_SPEED_SCALE,
         };
   if (!boost && !invisible) return;
+  if (battle.nativeInvisibilityTargets && invisible > 0 && !flag(row, 'Overgrowth'))
+    for (const d of battle.defenders ?? [])
+      if (
+        d.hp > 0 &&
+        d.spawnedAt <= at + 1e-9 &&
+        !defenderSpellImmune(row, d) &&
+        distance2D(d.x - x, d.y - y) <= radius + 1e-9
+      )
+        d.invisibleUntil = Math.max(d.invisibleUntil ?? 0, at + invisible);
   for (const b of battle.buildings) {
     if (
       b.hp <= 0 ||

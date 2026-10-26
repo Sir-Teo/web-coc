@@ -604,3 +604,28 @@ retains destination-facing behavior. This is presentation only and uses version 
 metadata without a combat-version change. Unit presentation checks cover distinct directions,
 missing blockers, paused and backward redraws, reduced motion and simulation-state invariance.
 The real Wall recording includes a diagonal destination to verify the rendered attack atlas.
+
+## Version 92 Invisibility on defending units
+
+Native Invisibility pulses now conceal present, living defending troops, Heroes and Guardians.
+The player's [Invisibility Spell](../reference/official-wiki/spells-siege-super/invisibility-spell.md)
+covers both armies and eligible buildings; [Spell Tower Invisibility](../reference/spell-tower/README.md)
+covers defending units and buildings under the project's documented defensive team rule.
+Walls, Siege Machines, traps and buried Teslas retain their immunity/visibility rules.
+Overgrowth's source `InvisibilityTime` does not conceal defenders.
+
+The shared defender target checks reject concealed units and select another eligible target.
+Each in-range pulse refreshes the pinned 600 ms linger, including overlapping casts; leaving
+the area permits that linger to expire. Hidden units keep attacking, take indirect damage and
+receive projectiles launched before concealment. Player casts now also conceal building targets
+without disabling their weapons. Expiry restores eligibility without forcing a return to the
+previous target. Versions 91 and earlier keep their original native coverage.
+
+Heroes and Guardians now share the existing local 0.35 opacity cue used by garrison troops and
+Skeletons. This alpha is a local readability choice; it is not an authored client transparency
+value. Defeated bodies retain their normal fade. `tests/native-invisibility-targets.test.ts`
+checks source tiers, both cast sides, target classes, immunities, birth and radius boundaries,
+overlap, retargeting, damage and real portable backward seeks. Native presentation tests check
+opacity, expiry, reduced motion and state invariance. Browser checks cover real player casts,
+ground/air Heroes, airborne impacts and a Spell Tower triggered by Champion hits, plus historical
+playback on desktop and phone.

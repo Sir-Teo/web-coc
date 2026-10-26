@@ -316,6 +316,46 @@ describe('troop native presentation', () => {
 });
 
 describe('hero native presentation', () => {
+  it.each(['hero', 'guardian'] as const)(
+    'shows native Invisibility on a defending %s through expiry and backward redraws',
+    (kind) => {
+      const p = new HeroNativePresentation(fakeScene());
+      const key = kind === 'hero' ? 'heroes-native/king' : 'guardians-native/longshot';
+      const file =
+        kind === 'hero'
+          ? 'public/assets/characters/king-v1/atlas.json'
+          : 'public/assets/guardians-native/longshot/atlas.json';
+      (p as unknown as { packs: Map<string, unknown> }).packs.set(
+        key,
+        JSON.parse(fs.readFileSync(file, 'utf8')),
+      );
+      const battle = battleOf([]);
+      battle.nativeRoster = true;
+      const d =
+        kind === 'hero'
+          ? defendingHero({ kind: 'king', level: 1, x: 10, y: 10 }, 0)
+          : createGuardian(battle, makeBuilding(1, 'townhall', 10, 10, 18), -1001)!;
+      d.spawnedAt = 0;
+      d.invisibleUntil = 2;
+      battle.defenders = [d];
+      for (const [at, alpha] of [
+        [1, 0.35],
+        [2, 1],
+        [0.5, 0.35],
+      ]) {
+        battle.elapsed = at;
+        for (const reduced of [false, true]) {
+          const before = JSON.stringify(battle);
+          p.render(battle, reduced, iso, 70, new Map(), new Map());
+          const sprite = (p as unknown as { sprites: Map<number, { alpha: number }> }).sprites.get(
+            d.id,
+          )!;
+          expect(sprite.alpha).toBe(alpha);
+          expect(JSON.stringify(battle)).toBe(before);
+        }
+      }
+    },
+  );
   for (const destination of ['building', 'defender'] as const) {
     it.each([undefined, 2, 999])(
       `faces the actual Wall before its ${destination} destination, wall id=%s`,

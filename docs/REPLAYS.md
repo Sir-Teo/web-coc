@@ -300,3 +300,13 @@ help break it during either chase. Target changes reset Diggy's route and underg
 missing or ineligible master targets use independent selection. Copies borrow no roster master.
 Actual King/Champion deployments and an enemy held behind a Wall by Freeze reconstruct through
 portable files and backward seeks. Versions 90 and earlier preserve independent pet selection.
+
+## Version 92: native Invisibility target coverage
+
+Player Invisibility now conceals eligible buildings and defending units as well as attackers.
+Native Spell Tower Invisibility also conceals defending units, retaining its existing defensive
+building coverage and team rule. Concealed targets remain vulnerable to airborne shots and
+indirect damage and can keep attacking. Each pulse refreshes the pinned 600 ms linger; expiry
+restores target eligibility. Actual casts, retargeting, airborne impacts and an automatically
+triggered Spell Tower reconstruct through portable files and backward seeks. Versions 91 and
+earlier retain their previous coverage.

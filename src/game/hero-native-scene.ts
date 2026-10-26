@@ -13,6 +13,7 @@ import { isShrunk } from './shrink-trap';
 import { unitDepth } from './unit-depth';
 import { UnitMotionTracker } from './unit-motion';
 import { guardianAttackAnimationTime } from './guardian-animation';
+import { defenderOpacity } from './defender-opacity';
 import {
   TINT_MULTIPLY,
   defenderStatusTint,
@@ -383,6 +384,7 @@ export class HeroNativePresentation {
         (u && isShrunk(u, gauntletKnockout ? deathAt : elapsed) ? 0.5 : 1) *
         (u ? heroGrowthScale(battle, u) : 1);
       const invisible = !!u && (u.native?.effects?.invisibleUntil ?? 0) > elapsed;
+      const livingAlpha = d ? defenderOpacity(battle, d) : invisible ? 0.35 : 1;
       // Unique per-actor depth, like troops (ids of units and defenders are separate spaces).
       const wantDepth = unitDepth(point.y, actor.id, actor.flying, 1.2);
       if (sprite.texture.key !== texture || sprite.frame.name !== name)
@@ -395,9 +397,7 @@ export class HeroNativePresentation {
         .setOrigin(frame.anchorX / frame.w, frame.anchorY / frame.h)
         .setPosition(point.x, point.y - (actor.flying ? lift : 0))
         .setScale((pack.scale ?? 0.6) * scale)
-        .setAlpha(
-          body.hp <= 0 ? Math.min(1, Math.max(0, 1 - fadeAge / 1.5)) : invisible ? 0.35 : 1,
-        );
+        .setAlpha(body.hp <= 0 ? Math.min(1, Math.max(0, 1 - fadeAge / 1.5)) : livingAlpha);
       // Attackers keep their shared status priority; defenders share the living Poison cue.
       const status =
         u && u.hp > 0
