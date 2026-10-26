@@ -2153,3 +2153,11 @@ copies the Queen's existing target rather than automatically aiming at an Air De
 survives Recall and defeat, contacts each object once, and finishes at the map edge. Original
 body and trail sampling remains deterministic through paused playback and portable seeks.
 See [source details, validation and the construct interaction limit](../reference/giant-arrow/README.md).
+
+## Version 132 Giant Arrow construct identity
+
+Native Invisibility Spell Towers now recognize a still-flying Giant Arrow as an indestructible
+construct when it damages a covered building. Its capture survives the Queen's removal, expires
+at the existing ray endpoint and cannot trigger a tower from an immune contact. The tower still
+uses its own release clock, so Freeze can outlast the projectile. Actual Recall recordings verify
+the original bottle, field, portable seeks and historical cancellation. See the [Giant Arrow reference](../reference/giant-arrow/README.md).

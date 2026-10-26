@@ -98,6 +98,7 @@ export function stepPiercingShots<T extends ArcherPiercingShot>(
   ctx: NativeTroopContext,
   shots: readonly T[],
   power?: (shot: T, target: ChainTarget, at: number) => number,
+  resolved?: (shot: T, target: ChainTarget, at: number, damaged: boolean) => void,
 ) {
   const b = ctx.battle;
   const candidates: (ChainTarget & { shot: T; at: number })[] = [];
@@ -151,8 +152,15 @@ export function stepPiercingShots<T extends ArcherPiercingShot>(
       air: 'defender' in target && target.defender.mode === 'air',
     });
     const damage = power ? power(shot, target, at) : shot.damage;
+    const before = 'building' in target ? target.building.hp : target.defender.hp;
     if ('building' in target) ctx.damageBuilding(target.building, damage, at);
     else hurtDefender(b, target.defender, damage, at);
+    resolved?.(
+      shot,
+      target,
+      at,
+      ('building' in target ? target.building.hp : target.defender.hp) < before,
+    );
   }
 }
 

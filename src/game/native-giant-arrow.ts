@@ -5,6 +5,7 @@ import { MAP_SIZE } from './grid';
 import { targetableBuilding } from './hidden-tesla';
 import { distanceTo, type Unit } from './model';
 import { nativeRow, num, text, tiles } from './native-data';
+import { noteBuildingDamage } from './native-defenses';
 import type { HeroAbility } from './native-heroes';
 import type { NativeTroopContext } from './native-troops';
 import { stepPiercingShots, type ArcherPiercingShot } from './native-super-archer';
@@ -95,31 +96,47 @@ export function stepGiantArrows(ctx: NativeTroopContext) {
     ...(b.nativeGiantArrows ?? []),
   ];
   if (!shots.length) return;
-  stepPiercingShots(ctx, shots, (shot, target, at) => {
-    if (!('airDefenseMultiplier' in shot)) return shot.damage;
-    const point = chainPoint(target),
-      ref = chainRef(target);
-    ctx.effect({
-      type: 'impact',
-      weapon: 'native',
-      projectileId: shot.id,
-      sourceId: shot.sourceId,
-      targetId: ref.id,
-      targetBuilding: ref.building,
-      ...(!ref.building ? { targetDefender: true } : {}),
-      x: shot.fromX,
-      y: shot.fromY,
-      toX: point.x,
-      toY: point.y,
-      at,
-    });
-    return (
-      shot.damage *
-      ('building' in target && target.building.kind === 'airdefense'
-        ? shot.airDefenseMultiplier
-        : 1)
-    );
-  });
+  stepPiercingShots(
+    ctx,
+    shots,
+    (shot, target, at) => {
+      if (!('airDefenseMultiplier' in shot)) return shot.damage;
+      const point = chainPoint(target),
+        ref = chainRef(target);
+      ctx.effect({
+        type: 'impact',
+        weapon: 'native',
+        projectileId: shot.id,
+        sourceId: shot.sourceId,
+        targetId: ref.id,
+        targetBuilding: ref.building,
+        ...(!ref.building ? { targetDefender: true } : {}),
+        x: shot.fromX,
+        y: shot.fromY,
+        toX: point.x,
+        toY: point.y,
+        at,
+      });
+      return (
+        shot.damage *
+        ('building' in target && target.building.kind === 'airdefense'
+          ? shot.airDefenseMultiplier
+          : 1)
+      );
+    },
+    (shot, target, at, damaged) => {
+      if (
+        b.nativeGiantArrowConstructs &&
+        damaged &&
+        'airDefenseMultiplier' in shot &&
+        'building' in target
+      )
+        noteBuildingDamage(b, target.building, at, false, {
+          key: shot.id,
+          until: shot.launched + shot.length / shot.speed,
+        });
+    },
+  );
   const retained = (shot: ArcherPiercingShot) =>
     shot.launched + shot.length / shot.speed + 10 >= b.elapsed - 1e-9;
   if (b.nativeArcherShots) b.nativeArcherShots = b.nativeArcherShots.filter(retained);

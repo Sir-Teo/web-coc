@@ -932,6 +932,8 @@ export interface Battle {
   nativeWardenFireball?: true;
   /** Version 131: Queen Giant Arrow uses source piercing damage and a fixed copied heading. */
   nativeGiantArrow?: true;
+  /** Version 132: a live Giant Arrow can sustain an Invisibility Spell Tower trigger. */
+  nativeGiantArrowConstructs?: true;
   nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
   nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */

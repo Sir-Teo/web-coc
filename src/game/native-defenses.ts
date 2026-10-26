@@ -63,7 +63,7 @@ export interface NativeDefenseState {
   /** Spell Tower: unit inside the activation radius and when it entered. */
   dwell?: { unit: number; since: number };
   /** Spell Tower Invisibility: attackers that hit a covered building, and when. */
-  trigger?: { units: number[]; at: number };
+  trigger?: { units: number[]; at: number; constructs?: { key: string; until: number }[] };
   /** Spell Tower clock time a new spell is loaded. */
   loadedAt?: number;
   /** Super Wizard Tower chain hits waiting to land. */
@@ -285,7 +285,13 @@ export function activeAsDefense(battle: Battle, b: Building, at = battle.elapsed
  * Model damage hook. Town Hall weapons wake on any damage; Spell Tower Invisibility watches
  * attacker (non-spell) hits on buildings inside its radius.
  */
-export function noteBuildingDamage(battle: Battle, b: Building, at: number, spell: boolean) {
+export function noteBuildingDamage(
+  battle: Battle,
+  b: Building,
+  at: number,
+  spell: boolean,
+  construct?: { key: string; until: number },
+) {
   if (!battle.nativeRoster) return;
   if (b.kind === 'townhall' && !b.npc) {
     const activation = townHallActivation(b.level);
@@ -312,6 +318,10 @@ export function noteBuildingDamage(battle: Battle, b: Building, at: number, spel
     else
       for (const id of attackers)
         if (!state.trigger.units.includes(id)) state.trigger.units.push(id);
+    if (battle.nativeGiantArrowConstructs && construct) {
+      const constructs = (state.trigger.constructs ??= []);
+      if (!constructs.some((entry) => entry.key === construct.key)) constructs.push(construct);
+    }
   }
 }
 
@@ -1179,11 +1189,16 @@ function stepSpellTower(
   if (mode === 'invisibility') {
     const trigger = state.trigger;
     if (!trigger) return;
-    // A cast needs at least one attacker from the triggering hits to survive the 1.2 s dwell.
+    // A cast needs an ordinary triggering attacker or a live source construct at release.
     const since = state.dwell?.since ?? state.clock;
     state.dwell ??= { unit: trigger.units[0] ?? -1, since };
     if (state.clock - state.dwell.since + EPS < weapon.windup) return;
-    const survivors = trigger.units.some((id) => battle.units.some((u) => u.id === id && u.hp > 0));
+    const survivors =
+      trigger.units.some((id) => battle.units.some((u) => u.id === id && u.hp > 0)) ||
+      !!(
+        battle.nativeGiantArrowConstructs &&
+        trigger.constructs?.some((entry) => entry.until > battleTime(state.clock) + EPS)
+      );
     delete state.trigger;
     delete state.dwell;
     if (!survivors) return;

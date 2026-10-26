@@ -31,9 +31,14 @@ the new presentation keeps that child clock running. The trail applies its paren
 25-unit launch offset remains a visual offset, separate from the physical ray. These source
 rows declare no sound, so contact feedback does not substitute a normal Queen hit sample.
 
-The arrow remains a captured ray rather than a troop actor. Its standalone construct identity
-for Spell Tower interactions is not modeled. The existing damage hook can still observe hits
-associated with an ordinary surviving attacker; this does not establish full construct parity.
+The arrow remains a captured ray rather than a troop actor. Version 132 also records its
+indestructible construct identity and map-exit deadline when it damages a building covered by
+a native Invisibility Spell Tower. The tower can release while that construct is still alive,
+including after Recall or defeat removes its Queen. An expired arrow cannot sustain the trigger;
+freezing the tower can delay its release beyond the construct's lifetime. Contacts that apply no
+damage do not register a construct. Repeated covered contacts deduplicate the same arrow.
+Rage and Poison towers continue to use their ordinary troop proximity rules. Version 131 retains
+its former cancellation when no ordinary triggering attacker survives.
 
 The immutable journal reconstructs body and trail through portable imports and backward seeks.
 Reduced motion suppresses moving art while preserving combat and stationary contact feedback.
@@ -51,3 +56,9 @@ PYTHONPATH=scripts python scripts/import-native-combat.py --check
 PYTHONPATH=scripts python scripts/import-native-projectile-art.py --check
 PYTHONPATH=scripts python scripts/import-native-effect-art.py --check
 ```
+
+`tests/giant-arrow-construct.test.ts` additionally covers live/expired constructs, freeze,
+Overgrowth, mode isolation and portable seeks. The corresponding browser fixture uses actual
+Queen activation and Recall, verifies the original tower bottle and Invisibility field on desktop
+and phone, and matches complete Node battle states. Construct expiry and tower dwell use battle
+time and the existing defense weapon clock; there is no independent wall-clock timer.
