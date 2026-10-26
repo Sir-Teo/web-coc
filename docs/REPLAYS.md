@@ -291,3 +291,12 @@ again. Existing longer stuns persist, and defenses resume after expiry. Resource
 defending units receive no Diggy stun. Real pet deployment, repeated hits and defense recovery
 reconstruct through portable files and backward seeks. Versions 89 and earlier preserve their
 previous defense activity and exposure while moving away from a building.
+
+## Version 91: Diggy follows its living Hero's target
+
+Diggy now prefers the assigned living Hero's eligible building or ground defender target.
+Hero routes record their actual blocking Wall separately from their destination so the pet can
+help break it during either chase. Target changes reset Diggy's route and underground approach;
+missing or ineligible master targets use independent selection. Copies borrow no roster master.
+Actual King/Champion deployments and an enemy held behind a Wall by Freeze reconstruct through
+portable files and backward seeks. Versions 90 and earlier preserve independent pet selection.

@@ -388,6 +388,24 @@ const canFight = (unit: Unit, enemy: Defender, troop: DefenderFightTraits) =>
   (enemy.mode === 'ground' ||
     (troop.airTargets ??
       (unit.kind === 'archer' || unit.kind === 'wizard' || unit.kind === 'dragon')));
+/** Resolve a committed defender with the shared visibility and targeting rules. */
+export function attackerDefenderTarget(
+  battle: Battle,
+  unit: Unit,
+  id: number | undefined,
+  troop: DefenderFightTraits,
+) {
+  if (id === undefined) return undefined;
+  return (battle.defenders ?? []).find(
+    (d) =>
+      d.id === id &&
+      d.hp > 0 &&
+      ((d.kind === 'skeleton' && !troop.seekUnalerted) || d.spawnedAt <= battle.elapsed) &&
+      canFight(unit, d, troop) &&
+      !lateDefenderHidden(battle, d) &&
+      garrisonDefenderTargetable(battle, d),
+  );
+}
 type AttackStats = Pick<TroopDef, 'damage' | 'speed' | 'range' | 'rate'>;
 /** Routing shared with the building chase: wall index, Jump breaches, A* budget. */
 export interface DefenderRoute {
@@ -400,6 +418,8 @@ export interface DefenderRoute {
   breaches?: readonly { x: number; y: number }[];
   /** Prepare native targetability before a unit can strike its chosen defender. */
   enterRange?(): void;
+  /** Observe the actual blocker while a routed attacker keeps its defender destination. */
+  enterWallRange?(wall: Building): void;
 }
 /** Hero hunters ignore alert distance and ordinary defenders while a valid Hero remains. */
 function preferredHeroTarget(battle: Battle, unit: Unit, troop: DefenderFightTraits) {
@@ -570,17 +590,7 @@ export function stepAttackerVsDefenders(
       return false;
     }
   }
-  let target =
-    preferredHero ??
-    (battle.defenders ?? []).find(
-      (d) =>
-        d.id === unit.defenderTarget &&
-        d.hp > 0 &&
-        ((d.kind === 'skeleton' && !troop.seekUnalerted) || d.spawnedAt <= battle.elapsed) &&
-        canFight(unit, d, troop) &&
-        !lateDefenderHidden(battle, d) &&
-        garrisonDefenderTargetable(battle, d),
-    );
+  let target = preferredHero ?? attackerDefenderTarget(battle, unit, unit.defenderTarget, troop);
   if (!target) {
     target = searched ? nearest : nearestAlertedDefender(battle, unit, troop);
     if (!target) {
@@ -730,6 +740,7 @@ export function stepAttackerVsDefenders(
         : undefined;
     if (wall && distanceTo(unit, wall) <= stats.range) {
       unit.attacking = true;
+      route?.enterWallRange?.(wall);
       if (unit.cooldown <= 0) {
         unit.cooldown = stats.rate;
         if (stats.range > 2) {

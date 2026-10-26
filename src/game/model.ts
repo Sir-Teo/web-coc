@@ -851,6 +851,8 @@ export interface Battle {
   nativeMonolithDefenderDamage?: true;
   /** Version 90: Diggy stuns a defense on emergence and burrows on leaving building range. */
   nativeDiggySurfaceStun?: true;
+  /** Version 91: Diggy follows its living Hero's eligible target, including Walls. */
+  nativeDiggyMasterTarget?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */

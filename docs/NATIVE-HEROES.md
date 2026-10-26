@@ -571,3 +571,26 @@ their previous defense activity and building-range exposure.
 Freeze, target classes, active Town Hall weapons, expiry and actual pet deployment through
 portable backward seeks. The matching browser spec checks native Diggy art, paused defense
 clocks, recovery, reduced motion and legacy playback on desktop and phone.
+
+## Version 91 Diggy follows its Hero's target
+
+While its assigned Hero lives, Diggy now prefers that Hero's eligible building or ground defender
+target. The [Diggy reference](../reference/official-wiki/heroes-pets/diggy.md) describes attacking
+the Hero's target, including a Wall the Hero attacks; the pinned pet row declares
+`PreferMasterTarget=TRUE`. A current Hero building target takes priority over Diggy's independent
+defender scan. Ground-only targeting and the shared defender concealment/birth checks still apply.
+Without a living assigned Hero or eligible target, Diggy uses independent target selection.
+Copies outside the roster do not borrow another pet's master.
+
+Hero routes keep their destination building or defender while hitting a blocking Wall, so new
+recordings track that actual blocker separately. Diggy follows the Wall until it is destroyed
+or the Hero resumes another target. Changing master targets discards the pet's old path and
+starts its underground approach again. Ordinary wall bypass and the version 90 surfacing stun
+retain their existing target rules. Versions 90 and earlier preserve independent pet selection.
+Other pet controllers and automatic master changes after Hero defeat remain separate audits.
+
+`tests/diggy-master-target.test.ts` checks conflicting targets, Walls in both chase paths,
+ground/air restrictions, dead/hidden/unborn targets, copies and unavailable Heroes. Actual King
+and Champion deployments, plus a recorded Freeze to hold an enemy behind a Wall, reconstruct
+through portable backward seeks. The matching browser spec checks native Diggy art, actual
+Wall and defense damage, reduced motion and historical playback on desktop and phone.

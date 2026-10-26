@@ -12,7 +12,12 @@ import {
   type UnitKind,
 } from './data';
 import { EXTRA_TROOP_KINDS } from './extra-troops';
-import { damageDefenders, hurtDefender, stepAttackerVsDefenders } from './defenders';
+import {
+  attackerDefenderTarget,
+  damageDefenders,
+  hurtDefender,
+  stepAttackerVsDefenders,
+} from './defenders';
 import { applyDefenderFrost } from './defender-frost';
 import { activeAsDefense } from './native-defenses';
 import {
@@ -32,7 +37,7 @@ import {
   unitFrozen,
   type UnitEffects,
 } from './native-status';
-import { heroOf, heroStatsFor } from './native-heroes';
+import { heroOf, heroStatsFor, petAnchor } from './native-heroes';
 import {
   heroAttackInterval,
   heroCombatOverrides,
@@ -74,6 +79,8 @@ export interface NativeUnitState {
   attacks?: number;
   /** Battle time the current building target was acquired. */
   targetAt?: number;
+  /** Version 91: Wall currently blocking a Hero's building or defender attack. */
+  wallTarget?: number;
   /** Next scheduled periodic summon and lifetime summon count. */
   summonAt?: number;
   summoned?: number;
@@ -382,6 +389,43 @@ function hash(seed: number, index: number) {
   return ((v ^ (v >>> 16)) >>> 0) / 0x100000000;
 }
 
+/** Diggy borrows only its own living Hero's eligible target; other pets keep their rules. */
+function followDiggyMaster(ctx: NativeTroopContext, unit: Unit, s: NativeUnitStats) {
+  if (!(ctx.battle.nativeDiggyMasterTarget && unit.kind === 'diggy' && s.preferMasterTarget))
+    return false;
+  const hero = petAnchor(ctx.battle, unit)?.hero;
+  if (!hero || hero.ejected || hero.native?.recalled) return false;
+  const at = ctx.battle.elapsed;
+  const reset = () => {
+    unit.path = [];
+    unit.pathAt = 0;
+    unit.native!.targetAt = at;
+    unit.native!.surfaced = false;
+    unit.native!.burrowed = true;
+  };
+  const wall = ctx.buildingsById.get(hero.native?.wallTarget ?? -1);
+  const blocker =
+    wall?.kind === 'wall' && wall.hp > 0 && !ctx.passableWalls.has(wall.id) ? wall : undefined;
+  if (!blocker && hero.defenderTarget !== undefined) {
+    const target = attackerDefenderTarget(ctx.battle, unit, hero.defenderTarget, {
+      airTargets: s.airTargets,
+    });
+    if (target && target.spawnedAt <= at) {
+      if (unit.defenderTarget !== target.id) reset();
+      unit.defenderTarget = target.id;
+    }
+    return false;
+  }
+  const target = blocker ?? ctx.buildingsById.get(hero.target ?? -1);
+  const targetable = ctx.isTargetable ?? ((b: Building) => targetableBuilding(ctx.battle, b));
+  if (!target || !targetable(target)) return false;
+  if (unit.target !== target.id || unit.defenderTarget !== undefined) reset();
+  unit.target = target.id;
+  delete unit.defenderTarget;
+  // A committed Hero building target takes priority over Diggy's independent alert scan.
+  return true;
+}
+
 /** Choose the nearest eligible building, honoring the unit's native favorite target. */
 function chooseTarget(ctx: NativeTroopContext, u: Unit, base: NativeUnitStats) {
   const battle = ctx.battle;
@@ -630,6 +674,7 @@ export function stepNativeUnit(
     u.attacking = false;
     return;
   }
+  if (battle.nativeDiggyMasterTarget && isHeroUnitKind(u.kind)) delete state.wallTarget;
   if (stepEquipmentDash(ctx, u, dt)) return;
   if (s.ability === 'DisableAttacking') {
     u.attacking = false;
@@ -689,7 +734,9 @@ export function stepNativeUnit(
       : undefined;
   const readyToAttack = u.cooldown <= 0;
   const undergroundChase = battle.nativeUndergroundDefenderChase && s.underground;
+  const masterBuilding = followDiggyMaster(ctx, u, s);
   if (
+    !masterBuilding &&
     stepAttackerVsDefenders(
       battle,
       u,
@@ -723,6 +770,13 @@ export function stepNativeUnit(
           : (ctx.routableBuildings ?? ctx.buildings),
         ...(jumpingChase ? { jumpWalls: true } : {}),
         ...(undergroundChase ? { enterRange: () => surfaceUndergroundUnit(ctx, u, at) } : {}),
+        ...(battle.nativeDiggyMasterTarget && isHeroUnitKind(u.kind)
+          ? {
+              enterWallRange: (wall: Building) => {
+                state.wallTarget = wall.id;
+              },
+            }
+          : {}),
         wallTile: ctx.wallTile,
         passableWalls: ctx.passableWalls,
         budget: ctx.pathBudget,
@@ -871,6 +925,7 @@ export function stepNativeUnit(
     const wall = hit && hit.hp > 0 && !ctx.passableWalls.has(hit.id) ? hit : undefined;
     if (wall && distanceTo(u, wall) <= s.range + 1e-6) {
       u.attacking = true;
+      if (battle.nativeDiggyMasterTarget && isHeroUnitKind(u.kind)) state.wallTarget = wall.id;
       if (u.cooldown <= 0) {
         u.cooldown = s.rate * unitAttackIntervalScale(u, at);
         strike(ctx, u, s, wall, damage);

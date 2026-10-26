@@ -244,6 +244,8 @@ export interface NativeUnitStats {
   cooldownOverride: number;
   /** Pets: how far they may wander from their hero before returning. */
   leash: number;
+  /** Pet attacks prefer the assigned Hero's current target. */
+  preferMasterTarget: boolean;
   /** Alternate mode (Grand Warden ground/air). */
   altMode: boolean;
   altFlying: boolean;
@@ -371,6 +373,7 @@ function computeUnitStats(kind: string, level: number): NativeUnitStats {
       })),
     cooldownOverride: seconds(row, 'CoolDownOverride'),
     leash: tiles(row, 'LeashLength'),
+    preferMasterTarget: flag(row, 'PreferMasterTarget'),
     altMode: flag(row, 'HasAltMode'),
     altFlying: flag(row, 'AltModeFlying'),
     altRange: tiles(row, 'AltAttackRange'),
