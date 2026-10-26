@@ -136,7 +136,7 @@ export function spellRandom(seed: number, index: number) {
   v = Math.imul(v ^ (v >>> 13), 0xc2b2ae35) >>> 0;
   return ((v ^ (v >>> 16)) >>> 0) / 0x100000000;
 }
-const randomPoint = (cast: NativeSpellCast, index: number, radius: number) => {
+export const randomPoint = (cast: NativeSpellCast, index: number, radius: number) => {
   const angle = spellRandom(cast.seed, index * 2) * Math.PI * 2;
   const reach = Math.sqrt(spellRandom(cast.seed, index * 2 + 1)) * radius;
   return { x: cast.x + Math.cos(angle) * reach, y: cast.y + Math.sin(angle) * reach };

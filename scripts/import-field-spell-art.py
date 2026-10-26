@@ -48,8 +48,13 @@ def main():
             profile = {k: current[k] for k in ['PreDeployEffect', 'DeployEffect', 'DeployEffect2']}
             profile.update(level=level, deploySeconds=int(current['DeployTimeMS']) / 1000,
                            pulseSeconds=sum(int(current[k]) for k in ['DeployTimeMS', 'ChargingTimeMS', 'HitTimeMS']) / 1000)
+            if current.get('HitEffect'):
+                profile['HitEffect'] = current['HitEffect']
+                radius = int(current.get('RandomRadius', '0'))
+                profile['hitRadiusTiles'] = radius // 100 if radius % 100 == 0 else radius / 100
+                profile['graphicsOnlyRadius'] = current.get('RandomRadiusAffectsOnlyGfx') == 'TRUE'
             profiles.append(profile)
-            names.update(profile[k] for k in ['PreDeployEffect', 'DeployEffect', 'DeployEffect2'])
+            names.update(profile[k] for k in ['PreDeployEffect', 'DeployEffect', 'DeployEffect2', 'HitEffect'] if profile.get(k))
         spells[spell] = dict(key=key, levels=profiles)
         collector = Collector(lib)
         for name in sorted(names):

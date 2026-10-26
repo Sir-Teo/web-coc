@@ -920,6 +920,8 @@ export interface Battle {
   nativeSpellArt?: readonly string[];
   /** Version 118: static spell particle exports scale their animated descendants. */
   nativeSpellEffectTimelines?: true;
+  /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */
+  nativeSpellPulsePresentation?: true;
   nativeSpellCastHistory?: NativeSpellCast[];
   nativeOvergrowthRoots?: OvergrowthRoot[];
   nativeArcherShots?: ArcherPiercingShot[];

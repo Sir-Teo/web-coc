@@ -185,3 +185,8 @@ landing and per-pulse sound keys once each; Poison's landing is the source `depl
 phase. Original pulse volume/pitch and late-history sample warming remain in use. The
 catalog remains at 340 files and 357 effects. See
 [Healing and Poison fields](NATIVE-HEROES.md#version-118-original-healing-and-poison-fields).
+
+Version 119 draws Healing's original pulse graphics with the existing
+`spell:<id>:hit:<index>` sound keys. It adds no cues, samples or voices; pulse volume,
+pitch and timing remain unchanged. See
+[Healing pulse graphics](NATIVE-HEROES.md#version-119-original-healing-pulse-graphics).

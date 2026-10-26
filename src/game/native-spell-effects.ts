@@ -1,5 +1,5 @@
 import type { Battle } from './model';
-import type { NativeSpellCast } from './native-spells';
+import { randomPoint, type NativeSpellCast } from './native-spells';
 import type { NativeEffectEvent } from './native-effects';
 export interface SpellEffectProfile {
   level: number;
@@ -7,6 +7,9 @@ export interface SpellEffectProfile {
   PreDeployEffect: string;
   DeployEffect: string;
   DeployEffect2: string;
+  HitEffect?: string;
+  hitRadiusTiles?: number;
+  graphicsOnlyRadius?: boolean;
 }
 /** Source deployment art is independent of the later combat pulse; sampling never changes a cast. */
 export function spellCastEffectEvents(
@@ -16,6 +19,7 @@ export function spellCastEffectEvents(
   iso: (x: number, y: number) => { x: number; y: number },
   duration: (name: string) => number | undefined,
   nestedTimelines = false,
+  pulsePresentation = false,
 ): (NativeEffectEvent & { sampleAt: number })[] {
   const events: (NativeEffectEvent & { sampleAt: number })[] = [];
   for (const cast of casts) {
@@ -38,6 +42,28 @@ export function spellCastEffectEvents(
         ...(nestedTimelines ? { nestedTimelines: true as const } : {}),
       });
     }
+    if (pulsePresentation && row.HitEffect && row.graphicsOnlyRadius) {
+      const effect = row.HitEffect,
+        tail = duration(effect) ?? 3,
+        interval = Math.max(0.001, cast.interval),
+        first = Math.max(0, Math.ceil((elapsed - tail - cast.firstHit - 1e-9) / interval));
+      // The cast already retains resolved pulse counts and its seed. Sampling consumes no RNG.
+      for (let i = first; i < Math.min(cast.hits, cast.total); i++) {
+        const at = cast.firstHit + i * interval;
+        if (elapsed + 1e-9 < at || elapsed - at > tail) continue;
+        const point = randomPoint(cast, i, row.hitRadiusTiles ?? 0),
+          ground = iso(point.x, point.y);
+        events.push({
+          key: `spell:${cast.id}:hit:${i}`,
+          effect,
+          at,
+          ground,
+          depth: ground.y + 2,
+          sampleAt: Math.max(elapsed, at),
+          ...(nestedTimelines ? { nestedTimelines: true as const } : {}),
+        });
+      }
+    }
   }
   return events;
 }
@@ -59,5 +85,6 @@ export function capturedSpellEffectEvents(
     iso,
     duration,
     battle.nativeSpellEffectTimelines,
+    battle.nativeSpellPulsePresentation,
   );
 }

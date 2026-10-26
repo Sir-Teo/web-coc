@@ -1687,3 +1687,31 @@ forward/reverse seeks. Phone/desktop Chromium checks cover original meshes and W
 unused-art loading, cold late-history seeks, reduced motion, historical fallback and
 natural paused-replay recovery after held/failed downloads. Existing Rage/Haste, troop
 audio and projectile-loading checks cover the shared presentation path.
+
+## Version 119 original Healing pulse graphics
+
+All 12 Healing levels now include the source `Heal spell` pulse effect. The source row
+declares `RandomRadius=200` and `RandomRadiusAffectsOnlyGfx=TRUE`: light beams and sparks
+scatter within two map tiles while healing still uses its five-tile logical area. The
+existing seeded point calculation reconstructs each location from captured cast metadata;
+rendering consumes no simulation RNG and needs no per-target history. This is a visual
+scatter adapter, independent of which units receive healing.
+
+`heal_ring_effect` emits ten particles over 300 ms with 700–800 ms lives;
+`heal_ring_effect2` emits two over 2 ms with 800–1,500 ms lives. The source maximum tail
+is 1.502 seconds. Sampling uses resolved hit counts, keeps stable `spell:<id>:hit:<index>`
+keys and skips expired pulses before iterating. The retained cast covers the final tail
+after pulse 41. Reduced motion omits these moving particles. Version 119 enables this
+path through `nativeSpellPulsePresentation`; version 118 keeps its earlier field art.
+
+Both particle exports already exist in the Healing pack. Importing the effect adds
+2,526 bytes of records, bringing that pack to 122,267 bytes without adding textures.
+Other field packs and the reused Rage upper pack remain byte-identical. The importer
+checks pinned source graphs and decoded pixels. Existing Healing pulse audio uses the
+same keys, original sample, volume and pitch; drawing the effect adds no audio voices.
+
+Tests cover all 12 level profiles, seeded scatter, exact pulse boundaries, resolved-hit
+limits, short tails, reduced motion and read-only sampling. Actual Cannon wounds verify
+unchanged health and combat state against version 118 and portable forward/reverse seeks.
+Browser checks cover cold history loading, original meshes and Web Audio on phone and
+desktop, version-118 field-only playback, and paused recovery after a held/failed pack.

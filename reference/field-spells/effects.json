@@ -27,6 +27,7 @@
     "Heal area": "heal",
     "Heal area top": "heal",
     "Heal predeploy": "heal",
+    "Heal spell": "heal",
     "Toxic deploy ground halloween": "poison",
     "Toxic deploy halloween": "poison",
     "toxic_Predeploy": "poison"
@@ -44,8 +45,8 @@
     },
     "heal": {
       "path": "assets/field-spells-native/heal/graph.json",
-      "sha256": "4db7aeaeadd52e805b7ec3eb3eb96e3071f396ba484826891b8110e1bdccdedd",
-      "bytes": 119741
+      "sha256": "aa1dbb550f5168e321820d20c39ca3a83a0114e601872bec3c68bc521e207703",
+      "bytes": 122267
     },
     "poison": {
       "path": "assets/field-spells-native/poison/graph.json",
@@ -185,7 +186,10 @@
           "DeployEffect2": "Heal area top",
           "level": 1,
           "deploySeconds": 0.8,
-          "pulseSeconds": 1.5
+          "pulseSeconds": 1.5,
+          "HitEffect": "Heal spell",
+          "hitRadiusTiles": 2,
+          "graphicsOnlyRadius": true
         },
         {
           "PreDeployEffect": "Heal predeploy",
@@ -193,7 +197,10 @@
           "DeployEffect2": "Heal area top",
           "level": 2,
           "deploySeconds": 0.8,
-          "pulseSeconds": 1.5
+          "pulseSeconds": 1.5,
+          "HitEffect": "Heal spell",
+          "hitRadiusTiles": 2,
+          "graphicsOnlyRadius": true
         },
         {
           "PreDeployEffect": "Heal predeploy",
@@ -201,7 +208,10 @@
           "DeployEffect2": "Heal area top",
           "level": 3,
           "deploySeconds": 0.8,
-          "pulseSeconds": 1.5
+          "pulseSeconds": 1.5,
+          "HitEffect": "Heal spell",
+          "hitRadiusTiles": 2,
+          "graphicsOnlyRadius": true
         },
         {
           "PreDeployEffect": "Heal predeploy",
@@ -209,7 +219,10 @@
           "DeployEffect2": "Heal area top",
           "level": 4,
           "deploySeconds": 0.8,
-          "pulseSeconds": 1.5
+          "pulseSeconds": 1.5,
+          "HitEffect": "Heal spell",
+          "hitRadiusTiles": 2,
+          "graphicsOnlyRadius": true
         },
         {
           "PreDeployEffect": "Heal predeploy",
@@ -217,7 +230,10 @@
           "DeployEffect2": "Heal area top",
           "level": 5,
           "deploySeconds": 0.8,
-          "pulseSeconds": 1.5
+          "pulseSeconds": 1.5,
+          "HitEffect": "Heal spell",
+          "hitRadiusTiles": 2,
+          "graphicsOnlyRadius": true
         },
         {
           "PreDeployEffect": "Heal predeploy",
@@ -225,7 +241,10 @@
           "DeployEffect2": "Heal area top",
           "level": 6,
           "deploySeconds": 0.8,
-          "pulseSeconds": 1.5
+          "pulseSeconds": 1.5,
+          "HitEffect": "Heal spell",
+          "hitRadiusTiles": 2,
+          "graphicsOnlyRadius": true
         },
         {
           "PreDeployEffect": "Heal predeploy",
@@ -233,7 +252,10 @@
           "DeployEffect2": "Heal area top",
           "level": 7,
           "deploySeconds": 0.8,
-          "pulseSeconds": 1.5
+          "pulseSeconds": 1.5,
+          "HitEffect": "Heal spell",
+          "hitRadiusTiles": 2,
+          "graphicsOnlyRadius": true
         },
         {
           "PreDeployEffect": "Heal predeploy",
@@ -241,7 +263,10 @@
           "DeployEffect2": "Heal area top",
           "level": 8,
           "deploySeconds": 0.8,
-          "pulseSeconds": 1.5
+          "pulseSeconds": 1.5,
+          "HitEffect": "Heal spell",
+          "hitRadiusTiles": 2,
+          "graphicsOnlyRadius": true
         },
         {
           "PreDeployEffect": "Heal predeploy",
@@ -249,7 +274,10 @@
           "DeployEffect2": "Heal area top",
           "level": 9,
           "deploySeconds": 0.8,
-          "pulseSeconds": 1.5
+          "pulseSeconds": 1.5,
+          "HitEffect": "Heal spell",
+          "hitRadiusTiles": 2,
+          "graphicsOnlyRadius": true
         },
         {
           "PreDeployEffect": "Heal predeploy",
@@ -257,7 +285,10 @@
           "DeployEffect2": "Heal area top",
           "level": 10,
           "deploySeconds": 0.8,
-          "pulseSeconds": 1.5
+          "pulseSeconds": 1.5,
+          "HitEffect": "Heal spell",
+          "hitRadiusTiles": 2,
+          "graphicsOnlyRadius": true
         },
         {
           "PreDeployEffect": "Heal predeploy",
@@ -265,7 +296,10 @@
           "DeployEffect2": "Heal area top",
           "level": 11,
           "deploySeconds": 0.8,
-          "pulseSeconds": 1.5
+          "pulseSeconds": 1.5,
+          "HitEffect": "Heal spell",
+          "hitRadiusTiles": 2,
+          "graphicsOnlyRadius": true
         },
         {
           "PreDeployEffect": "Heal predeploy",
@@ -273,7 +307,10 @@
           "DeployEffect2": "Heal area top",
           "level": 12,
           "deploySeconds": 0.8,
-          "pulseSeconds": 1.5
+          "pulseSeconds": 1.5,
+          "HitEffect": "Heal spell",
+          "hitRadiusTiles": 2,
+          "graphicsOnlyRadius": true
         }
       ]
     },

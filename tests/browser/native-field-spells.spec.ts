@@ -140,6 +140,31 @@ for (const { name, level, width } of [
       expect(result.battle).toBe(JSON.stringify(r.snapshots.find((s) => s.at === at)!.battle));
       expect(result).toMatchObject({ unchanged: true, gl: 0 });
       await visible(page, [...names]);
+      if (name === 'Healing' && stage === 'pulsing') {
+        await visible(page, ['heal_ring_effect', 'heal_ring_effect2']);
+        const pulses = await page.evaluate(async () => {
+          const { capturedSpellEffectEvents } = await import('/src/game/native-spell-effects.ts'),
+            source = await import('/reference/field-spells/effects.json'),
+            { iso } = await import('/src/game/scene.ts'),
+            { model, scene } = window.__game,
+            layer = scene.fieldSpellPresentations.get('Healing').layer;
+          return capturedSpellEffectEvents(
+            model.battle,
+            'Healing',
+            source.default.spells.Healing.levels,
+            iso,
+            false,
+            (e) => layer.duration(e, Infinity),
+          )
+            .filter((e) => e.effect === 'Heal spell')
+            .map((e) => ({ key: e.key, at: e.at, ground: e.ground }));
+        });
+        expect(pulses.map((e) => [e.key, e.at])).toEqual([
+          ['spell:1:hit:0', 1.5],
+          ['spell:1:hit:1', 1.8],
+        ]);
+        expect(pulses[0].ground).not.toEqual(pulses[1].ground);
+      }
       await page.screenshot({
         path: `output/playtest/native-${r.key}-${stage}-${level}-${width}.png`,
       });
@@ -208,6 +233,24 @@ for (const { name, level, width } of [
       ),
     ).toBe(0);
     await page.evaluate(() => window.__game.model.toggleReducedMotion());
+    if (name === 'Healing') {
+      await open(page, 118);
+      await seek(page, r.pulsing);
+      await visible(page, [ground]);
+      expect(
+        await page.evaluate(() => {
+          const { model, scene } = window.__game;
+          return {
+            pulse: model.battle.nativeSpellPulsePresentation,
+            meshes: scene.children.list.filter(
+              (o) =>
+                ['heal_ring_effect', 'heal_ring_effect2'].includes(o.getData?.('nativeEffect')) &&
+                o.visible,
+            ).length,
+          };
+        }),
+      ).toEqual({ pulse: undefined, meshes: 0 });
+    }
     const oldVersion = name === 'Healing' || name === 'Poison' ? 117 : 116;
     await open(page, oldVersion);
     await seek(page, r.steady);
@@ -283,7 +326,8 @@ for (const { name, path, heldEffect, otherEffect } of [
     await boot(page, r);
     await expect.poll(() => requested).toBeGreaterThan(0);
     await open(page);
-    const before = await seek(page, r.landing);
+    const recoveryAt = name === 'Healing' ? r.pulsing : r.landing,
+      before = await seek(page, recoveryAt);
     if (otherEffect)
       await page.waitForFunction(
         (effect) =>
@@ -354,7 +398,7 @@ for (const { name, path, heldEffect, otherEffect } of [
         };
       }),
     ).toEqual({ ready: true, rings: 0 });
-    expect((await seek(page, r.landing)).battle).toBe(before.battle);
+    expect((await seek(page, recoveryAt)).battle).toBe(before.battle);
     await visible(page, [
       {
         Rage: 'rage_glowPurple',
@@ -363,5 +407,6 @@ for (const { name, path, heldEffect, otherEffect } of [
         Poison: 'Toxic_glow',
       }[name],
     ]);
+    if (name === 'Healing') await visible(page, ['heal_ring_effect', 'heal_ring_effect2']);
     expect(errors).toEqual([]);
   });

@@ -39,6 +39,7 @@ function comparePhysical(
     const now = JSON.parse(JSON.stringify(snapshot.battle)) as Battle,
       then = JSON.parse(JSON.stringify(model.battle)) as Battle;
     delete now.nativeSpellArt;
+    delete now.nativeSpellPulsePresentation;
     delete now.nativeSpellEffectTimelines;
     delete then.nativeSpellArt;
     delete now.nativeSpellCastHistory;

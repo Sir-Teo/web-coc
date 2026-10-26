@@ -20,7 +20,12 @@ export class NativeSpellCastPresentation {
     this.warmEffects = [
       ...new Map(
         profiles
-          .flatMap((row) => [row.PreDeployEffect, row.DeployEffect, row.DeployEffect2])
+          .flatMap((row) => [
+            row.PreDeployEffect,
+            row.DeployEffect,
+            row.DeployEffect2,
+            ...(row.HitEffect ? [row.HitEffect] : []),
+          ])
           .map((effect) => [nativeEffectPack(effect) ?? effect, effect]),
       ).values(),
     ];
