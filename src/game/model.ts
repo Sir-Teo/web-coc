@@ -905,6 +905,8 @@ export interface Battle {
   nativeSuperWizard?: true;
   /** Version 111: source straight arrows hit each crossed enemy once at its arrival time. */
   nativeArcherPiercing?: true;
+  /** Version 112: deterministic chain distances and rooted secondary-hop absorption. */
+  nativeChainGeometry?: true;
   nativeArcherShots?: ArcherPiercingShot[];
   nativeSuperWizardBranches?: SuperWizardBranch[];
   nativeSuperWizardZaps?: SuperWizardZap[];

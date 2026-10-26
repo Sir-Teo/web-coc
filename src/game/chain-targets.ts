@@ -2,7 +2,8 @@ import { BUILDINGS } from './data';
 import type { Defender } from './defenders';
 import { defenderHidden } from './defender-visibility';
 import { garrisonDefenderTargetable } from './garrison-abilities';
-import { targetableBuilding } from './hidden-tesla';
+import { distance2D } from './distance';
+import { presentBuilding, targetableBuilding } from './hidden-tesla';
 import type { Building } from './model';
 import type { NativeTroopContext } from './native-troops';
 
@@ -63,6 +64,7 @@ export function nearestChainTarget(
   at: number,
   preferMaxHP = false,
 ): ChainTarget | undefined {
+  const measure = ctx.battle.nativeChainGeometry ? distance2D : Math.hypot;
   let nearest: ChainTarget | undefined,
     best = Infinity;
   const consider = (target: ChainTarget, distance: number) => {
@@ -78,11 +80,17 @@ export function nearestChainTarget(
     }
   };
   for (const b of ctx.buildings) {
-    if (b.kind === 'wall' || !targetableBuilding(ctx.battle, b)) continue;
+    if (b.kind === 'wall') continue;
+    const eligible =
+      targetableBuilding(ctx.battle, b) ||
+      (ctx.battle.nativeChainGeometry &&
+        (ctx.battle.buildingEffects?.[b.id]?.overgrownUntil ?? 0) > at + 1e-9 &&
+        presentBuilding(ctx.battle, b));
+    if (!eligible) continue;
     const size = BUILDINGS[b.kind].size;
     consider(
       { building: b },
-      Math.hypot(
+      measure(
         Math.max(b.x - from.x, 0, from.x - b.x - size),
         Math.max(b.y - from.y, 0, from.y - b.y - size),
       ),
@@ -90,6 +98,6 @@ export function nearestChainTarget(
   }
   for (const d of ctx.battle.defenders ?? [])
     if (eligibleDefender(ctx, d, at))
-      consider({ defender: d }, Math.hypot(d.x - from.x, d.y - from.y));
+      consider({ defender: d }, measure(d.x - from.x, d.y - from.y));
   return nearest;
 }

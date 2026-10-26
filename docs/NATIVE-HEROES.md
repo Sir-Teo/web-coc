@@ -1389,3 +1389,35 @@ Super Troop tier. Portable recordings and browser checks compare Node-generated 
 states with Chromium after the arrow passes its aim point, then repeat reverse seeks.
 Phone/desktop checks also verify original body/arrow meshes, actual firing Web Audio,
 read-only rendering, reduced motion and historical version 110 playback.
+
+## Version 112 Overgrowth chain absorption and consistent geometry
+
+The pinned Overgrowth dossier specifies that rooted buildings still absorb chain-lightning
+hops without taking damage. The shared native selector previously excluded them as
+untargetable. Version 112 allows a present, living overgrown building to receive a
+secondary Electromite, Electro Dragon or Super Wizard hit. It consumes its normal hop or
+branch slot; the existing damage immunity prevents health loss, and subsequent chain
+hops retain their normal damage decay. Original captured lightning, hit particles and
+sound still mark the absorbed hit. Rooted buildings do not become primary targets:
+acquisition stays unchanged, and Overgrowth still cancels a charging dragon's primary.
+Walls, traps, dead buildings and buried Teslas remain outside secondary chain eligibility.
+
+Chain distance and committed Electro Dragon chase calculations now use the existing
+`distance2D` arithmetic with an explicit square-root operation order. Browser `Math.hypot`
+implementations can differ in their final bits; a captured diagonal movement witness
+shows the one-bit position difference. The version gate preserves the historical
+`Math.hypot` path and rooted-target exclusion in version 111 and earlier. This keeps the
+existing building-edge/defender-point geometry and tie rules; it does not reconstruct
+client vertical hitboxes or continuous moving-target geometry.
+
+`tests/native-chain-overgrowth.test.ts` covers absorption, unchanged rooted health,
+continued decay, secondary caps and historical exclusion for all three chain families.
+It also verifies primary rejection, charge cancellation, immunity at scheduled timestamps
+through a late update, and exact old/new chase coordinates. A real Electro Dragon and
+Overgrowth cast in `tests/fixtures/native-chain-overgrowth.ts` place the spell's source
+1.5-second fall between the primary hit and first committed hop. Both end tiers retain
+all five hits while the four rooted structures keep their health. Portable forward/reverse
+checks and Node-generated phone/desktop browser recordings verify those states, original
+lightning and actual absorbed-hop Web Audio, read-only rendering, reduced motion and
+historical version 111 behavior. Existing Electromite and Super Wizard browser checks
+cover the shared selector. No assets or sound files are added.

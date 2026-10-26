@@ -1,3 +1,4 @@
+import { distance2D } from './distance';
 import { BUILDINGS, TROOPS } from './data';
 import {
   chainKey,
@@ -131,9 +132,10 @@ export function stepElectroDragonCharge(
     return false;
   }
   const point = chainPoint(target);
+  const measure = ctx.battle.nativeChainGeometry ? distance2D : Math.hypot;
   const gap =
     'building' in target
-      ? Math.hypot(
+      ? measure(
           Math.max(
             target.building.x - u.x,
             0,
@@ -145,9 +147,9 @@ export function stepElectroDragonCharge(
             u.y - target.building.y - BUILDINGS[target.building.kind].size,
           ),
         )
-      : Math.hypot(point.x - u.x, point.y - u.y);
+      : measure(point.x - u.x, point.y - u.y);
   if (gap > s.range + 1e-9) {
-    const length = Math.hypot(point.x - u.x, point.y - u.y),
+    const length = measure(point.x - u.x, point.y - u.y),
       travel = Math.min(speed * dt, gap - s.range);
     if (length > 0) {
       u.x += ((point.x - u.x) / length) * travel;
