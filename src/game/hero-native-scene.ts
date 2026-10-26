@@ -62,7 +62,9 @@ export const heroArtDirectory = (key: string) => {
   return `/assets/${key}`;
 };
 const KEYS: Record<string, string> = Object.fromEntries(
-  [...Object.entries(HERO_UNIT), ...Object.entries(PET_UNIT)].map(([key, unit]) => [unit, key]),
+  [...Object.entries(HERO_UNIT), ...Object.entries(PET_UNIT), ['phoenixegg', 'phoenixegg']].map(
+    ([key, unit]) => [unit, key],
+  ),
 );
 /** The baker's direction order is screen E, SE, S, SW, W, NW, N, NE. */
 export const bakedDirection = (dx: number, dy: number) =>
@@ -345,7 +347,8 @@ export class HeroNativePresentation {
       const state =
         pack.states[(actor.flying ? 'alt_' : '') + stateName] ??
         pack.states[stateName] ??
-        pack.states.idle;
+        pack.states.idle ??
+        pack.states.walk;
       if (!state) continue;
       fallback?.setVisible(false);
       if (body.hp <= 0 && fadeAge > 1.5) continue;

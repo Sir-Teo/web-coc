@@ -711,3 +711,31 @@ restarting at every damage tick. Source stage timestamps and stable target keys 
 seek and replay-speed changes use the shared sample player's normal lifecycle. Generic
 per-hit attack sounds remain for recordings before combat version 94. Transition bursts
 remain separate presentation work.
+
+## Phoenix Egg source artwork
+
+The internal `phoenixegg` actor now has its own original eight-direction atlas at
+`public/assets/heroes-native/phoenixegg/`, independently pinned in
+[`phoenix-egg-art.json`](../reference/full-client/phoenix-egg-art.json). `PetPhoenixEggDefault`
+uses `sc3d/pheonix_default_geo.glb` and the `PhoenixEggDefault` animation block. Its authored
+walk and attack rows both use `pheonix_default_walk1.glb`; it declares no idle or death row.
+The renderer reuses walk when idle. Both states share one 111,139-byte texture sheet, with
+22 frames per direction at the source 30 fps. The egg stays on the ground, matching
+`Phoenix Egg.IsFlying=FALSE`; `DepthBias=50` is retained as metadata rather than treated as
+physical altitude.
+
+The existing baker supports `--set phoenix_egg` without rewriting any other hero, pet or
+Guardian assets. `--download-missing` explicitly permits missing inputs to be downloaded
+from the pinned client bundle: the fingerprint is SHA-256 checked and every source is checked
+against its SHA-1 membership before it enters the cache. The default remains an offline
+source read. `NATIVE_ART_CHROMIUM_PATH` optionally selects a system Chromium for the WebGL
+baker; otherwise Playwright chooses its normal executable.
+
+```sh
+PYTHONPATH=scripts python scripts/native3d/bake_hero_art.py --set phoenix_egg --check --download-missing
+```
+
+An independent source rerender matches every checked egg pixel exactly. Hash/bounds tests,
+native presentation tests and desktop/phone browser previews verify the original frames,
+ground registration, reduced motion and unchanged battle state. This artwork prepares the
+Phoenix egg and revival controller; it does not itself change pet deployment or combat rules.

@@ -1,0 +1,203 @@
+{
+  "clientVersion": "18.400.21",
+  "generator": "scripts/native3d/bake_hero_art.py --set phoenix_egg",
+  "conventions": {
+    "camera": {
+      "source": "csv/client_globals.csv: 3D_CAMERA_POSITION, 3D_CAMERA_LOOK_AT, 3D_CAMERA_FOV, USE_3D_ORTHO_PROJECTION (grouped with 3D_CHARACTER_ATLAS_* sizes)",
+      "position": [
+        0,
+        70,
+        45
+      ],
+      "lookAt": [
+        0,
+        0,
+        0
+      ],
+      "fov": 35,
+      "orthographic": true,
+      "elevationDegrees": 57.2648,
+      "viewDirection": [
+        -0.0,
+        -0.841178,
+        -0.540758
+      ],
+      "axes": "Y-up like every Odin model and the skins.csv portrait/reward cameras (x;y;z); feet at y=0, models face +Z; screen right = +X"
+    },
+    "crossChecks": "2D art is drawn from a shallower camera than the client 3D character camera (57.26 deg): building_bases.sc base_2x2..base_5x5 diamonds measure 1.34:1 (orthographic elevation ~48 deg; 4:3 = 48.6 deg) and the Wall Wrecker 2D direction sprites (wheel layers, edge-on vs side view) give ~46-52 deg; this project draws a 2:1 (30 deg) grid. Pass --elevation to re-bake for another camera.",
+    "pixelsPerWorldUnit": 3.568044,
+    "clientPixelsPerWorldUnit": 3.568044,
+    "pixelScaleNote": "Client character viewport 225x225 px covers 2*(CameraDistance 10000/100)*tan(FOV/2) world units; atlases are baked at 1x that density. Draw at 1/1 for client scale.",
+    "directions": {
+      "count": 8,
+      "names": [
+        "E",
+        "SE",
+        "S",
+        "SW",
+        "W",
+        "NW",
+        "N",
+        "NE"
+      ],
+      "index": "frames[k] faces screen angle 45*k degrees clockwise from screen right (y down): 0=E, 2=S (toward camera), 6=N",
+      "yaw": "model yaw about +Y = atan2(cos(phi), sin(phi)/sin(elevation)); no mirroring is used"
+    },
+    "anchor": "The original Phoenix Egg uses the Phoenix geometry and its own ground walk/attack animation block. There is no authored idle or death row; the runtime may hold or reuse walk. DepthBias is retained as csvNotBaked, not guessed as an altitude.",
+    "sampling": "Sources are 30 fps. A state uses native frames from its range (whole clip; for looping walk states only the cycle from LoopStartFrame; other looping states keep the intro and set loopStart). The last native frame is dropped when it repeats the cycle start pose. Frames are decimated by the smallest integer step that keeps <= 24 frames; state fps = 30 / step. actionFrame maps the 1-based CSV ActionFrame to the nearest sampled frame.",
+    "lookAtCamera": "States flagged LookAtCamera (die/stunned) are rendered once facing the camera (S) and referenced by all 8 directions.",
+    "rig": "Animation clips contain the full authoring rig; joint globals are evaluated in the clip hierarchy (untracked nodes keep the clip node TRS) and mapped to geometry joints by name.",
+    "shading": "Approximation, not the client \"character\" shader: gamma-space base colour * (0.72 + 0.45 * lambert) with a view-space light from the upper left, tangent-space normal map (ASTC RRRG: x red, y alpha), additive emission map. Material maps are pinned but not applied; materials with an opacity variable (Angry Jelly dome) are drawn opaque. No particles, outlines, stun stars or ground shadows.",
+    "antialiasing": "4x4 supersampled, box filtered, straight alpha, tight alpha crop.",
+    "states": "idle, walk, attack, die (heroes and pets use the stunned clip for die); extra idle2/walk2/attack2 rows and an unnamed second attack clip become idle2/walk2/attack2; Grand Warden flying states use the alt_ prefix.",
+    "sharedCamera": "Camera, pixelsPerWorldUnit, sampling and antialiasing are identical to reference/full-client/hero-art.json (its elevationOverrideDegrees, if any, is inherited unless --elevation is given)."
+  },
+  "sources": {
+    "csv/animations.csv": "b0be152c98d06ccd0689320acfa19b07e04dd2a07fc6a1253558592f67bf29d8",
+    "csv/client_globals.csv": "2844ea910bc4c464fc38b8be35eee81cacdf186648976cdeb311e58a52bd717d",
+    "logic/pets.csv": "dc210b12a02fea73e47339e62cea0e2d50d462f736d81e7616d782533bec48ad",
+    "logic/skins.csv": "709da5743c729dedff1d1b9b02946452fc346dfaf09e385fda637c00eb812ad4",
+    "sc3d/pheonix_default_a.sctx": "2988b1d9a577b29371898c75eb7d2f3ed06408cc54456e39d90e906c780a3c89",
+    "sc3d/pheonix_default_geo.glb": "0b9057c88f189b19e96914c09d9955d9a816517ad3b11157125ebaa222bcfc9f",
+    "sc3d/pheonix_default_m.sctx": "dabc017e0d1f88fdbfbcc711b0d690bc59cfdb899cd8d84d6a25e50f9dacec31",
+    "sc3d/pheonix_default_n.sctx": "a74233ca55615e96f488970319718adeb54495231ff160063683cc4278f702bd",
+    "sc3d/pheonix_default_walk1.glb": "246d7ba4bcb629fa9ae5e378a0f6b4ae68dfe2e5c9e25e91e56ccf339fa3fd4d"
+  },
+  "characters": {
+    "phoenixegg": {
+      "record": "logic/pets.csv:Phoenix Egg",
+      "clientSkin": "PetPhoenixEggDefault",
+      "clientCharacter": "Phoenix Egg",
+      "animation": "PhoenixEggDefault",
+      "altAnimation": null,
+      "geometry": "sc3d/pheonix_default_geo.glb",
+      "textures": {
+        "base": "sc3d/pheonix_default_a.sctx",
+        "normal": "sc3d/pheonix_default_n.sctx",
+        "material": "sc3d/pheonix_default_m.sctx"
+      },
+      "appliedMaps": {
+        "normal": true,
+        "emission": false
+      },
+      "shadowScale": 40,
+      "csvSkinEffects": {},
+      "vertexBuffers": 1,
+      "joints": 63,
+      "vertices": 3532,
+      "triangles": 3982,
+      "states": {
+        "walk": {
+          "clip": "sc3d/pheonix_default_walk1.glb",
+          "block": "PhoenixEggDefault",
+          "event": "walk",
+          "loop": true,
+          "csvActionFrame": null,
+          "csvLoopStartFrame": null,
+          "scale": 1.0,
+          "lookAtCamera": false,
+          "csvOffsetY": null,
+          "csvNotBaked": {
+            "DepthBias": "50"
+          },
+          "frames": 22,
+          "fps": 30.0,
+          "nativeFrames": 22,
+          "nativeFps": 30.0,
+          "nativeRange": [
+            0,
+            21
+          ],
+          "step": 1,
+          "sampledNativeFrames": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21
+          ],
+          "lastFrameRepeatsCycleStart": false
+        },
+        "attack": {
+          "clip": "sc3d/pheonix_default_walk1.glb",
+          "block": "PhoenixEggDefault",
+          "event": "attack",
+          "loop": true,
+          "csvActionFrame": null,
+          "csvLoopStartFrame": null,
+          "scale": 1.0,
+          "lookAtCamera": false,
+          "csvOffsetY": null,
+          "csvNotBaked": {
+            "DepthBias": "50"
+          },
+          "frames": 22,
+          "fps": 30.0,
+          "nativeFrames": 22,
+          "nativeFps": 30.0,
+          "nativeRange": [
+            0,
+            21
+          ],
+          "step": 1,
+          "sampledNativeFrames": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21
+          ],
+          "lastFrameRepeatsCycleStart": false
+        }
+      },
+      "atlas": {
+        "path": "assets/heroes-native/phoenixegg/atlas.json",
+        "sha256": "387c8e92617a3664059abb1a8511a26b765a7a475406028da4e17f8d68f3989b"
+      },
+      "images": {
+        "walk.png": {
+          "sha256": "158d975ad06664160af27f6c698aaedca17fedd563b367183ce7d9bc39c3beaf",
+          "width": 247,
+          "height": 226,
+          "bytes": 111139
+        }
+      },
+      "bytes": 137775
+    }
+  },
+  "totalBytes": 137775
+}

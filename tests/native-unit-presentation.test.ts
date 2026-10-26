@@ -365,6 +365,31 @@ describe('troop native presentation', () => {
 });
 
 describe('hero native presentation', () => {
+  it.each([false, true])(
+    'draws the source Phoenix Egg ground pose without a synthetic idle clip, reduced=%s',
+    (reduced) => {
+      const p = new HeroNativePresentation(fakeScene());
+      const atlas = JSON.parse(
+        fs.readFileSync('public/assets/heroes-native/phoenixegg/atlas.json', 'utf8'),
+      );
+      (p as unknown as { packs: Map<string, unknown> }).packs.set(
+        'heroes-native/phoenixegg',
+        atlas,
+      );
+      const egg = unit(99, 10, 10, { kind: 'phoenixegg', level: 1, path: [], native: {} });
+      const battle = battleOf([egg]);
+      const original = JSON.stringify(battle);
+      const project = (x: number, y: number) => ({ x: x * 10, y: y * 10 });
+      p.render(battle, reduced, project, 46, new Map(), new Map());
+      const sprite = (p as unknown as { sprites: Map<number, any> }).sprites.get(egg.id);
+      expect(sprite.visible).toBe(true);
+      expect(sprite.texture.key).toBe('baked:heroes-native/phoenixegg/walk.png');
+      expect(sprite.y).toBe(100);
+      expect(atlas.states.idle).toBeUndefined();
+      p.render(battle, reduced, project, 46, new Map(), new Map());
+      expect(JSON.stringify(battle)).toBe(original);
+    },
+  );
   it.each(['hero', 'guardian'] as const)(
     'shows native Invisibility on a defending %s through expiry and backward redraws',
     (kind) => {

@@ -4,8 +4,9 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import heroes from '../reference/full-client/hero-art.json';
 import guardians from '../reference/full-client/guardian-art.json';
+import phoenixEgg from '../reference/full-client/phoenix-egg-art.json';
 import type { BakedState } from '../src/game/hero-native-scene';
-for (const manifest of [heroes, guardians])
+for (const manifest of [heroes, guardians, phoenixEgg])
   for (const [key, row] of Object.entries(manifest.characters)) {
     it(`${key}: ships every pinned atlas frame and image within its bounds`, () => {
       const file = path.join('public', row.atlas.path),

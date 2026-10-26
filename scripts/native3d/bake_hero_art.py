@@ -26,12 +26,13 @@ import math
 import shutil
 import subprocess
 import time
+import urllib.request
 from pathlib import Path
 
 import numpy as np
 from PIL import Image
 
-from native_art.bundle import ROOT, digest
+from native_art.bundle import ROOT, digest, BASE
 from native_art.source_csv import animation_blocks, decoded_rows, records
 from native3d import fla2
 from native3d.sctx3d import decode_sctx3d
@@ -77,6 +78,15 @@ SKIN_EFFECT_COLUMNS = ('DeployEffect', 'AttackEffect', 'AttackEffect2', 'AttackE
                        'DieEffect', 'AbilityTriggerEffect', 'AbilityEffect', 'AbilityActivationEffect', 'AbilityHitEffect',
                        'ParticleEffect3D', 'AbilityEffect3D', 'CelebrateSfx', 'GunBone', 'ShadowBone', 'ProjectileVis')
 SETS = dict(
+    phoenix_egg=dict(
+        characters=[('phoenixegg', 'logic/pets.csv', 'Phoenix Egg')], skinColumn='DefaultSkin',
+        states=('walk', 'attack'), required=('walk', 'attack'), output=OUTPUT,
+        index=ROOT / 'reference/full-client/phoenix-egg-art.json', work=ROOT / 'output/native3d-phoenix-egg-work',
+        checkKey='phoenixegg', generator='scripts/native3d/bake_hero_art.py --set phoenix_egg',
+        extraFields=True, cameraFrom=INDEX,
+        notes=dict(anchor='The original Phoenix Egg uses the Phoenix geometry and its own ground walk/attack animation block. '
+                          'There is no authored idle or death row; the runtime may hold or reuse walk. '
+                          'DepthBias is retained as csvNotBaked, not guessed as an altitude.')),
     heroes=dict(characters=CHARACTERS, skinColumn='DefaultSkin', states=BASE_STATES + EXTRA_STATES, required=BASE_STATES,
                 output=OUTPUT, index=INDEX, work=WORK, checkKey='king', generator='scripts/native3d/bake_hero_art.py',
                 extraFields=False, cameraFrom=None, notes={}),
@@ -112,10 +122,16 @@ def require(condition, message):
 
 
 class Source:
-    def __init__(self):
+    def __init__(self, download_missing=False):
+        self.download_missing = download_missing
         fingerprint = ARCHIVE / 'fingerprint.json'
         if not fingerprint.exists():
             fingerprint = ROOT / 'output/native-campaign-source/fingerprint.json'
+        if not fingerprint.exists() and download_missing:
+            raw = urllib.request.urlopen(BASE + 'fingerprint.json', timeout=30).read()
+            require(digest(raw) == FINGERPRINT_SHA256, 'Client fingerprint differs from pin')
+            fingerprint.parent.mkdir(parents=True, exist_ok=True)
+            fingerprint.write_bytes(raw)
         raw = fingerprint.read_bytes()
         require(digest(raw) == FINGERPRINT_SHA256, 'Client fingerprint differs from pin')
         self.members = {r['file']: r['sha'] for r in json.loads(raw)['files']}
@@ -126,6 +142,11 @@ class Source:
         target = ARCHIVE / 'files' / path
         if not target.exists():
             target = ROOT / 'output/native-campaign-source' / path
+        if not target.exists() and self.download_missing:
+            data = urllib.request.urlopen(BASE + path, timeout=30).read()
+            require(hashlib.sha1(data).hexdigest() == self.members[path], f'Source mismatch: {path}')
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
         data = target.read_bytes()
         require(hashlib.sha1(data).hexdigest() == self.members[path], f'Source mismatch: {path}')
         self.pins[path] = digest(data)
@@ -592,6 +613,7 @@ def main():
     parser.add_argument('--set', choices=sorted(SETS), default='heroes',
                         help='character set: heroes (heroes and pets, default) or guardians (Town Hall 18 Guardians)')
     parser.add_argument('--check', action='store_true', help='verify hashes and re-render one character')
+    parser.add_argument('--download-missing', action='store_true', help='download missing fingerprint-pinned files into the source cache')
     parser.add_argument('--check-key', help='character re-rendered by --check (default: king for heroes, longshot for guardians)')
     parser.add_argument('--only', nargs='*', help='bake a subset (the index is only written when all characters are baked)')
     parser.add_argument('--gpu', choices=['swiftshader', 'metal'], default='swiftshader')
@@ -609,7 +631,7 @@ def main():
     if config['cameraFrom'] is not None and config['cameraFrom'].exists():
         reference = json.loads(config['cameraFrom'].read_text())['conventions']
     started = time.time()
-    src = Source()
+    src = Source(download_missing=args.download_missing)
     camera = client_camera(src)
     if args.check:
         require(index_path.exists(), f'Missing {index_label}')
