@@ -40,7 +40,7 @@ def main():
 
     art.read = read
     def particle_tail(name):
-        # Durable scars contain finite particle rows only. Match the runtime's conservative
+        # Retained fields contain finite particle rows only. Match the runtime's conservative
         # emission + maximum-life bound without importing a mesh graph into combat code.
         rows = lib.effects[name]
         longest = 0
@@ -59,7 +59,8 @@ def main():
     effects, packs, spells, external = {}, {}, {}, {}
     for spell, key in [('Rage', 'rage'), ('Haste', 'haste'), ('Healing', 'heal'), ('Poison', 'poison'),
                        ('Clone', 'clone'), ('Invisibility', 'invisibility'), ('Recall', 'recall'),
-                       ('Lightning', 'lightning'), ('Earthquake', 'earthquake')]:
+                       ('Lightning', 'lightning'), ('Earthquake', 'earthquake'),
+                       ('Skeleton Spell', 'skeleton'), ('Bat Spell', 'bat')]:
         profiles, current, names = [], {}, set()
         for level, row in enumerate(lib.table('logic/spells.csv')[spell], 1):
             current.update(row)
@@ -73,9 +74,9 @@ def main():
                 radius = int(current.get('RandomRadius', '0'))
                 profile['hitRadiusTiles'] = radius // 100 if radius % 100 == 0 else radius / 100
                 profile['graphicsOnlyRadius'] = current.get('RandomRadiusAffectsOnlyGfx') == 'TRUE'
-            if spell == 'Earthquake':
-                profile['retainSeconds'] = profile['deploySeconds'] + max(
-                    particle_tail(profile[k]) for k in ['DeployEffect', 'DeployEffect2'])
+            if spell in ['Earthquake', 'Skeleton Spell', 'Bat Spell']:
+                profile['retainSeconds'] = round(profile['deploySeconds'] + max(
+                    particle_tail(profile[k]) for k in ['DeployEffect', 'DeployEffect2'] if profile.get(k)), 3)
             profiles.append(profile)
             names.update(profile[k] for k in ['PreDeployEffect', 'DeployEffect', 'DeployEffect2', 'ChargingEffect', 'HitEffect'] if profile.get(k))
         spells[spell] = dict(key=key, levels=profiles)

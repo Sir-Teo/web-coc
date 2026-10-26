@@ -114,6 +114,10 @@ for (const { name, level, width } of [
   { name: 'Lightning', level: 13, width: 1440 },
   { name: 'Earthquake', level: 1, width: 390 },
   { name: 'Earthquake', level: 8, width: 1440 },
+  { name: 'Skeleton Spell', level: 1, width: 390 },
+  { name: 'Skeleton Spell', level: 8, width: 1440 },
+  { name: 'Bat Spell', level: 1, width: 1440 },
+  { name: 'Bat Spell', level: 8, width: 390 },
 ] as const)
   test(`original ${name} level ${level} fields and audio survive cold portable seeks at ${width}px`, async ({
     page,
@@ -143,6 +147,8 @@ for (const { name, level, width } of [
       'recall',
       'lightning',
       'earthquake',
+      'skeleton',
+      'bat',
     ])
       if (key !== r.key)
         expect(requests).not.toContain(`/assets/field-spells-native/${key}/graph.json`);
@@ -165,6 +171,16 @@ for (const { name, level, width } of [
           bottle: 'invisibility_bottleDrop',
           ground: `invisibility_lvl${level}_ring`,
           upper: `invisibility_lvl${level}_ring2`,
+        },
+        'Skeleton Spell': {
+          bottle: 'Skeleton_bottleDrop',
+          ground: `skele_summon_area_edge${level}`,
+          upper: `skele_summon_red_glow${level}`,
+        },
+        'Bat Spell': {
+          bottle: 'bat_bottleDrop',
+          ground: `bat_summon_area_edge${level}`,
+          upper: `bat_summon_purple_glow${level}`,
         },
         Earthquake: {
           bottle: 'Earthquake_bottleDrop',
@@ -270,6 +286,8 @@ for (const { name, level, width } of [
         Recall: 1,
         Lightning: 0.8,
         Earthquake: 0.8,
+        'Skeleton Spell': 0.5,
+        'Bat Spell': 0.6,
       }[name],
       keys =
         name === 'Lightning'
@@ -292,6 +310,9 @@ for (const { name, level, width } of [
       expect(sound.impact.gain).toBeCloseTo(0.7 * 0.12, 6);
       expect(sound.impact.rate).toBeGreaterThanOrEqual(0.95);
       expect(sound.impact.rate).toBeLessThanOrEqual(1.05);
+    } else if (name === 'Skeleton Spell') {
+      expect(sound.pitch).toBeGreaterThanOrEqual(0.95);
+      expect(sound.pitch).toBeLessThanOrEqual(1.05);
     } else if (name === 'Healing') {
       expect(sound.pitch).toBeGreaterThanOrEqual(0.8);
       expect(sound.pitch).toBeLessThanOrEqual(0.9);
@@ -305,6 +326,7 @@ for (const { name, level, width } of [
           Invisibility: 1,
           Recall: 1,
           Earthquake: 0.97,
+          'Bat Spell': 1,
         }[name],
       );
     expect(sound.rate).toBeCloseTo(sound.pitch, 6);
@@ -346,17 +368,19 @@ for (const { name, level, width } of [
       ).toEqual({ pulse: undefined, meshes: 0 });
     }
     const oldVersion =
-      name === 'Earthquake'
-        ? 124
-        : name === 'Lightning'
-          ? 123
-          : name === 'Recall'
-            ? 120
-            : name === 'Clone' || name === 'Invisibility'
-              ? 119
-              : name === 'Healing' || name === 'Poison'
-                ? 117
-                : 116;
+      name === 'Skeleton Spell' || name === 'Bat Spell'
+        ? 125
+        : name === 'Earthquake'
+          ? 124
+          : name === 'Lightning'
+            ? 123
+            : name === 'Recall'
+              ? 120
+              : name === 'Clone' || name === 'Invisibility'
+                ? 119
+                : name === 'Healing' || name === 'Poison'
+                  ? 117
+                  : 116;
     await open(page, oldVersion);
     await seek(page, r.steady);
     expect(
@@ -374,7 +398,7 @@ for (const { name, level, width } of [
       ready: false,
       views: 0,
       names:
-        oldVersion === 124
+        oldVersion === 125
           ? [
               'Jump',
               'Rage',
@@ -385,21 +409,46 @@ for (const { name, level, width } of [
               'Invisibility',
               'Recall',
               'Lightning',
+              'Earthquake',
             ]
-          : oldVersion === 123
-            ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison', 'Clone', 'Invisibility', 'Recall']
-            : oldVersion === 120
-              ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison', 'Clone', 'Invisibility']
-              : oldVersion === 119
-                ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison']
-                : oldVersion === 117
-                  ? ['Jump', 'Rage', 'Haste']
-                  : ['Jump'],
+          : oldVersion === 124
+            ? [
+                'Jump',
+                'Rage',
+                'Haste',
+                'Healing',
+                'Poison',
+                'Clone',
+                'Invisibility',
+                'Recall',
+                'Lightning',
+              ]
+            : oldVersion === 123
+              ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison', 'Clone', 'Invisibility', 'Recall']
+              : oldVersion === 120
+                ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison', 'Clone', 'Invisibility']
+                : oldVersion === 119
+                  ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison']
+                  : oldVersion === 117
+                    ? ['Jump', 'Rage', 'Haste']
+                    : ['Jump'],
       history: undefined,
     });
     expect(errors).toEqual([]);
   });
 for (const { name, path, heldEffect, otherEffect } of [
+  {
+    name: 'Skeleton Spell',
+    path: 'field-spells-native/skeleton',
+    heldEffect: 'SkeleSpell Summon1',
+    otherEffect: undefined,
+  },
+  {
+    name: 'Bat Spell',
+    path: 'field-spells-native/bat',
+    heldEffect: 'BatSpell Summon1',
+    otherEffect: undefined,
+  },
   {
     name: 'Earthquake',
     path: 'field-spells-native/earthquake',
@@ -566,6 +615,8 @@ for (const { name, path, heldEffect, otherEffect } of [
         Recall: 'RecallCircleGround',
         Lightning: 'LightningSky',
         Earthquake: 'Earthquake_crackCenter',
+        'Skeleton Spell': 'skele_summon_area_edge1',
+        'Bat Spell': 'bat_summon_area_edge1',
       }[name],
     ]);
     if (name === 'Healing') await visible(page, ['heal_ring_effect', 'heal_ring_effect2']);
@@ -613,3 +664,26 @@ test('version-124 Earthquake playback stays read-only and never requests the dur
   ).toEqual({ ready: false, views: 0, cast: false });
   expect(requests).not.toContain('/assets/field-spells-native/earthquake/graph.json');
 });
+
+for (const name of ['Skeleton Spell', 'Bat Spell'] as const)
+  test(`version-125 ${name} playback never requests its new source field pack`, async ({
+    page,
+  }) => {
+    const r = nativeFieldSpellRecording(name),
+      requests: string[] = [];
+    page.on('request', (request) => requests.push(new URL(request.url()).pathname));
+    await boot(page, r, false, 125);
+    await open(page, 125);
+    await seek(page, r.afterLive);
+    expect(
+      await page.evaluate(() => ({
+        ready: window.__game.scene.fieldSpellPresentations
+          .get(window.__field.name)
+          .hasArt(window.__game.model.battle, false),
+        views: window.__game.scene.fieldSpellPresentations.get(window.__field.name).layer.views
+          .size,
+        cast: window.__game.model.castSpell(11.5, 11.5),
+      })),
+    ).toEqual({ ready: false, views: 0, cast: false });
+    expect(requests).not.toContain(`/assets/field-spells-native/${r.key}/graph.json`);
+  });

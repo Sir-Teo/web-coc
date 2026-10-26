@@ -1956,3 +1956,41 @@ destruction through portable forward/reverse seeks with version-124 physical equ
 Browser coverage includes phone/desktop meshes and original Web Audio, cold 45-second
 scars, reduced motion, battle completion, old-version asset requests and natural paused
 recovery after a held/failed pack.
+
+## Version 126 original Skeleton and Bat spell summon fields
+
+Skeleton and Bat spells now use their original falling bottles, skull rays, rings,
+colored glows and summon-area edges at every source level. Their separate lazy packs
+contain 53,289 and 53,155 bytes respectively, preserving the declared effect/emitter
+records, source graphs and decoded pixels. Both have a predeployment and deployment
+phase; missing upper, charging and hit phases are omitted. Existing field packs and
+the sound catalog remain unchanged.
+
+Deployment and the first physical release still occur at 800 ms. Skeleton spells
+release four initial shielded Skeletons, with the remaining units over the unchanged
+8–15-second source spawn duration. Bat spells release two initial Bats, then the rest
+over 3–13.8 seconds. The presentation does not change the existing release schedule,
+unit count, shield state, level, random positions, targeting or damage.
+
+The source Skeleton field lives 11–18 seconds after deployment, retaining a three-second
+visual tail after the final release. Bat fields live 6.2–17 seconds, retaining 3.2 seconds.
+The existing source-derived history bound now covers these particle-only fields too,
+including the one-millisecond emission window. Skeleton's longest bound is 18.801
+seconds after casting; Bat's is 17.801 seconds. Earlier versions do not capture these
+spell names, so their histories remain unchanged. A cast's physical pulse deadline
+remains 800 ms even while its pending summons keep the live cast active; presentation
+retention does not alter that combat rule.
+
+The existing vial fall and per-level landing cues keep their two stable cast keys.
+Skeleton's original landing uses 50% volume and 0.95–1.05 pitch; Bat's uses 60% volume
+and 1.0 pitch. Late cold views warm the field from captured history after inventory is
+spent and the live cast ends. They do not replay expired audio. Reduced motion omits
+the moving source fields, and pending/failed packs retain the existing feedback until
+all phase art recovers. Rendering remains read-only and consumes no combat RNG.
+
+Tests sample all sixteen spell/level combinations, first-group counts, the final release,
+full source tails and retirement. Actual summons reconstruct identical version-125
+bodies, shields, positions and combat through portable forward/reverse seeks. Browser
+coverage includes phone/desktop source meshes, original Web Audio, cold post-spawn
+fields, reduced motion, old-version requests and natural paused recovery from a
+held/failed pack.

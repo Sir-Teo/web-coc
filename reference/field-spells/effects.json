@@ -57,7 +57,25 @@
     "EarthQuake_deploy_ground_2": "earthquake",
     "EarthQuake_deploy_ground_3": "earthquake",
     "EarthQuake_deploy_ground_4": "earthquake",
-    "Earthquake_Predeploy": "earthquake"
+    "Earthquake_Predeploy": "earthquake",
+    "SkeleSpell Summon1": "skeleton",
+    "SkeleSpell Summon2": "skeleton",
+    "SkeleSpell Summon3": "skeleton",
+    "SkeleSpell Summon4": "skeleton",
+    "SkeleSpell Summon5": "skeleton",
+    "SkeleSpell Summon6": "skeleton",
+    "SkeleSpell Summon7": "skeleton",
+    "SkeleSpell Summon8": "skeleton",
+    "skele_Predeploy": "skeleton",
+    "BatSpell Summon1": "bat",
+    "BatSpell Summon2": "bat",
+    "BatSpell Summon3": "bat",
+    "BatSpell Summon4": "bat",
+    "BatSpell Summon5": "bat",
+    "BatSpell Summon6": "bat",
+    "BatSpell Summon7": "bat",
+    "BatSpell Summon8": "bat",
+    "bat_Predeploy": "bat"
   },
   "packs": {
     "rage": {
@@ -104,6 +122,16 @@
       "path": "assets/field-spells-native/earthquake/graph.json",
       "sha256": "88a448391401a9221710fefc14d4bb278d17d55c9231519e0266267d229c82c5",
       "bytes": 196132
+    },
+    "skeleton": {
+      "path": "assets/field-spells-native/skeleton/graph.json",
+      "sha256": "ef007eb65f9f8636cd5aef25db0759f47a743f22bfda6c4f2060894eb2dfc263",
+      "bytes": 53289
+    },
+    "bat": {
+      "path": "assets/field-spells-native/bat/graph.json",
+      "sha256": "adf4771ec86813f4693b5486b10b0bfd97768318ab1da458b743e826161af36d",
+      "bytes": 53155
     }
   },
   "spells": {
@@ -873,6 +901,144 @@
           "deploySeconds": 0.8,
           "pulseSeconds": 1.5,
           "retainSeconds": 303.3
+        }
+      ]
+    },
+    "Skeleton Spell": {
+      "key": "skeleton",
+      "levels": [
+        {
+          "PreDeployEffect": "skele_Predeploy",
+          "DeployEffect": "SkeleSpell Summon1",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 11.801
+        },
+        {
+          "PreDeployEffect": "skele_Predeploy",
+          "DeployEffect": "SkeleSpell Summon2",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 12.801
+        },
+        {
+          "PreDeployEffect": "skele_Predeploy",
+          "DeployEffect": "SkeleSpell Summon3",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 13.801
+        },
+        {
+          "PreDeployEffect": "skele_Predeploy",
+          "DeployEffect": "SkeleSpell Summon4",
+          "level": 4,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 14.801
+        },
+        {
+          "PreDeployEffect": "skele_Predeploy",
+          "DeployEffect": "SkeleSpell Summon5",
+          "level": 5,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 15.801
+        },
+        {
+          "PreDeployEffect": "skele_Predeploy",
+          "DeployEffect": "SkeleSpell Summon6",
+          "level": 6,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 16.801
+        },
+        {
+          "PreDeployEffect": "skele_Predeploy",
+          "DeployEffect": "SkeleSpell Summon7",
+          "level": 7,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 17.801
+        },
+        {
+          "PreDeployEffect": "skele_Predeploy",
+          "DeployEffect": "SkeleSpell Summon8",
+          "level": 8,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 18.801
+        }
+      ]
+    },
+    "Bat Spell": {
+      "key": "bat",
+      "levels": [
+        {
+          "PreDeployEffect": "bat_Predeploy",
+          "DeployEffect": "BatSpell Summon1",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 7.001
+        },
+        {
+          "PreDeployEffect": "bat_Predeploy",
+          "DeployEffect": "BatSpell Summon2",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 8.201
+        },
+        {
+          "PreDeployEffect": "bat_Predeploy",
+          "DeployEffect": "BatSpell Summon3",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 9.401
+        },
+        {
+          "PreDeployEffect": "bat_Predeploy",
+          "DeployEffect": "BatSpell Summon4",
+          "level": 4,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 12.401
+        },
+        {
+          "PreDeployEffect": "bat_Predeploy",
+          "DeployEffect": "BatSpell Summon5",
+          "level": 5,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 15.401
+        },
+        {
+          "PreDeployEffect": "bat_Predeploy",
+          "DeployEffect": "BatSpell Summon6",
+          "level": 6,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 16.001
+        },
+        {
+          "PreDeployEffect": "bat_Predeploy",
+          "DeployEffect": "BatSpell Summon7",
+          "level": 7,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 16.601
+        },
+        {
+          "PreDeployEffect": "bat_Predeploy",
+          "DeployEffect": "BatSpell Summon8",
+          "level": 8,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 17.801
         }
       ]
     }

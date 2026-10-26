@@ -654,3 +654,14 @@ covering its finite ground particles throughout a normal battle. Other captured 
 keep their former retirement rules. Version 124 and earlier request no Earthquake pack
 and retain their previous presentation. See
 [source and adapter details](NATIVE-HEROES.md#version-125-original-earthquake-fields-and-persistent-scars).
+
+## Version 126: original Skeleton and Bat spell summon fields
+
+The source-spell presentation list adds `Skeleton Spell` and `Bat Spell`. All eight
+levels of each spell retain their original bottle, skull rays, rings and summon-field
+edge/glow. Source-derived `retainSeconds` covers the full spawning window and its visual
+tail, including fields that outlive the former ten-second history bound. Physical
+summon counts, first groups, release times, shields, positions and combat remain
+unchanged. Version 125 and earlier retain their former presentation and request neither
+new pack. See
+[source and adapter details](NATIVE-HEROES.md#version-126-original-skeleton-and-bat-spell-summon-fields).
