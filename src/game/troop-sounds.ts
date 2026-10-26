@@ -294,6 +294,19 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
       if (cue) cues.push(cue);
     }
   }
+  for (const zap of battle.nativeElectromiteZaps ?? []) {
+    if (!cueAudible(zap.at, elapsed)) continue;
+    for (const event of (zap.primary ? ['attack', 'hit'] : ['hit']) as ('attack' | 'hit')[]) {
+      const cue = troopCue(
+        battle,
+        { id: zap.sourceId, kind: 'electromite', level: zap.level },
+        event,
+        `${zap.key}:${event}`,
+        zap.at,
+      );
+      if (cue) cues.push(cue);
+    }
+  }
   for (const cue of logged) cues.push(cue);
   return cues;
 }

@@ -1,3 +1,4 @@
+import type { ElectromiteArc, ElectromiteZap } from './native-electromite';
 import { stepDefendingHeroes } from './defending-heroes';
 import { ragePetAfterHeroDeath } from './native-pet-rage';
 import {
@@ -891,6 +892,10 @@ export interface Battle {
   nativeSingleUseMiteJumps?: true;
   /** Version 106: activated native weapons count for preferred targets and damage. */
   nativeActivatedPreference?: true;
+  /** Version 107: source Electromite chain lightning, building damage and one-use cast. */
+  nativeElectromites?: true;
+  nativeElectromiteArcs?: ElectromiteArc[];
+  nativeElectromiteZaps?: ElectromiteZap[];
   /** Recent detached troop stage effects; presentation only, retired deterministically. */
   infernoDragonTransitions?: InfernoDragonTransition[];
   /** Version 53: passive hero auras and Royal Rampage. */
@@ -6734,6 +6739,7 @@ export class GameModel {
         ) &&
         !b.nativeDeaths?.some((blast) => !blast.resolved) &&
         !b.nativeChains?.length &&
+        !b.nativeElectromiteArcs?.length &&
         !b.nativePendingSpawns?.length &&
         !b.nativeSpells?.some((cast) => nativeSpellCanStillFight(cast)) &&
         !TROOP_KEYS.some(

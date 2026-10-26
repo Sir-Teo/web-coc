@@ -374,6 +374,9 @@ export type DefenderFightTraits = Pick<
   TroopDef,
   'prefersDefenses' | 'prefersResources' | 'healer' | 'wallBreaker' | 'flying' | 'splash'
 > & {
+  /** Source Any Building preference and a committed native attack callback. */
+  prefersBuildings?: boolean;
+  nativeAttack?(target: Defender, power: number): void;
   airTargets?: boolean;
   preferHeroes?: boolean;
   heroDamageScale?: number;
@@ -540,6 +543,9 @@ function preferredOrCommitted(
   targetable: (b: Building) => boolean,
 ) {
   const index = preferenceIndex(battle, buildings, targetable);
+  if (troop.prefersBuildings)
+    for (const b of buildings)
+      if (b.kind !== 'wall' && !isTrap(b.kind) && b.hp > 0 && targetable(b)) return true;
   if (troop.prefersDefenses)
     for (const b of index.defenses)
       if (
@@ -597,7 +603,8 @@ export function stepAttackerVsDefenders(
   // stands or while it is committed to its current building target. That answer only needs
   // computing when a defender could actually be engaged: an unengaged troop with no alerted
   // defender in reach returns here exactly as it would after the building checks.
-  const wantsPreferred = !!troop.prefersDefenses || !!troop.prefersResources;
+  const wantsPreferred =
+    !!troop.prefersDefenses || !!troop.prefersResources || !!troop.prefersBuildings;
   const preferredHero = troop.preferHeroes ? preferredHeroTarget(battle, unit, troop) : undefined;
   let nearest: Defender | undefined;
   let searched = false;
@@ -645,7 +652,9 @@ export function stepAttackerVsDefenders(
       const power =
         hitDamage * (target.kind === 'hero' ? (troop.heroDamageScale ?? 1) : 1) +
         target.maxHp * (troop.nativeTargetHpBonus ?? 0);
-      if (unit.kind === 'dragon') {
+      if (troop.nativeAttack) {
+        troop.nativeAttack(target, power);
+      } else if (unit.kind === 'dragon') {
         hurtDefender(battle, target, power);
         damageDefenders(battle, target, stats.damage, troop.splash ?? 0, target.mode, target.id);
         if (target.mode === 'ground')

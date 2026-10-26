@@ -88,6 +88,13 @@ Furnaces before deployment. Their single-use defender jumps play the original de
 at launch, when the ballistic projectile replaces the creature. Desktop and phone checks
 verify those cues reach actual Web Audio nodes through portable replay seeks.
 
+Version 107 warms Electromite's four existing source events from a carried Super Yeti.
+A committed chain records the original attack sound once and the original hit sound at
+each reached target's scheduled time. Those cues retain the captured tier and survive
+the one-use caster's disappearance, alongside its existing death cue. The ten-second
+record horizon matches shared sound seeking; desktop and phone checks exercise actual
+attack and hit Web Audio nodes after portable replay seeks.
+
 ## Tests
 
 `tests/troop-sounds.test.ts` checks:

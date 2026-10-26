@@ -448,3 +448,16 @@ modifier against an activated Town Hall. Sleeping or unarmed buildings remain ou
 class. Versions 105 and earlier retain their previous static checks. Real Earthquake and
 Super Giant inputs cover this change through portable reverse seeks and historical playback.
 See the [source and adapter details](NATIVE-HEROES.md#version-106-activated-defense-preference).
+
+## Version 107: Electromite chain lightning
+
+Super Yetis release matching-tier Electromites per 400 lost HP while alive, retaining
+the existing total limit and releasing only the remainder on death.
+Electromites cast once after their source acquisition delay, chaining up to three
+ground/air targets with delayed, diminishing damage and a brief stun. Each building
+receives the fourfold source bonus once. Their building preference and Castle-pull
+immunity apply, and committed hops retain damage after the caster disappears. Original
+lightning, impact and sound events follow captured endpoints and timestamps through
+portable reverse seeks. Version 106 and earlier retain their previous direct hits and
+missing chain/bonus/stun. See the
+[source and adapter details](NATIVE-HEROES.md#version-107-electromite-chain-lightning).

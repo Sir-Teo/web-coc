@@ -1,3 +1,4 @@
+import { ELECTROMITE_EFFECTS } from './electromite-effects';
 import { MITE_SPAWN_PARENTS } from './native-mite-jumps';
 import { builderHutArt } from './builder-hut-art';
 import { phoenixLifeFraction } from './native-status';
@@ -2604,6 +2605,11 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.battle?.nativeSingleUseMiteJumps)
       for (const [child, parent] of Object.entries(MITE_SPAWN_PARENTS))
         if ((this.model.battle.carriedArmy?.[parent] ?? 0) > 0) wanted.add(child);
+    if (
+      this.model.battle?.nativeElectromites &&
+      (this.model.battle.carriedArmy?.superyeti ?? 0) > 0
+    )
+      wanted.add('electromite');
     return [...wanted].sort();
   }
   /** Baked character atlases the home lineup or current battle needs. */
@@ -2638,14 +2644,18 @@ export class VillageScene extends Phaser.Scene {
     const kinds = this.wantedTroopArt();
     const level = (kind: string) =>
       this.model.troopLevel(
-        (Object.hasOwn(MITE_SPAWN_PARENTS, kind)
-          ? MITE_SPAWN_PARENTS[kind as keyof typeof MITE_SPAWN_PARENTS]
-          : kind) as TroopKind,
+        (kind === 'electromite'
+          ? 'superyeti'
+          : Object.hasOwn(MITE_SPAWN_PARENTS, kind)
+            ? MITE_SPAWN_PARENTS[kind as keyof typeof MITE_SPAWN_PARENTS]
+            : kind) as TroopKind,
       );
     const signature = kinds.map((kind) => `${kind}:${level(kind)}`).join(',');
     if (signature !== this.armyPrefetchSignature) {
       this.armyPrefetchSignature = signature;
       if (kinds.length) this.troopNativePresentation?.prefetch(kinds, level);
+      if (kinds.includes('electromite'))
+        this.nativeProjectiles?.prefetchEffects(ELECTROMITE_EFFECTS);
     }
     const setups = this.model.reducedMotion
       ? []
@@ -4201,6 +4211,8 @@ export class VillageScene extends Phaser.Scene {
       if (battle.nativeSingleUseMiteJumps)
         for (const [child, parent] of Object.entries(MITE_SPAWN_PARENTS))
           if ((battle.carriedArmy?.[parent] ?? 0) > 0) kinds.add(child);
+      if (battle.nativeElectromites && (battle.carriedArmy?.superyeti ?? 0) > 0)
+        kinds.add('electromite');
       for (const [kind, count] of Object.entries(battle.spells))
         if (count) spells.add(SPELL_SOURCE[kind as SpellKind]);
     }

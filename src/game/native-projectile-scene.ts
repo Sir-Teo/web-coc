@@ -1,3 +1,4 @@
+import { electromiteEffectEvents } from './electromite-effects';
 import type Phaser from 'phaser';
 import type { Battle } from './model';
 import type { CombatProjectile } from './projectiles';
@@ -78,6 +79,10 @@ export class NativeProjectilePresentation {
     }
     for (const path of paths) this.packs.get(path);
   }
+  /** Targeted effects without a projectile warm through the same shared pack loader. */
+  prefetchEffects(names: Iterable<string>) {
+    for (const name of names) this.layer.duration(name);
+  }
   /** True when the native presentation already shows this shot's flight. */
   covers(id: string | undefined) {
     return !!id && this.covered.has(id);
@@ -156,6 +161,8 @@ export class NativeProjectilePresentation {
       this.layer.end();
       return covered;
     }
+    for (const event of electromiteEffectEvents(battle, iso, airLift))
+      this.layer.play(event, elapsed, reduced);
     for (const p of battle.projectiles ?? []) {
       if (p.weapon !== 'native' || !p.native) continue;
       const known = this.history.get(p.id);

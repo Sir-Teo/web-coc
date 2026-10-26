@@ -64,7 +64,12 @@ export function stepGarrisonReleases(battle: Battle) {
   // Boogers and source DoesNotOpenCC mite jumps fight defenders without pulling the reserve.
   const targets: GarrisonTarget[] = [];
   for (const unit of battle.units)
-    if (unit.kind !== 'booger' && unit.kind !== 'frostmite' && !nativeMiteJump(battle, unit.kind))
+    if (
+      unit.kind !== 'booger' &&
+      unit.kind !== 'frostmite' &&
+      !nativeMiteJump(battle, unit.kind) &&
+      !(battle.nativeElectromites && unit.kind === 'electromite')
+    )
       targets.push({ ...unit, flying: !!TROOPS[unit.kind].flying });
   for (const reserve of garrisons) {
     const castle = bunkers.get(reserve.castleId);

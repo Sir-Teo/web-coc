@@ -401,7 +401,10 @@ export class TroopNativePresentation {
           u.cooldown,
         );
         seconds =
-          battle && nativeMiteJump(battle, u.kind) && u.native?.targetAt !== undefined
+          battle &&
+          (nativeMiteJump(battle, u.kind) ||
+            (battle.nativeElectromites && u.kind === 'electromite')) &&
+          u.native?.targetAt !== undefined
             ? Math.max(0, elapsed - u.native.targetAt)
             : Math.max(0, interval - u.cooldown);
       } else

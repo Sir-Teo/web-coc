@@ -1,3 +1,4 @@
+import electromiteArt from '../../reference/electromite/effects.json' with { type: 'json' };
 import type Phaser from 'phaser';
 import effectArt from '../../reference/full-client/effect-art.json' with { type: 'json' };
 import { NativeSceneView, effectSceneView } from './native-scene-view';
@@ -13,16 +14,20 @@ import {
 } from './native-effects';
 
 type Point = { x: number; y: number };
-const index = effectArt as unknown as {
+type EffectIndex = {
   effects: Record<string, string>;
   emitters: Record<string, string>;
   packs: Record<string, { path: string }>;
 };
+const index = effectArt as unknown as EffectIndex;
+const electromiteIndex = electromiteArt as unknown as EffectIndex;
 /** Pack of an effects.csv record, or undefined for sound-only and unreferenced records. */
 export const nativeEffectPack = (effect: string | undefined) =>
   effect && Object.hasOwn(index.effects, effect)
     ? index.packs[index.effects[effect]].path
-    : undefined;
+    : effect && Object.hasOwn(electromiteIndex.effects, effect)
+      ? electromiteIndex.packs[electromiteIndex.effects[effect]].path
+      : undefined;
 export const nativeEmitterPack = (emitter: string | undefined) =>
   emitter && Object.hasOwn(index.emitters, emitter)
     ? index.packs[index.emitters[emitter]].path

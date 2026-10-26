@@ -1119,3 +1119,62 @@ impact timing. An actual Earthquake input wakes a Town Hall in
 the first Super Giant keeps its committed storage target. Portable forward/reverse seeks and
 phone/desktop browser checks verify the original bodies, read-only rendering, reduced
 motion and historical version 105 targeting.
+
+## Version 107 Electromite chain lightning
+
+The pinned `characters.Electromite` row names `ElectromiteStunAbility`; its chain and
+stun columns were not being read. Electromites now acquire a target for 0.5 seconds,
+cast once, and dissipate. The source has no projectile for this attack. Its `Any Building`
+preference keeps the initial cast on eligible structures; when none are targetable it
+can fight a released defender. Live Electromites retain trap immunity and now honor the
+source `DoesNotOpenCC` flag.
+
+Super Yeti also now releases children while alive: its ability declares one per 400
+lost HP, capped at 7–14 by tier, but its character row omits `SpawnWhenDamaged`. The
+former character-column guard therefore skipped every wound-spawn and left only the
+death release. The existing damage-spawn adapter now reads this ability in version 107;
+death releases only the remaining children. This uses the pinned 400-HP interval where
+the wiki's parent and child pages disagree between 400 and 800. Earlier versions retain
+their death-only release.
+
+The cast reaches up to three unvisited targets, with three-tile hops, a 0.128-second
+delay and 20% damage loss per hop. Buildings receive the character's fourfold multiplier
+once, including resource buildings and Town Halls. The ability repeats this multiplier;
+it does not add a second fourfold bonus. Defenders on either layer receive the captured
+base damage. Each reached living target receives the source 0.1-second full slow through
+the existing stun clocks, preserving a longer stun. Committed hops retain the original
+tier and outgoing damage after the caster disappears or a boost expires. Pending hops
+keep the last attacker's raid open until they resolve.
+
+The existing local chain adapter selects the nearest eligible target at each hop,
+measuring building-edge and defender-point distances. Equal distances prefer buildings,
+then lower ids. Walls, traps, dead or hidden targets, visited targets and not-yet-spawned
+defenders are excluded. This deterministic ordering and two-dimensional coverage are
+adapters; the client tables do not provide its full target selection or vertical geometry.
+Late updates process committed hops in time order at their scheduled timestamps.
+
+`scripts/import-electromite-art.py --check` reproduces two original lazy effect packs
+from verified client files, checking graph bytes and decoded texture pixels. Together
+they add 72,026 bytes: `Zappies Attack` retains both `Zappies_Lightning` variants;
+`SuperYetimite Hit` retains `Golem_hit`, `DefenceHit` and `Stone debris`. The shared native
+targeted-particle stretch and ground/air lift adapters place these effects between the
+captured endpoints; the client attachment code is not in the tables. Original body
+timelines remain unchanged, with the pre-cast attack clock dated from target acquisition.
+
+Carried Super Yetis warm the correct-tier Electromite body, both effect packs and the
+four existing original sound events before deployment. The recorded cast plays the
+original attack sound once; each reached target plays its original hit sound, and the
+consumed actor keeps its original death cue. Captured events survive source removal and
+remain for the shared ten-second sound seek horizon. Reduced motion suppresses particles
+without changing combat.
+
+`tests/native-electromite.test.ts` covers source damage/timing, one-use casts, mixed
+ground/air chains, stun, preference, captured boosts, visibility, radius, future targets,
+late updates, raid completion and trap/Castle immunity. A Queen naturally wounds a
+level-1 or level-8 Super Yeti in `tests/fixtures/native-electromite.ts`; its child chains
+through structures and the defender in portable forward/reverse seeks. Asset tests verify
+pins, complete pack sizes, deterministic particles and captured sound parameters.
+Phone/desktop browser checks verify cold roster warming, original bodies and lightning
+meshes, actual Web Audio, reduced motion, read-only rendering and historical playback.
+Version 106 and earlier preserve their former direct hits, missing chain/bonus/stun and
+Castle-pull behavior.

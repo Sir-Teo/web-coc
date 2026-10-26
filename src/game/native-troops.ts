@@ -1,3 +1,4 @@
+import { attackElectromite, stepElectromiteArcs } from './native-electromite';
 import { preferredDefense } from './native-defense-preference';
 import { monolithArrow, stepEquipmentDash } from './native-equipment-effects';
 import { isSiege } from './special-troops';
@@ -15,6 +16,7 @@ import {
 } from './data';
 import { EXTRA_TROOP_KINDS } from './extra-troops';
 import {
+  type Defender,
   attackerDefenderTarget,
   damageDefenders,
   hurtDefender,
@@ -774,6 +776,7 @@ export function stepNativeUnit(
     return;
   }
   const miteJump = nativeMiteJump(battle, u.kind);
+  const electromite = battle.nativeElectromites && u.kind === 'electromite';
   const heroHunter = battle.nativeHeadhunterHeroRules && u.kind === 'headhunter';
   const poisonLizard = battle.nativeAttackerHitPoison && u.kind === 'poisonlizard';
   const jumpingChase =
@@ -823,6 +826,13 @@ export function stepNativeUnit(
       {
         prefersDefenses: s.preferredClass === 'Defense' || !!s.preferredBuilding || undefined,
         prefersResources: s.preferredClass === 'Resource' || undefined,
+        ...(electromite
+          ? {
+              prefersBuildings: true,
+              nativeAttack: (target: Defender, power: number) =>
+                attackElectromite(ctx, u, power, { defender: target }),
+            }
+          : {}),
         wallBreaker: s.preferredClass === 'Wall' || undefined,
         healer: s.heal > 0 && s.dps <= 0,
         flying: s.flying || undefined,
@@ -846,7 +856,7 @@ export function stepNativeUnit(
           : (ctx.routableBuildings ?? ctx.buildings),
         ...(jumpingChase ? { jumpWalls: true } : {}),
         ...(undergroundChase ? { enterRange: () => surfaceUndergroundUnit(ctx, u, at) } : {}),
-        ...(miteJump
+        ...(miteJump || electromite
           ? {
               targetAcquired: () => {
                 state.targetAt = at;
@@ -1120,6 +1130,10 @@ function strike(
 ) {
   const battle = ctx.battle;
   const state = (u.native ??= {});
+  if (battle.nativeElectromites && u.kind === 'electromite') {
+    attackElectromite(ctx, u, damage, { building: target });
+    return;
+  }
   if (battle.nativeProjectileFrost && s.frostProjectile)
     s = { ...s, projectile: s.frostProjectile };
   const arrow = monolithArrow(ctx, u);
@@ -1634,7 +1648,11 @@ function stepLifecycle(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at:
   if (s.bunker && s.bunkerCount > 0) stepBunker(ctx, u, s, at);
   if (s.evolveTo && s.evolveTime > 0 && at + 1e-9 >= (u.spawnedAt ?? 0) + s.evolveTime && u.hp > 0)
     evolve(ctx, u, s);
-  if (s.spawnWhenDamaged > 0 && s.ability) stepDamageSpawns(ctx, u, s, at, false);
+  if (
+    s.ability &&
+    (s.spawnWhenDamaged > 0 || (battle.nativeElectromites && u.kind === 'superyeti'))
+  )
+    stepDamageSpawns(ctx, u, s, at, false);
 }
 
 function stepSummons(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: number) {
@@ -2175,5 +2193,6 @@ export function stepNativeBattle(ctx: NativeTroopContext) {
   });
   stepNativeDeaths(ctx);
   stepNativeChains(ctx);
+  stepElectromiteArcs(ctx);
   stepPendingSpawns(ctx);
 }
