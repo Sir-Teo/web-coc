@@ -36,6 +36,7 @@ import { NativeArtPacks, type NativeArtPack } from './native-art-pack';
 import { NativeProjectilePresentation } from './native-projectile-scene';
 import { nativeUnitStats } from './native-units';
 import { heroProjectileNames } from './hero-projectile-prefetch';
+import { fireballEffects } from './fireball-effects';
 import { NativeDefensePresentation } from './native-defense-scene';
 import { nativeRow, tiles as nativeTiles } from './native-data';
 import {
@@ -2723,19 +2724,26 @@ export class VillageScene extends Phaser.Scene {
     const setupSignature = JSON.stringify(
       setups.map(({ kind, level, items, pet }) => ({ kind, level, items, pet })),
     );
+    const fireball = !this.model.battle || !!this.model.battle.nativeWardenFireball;
     const projectiles = this.model.reducedMotion
       ? ''
-      : `${signature}|${setupSignature}|phoenix:${!!this.model.battle?.nativePhoenixResurrection}`;
+      : `${signature}|${setupSignature}|phoenix:${!!this.model.battle?.nativePhoenixResurrection}|fireball:${fireball}`;
     if (projectiles !== this.projectilePrefetchSignature) {
       this.projectilePrefetchSignature = projectiles;
       this.nativeProjectiles?.prefetch(
         projectiles
           ? [
               ...kinds.map((kind) => nativeUnitStats(kind, level(kind)).projectile),
-              ...heroProjectileNames(setups, !!this.model.battle?.nativePhoenixResurrection),
+              ...heroProjectileNames(
+                setups,
+                !!this.model.battle?.nativePhoenixResurrection,
+                fireball,
+              ),
             ]
           : [],
       );
+      if (fireball && !this.model.reducedMotion)
+        this.nativeProjectiles?.prefetchEffects(fireballEffects(setups));
     }
     const heroes = this.wantedHeroArt();
     const heroSignature = [...heroes].sort().join(',');
@@ -4304,11 +4312,10 @@ export class VillageScene extends Phaser.Scene {
     this.troopSoundFreezeCasts = freezeCasts;
     this.troopSoundSpellHistory = history;
     this.troopSoundRecallHistory = recallHistory;
-    this.troopSoundLoader.need(
-      kinds,
-      spells,
-      needsRecallPresentation(battle) ? ['RecallRedeployAuraTop'] : [],
-    );
+    this.troopSoundLoader.need(kinds, spells, [
+      ...(needsRecallPresentation(battle) ? ['RecallRedeployAuraTop'] : []),
+      ...(battle.nativeWardenFireball ? ['FireballActivationEffect'] : []),
+    ]);
   }
   /** Whether a spell's falling bottle is decoded, so it replaces the generated tones. */
   private spellReady(kind: SpellKind) {
@@ -4340,6 +4347,14 @@ export class VillageScene extends Phaser.Scene {
     this.fxSounded = false;
     const battle = this.model.battle;
     if (!battle || !this.audible()) return;
+    if (
+      (fx.type === 'projectile' || fx.type === 'impact') &&
+      battle.nativeFireballs?.some((shot) => shot.id === fx.projectileId)
+    ) {
+      // The captured equipment activation owns its source cue, including after a cold seek.
+      this.fxSounded = true;
+      return;
+    }
     if (fx.type === 'spell' && fx.spell) {
       this.battleSounds.spell(
         battle,

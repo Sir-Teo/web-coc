@@ -48,7 +48,7 @@ SPELL_EVENTS = {
     'charging': 'ChargingEffect', 'hit': 'HitEffect',
 }
 DESTROYED = 'Building Destroyed'
-EXTRA_EFFECTS = ['RecallRedeployAuraTop']
+EXTRA_EFFECTS = ['RecallRedeployAuraTop', 'FireballActivationEffect']
 
 
 def require(condition, message):

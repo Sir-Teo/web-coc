@@ -1,0 +1,194 @@
+{
+  "clientVersion": "18.400.21",
+  "generator": "scripts/import-fireball-art.py",
+  "sources": {
+    "csv/particle_emitters.csv": "8d80bbf714386c4f24e6aed8f2eef671a2eac5c3b3ad41e4d275b757ced64cef",
+    "logic/effects.csv": "5c6d5b67d6407345123b8d55872ed77ee6697b466d20d1fa21e25a723c511e9f",
+    "logic/special_abilities.csv": "c978dd90ff2335e60d988f3476d78bec72672e8c074344d149096e89951181eb",
+    "sc/buildings.sc": "f73ec949fc070bc03175d6bb3af8b62d8f607094bf2b343c9846a499a35be0ed",
+    "sc/buildings_39.sctx": "dd27d9612fe135c3be364840eeabe45b53a229b24192246b56a08fa0606fdb16",
+    "sc/vfx_character.sc": "1fedfef75fd781233c33535b2b0f11a45298ef02f93105d8f3730554c67e74e6",
+    "sc/vfx_character_3.sctx": "e8ea8adbb777e3c0e11f0695f53956a7a8e3c1e710a045af1af23771dbf3f5a1"
+  },
+  "effects": {
+    "FireballActivationEffect": "fireball",
+    "ps_chr_gw_fireballl_explosion_lvl1": "fireball",
+    "ps_chr_gw_fireballl_explosion_lvl2": "fireball",
+    "ps_chr_gw_fireballl_explosion_lvl3": "fireball"
+  },
+  "packs": {
+    "fireball": {
+      "path": "assets/fireball-native/effects/graph.json",
+      "sha256": "e48b476f56772ca1a79b34d9fca3c4d8d7ef18c4f07db3ff848fe70f403ee3b3",
+      "bytes": 374933
+    }
+  },
+  "levels": [
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl1",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl1",
+      "level": 1
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl1",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl1",
+      "level": 2
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl1",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl1",
+      "level": 3
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl1",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl1",
+      "level": 4
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl1",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl1",
+      "level": 5
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl1",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl1",
+      "level": 6
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl1",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl1",
+      "level": 7
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl1",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl1",
+      "level": 8
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl2",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl2",
+      "level": 9
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl2",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl2",
+      "level": 10
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl2",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl2",
+      "level": 11
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl2",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl2",
+      "level": 12
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl2",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl2",
+      "level": 13
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl2",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl2",
+      "level": 14
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl2",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl2",
+      "level": 15
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl2",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl2",
+      "level": 16
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl2",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl2",
+      "level": 17
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl2",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl2",
+      "level": 18
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl2",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl2",
+      "level": 19
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl2",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl2",
+      "level": 20
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl2",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl2",
+      "level": 21
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl2",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl2",
+      "level": 22
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl2",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl2",
+      "level": 23
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl3",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl3",
+      "level": 24
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl3",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl3",
+      "level": 25
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl3",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl3",
+      "level": 26
+    },
+    {
+      "ActivationEffect": "FireballActivationEffect",
+      "HitEffect": "ps_chr_gw_fireballl_explosion_lvl3",
+      "ProjectileOnActivation": "vfx_chr_gw_Fireball_lvl3",
+      "level": 27
+    }
+  ],
+  "conventions": {
+    "lifecycle": "Activation at launch; area explosion at the resolved source projectile impact.",
+    "flight": "Original projectile body, source, trail and destroyed effects reuse the full-client catalogs."
+  }
+}

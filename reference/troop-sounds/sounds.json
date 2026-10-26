@@ -2179,6 +2179,15 @@
         "delay": 0.0
       }
     ],
+    "FireballActivationEffect": [
+      {
+        "sound": "sfx/mage_attack_02.ogg",
+        "volume": 1.2,
+        "minPitch": 0.7,
+        "maxPitch": 0.8,
+        "delay": 0.0
+      }
+    ],
     "Firespirit Jump": [
       {
         "sound": "sfx/Troop_Furnace_FireSpirit_Die.ogg",

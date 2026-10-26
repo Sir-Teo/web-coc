@@ -1,4 +1,5 @@
 import fieldSpellArt from '../../reference/field-spells/effects.json' with { type: 'json' };
+import fireballArt from '../../reference/fireball/effects.json' with { type: 'json' };
 import recallUnitArt from '../../reference/recall/effects.json' with { type: 'json' };
 import reviveTargetArt from '../../reference/revive/effects.json' with { type: 'json' };
 import jumpSpellArt from '../../reference/jump-spell/effects.json' with { type: 'json' };
@@ -31,6 +32,7 @@ type EffectIndex = {
 const index = effectArt as unknown as EffectIndex;
 const catalogs = [
   index,
+  fireballArt,
   electromiteArt,
   electroDragonArt,
   superWizardArt,

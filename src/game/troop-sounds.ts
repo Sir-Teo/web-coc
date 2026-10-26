@@ -1,4 +1,5 @@
 import { fieldSpellDeploy2Delay, fieldSpellUsesResolvedRevive } from './field-spell-effects';
+import { fireballProfile } from './fireball-effects';
 import source from '../../reference/troop-sounds/sounds.json' with { type: 'json' };
 import type { Battle, Unit } from './model';
 import { CUE_HORIZON, cueAudible, type SampleCue } from './sample-audio';
@@ -308,6 +309,13 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
   if (!battle) return logged;
   const cues: SampleCue[] = [];
   const elapsed = battle.elapsed;
+  for (const shot of battle.nativeFireballs ?? []) {
+    if (shot.launched > elapsed + 1e-9 || !cueAudible(shot.launched, elapsed)) continue;
+    const profile = shot.native?.fireball && fireballProfile(shot.native.fireball.level);
+    const cue =
+      profile && effectCue(profile.ActivationEffect, `${shot.id}:fireball:sound`, shot.launched);
+    if (cue) cues.push(cue);
+  }
   if (battle.nativeRecallPresentation)
     for (const event of battle.nativeRecallEvents ?? []) {
       if (event.phase !== 'redeploy' || event.at > elapsed + 1e-9 || !cueAudible(event.at, elapsed))

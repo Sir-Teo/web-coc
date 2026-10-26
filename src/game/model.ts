@@ -928,6 +928,9 @@ export interface Battle {
   nativeRecallEvents?: RecallEvent[];
   /** Version 123: direct Revive controls retain the selected Hero in portable commands. */
   nativeReviveTargets?: true;
+  /** Version 130: Warden Fireball uses its original flight and captured area damage. */
+  nativeWardenFireball?: true;
+  nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */
   nativeSpellPulsePresentation?: true;
   nativeSpellCastHistory?: NativeSpellCast[];

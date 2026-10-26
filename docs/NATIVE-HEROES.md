@@ -2135,3 +2135,12 @@ state through portable forward/reverse seeks. Wasted and superseded casts cannot
 success feedback. Browser cases cover phone/desktop source meshes, actual activation
 Web Audio, cold spent-inventory history, reduced motion, old-version requests and
 natural paused recovery after a held/failed pack.
+
+## Version 130 Warden Fireball
+
+All 27 Fireball equipment levels now launch the original tiered projectile and deal their source
+area damage at its fixed 1.5-second impact. The selected point remains fixed, the blast reaches
+buildings and ground/air defenders, and launched damage survives Recall or defeat. Original
+activation, smoke trails and three explosion tiers reconstruct from a captured launch packet.
+The source activation cue replaces ordinary Warden attack/hit sounds for this equipment shot.
+Versions 129 and earlier retain their former activation. See [source pins, mechanics and validation](../reference/fireball/README.md).

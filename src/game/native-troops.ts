@@ -1,4 +1,5 @@
 import { launchArcherPiercing, stepArcherPiercing } from './native-super-archer';
+import { resolveWardenFireball } from './native-fireball';
 import { attackSuperWizard, stepSuperWizardBranches } from './native-super-wizard';
 import {
   stepElectroDragonCharge,
@@ -1571,6 +1572,7 @@ export function stepNativeChains(ctx: NativeTroopContext) {
 
 /** Native projectile arrival: damage, splash, bounces and on-hit spells. */
 export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile) {
+  if (resolveWardenFireball(ctx, p)) return;
   if (resolvePhoenixRevive(ctx, p)) return;
   if (resolveNativeHealing(ctx, p)) return;
   const battle = ctx.battle;

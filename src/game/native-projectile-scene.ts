@@ -1,4 +1,5 @@
 import { superArcherEffectEvents } from './super-archer-effects';
+import { fireballEffectEvents, fireballProfile } from './fireball-effects';
 import { superWizardEffectEvents } from './super-wizard-effects';
 import { electroDragonEffectEvents } from './electro-dragon-effects';
 import { electromiteEffectEvents } from './electromite-effects';
@@ -30,6 +31,7 @@ interface Snapshot {
   packPath: string;
   sourceId: number;
   bounce: number;
+  fireballLevel?: number;
   fromX: number;
   fromY: number;
   x: number;
@@ -96,7 +98,9 @@ export class NativeProjectilePresentation {
     const shot = this.history.get(id);
     const resolved = shot ? this.row(shot) : undefined;
     if (!resolved?.row) return false;
-    const effect = resolved.row.DestroyedEffect;
+    const effect = shot?.fireballLevel
+      ? fireballProfile(shot.fireballLevel)?.HitEffect
+      : resolved.row.DestroyedEffect;
     // Rows without an indexed visual impact keep their existing native coverage.
     if (!effect || !nativeEffectPack(effect)) return true;
     // Request a bounded retry even when the previous graph request failed.
@@ -179,7 +183,12 @@ export class NativeProjectilePresentation {
       this.layer.play(event, elapsed, reduced);
     for (const event of electromiteEffectEvents(battle, iso, airLift))
       this.layer.play(event, elapsed, reduced);
+    for (const event of fireballEffectEvents(battle, iso, airLift, (name) =>
+      this.layer.duration(name, Infinity),
+    ))
+      this.layer.play(event, elapsed, reduced);
     for (const p of [
+      ...(battle.nativeFireballs ?? []).filter((shot) => elapsed <= shot.impact + AFTERLIFE),
       ...(battle.nativeMeteorFlights ?? []).filter((shot) => elapsed <= shot.impact + AFTERLIFE),
       ...(battle.projectiles ?? []),
     ]) {
@@ -388,6 +397,7 @@ function snapshot(p: CombatProjectile, packPath: string): Snapshot {
     packPath,
     sourceId: p.sourceId,
     bounce: p.native!.bounce ?? 0,
+    ...(p.native!.fireball ? { fireballLevel: p.native!.fireball.level } : {}),
     fromX: p.fromX,
     fromY: p.fromY,
     x: p.x,

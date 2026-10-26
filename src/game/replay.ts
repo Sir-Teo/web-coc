@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 129;
+export const REPLAY_VERSION = 130;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -157,7 +157,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 126 retains original Skeleton and Bat spell summon fields.
  * Version 127 enables Totem and delayed Angry spell presentation.
  * Version 128 retains the original Ice Block platform and delayed melt sequence.
- * Version 129 captures original Revive effects at the actual restored Hero. */
+ * Version 129 captures original Revive effects at the actual restored Hero.
+ * Version 130 launches Warden Fireball with source flight and area damage. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -254,6 +255,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 126 ||
   version === 127 ||
   version === 128 ||
+  version === 129 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -402,6 +404,12 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 130 &&
+    s.heroes?.some(
+      (hero) => hero.kind === 'warden' && hero.items.some((item) => item.slug === 'fireball'),
+    )
+      ? { nativeWardenFireball: true as const }
+      : {}),
     ...(version >= 123 ? { nativeReviveTargets: true as const } : {}),
     ...(version >= 122 ? { nativeRecallPresentation: true as const } : {}),
     ...(version >= 119 ? { nativeSpellPulsePresentation: true as const } : {}),

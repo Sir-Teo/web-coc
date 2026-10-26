@@ -56,6 +56,8 @@ export interface CombatProjectile {
     kind: string;
     level: number;
     bounce?: number;
+    /** Version 130: captured equipment level; Fireball resolves a fixed-position area blast. */
+    fireball?: { level: number };
     /** Version 108: kind-changing throws keep the original actor’s sound identity. */
     captureSource?: true;
     /** Version 71: frost captured at launch, retained after the shooter leaves. */
@@ -303,7 +305,7 @@ export function stepProjectiles(
         ? buildingById.get(p.targetId)
         : unitById.get(p.targetId);
     let trackable = true;
-    if (p.defense && p.native) {
+    if ((p.defense || (battle.nativeWardenFireball && p.native?.fireball)) && p.native) {
       let cached = trackableByNative.get(p.native.name);
       if (cached === undefined) {
         cached = !flag(nativeRow('projectiles', p.native.name), 'DontTrackTarget');
