@@ -282,3 +282,12 @@ after ordinary attack damage scaling and persists alongside captured frost after
 later housing changes. Copies gain no roster item bonus. Actual ground/air Hero hits and Recall
 reconstruct through portable files and backward seeks. Versions 88 and earlier preserve their
 previous defender damage.
+
+## Version 90: Diggy's defense stun on surfacing
+
+Diggy now applies the source defense stun once per emergence. Repeated surfaced hits leave its
+deadline unchanged; leaving building attack range burrows Diggy so a later emergence may stun
+again. Existing longer stuns persist, and defenses resume after expiry. Resource buildings and
+defending units receive no Diggy stun. Real pet deployment, repeated hits and defense recovery
+reconstruct through portable files and backward seeks. Versions 89 and earlier preserve their
+previous defense activity and exposure while moving away from a building.

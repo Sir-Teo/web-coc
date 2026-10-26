@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 89;
+export const REPLAY_VERSION = 90;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -117,7 +117,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 86 retains every native source jumper's wall bypass during defender pursuit.
  * Version 87 applies underground defender pursuit and surfaces attackers before their hits.
  * Version 88 applies native Hero projectile/direct-hit shapes during defender combat.
- * Version 89 captures Monolith Arrow's target-max-HP damage against defenders. */
+ * Version 89 captures Monolith Arrow's target-max-HP damage against defenders.
+ * Version 90 applies Diggy's defense stun once per emergence. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -174,6 +175,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 86 ||
   version === 87 ||
   version === 88 ||
+  version === 89 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -322,6 +324,7 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 90 ? { nativeDiggySurfaceStun: true as const } : {}),
     ...(version >= 89 ? { nativeMonolithDefenderDamage: true as const } : {}),
     ...(version >= 88 ? { nativeHeroDefenderAttacks: true as const } : {}),
     ...(version >= 87 ? { nativeUndergroundDefenderChase: true as const } : {}),

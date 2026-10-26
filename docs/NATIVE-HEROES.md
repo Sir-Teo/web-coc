@@ -550,3 +550,24 @@ actual defender families, damage scaling, capture, copies, legacy damage and rea
 through portable backward seeks. `tests/browser/monolith-defender-damage.spec.ts` verifies
 native Monolith projectiles, post-Recall damage, frost, reduced motion and historical playback
 on desktop and phone.
+
+## Version 90 Diggy's Stunning Surprise
+
+Diggy now stuns its building target once when it surfaces, using the pinned
+`DiggyStunOnSurface.StunTargetOnActivateTime`: two seconds at pet levels 1–4, 2.5 at 5–9
+and three at level 10. The [Diggy reference](../reference/official-wiki/heroes-pets/diggy.md)
+records the `ActiveOnBecomingTargetable` trigger and the ten-level client ceiling; the newer
+wiki's levels 11–15 remain outside this source snapshot.
+
+The stun applies to defenses, including a Town Hall with an active weapon. Resource buildings,
+defending troops, Heroes and Guardians receive no Diggy stun. It uses the existing defense stun
+clock without adding Freeze status, preserves longer existing stuns and expires normally.
+Repeated attacks while surfaced do not refresh it. Diggy burrows again on leaving building
+attack range and may stun on its next emergence, including when retargeting an adjacent defense.
+Freeze holds a burrowed Diggy below ground until it can emerge. Versions 89 and earlier retain
+their previous defense activity and building-range exposure.
+
+`tests/diggy-surface-stun.test.ts` checks source tiers, repeated hits, re-emergence, held attacks,
+Freeze, target classes, active Town Hall weapons, expiry and actual pet deployment through
+portable backward seeks. The matching browser spec checks native Diggy art, paused defense
+clocks, recovery, reduced motion and legacy playback on desktop and phone.

@@ -14,6 +14,7 @@ import {
 import { EXTRA_TROOP_KINDS } from './extra-troops';
 import { damageDefenders, hurtDefender, stepAttackerVsDefenders } from './defenders';
 import { applyDefenderFrost } from './defender-frost';
+import { activeAsDefense } from './native-defenses';
 import {
   applyDefenderHitPoison,
   nativeHitPoison,
@@ -221,9 +222,29 @@ function completeHeroAttack(battle: Battle, unit: Unit) {
     spendHeroCharge(unit, battle.elapsed);
 }
 
-/** Shared building/defender surfacing transition; the Drill burst runs once per emergence. */
-function surfaceUndergroundUnit(ctx: NativeTroopContext, unit: Unit, at: number) {
+/** Shared surfacing transition; intrinsic abilities run once per emergence. */
+function surfaceUndergroundUnit(
+  ctx: NativeTroopContext,
+  unit: Unit,
+  at: number,
+  target?: Building,
+) {
   const state = unit.native!;
+  if (
+    !state.surfaced &&
+    ctx.battle.nativeDiggySurfaceStun &&
+    unit.kind === 'diggy' &&
+    target &&
+    activeAsDefense(ctx.battle, target)
+  ) {
+    const s = statsFor(ctx.battle, unit);
+    const row = nativeRow('abilities', s.ability, s.abilityLevel);
+    const until = at + nativeSeconds(row, 'StunTargetOnActivateTime');
+    const e = buildingEffects(ctx.battle, target);
+    e.stunUntil = Math.max(e.stunUntil ?? 0, until);
+    ctx.battle.defenseStuns[target.id] = Math.max(ctx.battle.defenseStuns[target.id] ?? 0, until);
+    delete ctx.battle.defenseTargets[target.id];
+  }
   if (!state.surfaced && unit.kind === 'battledrill') {
     const row = nativeRow('abilities', 'BattleDrillStunOnSurface');
     castNativeSpell(
@@ -773,7 +794,7 @@ export function stepNativeUnit(
   }
   if (distance <= s.range + 1e-6) {
     u.attacking = true;
-    if (s.underground) surfaceUndergroundUnit(ctx, u, at);
+    if (s.underground) surfaceUndergroundUnit(ctx, u, at, target);
     if (at + 1e-9 < (state.targetAt ?? 0) + s.newTargetDelay) return;
     if (u.cooldown > 0) return;
     u.cooldown = s.rate * unitAttackIntervalScale(u, at);
@@ -806,6 +827,10 @@ export function stepNativeUnit(
     y: Math.max(target.y, Math.min(u.y, target.y + BUILDINGS[target.kind].size)),
   };
   if (s.flying || s.underground) {
+    if (battle.nativeDiggySurfaceStun && u.kind === 'diggy') {
+      state.surfaced = false;
+      state.burrowed = true;
+    }
     moveToward(u, edge, Math.min(speed * dt, distance2D(edge.x - u.x, edge.y - u.y)));
     return;
   }
