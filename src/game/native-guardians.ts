@@ -2,6 +2,7 @@ import { nonWallBuildings } from './building-lists';
 import { defenderHitPoisonScales } from './defender-hit-poison';
 import { defenderFrostScales } from './defender-frost';
 import { distance2D } from './distance';
+import { activeBoost } from './native-boost';
 import { BUILDINGS, TROOPS } from './data';
 import type { Defender, GuardianDefender } from './defenders';
 import { knockback } from './native-defenses';
@@ -267,7 +268,11 @@ export function stepGuardian(ctx: NativeTroopContext, g: GuardianDefender, dt: n
   const frost = defenderFrostScales(g, at);
   const areaMove = poison ? Math.max(0, 1 + poison.speed * scale) : 1;
   const areaTempo = poison ? Math.max(0.05, 1 + poison.attack * scale) : 1;
-  const boost = g.boost && g.boost.until > at ? g.boost : undefined;
+  const boost = battle.nativeRageRules
+    ? activeBoost(g.boost, at)
+    : g.boost && g.boost.until > at
+      ? g.boost
+      : undefined;
   const damageScale =
     Math.max(1 + (g.enraged ? stats.homeRage!.damage : 0), 1 + (boost?.damage ?? 0)) *
     (poison ? 1 : 1);

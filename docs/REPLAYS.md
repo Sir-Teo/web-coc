@@ -310,3 +310,14 @@ indirect damage and can keep attacking. Each pulse refreshes the pinned 600 ms l
 restores target eligibility. Actual casts, retargeting, airborne impacts and an automatically
 triggered Spell Tower reconstruct through portable files and backward seeks. Versions 91 and
 earlier retain their previous coverage.
+
+## Version 93: native Rage rules
+
+Rage now boosts healing and eligible defending combat units. Preferred-target characters use
+the source secondary movement bonus; Heroes receive half of the normal movement and damage
+bonus, and Guardians receive full strength. Independent source deadlines prevent a weaker
+continuing aura from retaining an expired stronger boost, while permanent equipment boosts
+preserve temporary spell bonuses. Each component still uses its strongest active value.
+Real healing, Rage Gem and defensive Spell Tower recordings reproduce through portable files,
+backward seeking and reduced-motion playback. Versions 92 and earlier retain their original
+rules. See [the source and validation details](NATIVE-HEROES.md#version-93-rage-coverage-and-expiry).

@@ -20,6 +20,7 @@ import {
 } from './defenders';
 import { applyDefenderFrost } from './defender-frost';
 import { activeAsDefense } from './native-defenses';
+import { mergeBoost } from './native-boost';
 import {
   applyDefenderHitPoison,
   nativeHitPoison,
@@ -1475,12 +1476,24 @@ function stepLifecycle(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at:
         until = (u.spawnedAt ?? at) + duration;
       if (flag(row, 'IsInvisible')) effects.invisibleUntil = until;
       if (num(row, 'SpeedBoost') || num(row, 'BoostDamagePercentage'))
-        effects.boost = {
-          until,
-          speed: num(row, 'SpeedBoost') / 100,
-          damage: num(row, 'BoostDamagePercentage') / 100,
-          attackSpeed: 0,
-        };
+        effects.boost = battle.nativeRageRules
+          ? mergeBoost(
+              effects.boost,
+              `deployment:${ability.name}`,
+              {
+                until,
+                speed: num(row, 'SpeedBoost') / 100,
+                damage: num(row, 'BoostDamagePercentage') / 100,
+                attackSpeed: 0,
+              },
+              at,
+            )
+          : {
+              until,
+              speed: num(row, 'SpeedBoost') / 100,
+              damage: num(row, 'BoostDamagePercentage') / 100,
+              attackSpeed: 0,
+            };
     }
   }
   if (s.aura && state.aura === undefined) {

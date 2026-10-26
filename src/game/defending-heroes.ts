@@ -1,6 +1,7 @@
 import { poisonAvoidanceTarget } from './poison-avoidance';
 import { defenderHitPoisonScales } from './defender-hit-poison';
 import { defenderFrostScales } from './defender-frost';
+import { defenderRageStats } from './native-rage';
 import { TROOPS } from './data';
 import { heroRow, HERO_UNIT, type HeroKind } from './native-hero-data';
 import { nativeUnitStats } from './native-units';
@@ -49,7 +50,9 @@ export function stepDefendingHeroes(battle: Battle, dt: number, effect: (fx: FX)
         ? Math.min(dt, Math.max(0, battle.elapsed - stunnedUntil))
         : dt;
     if (activeDt <= 0) continue;
-    const stats = nativeUnitStats(HERO_UNIT[d.hero], d.level),
+    const stats = battle.nativeRageRules
+        ? defenderRageStats(battle, d, nativeUnitStats(HERO_UNIT[d.hero], d.level))
+        : nativeUnitStats(HERO_UNIT[d.hero], d.level),
       row = heroRow(d.hero, d.level);
     const alert = tiles(row, 'AlertRadius') || 12,
       leash = tiles(row, 'MaxSearchRadiusForDefender') || 10;

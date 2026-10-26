@@ -1,6 +1,9 @@
 import { distance2D } from './distance';
 import { BUILDINGS, TROOPS, isTrap, type BuildingKind, type UnitKind } from './data';
 import { damageDefenders, hurtDefender, isGarrisonDefender, type Defender } from './defenders';
+import { mergeBoost } from './native-boost';
+import { rageModifiers } from './native-rage';
+import { garrisonStats } from './garrison-kinds';
 import {
   flag,
   nativeGlobal,
@@ -17,7 +20,7 @@ import { freezeDefendingBuilders } from './defending-builder-freeze';
 import { recordPoisonArea } from './poison-avoidance';
 import { poisonDefendingBuilders } from './defending-builder-poison';
 import { defendingBuilderLightning } from './defending-builder-lightning';
-import { unitKindForName } from './native-units';
+import { unitKindForName, isHeroUnitKind, nativeUnitStats } from './native-units';
 import { tornadoPulse } from './native-traps';
 import { SPELL_SPEED_SCALE } from './spell-progression';
 import type { Battle, Building, FX, Unit } from './model';
@@ -223,7 +226,7 @@ function resolvePulse(ctx: NativeSpellContext, cast: NativeSpellCast, at: number
   } else {
     if (num(row, 'TornadoForce1') > 0) tornadoPulse(battle, cast, row, at, radius);
     else harmAttackers(ctx, cast, row, at, x, y, inRange);
-    supportDefense(battle, row, at, x, y, radius);
+    supportDefense(battle, cast, row, at, x, y, radius);
   }
   if (cast.hits === 0 || randomRadius > 0)
     ctx.effect({ type: 'spell-native', x, y, radius, text: cast.name, sourceId: cast.id });
@@ -488,18 +491,29 @@ function supportAttackers(
       healUnit(battle, u, -damage * (u.hero ? heroScale : 1));
     if (boostTime > 0 && !poison && given !== 'AngrySpellAnger') {
       const scale = u.hero ? 0.5 : 1;
-      const speed = (num(row, 'SpeedBoost') / SPELL_SPEED_SCALE) * scale;
-      const boostDamage = (num(row, 'DamageBoostPercent') / 100) * scale;
+      const hero = !!u.hero || isHeroUnitKind(u.kind);
+      const stats =
+        battle.nativeRageRules && !hero ? nativeUnitStats(u.kind, u.level ?? 1) : undefined;
+      const modifiers = battle.nativeRageRules
+        ? rageModifiers(row, hero, !!(stats?.preferredClass || stats?.preferredBuilding))
+        : {
+            speed: (num(row, 'SpeedBoost') / SPELL_SPEED_SCALE) * scale,
+            damage: (num(row, 'DamageBoostPercent') / 100) * scale,
+            attackSpeed: num(row, 'AttackSpeedBoost') / 100,
+          };
+      const speed = modifiers.speed;
+      const boostDamage = modifiers.damage;
       const e = unitEffects(u);
       const old = e.boost;
       // Rage-like boosts never stack; each component keeps the strongest active source.
-      e.boost =
-        old && old.until > at + 1e-9
+      e.boost = battle.nativeRageRules
+        ? mergeBoost(old, `spell:${cast.id}`, { until: at + boostTime, ...modifiers }, at)
+        : old && old.until > at + 1e-9
           ? {
               until: Math.max(old.until, at + boostTime),
-              speed: Math.max(old.speed, speed),
+              speed: Math.max(old.speed ?? 0, speed),
               damage: Math.max(old.damage, boostDamage),
-              attackSpeed: Math.max(old.attackSpeed, num(row, 'AttackSpeedBoost') / 100),
+              attackSpeed: Math.max(old.attackSpeed ?? 0, num(row, 'AttackSpeedBoost') / 100),
             }
           : {
               until: at + boostTime,
@@ -817,6 +831,7 @@ function harmAttackers(
 /** Friendly effects of a defensive spell on buildings (Spell Tower Rage, Invisibility). */
 function supportDefense(
   battle: Battle,
+  cast: NativeSpellCast,
   row: NativeRow,
   at: number,
   x: number,
@@ -825,16 +840,32 @@ function supportDefense(
 ) {
   const boost = num(row, 'BuildingDamageBoostPercent') / 100;
   const invisible = seconds(row, 'InvisibilityTime');
-  // Defensive Rage boosts Guardians at full strength (official wiki).
+  // Guardians take full strength; version 93 also covers present combat defenders.
   const unitBoost = num(row, 'DamageBoostPercent') / 100;
   if (unitBoost > 0)
     for (const d of battle.defenders ?? [])
-      if (d.kind === 'guardian' && d.hp > 0 && distance2D(d.x - x, d.y - y) <= radius + 1e-9)
-        d.boost = {
-          until: Math.max(d.boost?.until ?? 0, at + seconds(row, 'BoostTimeMS')),
-          damage: unitBoost,
-          speed: num(row, 'SpeedBoost') / SPELL_SPEED_SCALE,
-        };
+      if (d.hp > 0 && distance2D(d.x - x, d.y - y) <= radius + 1e-9) {
+        if (battle.nativeRageRules) {
+          if (d.kind === 'repairer' || d.spawnedAt > at + 1e-9 || defenderSpellImmune(row, d))
+            continue;
+          const modifiers = rageModifiers(
+            row,
+            d.kind === 'hero',
+            isGarrisonDefender(d) && garrisonStats(d.kind, d.level).preferredTarget,
+          );
+          d.boost = mergeBoost(
+            d.boost,
+            `spell:${cast.id}`,
+            { until: at + seconds(row, 'BoostTimeMS'), ...modifiers },
+            at,
+          );
+        } else if (d.kind === 'guardian')
+          d.boost = {
+            until: Math.max(d.boost?.until ?? 0, at + seconds(row, 'BoostTimeMS')),
+            damage: unitBoost,
+            speed: num(row, 'SpeedBoost') / SPELL_SPEED_SCALE,
+          };
+      }
   if (!boost && !invisible) return;
   if (battle.nativeInvisibilityTargets && invisible > 0 && !flag(row, 'Overgrowth'))
     for (const d of battle.defenders ?? [])
@@ -855,10 +886,17 @@ function supportDefense(
       continue;
     const e = buildingEffects(battle, b);
     if (boost)
-      e.boost = {
-        until: Math.max(e.boost?.until ?? 0, at + seconds(row, 'BoostTimeMS')),
-        damage: boost,
-      };
+      e.boost = battle.nativeRageRules
+        ? mergeBoost(
+            e.boost,
+            `spell:${cast.id}`,
+            { until: at + seconds(row, 'BoostTimeMS'), damage: boost },
+            at,
+          )
+        : {
+            until: Math.max(e.boost?.until ?? 0, at + seconds(row, 'BoostTimeMS')),
+            damage: boost,
+          };
     if (invisible) e.invisibleUntil = Math.max(e.invisibleUntil ?? 0, at + invisible);
   }
 }

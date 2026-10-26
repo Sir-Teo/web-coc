@@ -114,7 +114,8 @@ function resolveStats(kind: GarrisonKind, level: number) {
   const interval = sourceNumber(row, 'AttackSpeed');
   const newTarget = sourceNumber(row, 'NewTargetAttackDelay');
   const ability = specialAbilityFor(row);
-  const projectile = typeof row.Projectile === 'string' && row.Projectile ? row.Projectile : undefined;
+  const projectile =
+    typeof row.Projectile === 'string' && row.Projectile ? row.Projectile : undefined;
   const heroMultiplier = sourceNumber(row, 'HeroDamageMultiplier');
   const split = (GARRISON_KINDS[kind] as { timing?: 'split' }).timing === 'split';
   const timing = splitTiming(row);
@@ -138,6 +139,9 @@ function resolveStats(kind: GarrisonKind, level: number) {
     groundTargets: sourceFlag(row, 'GroundTargets'),
     airTargets: sourceFlag(row, 'AirTargets'),
     flying: sourceFlag(row, 'IsFlying'),
+    preferredTarget: !!(
+      textField(row, 'PreferedTargetBuildingClass') || textField(row, 'PreferedTargetBuilding')
+    ),
     newTargetDelay: newTarget / 1000,
     /**
      * Earlier families: initial timer charge, wait is interval minus that charge. Later
@@ -228,7 +232,10 @@ export function garrisonPoisonOnHit(stats: GarrisonStats) {
   if (!stats.ability) return undefined;
   const ability = specialAbility(stats.ability.name, stats.ability.level);
   if (!ability.PoisonOnHitSpell) return undefined;
-  const spell = spellLevel(ability.PoisonOnHitSpell, sourceNumber(ability, 'PoisonOnHitSpellLevel'));
+  const spell = spellLevel(
+    ability.PoisonOnHitSpell,
+    sourceNumber(ability, 'PoisonOnHitSpellLevel'),
+  );
   const heroMultiplier = sourceNumber(spell, 'HeroDamageMultiplier');
   return {
     spell: ability.PoisonOnHitSpell,

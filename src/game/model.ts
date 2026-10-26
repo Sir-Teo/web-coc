@@ -855,6 +855,8 @@ export interface Battle {
   nativeDiggyMasterTarget?: true;
   /** Version 92: Invisibility conceals offensive building targets and defending units. */
   nativeInvisibilityTargets?: true;
+  /** Version 93: source Rage coverage, movement, healing and independent boost expiries. */
+  nativeRageRules?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */
@@ -6156,7 +6158,12 @@ export class GameModel {
             }
           : unitBase;
       const heal =
-        base.heal === undefined ? undefined : base.heal * (1 + (spellRage?.damageBoost ?? 0) / 100);
+        base.heal === undefined
+          ? undefined
+          : base.heal *
+            (b.nativeRageRules
+              ? Math.max(1 + (spellRage?.damageBoost ?? 0) / 100, unitDamageScale(u, b.elapsed))
+              : 1 + (spellRage?.damageBoost ?? 0) / 100);
       const damage =
         base.damage *
         Math.max(

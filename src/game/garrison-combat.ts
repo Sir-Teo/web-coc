@@ -30,7 +30,7 @@ import {
   type GarrisonChainJump,
 } from './garrison-abilities';
 // Late campaign Spell Tower Rage (neutral without version 44 late state).
-import { lateDefenderStats } from './late-campaign';
+import { defenderRageStats } from './native-rage';
 import { untargetable } from './spell-effects';
 
 export interface GarrisonAttack {
@@ -281,7 +281,7 @@ export function stepGarrisonDefender(
     defender.kind === 'hero'
   )
     return;
-  const stats = lateDefenderStats(battle, defender, garrisonStats(defender.kind, defender.level));
+  const stats = defenderRageStats(battle, defender, garrisonStats(defender.kind, defender.level));
   stepShots(battle, defender, effect);
   // Later families: effects already in progress resolve even if the defender dies or is stunned.
   if (stats.chain) stepChain(battle, defender, stats);

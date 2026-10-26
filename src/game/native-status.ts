@@ -1,4 +1,5 @@
 import type { Battle, Building, Unit } from './model';
+import { activeBoost, type NativeBoost } from './native-boost';
 
 /**
  * Version 45+ timed effects. Every field is a battle-clock deadline so replays, seeking and
@@ -10,7 +11,7 @@ export interface UnitEffects {
   /** Partial freeze, such as the TH13 frost field, as a fraction of normal action speed lost. */
   chill?: { until: number; percent: number };
   /** Strongest active friendly boost; rage-like spells do not stack with each other. */
-  boost?: { until: number; speed: number; damage: number; attackSpeed: number };
+  boost?: NativeBoost;
   /** Dragon Duke's innate boost, separate from temporary spells and equipment. */
   rampage?: { damage: number; attackSpeed: number; trapProtection: number };
   /** Enemy poison slows and damages over time. */
@@ -57,7 +58,7 @@ export interface BuildingEffects {
   chill?: { until: number; percent: number };
   /** Attack slow applied by frost-on-hit troops. */
   frost?: { until: number; percent: number };
-  boost?: { until: number; damage: number };
+  boost?: NativeBoost;
   invisibleUntil?: number;
   /** Earthquake strike count and the casts already counted, for diminishing repeated quakes. */
   quakes?: number;
@@ -121,30 +122,18 @@ export function unitSpeedScale(unit: Unit, at: number) {
 }
 /** Extra tiles/second from rage and haste style boosts. */
 export const unitSpeedBonus = (unit: Unit, at: number) => {
-  const boost = unit.native?.effects?.boost;
-  return boost && boost.until > at + 1e-9 ? boost.speed : 0;
+  return activeBoost(unit.native?.effects?.boost, at)?.speed ?? 0;
 };
 export const unitDamageScale = (unit: Unit, at: number) => {
-  const boost = unit.native?.effects?.boost;
-  return (
-    1 +
-    Math.max(
-      boost && boost.until > at + 1e-9 ? boost.damage : 0,
-      unit.native?.effects?.rampage?.damage ?? 0,
-    )
-  );
+  const boost = activeBoost(unit.native?.effects?.boost, at);
+  return 1 + Math.max(boost?.damage ?? 0, unit.native?.effects?.rampage?.damage ?? 0);
 };
 /** Multiplier on the time between attacks. */
 export function unitAttackIntervalScale(unit: Unit, at: number) {
   const e = unit.native?.effects;
   if (!e) return 1;
   let speed = 1;
-  speed *=
-    1 +
-    Math.max(
-      e.boost && e.boost.until > at + 1e-9 ? e.boost.attackSpeed : 0,
-      e.rampage?.attackSpeed ?? 0,
-    );
+  speed *= 1 + Math.max(activeBoost(e.boost, at)?.attackSpeed ?? 0, e.rampage?.attackSpeed ?? 0);
   if (e.poison && e.poison.until > at + 1e-9) speed *= Math.max(0.05, 1 + e.poison.attackSpeed);
   if (e.chill && e.chill.until > at + 1e-9) speed *= Math.max(0.05, 1 - e.chill.percent);
   return 1 / speed;
@@ -162,8 +151,7 @@ export function buildingAttackIntervalScale(
   return 1 / speed;
 }
 export const buildingDamageScale = (battle: Battle, building: Pick<Building, 'id'>, at: number) => {
-  const boost = battle.buildingEffects?.[building.id]?.boost;
-  return boost && boost.until > at + 1e-9 ? 1 + boost.damage : 1;
+  return 1 + (activeBoost(battle.buildingEffects?.[building.id]?.boost, at)?.damage ?? 0);
 };
 
 /**

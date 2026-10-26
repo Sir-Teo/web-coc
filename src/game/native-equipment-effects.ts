@@ -3,6 +3,7 @@ import { num, text, seconds, tiles, flag } from './native-data';
 import { heroAbilities, type NativeBattleHero, type HeroAbility } from './native-heroes';
 import { castNativeSpell } from './native-spells';
 import { healUnit, unitEffects } from './native-status';
+import { mergeBoost } from './native-boost';
 import { launchProjectile } from './projectiles';
 import { damageDefenders, hurtDefender } from './defenders';
 import { distanceTo, type Unit } from './model';
@@ -127,12 +128,16 @@ export function stepEquipmentEffects(ctx: NativeTroopContext, hero: NativeBattle
       unit.hp += added;
       state['crown:hp'] = percent;
     }
-    unitEffects(unit).boost = {
+    const effects = unitEffects(unit);
+    const boost = {
       until: Infinity,
       damage: num(crown.row, 'BoostDamagePercentage') / 100,
       speed: 0,
       attackSpeed: 0,
     };
+    effects.boost = battle.nativeRageRules
+      ? mergeBoost(effects.boost, 'equipment:dark-crown', boost, at)
+      : boost;
   }
 }
 export function startEquipmentDash(ctx: NativeTroopContext, unit: Unit, ability: HeroAbility) {

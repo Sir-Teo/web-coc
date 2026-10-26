@@ -23,8 +23,10 @@ import { launchProjectile, type CombatProjectile } from './projectiles';
 import { presentBuilding, targetableBuilding } from './hidden-tesla';
 // Late campaign Spell Tower Rage and Invisibility, and activated late Defense classes
 // (all neutral without version 44 late state).
-import { lateActivatedDefense, lateDefenderStats } from './late-campaign';
+import { lateActivatedDefense } from './late-campaign';
 import { defenderHidden } from './defender-visibility';
+import { defenderRageStats } from './native-rage';
+import type { NativeBoost } from './native-boost';
 import { untargetable } from './spell-effects';
 import {
   SKELETON_TRAP,
@@ -57,6 +59,8 @@ interface DefenderState {
   frozenUntil?: number;
   /** Version 92: concealment from native Invisibility pulses, independent of stun. */
   invisibleUntil?: number;
+  /** Friendly Rage; version 93 extends native coverage beyond Guardians. */
+  boost?: NativeBoost;
   /** Version 76: intrinsic attacker poison-on-hit, separate from area-spell exposure. */
   hitPoison?: DefenderHitPoison;
   /** Version 77: partial frost from a native ranged hit, independent of full Freeze. */
@@ -117,8 +121,6 @@ export interface GuardianDefender extends DefenderState {
   releaseAt?: number;
   enraged?: boolean;
   deathResolved?: boolean;
-  /** Friendly defensive Rage (Spell Tower, Smasher death rage). */
-  boost?: { until: number; damage: number; speed: number };
 }
 /** Builder's Hut Defending Builder (version 45+): repairs buildings and cannot be attacked. */
 export interface RepairDefender extends DefenderState {
@@ -257,7 +259,7 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
       ),
     );
     if (activeDt <= 0) continue;
-    const stats = lateDefenderStats(
+    const stats = defenderRageStats(
         battle,
         defender,
         skeletonStats(defender.mode, defender.spawnLevel),

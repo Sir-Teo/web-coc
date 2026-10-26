@@ -629,3 +629,34 @@ overlap, retargeting, damage and real portable backward seeks. Native presentati
 opacity, expiry, reduced motion and state invariance. Browser checks cover real player casts,
 ground/air Heroes, airborne impacts and a Spell Tower triggered by Champion hits, plus historical
 playback on desktop and phone.
+
+## Version 93 Rage coverage and expiry
+
+The [Rage Spell](../reference/official-wiki/spells-siege-super/rage-spell.md) and
+[Rage Gem](../reference/official-wiki/heroes-pets/rage-gem.md) now increase healing as well as
+damage. Native defensive Rage covers present, living defending Heroes, garrison troops,
+Skeletons and Guardians; it respects spell immunity and leaves the opposing army unaffected.
+Defenders share the existing local orange boost tint, below Freeze and Poison in priority.
+
+The pinned spell rows provide both `SpeedBoost` and `SpeedBoost2`. Preferred-target characters
+use the latter; Heroes use the normal speed value with `HERO_RAGE_SPEED_MULTIPLIER` (50%),
+including the defense-preferring Royal Champion. Hero damage bonuses use
+`HERO_RAGE_MULTIPLIER` (50%). Guardians receive full strength. The older
+`LogicLevel.BoostGameObject` reconstruction at
+[52c5953](https://github.com/bns34/Supercell.Magic-my-turn/blob/52c5953f5e5802c64ac36e53d5599f8700976085/Supercell.Magic.Logic/Level/LogicLevel.cs#L2784)
+supports the preferred-character versus Hero branch; it is supporting historical evidence,
+not a claim to modern client code. The pinned [Spell Tower reference](../reference/spell-tower/README.md)
+provides defensive boost values and the Hero globals. Rage does not add attack speed.
+
+Each spell, aura, ability, deployment boost and Dark Crown stage retains its own deadline.
+Readers choose the strongest currently active damage, movement and attack-speed component.
+A continuing weak aura therefore cannot extend an expired Rage Spell or Rage Vial bonus,
+and a permanent Dark Crown boost does not erase a temporary movement bonus. Guardian home
+Rage still takes the strongest component. Versions 92 and earlier keep their original combat
+coverage, healing, movement and shared-expiry behavior.
+
+`tests/native-rage.test.ts` checks source tiers, preferred targets, all six physical Hero kinds,
+defender classes, actual attacks, healing, overlapping expiry, Dark Crown and historical rules.
+Real army deployments, casts and an automatically triggered Spell Tower reconstruct through
+portable replay files and backward seeks. Browser checks cover healing on desktop and aura
+expiry and defending Hero art on phone, including reduced motion and old-version playback.

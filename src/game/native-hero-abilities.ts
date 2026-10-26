@@ -4,6 +4,7 @@ import { TROOPS, type UnitKind } from './data';
 import { flag, nativeRow, num, seconds, text, tiles, type NativeRow } from './native-data';
 import { castNativeSpell } from './native-spells';
 import { healUnit, unitEffects } from './native-status';
+import { mergeBoost } from './native-boost';
 import { unitKindForName } from './native-units';
 import {
   activeAbilities,
@@ -60,12 +61,19 @@ function applyAbility(
   const damage = num(row, 'BoostDamagePercentage') / 100;
   const rate = seconds(row, 'AttackSpeed');
   if ((speed || damage || rate) && duration > 0) {
-    effects.boost = {
-      until: Math.max(effects.boost?.until ?? 0, at + duration),
-      speed: Math.max(effects.boost?.speed ?? 0, speed),
-      damage: Math.max(effects.boost?.damage ?? 0, damage),
-      attackSpeed: effects.boost?.attackSpeed ?? 0,
-    };
+    effects.boost = battle.nativeRageRules
+      ? mergeBoost(
+          effects.boost,
+          `ability:${ability.name}`,
+          { until: at + duration, speed, damage, attackSpeed: 0 },
+          at,
+        )
+      : {
+          until: Math.max(effects.boost?.until ?? 0, at + duration),
+          speed: Math.max(effects.boost?.speed ?? 0, speed),
+          damage: Math.max(effects.boost?.damage ?? 0, damage),
+          attackSpeed: effects.boost?.attackSpeed ?? 0,
+        };
     if (rate > 0)
       effects.attackInterval = {
         until: at + duration,
@@ -160,7 +168,7 @@ export function releaseSpawns(
         text(row, 'GivenAbility'),
         num(row, 'GivenAbilityLevel', 1) || 1,
       );
-      applyGiven(spawn, given, when);
+      applyGiven(spawn, given, when, ctx.battle);
     }
     spawned[ability.name] = index + 1;
   }
@@ -172,13 +180,21 @@ function spawnOffset(row: NativeRow, index: number, perHit: number) {
   return { x: Math.cos(angle) * 0.8, y: Math.sin(angle) * 0.8 };
 }
 /** Boosts a summoned troop carries (Barbarian Puppet rage, Archer Puppet invisibility). */
-export function applyGiven(unit: Unit, row: NativeRow, at: number) {
+export function applyGiven(unit: Unit, row: NativeRow, at: number, battle: Battle) {
   const effects = unitEffects(unit);
   const duration = seconds(row, 'DeactivateAfterTime');
   if (duration <= 0) return;
   const speed = num(row, 'SpeedBoost') / 100;
   const damage = num(row, 'BoostDamagePercentage') / 100;
-  if (speed || damage) effects.boost = { until: at + duration, speed, damage, attackSpeed: 0 };
+  if (speed || damage)
+    effects.boost = battle.nativeRageRules
+      ? mergeBoost(
+          effects.boost,
+          `given:${text(row, 'Name')}`,
+          { until: at + duration, speed, damage, attackSpeed: 0 },
+          at,
+        )
+      : { until: at + duration, speed, damage, attackSpeed: 0 };
   if (flag(row, 'IsInvisible'))
     effects.invisibleUntil = Math.max(effects.invisibleUntil ?? 0, at + duration);
 }

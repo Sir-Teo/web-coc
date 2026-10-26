@@ -2,6 +2,7 @@ import type { Defender } from './defenders';
 import type { Battle, Unit } from './model';
 import { lateUnitFrozen, lateUnitTimeLost } from './late-campaign';
 import { FROZEN_TINT } from './freeze-trap-art';
+import { activeBoost } from './native-boost';
 
 /** Phaser.TintModes values (kept numeric so pure modules need no Phaser import). */
 export const TINT_MULTIPLY = 0;
@@ -53,10 +54,12 @@ export function defenderStatusTint(defender: Defender, at: number): UnitStatusTi
   if (defender.hp <= 0) return undefined;
   if ((defender.frozenUntil ?? 0) > at) return tints.frozen;
   if (defender.frost && defender.frost.until > at) return tints.frozen;
-  return (defender.poison && defender.poison.until > at) ||
+  if (
+    (defender.poison && defender.poison.until > at) ||
     (defender.hitPoison && defender.hitPoison.until > at)
-    ? tints.poison
-    : undefined;
+  )
+    return tints.poison;
+  return activeBoost(defender.boost, at) ? tints.rage : undefined;
 }
 
 /**
