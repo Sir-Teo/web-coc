@@ -1,4 +1,5 @@
 import { stepDefendingHeroes } from './defending-heroes';
+import { ragePetAfterHeroDeath } from './native-pet-rage';
 import {
   retireInfernoDragonTransitions,
   type InfernoDragonTransition,
@@ -870,6 +871,8 @@ export interface Battle {
   nativePetCloneImmunity?: true;
   /** Version 96: waiting/recalled allies and native healing immunity share eligibility rules. */
   nativeFriendlyEligibility?: true;
+  /** Version 97: Mighty Yak uses its source BoostSelf once when its own Hero falls. */
+  nativeYakMasterRage?: true;
   /** Recent detached troop stage effects; presentation only, retired deterministically. */
   infernoDragonTransitions?: InfernoDragonTransition[];
   /** Version 53: passive hero auras and Royal Rampage. */
@@ -6641,6 +6644,7 @@ export class GameModel {
         if (unit.hp <= 0 && !unit.spent && !hero.abilityUsed)
           this.activateNativeHeroAbility(hero.kind, true);
         hatchPhoenix(native, hero, unit);
+        ragePetAfterHeroDeath(b, hero, unit);
         // Waves stop when the hero falls; the automatic activation above still fires once.
         if (unit.hp > 0)
           stepHeroAbilities(

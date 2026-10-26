@@ -31,6 +31,8 @@ export interface HeroSetup {
   pet?: { kind: PetKind; level: number };
 }
 export interface NativeBattleHero extends HeroSetup {
+  /** Version 97: the pet's Hero-death boost is spent for this raid, including later Revive. */
+  petHeroDeathUsed?: true;
   /** Version 95: one Phoenix hatch per raid, including Recall-paused temporary revival. */
   phoenix?: {
     used: boolean;

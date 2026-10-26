@@ -822,3 +822,30 @@ and burrowing, and version 95 behavior. Actual Cannon deployments record an idle
 beside a damaged siege, its later Giant target, and Tantrum before/after a Phoenix hatch.
 Portable files, reverse seeks, desktop/phone rendering and reduced motion reproduce those
 states. Versions 95 and earlier retain their original eligibility rules.
+
+## Version 97 Mighty Yak Hero-death rage
+
+The [Mighty Yak reference](../reference/official-wiki/heroes-pets/mighty-yak.md) specifies
+one rage after its assigned Hero falls, with none for Recall and none for a later knockout
+after Revive. The pinned pet row names `HeroDeathAbilityType=BoostSelf`, `TroopRage` level 2.
+That inherited spell row supplies eight seconds, +70% damage and +16 in-game speed units
+(+2 tiles/second), without an attack-speed bonus. All pet levels use the source ability tier.
+
+The Hero's automatic ability runs first and can prevent the knockout. A living, present Yak
+then receives the boost directly; coincident allies do not receive an area spell. The source
+joins the existing independent boost ledger: stronger Rage wins while active, then the
+Yak's weaker boost remains until its own original deadline. The existing 20x Wall damage
+multiplier combines with rage once. Existing native boost tint supplies the local feedback.
+
+The spent trigger belongs to the raid's Hero/pet association, so Revive, Recall and a new
+deployment body do not grant another use. This preserves the current Recall treatment of
+temporary buffs; it does not introduce a new paused rage timer. Dead, ejected and recalled
+pets receive no boost. Sneezy's separate transform and Diggy's `SwitchHero` row are outside
+this rule.
+
+`tests/native-pet-rage.test.ts` covers source tiers, all six Hero assignments, automatic
+ability rescue, ownership, self-only coverage, Recall/Revive persistence, expiry, overlapping
+Rage and Wall damage. Real Cannon attacks knock out the Hero while the Yak survives through
+the source boost window. Portable reverse seeks and desktop/phone browser checks reproduce
+the native pet, active/expired tint, reduced motion and historical version 96 behavior.
+Versions 96 and earlier retain their previous unboosted Yak behavior.

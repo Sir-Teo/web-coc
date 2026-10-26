@@ -353,3 +353,12 @@ troops still receive splash healing without restoring siege HP. Actual deploymen
 Healer retargeting and Baby Dragon Tantrum before/after a Phoenix hatch through portable
 files and backward seeks. Versions 95 and earlier keep their previous rules. See
 [source and validation details](NATIVE-HEROES.md#version-96-friendly-participation-and-healing-immunity).
+
+## Version 97: Mighty Yak Hero-death rage
+
+A living Mighty Yak gains its source eight-second self-rage when its own Hero falls after
+automatic ability activation: +70% damage and +2 tiles/second, with independent expiry under
+stronger Rage. Recall does not trigger it, and later Revive/Recall/redeployment does not
+grant another use. Real Cannon knockouts and boost expiry reproduce through portable
+files and backward seeks. Versions 96 and earlier preserve their original Yak behavior.
+See [source and validation details](NATIVE-HEROES.md#version-97-mighty-yak-hero-death-rage).
