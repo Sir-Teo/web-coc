@@ -883,6 +883,8 @@ export interface Battle {
   nativeHealerRoutes?: true;
   /** Version 102: Sneezy spawns without attacking until its Hero falls, and pauses to sneeze. */
   nativeSneezyController?: true;
+  /** Version 103: a recalled pet retains the same logical ownership of living/queued summons. */
+  nativePetSummonRecall?: true;
   /** Recent detached troop stage effects; presentation only, retired deterministically. */
   infernoDragonTransitions?: InfernoDragonTransition[];
   /** Version 53: passive hero auras and Royal Rampage. */

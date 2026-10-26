@@ -410,3 +410,11 @@ wind-up, trap immunity and Castle-pull exclusion. Original character clips, body
 and carried-roster asset/audio warming follow these states. See the
 [source, source/wiki differences and adapter timing](NATIVE-HEROES.md#version-102-sneezy-modes-and-boogers).
 Versions 101 and earlier retain their former Sneezy and missing-Booger behavior.
+
+## Version 103: pet summon ownership after Recall
+
+A recalled pet retains logical ownership of its living and queued summons when
+redeployment creates a new unit body. Sneezy's earlier Boogers therefore continue
+to occupy its two summon slots, and later replacements stay in the same family.
+See the [Recall ownership details](NATIVE-HEROES.md#version-103-pet-summon-ownership-after-recall).
+Versions 102 and earlier retain per-body ownership and its original summon counts.

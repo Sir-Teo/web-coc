@@ -1608,11 +1608,18 @@ function stepSummons(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: n
   state.summonAt ??= (u.spawnedAt ?? at) + s.summonDelay;
   const kind = unitKindForName(s.summon) as UnitKind | undefined;
   if (!kind || (kind === 'booger' && !battle.nativeSneezyController)) return;
+  const owner =
+    battle.nativePetSummonRecall && isPetUnitKind(u.kind)
+      ? battle.nativeHeroes?.find((hero) => hero.petId === u.id)
+      : undefined;
+  const summonOwner = owner ? (owner.petSummonerId ??= u.id) : u.id;
   while (state.summonAt <= at + 1e-9 && u.hp > 0) {
     let alive = 0;
-    for (const member of battle.units) if (member.hp > 0 && member.native?.owner === u.id) alive++;
+    for (const member of battle.units)
+      if (member.hp > 0 && member.native?.owner === summonOwner) alive++;
     if (battle.nativeSneezyController && u.kind === 'sneezy')
-      for (const spawn of battle.nativePendingSpawns ?? []) if (spawn.owner === u.id) alive++;
+      for (const spawn of battle.nativePendingSpawns ?? [])
+        if (spawn.owner === summonOwner) alive++;
     const lifetime = state.summoned ?? 0;
     if (s.summonLifetimeLimit > 0 && lifetime >= s.summonLifetimeLimit) {
       if (s.diesWhenSpawnLimitReached) {
@@ -1639,9 +1646,18 @@ function stepSummons(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: n
           x: p.x,
           y: p.y,
           at: state.summonAt + s.summonTime,
-          owner: u.id,
+          owner: summonOwner,
         });
-      else spawnNativeUnit(ctx, kind, s.summonLevel, p.x, p.y, state.summonAt + s.summonTime, u.id);
+      else
+        spawnNativeUnit(
+          ctx,
+          kind,
+          s.summonLevel,
+          p.x,
+          p.y,
+          state.summonAt + s.summonTime,
+          summonOwner,
+        );
     }
     state.summoned = lifetime + count;
     state.summonAt += s.summonCooldown + s.summonTime;

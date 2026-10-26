@@ -361,3 +361,47 @@ it('a committed Booger arrives after its summoner falls without exposing an unbo
     spawnedAt: 2.5,
   });
 });
+
+it.each([false, true])(
+  'keeps logical Booger ownership after Recall, historical=%s',
+  (historical) => {
+    const a = arena(1, historical ? 102 : undefined);
+    a.battle.buildings = [makeBuilding(1, 'townhall', 36, 36, 1)];
+    a.until(14.1);
+    expect(a.battle.units.filter((u) => u.kind === 'booger' && u.hp > 0)).toHaveLength(2);
+    a.model.activeSpell = 'recall';
+    expect(a.model.castSpell(a.hero.x, a.hero.y)).toBe(true);
+    a.until(16.1);
+    expect(a.owner.unitId).toBeNull();
+    expect(a.model.deployNativeHero('king', 5, 6.5)).toBe(true);
+    expect(a.owner.petId).not.toBe(a.pet.id);
+    expect(a.battle.units.find((u) => u.id === a.owner.petId)!.hp).toBeGreaterThan(0);
+    a.until(17.2);
+    const children = a.battle.units.filter((u) => u.kind === 'booger' && u.hp > 0).length;
+    const pending =
+      a.battle.nativePendingSpawns?.filter((spawn) => spawn.kind === 'booger').length ?? 0;
+    expect(children + pending).toBe(historical ? 3 : 2);
+    expect(a.owner.petSummonerId).toBe(historical ? undefined : a.pet.id);
+  },
+);
+
+it('can replace a fallen pre-Recall Booger without creating a new summon family', () => {
+  const a = arena();
+  a.battle.buildings = [makeBuilding(1, 'townhall', 36, 36, 1)];
+  a.until(14.1);
+  a.model.activeSpell = 'recall';
+  expect(a.model.castSpell(a.hero.x, a.hero.y)).toBe(true);
+  a.until(16.1);
+  expect(a.model.deployNativeHero('king', 5, 6.5)).toBe(true);
+  a.until(17.2);
+  const child = a.battle.units.find((u) => u.kind === 'booger' && u.hp > 0)!;
+  child.hp = 0;
+  a.model.step(0.05);
+  expect(a.battle.nativePendingSpawns).toContainEqual(
+    expect.objectContaining({ kind: 'booger', owner: a.pet.id }),
+  );
+  a.until(18.8);
+  const living = a.battle.units.filter((u) => u.kind === 'booger' && u.hp > 0);
+  expect(living).toHaveLength(2);
+  expect(living.every((u) => u.native?.owner === a.pet.id)).toBe(true);
+});

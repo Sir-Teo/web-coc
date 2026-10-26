@@ -993,3 +993,23 @@ browser checks verify original clips, mode scale, the Booger body, projectile ar
 actual Web Audio birth cues, reduced motion and historical playback. Versions 101 and
 earlier retain their prior Sneezy attacks, missing Booger lookup, summon presentation
 and absent Sneezy Hero-death boost.
+
+## Version 103 pet summon ownership after Recall
+
+Recall gives the redeployed pet a new local unit ID. Previously, Sneezy's earlier
+Boogers still belonged to the old ID, so the new body counted an empty summon family
+and could exceed its source two-living-Booger limit. The raid's Hero/pet association
+now retains the original summoner ID and uses it for both living and queued children.
+This ID is local ownership bookkeeping; it is not a reconstruction of client object IDs.
+
+The existing Recall timing adapter still governs the new body, and replacement summons
+use that body's current location. When a pre-Recall Booger falls, the vacancy permits
+one replacement in the same family. Living Boogers remain on the battlefield while
+their pet is recalled.
+
+`tests/native-sneezy.test.ts` reproduces the extra pending Booger, checks version 102
+behavior and replacement after a pre-Recall child falls. Actual deployment/Recall
+inputs in `tests/fixtures/pet-summon-recall.ts` keep both children alive against an
+unarmed Town Hall, then redeploy their pet. Portable reverse seeks and phone/desktop
+browser checks preserve their original bodies, the cap and reduced motion. Versions
+102 and earlier retain their former per-body summon ownership.

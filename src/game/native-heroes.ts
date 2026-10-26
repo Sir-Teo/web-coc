@@ -35,6 +35,8 @@ export interface NativeBattleHero extends HeroSetup {
   petHeroDeathUsed?: true;
   /** Version 102: Sneezy's one-use spawner transform stays deactivated after Revive/Recall. */
   sneezyTransformed?: true;
+  /** Version 103: first summoner body id remains stable when Recall creates a new body. */
+  petSummonerId?: number;
   /** Version 95: one Phoenix hatch per raid, including Recall-paused temporary revival. */
   phoenix?: {
     used: boolean;
