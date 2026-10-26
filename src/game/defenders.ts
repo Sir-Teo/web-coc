@@ -377,6 +377,8 @@ export type DefenderFightTraits = Pick<
   /** Source Any Building preference and a committed native attack callback. */
   prefersBuildings?: boolean;
   nativeAttack?(target: Defender, power: number): void;
+  /** Blocking walls use the same native cast as an ordinary building target. */
+  nativeBuildingAttack?(target: Building, power: number): void;
   airTargets?: boolean;
   preferHeroes?: boolean;
   heroDamageScale?: number;
@@ -784,7 +786,9 @@ export function stepAttackerVsDefenders(
       route?.enterWallRange?.(wall);
       if (unit.cooldown <= 0) {
         unit.cooldown = stats.rate;
-        if (stats.range > 2) {
+        if (troop.nativeBuildingAttack) {
+          troop.nativeBuildingAttack(wall, stats.damage);
+        } else if (stats.range > 2) {
           launchProjectile(
             battle,
             {

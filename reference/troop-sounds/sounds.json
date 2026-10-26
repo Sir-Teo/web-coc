@@ -8,6 +8,7 @@
     "logic/pets.csv": "dc210b12a02fea73e47339e62cea0e2d50d462f736d81e7616d782533bec48ad",
     "logic/spells.csv": "385159e00327e6a1567cd91f1585b4ed0717d3f4475f0823398243482598289d",
     "logic/effects.csv": "5c6d5b67d6407345123b8d55872ed77ee6697b466d20d1fa21e25a723c511e9f",
+    "logic/projectiles.csv": "71cda0e457ad88a6772f6421a22419b24d6bcf78d0ed305f09184404889a72dc",
     "sfx/Clash_Pet_Angry_Jelly_Attack.ogg": "727f059efc92f42369cb561d3094051826d40172e489db8cddabe0e1a7bc86b4",
     "sfx/Clash_Pet_Angry_Jelly_Deploy.ogg": "285a9bece753000048ed4283cea253b35ecb198f2ecd81d7133ddb606beae11b",
     "sfx/Clash_Pet_Angry_Jelly_Die.ogg": "ea50f01b02047f6b48e843b02d8195f3eacddc89c89af11458c3e0e1432906df",
@@ -37,6 +38,9 @@
     "sfx/Troop_MeteorGolem_Die_01.ogg": "0048f675d10c3b1b72c6073bf2890ed71760401de7bc57dcab34480d6df5266b",
     "sfx/Troop_MeteorGolem_Die_02.ogg": "95208acdc164aff998f0292d63a7acd3c3b748070dbfde2b7f54bd3df93d1cd4",
     "sfx/Troop_MeteorGolem_Die_03.ogg": "cd618bd72a75c0d410162ef589669b30f50ccdf76d8b967da51111378164dbd8",
+    "sfx/Troop_MeteorGolem_Hit_01.ogg": "4a69b035a2205c86214b4eddcfa040fc2e1b3fc2d98dde7cad4bef4a2c5698d6",
+    "sfx/Troop_MeteorGolem_Hit_02.ogg": "e8f5ca839077fba3c3cb35cbe6bac336053b5f132fabf96ddb8df11a41fe6284",
+    "sfx/Troop_MeteorGolem_Hit_03.ogg": "2d35c3211901ce2dd125d9b090a2659906c931c178f335d8544d6b501f85a4ec",
     "sfx/Troop_MeteorGolem_MeleeAttack_01.ogg": "66433369c356217d646226f78063055acb4b03e549e62ecbd9f17582b0ada834",
     "sfx/Troop_MeteorGolem_MeleeAttack_02.ogg": "e2cc725203ee8a7809f0727a6781d09e4e982d1d80a0ff05581d1fb1ea55f14a",
     "sfx/Troop_MeteorGolem_MeleeAttack_03.ogg": "88e82fbbf978cb8b27976e6784aa4cb27e4dbe0acd14b9d6d411e857c621696d",
@@ -640,7 +644,8 @@
       "name": "Meteor Golem",
       "deploy": "Meteor_Golem_deploy",
       "attack": "Meteor_Golem_ThrowAttack_SFX",
-      "die": "Meteor_Golem_die"
+      "die": "Meteor_Golem_die",
+      "projectileHit": "Meteor_Golem_Projectile_Hit"
     },
     "meteormite": {
       "name": "Meteormite",
@@ -3003,6 +3008,29 @@
         "delay": 0.0
       }
     ],
+    "Meteor_Golem_Projectile_Hit": [
+      {
+        "sound": "sfx/Troop_MeteorGolem_Hit_01.ogg",
+        "volume": 0.9,
+        "minPitch": 0.9,
+        "maxPitch": 1.1,
+        "delay": 0.0
+      },
+      {
+        "sound": "sfx/Troop_MeteorGolem_Hit_02.ogg",
+        "volume": 0.9,
+        "minPitch": 0.9,
+        "maxPitch": 1.1,
+        "delay": 0.0
+      },
+      {
+        "sound": "sfx/Troop_MeteorGolem_Hit_03.ogg",
+        "volume": 0.9,
+        "minPitch": 0.9,
+        "maxPitch": 1.1,
+        "delay": 0.0
+      }
+    ],
     "Meteor_Golem_ThrowAttack_SFX": [
       {
         "sound": "sfx/Troop_MeteorGolem_ThrowAttack_01.ogg",
@@ -5167,6 +5195,21 @@
       "path": "assets/audio/troops-native/Troop_MeteorGolem_Die_03.ogg",
       "bytes": 12757,
       "sha256": "cd618bd72a75c0d410162ef589669b30f50ccdf76d8b967da51111378164dbd8"
+    },
+    "sfx/Troop_MeteorGolem_Hit_01.ogg": {
+      "path": "assets/audio/troops-native/Troop_MeteorGolem_Hit_01.ogg",
+      "bytes": 7315,
+      "sha256": "4a69b035a2205c86214b4eddcfa040fc2e1b3fc2d98dde7cad4bef4a2c5698d6"
+    },
+    "sfx/Troop_MeteorGolem_Hit_02.ogg": {
+      "path": "assets/audio/troops-native/Troop_MeteorGolem_Hit_02.ogg",
+      "bytes": 7756,
+      "sha256": "e8f5ca839077fba3c3cb35cbe6bac336053b5f132fabf96ddb8df11a41fe6284"
+    },
+    "sfx/Troop_MeteorGolem_Hit_03.ogg": {
+      "path": "assets/audio/troops-native/Troop_MeteorGolem_Hit_03.ogg",
+      "bytes": 7191,
+      "sha256": "2d35c3211901ce2dd125d9b090a2659906c931c178f335d8544d6b501f85a4ec"
     },
     "sfx/Troop_MeteorGolem_MeleeAttack_01.ogg": {
       "path": "assets/audio/troops-native/Troop_MeteorGolem_MeleeAttack_01.ogg",

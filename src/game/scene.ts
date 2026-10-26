@@ -1,5 +1,5 @@
 import { ELECTROMITE_EFFECTS } from './electromite-effects';
-import { MITE_SPAWN_PARENTS } from './native-mite-jumps';
+import { carriedMiteArt, MITE_SPAWN_PARENTS } from './native-mite-jumps';
 import { builderHutArt } from './builder-hut-art';
 import { phoenixLifeFraction } from './native-status';
 import { HeroNativePresentation } from './hero-native-scene';
@@ -2602,14 +2602,7 @@ export class VillageScene extends Phaser.Scene {
       this.model.battle.nativeHeroes?.some((hero) => hero.pet?.kind === 'frosty')
     )
       wanted.add('frostmite');
-    if (this.model.battle?.nativeSingleUseMiteJumps)
-      for (const [child, parent] of Object.entries(MITE_SPAWN_PARENTS))
-        if ((this.model.battle.carriedArmy?.[parent] ?? 0) > 0) wanted.add(child);
-    if (
-      this.model.battle?.nativeElectromites &&
-      (this.model.battle.carriedArmy?.superyeti ?? 0) > 0
-    )
-      wanted.add('electromite');
+    for (const child of carriedMiteArt(this.model.battle)) wanted.add(child);
     return [...wanted].sort();
   }
   /** Baked character atlases the home lineup or current battle needs. */
@@ -2644,11 +2637,9 @@ export class VillageScene extends Phaser.Scene {
     const kinds = this.wantedTroopArt();
     const level = (kind: string) =>
       this.model.troopLevel(
-        (kind === 'electromite'
-          ? 'superyeti'
-          : Object.hasOwn(MITE_SPAWN_PARENTS, kind)
-            ? MITE_SPAWN_PARENTS[kind as keyof typeof MITE_SPAWN_PARENTS]
-            : kind) as TroopKind,
+        (Object.hasOwn(MITE_SPAWN_PARENTS, kind)
+          ? MITE_SPAWN_PARENTS[kind as keyof typeof MITE_SPAWN_PARENTS]
+          : kind) as TroopKind,
       );
     const signature = kinds.map((kind) => `${kind}:${level(kind)}`).join(',');
     if (signature !== this.armyPrefetchSignature) {
@@ -4208,11 +4199,7 @@ export class VillageScene extends Phaser.Scene {
         }
       }
       for (const [kind, count] of Object.entries(battle.remaining)) if (count) kinds.add(kind);
-      if (battle.nativeSingleUseMiteJumps)
-        for (const [child, parent] of Object.entries(MITE_SPAWN_PARENTS))
-          if ((battle.carriedArmy?.[parent] ?? 0) > 0) kinds.add(child);
-      if (battle.nativeElectromites && (battle.carriedArmy?.superyeti ?? 0) > 0)
-        kinds.add('electromite');
+      for (const child of carriedMiteArt(battle)) kinds.add(child);
       for (const [kind, count] of Object.entries(battle.spells))
         if (count) spells.add(SPELL_SOURCE[kind as SpellKind]);
     }
@@ -4275,22 +4262,23 @@ export class VillageScene extends Phaser.Scene {
       fx.sourceId !== undefined &&
       (fx.targetBuilding || fx.targetDefender || fx.targetFriendly || fx.weapon === 'healing')
     ) {
-      const u =
-        fx.targetFriendly && fx.sourceKind
-          ? { id: fx.sourceId, kind: fx.sourceKind, level: fx.sourceLevel }
-          : battle.units.find((v) => v.id === fx.sourceId);
+      const u = fx.sourceKind
+        ? { id: fx.sourceId, kind: fx.sourceKind, level: fx.sourceLevel }
+        : battle.units.find((v) => v.id === fx.sourceId);
       if (!u) return;
       // A melee blow is the swing and the impact at once; a shot swings at its launch and
       // lands at its impact.
-      const events: ('attack' | 'hit')[] =
+      const events: ('attack' | 'hit' | 'projectileHit')[] =
         fx.type === 'hit'
           ? ['attack', 'hit']
           : fx.type === 'impact'
-            ? ['hit']
+            ? battle.nativeMeteorThrows && fx.sourceKind === 'meteorgolem'
+              ? ['projectileHit']
+              : ['hit']
             : fx.targetFriendly && (fx.projectileBounce ?? 0) > 0
               ? []
               : ['attack'];
-      for (const event of events) this.battleSounds.attack(battle, u, event);
+      for (const event of events) this.battleSounds.attack(battle, u, event, fx.at);
       this.fxSounded = events.some((event) =>
         this.cueReady(troopCue(battle, u, event, 'ready', 0)),
       );

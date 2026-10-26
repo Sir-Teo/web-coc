@@ -130,6 +130,7 @@ def build():
     pets = records(source('logic/pets.csv', pins))
     spells_table = records(source('logic/spells.csv', pins))
     effects = records(source('logic/effects.csv', pins))
+    projectiles = records(source('logic/projectiles.csv', pins))
 
     def takes(name):
         rows = [row for row in effects.get(name, []) if row.get('Sound')]
@@ -164,6 +165,15 @@ def build():
         rows = table.get(name)
         require(rows, f'Absent character {name}')
         entry = entries(rows, EVENTS)
+        if key == 'meteorgolem':
+            # This actor's impact sound belongs to its projectile, not characters.HitEffect.
+            current, impacts = None, []
+            for row in rows:
+                current = row.get('Projectile', current)
+                require(current in projectiles, f'Missing Meteor Golem projectile: {current}')
+                effect = projectiles[current][0].get('DestroyedEffect')
+                impacts.append({'HitEffect': effect} if effect else {})
+            entry.update(entries(impacts, {'projectileHit': 'HitEffect'}))
         if entry:
             troops[key] = dict(name=name, **entry)
     spells = {}
@@ -183,7 +193,7 @@ def build():
         files[ROOT / 'public' / target] = blob
         sounds[path] = dict(path=target, bytes=len(blob), sha256=pins[path])
     sources = {p: pins[p] for p in ['logic/characters.csv', 'logic/heroes.csv', 'logic/pets.csv', 'logic/spells.csv',
-                                    'logic/effects.csv', *sounds]}
+                                    'logic/effects.csv', 'logic/projectiles.csv', *sounds]}
     catalog = dict(clientVersion='18.400.21', bundle=BUNDLE, baseUrl=BASE, sources=sources,
                    troops=troops, spells=spells, destroyed=DESTROYED,
                    effects=dict(sorted(used.items())), sounds=sounds)

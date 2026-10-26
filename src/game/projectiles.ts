@@ -56,6 +56,8 @@ export interface CombatProjectile {
     kind: string;
     level: number;
     bounce?: number;
+    /** Version 108: kind-changing throws keep the original actor’s sound identity. */
+    captureSource?: true;
     /** Version 71: frost captured at launch, retained after the shooter leaves. */
     frost?: { seconds: number; percent: number };
     /** Version 95: a Phoenix Egg revives its own Hero at this packet's fixed-time impact. */
@@ -163,6 +165,7 @@ export function launchProjectile(
               (battle.nativeSingleUseMiteJumps &&
                 !!shot.native &&
                 nativeMiteJump(battle, shot.native.kind)) ||
+              (battle.nativeMeteorThrows && shot.native?.kind === 'meteorgolem') ||
               shot.weapon === 'towerbomb' ||
               shot.weapon === 'fireball' ||
               shot.weapon === 'arcane' ||
@@ -201,6 +204,8 @@ export function launchProjectile(
       : undefined;
   if (target) Object.assign(projectile, buildingAim(shot, target));
   (battle.projectiles ??= []).push(projectile);
+  if (projectile.native?.captureSource && projectile.native.kind === 'meteorgolem')
+    (battle.nativeMeteorFlights ??= []).push({ ...projectile, native: { ...projectile.native } });
   emit(projectileEffect(projectile, 'projectile'));
   return projectile;
 }
@@ -218,14 +223,15 @@ export function projectileEffect(p: CombatProjectile, type: 'projectile' | 'impa
     targetId: p.targetId,
     targetBuilding: p.targetBuilding,
     targetDefender: p.targetDefender,
-    ...(p.native?.healing
+    ...(p.native?.healing ? { targetFriendly: true as const } : {}),
+    ...(p.native && (p.native.healing || p.native.captureSource)
       ? {
-          targetFriendly: true as const,
           sourceKind: p.native.kind as UnitKind,
           sourceLevel: p.native.level,
           projectileBounce: p.native.bounce ?? 0,
         }
       : {}),
+    ...(p.native?.captureSource ? { at: type === 'projectile' ? p.launched : p.impact } : {}),
     fromAir: p.fromAir,
     toAir: p.toAir,
     radius: p.splash,

@@ -151,6 +151,10 @@ export interface NativePendingSpawn {
   y: number;
   hp?: number;
   owner?: number;
+  /** Version 108: a thrown cloned half retains the original body’s deadline. */
+  cloneUntil?: number;
+  /** A thrown body materializes after its own packet damage, rather than before the unit step. */
+  projectileId?: string;
 }
 export interface NativeDeathBlast {
   sourceId: number;
@@ -777,6 +781,7 @@ export function stepNativeUnit(
   }
   const miteJump = nativeMiteJump(battle, u.kind);
   const electromite = battle.nativeElectromites && u.kind === 'electromite';
+  const meteorThrow = battle.nativeMeteorThrows && u.kind === 'meteorgolem';
   const heroHunter = battle.nativeHeadhunterHeroRules && u.kind === 'headhunter';
   const poisonLizard = battle.nativeAttackerHitPoison && u.kind === 'poisonlizard';
   const jumpingChase =
@@ -831,6 +836,14 @@ export function stepNativeUnit(
               prefersBuildings: true,
               nativeAttack: (target: Defender, power: number) =>
                 attackElectromite(ctx, u, power, { defender: target }),
+            }
+          : {}),
+        ...(meteorThrow
+          ? {
+              nativeAttack: (target: Defender, power: number) =>
+                throwMeteorAtDefender(ctx, u, s, power, target),
+              nativeBuildingAttack: (target: Building, power: number) =>
+                strike(ctx, u, s, target, power),
             }
           : {}),
         wallBreaker: s.preferredClass === 'Wall' || undefined,
@@ -1145,6 +1158,7 @@ function strike(
     x: target.x + BUILDINGS[target.kind].size / 2,
     y: target.y + BUILDINGS[target.kind].size / 2,
   };
+  let shot: CombatProjectile | undefined;
   if (s.selfAreaCenter || s.multipleBuildings) {
     const radius = Math.max(s.splash, s.range);
     for (const b of battle.buildings)
@@ -1158,7 +1172,7 @@ function strike(
     damageDefenders(battle, u, damage, radius, 'ground');
     ctx.effect({ type: 'blast', x: u.x, y: u.y, radius, sourceId: u.id });
   } else if (s.projectile && s.range >= 1) {
-    launchProjectile(
+    shot = launchProjectile(
       battle,
       {
         weapon: 'native',
@@ -1166,6 +1180,9 @@ function strike(
           name: s.projectile,
           kind: u.kind,
           level: s.level,
+          ...(battle.nativeMeteorThrows && u.kind === 'meteorgolem'
+            ? { captureSource: true as const }
+            : {}),
           ...(battle.nativeProjectileFrost && s.frostTime > 0
             ? { frost: { seconds: s.frostTime, percent: s.frostPercent } }
             : {}),
@@ -1223,7 +1240,14 @@ function strike(
   completeHeroAttack(battle, u);
   // A throwing golem's single attack ends in a split rather than its own defeat.
   if (s.secondaryOnAttack && s.secondary) {
-    splitOnThrow(ctx, u, s, center);
+    splitOnThrow(
+      ctx,
+      u,
+      s,
+      center,
+      battle.nativeMeteorThrows ? shot?.impact : undefined,
+      battle.nativeMeteorThrows ? shot?.id : undefined,
+    );
     return;
   }
   if (s.attackCount > 0 && state.attacks >= s.attackCount) {
@@ -1231,6 +1255,39 @@ function strike(
     u.spent = true;
     u.defeatedAt = battle.elapsed;
   }
+}
+/** A native throw keeps its original source identity while the staying body becomes a Meteormite. */
+function throwMeteorAtDefender(
+  ctx: NativeTroopContext,
+  unit: Unit,
+  stats: NativeUnitStats,
+  damage: number,
+  target: Defender,
+) {
+  const shot = launchProjectile(
+    ctx.battle,
+    {
+      weapon: 'native',
+      native: { name: stats.projectile, kind: unit.kind, level: stats.level, captureSource: true },
+      sourceId: unit.id,
+      targetId: target.id,
+      targetDefender: true,
+      targetBuilding: false,
+      fromX: unit.x,
+      fromY: unit.y,
+      x: target.x,
+      y: target.y,
+      fromAir: stats.flying,
+      toAir: target.mode === 'air',
+      damage,
+      splash: stats.splash,
+    },
+    ctx.effect,
+  );
+  const state = (unit.native ??= {});
+  state.lastAttackAt = ctx.battle.elapsed;
+  state.attacks = (state.attacks ?? 0) + 1;
+  splitOnThrow(ctx, unit, stats, target, shot.impact, shot.id);
 }
 /**
  * Meteor Golem: one Meteormite is hurled at the target and the other stays. Each starts with half of
@@ -1242,10 +1299,13 @@ function splitOnThrow(
   u: Unit,
   s: NativeUnitStats,
   landing: { x: number; y: number },
+  arrivalAt?: number,
+  projectileId?: string,
 ) {
   const battle = ctx.battle;
   const kind = unitKindForName(s.secondary) as UnitKind | undefined;
-  if (!kind || u.native?.cloneUntil !== undefined) return;
+  const cloneUntil = u.native?.cloneUntil;
+  if (!kind || (cloneUntil !== undefined && !battle.nativeMeteorThrows)) return;
   const mite = nativeUnitStats(kind, s.level);
   const step = mite.hp / 100;
   const half = Math.floor(u.hp / 2 / step) * step;
@@ -1253,12 +1313,14 @@ function splitOnThrow(
   const flight =
     travel / Math.max(0.5, num(nativeRow('projectiles', s.projectile), 'Speed', 800) / 100);
   (battle.nativePendingSpawns ??= []).push({
-    at: battle.elapsed + flight,
+    at: arrivalAt ?? battle.elapsed + flight,
     kind,
     level: mite.level,
     x: landing.x,
     y: landing.y,
     hp: half >= step ? half : 1,
+    ...(cloneUntil !== undefined ? { cloneUntil } : {}),
+    ...(projectileId ? { projectileId } : {}),
   });
   if (half < step) {
     u.hp = 0;
@@ -1274,6 +1336,10 @@ function splitOnThrow(
   u.path = [];
   u.pathAt = 0;
   u.cooldown = mite.rate;
+  if (battle.nativeMeteorThrows) {
+    u.attacking = false;
+    delete u.defenderTarget;
+  }
   const state = (u.native ??= {});
   state.lastAttackAt = battle.elapsed;
   state.attacks = 0;
@@ -1466,6 +1532,8 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
   const phoenixSplash = !!(battle.nativePhoenixResurrection && source.kind === 'phoenix');
   const frostmiteSplash = !!(battle.nativeFrostmites && source.kind === 'frostmite');
   const miteSplash = nativeMiteJump(battle, source.kind);
+  const meteorSplash = !!(battle.nativeMeteorThrows && source.kind === 'meteorgolem');
+  const bothLayers = miteSplash || meteorSplash;
   // Native defender-targeted shots retain their captured direct hit on either defender layer.
   if (p.targetDefender) {
     const defender = battle.defenders?.find((d) => d.id === p.targetId);
@@ -1477,7 +1545,7 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
         p.damage,
         rocketSplash ||
           phoenixSplash ||
-          miteSplash ||
+          bothLayers ||
           (battle.nativeHeroDefenderAttacks && isHeroUnitKind(source.kind))
           ? p.impact
           : undefined,
@@ -1514,14 +1582,15 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
       p,
       p.damage,
       p.splash,
-      miteSplash ? 'both' : (rocketSplash || phoenixSplash) && p.toAir ? 'air' : 'ground',
-      (rocketSplash || phoenixSplash || miteSplash) && p.targetDefender ? p.targetId : undefined,
-      rocketSplash || phoenixSplash || miteSplash ? p.impact : undefined,
+      bothLayers ? 'both' : (rocketSplash || phoenixSplash) && p.toAir ? 'air' : 'ground',
+      (rocketSplash || phoenixSplash || bothLayers) && p.targetDefender ? p.targetId : undefined,
+      rocketSplash || phoenixSplash || bothLayers ? p.impact : undefined,
     );
   if (frostmiteSplash && p.splash)
     for (const defender of battle.defenders ?? [])
       if (distance2D(defender.x - p.x, defender.y - p.y) <= p.splash)
         applyDefenderFrost(defender, { seconds: s.frostTime, percent: s.frostPercent }, p.impact);
+  if (meteorSplash) releaseMeteorLanding(ctx, p.id);
   const projectile = nativeRow('projectiles', source.name);
   const hitSpell = text(projectile, 'HitSpell');
   if (hitSpell)
@@ -1886,26 +1955,44 @@ function stepRuinWitch(
 }
 
 /** Scheduled arrivals that no longer depend on their creator being alive. */
+function materializePending(ctx: NativeTroopContext, spawn: NativePendingSpawn) {
+  if (spawn.cloneUntil !== undefined && spawn.cloneUntil <= ctx.battle.elapsed + 1e-9) return;
+  const unit = spawnNativeUnit(
+    ctx,
+    spawn.kind as UnitKind,
+    spawn.level,
+    spawn.x,
+    spawn.y,
+    spawn.at,
+    spawn.owner,
+  );
+  if (spawn.hp !== undefined) unit.hp = Math.min(unit.maxHp, spawn.hp);
+  if (spawn.cloneUntil !== undefined) {
+    (unit.native ??= {}).cloneUntil = spawn.cloneUntil;
+    unit.summoned = true;
+  }
+}
+/** A thrown half cannot act before the packet's direct hit and splash resolve. */
+function releaseMeteorLanding(ctx: NativeTroopContext, projectileId: string) {
+  const due =
+    ctx.battle.nativePendingSpawns?.filter((spawn) => spawn.projectileId === projectileId) ?? [];
+  if (!due.length) return;
+  ctx.battle.nativePendingSpawns = ctx.battle.nativePendingSpawns!.filter(
+    (spawn) => spawn.projectileId !== projectileId,
+  );
+  for (const spawn of due) materializePending(ctx, spawn);
+}
 function stepPendingSpawns(ctx: NativeTroopContext) {
   const battle = ctx.battle;
   if (!battle.nativePendingSpawns?.length) return;
-  const due = battle.nativePendingSpawns.filter((spawn) => spawn.at <= battle.elapsed + 1e-9);
+  const due = battle.nativePendingSpawns.filter(
+    (spawn) => !spawn.projectileId && spawn.at <= battle.elapsed + 1e-9,
+  );
   if (!due.length) return;
   battle.nativePendingSpawns = battle.nativePendingSpawns.filter(
-    (spawn) => spawn.at > battle.elapsed + 1e-9,
+    (spawn) => !!spawn.projectileId || spawn.at > battle.elapsed + 1e-9,
   );
-  for (const spawn of due) {
-    const unit = spawnNativeUnit(
-      ctx,
-      spawn.kind as UnitKind,
-      spawn.level,
-      spawn.x,
-      spawn.y,
-      spawn.at,
-      spawn.owner,
-    );
-    if (spawn.hp !== undefined) unit.hp = Math.min(unit.maxHp, spawn.hp);
-  }
+  for (const spawn of due) materializePending(ctx, spawn);
 }
 
 function evolve(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats) {
@@ -2174,6 +2261,10 @@ export function targetableUnit(battle: Battle, u: Unit) {
 
 export function stepNativeBattle(ctx: NativeTroopContext) {
   const battle = ctx.battle;
+  if (battle.nativeMeteorFlights)
+    battle.nativeMeteorFlights = battle.nativeMeteorFlights.filter(
+      (shot) => shot.impact + 10 >= battle.elapsed - 1e-9,
+    );
   if (battle.nativeAttackerHitPoison)
     for (const defender of battle.defenders ?? []) tickDefenderHitPoison(defender, battle.elapsed);
   // Clone Spell copies expire silently: no death damage, splits or spells.

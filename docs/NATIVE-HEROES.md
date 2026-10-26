@@ -1178,3 +1178,56 @@ Phone/desktop browser checks verify cold roster warming, original bodies and lig
 meshes, actual Web Audio, reduced motion, read-only rendering and historical playback.
 Version 106 and earlier preserve their former direct hits, missing chain/bonus/stun and
 Castle-pull behavior.
+
+## Version 108 Meteor Golem defender throws
+
+Meteor Golems previously used the shared ranged defender attack, launching a generic
+arrow and remaining unsplit. They now launch their original tier's ballistic projectile
+against ground or air defenders, leave one Meteormite behind, and materialize the thrown
+half after the packet's direct damage and one-tile splash resolve. A blocking Wall on
+the defender route uses the same native building throw, including its fivefold Wall
+damage. Each affected structure receives its own modifier; the primary defender is hit
+once and splash reaches both defender layers, excluding future defenders at impact time.
+
+Both halves retain half the golem's current health at launch, rounded down to a 1% step
+of that tier's Meteormite health. Below one step only the thrown 1-HP half survives.
+The landing is bound to the actual packet id and impact timestamp, so a newborn half
+cannot attack before the original impact. It starts acting on the following simulation
+update. Captured tier and outgoing damage survive the staying half's defeat or removal.
+
+Cloned golems now split too. Both halves retain the parent's clone deadline and cannot
+merge. A clone that expires in flight still has its committed impact, but no expired
+living half appears at landing. Keeping the parent's deadline is a local clock adapter:
+the Clone and Meteor Golem references specify expiration and prohibit cloned merges,
+but do not expose a separate split-child timer. Earlier versions retain their unsplit
+cloned building attacker and generic defender shots.
+
+The three original projectiles use the source eight-tiles/second speed. Version 108
+applies the shared 0.01-second simulation floor and uses the packet's arrival for
+building throws too; version 107 retains its 0.12-second floor and independently dated
+pending birth. The floor, attack-start timing and fixed launch aim remain adapters;
+this change does not reconstruct the client's full wind-up or moving-target tracking.
+
+Carried Meteor Golems warm the matching Meteormite body and samples before deployment.
+When an actor changes kind within `chr_split_golem`, the renderer now replaces its
+texture namespace rather than reusing the old kind's view, including under reduced
+detail. This also corrects the visual handoff in historical building throws without
+altering their combat. Original body, projectile, trail and impact art were already
+imported and remain unchanged.
+
+The impact sound belongs to `projectiles.DestroyedEffect`, not the character's empty
+`HitEffect`. The sound importer now retains `Meteor_Golem_Projectile_Hit` and its three
+unchanged Ogg takes, bringing the catalog to 338 files. Captured packets retain the
+original golem's tier and timestamps after its id becomes a Meteormite. A ten-second
+record supplies one throw cue and one projectile-hit cue through reverse seeks, and
+also reconstructs original flight/impact art when seeking directly past the landing.
+The live effect log skips these recorded cues to avoid duplicates.
+
+`tests/native-meteor-throws.test.ts` covers all three tiers, ground/air targets, health
+rounding, the 1-HP case, captured boosts, primary-once splash, Wall blockers, short-flight
+timing, clone expiry, no merge, packet ordering, source effect metadata and retained
+sound cues. Actual deployment and Clone Spell inputs in
+`tests/fixtures/native-meteor-throws.ts` fight a Queen through portable forward/reverse
+seeks. Phone/desktop checks verify cold tier warming, original body namespaces and
+ballistic meshes, real throw/impact Web Audio, exact landing, clone deadlines, reduced
+motion, read-only rendering and historical version 107 playback.

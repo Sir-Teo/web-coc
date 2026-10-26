@@ -894,6 +894,10 @@ export interface Battle {
   nativeActivatedPreference?: true;
   /** Version 107: source Electromite chain lightning, building damage and one-use cast. */
   nativeElectromites?: true;
+  /** Version 108: source Meteor Golem throws split against defenders and retain clone lifetimes. */
+  nativeMeteorThrows?: true;
+  /** Captured throw packets retained for original art and sound through replay seeks. */
+  nativeMeteorFlights?: CombatProjectile[];
   nativeElectromiteArcs?: ElectromiteArc[];
   nativeElectromiteZaps?: ElectromiteZap[];
   /** Recent detached troop stage effects; presentation only, retired deterministically. */
@@ -1102,6 +1106,8 @@ export type FX = {
   targetDefender?: boolean;
   /** Friendly native healing retains its caster identity through death, Recall and evolution. */
   targetFriendly?: true;
+  /** Scheduled source-packet time; older events use the current simulation sample. */
+  at?: number;
   sourceKind?: UnitKind;
   sourceLevel?: number;
   projectileBounce?: number;

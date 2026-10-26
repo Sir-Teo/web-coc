@@ -461,3 +461,13 @@ lightning, impact and sound events follow captured endpoints and timestamps thro
 portable reverse seeks. Version 106 and earlier retain their previous direct hits and
 missing chain/bonus/stun. See the
 [source and adapter details](NATIVE-HEROES.md#version-107-electromite-chain-lightning).
+
+## Version 108: Meteor Golem defender throws
+
+Meteor Golems use original ballistic throws and split against defenders and blocking
+Walls. The thrown half appears after its packet damage at the actual impact time;
+splash hits both layers and applies Wall modifiers independently. Cloned halves keep
+the parent's deadline and cannot merge. Captured packets reconstruct original art and
+throw/impact sounds through reverse seeks. Version 107 retains its generic defender
+shots, unsplit cloned building attackers and earlier short-flight/birth timing.
+See the [source and adapter details](NATIVE-HEROES.md#version-108-meteor-golem-defender-throws).

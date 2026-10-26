@@ -163,7 +163,10 @@ export class NativeProjectilePresentation {
     }
     for (const event of electromiteEffectEvents(battle, iso, airLift))
       this.layer.play(event, elapsed, reduced);
-    for (const p of battle.projectiles ?? []) {
+    for (const p of [
+      ...(battle.nativeMeteorFlights ?? []).filter((shot) => elapsed <= shot.impact + AFTERLIFE),
+      ...(battle.projectiles ?? []),
+    ]) {
       if (p.weapon !== 'native' || !p.native) continue;
       const known = this.history.get(p.id);
       // Recorded shots are immutable; keep the snapshot and its cached flight points.

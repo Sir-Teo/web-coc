@@ -35,6 +35,7 @@ interface Pack {
   byLevel?: Map<number, Pack['levels'][number]>;
 }
 interface TroopView {
+  kind: string;
   scene: string;
   view: NativeSceneView;
   /** Clip state drawn by the last full render: walk, idle, attack or die. */
@@ -316,7 +317,7 @@ export class TroopNativePresentation {
           // Off-screen: leave the (now invisible) fallback as-is; it is off screen.
           continue;
         }
-        if (lodActive && kept) {
+        if (lodActive && kept && kept.kind === u.kind) {
           const dx = point.x - cx;
           const dy = point.y - cy;
           const radius = lodRadius * LOD_HYSTERESIS;
@@ -416,7 +417,7 @@ export class TroopNativePresentation {
       const scale = 0.6 * state.scale * (isShrunk(u, elapsed) ? 0.5 : 1);
       const mirror = sx < 0 ? -1 : 1;
       let owned = this.views.get(u.id);
-      if (owned && owned.scene !== state.scene) {
+      if (owned && (owned.scene !== state.scene || owned.kind !== u.kind)) {
         owned.view.retire();
         this.views.delete(u.id);
         owned = undefined;
@@ -462,7 +463,16 @@ export class TroopNativePresentation {
         view.mergeLeaves = true;
         // Hit-flash texel bakes spread over frames instead of stalling the one they land on.
         view.bakeBudget = true;
-        owned = { scene: state.scene, view, state: requested, x: 0, y: 0, depth: 0, tagged: -1 };
+        owned = {
+          kind: u.kind,
+          scene: state.scene,
+          view,
+          state: requested,
+          x: 0,
+          y: 0,
+          depth: 0,
+          tagged: -1,
+        };
         this.views.set(u.id, owned);
       }
       owned.state = requested;

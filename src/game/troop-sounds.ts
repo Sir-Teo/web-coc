@@ -12,7 +12,7 @@ import { seconds } from './native-data';
  * lists alternative takes; one is chosen per event from the event's key, so a replay picks the
  * same take. See docs/TROOP-SOUNDS.md.
  */
-export type TroopSoundEvent = 'deploy' | 'attack' | 'hit' | 'die';
+export type TroopSoundEvent = 'deploy' | 'attack' | 'hit' | 'die' | 'projectileHit';
 export type SpellSoundEvent = 'preDeploy' | 'deploy' | 'deploy2' | 'charging' | 'hit';
 type Named = string | (string | null)[];
 type Take = { sound: string; volume: number; minPitch: number; maxPitch: number; delay: number };
@@ -52,7 +52,7 @@ export const troopSoundEffect = (kind: string, level: number, event: TroopSoundE
   atLevel(TROOPS[kind]?.[event], level);
 /** Every sound file a troop kind can play, at any level. */
 export const troopSoundFiles = (kind: string) =>
-  files(TROOPS[kind], ['deploy', 'attack', 'hit', 'die']);
+  files(TROOPS[kind], ['deploy', 'attack', 'hit', 'die', 'projectileHit']);
 /** The effect a spell (by its client name) plays for an event at its level. */
 export const spellSoundEffect = (name: string, level: number, event: SpellSoundEvent) =>
   atLevel(SPELLS[name]?.[event], level);
@@ -183,18 +183,20 @@ export class BattleSoundLog {
   attack(
     battle: Battle,
     u: Pick<Unit, 'id' | 'kind' | 'level'>,
-    event: 'attack' | 'hit' = 'attack',
+    event: 'attack' | 'hit' | 'projectileHit' = 'attack',
+    at = battle.elapsed,
   ) {
     this.sync(battle);
     // Version 94's beam owns a sustained loop; do not restart the same clip every damage tick.
     if (battle.nativeTroopDamageRamp && u.kind === 'infernodragon' && event === 'attack') return;
-    const cue = troopCue(
-      battle,
-      u,
-      event,
-      `troop:${u.id}:${event}:${battle.elapsed}`,
-      battle.elapsed,
-    );
+    // Captured throw packets reconstruct these cues after seeks, including after the actor changes kind.
+    if (
+      battle.nativeMeteorThrows &&
+      u.kind === 'meteorgolem' &&
+      (event === 'attack' || event === 'projectileHit')
+    )
+      return;
+    const cue = troopCue(battle, u, event, `troop:${u.id}:${event}:${at}`, at);
     if (cue) this.events.push(cue);
   }
   /**
@@ -304,6 +306,19 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
         `${zap.key}:${event}`,
         zap.at,
       );
+      if (cue) cues.push(cue);
+    }
+  }
+  for (const shot of battle.nativeMeteorFlights ?? []) {
+    if (!shot.native) continue;
+    const actor = { id: shot.sourceId, kind: 'meteorgolem' as const, level: shot.native.level };
+    for (const [event, at] of [
+      ['attack', shot.launched],
+      ['projectileHit', shot.impact],
+    ] as const) {
+      if (at > elapsed || !cueAudible(at, elapsed)) continue;
+      const key = `troop:${shot.sourceId}:${event}:${at}`,
+        cue = troopCue(battle, actor, event, key, at);
       if (cue) cues.push(cue);
     }
   }

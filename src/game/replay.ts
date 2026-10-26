@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 107;
+export const REPLAY_VERSION = 108;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -135,7 +135,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 104 restores Frosty Frostmites and their source single-use area frost jump.
  * Version 105 gives Yetimite/Firemite defender attacks their source single-use jumps.
  * Version 106 includes activated native weapons in preferred targets and damage.
- * Version 107 restores Electromite source chain lightning and its single-use cast. */
+ * Version 107 restores Electromite source chain lightning and its single-use cast.
+ * Version 108 preserves Meteor Golem throws, split arrivals and clone lifetimes against defenders. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -210,6 +211,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 104 ||
   version === 105 ||
   version === 106 ||
+  version === 107 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -358,6 +360,7 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 108 ? { nativeMeteorThrows: true as const } : {}),
     ...(version >= 107 ? { nativeElectromites: true as const } : {}),
     ...(version >= 106 ? { nativeActivatedPreference: true as const } : {}),
     ...(version >= 105 ? { nativeSingleUseMiteJumps: true as const } : {}),
