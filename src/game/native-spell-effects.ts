@@ -7,6 +7,8 @@ export interface SpellEffectProfile {
   PreDeployEffect: string;
   DeployEffect: string;
   DeployEffect2?: string;
+  ChargingEffect?: string;
+  chargingTargeted?: boolean;
   HitEffect?: string;
   hitRadiusTiles?: number;
   graphicsOnlyRadius?: boolean;
@@ -30,6 +32,7 @@ export function spellCastEffectEvents(
       ['preDeploy', row.PreDeployEffect, cast.castAt],
       ['deploy', row.DeployEffect, cast.castAt + row.deploySeconds],
       ['deploy2', row.DeployEffect2, cast.castAt + row.deploySeconds],
+      ['charging', row.ChargingEffect, cast.castAt + row.deploySeconds],
     ] as const) {
       if (!effect || elapsed + 1e-9 < at || elapsed - at > (duration(effect) ?? 30)) continue;
       events.push({
@@ -37,6 +40,9 @@ export function spellCastEffectEvents(
         effect,
         at,
         ground,
+        ...(phase === 'charging' && row.chargingTargeted
+          ? { target: ground, targetedOrigins: true as const }
+          : {}),
         depth: ground.y + 2,
         sampleAt: Math.max(elapsed, at),
         ...(nestedTimelines ? { nestedTimelines: true as const } : {}),

@@ -29,6 +29,8 @@ export interface NativeEffectEvent {
   facing?: Point;
   /** Targeted and Beam rows: projected end point, already lifted. */
   target?: Point;
+  /** Source-spell targeted particles retain their static emitter spawn offsets. */
+  targetedOrigins?: true;
   /** Looping rows and externally sustained effects end at this battle time. */
   until?: number;
   /** A caller-owned lifecycle repeats a source clip/emitter until this event ends. */
@@ -377,6 +379,14 @@ export function nativeEffectPoses(
         const life = mix(n(config, 'MinLife'), n(config, 'MaxLife'), random(0)) / 1000;
         if (birth.age >= life) continue;
         const from = { x: origin.x, y: origin.y - n(config, 'StartZ') * NATIVE_ALTITUDE };
+        if (event.targetedOrigins) {
+          const radius = mix(n(config, 'StartRadiusMin'), n(config, 'StartRadiusMax'), random(6)),
+            angle = random(7) * Math.PI * 2,
+            sx = n(config, 'StartX') + Math.cos(angle) * radius,
+            sy = n(config, 'StartY') + Math.sin(angle) * radius;
+          from.x += (sx - sy) * 0.32;
+          from.y += (sx + sy) * 0.16;
+        }
         const to = {
           x: event.target!.x,
           y: event.target!.y - n(config, 'TargetedEndZ') * NATIVE_ALTITUDE,

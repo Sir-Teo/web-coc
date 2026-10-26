@@ -632,3 +632,14 @@ action field, and the portable serializer retains it only for a valid Revive com
 Older playback keeps its prior presentation and never requests the indicator pack.
 The new marker remains read-only during playback. See
 [source and control details](NATIVE-HEROES.md#version-123-direct-hero-revive-targeting).
+
+## Version 124: original Lightning cast and impact effects
+
+The source-spell presentation list adds Lightning. All thirteen levels retain the
+original falling bottle, deployment winds, three sky bolts and resolved impact through
+captured cast history. Charging art begins at 800 ms; the single physical hit still
+resolves at 900 ms. The original crater can remain visible until 7.401 seconds after
+the cast without extending damage or stun. Original audio keeps its existing four cue
+keys. Version 123 and earlier retain their previous presentation and never request
+the new pack. See
+[source and adapter details](NATIVE-HEROES.md#version-124-original-lightning-cast-and-impact-effects).

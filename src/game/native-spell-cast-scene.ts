@@ -24,6 +24,7 @@ export class NativeSpellCastPresentation {
             row.PreDeployEffect,
             row.DeployEffect,
             row.DeployEffect2,
+            row.ChargingEffect,
             ...(row.HitEffect ? [row.HitEffect] : []),
           ])
           .filter((effect): effect is string => !!effect)

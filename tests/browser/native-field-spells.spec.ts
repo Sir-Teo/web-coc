@@ -1,11 +1,16 @@
 import { expect, test, type Page } from '@playwright/test';
 import { nativeFieldSpellRecording } from '../fixtures/native-field-spells';
-async function boot(page: Page, r: ReturnType<typeof nativeFieldSpellRecording>, late = false) {
+async function boot(
+  page: Page,
+  r: ReturnType<typeof nativeFieldSpellRecording>,
+  late = false,
+  version?: number,
+) {
   await page.goto('/?lazyart');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   await page.evaluate(
-    async ({ r, late }) => {
+    async ({ r, late, version }) => {
       window.__field = r;
       const { model, scene, audio } = window.__game,
         { replayBattle } = await import('/src/game/replay.ts');
@@ -15,12 +20,12 @@ async function boot(page: Page, r: ReturnType<typeof nativeFieldSpellRecording>,
       await audio.context.resume();
       model.battle = late
         ? structuredClone(r.snapshots.find((s) => s.at === r.afterLive).battle)
-        : replayBattle(r.data.initial);
+        : replayBattle(r.data.initial, version);
       model.changed();
       scene.sync();
       scene.drawOverlay(0);
     },
-    { r, late },
+    { r, late, version },
   );
 }
 async function open(page: Page, version?: number) {
@@ -102,6 +107,8 @@ for (const { name, level, width } of [
   { name: 'Invisibility', level: 4, width: 390 },
   { name: 'Recall', level: 1, width: 390 },
   { name: 'Recall', level: 7, width: 1440 },
+  { name: 'Lightning', level: 1, width: 390 },
+  { name: 'Lightning', level: 13, width: 1440 },
 ] as const)
   test(`original ${name} level ${level} fields and audio survive cold portable seeks at ${width}px`, async ({
     page,
@@ -121,7 +128,16 @@ for (const { name, level, width } of [
     expect(requests).toContain(`/assets/field-spells-native/${r.key}/graph.json`);
     if (name === 'Rage')
       expect(requests).toContain('/assets/effects-native/rage-deploy-top/graph.json');
-    for (const key of ['rage', 'haste', 'heal', 'poison', 'clone', 'invisibility', 'recall'])
+    for (const key of [
+      'rage',
+      'haste',
+      'heal',
+      'poison',
+      'clone',
+      'invisibility',
+      'recall',
+      'lightning',
+    ])
       if (key !== r.key)
         expect(requests).not.toContain(`/assets/field-spells-native/${key}/graph.json`);
     expect(requests).not.toContain('/assets/jump-spell-native/cast/graph.json');
@@ -143,6 +159,11 @@ for (const { name, level, width } of [
           bottle: 'invisibility_bottleDrop',
           ground: `invisibility_lvl${level}_ring`,
           upper: `invisibility_lvl${level}_ring2`,
+        },
+        Lightning: {
+          bottle: 'lightning_bottleDrop',
+          ground: 'Lightning_area_ring_small',
+          upper: 'LightningSky',
         },
         Recall: {
           bottle: 'recall_bottleDrop',
@@ -197,11 +218,13 @@ for (const { name, level, width } of [
       scene.santaPresentation.render(model.battle, false, true, 1, iso, scene.lastCues);
       const name = window.__field.name,
         key =
-          name === 'Healing'
-            ? 'spell:1:hit:1'
-            : name === 'Poison' || name === 'Recall'
-              ? 'spell:1:deploy2'
-              : 'spell:1:deploy';
+          name === 'Lightning'
+            ? 'spell:1:charging'
+            : name === 'Healing'
+              ? 'spell:1:hit:1'
+              : name === 'Poison' || name === 'Recall'
+                ? 'spell:1:deploy2'
+                : 'spell:1:deploy';
       const cue = scene.lastCues.find((c) => c.key === key),
         node = audio.samples.active.get(key);
       if (!cue || !node) throw Error('Original field Web Audio missing after direct seek');
@@ -212,6 +235,15 @@ for (const { name, level, width } of [
         rate: node.source.playbackRate.value,
         gain: node.gain.gain.value,
         unchanged: before === JSON.stringify(model.battle),
+        ...(name === 'Lightning'
+          ? {
+              impact: {
+                at: scene.lastCues.find((c) => c.key === 'spell:1:hit:0')?.at,
+                gain: audio.samples.active.get('spell:1:hit:0')?.gain.gain.value,
+                rate: audio.samples.active.get('spell:1:hit:0')?.source.playbackRate.value,
+              },
+            }
+          : {}),
         keys: scene.lastCues.filter((c) => c.key.startsWith('spell:1:')).map((c) => c.key),
       };
       scene.santaPresentation.render(model.battle, false, false, 1, iso, scene.lastCues);
@@ -225,20 +257,30 @@ for (const { name, level, width } of [
         Clone: 0.95,
         Invisibility: 0.9,
         Recall: 1,
+        Lightning: 0.8,
       }[name],
       keys =
-        name === 'Healing'
-          ? ['spell:1:preDeploy', 'spell:1:deploy', 'spell:1:hit:0', 'spell:1:hit:1']
-          : name === 'Poison' || name === 'Recall'
-            ? ['spell:1:preDeploy', 'spell:1:deploy2']
-            : ['spell:1:preDeploy', 'spell:1:deploy'];
+        name === 'Lightning'
+          ? ['spell:1:preDeploy', 'spell:1:deploy', 'spell:1:charging', 'spell:1:hit:0']
+          : name === 'Healing'
+            ? ['spell:1:preDeploy', 'spell:1:deploy', 'spell:1:hit:0', 'spell:1:hit:1']
+            : name === 'Poison' || name === 'Recall'
+              ? ['spell:1:preDeploy', 'spell:1:deploy2']
+              : ['spell:1:preDeploy', 'spell:1:deploy'];
     expect(sound).toMatchObject({
       at: name === 'Healing' ? 1.8 : 0.8,
       volume,
       unchanged: true,
       keys,
     });
-    if (name === 'Healing') {
+    if (name === 'Lightning') {
+      expect(sound.pitch).toBeGreaterThanOrEqual(1);
+      expect(sound.pitch).toBeLessThanOrEqual(1.2);
+      expect(sound.impact.at).toBe(0.9);
+      expect(sound.impact.gain).toBeCloseTo(0.7 * 0.12, 6);
+      expect(sound.impact.rate).toBeGreaterThanOrEqual(0.95);
+      expect(sound.impact.rate).toBeLessThanOrEqual(1.05);
+    } else if (name === 'Healing') {
       expect(sound.pitch).toBeGreaterThanOrEqual(0.8);
       expect(sound.pitch).toBeLessThanOrEqual(0.9);
     } else
@@ -284,13 +326,15 @@ for (const { name, level, width } of [
       ).toEqual({ pulse: undefined, meshes: 0 });
     }
     const oldVersion =
-      name === 'Recall'
-        ? 120
-        : name === 'Clone' || name === 'Invisibility'
-          ? 119
-          : name === 'Healing' || name === 'Poison'
-            ? 117
-            : 116;
+      name === 'Lightning'
+        ? 123
+        : name === 'Recall'
+          ? 120
+          : name === 'Clone' || name === 'Invisibility'
+            ? 119
+            : name === 'Healing' || name === 'Poison'
+              ? 117
+              : 116;
     await open(page, oldVersion);
     await seek(page, r.steady);
     expect(
@@ -308,18 +352,26 @@ for (const { name, level, width } of [
       ready: false,
       views: 0,
       names:
-        oldVersion === 120
-          ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison', 'Clone', 'Invisibility']
-          : oldVersion === 119
-            ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison']
-            : oldVersion === 117
-              ? ['Jump', 'Rage', 'Haste']
-              : ['Jump'],
+        oldVersion === 123
+          ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison', 'Clone', 'Invisibility', 'Recall']
+          : oldVersion === 120
+            ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison', 'Clone', 'Invisibility']
+            : oldVersion === 119
+              ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison']
+              : oldVersion === 117
+                ? ['Jump', 'Rage', 'Haste']
+                : ['Jump'],
       history: undefined,
     });
     expect(errors).toEqual([]);
   });
 for (const { name, path, heldEffect, otherEffect } of [
+  {
+    name: 'Lightning',
+    path: 'field-spells-native/lightning',
+    heldEffect: 'Lightning Spell',
+    otherEffect: undefined,
+  },
   {
     name: 'Rage',
     path: 'field-spells-native/rage',
@@ -415,7 +467,7 @@ for (const { name, path, heldEffect, otherEffect } of [
           ).length,
         };
       }),
-    ).toEqual({ ready: false, views: 0, rings: 1 });
+    ).toEqual({ ready: false, views: 0, rings: name === 'Lightning' ? 2 : 1 });
     // Exercise the real frame cache while the replay is paused; no forced draw after recovery.
     await page.evaluate(() => {
       const { model, scene } = window.__game;
@@ -472,8 +524,30 @@ for (const { name, path, heldEffect, otherEffect } of [
         Clone: 'clone_deploy_range_lvl1',
         Invisibility: 'invisibility_lvl1_ring',
         Recall: 'RecallCircleGround',
+        Lightning: 'LightningSky',
       }[name],
     ]);
     if (name === 'Healing') await visible(page, ['heal_ring_effect', 'heal_ring_effect2']);
     expect(errors).toEqual([]);
   });
+
+test('version-123 Lightning playback stays read-only and never requests the new source pack', async ({
+  page,
+}) => {
+  const r = nativeFieldSpellRecording('Lightning'),
+    requests: string[] = [];
+  page.on('request', (request) => requests.push(new URL(request.url()).pathname));
+  await boot(page, r, false, 123);
+  await open(page, 123);
+  await seek(page, r.pulsing);
+  expect(
+    await page.evaluate(() => ({
+      ready: window.__game.scene.fieldSpellPresentations
+        .get('Lightning')
+        .hasArt(window.__game.model.battle, false),
+      views: window.__game.scene.fieldSpellPresentations.get('Lightning').layer.views.size,
+      cast: window.__game.model.castSpell(11.5, 11.5),
+    })),
+  ).toEqual({ ready: false, views: 0, cast: false });
+  expect(requests).not.toContain('/assets/field-spells-native/lightning/graph.json');
+});

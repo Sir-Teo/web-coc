@@ -1876,3 +1876,43 @@ asset tests check pins, full file sizes, read-only projection, reduced-motion op
 and hit bounds against every drawn vertex. Browser cases cover Enter, H and real touch,
 selection preservation, concurrent casts, older playback and natural paused recovery
 from an unavailable marker pack.
+
+## Version 124 original Lightning cast and impact effects
+
+All thirteen source Lightning levels declare `Lightning predeploy`, `Lightning area
+small`, `Lightning Spell` charging and `Lightning Spell Hit`. The 491,070-byte lazy pack
+retains those effect records, emitter variants, original `sc/buildings.sc` timelines
+and decoded textures. The importer now includes optional charging phases and records
+whether their source effect is targeted. Existing field packs remain byte-identical;
+no sound files or sound catalog entries change.
+
+The bottle begins at the cast time. Deployment winds, range rings and charging start
+at 800 ms, independently of the unchanged 900-ms damage/stun pulse. `LightningSky`
+emits three additive bolts over one millisecond, each with a 300-ms lifetime, a source
+altitude of 4000 and an 80-unit spawn radius. Charging events supply the projected
+ground target. An opt-in adapter preserves static emitter origin offsets using the
+same visual random slots as ordinary particles; legacy targeted callers retain their
+former origins. The shared targeted renderer stretches the full bolt to the ground
+while source scaling changes its width and its timeline advances over its lifetime.
+
+The resolved hit uses the captured cast seed and zero graphics-only scatter radius.
+Its explosions, debris, grass and smoke retain their source motion and layers. The
+crater's 6500-ms lifetime and one-millisecond emission window bound the final source
+tail at 7.401 seconds after casting. Existing ten-second history retention covers the
+entire sequence after the live cast disappears. Source records retain their instance
+limits; the renderer does not reconstruct a client-wide effect budget.
+
+The original fall, bottle break, Tesla zap and impact ambience keep stable predeploy,
+deploy, charging and hit sound keys. Rendering consumes no combat RNG and changes no
+health, stun deadlines or defending Builder repair behavior. Reduced motion omits the
+moving captured effects. Pending/failed art uses the existing ring and bolt feedback;
+both are removed together once all phase art is ready, including paused reconnects.
+Version 123 and earlier request no Lightning pack and keep their previous sampling.
+
+Tests sample every level, validate distinct projected source origins and the full
+sky-to-ground geometry, and exercise exact hit boundaries, crater retirement, original
+audio keys and legacy targeted cache stability. Actual spell inputs and Builder repair
+retargeting reconstruct through portable forward/reverse seeks with version-123
+physical equivalence. Browser cases cover phone/desktop source meshes and Web Audio,
+cold history, reduced motion, older asset requests and natural paused recovery after
+a held/failed pack.

@@ -4404,7 +4404,10 @@ export class VillageScene extends Phaser.Scene {
   private visibleScratch: Building[] = [];
   private villageBodyScratch: Building[] = [];
   /** Buildings, defenses, traps, projectiles, selection and effects: everything but units. */
-  private spellFallbacks = new Map<Phaser.GameObjects.Ellipse, string>();
+  private spellFallbacks = new Map<
+    Phaser.GameObjects.Ellipse | Phaser.GameObjects.Graphics,
+    string
+  >();
   private spellArtReady(name: string | undefined) {
     const battle = this.model.battle,
       reduced = this.model.reducedMotion;
@@ -4417,7 +4420,10 @@ export class VillageScene extends Phaser.Scene {
           : name !== undefined &&
             (this.fieldSpellPresentations.get(name)?.hasArt(battle, reduced) ?? false);
   }
-  private trackSpellFallback(ring: Phaser.GameObjects.Ellipse, name: string | undefined) {
+  private trackSpellFallback(
+    ring: Phaser.GameObjects.Ellipse | Phaser.GameObjects.Graphics,
+    name: string | undefined,
+  ) {
     if (
       (name === 'Overgrowth' && this.model.battle?.nativeOvergrowthCastPresentation) ||
       (name === 'Freeze' && this.model.battle?.nativeFreezeCastPresentation) ||
@@ -5878,6 +5884,7 @@ export class VillageScene extends Phaser.Scene {
       if (fx.spell === 'lightning') {
         const bolt = this.add.graphics().setPosition(p.x, p.y).setDepth(7300);
         bolt.setData('spell', 'lightning');
+        this.trackSpellFallback(bolt, nativeName);
         const paths = [
           [
             [-18, -310],
@@ -5918,7 +5925,10 @@ export class VillageScene extends Phaser.Scene {
           targets: bolt,
           alpha: 0,
           duration: 260,
-          onComplete: () => bolt.destroy(),
+          onComplete: () => {
+            this.spellFallbacks.delete(bolt);
+            bolt.destroy();
+          },
         });
       }
       if (!ring.getData('nativeSpellFallback')) this.sparks(p.x, p.y - 20, color, 16);

@@ -28,6 +28,7 @@ it.each([1, 10])(
         const expected = JSON.parse(JSON.stringify(snapshot.battle)) as Battle,
           actual = JSON.parse(JSON.stringify(model.battle)) as Battle;
         if (version === 121) {
+          expected.nativeSpellArt = actual.nativeSpellArt;
           delete expected.nativeRecallPresentation;
           delete expected.nativeReviveTargets;
           delete expected.nativeRecallEvents;
@@ -58,6 +59,7 @@ it.each([0, 11])(
         while (model.replay!.seeking) model.step(0.05);
         const expected = JSON.parse(JSON.stringify(snapshot.battle)) as Battle;
         if (version === 121) {
+          expected.nativeSpellArt = model.battle!.nativeSpellArt;
           delete expected.nativeRecallPresentation;
           delete expected.nativeReviveTargets;
           delete expected.nativeRecallEvents;

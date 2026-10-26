@@ -42,20 +42,23 @@ def main():
     existing = json.loads((ROOT / 'reference/full-client/effect-art.json').read_text())
     effects, packs, spells, external = {}, {}, {}, {}
     for spell, key in [('Rage', 'rage'), ('Haste', 'haste'), ('Healing', 'heal'), ('Poison', 'poison'),
-                       ('Clone', 'clone'), ('Invisibility', 'invisibility'), ('Recall', 'recall')]:
+                       ('Clone', 'clone'), ('Invisibility', 'invisibility'), ('Recall', 'recall'),
+                       ('Lightning', 'lightning')]:
         profiles, current, names = [], {}, set()
         for level, row in enumerate(lib.table('logic/spells.csv')[spell], 1):
             current.update(row)
-            profile = {k: current[k] for k in ['PreDeployEffect', 'DeployEffect', 'DeployEffect2'] if current.get(k)}
+            profile = {k: current[k] for k in ['PreDeployEffect', 'DeployEffect', 'DeployEffect2', 'ChargingEffect'] if current.get(k)}
             profile.update(level=level, deploySeconds=int(current['DeployTimeMS']) / 1000,
                            pulseSeconds=sum(int(current[k]) for k in ['DeployTimeMS', 'ChargingTimeMS', 'HitTimeMS']) / 1000)
+            if current.get('ChargingEffect'):
+                profile['chargingTargeted'] = any(row.get('Targeted') == 'TRUE' for row in lib.effects[current['ChargingEffect']])
             if current.get('HitEffect'):
                 profile['HitEffect'] = current['HitEffect']
                 radius = int(current.get('RandomRadius', '0'))
                 profile['hitRadiusTiles'] = radius // 100 if radius % 100 == 0 else radius / 100
                 profile['graphicsOnlyRadius'] = current.get('RandomRadiusAffectsOnlyGfx') == 'TRUE'
             profiles.append(profile)
-            names.update(profile[k] for k in ['PreDeployEffect', 'DeployEffect', 'DeployEffect2', 'HitEffect'] if profile.get(k))
+            names.update(profile[k] for k in ['PreDeployEffect', 'DeployEffect', 'DeployEffect2', 'ChargingEffect', 'HitEffect'] if profile.get(k))
         spells[spell] = dict(key=key, levels=profiles)
         collector = Collector(lib)
         for name in sorted(names):
