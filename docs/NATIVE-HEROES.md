@@ -1506,3 +1506,42 @@ Actual level-1 and level-5 portable recordings include bottle, landing, live-pul
 steady roots, expiry and field retirement through forward/reverse seeks. Phone/desktop
 Chromium checks verify the original meshes, actual field Web Audio after a direct seek,
 reduced motion, historical behavior and loading/failure/reconnect handoff.
+
+## Version 115 original Freeze Spell casts
+
+Freeze now uses the original falling bottle, frost stars, crystals, dot flakes and blue
+glow for all eight levels. `scripts/import-freeze-spell-art.py --check` reproduces the
+17 effect records, their emitters and original building-scene exports from client
+18.400.21, verifying source pins, graph bytes and decoded texture pixels. A single lazy
+cast pack adds 376,406 bytes. Source rows, meshes and textures remain unchanged; the
+shared native particle projection, fade and timeline adapters apply.
+
+The source bottle lasts 800 ms; both deployment effects begin at that deadline.
+Level-specific glow lasts 2.5–6 seconds and the accompanying particles fade according
+to their source rows. Combat continues to apply the snapshot Freeze after deployment,
+charging and hit delays total 1.5 seconds. Existing building and defender frozen cues,
+immunities, durations and targeting remain unchanged. `FreezeOuterTimeMS` remains
+uninterpreted; art is not evidence for assigning its undocumented secondary duration.
+
+`nativeFreezeCasts` retains each live cast object through resolution, then through its
+physical freeze duration plus the ten-second sound horizon. This also captures casts
+without eligible targets. Original `magic_bottle_fall_05.ogg` and `freeze_spell_01.ogg`
+samples reconstruct after a direct seek beyond the live pulse, retaining source keys,
+volume and pitch. Captured casts bypass the scene's live cast log to avoid duplicates.
+Retained casts request their samples even when there are no deployed actors, live spells
+or remaining Freeze spells. No sounds or effects are added to the catalog: 340 files
+and 357 effects remain.
+
+The original art replaces generic spell rings and auras once loaded. Pending and failed
+downloads keep the existing fallback; reconnecting retries the pack and retires the
+pending fallback ring at the current battle time. Reduced motion omits moving cast
+particles while keeping existing frozen status cues. Version 114 and earlier retain
+their former live-only Freeze presentation. A shared pure source-cast sampler also
+preserves Overgrowth's version-114 timing, keys and original art.
+
+Pure tests cover all levels, source pins and complete pack size, tolerant landing
+deadlines, particle retirement, read-only deterministic rendering and unchanged physical
+state against version 114. Actual level-1 and level-8 portable recordings reconstruct
+exactly through forward/reverse bottle, landing, freeze and expiry checkpoints. Chromium
+phone/desktop checks cover cold post-pulse sample loading, original meshes and Web Audio,
+reduced motion, historical replay fallback and held/failed/reconnected art downloads.

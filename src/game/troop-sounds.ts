@@ -224,7 +224,11 @@ export class BattleSoundLog {
   private noteCasts(battle: Battle) {
     const live = new Set<number>();
     for (const cast of battle.nativeSpells ?? []) {
-      if (battle.nativeOvergrowthCastPresentation && cast.name === 'Overgrowth') continue;
+      if (
+        (battle.nativeOvergrowthCastPresentation && cast.name === 'Overgrowth') ||
+        (battle.nativeFreezeCastPresentation && cast.name === 'Freeze')
+      )
+        continue;
       live.add(cast.id);
       const known = this.casts.get(cast.id);
       if (known) known.count = cast.hits;
@@ -384,7 +388,7 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
     const cue = spellCue('Overgrowth', 1, event, `${root.key}:stop`, root.until);
     if (cue) cues.push(cue);
   }
-  for (const cast of battle.nativeOvergrowthCasts ?? [])
+  for (const cast of [...(battle.nativeOvergrowthCasts ?? []), ...(battle.nativeFreezeCasts ?? [])])
     castCues(
       cues,
       elapsed,

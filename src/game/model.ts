@@ -913,6 +913,9 @@ export interface Battle {
   /** Version 114: original Overgrowth bottle/field and audio survive the live pulse record. */
   nativeOvergrowthCastPresentation?: true;
   nativeOvergrowthCasts?: NativeSpellCast[];
+  /** Version 115: original Freeze cast art and audio survive the one-pulse live record. */
+  nativeFreezeCastPresentation?: true;
+  nativeFreezeCasts?: NativeSpellCast[];
   nativeOvergrowthRoots?: OvergrowthRoot[];
   nativeArcherShots?: ArcherPiercingShot[];
   nativeSuperWizardBranches?: SuperWizardBranch[];

@@ -123,6 +123,8 @@ export function castNativeSpell(
   (battle.nativeSpells ??= []).push(cast);
   if (battle.nativeOvergrowthCastPresentation && name === 'Overgrowth')
     (battle.nativeOvergrowthCasts ??= []).push(cast);
+  if (battle.nativeFreezeCastPresentation && name === 'Freeze')
+    (battle.nativeFreezeCasts ??= []).push(cast);
   return cast;
 }
 
@@ -182,6 +184,12 @@ export function stepNativeSpells(ctx: NativeSpellContext) {
   const battle = ctx.battle;
   retireOvergrowthRoots(battle);
   retireOvergrowthCasts(battle);
+  if (battle.nativeFreezeCastPresentation && battle.nativeFreezeCasts)
+    battle.nativeFreezeCasts = battle.nativeFreezeCasts.filter(
+      (cast) =>
+        cast.firstHit + seconds(spellRow('Freeze', cast.level), 'FreezeTimeMS') + 10 >=
+        battle.elapsed - 1e-9,
+    );
   for (const cast of battle.nativeSpells ?? []) {
     if (cast.ended) continue;
     while (cast.hits < cast.total) {

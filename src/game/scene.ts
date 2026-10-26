@@ -1,3 +1,4 @@
+import { FreezeSpellPresentation } from './freeze-spell-scene';
 import { OvergrowthPresentation } from './overgrowth-scene';
 import { SUPER_ARCHER_EFFECTS } from './super-archer-effects';
 import { SUPER_WIZARD_EFFECTS } from './super-wizard-effects';
@@ -677,6 +678,7 @@ export class VillageScene extends Phaser.Scene {
   private decorationNativePresentation!: DecorationNativePresentation;
   private nativeEffectPacks!: NativeArtPacks<NativeArtPack>;
   private overgrowthPresentation!: OvergrowthPresentation;
+  private freezeSpellPresentation!: FreezeSpellPresentation;
   private nativeProjectiles!: NativeProjectilePresentation;
   private nativeDefenses!: NativeDefensePresentation;
   private darkDrillPresentation!: DarkDrillPresentation;
@@ -950,11 +952,13 @@ export class VillageScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
       this.decorationNativePresentation.destroy(),
     );
+    this.freezeSpellPresentation = new FreezeSpellPresentation(this, this.nativeEffectPacks);
     this.overgrowthPresentation = new OvergrowthPresentation(this, this.nativeEffectPacks);
     this.nativeProjectiles = new NativeProjectilePresentation(this, this.nativeEffectPacks);
     this.nativeDefenses = new NativeDefensePresentation(this, this.nativeEffectPacks);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.overgrowthPresentation.destroy();
+      this.freezeSpellPresentation.destroy();
       this.nativeProjectiles.destroy();
       this.nativeDefenses.destroy();
       this.nativeEffectPacks.destroy();
@@ -2674,6 +2678,7 @@ export class VillageScene extends Phaser.Scene {
     )
       this.nativeProjectiles?.prefetchEffects(SUPER_ARCHER_EFFECTS);
     this.overgrowthPresentation?.prefetch(this.model.battle);
+    this.freezeSpellPresentation?.prefetch(this.model.battle);
     const setups = this.model.reducedMotion
       ? []
       : [...this.model.heroSetups(), ...(this.model.battle?.nativeHeroes ?? [])];
@@ -2763,6 +2768,7 @@ export class VillageScene extends Phaser.Scene {
       }
       this.nativeProjectiles.clear();
       this.overgrowthPresentation.clear();
+      this.freezeSpellPresentation.clear();
       this.nativeDefenses.clear();
       this.villageArcherTowers.clear();
       this.archerTowerProjectiles.clear();
@@ -4202,6 +4208,7 @@ export class VillageScene extends Phaser.Scene {
   private troopSoundCasts = -1;
   private troopSoundRoots = -1;
   private troopSoundOvergrowthCasts = -1;
+  private troopSoundFreezeCasts = -1;
   /**
    * Fetches the sounds of the army and its spells, of every unit kind on the field and of every
    * spell cast, once each.
@@ -4209,18 +4216,21 @@ export class VillageScene extends Phaser.Scene {
   private needTroopSounds(battle: Battle) {
     const casts = battle.nativeSpells?.length ?? 0,
       roots = battle.nativeOvergrowthRoots?.length ?? 0,
-      overgrowthCasts = battle.nativeOvergrowthCasts?.length ?? 0;
+      overgrowthCasts = battle.nativeOvergrowthCasts?.length ?? 0,
+      freezeCasts = battle.nativeFreezeCasts?.length ?? 0;
     if (
       battle === this.troopSoundBattle &&
       battle.units.length === this.troopSoundUnits &&
       casts === this.troopSoundCasts &&
       roots === this.troopSoundRoots &&
-      overgrowthCasts === this.troopSoundOvergrowthCasts
+      overgrowthCasts === this.troopSoundOvergrowthCasts &&
+      freezeCasts === this.troopSoundFreezeCasts
     )
       return;
     const kinds = new Set<string>(battle.units.map((u) => u.kind));
     const spells = new Set<string>(battle.nativeSpells?.map((cast) => cast.name));
     if (roots || overgrowthCasts) spells.add('Overgrowth');
+    if (freezeCasts) spells.add('Freeze');
     if (battle !== this.troopSoundBattle) {
       for (const hero of battle.nativeHeroes ?? []) {
         kinds.add(heroUnitKind(hero.kind));
@@ -4242,6 +4252,7 @@ export class VillageScene extends Phaser.Scene {
     this.troopSoundCasts = casts;
     this.troopSoundRoots = roots;
     this.troopSoundOvergrowthCasts = overgrowthCasts;
+    this.troopSoundFreezeCasts = freezeCasts;
     this.troopSoundLoader.need(kinds, spells);
   }
   /** Whether a spell's falling bottle is decoded, so it replaces the generated tones. */
@@ -4338,7 +4349,26 @@ export class VillageScene extends Phaser.Scene {
   private visibleScratch: Building[] = [];
   private villageBodyScratch: Building[] = [];
   /** Buildings, defenses, traps, projectiles, selection and effects: everything but units. */
-  private overgrowthFallbacks = new Set<Phaser.GameObjects.Ellipse>();
+  private spellFallbacks = new Map<Phaser.GameObjects.Ellipse, string>();
+  private spellArtReady(name: string | undefined) {
+    const battle = this.model.battle,
+      reduced = this.model.reducedMotion;
+    return name === 'Overgrowth'
+      ? this.overgrowthPresentation.hasCastArt(battle, reduced)
+      : name === 'Freeze'
+        ? this.freezeSpellPresentation.hasArt(battle, reduced)
+        : false;
+  }
+  private trackSpellFallback(ring: Phaser.GameObjects.Ellipse, name: string | undefined) {
+    if (
+      (name === 'Overgrowth' && this.model.battle?.nativeOvergrowthCastPresentation) ||
+      (name === 'Freeze' && this.model.battle?.nativeFreezeCastPresentation)
+    ) {
+      ring.setData('nativeSpellFallback', name);
+      if (name === 'Overgrowth') ring.setData('overgrowthFallback', true);
+      this.spellFallbacks.set(ring, name);
+    }
+  }
   private drawWorld() {
     const battle = this.model.battle;
     const reduced = this.model.reducedMotion;
@@ -4355,9 +4385,12 @@ export class VillageScene extends Phaser.Scene {
       this.villageNativePresentation.preview();
     this.drawProjectiles();
     this.overgrowthPresentation.render(battle ?? null, reduced, iso);
-    if (!battle || this.overgrowthPresentation.hasCastArt(battle, reduced)) {
-      for (const ring of this.overgrowthFallbacks) ring.destroy();
-      this.overgrowthFallbacks.clear();
+    this.freezeSpellPresentation.render(battle ?? null, reduced, iso);
+    for (const [ring, name] of this.spellFallbacks) {
+      if (!battle || this.spellArtReady(name)) {
+        ring.destroy();
+        this.spellFallbacks.delete(ring);
+      }
     }
     // One visible-building pass per frame; every presentation below filters by kind.
     const visible = this.visibleScratch;
@@ -4624,8 +4657,7 @@ export class VillageScene extends Phaser.Scene {
       const reduced = this.model.reducedMotion;
       const p = this.auraPoint;
       for (const cast of active.nativeSpells ?? []) {
-        if (cast.name === 'Overgrowth' && this.overgrowthPresentation.hasCastArt(active, reduced))
-          continue;
+        if (this.spellArtReady(cast.name)) continue;
         if (cast.firstHit - 0.9 > active.elapsed) continue;
         const row = nativeRow('spells', cast.name, cast.level);
         const radius = nativeTiles(row, 'Radius') || nativeTiles(row, 'TargetingRadius');
@@ -5728,11 +5760,7 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     if (fx.type === 'spell-native') {
-      if (
-        fx.text === 'Overgrowth' &&
-        this.overgrowthPresentation.hasCastArt(this.model.battle, this.model.reducedMotion)
-      )
-        return;
+      if (this.spellArtReady(fx.text)) return;
       if (this.model.reducedMotion) return;
       const color = NATIVE_SPELL_COLOR[fx.text ?? ''] ?? 0xfff0c2;
       const radius = Math.max(0.6, fx.radius ?? 1) * 64;
@@ -5740,10 +5768,7 @@ export class VillageScene extends Phaser.Scene {
         .ellipse(p.x, p.y, radius * 0.5, radius * 0.25)
         .setStrokeStyle(3, color, 0.9)
         .setDepth(7200);
-      if (fx.text === 'Overgrowth' && this.model.battle?.nativeOvergrowthCastPresentation) {
-        ring.setData('overgrowthFallback', true);
-        this.overgrowthFallbacks.add(ring);
-      }
+      this.trackSpellFallback(ring, fx.text);
       this.animateEffect({
         targets: ring,
         scaleX: 4,
@@ -5751,17 +5776,15 @@ export class VillageScene extends Phaser.Scene {
         alpha: 0,
         duration: 420,
         onComplete: () => {
-          this.overgrowthFallbacks.delete(ring);
+          this.spellFallbacks.delete(ring);
           ring.destroy();
         },
       });
       return;
     }
     if (fx.type === 'spell') {
-      if (
-        fx.spell === 'overgrowth' &&
-        this.overgrowthPresentation.hasCastArt(this.model.battle, this.model.reducedMotion)
-      ) {
+      const nativeName = fx.spell ? SPELL_SOURCE[fx.spell] : undefined;
+      if (this.spellArtReady(nativeName)) {
         if (!this.fxSounded) this.audio.play('collect');
         return;
       }
@@ -5771,10 +5794,7 @@ export class VillageScene extends Phaser.Scene {
         .ellipse(p.x, p.y, radius * 0.4, radius * 0.2)
         .setStrokeStyle(4, color, 0.95)
         .setDepth(7200);
-      if (fx.spell === 'overgrowth' && this.model.battle?.nativeOvergrowthCastPresentation) {
-        ring.setData('overgrowthFallback', true);
-        this.overgrowthFallbacks.add(ring);
-      }
+      this.trackSpellFallback(ring, nativeName);
       this.animateEffect({
         targets: ring,
         scaleX: 5,
@@ -5782,7 +5802,7 @@ export class VillageScene extends Phaser.Scene {
         alpha: 0,
         duration: 520,
         onComplete: () => {
-          this.overgrowthFallbacks.delete(ring);
+          this.spellFallbacks.delete(ring);
           ring.destroy();
         },
       });
@@ -5832,8 +5852,7 @@ export class VillageScene extends Phaser.Scene {
           onComplete: () => bolt.destroy(),
         });
       }
-      if (fx.spell !== 'overgrowth' || !this.model.battle?.nativeOvergrowthCastPresentation)
-        this.sparks(p.x, p.y - 20, color, 16);
+      if (!ring.getData('nativeSpellFallback')) this.sparks(p.x, p.y - 20, color, 16);
       if (!this.fxSounded) this.audio.play(fx.spell === 'lightning' ? 'destroy' : 'collect');
       if (fx.spell === 'lightning' && !this.model.reducedMotion) this.shakeCamera(140, 0.0022);
       return;

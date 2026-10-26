@@ -1,3 +1,4 @@
+import freezeSpellArt from '../../reference/freeze-spell/effects.json' with { type: 'json' };
 import overgrowthArt from '../../reference/overgrowth/effects.json' with { type: 'json' };
 import superArcherArt from '../../reference/super-archer/effects.json' with { type: 'json' };
 import superWizardArt from '../../reference/super-wizard/effects.json' with { type: 'json' };
@@ -31,6 +32,7 @@ const catalogs = [
   superWizardArt,
   superArcherArt,
   overgrowthArt,
+  freezeSpellArt,
 ] as unknown as EffectIndex[];
 /** Pack of an effects.csv record, or undefined for sound-only and unreferenced records. */
 export function nativeEffectPack(effect: string | undefined) {

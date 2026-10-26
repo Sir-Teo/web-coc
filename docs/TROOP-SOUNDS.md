@@ -157,3 +157,10 @@ the pulse, using the same keys as live playback. The live event log skips these 
 casts to avoid duplicates. Retained casts request their samples even when no buildings
 were rooted. No samples or sound effects are added; the catalog remains at 340 files and
 357 effects. See [cast presentation](NATIVE-HEROES.md#version-114-original-overgrowth-cast-and-field).
+
+Version 115 retains Freeze casts after their live pulse disappears. Original bottle and
+landing cues reconstruct on a fresh seek using captured cast keys, including cold sample
+loading with no live spells or deployed actors. The live cast log skips captured Freeze
+casts, preventing duplicates. Original volume and pitch remain unchanged; the catalog
+still contains 340 files and 357 effects. See
+[Freeze cast presentation](NATIVE-HEROES.md#version-115-original-freeze-spell-casts).
