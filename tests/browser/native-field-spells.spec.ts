@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { nativeFieldSpellRecording } from '../fixtures/native-field-spells';
+import { nativeReviveCastRecording } from '../fixtures/native-revive-cast';
 async function boot(
   page: Page,
   r: ReturnType<typeof nativeFieldSpellRecording>,
@@ -56,7 +57,8 @@ async function seek(page: Page, at: number) {
     model.changed();
     scene.sync();
     const { iso } = await import('/src/game/scene.ts'),
-      p = iso(11.5, 11.5);
+      p = iso(window.__field.anchor.x, window.__field.anchor.y);
+    if (window.__field.name === 'Revive') scene.cameras.main.useBounds = false;
     scene.cameras.main.setZoom(window.innerWidth < 500 ? 0.9 : 1.35).centerOn(p.x, p.y - 125);
     const before = JSON.stringify(model.battle);
     scene.drawOverlay(0);
@@ -163,6 +165,7 @@ for (const { name, level, width } of [
       'totem',
       'angry',
       'iceblock',
+      'revive',
     ])
       if (key !== r.key)
         expect(requests).not.toContain(`/assets/field-spells-native/${key}/graph.json`);
@@ -873,4 +876,204 @@ test('version-127 Ice Block playback keeps its previous fields and never request
     })),
   ).toEqual({ ready: false, views: 0, cast: false });
   expect(requests).not.toContain('/assets/field-spells-native/iceblock/graph.json');
+});
+
+for (const { level, width } of [
+  { level: 1, width: 390 },
+  { level: 5, width: 1440 },
+])
+  test(`original Revive level ${level} uses the actual restored Hero and success audio at ${width}px`, async ({
+    page,
+  }) => {
+    test.setTimeout(120000);
+    await page.setViewportSize({ width, height: 960 });
+    const r = nativeReviveCastRecording(level),
+      errors: string[] = [],
+      requests: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    page.on('console', (e) => {
+      if (e.type() === 'error') errors.push(e.text());
+    });
+    page.on('request', (request) => requests.push(new URL(request.url()).pathname));
+    await boot(page, r, true);
+    await ready(page);
+    expect(requests).toContain('/assets/field-spells-native/revive/graph.json');
+    await open(page);
+    for (const [at, emitters, stage] of [
+      [r.bottle, ['e_spell_revive_bottledrop'], 'bottle'],
+      [r.beforeHit, [], 'waiting'],
+      [r.landing, ['e_spell_revive_wings', 'e_spell_revive_ground_symbol'], 'restored'],
+      [r.steady, ['e_spell_revive_wings'], 'tail'],
+    ] as const) {
+      const result = await seek(page, at);
+      expect(result).toMatchObject({ unchanged: true, gl: 0 });
+      expect(result.battle).toBe(JSON.stringify(r.snapshots.find((s) => s.at === at)!.battle));
+      await visible(page, [...emitters]);
+      if (stage === 'waiting') {
+        expect(
+          await page.evaluate(() =>
+            window.__game.scene.children.list.some(
+              (o) => o.visible && o.getData?.('nativeEffect') === 'e_spell_revive_wings',
+            ),
+          ),
+        ).toBe(false);
+        expect(
+          await page.evaluate(() =>
+            window.__game.scene.lastCues.some(
+              (c) => c.key === `spell:${window.__field.castId}:deploy2`,
+            ),
+          ),
+        ).toBe(false);
+      }
+      await page.screenshot({
+        path: `output/playtest/native-revive-${stage}-${level}-${width}.png`,
+      });
+    }
+    await seek(page, r.pulsing);
+    const played = await page.evaluate(async () => {
+      const { model, scene, audio } = window.__game,
+        { iso } = await import('/src/game/scene.ts'),
+        { capturedSpellEffectEvents } = await import('/src/game/native-spell-effects.ts'),
+        source = await import('/reference/field-spells/effects.json'),
+        r = window.__field,
+        before = JSON.stringify(model.battle),
+        key = `spell:${r.castId}:deploy2`;
+      const events = capturedSpellEffectEvents(
+        model.battle,
+        'Revive',
+        source.default.spells.Revive.levels,
+        iso,
+        false,
+        (effect) => scene.fieldSpellPresentations.get('Revive').layer.duration(effect, Infinity),
+      );
+      scene.santaPresentation.render(model.battle, false, true, 1, iso, scene.lastCues);
+      const cue = scene.lastCues.find((c) => c.key === key),
+        node = audio.samples.active.get(key);
+      if (!cue || !node) throw Error('Revive activation sample missing');
+      const result = {
+        points: events.filter((e) => !e.key.endsWith(':preDeploy')).map((e) => e.ground),
+        target: iso(r.anchor.x, r.anchor.y),
+        caster: iso(r.caster.x, r.caster.y),
+        at: cue.at,
+        gain: node.gain.gain.value,
+        rate: node.source.playbackRate.value,
+        keys: scene.lastCues
+          .filter((c) => c.key.startsWith(`spell:${r.castId}:`))
+          .map((c) => c.key),
+        unchanged: before === JSON.stringify(model.battle),
+      };
+      scene.santaPresentation.render(model.battle, false, false, 1, iso, scene.lastCues);
+      return result;
+    });
+    expect(played.points).toEqual([played.target, played.target]);
+    expect(played.target).not.toEqual(played.caster);
+    expect(played.at).toBeCloseTo(r.resolvedAt, 9);
+    expect(played.gain).toBeCloseTo(0.12, 6);
+    expect(played.rate).toBe(1);
+    expect(played.keys).toEqual([`spell:${r.castId}:preDeploy`, `spell:${r.castId}:deploy2`]);
+    expect(played.unchanged).toBe(true);
+    const steady = await seek(page, r.steady);
+    await seek(page, r.fieldAfter);
+    expect(
+      await page.evaluate(
+        () => window.__game.scene.fieldSpellPresentations.get('Revive').layer.views.size,
+      ),
+    ).toBe(0);
+    await seek(page, r.bottle);
+    expect((await seek(page, r.steady)).battle).toBe(steady.battle);
+    await page.evaluate(() => window.__game.model.toggleReducedMotion());
+    expect((await seek(page, r.steady)).battle).toBe(steady.battle);
+    expect(
+      await page.evaluate(
+        () => window.__game.scene.fieldSpellPresentations.get('Revive').layer.views.size,
+      ),
+    ).toBe(0);
+    await page.evaluate(() => window.__game.model.toggleReducedMotion());
+    expect(errors).toEqual([]);
+  });
+
+test('Revive success art recovers on a paused replay after its optional pack fails', async ({
+  page,
+}) => {
+  test.setTimeout(120000);
+  await page.setViewportSize({ width: 390, height: 960 });
+  let release!: () => void,
+    rejecting = true,
+    requested = 0;
+  const held = new Promise<void>((resolve) => (release = resolve)),
+    r = nativeReviveCastRecording();
+  await page.route('**/assets/field-spells-native/revive/graph.json', async (route) => {
+    requested++;
+    await held;
+    if (rejecting) await route.fulfill({ status: 503, body: 'Temporary Revive field failure' });
+    else await route.continue();
+  });
+  await boot(page, r, true);
+  await expect.poll(() => requested).toBeGreaterThan(0);
+  await open(page);
+  const before = await seek(page, r.landing);
+  expect(
+    await page.evaluate(() => {
+      const { model, scene } = window.__game,
+        { anchor } = window.__field;
+      scene.effect({ type: 'spell-native', text: 'Revive', x: anchor.x, y: anchor.y, radius: 1 });
+      scene.drainEffects();
+      return {
+        ready: scene.fieldSpellPresentations.get('Revive').hasArt(model.battle, false),
+        fallback: scene.children.list.filter(
+          (o) => o.active && o.getData?.('nativeSpellFallback') === 'Revive',
+        ).length,
+      };
+    }),
+  ).toEqual({ ready: false, fallback: 1 });
+  await page.evaluate(() => {
+    window.__game.model.replay.paused = true;
+    window.__game.scene.paused = false;
+    window.__game.model.changed();
+  });
+  release();
+  await page.waitForFunction(
+    () =>
+      window.__game.scene.fieldSpellPresentations
+        .get('Revive')
+        .layer.status('hero_revive_top_layer') === 'none',
+  );
+  expect(await page.evaluate(() => JSON.stringify(window.__game.model.battle))).toBe(before.battle);
+  rejecting = false;
+  await page.evaluate(() => window.dispatchEvent(new Event('online')));
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const { scene } = window.__game;
+        return (
+          scene.children.list.some(
+            (o) => o.visible && o.getData?.('nativeEffect') === 'e_spell_revive_wings',
+          ) &&
+          !scene.children.list.some(
+            (o) => o.active && o.getData?.('nativeSpellFallback') === 'Revive',
+          )
+        );
+      }),
+    )
+    .toBe(true);
+  expect(await page.evaluate(() => JSON.stringify(window.__game.model.battle))).toBe(before.battle);
+});
+
+test('version-128 Revive remains read-only and never requests new cast art', async ({ page }) => {
+  const r = nativeReviveCastRecording(),
+    requests: string[] = [];
+  page.on('request', (request) => requests.push(new URL(request.url()).pathname));
+  await boot(page, r, false, 128);
+  await open(page, 128);
+  await seek(page, r.landing);
+  expect(
+    await page.evaluate(() => ({
+      ready: window.__game.scene.fieldSpellPresentations
+        .get('Revive')
+        .hasArt(window.__game.model.battle, false),
+      views: window.__game.scene.fieldSpellPresentations.get('Revive').layer.views.size,
+      cast: window.__game.model.castReviveOnHero('queen'),
+    })),
+  ).toEqual({ ready: false, views: 0, cast: false });
+  expect(requests).not.toContain('/assets/field-spells-native/revive/graph.json');
 });

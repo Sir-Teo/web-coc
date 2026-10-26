@@ -4,8 +4,13 @@ export const FIELD_SPELL_PROFILES = source.spells;
 type SpellIdentity = { name: string; level: number };
 function fieldSpellLevel(cast: SpellIdentity) {
   const levels:
-    readonly { level: number; retainSeconds?: number; deploy2DelaySeconds?: number }[] | undefined =
-    FIELD_SPELL_PROFILES[cast.name as keyof typeof FIELD_SPELL_PROFILES]?.levels;
+    | readonly {
+        level: number;
+        retainSeconds?: number;
+        deploy2DelaySeconds?: number;
+        resolvedRevive?: boolean;
+      }[]
+    | undefined = FIELD_SPELL_PROFILES[cast.name as keyof typeof FIELD_SPELL_PROFILES]?.levels;
   return levels?.find((row) => row.level === cast.level);
 }
 /** Source-backed visual tails may survive long after the physical cast ends. */
@@ -21,4 +26,9 @@ export function fieldSpellDeploy2Delay(cast: SpellIdentity) {
 export function fieldSpellPresentationName(name: string | undefined) {
   const children: Readonly<Record<string, string>> = source.silentChildren;
   return name === undefined ? undefined : (children[name] ?? name);
+}
+
+/** Revive success feedback is reconstructed from the actual restored body. */
+export function fieldSpellUsesResolvedRevive(cast: SpellIdentity) {
+  return fieldSpellLevel(cast)?.resolvedRevive === true;
 }

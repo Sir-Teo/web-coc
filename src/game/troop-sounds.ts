@@ -1,4 +1,4 @@
-import { fieldSpellDeploy2Delay } from './field-spell-effects';
+import { fieldSpellDeploy2Delay, fieldSpellUsesResolvedRevive } from './field-spell-effects';
 import source from '../../reference/troop-sounds/sounds.json' with { type: 'json' };
 import type { Battle, Unit } from './model';
 import { CUE_HORIZON, cueAudible, type SampleCue } from './sample-audio';
@@ -114,22 +114,27 @@ const spellCue = (name: string, level: number, event: SpellSoundEvent, key: stri
 function castCues(
   cues: SampleCue[],
   elapsed: number,
-  cast: { key: string; name: string; level: number; at: number },
+  cast: { key: string; name: string; level: number; at: number; deployedAt?: number | null },
   hits?: { first: number; interval: number; count: number },
   precise = false,
 ) {
   const { key, name, level, at } = cast;
   if (!SPELLS[name]) return;
-  const landed = at + seconds(spellRow(name, level), 'DeployTimeMS');
+  const landed =
+    cast.deployedAt === null
+      ? undefined
+      : (cast.deployedAt ?? at + seconds(spellRow(name, level), 'DeployTimeMS'));
   const push = (event: SpellSoundEvent, when: number, suffix = '') => {
     if (when > elapsed + (precise ? 1e-9 : 0) || !cueAudible(when, elapsed)) return;
     const cue = spellCue(name, level, event, `${key}:${event}${suffix}`, when);
     if (cue) cues.push(cue);
   };
   push('preDeploy', at);
-  push('deploy', landed);
-  push('deploy2', landed + (precise ? fieldSpellDeploy2Delay(cast) : 0));
-  push('charging', landed);
+  if (landed !== undefined) {
+    push('deploy', landed);
+    push('deploy2', landed + (precise ? fieldSpellDeploy2Delay(cast) : 0));
+    push('charging', landed);
+  }
   if (!hits?.count) return;
   // Only pulses that can still be heard: a long Healing Spell pulses dozens of times.
   const step = Math.max(hits.interval, 1e-3);
@@ -406,7 +411,15 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
     castCues(
       cues,
       elapsed,
-      { key: `spell:${cast.id}`, name: cast.name, level: cast.level, at: cast.castAt },
+      {
+        key: `spell:${cast.id}`,
+        name: cast.name,
+        level: cast.level,
+        at: cast.castAt,
+        ...(fieldSpellUsesResolvedRevive(cast)
+          ? { deployedAt: cast.revivePresentation?.at ?? null }
+          : {}),
+      },
       { first: cast.firstHit, interval: cast.interval, count: cast.hits },
       true,
     );

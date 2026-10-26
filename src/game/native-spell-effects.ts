@@ -4,6 +4,7 @@ import type { NativeEffectEvent } from './native-effects';
 export interface SpellEffectProfile {
   level: number;
   deploySeconds: number;
+  resolvedRevive?: boolean;
   PreDeployEffect: string;
   DeployEffect: string;
   DeployEffect2?: string;
@@ -29,19 +30,29 @@ export function spellCastEffectEvents(
   for (const cast of casts) {
     const row = profiles.find((r) => r.level === cast.level);
     if (!row) continue;
-    const ground = iso(cast.x, cast.y);
+    const castGround = iso(cast.x, cast.y),
+      revival = row.resolvedRevive ? cast.revivePresentation : undefined,
+      deployAt = row.resolvedRevive ? revival?.at : cast.castAt + row.deploySeconds,
+      deployGround = revival ? iso(revival.x, revival.y) : castGround;
     for (const [phase, effect, at] of [
       ['preDeploy', row.PreDeployEffect, cast.castAt],
-      ['deploy', row.DeployEffect, cast.castAt + row.deploySeconds],
+      ['deploy', row.DeployEffect, deployAt],
       [
         'deploy2',
         row.DeployEffect2,
-        cast.castAt + row.deploySeconds + (row.deploy2DelaySeconds ?? 0),
+        deployAt === undefined ? undefined : deployAt + (row.deploy2DelaySeconds ?? 0),
       ],
       ['charging', row.ChargingEffect, cast.castAt + row.deploySeconds],
       ['end', cast.hits >= cast.total ? row.EndEffect : undefined, spellEndTime(cast)],
     ] as const) {
-      if (!effect || elapsed + 1e-9 < at || elapsed - at > (duration(effect) ?? 30)) continue;
+      if (
+        !effect ||
+        at === undefined ||
+        elapsed + 1e-9 < at ||
+        elapsed - at > (duration(effect) ?? 30)
+      )
+        continue;
+      const ground = phase === 'deploy' || phase === 'deploy2' ? deployGround : castGround;
       events.push({
         key: `spell:${cast.id}:${phase}`,
         effect,

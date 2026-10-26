@@ -2085,3 +2085,53 @@ area verifies stationary protection, reduced incoming damage and movement after 
 Portable forward/reverse seeks preserve version-127 physical state. Browser cases cover
 phone/desktop meshes, original Web Audio, cold post-pulse fields, the late melt, reduced
 motion, legacy requests and natural paused recovery from a held/failed pack.
+
+## Version 129 original Revive success presentation
+
+All five Revive levels now use the original potion bottle, flash, rays, aura, swirls,
+sparkles, wings, ground symbol and startup rings. The 138,941-byte lazy pack preserves
+the three declared source effect records, emitter variants, `sc/buildings.sc` graphs
+and decoded pixels. These detached effects keep their original Top/Bottom layers,
+offsets, scale, finite lifetimes and nested timelines. Existing spell packs and the
+separate fallen-Hero indicator pack remain unchanged.
+
+Revive differs from an ordinary area field: its successful target may be up to eight
+tiles from the selected tile. The source bottle has a 1500-ms particle lifetime and
+remains at the caster-selected position. The presentation adapter binds the two success
+phases to the actual restoration result, at the model's unchanged 1.5-second pulse.
+Their wings and ground effects stay at that captured point as the revived Hero moves,
+matching the source's detached, non-parent-attached records.
+
+A successful `reviveHero` records `revivePresentation` on the captured cast: Hero body
+ID, restoration position and scheduled pulse timestamp. Recording this metadata does
+not change restored health, target selection, ability state or movement. Direct Hero
+commands keep their version-123 identity; ordinary tile commands keep nearest-target
+and ID tie ordering. A cast without an eligible target records no successful result.
+An earlier restoration also prevents a later queued cast from generating duplicate
+success effects.
+
+Source profiles mark this result-bound presentation. Before resolution, sampling plays
+only the bottle. After success, the original top and ground phases use the captured
+Hero position and time. The activation sound shares that timestamp; its existing key,
+100% volume and 1.0 pitch remain stable. Wasted casts retain their bottle sound and
+omit activation audio. Legacy version-128 reconstruction keeps its former deployment
+clock. No sound files or catalog entries change.
+
+The longest conservative top tail is 2.8 seconds after restoration; the ground tail is
+2.6 seconds. Existing history retention covers the entire sequence after the primary
+cast ends. Cold replay views can warm the pack from that history after Revive inventory
+is spent. Reduced motion omits the moving source effects; failed/pending packs retain
+existing feedback until natural paused recovery completes. Rendering remains read-only
+and consumes no simulation RNG.
+
+The source also declares a separate `Hero Revive Projectile`. Its flight is an
+independent integration; this change preserves the current health-restoration timing
+and binds the declared cast/success effects without guessing a new projectile clock.
+
+Tests cover all five levels, distinct cast/target origins, original layers, static
+success positions, finite tails, exact metadata and original audio keys. Real Cannon
+knockout, Freeze and ordinary/direct Revive inputs reconstruct version-128 physical
+state through portable forward/reverse seeks. Wasted and superseded casts cannot emit
+success feedback. Browser cases cover phone/desktop source meshes, actual activation
+Web Audio, cold spent-inventory history, reduced motion, old-version requests and
+natural paused recovery after a held/failed pack.

@@ -2,7 +2,7 @@ import { GameModel, makeBuilding } from '../../src/game/model';
 import { emptyArmy, emptySpells } from '../../src/game/army';
 import { replayBattle, type ReplayData } from '../../src/game/replay';
 /** Real Cannon knockout and Freeze inputs prepare a living game's direct Revive controls. */
-export function prepareReviveTargeting(model = new GameModel()) {
+export function prepareReviveTargeting(model = new GameModel(), reviveLevel = 1, reviveCount = 2) {
   model.state.king = undefined;
   model.state.obstacles = [];
   model.state.nextId = 1000;
@@ -11,8 +11,8 @@ export function prepareReviveTargeting(model = new GameModel()) {
     makeBuilding(2, 'cannon', 10, 10, 21),
   ];
   model.state.army = { ...emptyArmy(), giant: 1 };
-  model.state.spells = { ...emptySpells(), revive: 2, freeze: 1 };
-  model.state.spellLevels = { ...model.state.spellLevels, revive: 1, freeze: 8 };
+  model.state.spells = { ...emptySpells(), revive: reviveCount, freeze: 1 };
+  model.state.spellLevels = { ...model.state.spellLevels, revive: reviveLevel, freeze: 8 };
   model.startBattle(0, true);
   const data = (model as unknown as { recording: ReplayData }).recording;
   data.initial.heroes = [{ kind: 'queen', level: 1, items: [] }];

@@ -66,6 +66,8 @@ export interface NativeSpellCast {
   ended?: boolean;
   /** Version 123: a direct Hero control retains the selected body through the cast delay. */
   reviveTargetId?: number;
+  /** Source success effects stay at the body and time that actually received Revive. */
+  revivePresentation?: { targetId: number; x: number; y: number; at: number };
 }
 export interface NativeSpellContext {
   battle: Battle;
@@ -259,7 +261,7 @@ function resolvePulse(ctx: NativeSpellContext, cast: NativeSpellCast, at: number
     if (flag(row, 'Overgrowth')) overgrow(battle, row, at, x, y, radius, cast.id);
     if (num(row, 'DuplicateHousing')) cloneUnits(ctx, cast, row, at, radius);
     if (num(row, 'RecallHousing')) recallUnits(ctx, cast, at, radius);
-    if (num(row, 'ResurrectHitpointPercentage')) reviveHero(ctx, row, x, y, cast.reviveTargetId);
+    if (num(row, 'ResurrectHitpointPercentage')) reviveHero(ctx, row, x, y, cast, at);
     const chain = text(row, 'ChainSpell');
     if (chain && cast.hits === 0)
       castNativeSpell(battle, chain, num(row, 'ChainSpellLevel', 1) || 1, cast.side, x, y, { at });
@@ -737,8 +739,10 @@ function reviveHero(
   row: NativeRow,
   x: number,
   y: number,
-  targetId?: number,
+  cast: NativeSpellCast,
+  at: number,
 ) {
+  const targetId = cast.reviveTargetId;
   const reach = tiles(row, 'TargetingRadius');
   const fallen = ctx.battle.units
     .filter(
@@ -755,6 +759,8 @@ function reviveHero(
   fallen.target = null;
   fallen.path = [];
   fallen.pathAt = 0;
+  if (ctx.battle.nativeSpellArt?.includes('Revive'))
+    cast.revivePresentation = { targetId: fallen.id, x: fallen.x, y: fallen.y, at };
   ctx.effect({ type: 'spawn', x: fallen.x, y: fallen.y });
 }
 

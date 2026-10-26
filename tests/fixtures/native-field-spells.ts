@@ -18,7 +18,8 @@ export function nativeFieldSpellRecording(
     | 'Bat Spell'
     | 'Totem Spell'
     | 'AngrySpell'
-    | 'Ice Block',
+    | 'Ice Block'
+    | 'Revive',
   level = 1,
 ) {
   const key = (
@@ -37,6 +38,7 @@ export function nativeFieldSpellRecording(
         'Totem Spell': 'totem',
         AngrySpell: 'angry',
         'Ice Block': 'iceblock',
+        Revive: 'revive',
       } as const
     )[name],
     summons = name === 'Skeleton Spell' || name === 'Bat Spell',

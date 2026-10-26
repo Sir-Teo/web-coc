@@ -7,6 +7,7 @@
     "logic/spells.csv": "385159e00327e6a1567cd91f1585b4ed0717d3f4475f0823398243482598289d",
     "sc/buildings.sc": "f73ec949fc070bc03175d6bb3af8b62d8f607094bf2b343c9846a499a35be0ed",
     "sc/buildings_39.sctx": "dd27d9612fe135c3be364840eeabe45b53a229b24192246b56a08fa0606fdb16",
+    "sc/buildings_62.sctx": "0f97f201e0fc95e31f3e1c3430c109858132b408a59db6704a0cedbc8ac3f94d",
     "sc/buildings_66.sctx": "c65a2f6e362edfd51d5fc634d5a6c30ec353bd936fa06fa8775b856aeb7baff0",
     "sc/vfx_spells.sc": "01e6556059ed1a80dda2df6366ad7dcf6305bf7c7ebccaa2128843e534c100e7",
     "sc/vfx_spells_0.sctx": "f7758db085e837a7ab23f9911c1f3d87a4998bc46057cd68de63f8005042b9e1",
@@ -88,7 +89,10 @@
     "IceBlock predeploy": "iceblock",
     "ps_spells_iceblock_Area": "iceblock",
     "ps_spells_iceblock_Despawn": "iceblock",
-    "ps_spells_iceblock_explode": "iceblock"
+    "ps_spells_iceblock_explode": "iceblock",
+    "hero_revive_bottle_effect": "revive",
+    "hero_revive_ground_layer": "revive",
+    "hero_revive_top_layer": "revive"
   },
   "packs": {
     "rage": {
@@ -160,6 +164,11 @@
       "path": "assets/field-spells-native/iceblock/graph.json",
       "sha256": "1cf70976bd15c0d9f6dcaa94f066dea25e923b7668a7194c71235d8d21ba0585",
       "bytes": 1109185
+    },
+    "revive": {
+      "path": "assets/field-spells-native/revive/graph.json",
+      "sha256": "dd02e0ccc966f48bb20a0c634d35fa87e8b17db65247ed661106f2a17346414c",
+      "bytes": 138941
     }
   },
   "spells": {
@@ -1210,6 +1219,56 @@
           "deploySeconds": 0.8,
           "pulseSeconds": 1.5,
           "deploy2DelaySeconds": 0.1
+        }
+      ]
+    },
+    "Revive": {
+      "key": "revive",
+      "levels": [
+        {
+          "PreDeployEffect": "hero_revive_bottle_effect",
+          "DeployEffect": "hero_revive_top_layer",
+          "DeployEffect2": "hero_revive_ground_layer",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "resolvedRevive": true
+        },
+        {
+          "PreDeployEffect": "hero_revive_bottle_effect",
+          "DeployEffect": "hero_revive_top_layer",
+          "DeployEffect2": "hero_revive_ground_layer",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "resolvedRevive": true
+        },
+        {
+          "PreDeployEffect": "hero_revive_bottle_effect",
+          "DeployEffect": "hero_revive_top_layer",
+          "DeployEffect2": "hero_revive_ground_layer",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "resolvedRevive": true
+        },
+        {
+          "PreDeployEffect": "hero_revive_bottle_effect",
+          "DeployEffect": "hero_revive_top_layer",
+          "DeployEffect2": "hero_revive_ground_layer",
+          "level": 4,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "resolvedRevive": true
+        },
+        {
+          "PreDeployEffect": "hero_revive_bottle_effect",
+          "DeployEffect": "hero_revive_top_layer",
+          "DeployEffect2": "hero_revive_ground_layer",
+          "level": 5,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "resolvedRevive": true
         }
       ]
     }

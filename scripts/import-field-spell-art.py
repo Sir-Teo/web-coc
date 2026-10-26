@@ -61,13 +61,17 @@ def main():
                        ('Clone', 'clone'), ('Invisibility', 'invisibility'), ('Recall', 'recall'),
                        ('Lightning', 'lightning'), ('Earthquake', 'earthquake'),
                        ('Skeleton Spell', 'skeleton'), ('Bat Spell', 'bat'),
-                       ('Totem Spell', 'totem'), ('AngrySpell', 'angry'), ('Ice Block', 'iceblock')]:
+                       ('Totem Spell', 'totem'), ('AngrySpell', 'angry'), ('Ice Block', 'iceblock'),
+                       ('Revive', 'revive')]:
         profiles, current, names = [], {}, set()
         for level, row in enumerate(lib.table('logic/spells.csv')[spell], 1):
             current.update(row)
             profile = {k: current[k] for k in ['PreDeployEffect', 'DeployEffect', 'DeployEffect2', 'ChargingEffect', 'EndEffect'] if current.get(k)}
             profile.update(level=level, deploySeconds=int(current['DeployTimeMS']) / 1000,
                            pulseSeconds=sum(int(current[k]) for k in ['DeployTimeMS', 'ChargingTimeMS', 'HitTimeMS']) / 1000)
+            if int(current.get('ResurrectHitpointPercentage') or 0):
+                require(current.get('TargetedProjectile'), 'Expected a targeted Revive source')
+                profile['resolvedRevive'] = True
             if int(current.get('DeployEffect2Delay') or 0):
                 profile['deploy2DelaySeconds'] = int(current['DeployEffect2Delay']) / 1000
             if current.get('ChargingEffect'):

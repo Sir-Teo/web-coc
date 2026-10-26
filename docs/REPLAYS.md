@@ -689,3 +689,14 @@ places the melt at 7.8 seconds. Source particle tails remain finite and independ
 the unchanged seven-second protection and defense freeze. Earlier recordings retain
 their former presentation and request no new pack. See
 [source and adapter details](NATIVE-HEROES.md#version-128-original-ice-block-platform-and-melting-sequence).
+
+## Version 129: original Revive success presentation
+
+The source-spell presentation list adds `Revive`. Its bottle stays at the cast point;
+a successful restoration captures `revivePresentation` with the actual Hero ID,
+position and scheduled pulse time. The original wings, ground symbol and activation
+sound reconstruct from that result, including when an ordinary tile cast restores a
+Hero elsewhere. Wasted or superseded casts emit no success feedback. Health restoration
+and targeting remain unchanged. Version 128 keeps its former presentation and audio
+clock and requests no new pack. See
+[source and adapter details](NATIVE-HEROES.md#version-129-original-revive-success-presentation).
