@@ -1831,3 +1831,48 @@ equivalence with version 121 survive portable forward/reverse seeks. Hero/pet re
 guard primary event counts and summon ownership. Browser cases verify phone/desktop
 meshes, original Web Audio gain/pitch, cold transition-only history, reduced motion,
 version-121 requests and natural paused recovery from a held/failed pack.
+
+## Version 123 direct Hero Revive targeting
+
+Fallen Heroes now show the original `hero_revive_indicator` while a Revive Spell remains
+available. Tapping its winged heart casts Revive on that Hero without changing the
+previous troop, spell or Hero selection. Selecting Revive also enables an eligible
+fallen Hero's deployment-bar button, labelled `Revive Queen`, `Revive King`, and so on.
+The button supports Enter, and H targets the first eligible Hero while Revive is
+selected; its displayed shortcut follows that Hero. Queued direct casts show `Reviving`
+and refuse repeat clicks without spending another spell. A Hero restored by an earlier
+cast leaves the busy state immediately, even if a later cast is still queued.
+
+The source emitter `hero_revivable` plays `sc/characters.sc:revivable_hero`: one particle
+with a 200-second life, 80% particle scale, 200% effect scale and the original Top-layer
+offset. The 52,689-byte lazy pack preserves the original graph and decoded pixels. It
+is shown only for an eligible roster body while inventory remains, and disappears on
+revival, ejection, Phoenix-pending revival, a queued direct cast, or battle completion.
+No new event history is needed: retained Hero bodies already carry their knockout
+time and position. Reduced motion freezes a visible source pose at full source opacity.
+Hit bounds come from the original graph and use at least 44 screen pixels for touch.
+Loading this optional art does not block the deployment-bar control.
+
+Direct controls record a version-123 spell action with `targetHero`. The cast resolves
+the chosen roster body and stores its ID as `reviveTargetId`, so Hero copies and two
+fallen bodies at the same coordinates cannot steal the target. If the selected body
+is no longer eligible, the cast does not switch to another Hero. Ordinary tile casts
+retain the existing nearest-target and ID tie ordering. Guide constraints, inventory
+consumption and recording use the normal cast path. Cast and health-restoration timing
+are unchanged in this control update; the separate targeted projectile remains an
+independent source audit.
+
+The replay codec requires a Revive command and a valid recorded Hero for `targetHero`,
+rejects it before version 123, and preserves it in portable files. The new
+`nativeReviveTargets` capability gates the marker and controls. Earlier recordings
+request no marker pack. New recordings show the marker during playback with all
+casting controls read-only. No audio catalog entries change.
+
+Tests cover exact selection when bodies overlap, roster identity, queued-click
+deduplication, inventory/selection preservation, ejection and Phoenix guards, ordinary
+tile ordering and strict portable action validation. Actual Cannon knockout and Freeze
+inputs verify direct Queen revival through portable forward/reverse seeks. Source
+asset tests check pins, full file sizes, read-only projection, reduced-motion opacity
+and hit bounds against every drawn vertex. Browser cases cover Enter, H and real touch,
+selection preservation, concurrent casts, older playback and natural paused recovery
+from an unavailable marker pack.

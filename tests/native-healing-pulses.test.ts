@@ -110,6 +110,7 @@ it.each([1, 12])(
         if (version === 118) {
           delete expected.nativeSpellPulsePresentation;
           delete expected.nativeRecallPresentation;
+          delete expected.nativeReviveTargets;
           delete expected.nativeRecallEvents;
           expected.nativeSpellArt = ['Jump', 'Rage', 'Haste', 'Healing', 'Poison'];
         }

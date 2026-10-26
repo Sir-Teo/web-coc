@@ -256,6 +256,7 @@ import {
   CLONE_LIFETIME,
   recallHousing,
   reviveFraction,
+  REVIVE_RADIUS,
   RAGE_HERO_MULTIPLIER,
   SPELL_SPEED_SCALE,
 } from './spell-progression';
@@ -517,6 +518,7 @@ import {
 import { activateHero, refreshHeroPassives, stepHeroAbilities } from './native-hero-abilities';
 import { initializePhoenix, stepPhoenix, hatchPhoenix, recallPhoenix } from './native-phoenix';
 import { recordRecallEvent, type RecallEvent } from './native-recall';
+import { revivableHero, pendingHeroRevive, reviveTargetUnit } from './revive-targets';
 
 /** What a Book finishes: a building's running upgrade, the research, a hero's or the pets'. */
 export type BookTarget =
@@ -924,6 +926,8 @@ export interface Battle {
   /** Version 122: primary Recall transitions retain their actual positions for source presentation. */
   nativeRecallPresentation?: true;
   nativeRecallEvents?: RecallEvent[];
+  /** Version 123: direct Revive controls retain the selected Hero in portable commands. */
+  nativeReviveTargets?: true;
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */
   nativeSpellPulsePresentation?: true;
   nativeSpellCastHistory?: NativeSpellCast[];
@@ -5790,7 +5794,39 @@ export class GameModel {
     }
     return placed;
   }
-  castSpell(x: number, y: number) {
+  canReviveHero(kind: HeroKind) {
+    const b = this.battle,
+      unit = b ? reviveTargetUnit(b, kind) : undefined;
+    return (
+      !!b?.nativeReviveTargets &&
+      !!b.nativeContentExpansion &&
+      !b.finished &&
+      !this.replay &&
+      b.spells.revive > 0 &&
+      !!unit &&
+      revivableHero(b, unit) &&
+      !pendingHeroRevive(b, unit.id)
+    );
+  }
+  /** Quick targeting shares the normal cast validation and recorder, preserving the prior selection. */
+  castReviveOnHero(kind: HeroKind) {
+    if (!this.canReviveHero(kind)) return false;
+    const unit = reviveTargetUnit(this.battle!, kind)!,
+      previous = { spell: this.activeSpell, hero: this.activeHero, kind: this.activeHeroKind },
+      guided = !!this.guideStep;
+    this.activeSpell = 'revive';
+    this.activeHero = false;
+    this.activeHeroKind = null;
+    const cast = this.castSpell(unit.x, unit.y, kind);
+    if (!guided || !cast) {
+      if (previous.spell !== 'revive') this.activeSpell = previous.spell;
+      this.activeHero = previous.hero;
+      this.activeHeroKind = previous.kind;
+    }
+    this.changed();
+    return cast;
+  }
+  castSpell(x: number, y: number, targetHero?: HeroKind) {
     if (this.replay) return false;
     const b = this.battle,
       k = this.activeSpell;
@@ -5798,6 +5834,15 @@ export class GameModel {
     const spot = this.guidePlacement({ spell: k }, x, y);
     if (!spot) return false;
     ({ x, y } = spot);
+    const reviveTarget = targetHero === undefined ? undefined : reviveTargetUnit(b, targetHero);
+    if (
+      targetHero !== undefined &&
+      (k !== 'revive' ||
+        !this.canReviveHero(targetHero) ||
+        !reviveTarget ||
+        distance2D(reviveTarget.x - x, reviveTarget.y - y) > REVIVE_RADIUS + 1e-9)
+    )
+      return false;
     if (
       !Number.isFinite(x) ||
       !Number.isFinite(y) ||
@@ -5807,7 +5852,13 @@ export class GameModel {
       y > MAP_SIZE
     )
       return false;
-    this.recordAction({ type: 'spell', kind: k, x, y });
+    this.recordAction({
+      type: 'spell',
+      kind: k,
+      x,
+      y,
+      ...(targetHero !== undefined ? { targetHero } : {}),
+    });
     const starting = !b.started;
     this.beginFight();
     recordWakeSpace(b, spellWakeSpace(SPELLS[k].space));
@@ -5816,7 +5867,15 @@ export class GameModel {
     const d = this.spellStats(k);
     this.onEffect({ type: 'spell', x, y, spell: k, radius: d.radius });
     if (b.nativeContentExpansion) {
-      castNativeSpell(b, SPELL_SOURCE[k], this.spellLevel(k), 'attack', x, y);
+      castNativeSpell(
+        b,
+        SPELL_SOURCE[k],
+        this.spellLevel(k),
+        'attack',
+        x,
+        y,
+        reviveTarget ? { reviveTargetId: reviveTarget.id } : {},
+      );
     } else if (k === 'lightning') {
       damageDefenders(b, { x, y }, d.damage, d.radius, 'both');
       lateLightningStrike(b, x, y, d.radius);
@@ -7478,7 +7537,7 @@ export class GameModel {
         runner.deploy(a.x, a.y);
       } else if (a.type === 'spell') {
         runner.activeSpell = a.kind;
-        runner.castSpell(a.x, a.y);
+        runner.castSpell(a.x, a.y, a.targetHero);
       } else if (a.type === 'hero')
         a.hero ? runner.deployNativeHero(a.hero, a.x, a.y) : runner.deployHero(a.x, a.y);
       else if (a.type === 'ability')

@@ -29,6 +29,7 @@ it.each([1, 10])(
           actual = JSON.parse(JSON.stringify(model.battle)) as Battle;
         if (version === 121) {
           delete expected.nativeRecallPresentation;
+          delete expected.nativeReviveTargets;
           delete expected.nativeRecallEvents;
         }
         expect(actual).toEqual(expected);
@@ -58,6 +59,7 @@ it.each([0, 11])(
         const expected = JSON.parse(JSON.stringify(snapshot.battle)) as Battle;
         if (version === 121) {
           delete expected.nativeRecallPresentation;
+          delete expected.nativeReviveTargets;
           delete expected.nativeRecallEvents;
         }
         expect(model.battle).toEqual(expected);

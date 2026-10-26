@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 122;
+export const REPLAY_VERSION = 123;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -150,7 +150,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 119 reconstructs original Healing pulse graphics from captured cast seeds.
  * Version 120 enables original Clone and Invisibility cast fields.
  * Version 121 retains original Recall cast effects and audio after its live pulse ends.
- * Version 122 captures primary unit Recall disappearance and redeployment presentation. */
+ * Version 122 captures primary unit Recall disappearance and redeployment presentation.
+ * Version 123 preserves the selected Hero in direct Revive commands. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -240,6 +241,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 119 ||
   version === 120 ||
   version === 121 ||
+  version === 122 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -338,7 +340,7 @@ export const MAX_REPLAY_STEPS_PER_UPDATE = 100;
 export const MAX_REPLAY_UPDATE_MS = 8;
 export type ReplayAction = { step: number } & (
   | { type: 'troop'; kind: keyof Army; x: number; y: number }
-  | { type: 'spell'; kind: keyof SpellBook; x: number; y: number }
+  | { type: 'spell'; kind: keyof SpellBook; x: number; y: number; targetHero?: HeroKind }
   | { type: 'hero'; x: number; y: number; hero?: HeroKind }
   | { type: 'ability'; hero?: HeroKind }
   | { type: 'end' }
@@ -388,6 +390,7 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 123 ? { nativeReviveTargets: true as const } : {}),
     ...(version >= 122 ? { nativeRecallPresentation: true as const } : {}),
     ...(version >= 119 ? { nativeSpellPulsePresentation: true as const } : {}),
     ...(version >= 118
@@ -890,6 +893,18 @@ export function validateReplay(value: unknown): value is ReplayData {
   let last = 0;
   for (const [i, a] of value.actions.entries()) {
     if (!object(a) || !integer(a.step, last, value.steps.length)) return false;
+    if (
+      a.targetHero !== undefined &&
+      (value.version < 123 ||
+        a.type !== 'spell' ||
+        a.kind !== 'revive' ||
+        !validHero(a.targetHero) ||
+        !(
+          s.heroes?.some((hero: HeroSetup) => hero.kind === a.targetHero) ||
+          (a.targetHero === 'king' && !!s.hero)
+        ))
+    )
+      return false;
     last = a.step;
     if (a.type === 'end') {
       if (i !== value.actions.length - 1 || a.step !== value.steps.length) return false;

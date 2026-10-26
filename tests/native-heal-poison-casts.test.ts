@@ -40,6 +40,7 @@ function comparePhysical(
       then = JSON.parse(JSON.stringify(model.battle)) as Battle;
     delete now.nativeSpellArt;
     delete now.nativeRecallPresentation;
+    delete now.nativeReviveTargets;
     delete now.nativeRecallEvents;
     delete now.nativeSpellPulsePresentation;
     delete now.nativeSpellEffectTimelines;

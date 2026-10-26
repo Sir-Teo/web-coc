@@ -1,0 +1,24 @@
+{
+  "clientVersion": "18.400.21",
+  "generator": "scripts/import-revive-target-art.py",
+  "sources": {
+    "csv/particle_emitters.csv": "8d80bbf714386c4f24e6aed8f2eef671a2eac5c3b3ad41e4d275b757ced64cef",
+    "logic/effects.csv": "5c6d5b67d6407345123b8d55872ed77ee6697b466d20d1fa21e25a723c511e9f",
+    "sc/characters.sc": "0e23bd3745176fe7db3d61e490d9da07c63a42e95462f514d6eac696314c3798",
+    "sc/characters_0.sctx": "cc984c847070c85b15fa7c360d88ed6d2534f0f26481a3507e86d53774632956"
+  },
+  "effects": {
+    "hero_revive_indicator": "target"
+  },
+  "packs": {
+    "target": {
+      "path": "assets/revive-native/target/graph.json",
+      "sha256": "1c307a4ec408f0bc7d65afc4f632d804e6733aa8ebc56ab5ce86cd01c0945ac2",
+      "bytes": 52689
+    }
+  },
+  "conventions": {
+    "lifecycle": "The source finite 200-second marker is shown only while a Hero remains eligible and Revive is available.",
+    "placement": "Source offsets and scale use the shared native isometric projection adapter."
+  }
+}

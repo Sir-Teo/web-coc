@@ -28,6 +28,7 @@ function verify(r: Pick<ReturnType<typeof petSummonRecallRecording>, 'data' | 's
         delete actual.nativeSpellArt;
         delete expected.nativeSpellArt;
         delete expected.nativeRecallPresentation;
+        delete expected.nativeReviveTargets;
         delete expected.nativeRecallEvents;
         delete actual.nativeSpellCastHistory;
         delete expected.nativeSpellCastHistory;

@@ -63,6 +63,7 @@ it.each(['Rage', 'Haste'] as const)(
         then = JSON.parse(JSON.stringify(b.model.battle));
       delete now.nativeSpellArt;
       delete now.nativeRecallPresentation;
+      delete now.nativeReviveTargets;
       delete now.nativeRecallEvents;
       delete now.nativeSpellPulsePresentation;
       delete now.nativeSpellEffectTimelines;

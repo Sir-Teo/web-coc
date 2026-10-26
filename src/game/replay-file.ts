@@ -129,7 +129,16 @@ export function makeReplayFile(replay: ReplayData): ReplayFile {
       actions: replay.actions.map((a) => {
         const base = { step: a.step, type: a.type };
         if (a.type === 'troop' || a.type === 'spell')
-          return { ...base, type: a.type, kind: a.kind, x: a.x, y: a.y } as typeof a;
+          return {
+            ...base,
+            type: a.type,
+            kind: a.kind,
+            x: a.x,
+            y: a.y,
+            ...(a.type === 'spell' && a.targetHero !== undefined
+              ? { targetHero: a.targetHero }
+              : {}),
+          } as typeof a;
         if (a.type === 'hero')
           return { ...base, type: a.type, x: a.x, y: a.y, ...(a.hero ? { hero: a.hero } : {}) };
         if (a.type === 'ability')

@@ -2,6 +2,7 @@ import { FIELD_SPELL_PROFILES } from './field-spell-effects';
 import { NativeSpellCastPresentation } from './native-spell-cast-scene';
 import { NativeRecallPresentation } from './native-recall-scene';
 import { needsRecallPresentation } from './native-recall';
+import { ReviveTargetPresentation } from './revive-target-scene';
 import { JumpSpellPresentation } from './jump-spell-scene';
 import { FreezeSpellPresentation } from './freeze-spell-scene';
 import { OvergrowthPresentation } from './overgrowth-scene';
@@ -687,6 +688,7 @@ export class VillageScene extends Phaser.Scene {
   private jumpSpellPresentation!: JumpSpellPresentation;
   private fieldSpellPresentations = new Map<string, NativeSpellCastPresentation>();
   private recallPresentation!: NativeRecallPresentation;
+  private reviveTargets!: ReviveTargetPresentation;
   private nativeProjectiles!: NativeProjectilePresentation;
   private nativeDefenses!: NativeDefensePresentation;
   private darkDrillPresentation!: DarkDrillPresentation;
@@ -961,6 +963,8 @@ export class VillageScene extends Phaser.Scene {
       this.decorationNativePresentation.destroy(),
     );
     this.recallPresentation = new NativeRecallPresentation(this, this.nativeEffectPacks);
+    this.reviveTargets = new ReviveTargetPresentation(this, this.nativeEffectPacks);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.reviveTargets.destroy());
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.recallPresentation.destroy());
     for (const [name, config] of Object.entries(FIELD_SPELL_PROFILES))
       this.fieldSpellPresentations.set(
@@ -2346,6 +2350,12 @@ export class VillageScene extends Phaser.Scene {
         this.model.notify(LOADING_LATE_ART);
         return;
       }
+      const reviveHero =
+        !this.model.replay && this.reviveTargets.pick(world.x, world.y, this.cameras.main.zoom);
+      if (reviveHero) {
+        if (this.model.castReviveOnHero(reviveHero)) this.castFeedback();
+        return;
+      }
       if (this.model.activeSpell) {
         if (this.model.castSpell(grid.x, grid.y)) this.castFeedback();
         return;
@@ -2706,6 +2716,7 @@ export class VillageScene extends Phaser.Scene {
     this.jumpSpellPresentation?.prefetch(this.model.battle);
     for (const view of this.fieldSpellPresentations.values()) view.prefetch(this.model.battle);
     this.recallPresentation?.prefetch(this.model.battle);
+    this.reviveTargets?.prefetch(this.model.battle);
     const setups = this.model.reducedMotion
       ? []
       : [...this.model.heroSetups(), ...(this.model.battle?.nativeHeroes ?? [])];
@@ -2799,6 +2810,7 @@ export class VillageScene extends Phaser.Scene {
       this.jumpSpellPresentation.clear();
       for (const view of this.fieldSpellPresentations.values()) view.clear();
       this.recallPresentation?.clear();
+      this.reviveTargets?.clear();
       this.nativeDefenses.clear();
       this.villageArcherTowers.clear();
       this.archerTowerProjectiles.clear();
@@ -4437,6 +4449,7 @@ export class VillageScene extends Phaser.Scene {
     for (const view of this.fieldSpellPresentations.values())
       view.render(battle ?? null, reduced, iso);
     this.recallPresentation.render(battle ?? null, reduced, iso);
+    this.reviveTargets.render(battle ?? null, reduced, iso);
     for (const [ring, name] of this.spellFallbacks) {
       if (!battle || this.spellArtReady(name)) {
         ring.destroy();

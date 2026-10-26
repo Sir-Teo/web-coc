@@ -29,6 +29,7 @@ import { unitKindForName, isHeroUnitKind, isPetUnitKind, nativeUnitStats } from 
 import { tornadoPulse } from './native-traps';
 import { SPELL_SPEED_SCALE } from './spell-progression';
 import { retireRecallEvents } from './native-recall';
+import { revivableHero } from './revive-targets';
 import type { Battle, Building, FX, Unit } from './model';
 
 /** Buildings immune to storage/Town Hall flags, following the client's building classes. */
@@ -62,6 +63,8 @@ export interface NativeSpellCast {
   released?: number;
   summonGroups?: number[];
   ended?: boolean;
+  /** Version 123: a direct Hero control retains the selected body through the cast delay. */
+  reviveTargetId?: number;
 }
 export interface NativeSpellContext {
   battle: Battle;
@@ -95,7 +98,13 @@ export function castNativeSpell(
   side: SpellSide,
   x: number,
   y: number,
-  options: { at?: number; follow?: number; owner?: number; immediate?: boolean } = {},
+  options: {
+    at?: number;
+    follow?: number;
+    owner?: number;
+    immediate?: boolean;
+    reviveTargetId?: number;
+  } = {},
 ) {
   const row = spellRow(name, level);
   const at = options.at ?? battle.elapsed;
@@ -118,6 +127,7 @@ export function castNativeSpell(
     total: Math.max(1, num(row, 'NumberOfHits', 1)),
     interval: seconds(row, 'TimeBetweenHitsMS'),
     seed: (Math.imul(battle.seed, 7919) + Math.imul(battle.nativeSpellSequence, 104729)) >>> 0,
+    ...(options.reviveTargetId !== undefined ? { reviveTargetId: options.reviveTargetId } : {}),
     ...(num(row, 'DuplicateHousing') ? { budget: num(row, 'DuplicateHousing') } : {}),
     ...(num(row, 'RecallHousing') ? { budget: num(row, 'RecallHousing') } : {}),
   };
@@ -247,7 +257,7 @@ function resolvePulse(ctx: NativeSpellContext, cast: NativeSpellCast, at: number
     if (flag(row, 'Overgrowth')) overgrow(battle, row, at, x, y, radius, cast.id);
     if (num(row, 'DuplicateHousing')) cloneUnits(ctx, cast, row, at, radius);
     if (num(row, 'RecallHousing')) recallUnits(ctx, cast, at, radius);
-    if (num(row, 'ResurrectHitpointPercentage')) reviveHero(ctx, row, x, y);
+    if (num(row, 'ResurrectHitpointPercentage')) reviveHero(ctx, row, x, y, cast.reviveTargetId);
     const chain = text(row, 'ChainSpell');
     if (chain && cast.hits === 0)
       castNativeSpell(battle, chain, num(row, 'ChainSpellLevel', 1) || 1, cast.side, x, y, { at });
@@ -720,15 +730,19 @@ function recallUnits(ctx: NativeSpellContext, cast: NativeSpellCast, at: number,
   }
 }
 
-function reviveHero(ctx: NativeSpellContext, row: NativeRow, x: number, y: number) {
+function reviveHero(
+  ctx: NativeSpellContext,
+  row: NativeRow,
+  x: number,
+  y: number,
+  targetId?: number,
+) {
   const reach = tiles(row, 'TargetingRadius');
   const fallen = ctx.battle.units
     .filter(
       (u) =>
-        u.hero &&
-        u.hp <= 0 &&
-        !u.ejected &&
-        !ctx.battle.nativeHeroes?.some((h) => h.unitId === u.id && h.phoenix?.pending) &&
+        revivableHero(ctx.battle, u) &&
+        (targetId === undefined || u.id === targetId) &&
         distance2D(u.x - x, u.y - y) <= reach + 1e-9,
     )
     .sort((a, b) => distance2D(a.x - x, a.y - y) - distance2D(b.x - x, b.y - y) || a.id - b.id)[0];

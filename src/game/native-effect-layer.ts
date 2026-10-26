@@ -1,5 +1,6 @@
 import fieldSpellArt from '../../reference/field-spells/effects.json' with { type: 'json' };
 import recallUnitArt from '../../reference/recall/effects.json' with { type: 'json' };
+import reviveTargetArt from '../../reference/revive/effects.json' with { type: 'json' };
 import jumpSpellArt from '../../reference/jump-spell/effects.json' with { type: 'json' };
 import freezeSpellArt from '../../reference/freeze-spell/effects.json' with { type: 'json' };
 import overgrowthArt from '../../reference/overgrowth/effects.json' with { type: 'json' };
@@ -39,6 +40,7 @@ const catalogs = [
   jumpSpellArt,
   fieldSpellArt,
   recallUnitArt,
+  reviveTargetArt,
 ] as unknown as EffectIndex[];
 /** Pack of an effects.csv record, or undefined for sound-only and unreferenced records. */
 export function nativeEffectPack(effect: string | undefined) {

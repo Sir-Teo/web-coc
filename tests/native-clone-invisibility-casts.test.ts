@@ -20,6 +20,7 @@ function verify(r: Pick<ReturnType<typeof nativeCloneSpellRecording>, 'data' | '
         delete actual.nativeSpellArt;
         delete expected.nativeSpellArt;
         delete expected.nativeRecallPresentation;
+        delete expected.nativeReviveTargets;
         delete expected.nativeRecallEvents;
         delete actual.nativeSpellCastHistory;
         delete expected.nativeSpellCastHistory;

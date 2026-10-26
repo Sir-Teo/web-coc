@@ -59,6 +59,7 @@ it('casts and wall crossing retain the previous physical pulse and expiry deadli
     const now = JSON.parse(JSON.stringify(a.model.battle));
     delete now.nativeSpellArt;
     delete now.nativeRecallPresentation;
+    delete now.nativeReviveTargets;
     delete now.nativeRecallEvents;
     delete now.nativeSpellPulsePresentation;
     delete now.nativeSpellEffectTimelines;
