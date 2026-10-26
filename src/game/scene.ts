@@ -440,6 +440,10 @@ const ART_FAMILIES: ArtFamily[] = [
   },
   {
     draws: (b) => b.kind === 'inferno',
+    needed: (model) =>
+      !!model.battle?.nativeTroopDamageRamp &&
+      (model.battle.remaining.infernodragon > 0 ||
+        model.battle.units.some((u) => u.kind === 'infernodragon')),
     preload: preloadInfernos,
     prepare: loadInfernoArt,
     prepared: infernoArtLoaded,
@@ -4795,6 +4799,9 @@ export class VillageScene extends Phaser.Scene {
       AIR_LIFT,
       this.unitSprites,
       this.defenderSprites,
+    );
+    this.infernoPresentation.renderTroops(battle, reduced, this.project, AIR_LIFT, (id, locator) =>
+      this.troopNativePresentation.attachment(id, locator),
     );
     // Troops without a walk sheet (and pets) have an invisible fallback sprite. The marker
     // stands in only while no native model draws them; it used to cover every real model.

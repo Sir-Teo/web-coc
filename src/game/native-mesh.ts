@@ -117,6 +117,53 @@ function sourceFrame(graph: NativeMeshGraph, id: number, seconds: number) {
   return Math.floor((Number.isFinite(seconds) ? Math.max(0, seconds) : 0) * fps + 1e-9);
 }
 
+/** Matrix of a named source locator at the same nested timeline sample as the drawn body. */
+export function nativeSceneLocator(
+  graph: NativeMeshGraph,
+  name: string,
+  seconds: number,
+  locator: string,
+  controls: Readonly<Record<string, number | false>> = {},
+  root: NativeMatrix = NATIVE_IDENTITY,
+): NativeMatrix | undefined {
+  const id = graph.exports[name];
+  if (id === undefined) throw Error(`Unknown native export: ${name}`);
+  const ancestors = new Set<number>();
+  function walk(id: number, frame: number, matrix: NativeMatrix): NativeMatrix | undefined {
+    if (ancestors.has(id) || ancestors.size >= 32) throw Error('Recursive native scene');
+    const clip = graph.clips[id];
+    if (!clip) return undefined;
+    ancestors.add(id);
+    const f = frame % clip.timeline.length;
+    for (const [slot, transform] of clip.frames[clip.timeline[f]]) {
+      const label = clip.names[slot];
+      const control = controls[label];
+      if (control === false) continue;
+      const next = nativeMatrix(matrix, graph.matrices[transform]);
+      if (label === locator) {
+        ancestors.delete(id);
+        return next;
+      }
+      const child = clip.children[slot];
+      const nested = graph.clips[child];
+      if (!nested) continue;
+      const age = placementAges(graph, id, slot)[f];
+      const elapsed = age < 0 ? frame : Math.min(frame, age);
+      const phase = Number.isFinite(control)
+        ? Math.max(0, Math.floor(control))
+        : Math.floor((elapsed * nested.fps) / clip.fps);
+      const found = walk(child, phase, next);
+      if (found) {
+        ancestors.delete(id);
+        return found;
+      }
+    }
+    ancestors.delete(id);
+    return undefined;
+  }
+  return walk(id, sourceFrame(graph, id, seconds), root);
+}
+
 const SHARED_LIMIT = 512;
 const shared = new WeakMap<NativeMeshGraph, Map<string, NativeScenePose[]>>();
 function controlsKey(controls: Readonly<Record<string, number | false>>) {

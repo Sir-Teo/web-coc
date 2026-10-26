@@ -2,7 +2,8 @@ import { isPetUnitKind } from './native-units';
 import type Phaser from 'phaser';
 import { TROOPS, type TroopKind } from './data';
 import type { Battle, Building } from './model';
-import { nativeScenePosesShared, type NativeMeshGraph } from './native-mesh';
+import { nativeScenePosesShared, nativeSceneLocator, type NativeMeshGraph } from './native-mesh';
+import { nativeTroopFacingTarget } from './native-troop-facing';
 import { nativeMeshTexture } from './native-mesh-scene';
 import { NativeSceneView } from './native-scene-view';
 import type { NativeScenePose } from './native-mesh';
@@ -45,12 +46,13 @@ interface TroopView {
   tagged: number;
   /** The last shared sample drawn, so an unchanged source frame skips the shared-cache lookup. */
   sample?: {
-    graph: object;
+    graph: NativeMeshGraph;
     name: string;
     frame: number;
     scale: number;
     mirror: number;
     poses: readonly NativeScenePose[];
+    attachments?: Record<string, { x: number; y: number } | undefined>;
   };
 }
 /** Source direction roots and native clip timing follow the deterministic battle clock. */
@@ -211,6 +213,27 @@ export class TroopNativePresentation {
   hasView(id: number) {
     return this.views.has(id);
   }
+  /** World point of a named locator in the exact pose retained by this unit's body. */
+  attachment(id: number, name: string) {
+    const owned = this.views.get(id);
+    const sample = owned?.sample;
+    if (!owned || !sample || !this.drewUnit(id)) return undefined;
+    const attachments = (sample.attachments ??= {});
+    if (!Object.hasOwn(attachments, name)) {
+      const fps = sample.graph.clips[sample.graph.exports[sample.name]]?.fps ?? 1;
+      const matrix = nativeSceneLocator(sample.graph, sample.name, sample.frame / fps, name, {}, [
+        sample.scale * sample.mirror,
+        0,
+        0,
+        0,
+        sample.scale,
+        0,
+      ]);
+      attachments[name] = matrix ? { x: matrix[2], y: matrix[5] } : undefined;
+    }
+    const point = attachments[name];
+    return point ? { x: owned.x + point.x, y: owned.y + point.y } : undefined;
+  }
   render(
     battle: Battle | null,
     reduced: boolean,
@@ -329,12 +352,12 @@ export class TroopNativePresentation {
       // runs at 20 Hz without interpolation, so most rendered frames see no displacement.
       const motion = this.motion.update(u.id, u.x, u.y, elapsed, !u.attacking && u.path.length > 0);
       const moving = !u.attacking && motion.moving;
-      const target = typeof u.target === 'number' ? buildings?.get(u.target) : undefined;
+      const target = u.attacking ? nativeTroopFacingTarget(battle!, u, buildings) : undefined;
       let facing = this.facings.get(u.id);
       if (!facing) this.facings.set(u.id, (facing = { dx: 1, dy: 0 }));
       if (u.attacking && target) {
-        facing.dx = target.x + 1 - u.x;
-        facing.dy = target.y + 1 - u.y;
+        facing.dx = target.x - u.x;
+        facing.dy = target.y - u.y;
       } else if (moving && motion.heading) {
         facing.dx = motion.dx;
         facing.dy = motion.dy;

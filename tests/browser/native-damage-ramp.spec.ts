@@ -83,6 +83,24 @@ for (const { kind, defenders, width } of [
         }),
       )
       .toBe(true);
+    if (kind === 'infernodragon')
+      await expect
+        .poll(() =>
+          page.evaluate(() => {
+            const { scene } = window.__game;
+            scene.drawOverlay(0);
+            const id = window.__damageRamp.unitId;
+            const mouth = scene.troopNativePresentation.attachment(id, 'attack_pivot');
+            const objects = scene.infernoPresentation.troopBeams.get(id)?.objects ?? [];
+            return (
+              !!mouth &&
+              Number.isFinite(mouth.x) &&
+              Number.isFinite(mouth.y) &&
+              objects.some((o) => o.visible && o.alpha > 0 && o.getData('nativeBeamStage') === 2)
+            );
+          }),
+        )
+        .toBe(true);
     await page.screenshot({
       path: `output/playtest/native-ramp-${kind}-${defenders}-${width}.png`,
     });
@@ -94,6 +112,16 @@ for (const { kind, defenders, width } of [
     expect(await seek(page, r.initial)).toEqual(initial);
     await page.evaluate(() => window.__game.model.toggleReducedMotion());
     expect(await seek(page, r.maximum)).toEqual(maximum);
+    if (kind === 'infernodragon')
+      expect(
+        await page.evaluate(() => {
+          const { scene } = window.__game;
+          scene.drawOverlay(0);
+          return scene.infernoPresentation.troopBeams
+            .get(window.__damageRamp.unitId)
+            ?.objects.some((o) => o.visible && o.alpha > 0 && o.getData('nativeBeamStage') === 2);
+        }),
+      ).toBe(true);
     expect(await seek(page, r.retargeted)).toEqual(retargeted);
     if (defenders) {
       await page.evaluate(() => {
@@ -108,5 +136,14 @@ for (const { kind, defenders, width } of [
     }
     expect(await page.evaluate(() => window.__game.game.renderer.gl.getError())).toBe(0);
     expect(errors).toEqual([]);
+    await page.evaluate(() => {
+      const { model, scene } = window.__game;
+      model.returnHome();
+      scene.sync();
+      scene.drawOverlay(0);
+    });
+    expect(await page.evaluate(() => window.__game.scene.infernoPresentation.troopBeams.size)).toBe(
+      0,
+    );
   });
 }

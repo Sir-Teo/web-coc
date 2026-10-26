@@ -689,3 +689,18 @@ deployment/Freeze recordings reach each stage, kill their first target and resta
 then reproduce through portable replay files and backward seeks. Browser checks cover both
 units against buildings and defending Heroes on desktop and phone, native body art, reduced
 motion and historical defender playback.
+
+## Native Inferno Dragon beam presentation
+
+The [pinned beam reference](../reference/inferno-dragon/README.md) supplies the three authored
+attack effects and their `dbeam_1_light`/`2`/`3` scene exports. These meshes and textures were
+already imported with the Inferno family. The beam now follows the actual body's
+`attack_pivot` locator, including nested animation timing, source direction, mirroring and
+world movement. It switches artwork with combat version 94's damage stage and uses the
+source 128 ms fade-in with a local linear envelope.
+
+Native troop bodies now face defending targets before building destinations; structure
+centers follow their real footprints. The beam disappears when ownership or target validity
+ends, during Freeze, while pursuing, and when returning home. Reduced motion keeps a static
+beam timeline with the current combat stage. Rendering does not modify combat state or bump
+the replay version. Source loop audio and transition bursts remain separate work.

@@ -214,6 +214,55 @@ describe('unit motion tracker', () => {
 });
 
 describe('troop native presentation', () => {
+  it.each([false, true])(
+    'attaches the Inferno Dragon beam to its drawn mouth, reduced=%s',
+    (reduced) => {
+      const p = troops();
+      const pack = JSON.parse(
+        fs.readFileSync('public/assets/troops-native/infernodragon/graph.json', 'utf8'),
+      );
+      const internals = p as unknown as {
+        packs: Map<string, unknown>;
+        levelsReady: Map<string, Set<number>>;
+        views: Map<number, { x: number; y: number; sample: { name: string; mirror: number } }>;
+      };
+      internals.packs.set('infernodragon', pack);
+      internals.levelsReady.set('infernodragon', new Set([1]));
+      const u = unit(7, 5, 5, {
+        kind: 'infernodragon',
+        attacking: true,
+        path: [],
+        target: 2,
+        defenderTarget: -1,
+        native: {},
+      });
+      const battle = battleOf([u]);
+      battle.buildings = [makeBuilding(2, 'goldstorage', 0, 12, 1)];
+      const d = defendingHero({ kind: 'king', level: 1, x: 10, y: 5 }, 0);
+      d.id = -1;
+      battle.defenders = [d];
+      const project = (x: number, y: number) => ({ x: x * 10, y: y * 10 });
+      const draw = () => p.render(battle, reduced, project, 46, new Map());
+      const original = JSON.stringify(battle);
+      draw();
+      const view = internals.views.get(u.id)!;
+      expect(view.sample.mirror).toBe(1);
+      expect(view.sample.name).toBe(pack.levels[0].states.attack.exports[2]);
+      const mouth = p.attachment(u.id, 'attack_pivot')!;
+      expect(Number.isFinite(mouth.x) && Number.isFinite(mouth.y)).toBe(true);
+      expect(p.attachment(u.id, 'attack_pivot')).toEqual(mouth);
+      expect(p.attachment(u.id, 'missing')).toBeUndefined();
+      draw();
+      expect(p.attachment(u.id, 'attack_pivot')).toEqual(mouth);
+      expect(JSON.stringify(battle)).toBe(original);
+      u.x += 1;
+      battle.elapsed += 0.05;
+      draw();
+      expect(p.attachment(u.id, 'attack_pivot')!.x).toBeCloseTo(mouth.x + 10, 8);
+      p.clear();
+      expect(p.attachment(u.id, 'attack_pivot')).toBeUndefined();
+    },
+  );
   for (const stage of ['graph', 'textures'] as const) {
     it(`keeps the sprite pass visible until native ${stage} load, then hands off once`, () => {
       const p = troops();

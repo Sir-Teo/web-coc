@@ -15,6 +15,11 @@ import { battleUnit } from './battle-index';
 import { registerCachedSample } from './sample-audio';
 import { presentationLive, presentationTime } from './presentation-clock';
 import { guardRender } from './render-guard';
+import {
+  infernoDragonBeams,
+  infernoDragonBeamProfile,
+  infernoDragonBeamPoses,
+} from './inferno-dragon-beam';
 
 /** Beams span the map between tower and troop: draw them in the effect band, under labels. */
 const BEAM_DEPTH = 8000;
@@ -50,6 +55,7 @@ export class InfernoPresentation {
   /** Live impact/transition particle views by key (pooled; see NativeEffectViews). */
   readonly impacts: Map<string, NativeSceneView>;
   readonly beams = new Map<string, NativeSceneView>();
+  readonly troopBeams = new Map<number, NativeSceneView>();
   readonly views = new Map<number, NativeSceneView>();
   private signatures = new Map<number, string>();
   constructor(
@@ -65,6 +71,8 @@ export class InfernoPresentation {
     this.fx.clear();
     for (const view of this.beams.values()) view.destroy();
     this.beams.clear();
+    for (const view of this.troopBeams.values()) view.destroy();
+    this.troopBeams.clear();
     for (const view of this.views.values()) view.destroy();
     this.views.clear();
     this.signatures.clear();
@@ -184,6 +192,46 @@ export class InfernoPresentation {
         view.destroy();
         this.views.delete(id);
         this.signatures.delete(id);
+      }
+  }
+  /** Runs after troop bodies, so source locators come from the pose actually drawn this frame. */
+  renderTroops(
+    battle: Battle | null,
+    reduced: boolean,
+    iso: (x: number, y: number) => { x: number; y: number },
+    airLift: number,
+    attachment: (id: number, locator: string) => { x: number; y: number } | undefined,
+  ) {
+    const wanted = new Set<number>();
+    if (infernoArtLoaded())
+      for (const beam of infernoDragonBeams(battle)) {
+        const profile = infernoDragonBeamProfile(beam.stage);
+        const from = attachment(beam.id, profile.locator);
+        if (!from) continue;
+        const end = iso(beam.target.x, beam.target.y);
+        const to = { x: end.x, y: end.y - (beam.air ? airLift : 0) - profile.endZ * 0.8 };
+        const poses = guardRender(
+          'Inferno Dragon beam',
+          () => infernoDragonBeamPoses(beam.stage, reduced ? 0 : beam.age, from, to),
+          [],
+        );
+        if (!poses.length) continue;
+        let view = this.troopBeams.get(beam.id);
+        if (!view) this.troopBeams.set(beam.id, (view = effectSceneView(this.scene, 'inferno')));
+        wanted.add(beam.id);
+        const alpha = profile.fadeIn > 0 ? Math.min(1, beam.age / profile.fadeIn) : 1;
+        view.render(poses, 0, 0, BEAM_DEPTH, alpha);
+        for (const object of view.objects) {
+          if (object.getData('nativeInfernoDragon') !== beam.id)
+            object.setData('nativeInfernoDragon', beam.id);
+          if (object.getData('nativeBeamStage') !== beam.stage)
+            object.setData('nativeBeamStage', beam.stage);
+        }
+      }
+    for (const [id, view] of this.troopBeams)
+      if (!wanted.has(id)) {
+        view.destroy();
+        this.troopBeams.delete(id);
       }
   }
 }
