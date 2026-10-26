@@ -1467,3 +1467,42 @@ Node-to-Chromium phone/desktop checks verify original grow/deployed/retract mesh
 steady visibility, actual retract Web Audio on the expiry tick, read-only rendering and
 historical fallback. Held and failed downloads verify the status-to-native handoff and
 reconnection recovery without changing combat.
+
+## Version 114 original Overgrowth cast and field
+
+The same pinned importer now retains a separate cast pack: `Entangle_predeploy`,
+`Entangle_area_deploy` and the five `entangle_spell_circle_radius` level variants.
+The pack adds 49,601 bytes, bringing all Overgrowth art to 1,051,815 bytes. Original
+bottle, grass, landing circle, ground ring and smoke exports keep their source rows,
+meshes and textures. Reproduction checks verify graph bytes and decoded source pixels.
+The cast pack warms only for version 114 battles carrying Overgrowth or retaining a cast.
+The three root packs keep their existing bytes and historical loading behavior.
+
+The bottle begins at cast time and lands after the source `DeployTimeMS` of 800 ms.
+Landing grass/circle and the selected level's field start then. The existing combat
+adapter still applies roots after deployment, charging and hit delays total 1.5 seconds;
+this change does not retime immunity. Source field rings last 22–26 seconds from landing,
+with their original two-second fade; smoke lasts up to two seconds longer. Their lifetimes
+therefore differ from the physical root deadline. Source particle projection and fade
+adapters remain in use. Reduced motion omits moving cast particles and retains the static
+root presentation and existing aura fallback.
+
+`nativeOvergrowthCasts` holds the same live cast object through resolution, then retains
+its completed timeline until the physical duration plus the ten-second sound horizon.
+This also covers casts with no eligible buildings. The existing vial and field samples
+reconstruct after direct seeks beyond the live pulse, with their original cue keys,
+volume and pitch. Carried spells, retained casts and roots request their audio even
+with no deployed actors. The catalog remains at 340 files and 357 effects.
+
+Original art replaces the generic spell ring and aura when ready. Pending or failed
+cast downloads keep the fallback; a successful load retires a pending fallback ring at
+the current battle time. Shared pack retries recover on reconnect. Historical version
+113 retains original roots without the new cast capture or field; physical state is
+identical after removing the new presentation fields.
+
+Pure checks cover all five level fields, bottle/landing boundaries, smoke retirement,
+read-only deterministic poses, history retention and absence of duplicate sound cues.
+Actual level-1 and level-5 portable recordings include bottle, landing, live-pulse removal,
+steady roots, expiry and field retirement through forward/reverse seeks. Phone/desktop
+Chromium checks verify the original meshes, actual field Web Audio after a direct seek,
+reduced motion, historical behavior and loading/failure/reconnect handoff.

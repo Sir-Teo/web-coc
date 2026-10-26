@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 113;
+export const REPLAY_VERSION = 114;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -141,7 +141,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 110 restores Super Wizard primary-centered Chain Magic.
  * Version 111 advances Super Archer piercing arrows through both enemy layers.
  * Version 112 makes native chain geometry consistent and lets Overgrowth absorb secondary hops.
- * Version 113 captures Overgrowth root lifetimes for original presentation. */
+ * Version 113 captures Overgrowth root lifetimes for original presentation.
+ * Version 114 retains Overgrowth bottle, field and cast-audio timelines. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -222,6 +223,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 110 ||
   version === 111 ||
   version === 112 ||
+  version === 113 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -370,6 +372,7 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 114 ? { nativeOvergrowthCastPresentation: true as const } : {}),
     ...(version >= 113 ? { nativeOvergrowthPresentation: true as const } : {}),
     ...(version >= 112 ? { nativeChainGeometry: true as const } : {}),
     ...(version >= 111 ? { nativeArcherPiercing: true as const } : {}),

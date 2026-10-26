@@ -4201,23 +4201,26 @@ export class VillageScene extends Phaser.Scene {
   private troopSoundUnits = -1;
   private troopSoundCasts = -1;
   private troopSoundRoots = -1;
+  private troopSoundOvergrowthCasts = -1;
   /**
    * Fetches the sounds of the army and its spells, of every unit kind on the field and of every
    * spell cast, once each.
    */
   private needTroopSounds(battle: Battle) {
     const casts = battle.nativeSpells?.length ?? 0,
-      roots = battle.nativeOvergrowthRoots?.length ?? 0;
+      roots = battle.nativeOvergrowthRoots?.length ?? 0,
+      overgrowthCasts = battle.nativeOvergrowthCasts?.length ?? 0;
     if (
       battle === this.troopSoundBattle &&
       battle.units.length === this.troopSoundUnits &&
       casts === this.troopSoundCasts &&
-      roots === this.troopSoundRoots
+      roots === this.troopSoundRoots &&
+      overgrowthCasts === this.troopSoundOvergrowthCasts
     )
       return;
     const kinds = new Set<string>(battle.units.map((u) => u.kind));
     const spells = new Set<string>(battle.nativeSpells?.map((cast) => cast.name));
-    if (roots) spells.add('Overgrowth');
+    if (roots || overgrowthCasts) spells.add('Overgrowth');
     if (battle !== this.troopSoundBattle) {
       for (const hero of battle.nativeHeroes ?? []) {
         kinds.add(heroUnitKind(hero.kind));
@@ -4238,6 +4241,7 @@ export class VillageScene extends Phaser.Scene {
     this.troopSoundUnits = battle.units.length;
     this.troopSoundCasts = casts;
     this.troopSoundRoots = roots;
+    this.troopSoundOvergrowthCasts = overgrowthCasts;
     this.troopSoundLoader.need(kinds, spells);
   }
   /** Whether a spell's falling bottle is decoded, so it replaces the generated tones. */
@@ -4334,6 +4338,7 @@ export class VillageScene extends Phaser.Scene {
   private visibleScratch: Building[] = [];
   private villageBodyScratch: Building[] = [];
   /** Buildings, defenses, traps, projectiles, selection and effects: everything but units. */
+  private overgrowthFallbacks = new Set<Phaser.GameObjects.Ellipse>();
   private drawWorld() {
     const battle = this.model.battle;
     const reduced = this.model.reducedMotion;
@@ -4350,6 +4355,10 @@ export class VillageScene extends Phaser.Scene {
       this.villageNativePresentation.preview();
     this.drawProjectiles();
     this.overgrowthPresentation.render(battle ?? null, reduced, iso);
+    if (!battle || this.overgrowthPresentation.hasCastArt(battle, reduced)) {
+      for (const ring of this.overgrowthFallbacks) ring.destroy();
+      this.overgrowthFallbacks.clear();
+    }
     // One visible-building pass per frame; every presentation below filters by kind.
     const visible = this.visibleScratch;
     visible.length = 0;
@@ -4615,6 +4624,8 @@ export class VillageScene extends Phaser.Scene {
       const reduced = this.model.reducedMotion;
       const p = this.auraPoint;
       for (const cast of active.nativeSpells ?? []) {
+        if (cast.name === 'Overgrowth' && this.overgrowthPresentation.hasCastArt(active, reduced))
+          continue;
         if (cast.firstHit - 0.9 > active.elapsed) continue;
         const row = nativeRow('spells', cast.name, cast.level);
         const radius = nativeTiles(row, 'Radius') || nativeTiles(row, 'TargetingRadius');
@@ -5717,6 +5728,11 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     if (fx.type === 'spell-native') {
+      if (
+        fx.text === 'Overgrowth' &&
+        this.overgrowthPresentation.hasCastArt(this.model.battle, this.model.reducedMotion)
+      )
+        return;
       if (this.model.reducedMotion) return;
       const color = NATIVE_SPELL_COLOR[fx.text ?? ''] ?? 0xfff0c2;
       const radius = Math.max(0.6, fx.radius ?? 1) * 64;
@@ -5724,30 +5740,51 @@ export class VillageScene extends Phaser.Scene {
         .ellipse(p.x, p.y, radius * 0.5, radius * 0.25)
         .setStrokeStyle(3, color, 0.9)
         .setDepth(7200);
+      if (fx.text === 'Overgrowth' && this.model.battle?.nativeOvergrowthCastPresentation) {
+        ring.setData('overgrowthFallback', true);
+        this.overgrowthFallbacks.add(ring);
+      }
       this.animateEffect({
         targets: ring,
         scaleX: 4,
         scaleY: 4,
         alpha: 0,
         duration: 420,
-        onComplete: () => ring.destroy(),
+        onComplete: () => {
+          this.overgrowthFallbacks.delete(ring);
+          ring.destroy();
+        },
       });
       return;
     }
     if (fx.type === 'spell') {
+      if (
+        fx.spell === 'overgrowth' &&
+        this.overgrowthPresentation.hasCastArt(this.model.battle, this.model.reducedMotion)
+      ) {
+        if (!this.fxSounded) this.audio.play('collect');
+        return;
+      }
       const color = SPELL_COLOR[fx.spell ?? 'rage'];
       const radius = (fx.radius ?? 3) * 64;
       const ring = this.add
         .ellipse(p.x, p.y, radius * 0.4, radius * 0.2)
         .setStrokeStyle(4, color, 0.95)
         .setDepth(7200);
+      if (fx.spell === 'overgrowth' && this.model.battle?.nativeOvergrowthCastPresentation) {
+        ring.setData('overgrowthFallback', true);
+        this.overgrowthFallbacks.add(ring);
+      }
       this.animateEffect({
         targets: ring,
         scaleX: 5,
         scaleY: 5,
         alpha: 0,
         duration: 520,
-        onComplete: () => ring.destroy(),
+        onComplete: () => {
+          this.overgrowthFallbacks.delete(ring);
+          ring.destroy();
+        },
       });
       if (fx.spell === 'lightning') {
         const bolt = this.add.graphics().setPosition(p.x, p.y).setDepth(7300);
@@ -5795,7 +5832,8 @@ export class VillageScene extends Phaser.Scene {
           onComplete: () => bolt.destroy(),
         });
       }
-      this.sparks(p.x, p.y - 20, color, 16);
+      if (fx.spell !== 'overgrowth' || !this.model.battle?.nativeOvergrowthCastPresentation)
+        this.sparks(p.x, p.y - 20, color, 16);
       if (!this.fxSounded) this.audio.play(fx.spell === 'lightning' ? 'destroy' : 'collect');
       if (fx.spell === 'lightning' && !this.model.reducedMotion) this.shakeCamera(140, 0.0022);
       return;

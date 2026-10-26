@@ -1,4 +1,8 @@
-import { recordOvergrowthRoot, retireOvergrowthRoots } from './native-overgrowth';
+import {
+  recordOvergrowthRoot,
+  retireOvergrowthRoots,
+  retireOvergrowthCasts,
+} from './native-overgrowth';
 import { distance2D } from './distance';
 import { BUILDINGS, TROOPS, isTrap, type BuildingKind, type UnitKind } from './data';
 import { damageDefenders, hurtDefender, isGarrisonDefender, type Defender } from './defenders';
@@ -117,6 +121,8 @@ export function castNativeSpell(
     ...(num(row, 'RecallHousing') ? { budget: num(row, 'RecallHousing') } : {}),
   };
   (battle.nativeSpells ??= []).push(cast);
+  if (battle.nativeOvergrowthCastPresentation && name === 'Overgrowth')
+    (battle.nativeOvergrowthCasts ??= []).push(cast);
   return cast;
 }
 
@@ -175,6 +181,7 @@ const housing = (u: Unit) => (u.hero ? 25 : TROOPS[u.kind].space);
 export function stepNativeSpells(ctx: NativeSpellContext) {
   const battle = ctx.battle;
   retireOvergrowthRoots(battle);
+  retireOvergrowthCasts(battle);
   for (const cast of battle.nativeSpells ?? []) {
     if (cast.ended) continue;
     while (cast.hits < cast.total) {

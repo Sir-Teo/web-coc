@@ -2,7 +2,11 @@ import source from '../../reference/overgrowth/effects.json' with { type: 'json'
 import type { Battle } from './model';
 import type { NativeEffectEvent } from './native-effects';
 type Point = { x: number; y: number };
-export const OVERGROWTH_EFFECTS = Object.keys(source.effects);
+export const OVERGROWTH_EFFECTS = Object.values(source.phases).flatMap((phase) => [
+  phase.start.effect,
+  phase.deployed.effect,
+  phase.stop.effect,
+]);
 export function overgrowthPhases(size: number) {
   if (size !== 2 && size !== 3 && size !== 4) return;
   return source.phases[size];

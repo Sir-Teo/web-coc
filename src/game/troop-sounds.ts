@@ -114,12 +114,13 @@ function castCues(
   elapsed: number,
   cast: { key: string; name: string; level: number; at: number },
   hits?: { first: number; interval: number; count: number },
+  precise = false,
 ) {
   const { key, name, level, at } = cast;
   if (!SPELLS[name]) return;
   const landed = at + seconds(spellRow(name, level), 'DeployTimeMS');
   const push = (event: SpellSoundEvent, when: number, suffix = '') => {
-    if (when > elapsed || !cueAudible(when, elapsed)) return;
+    if (when > elapsed + (precise ? 1e-9 : 0) || !cueAudible(when, elapsed)) return;
     const cue = spellCue(name, level, event, `${key}:${event}${suffix}`, when);
     if (cue) cues.push(cue);
   };
@@ -223,6 +224,7 @@ export class BattleSoundLog {
   private noteCasts(battle: Battle) {
     const live = new Set<number>();
     for (const cast of battle.nativeSpells ?? []) {
+      if (battle.nativeOvergrowthCastPresentation && cast.name === 'Overgrowth') continue;
       live.add(cast.id);
       const known = this.casts.get(cast.id);
       if (known) known.count = cast.hits;
@@ -382,6 +384,14 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
     const cue = spellCue('Overgrowth', 1, event, `${root.key}:stop`, root.until);
     if (cue) cues.push(cue);
   }
+  for (const cast of battle.nativeOvergrowthCasts ?? [])
+    castCues(
+      cues,
+      elapsed,
+      { key: `spell:${cast.id}`, name: cast.name, level: cast.level, at: cast.castAt },
+      { first: cast.firstHit, interval: cast.interval, count: cast.hits },
+      true,
+    );
   for (const cue of logged) cues.push(cue);
   return cues;
 }

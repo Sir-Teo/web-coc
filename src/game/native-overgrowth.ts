@@ -1,3 +1,4 @@
+import { nativeRow, seconds } from './native-data';
 import { BUILDINGS } from './data';
 import type { Battle, Building } from './model';
 
@@ -43,4 +44,14 @@ export function retireOvergrowthRoots(battle: Battle) {
     battle.nativeOvergrowthRoots = battle.nativeOvergrowthRoots.filter(
       (r) => r.until + 10 >= battle.elapsed - 1e-9,
     );
+}
+
+/** Keep the same mutable cast while live, then its completed timeline through the field/audio horizon. */
+export function retireOvergrowthCasts(battle: Battle) {
+  if (battle.nativeOvergrowthCastPresentation && battle.nativeOvergrowthCasts)
+    battle.nativeOvergrowthCasts = battle.nativeOvergrowthCasts.filter((cast) => {
+      const row = nativeRow('spells', 'Overgrowth', cast.level);
+      const duration = seconds(row, 'ShieldTime') || seconds(row, 'FreezeTimeMS');
+      return cast.firstHit + duration + 10 >= battle.elapsed - 1e-9;
+    });
 }

@@ -18,7 +18,14 @@
     "entangle_spell_stop_3x3": "3",
     "entangle_spell_start_4x4": "4",
     "entangle_spell_deployed_4x4": "4",
-    "entangle_spell_stop_4x4": "4"
+    "entangle_spell_stop_4x4": "4",
+    "Entangle_predeploy": "cast",
+    "Entangle_area_deploy": "cast",
+    "entangle_spell_circle_radius": "cast",
+    "entangle_spell_circle_radius_lvl2": "cast",
+    "entangle_spell_circle_radius_lvl3": "cast",
+    "entangle_spell_circle_radius_lvl4": "cast",
+    "entangle_spell_circle_radius_lvl5": "cast"
   },
   "packs": {
     "2": {
@@ -35,6 +42,11 @@
       "path": "assets/overgrowth-native/4x4/graph.json",
       "sha256": "af7b71a1299253bb2f12bca3c4c6052970268375914b1f8ce614f887934c29b6",
       "bytes": 493828
+    },
+    "cast": {
+      "path": "assets/overgrowth-native/cast/graph.json",
+      "sha256": "98cf60ec57902906a1658927503335aa5b0d270505afe96c392ff58f343eb88d",
+      "bytes": 49601
     }
   },
   "phases": {
@@ -108,6 +120,48 @@
       }
     }
   },
+  "spellLevels": [
+    {
+      "PreDeployEffect": "Entangle_predeploy",
+      "DeployEffect": "Entangle_area_deploy",
+      "DeployEffect2": "entangle_spell_circle_radius",
+      "level": 1,
+      "deploySeconds": 0.8,
+      "pulseSeconds": 1.5
+    },
+    {
+      "PreDeployEffect": "Entangle_predeploy",
+      "DeployEffect": "Entangle_area_deploy",
+      "DeployEffect2": "entangle_spell_circle_radius_lvl2",
+      "level": 2,
+      "deploySeconds": 0.8,
+      "pulseSeconds": 1.5
+    },
+    {
+      "PreDeployEffect": "Entangle_predeploy",
+      "DeployEffect": "Entangle_area_deploy",
+      "DeployEffect2": "entangle_spell_circle_radius_lvl3",
+      "level": 3,
+      "deploySeconds": 0.8,
+      "pulseSeconds": 1.5
+    },
+    {
+      "PreDeployEffect": "Entangle_predeploy",
+      "DeployEffect": "Entangle_area_deploy",
+      "DeployEffect2": "entangle_spell_circle_radius_lvl4",
+      "level": 4,
+      "deploySeconds": 0.8,
+      "pulseSeconds": 1.5
+    },
+    {
+      "PreDeployEffect": "Entangle_predeploy",
+      "DeployEffect": "Entangle_area_deploy",
+      "DeployEffect2": "entangle_spell_circle_radius_lvl5",
+      "level": 5,
+      "deploySeconds": 0.8,
+      "pulseSeconds": 1.5
+    }
+  ],
   "conventions": {
     "lifecycle": "The original root clips are retained unchanged. External root lifetime selects start, deployed and stop phases.",
     "placement": "Source effect offsets use the shared native isometric projection adapter."

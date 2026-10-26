@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Retain original Overgrowth grow, deployed and retract clips in one pack per footprint.
+"""Retain original Overgrowth roots per footprint and bottle/landing/field art in a cast pack.
 
 PYTHONPATH=scripts python scripts/import-overgrowth-art.py [--check] [--download-missing]
 """
@@ -39,7 +39,7 @@ def main():
         return read_source(path)
 
     art.read = read
-    lib.table('logic/spells.csv')
+    spell_rows = lib.table('logic/spells.csv')['Overgrowth']
     effects, packs, phases = {}, {}, {}
     for size in [2, 3, 4]:
         key = str(size)
@@ -60,8 +60,24 @@ def main():
             clip = graph['clips'][str(graph['exports'][row['ExportName']])]
             timings[stage] = dict(effect=effect, export=row['ExportName'], frames=len(clip['timeline']), fps=clip['fps'], seconds=len(clip['timeline']) / clip['fps'])
         phases[key] = timings
+    spell_levels, current = [], {}
+    collector = Collector(lib)
+    for level, row in enumerate(spell_rows, 1):
+        current.update(row)
+        profile = {key: current[key] for key in ['PreDeployEffect', 'DeployEffect', 'DeployEffect2']}
+        profile.update(level=level, deploySeconds=int(current['DeployTimeMS']) / 1000,
+                       pulseSeconds=sum(int(current[key]) for key in ['DeployTimeMS', 'ChargingTimeMS', 'HitTimeMS']) / 1000)
+        spell_levels.append(profile)
+        for name in [profile[key] for key in ['PreDeployEffect', 'DeployEffect', 'DeployEffect2']]:
+            collector.effect(name)
+            effects[name] = 'cast'
+    require(not collector.missing, f'Missing cast source: {collector.missing}')
+    prefix = 'assets/overgrowth-native/cast'
+    result = write_pack(lib, collector, ROOT / 'public' / prefix, prefix, dict(kind='overgrowth-cast-effects'), args.check)
+    require(not result['skipped'], f'Cast exports missing: {result["skipped"]}')
+    packs['cast'] = dict(path=f'{prefix}/graph.json', sha256=result['sha256'], bytes=result['bytes'])
     index = dict(clientVersion='18.400.21', generator='scripts/import-overgrowth-art.py', sources=dict(sorted(art.PINS.items())),
-                 effects=effects, packs=packs, phases=phases,
+                 effects=effects, packs=packs, phases=phases, spellLevels=spell_levels,
                  conventions=dict(lifecycle='The original root clips are retained unchanged. External root lifetime selects start, deployed and stop phases.',
                                   placement='Source effect offsets use the shared native isometric projection adapter.'))
     target = ROOT / 'reference/overgrowth/effects.json'
@@ -71,7 +87,7 @@ def main():
     else:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(serialized)
-    print(f'{"Verified" if args.check else "Wrote"} original Overgrowth roots: {sum(p["bytes"] for p in packs.values()):,} bytes')
+    print(f'{"Verified" if args.check else "Wrote"} original Overgrowth roots and cast: {sum(p["bytes"] for p in packs.values()):,} bytes')
 
 
 if __name__ == '__main__':

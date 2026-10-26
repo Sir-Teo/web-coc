@@ -91,5 +91,7 @@ it('presentation capture preserves physical spell behavior and version 112 omits
   expect(then.nativeOvergrowthRoots).toBeUndefined();
   delete now.nativeOvergrowthRoots;
   delete now.nativeOvergrowthPresentation;
+  delete now.nativeOvergrowthCastPresentation;
+  delete now.nativeOvergrowthCasts;
   expect(now).toEqual(then);
 });

@@ -2,6 +2,10 @@ import { expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import source from '../reference/overgrowth/effects.json';
+import {
+  OVERGROWTH_CAST_EFFECTS,
+  overgrowthCastEffects,
+} from '../src/game/overgrowth-cast-effects';
 import manifest from '../reference/full-client/manifest.json';
 import type { Battle } from '../src/game/model';
 import type { NativeArtPack } from '../src/game/native-art-pack';
@@ -119,4 +123,71 @@ it('root visuals and retract cues switch on the same tolerant deadline as immuni
   expect(
     troopSoundCues(battle, new BattleSoundLog()).filter((c) => c.key.startsWith('overgrowth:')),
   ).toHaveLength(3);
+});
+
+it.each([1, 2, 3, 4, 5])(
+  'level %s casts sample the original bottle, landing and field timelines',
+  (level) => {
+    const r = nativeOvergrowthRecording(level),
+      row = source.spellLevels[level - 1];
+    const sample = (at: number, reduced = false) => {
+      const battle = r.snapshots.find((s) => s.at === at)!.battle as Battle;
+      const before = JSON.stringify(battle);
+      const events = overgrowthCastEffects(battle, iso, reduced, (name) =>
+        nativeEffectDuration(packFor(name), name),
+      );
+      const poses = events.flatMap((e) =>
+        nativeEffectPoses(packFor(e.effect), e, e.sampleAt, reduced),
+      );
+      expect(JSON.stringify(battle)).toBe(before);
+      return { events, poses };
+    };
+    expect(OVERGROWTH_CAST_EFFECTS).toHaveLength(7);
+    expect(sample(r.bottle).poses.some((p) => p.emitter === 'jump_bottleDrop')).toBe(true);
+    const landing = sample(r.landing);
+    expect(landing.events.map((e) => [e.effect, e.at])).toEqual([
+      [row.DeployEffect, 0.8],
+      [row.DeployEffect2, 0.8],
+    ]);
+    expect(landing.poses.some((p) => p.emitter === 'entangle_deploy_circle')).toBe(true);
+    expect(
+      landing.poses.some((p) => p.emitter === `entangle_ground_circle_radius_lvl${level}`),
+    ).toBe(true);
+    const steady = sample(r.steady);
+    expect(steady.events.map((e) => e.effect)).toEqual([row.DeployEffect2]);
+    expect(steady.poses.length).toBeGreaterThan(0);
+    expect(
+      sample(r.after).poses.some((p) => p.emitter === `entangle_ground_smoke_radius_lvl${level}`),
+    ).toBe(true);
+    expect(sample(r.fieldAfter).poses).toEqual([]);
+    expect(sample(r.steady, true).poses).toEqual([]);
+    const historical = structuredClone(
+      r.snapshots.find((s) => s.at === r.steady)!.battle,
+    ) as Battle;
+    delete historical.nativeOvergrowthCastPresentation;
+    expect(overgrowthCastEffects(historical, iso, false, () => 30)).toEqual([]);
+  },
+);
+it('the original landing appears on its tolerant source deadline without emitting future audio', () => {
+  const r = nativeOvergrowthRecording(),
+    battle = structuredClone(r.snapshots.find((s) => s.at === r.bottle)!.battle) as Battle;
+  battle.elapsed = 0.8 - 1e-13;
+  const events = overgrowthCastEffects(battle, iso, false, (name) =>
+    nativeEffectDuration(packFor(name), name),
+  );
+  const landing = events.find((e) => e.effect === 'Entangle_area_deploy')!;
+  expect(landing.sampleAt).toBe(0.8);
+  expect(
+    nativeEffectPoses(packFor(landing.effect), landing, landing.sampleAt, false).length,
+  ).toBeGreaterThan(0);
+  expect(
+    troopSoundCues(battle, new BattleSoundLog()).some((c) => c.key === 'spell:1:deploy2'),
+  ).toBe(true);
+  battle.elapsed = 0.79;
+  expect(
+    overgrowthCastEffects(battle, iso, false, () => 30).some((e) => e.effect === landing.effect),
+  ).toBe(false);
+  expect(
+    troopSoundCues(battle, new BattleSoundLog()).some((c) => c.key === 'spell:1:deploy2'),
+  ).toBe(false);
 });

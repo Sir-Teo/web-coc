@@ -150,3 +150,10 @@ silent. Browser checks exercise actual retraction nodes at the expiry tick.
 `tests/browser/troop-sounds.spec.ts` runs at phone size. It checks that boot fetches no troop sound and that a Barbarian-only battle fetches only the Barbarian's sounds. It then checks that the deploy, hit and death sounds and a Rage Spell's falling bottle actually start playing.
 
 Not included: the heroes' other sounds (the client's hero rows name only hits, so the rest presumably play from their animations), Siege Machine special effects, movement sounds and ability-specific effects beyond the imported ordinary event rows.
+
+Version 114 retains Overgrowth's cast timeline after its one-pulse live record disappears.
+The original vial and level-specific field cues now reconstruct on a fresh seek beyond
+the pulse, using the same keys as live playback. The live event log skips these captured
+casts to avoid duplicates. Retained casts request their samples even when no buildings
+were rooted. No samples or sound effects are added; the catalog remains at 340 files and
+357 effects. See [cast presentation](NATIVE-HEROES.md#version-114-original-overgrowth-cast-and-field).

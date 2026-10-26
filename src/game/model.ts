@@ -910,6 +910,9 @@ export interface Battle {
   nativeChainGeometry?: true;
   /** Version 113: captured roots select original grow, deployed and retract presentation. */
   nativeOvergrowthPresentation?: true;
+  /** Version 114: original Overgrowth bottle/field and audio survive the live pulse record. */
+  nativeOvergrowthCastPresentation?: true;
+  nativeOvergrowthCasts?: NativeSpellCast[];
   nativeOvergrowthRoots?: OvergrowthRoot[];
   nativeArcherShots?: ArcherPiercingShot[];
   nativeSuperWizardBranches?: SuperWizardBranch[];

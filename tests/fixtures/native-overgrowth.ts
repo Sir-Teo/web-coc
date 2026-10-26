@@ -32,6 +32,12 @@ export function nativeOvergrowthRecording(level = 1) {
   };
   model.activeSpell = 'overgrowth';
   if (!model.castSpell(16, 11)) throw Error('Overgrowth cast failed');
+  run(0.4);
+  const bottle = battle.elapsed;
+  snapshot();
+  run(0.9);
+  const landing = battle.elapsed;
+  snapshot();
   run(1.45);
   const falling = battle.elapsed;
   snapshot();
@@ -59,10 +65,16 @@ export function nativeOvergrowthRecording(level = 1) {
   run(until + 0.85);
   const after = battle.elapsed;
   snapshot();
+  run(until + 1.4);
+  const fieldAfter = battle.elapsed;
+  snapshot();
   step();
   model.finishBattle();
   return {
     level,
+    bottle,
+    landing,
+    fieldAfter,
     falling,
     growing,
     deployed,
