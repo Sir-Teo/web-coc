@@ -182,6 +182,8 @@ export class BattleSoundLog {
    */
   attack(battle: Battle, u: Unit, event: 'attack' | 'hit' = 'attack') {
     this.sync(battle);
+    // Version 94's beam owns a sustained loop; do not restart the same clip every damage tick.
+    if (battle.nativeTroopDamageRamp && u.kind === 'infernodragon' && event === 'attack') return;
     const cue = troopCue(
       battle,
       u,

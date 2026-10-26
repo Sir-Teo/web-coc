@@ -703,4 +703,11 @@ Native troop bodies now face defending targets before building destinations; str
 centers follow their real footprints. The beam disappears when ownership or target validity
 ends, during Freeze, while pursuing, and when returning home. Reduced motion keeps a static
 beam timeline with the current combat stage. Rendering does not modify combat state or bump
-the replay version. Source loop audio and transition bursts remain separate work.
+the replay version.
+
+Inferno Dragon's attack audio now follows the same beam ownership. The original fire sample
+loops once per active stage at the pinned 30% volume and 1.0/1.2/1.4 pitches, rather than
+restarting at every damage tick. Source stage timestamps and stable target keys make pause,
+seek and replay-speed changes use the shared sample player's normal lifecycle. Generic
+per-hit attack sounds remain for recordings before combat version 94. Transition bursts
+remain separate presentation work.

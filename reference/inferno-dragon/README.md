@@ -36,5 +36,13 @@ timeline controls, locator transforms, facing, stop conditions and read-only bat
 Native presentation checks cover the retained mouth pose, world movement, caching and
 reduced motion. Browser recordings cover buildings and defending Heroes, all damage stages,
 retargeting, backward seeking, reduced motion, native meshes and return-home cleanup on
-desktop and phone. The attack loop audio and transition bursts are separate presentation
-work; captured effect sound fields are not a claim that those loops have been implemented.
+desktop and phone.
+
+The same three attack effects name `sfx/infdragon_fireloop_01.ogg` at 30% volume with fixed
+100%, 120% and 140% pitch. That original sample is already imported by the troop sound
+library. One sustained cue now owns each active beam stage; its key contains the unit,
+target namespace/id, first-hit clock and stage. Generic per-hit attack starts are suppressed
+for combat version 94, while older recordings retain them. The shared sample player wraps
+seek offsets through the source loop, scales pitch with replay speed and stops it for pause,
+mute, lost beam ownership or battle completion. Existing mixer voice caps still apply.
+Stage transition bursts remain separate presentation work.

@@ -1,5 +1,13 @@
 # Troop and spell sounds
 
+Inferno Dragon's combat version 94 beam uses one sustained source fire loop per active stage,
+at 30% volume and 1.0/1.2/1.4 pitch. Per-hit attack starts are suppressed for that beam.
+Pause, seek, replay speed, retargeting and mute use the shared sample player's loop lifecycle.
+See the [pinned beam and sound reference](../reference/inferno-dragon/README.md).
+
+Sound preloading uses the battle's carried army, including fixed armies and portable replays,
+so the viewing village's home army cannot delay the recording's first attack samples.
+
 Attacking troops play the client's own sounds when they are deployed, when they attack and when they fall. Spells play theirs as the bottle falls, lands and pulses, and a destroyed building plays the client's crash. They replace the generated tones that stood in before; a tone still plays until its sound has been decoded, and vibration follows the same moments either way.
 
 ## Source

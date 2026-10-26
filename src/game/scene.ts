@@ -40,6 +40,7 @@ import { darkDrillArtLoaded, darkDrillBounds, loadDarkDrillArt } from './dark-dr
 import { loadXbowArt, xbowArtLoaded } from './xbow-poses';
 import { infernoSoundCues } from './inferno-sounds';
 import { preloadInfernos, InfernoPresentation } from './inferno-scene';
+import { infernoDragonSoundCues } from './inferno-dragon-sounds';
 import { infernoPortrait } from './inferno-art';
 import { infernoArtLoaded, infernoBounds, loadInfernoArt } from './inferno-graph';
 import {
@@ -4162,7 +4163,7 @@ export class VillageScene extends Phaser.Scene {
     const kinds = new Set<string>(battle.units.map((u) => u.kind));
     const spells = new Set<string>(battle.nativeSpells?.map((cast) => cast.name));
     if (battle !== this.troopSoundBattle) {
-      for (const [kind, count] of Object.entries(this.model.state.army)) if (count) kinds.add(kind);
+      for (const [kind, count] of Object.entries(battle.remaining)) if (count) kinds.add(kind);
       for (const [kind, count] of Object.entries(battle.spells))
         if (count) spells.add(SPELL_SOURCE[kind as SpellKind]);
     }
@@ -4370,6 +4371,7 @@ export class VillageScene extends Phaser.Scene {
           ...garrisonSoundCues(battle),
           ...troopSoundCues(battle, this.battleSounds),
           ...infernoSoundCues(battle),
+          ...infernoDragonSoundCues(battle),
           ...lateCues,
         ]
       : NO_CUES;

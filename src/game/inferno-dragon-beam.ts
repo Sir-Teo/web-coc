@@ -27,6 +27,9 @@ const profiles = effects.map((name) => {
     fadeIn: Number(particle.FadeInTime) / 1000,
     endZ: Number(particle.TargetedEndZ),
     width: (Number(particle.StartScale) / 100) * 1.2,
+    sound: effect.Sound,
+    volume: Number(effect.Volume) / 100,
+    pitch: Number(effect.MinPitch) / 100,
   };
 });
 export const infernoDragonBeamProfile = (stage: number) => profiles[stage];
@@ -40,6 +43,9 @@ export function infernoDragonBeams(battle: Battle | null) {
     age: number;
     target: { x: number; y: number };
     air: boolean;
+    /** Stable ownership of this stage, including a fresh clock when the target changes. */
+    key: string;
+    at: number;
   }[] = [];
   const buildings = buildingIndex(battle),
     defenders = defenderIndex(battle);
@@ -76,7 +82,15 @@ export function infernoDragonBeams(battle: Battle | null) {
     const times = nativeUnitStats(unit.kind, unit.level ?? battle.troopLevels?.infernodragon ?? 1)
       .damageRamp!.switchAt;
     const stage = age + 1e-9 >= times[1] ? 2 : age + 1e-9 >= times[0] ? 1 : 0;
-    result.push({ id: unit.id, stage, age, target, air });
+    result.push({
+      id: unit.id,
+      stage,
+      age,
+      target,
+      air,
+      key: `inferno-dragon:${unit.id}:${ramp.defender ? 'd' : 'b'}:${ramp.targetId}:${ramp.startedAt}:${stage}`,
+      at: ramp.startedAt + (stage > 0 ? times[stage - 1] : 0),
+    });
   }
   return result;
 }
