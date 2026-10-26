@@ -38,7 +38,7 @@ The take and its pitch come from a hash of the event's key: the unit's id and th
 ## When they play
 
 - **Deploy.** A deployed troop carries no deploy time, so the scene notes the battle time of the first frame that shows each unit. Units already on the field when the sound log starts, or after a seek, are noted silently, so seeking through a replay doesn't fire a burst of deploys. Units that another unit, a spell or an ability summons play no deploy sound.
-- **Attack and hit.** Most attacks use the scene's log of combat events against buildings or defenders, live or replayed. Captured Electromite/Electro Dragon arcs and Meteor Golem packets keep their own timelines:
+- **Attack and hit.** Most attacks use the scene's log of combat events against buildings or defenders, live or replayed. Captured Electromite/Electro Dragon/Super Wizard arcs and Meteor Golem packets keep their own timelines:
   - a melee blow is the attack and the hit at once;
   - a shot attacks at its launch and hits at its impact;
   - a breath attacks.
@@ -111,6 +111,13 @@ retain the primary attack, secondary chain and per-target hit cues through caste
 and reverse seeks. Primary attack uses the original 90% volume and 0.95–1.05 pitch;
 chain uses 40% and 0.9–1; hit uses 20% and 0.5–0.7. Carried dragons warm all samples
 before deployment. Phone/desktop checks exercise all four events in actual Web Audio.
+
+Version 110 retains Super Wizard's original `ChainAttackEffect`, using the already shipped
+`tesla_zap_01.ogg` at 40% volume and 0.9–1 pitch. Each captured secondary plays one chain
+and one hit cue; the primary plays its original attack and hit. The sample count remains
+339 while the effect catalog reaches 354. Captured tiers and timestamps survive caster
+removal and reverse seeks, and identical-roster battle warming loads every sample before
+deployment. Phone/desktop checks exercise actual primary and branch Web Audio nodes.
 
 ## Tests
 

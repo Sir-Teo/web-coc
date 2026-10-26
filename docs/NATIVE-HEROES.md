@@ -1288,3 +1288,49 @@ Asset tests verify pins, pack sizes, deterministic particles, attachment placeme
 independent effect lifetimes and retained sound parameters. Phone/desktop browser checks
 exercise original lightning, actual charge/attack/chain/hit Web Audio, cold battle warming,
 read-only rendering, reduced motion and historical version 108 playback.
+
+## Version 110 Super Wizard Chain Magic
+
+Super Wizard's `ChainAttackDepth` is one, so the former hop-only controller never
+scheduled a secondary hit. Version 110 reads `ChainAttackFactor` as ten total targets:
+one primary and up to nine branches from that primary. The pinned Super Wizard dossier
+(revision 624748) confirms this topology and the source character supplies a three-tile
+radius, 128-ms delay and 60% damage reduction. Every secondary receives 40% of captured
+primary damage once; secondary hits do not become new origins or accumulate reduction.
+Building and defender primaries use this same direct native attack instead of a generic
+arrow against defenders. A blocking Wall may be primary, but Walls and traps cannot be
+secondary targets. Both defender layers are eligible.
+
+The existing attack-start timing and two-second period remain adapters. This correction
+does not yet drive the attacker from the source clip's action frame or `PreAttackEffect`.
+Branches resolve together at one source delay, selecting the nearest unvisited eligible
+targets from the primary's current position if it survives, otherwise its captured point.
+Building-edge/defender-point distances, stable building/id tie ordering and selection at
+resolution time are explicit local adapters; the tables do not expose the full client
+selector. Dead, hidden and future targets are excluded. Captured tier and outgoing damage
+survive caster removal, and pending branches keep a final clone's raid open until they
+resolve. Version 109 and earlier retain their former primary-only and generic-shot combat.
+
+`scripts/import-super-wizard-art.py --check` reproduces three exact source effect packs,
+523,646 bytes in total, checking graph hashes and decoded pixels. These are `Super Wizard
+Attack`, `Super Wizard Attack Chain` and `Super Wizard Hit`; existing `ps_chr_` variants
+have different offsets, layers or gun-bone flags and are not substituted. Native targeted
+particles follow the surviving caster/primary and use the original `attack_pivot` when
+available, with the shared endpoint-stretch and lift adapters. Original effect lifetimes
+control sampling; reduced motion suppresses particles without changing combat. The shared
+pure effect-event builder also preserves version 109 Electro Dragon presentation and
+avoids allocating a duration map per frame.
+
+Captured strikes retain one primary attack sound, one chain sound per secondary and one
+hit sound per reached target through the ten-second seek horizon. All Ogg files already
+ship; the catalog stays at 339 samples and now includes 354 effects. Carried Super Wizards
+warm all three packs and actor samples before deployment even with the same home roster.
+
+Unit tests cover both end tiers, the nine-branch cap, constant secondary damage, mixed
+layers, primary-only radius, moving origins, captured boosts, exclusions, Wall primaries,
+clone expiry and historical behavior. Real deployment fixtures set the base Wizard's
+research too, preserving the derived Super Troop tier through portable forward/reverse
+seeks. Asset tests verify source pins, pack sizes, deterministic particles, attachments,
+independent lifetimes and captured sound parameters. Phone/desktop browser checks cover
+original primary/branch art, actual attack/chain/hit Web Audio, identical-roster warming,
+read-only rendering, reduced motion and historical version 109 playback.

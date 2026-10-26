@@ -1,3 +1,4 @@
+import { SUPER_WIZARD_EFFECTS } from './super-wizard-effects';
 import { ELECTRO_DRAGON_EFFECTS } from './electro-dragon-effects';
 import { ELECTROMITE_EFFECTS } from './electromite-effects';
 import { carriedMiteArt, MITE_SPAWN_PARENTS } from './native-mite-jumps';
@@ -2655,6 +2656,12 @@ export class VillageScene extends Phaser.Scene {
       kinds.includes('electrodragon')
     )
       this.nativeProjectiles?.prefetchEffects(ELECTRO_DRAGON_EFFECTS);
+    if (
+      this.model.battle?.nativeSuperWizard &&
+      !this.model.reducedMotion &&
+      kinds.includes('superwizard')
+    )
+      this.nativeProjectiles?.prefetchEffects(SUPER_WIZARD_EFFECTS);
     const setups = this.model.reducedMotion
       ? []
       : [...this.model.heroSetups(), ...(this.model.battle?.nativeHeroes ?? [])];

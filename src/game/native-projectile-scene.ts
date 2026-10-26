@@ -1,3 +1,4 @@
+import { superWizardEffectEvents } from './super-wizard-effects';
 import { electroDragonEffectEvents } from './electro-dragon-effects';
 import { electromiteEffectEvents } from './electromite-effects';
 import type Phaser from 'phaser';
@@ -164,6 +165,10 @@ export class NativeProjectilePresentation {
       return covered;
     }
     for (const event of electroDragonEffectEvents(battle, iso, airLift, attachment, (name) =>
+      this.layer.duration(name),
+    ))
+      this.layer.play(event, elapsed, reduced);
+    for (const event of superWizardEffectEvents(battle, iso, airLift, attachment, (name) =>
       this.layer.duration(name),
     ))
       this.layer.play(event, elapsed, reduced);

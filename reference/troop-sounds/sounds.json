@@ -885,7 +885,8 @@
       "deploy": "Super Wizard Deploy",
       "attack": "Super Wizard Attack",
       "hit": "Super Wizard Hit",
-      "die": "Wizard Die"
+      "die": "Wizard Die",
+      "chain": "Super Wizard Attack Chain"
     },
     "superyeti": {
       "name": "Super Yeti",
@@ -3912,6 +3913,15 @@
         "volume": 0.9,
         "minPitch": 0.95,
         "maxPitch": 1.05,
+        "delay": 0.0
+      }
+    ],
+    "Super Wizard Attack Chain": [
+      {
+        "sound": "sfx/tesla_zap_01.ogg",
+        "volume": 0.4,
+        "minPitch": 0.9,
+        "maxPitch": 1.0,
         "delay": 0.0
       }
     ],

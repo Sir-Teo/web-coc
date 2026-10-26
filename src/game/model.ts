@@ -1,3 +1,4 @@
+import type { SuperWizardBranch, SuperWizardZap } from './native-super-wizard';
 import type { ElectroDragonArc, ElectroDragonZap } from './native-electro-dragon';
 import type { ElectromiteArc, ElectromiteZap } from './native-electromite';
 import { stepDefendingHeroes } from './defending-heroes';
@@ -899,6 +900,10 @@ export interface Battle {
   nativeMeteorThrows?: true;
   /** Version 109: Electro Dragon source charge, mixed-target lightning and captured effects. */
   nativeElectroDragon?: true;
+  /** Version 110: Super Wizard branches once from the primary to nine secondary targets. */
+  nativeSuperWizard?: true;
+  nativeSuperWizardBranches?: SuperWizardBranch[];
+  nativeSuperWizardZaps?: SuperWizardZap[];
   nativeElectroDragonArcs?: ElectroDragonArc[];
   nativeElectroDragonZaps?: ElectroDragonZap[];
   /** Captured throw packets retained for original art and sound through replay seeks. */
@@ -6752,6 +6757,7 @@ export class GameModel {
         !b.nativeChains?.length &&
         !b.nativeElectromiteArcs?.length &&
         !b.nativeElectroDragonArcs?.length &&
+        !b.nativeSuperWizardBranches?.length &&
         !b.nativePendingSpawns?.length &&
         !b.nativeSpells?.some((cast) => nativeSpellCanStillFight(cast)) &&
         !TROOP_KEYS.some(

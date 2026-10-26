@@ -351,6 +351,14 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
       if (cue) cues.push(cue);
     }
   }
+  for (const zap of battle.nativeSuperWizardZaps ?? []) {
+    if (zap.at > elapsed || !cueAudible(zap.at, elapsed)) continue;
+    const actor = { id: zap.sourceId, kind: 'superwizard' as const, level: zap.level };
+    for (const event of [zap.primary ? 'attack' : 'chain', 'hit'] as const) {
+      const cue = troopCue(battle, actor, event, `${zap.key}:${event}`, zap.at);
+      if (cue) cues.push(cue);
+    }
+  }
   for (const cue of logged) cues.push(cue);
   return cues;
 }
