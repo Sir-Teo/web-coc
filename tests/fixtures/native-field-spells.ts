@@ -3,7 +3,7 @@ import { emptyArmy, emptySpells } from '../../src/game/army';
 import { replayBattle, type ReplayData } from '../../src/game/replay';
 import { spellEndTime } from '../../src/game/native-spells';
 export function nativeFieldSpellRecording(
-  name: 'Rage' | 'Haste' | 'Healing' | 'Poison' | 'Clone' | 'Invisibility',
+  name: 'Rage' | 'Haste' | 'Healing' | 'Poison' | 'Clone' | 'Invisibility' | 'Recall',
   level = 1,
 ) {
   const key = (
@@ -14,6 +14,7 @@ export function nativeFieldSpellRecording(
         Poison: 'poison',
         Clone: 'clone',
         Invisibility: 'invisibility',
+        Recall: 'recall',
       } as const
     )[name],
     model = new GameModel();
@@ -38,9 +39,9 @@ export function nativeFieldSpellRecording(
   const times = {
     bottle: 0.4,
     landing: 0.9,
-    beforeHit: 1.45,
+    beforeHit: battle.nativeSpells![0].firstHit - 0.05,
     pulsing: 1.8,
-    steady: Math.min(10, end / 2),
+    steady: Math.max(1, Math.min(10, end / 2)),
     nearEnd: end - 0.6,
     beforeEnd: end - 0.05,
     end,

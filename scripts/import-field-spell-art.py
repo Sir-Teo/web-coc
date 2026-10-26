@@ -42,7 +42,7 @@ def main():
     existing = json.loads((ROOT / 'reference/full-client/effect-art.json').read_text())
     effects, packs, spells, external = {}, {}, {}, {}
     for spell, key in [('Rage', 'rage'), ('Haste', 'haste'), ('Healing', 'heal'), ('Poison', 'poison'),
-                       ('Clone', 'clone'), ('Invisibility', 'invisibility')]:
+                       ('Clone', 'clone'), ('Invisibility', 'invisibility'), ('Recall', 'recall')]:
         profiles, current, names = [], {}, set()
         for level, row in enumerate(lib.table('logic/spells.csv')[spell], 1):
             current.update(row)

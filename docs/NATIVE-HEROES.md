@@ -1754,3 +1754,36 @@ committed projectiles. Spell Tower inputs guard the separate defensive path. The
 recordings reconstruct through portable forward/reverse seeks and match version-119
 physical states after removing presentation metadata. Browser cases cover phone and
 desktop meshes, original Web Audio, cold retained history and failed-pack recovery.
+
+## Version 121 original Recall cast effects
+
+Recall's seven levels now use `Recall_Predeploy`, `RecallDeployAuraGround` and
+`RecallDeployAuraTop` from the pinned client. The 54,956-byte pack contains the original
+bottle, ground circle, upper circle and two sparkle variants. Source scene timelines
+retain the brief upper circle and shrinking ground ring. Both circle emitters have
+2,000 ms lives and 1 ms emission; the source effect scale is 111%, and particle scale
+shrinks from 100% to 60%. The top phase also emits 20 sparks over 500 ms with 1,500–3,000
+ms lives, giving a maximum 3.5-second tail from deployment.
+
+Original deployment begins at 800 ms. The physical Recall still resolves its one pulse
+at 900 ms, so the captured ended cast is required to finish the source particles and
+audio after troops return to the deployment bar. Version 121 adds `Recall` to
+`nativeSpellArt`; existing history, duration culling and nested timeline sampling handle
+the short cast without a new Battle structure. Reduced motion omits moving particles.
+Version 120 keeps its earlier capability list and presentation. The distinct per-unit
+disappearance and redeployment effects need unit event positions; this cast-phase path
+uses the fixed cast center.
+
+The original bottle cue remains 80% volume at 0.95 pitch. The landing sound belongs to
+`deploy2`, at 100% volume and 1.0 pitch, with its existing stable cast key. Cold views warm
+the pack and samples from retained history even when no live or carried Recall remains.
+The audio catalog stays at 340 files and 357 effects, and existing field packs are
+unchanged. The importer verifies source pins, graph bytes, decoded pixels and file sets.
+
+Tests cover all seven levels, visible source phases, final sparkle tails, original
+audio, read-only sampling and reduced motion. Portable recordings reconstruct through
+forward and reverse seeks. Actual Recall and redeployment with Sneezy verify living
+summon ownership, and actual Queen arrows verify impacts committed before Recall against
+ground and air defenders. These physical states match version 120 after presentation
+metadata is removed. Browser cases verify phone/desktop meshes and original Web Audio,
+cold ended-cast loading, old playback and paused recovery after a failed pack.

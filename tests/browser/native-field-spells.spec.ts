@@ -100,6 +100,8 @@ for (const { name, level, width } of [
   { name: 'Clone', level: 9, width: 1440 },
   { name: 'Invisibility', level: 1, width: 1440 },
   { name: 'Invisibility', level: 4, width: 390 },
+  { name: 'Recall', level: 1, width: 390 },
+  { name: 'Recall', level: 7, width: 1440 },
 ] as const)
   test(`original ${name} level ${level} fields and audio survive cold portable seeks at ${width}px`, async ({
     page,
@@ -119,7 +121,7 @@ for (const { name, level, width } of [
     expect(requests).toContain(`/assets/field-spells-native/${r.key}/graph.json`);
     if (name === 'Rage')
       expect(requests).toContain('/assets/effects-native/rage-deploy-top/graph.json');
-    for (const key of ['rage', 'haste', 'heal', 'poison', 'clone', 'invisibility'])
+    for (const key of ['rage', 'haste', 'heal', 'poison', 'clone', 'invisibility', 'recall'])
       if (key !== r.key)
         expect(requests).not.toContain(`/assets/field-spells-native/${key}/graph.json`);
     expect(requests).not.toContain('/assets/jump-spell-native/cast/graph.json');
@@ -141,6 +143,11 @@ for (const { name, level, width } of [
           bottle: 'invisibility_bottleDrop',
           ground: `invisibility_lvl${level}_ring`,
           upper: `invisibility_lvl${level}_ring2`,
+        },
+        Recall: {
+          bottle: 'recall_bottleDrop',
+          ground: 'RecallCircleGround',
+          upper: 'RecallCircleTwirl',
         },
       },
       { bottle, ground, upper } = visuals[name];
@@ -192,7 +199,7 @@ for (const { name, level, width } of [
         key =
           name === 'Healing'
             ? 'spell:1:hit:1'
-            : name === 'Poison'
+            : name === 'Poison' || name === 'Recall'
               ? 'spell:1:deploy2'
               : 'spell:1:deploy';
       const cue = scene.lastCues.find((c) => c.key === key),
@@ -217,11 +224,12 @@ for (const { name, level, width } of [
         Poison: 0.8,
         Clone: 0.95,
         Invisibility: 0.9,
+        Recall: 1,
       }[name],
       keys =
         name === 'Healing'
           ? ['spell:1:preDeploy', 'spell:1:deploy', 'spell:1:hit:0', 'spell:1:hit:1']
-          : name === 'Poison'
+          : name === 'Poison' || name === 'Recall'
             ? ['spell:1:preDeploy', 'spell:1:deploy2']
             : ['spell:1:preDeploy', 'spell:1:deploy'];
     expect(sound).toMatchObject({
@@ -235,7 +243,7 @@ for (const { name, level, width } of [
       expect(sound.pitch).toBeLessThanOrEqual(0.9);
     } else
       expect(sound.pitch).toBe(
-        { Rage: 0.75, Haste: 0.97, Poison: 0.97, Clone: 0.97, Invisibility: 1 }[name],
+        { Rage: 0.75, Haste: 0.97, Poison: 0.97, Clone: 0.97, Invisibility: 1, Recall: 1 }[name],
       );
     expect(sound.rate).toBeCloseTo(sound.pitch, 6);
     expect(sound.gain).toBeCloseTo(volume * 0.12, 6);
@@ -276,11 +284,13 @@ for (const { name, level, width } of [
       ).toEqual({ pulse: undefined, meshes: 0 });
     }
     const oldVersion =
-      name === 'Clone' || name === 'Invisibility'
-        ? 119
-        : name === 'Healing' || name === 'Poison'
-          ? 117
-          : 116;
+      name === 'Recall'
+        ? 120
+        : name === 'Clone' || name === 'Invisibility'
+          ? 119
+          : name === 'Healing' || name === 'Poison'
+            ? 117
+            : 116;
     await open(page, oldVersion);
     await seek(page, r.steady);
     expect(
@@ -298,11 +308,13 @@ for (const { name, level, width } of [
       ready: false,
       views: 0,
       names:
-        oldVersion === 119
-          ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison']
-          : oldVersion === 117
-            ? ['Jump', 'Rage', 'Haste']
-            : ['Jump'],
+        oldVersion === 120
+          ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison', 'Clone', 'Invisibility']
+          : oldVersion === 119
+            ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison']
+            : oldVersion === 117
+              ? ['Jump', 'Rage', 'Haste']
+              : ['Jump'],
       history: undefined,
     });
     expect(errors).toEqual([]);
@@ -348,6 +360,12 @@ for (const { name, path, heldEffect, otherEffect } of [
     name: 'Invisibility',
     path: 'field-spells-native/invisibility',
     heldEffect: 'Invisibility area lvl1',
+    otherEffect: undefined,
+  },
+  {
+    name: 'Recall',
+    path: 'field-spells-native/recall',
+    heldEffect: 'RecallDeployAuraGround',
     otherEffect: undefined,
   },
 ] as const)
@@ -453,6 +471,7 @@ for (const { name, path, heldEffect, otherEffect } of [
         Poison: 'Toxic_glow',
         Clone: 'clone_deploy_range_lvl1',
         Invisibility: 'invisibility_lvl1_ring',
+        Recall: 'RecallCircleGround',
       }[name],
     ]);
     if (name === 'Healing') await visible(page, ['heal_ring_effect', 'heal_ring_effect2']);

@@ -38,7 +38,10 @@
     "Invisibility area lvl2": "invisibility",
     "Invisibility area lvl3": "invisibility",
     "Invisibility area lvl4": "invisibility",
-    "Invisibility_Predeploy": "invisibility"
+    "Invisibility_Predeploy": "invisibility",
+    "RecallDeployAuraGround": "recall",
+    "RecallDeployAuraTop": "recall",
+    "Recall_Predeploy": "recall"
   },
   "packs": {
     "rage": {
@@ -70,6 +73,11 @@
       "path": "assets/field-spells-native/invisibility/graph.json",
       "sha256": "13d0239d5b2861d2a646c9fc2d7698a479b089e98ec75dcabe720c526a936788",
       "bytes": 150035
+    },
+    "recall": {
+      "path": "assets/field-spells-native/recall/graph.json",
+      "sha256": "6eaaec45f45fc15244936be5a662fb416dcab271ef38ae5e7792c6cb951ccf14",
+      "bytes": 54956
     }
   },
   "spells": {
@@ -540,6 +548,67 @@
           "level": 4,
           "deploySeconds": 0.8,
           "pulseSeconds": 1.5
+        }
+      ]
+    },
+    "Recall": {
+      "key": "recall",
+      "levels": [
+        {
+          "PreDeployEffect": "Recall_Predeploy",
+          "DeployEffect": "RecallDeployAuraGround",
+          "DeployEffect2": "RecallDeployAuraTop",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9
+        },
+        {
+          "PreDeployEffect": "Recall_Predeploy",
+          "DeployEffect": "RecallDeployAuraGround",
+          "DeployEffect2": "RecallDeployAuraTop",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9
+        },
+        {
+          "PreDeployEffect": "Recall_Predeploy",
+          "DeployEffect": "RecallDeployAuraGround",
+          "DeployEffect2": "RecallDeployAuraTop",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9
+        },
+        {
+          "PreDeployEffect": "Recall_Predeploy",
+          "DeployEffect": "RecallDeployAuraGround",
+          "DeployEffect2": "RecallDeployAuraTop",
+          "level": 4,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9
+        },
+        {
+          "PreDeployEffect": "Recall_Predeploy",
+          "DeployEffect": "RecallDeployAuraGround",
+          "DeployEffect2": "RecallDeployAuraTop",
+          "level": 5,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9
+        },
+        {
+          "PreDeployEffect": "Recall_Predeploy",
+          "DeployEffect": "RecallDeployAuraGround",
+          "DeployEffect2": "RecallDeployAuraTop",
+          "level": 6,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9
+        },
+        {
+          "PreDeployEffect": "Recall_Predeploy",
+          "DeployEffect": "RecallDeployAuraGround",
+          "DeployEffect2": "RecallDeployAuraTop",
+          "level": 7,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9
         }
       ]
     }

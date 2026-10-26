@@ -196,3 +196,8 @@ their existing bottle cue at 80% volume and 0.95 pitch. Deployment remains 95%/0
 Clone and 90%/1.0 for Invisibility. Source field art adds no cues or samples; the catalog
 remains at 340 files and 357 effects. See
 [Clone and Invisibility fields](NATIVE-HEROES.md#version-120-original-clone-and-invisibility-fields).
+
+Version 121 retains Recall's original cast cues after its single live pulse ends.
+The bottle remains 80%/0.95 pitch; the landing belongs to `deploy2` at 100%/1.0 pitch.
+Cold retained-history views warm the existing samples, with no new catalog entries. See
+[Recall cast effects](NATIVE-HEROES.md#version-121-original-recall-cast-effects).
