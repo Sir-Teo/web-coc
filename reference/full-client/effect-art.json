@@ -25,6 +25,7 @@
     "sc/buildings_40.sctx": "0e3a207454e5392dd9d73d61c2fb17399f93bd7f9e680c34838fa303207bea7d",
     "sc/buildings_45.sctx": "ce0425622f22f1dade3fd1614e1c3ce5fabe4e09d9c5f32d014dd1f12cdc9287",
     "sc/buildings_6.sctx": "68d97a39c2bfbcf94f820f4091c078a9516f41dafe27744e7de26e30864d1ffc",
+    "sc/buildings_62.sctx": "0f97f201e0fc95e31f3e1c3430c109858132b408a59db6704a0cedbc8ac3f94d",
     "sc/buildings_65.sctx": "f40df9c9730121c5c444034a661751aba81aa00a7c2bbb3e080e8ffe73c53cac",
     "sc/buildings_cc.sc": "bcf0c19bfa47359ddee1ca71976459e87c5087d82c7386703119c3f602d33f54",
     "sc/buildings_cc_7.sctx": "ab8fc8f197ea85e43717baea5f3a7494393d5fb8a5d459ff92fb17ed0f53a658",
@@ -46,7 +47,7 @@
     "sc/vfx_env_2.sctx": "36578887a41381699efe7cf4e9f013254a053b02c95dc37db886a2d5415c9995",
     "sc/vfx_env_3.sctx": "4c914a56083b09df94d6d06881738522f9172e589707e79830834ee1c9573dca"
   },
-  "totalBytes": 8034673,
+  "totalBytes": 8036623,
   "effects": {
     "ThrowerProjectileHit": "throwerprojectilehit",
     "Meteor_Golem_Projectile_Hit": "meteor-golem-projectile-hit",
@@ -190,6 +191,7 @@
     "frosty_trail_emitter": "emitter-frosty-trail-emitter",
     "hero_equip_aq_frost_arrow_trail_emitter": "emitter-frosty-trail-emitter",
     "fennec_trail_emitter": "emitter-fennec-trail-emitter",
+    "e_spell_revive_sparkles_trail": "emitter-e-spell-revive-sparkles-trail",
     "BlastBow_trail_emitter": "emitter-blastbow-trail-emitter",
     "e_chr_gw_fireball_Smoke": "emitter-e-chr-gw-fireball-smoke",
     "e_mp_PowerPumpTrail": "emitter-e-mp-powerpumptrail",
@@ -768,6 +770,11 @@
       "path": "assets/effects-native/emitter-fennec-trail-emitter/graph.json",
       "sha256": "f30e0d9f45241b7325b95eb9d9c67019353e217233dbf9394f771175e9b7f39d",
       "bytes": 12271
+    },
+    "emitter-e-spell-revive-sparkles-trail": {
+      "path": "assets/effects-native/emitter-e-spell-revive-sparkles-trail/graph.json",
+      "sha256": "1a3d505adb5fde86e2eb346715ac17da78b578a6cb74539bf5861c1ec25c0831",
+      "bytes": 1950
     },
     "emitter-blastbow-trail-emitter": {
       "path": "assets/effects-native/emitter-blastbow-trail-emitter/graph.json",

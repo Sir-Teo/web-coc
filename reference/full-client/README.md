@@ -62,6 +62,21 @@ Omit `--check` to rebuild. Both animation importers compare graph bytes and deco
 
 Artwork and audio remain the property of Supercell. Acquisition uses the public official `game-assets.clashofclans.com` bundle. This fan project is not endorsed by Supercell. Existing project asset attribution and usage conditions continue to apply.
 
+### Targeted projectile reference coverage
+
+The combat compiler follows `TargetedProjectile` alongside the four ordinary projectile reference
+columns. This retains Revive's `Hero Revive Projectile`: the original flight export and sparkle
+trail are available through the projectile and emitter catalogs. The catalogs now contain 244
+projectile rows in 178 flight packs, plus 99 effects and 57 emitters in 123 effect packs.
+Existing combat values and art packs are unchanged. Source delta resets use sorted column names
+so repeated compilation verifies identically across Python hash seeds.
+
+`tests/targeted-projectile-references.test.ts` checks reference closure across the compiled tables,
+the source 800 ms flight, drawable original geometry, deterministic trail resampling, reduced
+motion and particle retirement. The three importers support `--check`; the shared battle-art tests
+verify graph pins, texture paths and complete owned-file byte counts. This adds source coverage
+without binding a live Revive flight or changing its existing 1.5-second restoration timing.
+
 ## Verified September 15, 2026
 
 - Complete archive reconstruction: 9,075/9,075, zero missing/mismatched files.
