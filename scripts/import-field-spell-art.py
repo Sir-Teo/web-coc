@@ -56,17 +56,20 @@ def main():
         return longest
 
     existing = json.loads((ROOT / 'reference/full-client/effect-art.json').read_text())
-    effects, packs, spells, external = {}, {}, {}, {}
+    effects, packs, spells, external, silent_children = {}, {}, {}, {}, {}
     for spell, key in [('Rage', 'rage'), ('Haste', 'haste'), ('Healing', 'heal'), ('Poison', 'poison'),
                        ('Clone', 'clone'), ('Invisibility', 'invisibility'), ('Recall', 'recall'),
                        ('Lightning', 'lightning'), ('Earthquake', 'earthquake'),
-                       ('Skeleton Spell', 'skeleton'), ('Bat Spell', 'bat')]:
+                       ('Skeleton Spell', 'skeleton'), ('Bat Spell', 'bat'),
+                       ('Totem Spell', 'totem'), ('AngrySpell', 'angry')]:
         profiles, current, names = [], {}, set()
         for level, row in enumerate(lib.table('logic/spells.csv')[spell], 1):
             current.update(row)
             profile = {k: current[k] for k in ['PreDeployEffect', 'DeployEffect', 'DeployEffect2', 'ChargingEffect'] if current.get(k)}
             profile.update(level=level, deploySeconds=int(current['DeployTimeMS']) / 1000,
                            pulseSeconds=sum(int(current[k]) for k in ['DeployTimeMS', 'ChargingTimeMS', 'HitTimeMS']) / 1000)
+            if int(current.get('DeployEffect2Delay') or 0):
+                profile['deploy2DelaySeconds'] = int(current['DeployEffect2Delay']) / 1000
             if current.get('ChargingEffect'):
                 profile['chargingTargeted'] = any(row.get('Targeted') == 'TRUE' for row in lib.effects[current['ChargingEffect']])
             if current.get('HitEffect'):
@@ -74,9 +77,16 @@ def main():
                 radius = int(current.get('RandomRadius', '0'))
                 profile['hitRadiusTiles'] = radius // 100 if radius % 100 == 0 else radius / 100
                 profile['graphicsOnlyRadius'] = current.get('RandomRadiusAffectsOnlyGfx') == 'TRUE'
-            if spell in ['Earthquake', 'Skeleton Spell', 'Bat Spell']:
-                profile['retainSeconds'] = round(profile['deploySeconds'] + max(
+            if spell in ['Earthquake', 'Skeleton Spell', 'Bat Spell', 'AngrySpell']:
+                profile['retainSeconds'] = round(max(
+                    profile['deploySeconds'] + (profile.get('deploy2DelaySeconds', 0) if k == 'DeployEffect2' else 0) +
                     particle_tail(profile[k]) for k in ['DeployEffect', 'DeployEffect2'] if profile.get(k)), 3)
+            child = current.get('ChainSpell')
+            if child:
+                effect_columns = ['PreDeployEffect', 'DeployEffect', 'DeployEffect2', 'ChargingEffect', 'HitEffect', 'EndEffect', 'EnemyDeployEffect']
+                child_rows = lib.table('logic/spells.csv')[child]
+                if not any(row.get(column) for row in child_rows for column in effect_columns):
+                    require(silent_children.setdefault(child, spell) == spell, f'Ambiguous silent child: {child}')
             profiles.append(profile)
             names.update(profile[k] for k in ['PreDeployEffect', 'DeployEffect', 'DeployEffect2', 'ChargingEffect', 'HitEffect'] if profile.get(k))
         spells[spell] = dict(key=key, levels=profiles)
@@ -106,7 +116,7 @@ def main():
         require(not result['skipped'], f'Missing exports: {result["skipped"]}')
         packs[key] = dict(path=f'{prefix}/graph.json', sha256=result['sha256'], bytes=result['bytes'])
     index = dict(clientVersion='18.400.21', generator='scripts/import-field-spell-art.py', sources=dict(sorted(art.PINS.items())),
-                 effects=effects, packs=packs, spells=spells, externalEffects=external,
+                 effects=effects, packs=packs, spells=spells, externalEffects=external, silentChildren=silent_children,
                  conventions=dict(lifecycle='Source cast phases retain original finite emitter lifetimes; combat pulse timing is unchanged.',
                                   reuse='Existing effects are verified against source without modifying their packs.',
                                   placement='Source offsets use the shared native isometric projection adapter.'))

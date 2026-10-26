@@ -1,3 +1,4 @@
+import { fieldSpellDeploy2Delay } from './field-spell-effects';
 import source from '../../reference/troop-sounds/sounds.json' with { type: 'json' };
 import type { Battle, Unit } from './model';
 import { CUE_HORIZON, cueAudible, type SampleCue } from './sample-audio';
@@ -127,7 +128,7 @@ function castCues(
   };
   push('preDeploy', at);
   push('deploy', landed);
-  push('deploy2', landed);
+  push('deploy2', landed + (precise ? fieldSpellDeploy2Delay(cast) : 0));
   push('charging', landed);
   if (!hits?.count) return;
   // Only pulses that can still be heard: a long Healing Spell pulses dozens of times.

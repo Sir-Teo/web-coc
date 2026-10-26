@@ -20,8 +20,11 @@ async function boot(
       await audio.context.resume();
       model.battle = late
         ? structuredClone(
-            r.snapshots.find((s) => s.at === (r.name === 'Earthquake' ? r.steady : r.afterLive))
-              .battle,
+            r.snapshots.find(
+              (s) =>
+                s.at ===
+                (r.name === 'Earthquake' || r.name === 'AngrySpell' ? r.steady : r.afterLive),
+            ).battle,
           )
         : replayBattle(r.data.initial, version);
       model.changed();
@@ -118,6 +121,10 @@ for (const { name, level, width } of [
   { name: 'Skeleton Spell', level: 8, width: 1440 },
   { name: 'Bat Spell', level: 1, width: 1440 },
   { name: 'Bat Spell', level: 8, width: 390 },
+  { name: 'Totem Spell', level: 1, width: 1440 },
+  { name: 'Totem Spell', level: 4, width: 390 },
+  { name: 'AngrySpell', level: 1, width: 390 },
+  { name: 'AngrySpell', level: 4, width: 1440 },
 ] as const)
   test(`original ${name} level ${level} fields and audio survive cold portable seeks at ${width}px`, async ({
     page,
@@ -149,6 +156,8 @@ for (const { name, level, width } of [
       'earthquake',
       'skeleton',
       'bat',
+      'totem',
+      'angry',
     ])
       if (key !== r.key)
         expect(requests).not.toContain(`/assets/field-spells-native/${key}/graph.json`);
@@ -171,6 +180,16 @@ for (const { name, level, width } of [
           bottle: 'invisibility_bottleDrop',
           ground: `invisibility_lvl${level}_ring`,
           upper: `invisibility_lvl${level}_ring2`,
+        },
+        'Totem Spell': {
+          bottle: 'e_spells_meteortotem_bottledrop',
+          ground: 'e_spells_meteortotem_ring',
+          upper: 'e_spells_meteortotem_shockwave',
+        },
+        AngrySpell: {
+          bottle: 'e_spell_angryspell_predeploy',
+          ground: 'e_spell_angryspell_centre_splat_next',
+          upper: 'e_spell_angryspell_startspat_next',
         },
         'Skeleton Spell': {
           bottle: 'Skeleton_bottleDrop',
@@ -247,11 +266,13 @@ for (const { name, level, width } of [
         key =
           name === 'Lightning'
             ? 'spell:1:charging'
-            : name === 'Healing'
-              ? 'spell:1:hit:1'
-              : name === 'Poison' || name === 'Recall' || name === 'Earthquake'
-                ? 'spell:1:deploy2'
-                : 'spell:1:deploy';
+            : name === 'AngrySpell'
+              ? 'spell:1:deploy2'
+              : name === 'Healing'
+                ? 'spell:1:hit:1'
+                : name === 'Poison' || name === 'Recall' || name === 'Earthquake'
+                  ? 'spell:1:deploy2'
+                  : 'spell:1:deploy';
       const cue = scene.lastCues.find((c) => c.key === key),
         node = audio.samples.active.get(key);
       if (!cue || !node) throw Error('Original field Web Audio missing after direct seek');
@@ -288,17 +309,21 @@ for (const { name, level, width } of [
         Earthquake: 0.8,
         'Skeleton Spell': 0.5,
         'Bat Spell': 0.6,
+        'Totem Spell': 1,
+        AngrySpell: 0.8,
       }[name],
       keys =
-        name === 'Lightning'
-          ? ['spell:1:preDeploy', 'spell:1:deploy', 'spell:1:charging', 'spell:1:hit:0']
-          : name === 'Healing'
-            ? ['spell:1:preDeploy', 'spell:1:deploy', 'spell:1:hit:0', 'spell:1:hit:1']
-            : name === 'Poison' || name === 'Recall' || name === 'Earthquake'
-              ? ['spell:1:preDeploy', 'spell:1:deploy2']
-              : ['spell:1:preDeploy', 'spell:1:deploy'];
+        name === 'AngrySpell'
+          ? ['spell:1:preDeploy', 'spell:1:deploy', 'spell:1:deploy2']
+          : name === 'Lightning'
+            ? ['spell:1:preDeploy', 'spell:1:deploy', 'spell:1:charging', 'spell:1:hit:0']
+            : name === 'Healing'
+              ? ['spell:1:preDeploy', 'spell:1:deploy', 'spell:1:hit:0', 'spell:1:hit:1']
+              : name === 'Poison' || name === 'Recall' || name === 'Earthquake'
+                ? ['spell:1:preDeploy', 'spell:1:deploy2']
+                : ['spell:1:preDeploy', 'spell:1:deploy'];
     expect(sound).toMatchObject({
-      at: name === 'Healing' ? 1.8 : 0.8,
+      at: name === 'Healing' ? 1.8 : name === 'AngrySpell' ? 1.1 : 0.8,
       volume,
       unchanged: true,
       keys,
@@ -310,6 +335,9 @@ for (const { name, level, width } of [
       expect(sound.impact.gain).toBeCloseTo(0.7 * 0.12, 6);
       expect(sound.impact.rate).toBeGreaterThanOrEqual(0.95);
       expect(sound.impact.rate).toBeLessThanOrEqual(1.05);
+    } else if (name === 'Totem Spell') {
+      expect(sound.pitch).toBeGreaterThanOrEqual(0.9);
+      expect(sound.pitch).toBeLessThanOrEqual(1.1);
     } else if (name === 'Skeleton Spell') {
       expect(sound.pitch).toBeGreaterThanOrEqual(0.95);
       expect(sound.pitch).toBeLessThanOrEqual(1.05);
@@ -327,10 +355,30 @@ for (const { name, level, width } of [
           Recall: 1,
           Earthquake: 0.97,
           'Bat Spell': 1,
+          AngrySpell: 1,
         }[name],
       );
     expect(sound.rate).toBeCloseTo(sound.pitch, 6);
     expect(sound.gain).toBeCloseTo(volume * 0.12, 6);
+    if (name === 'Totem Spell') {
+      await seek(page, 1.45);
+      expect(
+        await page.evaluate(() => {
+          const { model, scene } = window.__game,
+            before = JSON.stringify(model.battle);
+          scene.effect({ type: 'spell-native', text: 'TotemSummon', x: 11.5, y: 11.5, radius: 5 });
+          scene.drainEffects();
+          return {
+            chainReady: scene.spellArtReady('TotemSummon'),
+            born: model.battle.units.find((u) => u.kind === 'totem')?.spawnedAt,
+            fallback: scene.children.list.filter(
+              (o) => o.active && o.getData?.('nativeSpellFallback') === 'Totem Spell',
+            ).length,
+            unchanged: before === JSON.stringify(model.battle),
+          };
+        }),
+      ).toEqual({ chainReady: true, born: 1.4, fallback: 0, unchanged: true });
+    }
     const steady = await seek(page, r.steady);
     await visible(page, [ground]);
     await seek(page, r.fieldAfter);
@@ -368,19 +416,21 @@ for (const { name, level, width } of [
       ).toEqual({ pulse: undefined, meshes: 0 });
     }
     const oldVersion =
-      name === 'Skeleton Spell' || name === 'Bat Spell'
-        ? 125
-        : name === 'Earthquake'
-          ? 124
-          : name === 'Lightning'
-            ? 123
-            : name === 'Recall'
-              ? 120
-              : name === 'Clone' || name === 'Invisibility'
-                ? 119
-                : name === 'Healing' || name === 'Poison'
-                  ? 117
-                  : 116;
+      name === 'Totem Spell' || name === 'AngrySpell'
+        ? 126
+        : name === 'Skeleton Spell' || name === 'Bat Spell'
+          ? 125
+          : name === 'Earthquake'
+            ? 124
+            : name === 'Lightning'
+              ? 123
+              : name === 'Recall'
+                ? 120
+                : name === 'Clone' || name === 'Invisibility'
+                  ? 119
+                  : name === 'Healing' || name === 'Poison'
+                    ? 117
+                    : 116;
     await open(page, oldVersion);
     await seek(page, r.steady);
     expect(
@@ -398,7 +448,7 @@ for (const { name, level, width } of [
       ready: false,
       views: 0,
       names:
-        oldVersion === 125
+        oldVersion === 126
           ? [
               'Jump',
               'Rage',
@@ -410,8 +460,10 @@ for (const { name, level, width } of [
               'Recall',
               'Lightning',
               'Earthquake',
+              'Skeleton Spell',
+              'Bat Spell',
             ]
-          : oldVersion === 124
+          : oldVersion === 125
             ? [
                 'Jump',
                 'Rage',
@@ -422,21 +474,46 @@ for (const { name, level, width } of [
                 'Invisibility',
                 'Recall',
                 'Lightning',
+                'Earthquake',
               ]
-            : oldVersion === 123
-              ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison', 'Clone', 'Invisibility', 'Recall']
-              : oldVersion === 120
-                ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison', 'Clone', 'Invisibility']
-                : oldVersion === 119
-                  ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison']
-                  : oldVersion === 117
-                    ? ['Jump', 'Rage', 'Haste']
-                    : ['Jump'],
+            : oldVersion === 124
+              ? [
+                  'Jump',
+                  'Rage',
+                  'Haste',
+                  'Healing',
+                  'Poison',
+                  'Clone',
+                  'Invisibility',
+                  'Recall',
+                  'Lightning',
+                ]
+              : oldVersion === 123
+                ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison', 'Clone', 'Invisibility', 'Recall']
+                : oldVersion === 120
+                  ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison', 'Clone', 'Invisibility']
+                  : oldVersion === 119
+                    ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison']
+                    : oldVersion === 117
+                      ? ['Jump', 'Rage', 'Haste']
+                      : ['Jump'],
       history: undefined,
     });
     expect(errors).toEqual([]);
   });
 for (const { name, path, heldEffect, otherEffect } of [
+  {
+    name: 'Totem Spell',
+    path: 'field-spells-native/totem',
+    heldEffect: 'ps_spells_meteortotem_Impact',
+    otherEffect: undefined,
+  },
+  {
+    name: 'AngrySpell',
+    path: 'field-spells-native/angry',
+    heldEffect: 'AngrySpell_area_top',
+    otherEffect: undefined,
+  },
   {
     name: 'Skeleton Spell',
     path: 'field-spells-native/skeleton',
@@ -548,6 +625,10 @@ for (const { name, path, heldEffect, otherEffect } of [
           view = scene.fieldSpellPresentations.get(name);
         scene.effect({ type: 'spell', spell: key, x: 11.5, y: 11.5, radius: 5 });
         scene.drainEffects();
+        if (name === 'Totem Spell') {
+          scene.effect({ type: 'spell-native', text: 'TotemSummon', x: 11.5, y: 11.5, radius: 5 });
+          scene.drainEffects();
+        }
         return {
           ready: view.hasArt(model.battle, false),
           views: view.layer.views.size,
@@ -556,7 +637,11 @@ for (const { name, path, heldEffect, otherEffect } of [
           ).length,
         };
       }),
-    ).toEqual({ ready: false, views: 0, rings: name === 'Lightning' ? 2 : 1 });
+    ).toEqual({
+      ready: false,
+      views: 0,
+      rings: name === 'Lightning' || name === 'Totem Spell' ? 2 : 1,
+    });
     // Exercise the real frame cache while the replay is paused; no forced draw after recovery.
     await page.evaluate(() => {
       const { model, scene } = window.__game;
@@ -617,6 +702,8 @@ for (const { name, path, heldEffect, otherEffect } of [
         Earthquake: 'Earthquake_crackCenter',
         'Skeleton Spell': 'skele_summon_area_edge1',
         'Bat Spell': 'bat_summon_area_edge1',
+        'Totem Spell': 'e_spells_meteortotem_ring',
+        AngrySpell: 'e_spell_angryspell_centre_splat_next',
       }[name],
     ]);
     if (name === 'Healing') await visible(page, ['heal_ring_effect', 'heal_ring_effect2']);
@@ -685,5 +772,29 @@ for (const name of ['Skeleton Spell', 'Bat Spell'] as const)
         cast: window.__game.model.castSpell(11.5, 11.5),
       })),
     ).toEqual({ ready: false, views: 0, cast: false });
+    expect(requests).not.toContain(`/assets/field-spells-native/${r.key}/graph.json`);
+  });
+
+for (const name of ['Totem Spell', 'AngrySpell'] as const)
+  test(`version-126 ${name} playback keeps its original fallback and never requests new source art`, async ({
+    page,
+  }) => {
+    const r = nativeFieldSpellRecording(name),
+      requests: string[] = [];
+    page.on('request', (request) => requests.push(new URL(request.url()).pathname));
+    await boot(page, r, false, 126);
+    await open(page, 126);
+    await seek(page, r.landing);
+    expect(
+      await page.evaluate(() => ({
+        ready: window.__game.scene.fieldSpellPresentations
+          .get(window.__field.name)
+          .hasArt(window.__game.model.battle, false),
+        views: window.__game.scene.fieldSpellPresentations.get(window.__field.name).layer.views
+          .size,
+        chainReady: window.__game.scene.spellArtReady('TotemSummon'),
+        cast: window.__game.model.castSpell(11.5, 11.5),
+      })),
+    ).toEqual({ ready: false, views: 0, chainReady: false, cast: false });
     expect(requests).not.toContain(`/assets/field-spells-native/${r.key}/graph.json`);
   });

@@ -15,7 +15,9 @@ export function nativeFieldSpellRecording(
     | 'Lightning'
     | 'Earthquake'
     | 'Skeleton Spell'
-    | 'Bat Spell',
+    | 'Bat Spell'
+    | 'Totem Spell'
+    | 'AngrySpell',
   level = 1,
 ) {
   const key = (
@@ -31,9 +33,12 @@ export function nativeFieldSpellRecording(
         Earthquake: 'earthquake',
         'Skeleton Spell': 'skeleton',
         'Bat Spell': 'bat',
+        'Totem Spell': 'totem',
+        AngrySpell: 'angry',
       } as const
     )[name],
     summons = name === 'Skeleton Spell' || name === 'Bat Spell',
+    persistent = name === 'Earthquake' || name === 'AngrySpell',
     model = new GameModel();
   model.state.king = undefined;
   model.state.obstacles = [];
@@ -61,16 +66,24 @@ export function nativeFieldSpellRecording(
       : spellEndTime(cast);
   const times = {
     bottle: 0.4,
-    landing: 0.9,
+    landing: name === 'AngrySpell' ? 1.25 : 0.9,
     beforeHit: battle.nativeSpells![0].firstHit - 0.05,
-    pulsing: name === 'Lightning' ? cast.firstHit + 0.05 : summons ? cast.firstHit + 0.15 : 1.8,
-    steady: name === 'Earthquake' ? 45 : Math.max(1, Math.min(10, end / 2)),
+    pulsing:
+      name === 'Lightning'
+        ? cast.firstHit + 0.05
+        : name === 'Totem Spell'
+          ? 0.95
+          : name === 'AngrySpell'
+            ? 1.35
+            : summons
+              ? cast.firstHit + 0.15
+              : 1.8,
+    steady: persistent ? 45 : Math.max(1, Math.min(10, end / 2)),
     nearEnd: end - 0.6,
     beforeEnd: end - 0.05,
     end,
     afterLive: end + 0.15,
-    fieldAfter:
-      name === 'Earthquake' ? 180 : end + (name === 'Healing' || name === 'Lightning' ? 8 : 5),
+    fieldAfter: persistent ? 180 : end + (name === 'Healing' || name === 'Lightning' ? 8 : 5),
   };
   for (const k of (Object.keys(times) as (keyof typeof times)[]).sort(
     (a, b) => times[a] - times[b],

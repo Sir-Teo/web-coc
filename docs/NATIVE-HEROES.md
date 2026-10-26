@@ -1994,3 +1994,53 @@ bodies, shields, positions and combat through portable forward/reverse seeks. Br
 coverage includes phone/desktop source meshes, original Web Audio, cold post-spawn
 fields, reduced motion, old-version requests and natural paused recovery from a
 held/failed pack.
+
+## Version 127 original Totem and delayed Angry spell effects
+
+Totem and Angry spells now use the original effects declared by all four source levels.
+The separate 689,232-byte Totem and 259,331-byte Angry packs retain their source records,
+`sc/vfx_spells.sc` graphs and decoded texture pixels. Every referenced export passes the
+strict graph importer. Existing spell packs, unit body packs and sound files remain
+unchanged.
+
+Totem's vial starts at casting; its ground rocks, smoke, shockwaves and ring begin at
+800 ms. The effect uses the original 83% row scale, emitter variants, particle motion
+and fades. The longest impact particle bound ends at 1.451 seconds after casting.
+The physical 200-ms defense stun still begins at 800 ms. `TotemSummon` remains a separate
+600-ms chained cast, creating the existing native Totem body at 1.4 seconds. Its health
+drain and defense interactions are unchanged.
+
+The importer checks the chained spell's source levels for the absence of declared
+spell effects and records `TotemSummon` under `silentChildren`. The scene maps its
+readiness and temporary feedback to the parent Totem presentation, so the original
+impact hands over without an extra generic spell ring. Pending/failed art retains the
+existing feedback; once the parent pack recovers, primary and chained fallback rings
+clear together. Original unit deployment effects keep their existing pipeline. Earlier
+recordings lack the parent capability and preserve their former feedback and requests.
+
+Angry deploys its original flash, fresnel, splash and growing central splat at 800 ms.
+The source `DeployEffect2Delay` adds 300 ms before the upper phase. Its two long-lived
+paint emitters begin at 1.1 seconds, with the second emitter's own 99-ms delay preserved.
+Their 200-second particle lifetimes and emission windows give the upper phase a
+200.1-second bound, ending at 201.2 seconds after casting. Source-derived retention now
+includes per-phase delays. The normal battle end clears the displayed paint.
+
+The upper phase's original sound shares the 1.1-second timestamp. Captured source cues
+use the profile delay, while legacy cue reconstruction retains its former 800-ms upper
+sound. Keys and sound takes stay stable, avoiding duplicate playback. Every previously
+captured spell has zero declared upper-phase delay, preserving its timing. Totem keeps
+its 100% volume and 0.9–1.1 landing pitch; Angry's landing and upper sounds use 80%
+volume and 1.0 pitch. Late cold views reconstruct art without replaying expired cues.
+
+Angry continues to give friendly troops their existing defense-target preference. Its
+fifty 100-ms pulses still run from 1.5 to 6.4 seconds; field lifetime does not extend
+those pulses or the granted ability. Rendering remains read-only, consumes no combat
+RNG, and omits moving source fields under reduced motion.
+
+Tests cover all eight spell/level combinations, exact upper-phase boundaries, emitter
+delays, source-tail retirement and old/new audio clocks. Real Swordsman deployments
+verify the Gold Mine-to-Cannon target switch; actual Totem casts verify defense stuns,
+chained spawning and health drain against an Air Defense. Portable forward/reverse
+seeks preserve version-126 physical state. Browser cases cover phone/desktop meshes,
+original Web Audio, chained feedback, cold persistent paint, reduced motion, legacy
+requests and natural paused recovery from held/failed packs.

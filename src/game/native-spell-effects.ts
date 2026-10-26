@@ -7,6 +7,7 @@ export interface SpellEffectProfile {
   PreDeployEffect: string;
   DeployEffect: string;
   DeployEffect2?: string;
+  deploy2DelaySeconds?: number;
   ChargingEffect?: string;
   chargingTargeted?: boolean;
   HitEffect?: string;
@@ -31,7 +32,11 @@ export function spellCastEffectEvents(
     for (const [phase, effect, at] of [
       ['preDeploy', row.PreDeployEffect, cast.castAt],
       ['deploy', row.DeployEffect, cast.castAt + row.deploySeconds],
-      ['deploy2', row.DeployEffect2, cast.castAt + row.deploySeconds],
+      [
+        'deploy2',
+        row.DeployEffect2,
+        cast.castAt + row.deploySeconds + (row.deploy2DelaySeconds ?? 0),
+      ],
       ['charging', row.ChargingEffect, cast.castAt + row.deploySeconds],
     ] as const) {
       if (!effect || elapsed + 1e-9 < at || elapsed - at > (duration(effect) ?? 30)) continue;

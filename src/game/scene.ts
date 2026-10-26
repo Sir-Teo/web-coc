@@ -1,4 +1,4 @@
-import { FIELD_SPELL_PROFILES } from './field-spell-effects';
+import { FIELD_SPELL_PROFILES, fieldSpellPresentationName } from './field-spell-effects';
 import { NativeSpellCastPresentation } from './native-spell-cast-scene';
 import { NativeRecallPresentation } from './native-recall-scene';
 import { needsRecallPresentation } from './native-recall';
@@ -4409,6 +4409,7 @@ export class VillageScene extends Phaser.Scene {
     string
   >();
   private spellArtReady(name: string | undefined) {
+    name = fieldSpellPresentationName(name);
     const battle = this.model.battle,
       reduced = this.model.reducedMotion;
     return name === 'Overgrowth'
@@ -4424,6 +4425,7 @@ export class VillageScene extends Phaser.Scene {
     ring: Phaser.GameObjects.Ellipse | Phaser.GameObjects.Graphics,
     name: string | undefined,
   ) {
+    name = fieldSpellPresentationName(name);
     if (
       (name === 'Overgrowth' && this.model.battle?.nativeOvergrowthCastPresentation) ||
       (name === 'Freeze' && this.model.battle?.nativeFreezeCastPresentation) ||

@@ -665,3 +665,17 @@ summon counts, first groups, release times, shields, positions and combat remain
 unchanged. Version 125 and earlier retain their former presentation and request neither
 new pack. See
 [source and adapter details](NATIVE-HEROES.md#version-126-original-skeleton-and-bat-spell-summon-fields).
+
+## Version 127: original Totem and delayed Angry spell effects
+
+The source-spell presentation list adds `Totem Spell` and `AngrySpell`. Totem retains
+its original vial and impact effects at 800 ms; its chained summon still creates the
+unit at 1.4 seconds. Source-verified `silentChildren` lets that effectless chained spell
+share its parent's fallback handoff. Older recordings retain their previous feedback.
+
+Angry's upper effect and original upper sound start 300 ms after deployment, at 1.1
+seconds. Its long-lived source paint remains visible through captured history, with a
+201.2-second conservative tail bound. The fifty physical pulses, friendly defense-target
+preference and ability expiry remain unchanged. Version 126 and earlier keep their
+former presentation and sound timing and request neither new pack. See
+[source and adapter details](NATIVE-HEROES.md#version-127-original-totem-and-delayed-angry-spell-effects).
