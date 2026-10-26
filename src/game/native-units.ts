@@ -11,6 +11,7 @@ import {
   type NativeTable,
 } from './native-data';
 import type { TroopDef } from './data';
+import type { NativeDamageRampStats } from './native-damage-ramp';
 
 /** Client character names for every trainable troop key. The Barbarian keeps its saved key. */
 export const TROOP_SOURCE = {
@@ -161,6 +162,7 @@ export interface NativeUnitStats {
   /** Damage each attack resolves; negative DPS rows (healers) keep their positive heal here. */
   damage: number;
   dps: number;
+  damageRamp?: NativeDamageRampStats;
   heal: number;
   rate: number;
   range: number;
@@ -284,6 +286,15 @@ function computeUnitStats(kind: string, level: number): NativeUnitStats {
     level: safe,
     hp: num(row, 'Hitpoints'),
     damage: Math.abs(dps) * rate,
+    ...(flag(row, 'IncreasingDamage')
+      ? {
+          damageRamp: {
+            dps: [dps, num(row, 'DPSLv2', dps), num(row, 'DPSLv3', dps)] as const,
+            switchAt: [seconds(row, 'Lv2SwitchTime'), seconds(row, 'Lv3SwitchTime')] as const,
+            killedCooldown: seconds(row, 'TargetKilledCooldownTimer'),
+          },
+        }
+      : {}),
     dps: Math.max(0, dps),
     heal: Math.max(0, -dps) * rate,
     rate,

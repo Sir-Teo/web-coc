@@ -27,6 +27,7 @@ import { lateActivatedDefense } from './late-campaign';
 import { defenderHidden } from './defender-visibility';
 import { defenderRageStats } from './native-rage';
 import type { NativeBoost } from './native-boost';
+import { rampedDamage, finishRampingHit, type NativeDamageRampStats } from './native-damage-ramp';
 import { untargetable } from './spell-effects';
 import {
   SKELETON_TRAP,
@@ -385,6 +386,8 @@ export type DefenderFightTraits = Pick<
   nativeDirectHit?: boolean;
   /** Fraction of the primary target's max HP, added after attack damage boosts. */
   nativeTargetHpBonus?: number;
+  /** Source IncreasingDamage stages, keyed to the actual defender being hit. */
+  nativeDamageRamp?: NativeDamageRampStats;
 };
 const canFight = (unit: Unit, enemy: Defender, troop: DefenderFightTraits) =>
   !troop.healer &&
@@ -619,8 +622,11 @@ export function stepAttackerVsDefenders(
     route?.enterRange?.();
     if (unit.cooldown <= 0) {
       unit.cooldown = stats.rate;
+      const hitDamage = troop.nativeDamageRamp
+        ? rampedDamage(unit, troop.nativeDamageRamp, stats.damage, target.id, true, battle.elapsed)
+        : stats.damage;
       const power =
-        stats.damage * (target.kind === 'hero' ? (troop.heroDamageScale ?? 1) : 1) +
+        hitDamage * (target.kind === 'hero' ? (troop.heroDamageScale ?? 1) : 1) +
         target.maxHp * (troop.nativeTargetHpBonus ?? 0);
       if (unit.kind === 'dragon') {
         hurtDefender(battle, target, power);
@@ -697,6 +703,7 @@ export function stepAttackerVsDefenders(
           toY: target.y,
         });
       }
+      if (troop.nativeDamageRamp) finishRampingHit(unit, target, troop.nativeDamageRamp);
     }
   } else if (troop.flying || troop.underground) {
     const move = Math.min(stats.speed * dt, distance);

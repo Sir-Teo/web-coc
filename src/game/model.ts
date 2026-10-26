@@ -857,6 +857,8 @@ export interface Battle {
   nativeInvisibilityTargets?: true;
   /** Version 93: source Rage coverage, movement, healing and independent boost expiries. */
   nativeRageRules?: true;
+  /** Version 94: per-target native troop damage stages against buildings and defenders. */
+  nativeTroopDamageRamp?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */

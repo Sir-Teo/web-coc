@@ -21,6 +21,7 @@ import {
 import { applyDefenderFrost } from './defender-frost';
 import { activeAsDefense } from './native-defenses';
 import { mergeBoost } from './native-boost';
+import { rampedDamage, finishRampingHit, type NativeDamageRamp } from './native-damage-ramp';
 import {
   applyDefenderHitPoison,
   nativeHitPoison,
@@ -67,6 +68,8 @@ export interface NativeUnitState {
   deploymentAbility?: boolean;
   lastDamageSource?: number;
   firingSince?: number;
+  /** Version 94: heat belongs to one building or defender, never to a previous target. */
+  damageRamp?: NativeDamageRamp;
   dash?: {
     dx: number;
     dy: number;
@@ -615,6 +618,13 @@ export function stepNativeUnit(
   let s = statsFor(battle, u);
   const state = (u.native ??= {});
   const at = battle.elapsed;
+  const damageRamp = battle.nativeTroopDamageRamp ? s.damageRamp : undefined;
+  if (damageRamp && state.damageRamp) {
+    const previous = state.damageRamp.defender
+      ? battle.defenders?.find((d) => d.id === state.damageRamp!.targetId)
+      : ctx.buildingsById.get(state.damageRamp.targetId);
+    if (previous && previous.hp <= 0) finishRampingHit(u, previous, damageRamp);
+  }
   const nativeStickHorse = !!(
     battle.nativeKingStickHorse &&
     u.kind === 'barbarianking' &&
@@ -760,6 +770,7 @@ export function stepNativeUnit(
         ...(gauntletSplash > 0 ? { nativeMeleeSplash: gauntletSplash } : {}),
         ...(undergroundChase ? { underground: true } : {}),
         ...(nativeHeroAttack && !s.projectile ? { nativeDirectHit: true } : {}),
+        ...(damageRamp ? { nativeDamageRamp: damageRamp, nativeDirectHit: !s.projectile } : {}),
         ...(battle.nativeMonolithDefenderDamage && frostArrow
           ? { nativeTargetHpBonus: num(frostArrow, 'DamagePermilHp') / 1000 }
           : {}),
@@ -785,6 +796,7 @@ export function stepNativeUnit(
       },
     )
   ) {
+    if (damageRamp && !u.attacking) delete state.damageRamp;
     if (undergroundChase && !u.attacking) {
       state.surfaced = false;
       state.burrowed = true;
@@ -799,6 +811,7 @@ export function stepNativeUnit(
     target = chooseTarget(ctx, u, s);
     if (!target) {
       u.attacking = false;
+      if (damageRamp) delete state.damageRamp;
       return;
     }
     u.target = target.id;
@@ -853,29 +866,35 @@ export function stepNativeUnit(
     if (at + 1e-9 < (state.targetAt ?? 0) + s.newTargetDelay) return;
     if (u.cooldown > 0) return;
     u.cooldown = s.rate * unitAttackIntervalScale(u, at);
-    const row = nativeUnitRow(u.kind, s.level);
-    state.firingSince ??= at;
-    const firing = at - state.firingSince;
-    const stage = flag(row, 'IncreasingDamage')
-      ? firing >= nativeSeconds(row, 'Lv3SwitchTime')
-        ? 'DPSLv3'
-        : firing >= nativeSeconds(row, 'Lv2SwitchTime')
-          ? 'DPSLv2'
-          : 'DPS'
-      : 'DPS';
-    strike(
-      ctx,
-      u,
-      s,
-      target,
-      flag(row, 'IncreasingDamage') && s.dps > 0
-        ? (damage * num(row, stage, s.dps)) / s.dps
-        : damage,
-    );
+    if (damageRamp) {
+      strike(ctx, u, s, target, rampedDamage(u, damageRamp, damage, target.id, false, at));
+      finishRampingHit(u, target, damageRamp);
+    } else {
+      const row = nativeUnitRow(u.kind, s.level);
+      state.firingSince ??= at;
+      const firing = at - state.firingSince;
+      const stage = flag(row, 'IncreasingDamage')
+        ? firing >= nativeSeconds(row, 'Lv3SwitchTime')
+          ? 'DPSLv3'
+          : firing >= nativeSeconds(row, 'Lv2SwitchTime')
+            ? 'DPSLv2'
+            : 'DPS'
+        : 'DPS';
+      strike(
+        ctx,
+        u,
+        s,
+        target,
+        flag(row, 'IncreasingDamage') && s.dps > 0
+          ? (damage * num(row, stage, s.dps)) / s.dps
+          : damage,
+      );
+    }
     return;
   }
   u.attacking = false;
   delete state.firingSince;
+  if (damageRamp) delete state.damageRamp;
   if (s.speed <= 0) return;
   const edge = {
     x: Math.max(target.x, Math.min(u.x, target.x + BUILDINGS[target.kind].size)),

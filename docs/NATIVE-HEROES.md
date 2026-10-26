@@ -660,3 +660,32 @@ defender classes, actual attacks, healing, overlapping expiry, Dark Crown and hi
 Real army deployments, casts and an automatically triggered Spell Tower reconstruct through
 portable replay files and backward seeks. Browser checks cover healing on desktop and aura
 expiry and defending Hero art on phone, including reduced motion and old-version playback.
+
+## Version 94 increasing troop damage
+
+[Inferno Dragon](../reference/official-wiki/spells-siege-super/inferno-dragon.md) and
+[Super Miner](../reference/official-wiki/spells-siege-super/super-miner.md) now use their pinned
+`IncreasingDamage`, `DPS`/`DPSLv2`/`DPSLv3` and switch times against defending troops and Heroes
+as well as buildings. Inferno Dragon switches after 1.7 and 3.2 seconds; Super Miner after 1.5
+and 3 seconds. Each source tier supplies its own damage values, including Super Miner's
+nonuniform final-stage ratios. Existing damage boosts apply once to the selected stage.
+
+Heat belongs to the actual target and its building/defender namespace. A new target starts at
+base damage even when it is already in range. Pursuit clears heat; travel never warms the
+next attack. The first successful hit starts the new target's clock. Inferno Dragon's
+`TargetKilledCooldownTimer` adds the pinned 0.6-second recovery after a direct killing hit;
+Super Miner retains its normal source attack interval. A target killed by another attacker
+also clears the previous heat when that death is observed.
+
+Both source character rows omit `Projectile`. Their attacks against defenders now resolve
+directly instead of creating the shared fighter's generic ranged/flying projectile. Existing
+native troop bodies, hit feedback and target-height restrictions remain in use. This pass
+does not add a new beam visual or change the existing Freeze clock treatment. Versions 93
+and earlier retain flat defender damage and the old building heat and projectile behavior.
+
+`tests/native-damage-ramp.test.ts` verifies all stages and threshold boundaries, inherited
+tiers, boosts, in-range target changes, pursuit, direct kills, recovery and old rules. Real
+deployment/Freeze recordings reach each stage, kill their first target and restart on another,
+then reproduce through portable replay files and backward seeks. Browser checks cover both
+units against buildings and defending Heroes on desktop and phone, native body art, reduced
+motion and historical defender playback.

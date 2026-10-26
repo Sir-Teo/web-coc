@@ -321,3 +321,12 @@ preserve temporary spell bonuses. Each component still uses its strongest active
 Real healing, Rage Gem and defensive Spell Tower recordings reproduce through portable files,
 backward seeking and reduced-motion playback. Versions 92 and earlier retain their original
 rules. See [the source and validation details](NATIVE-HEROES.md#version-93-rage-coverage-and-expiry).
+
+## Version 94: per-target troop damage stages
+
+Inferno Dragon and Super Miner now ramp damage against defending units as well as buildings.
+Each new target starts at its source base damage, including in-range retargeting; pursuit
+clears heat. Source attacks without projectiles resolve directly, and Inferno Dragon applies
+its 0.6-second recovery after a target dies. Real recordings reach all stages and restart
+against another target through portable files and backward seeks. Versions 93 and earlier
+retain their old behavior. See [source and validation details](NATIVE-HEROES.md#version-94-increasing-troop-damage).
