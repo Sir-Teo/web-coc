@@ -95,5 +95,6 @@ it('presentation capture preserves physical spell behavior and version 112 omits
   delete now.nativeOvergrowthCasts;
   delete now.nativeFreezeCastPresentation;
   delete now.nativeSpellArt;
+  delete now.nativeSpellEffectTimelines;
   expect(now).toEqual(then);
 });

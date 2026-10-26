@@ -1633,3 +1633,57 @@ each Rage pack independently and Haste's pack during a genuinely paused replay w
 forcing presentation draws. Loader tests cover complete-upload revisions and one-shot
 backoff/reconnect invalidation; shared regressions cover Jump, Freeze,
 Overgrowth, projectile loading and troop audio.
+
+## Version 118 original Healing and Poison fields
+
+Healing and Poison now use their original bottle and field phases for all 12 levels of
+each spell. The shared importer adds a 119,741-byte Healing pack and a 292,020-byte Poison
+pack (411,761 bytes combined), preserving earlier Rage/Haste packs and the reused upper
+Rage effect unchanged. `scripts/import-field-spell-art.py --check` verifies source pins,
+graph bytes and decoded texture pixels for both new and existing packs.
+
+Profiles retain the source mappings exactly. Healing uses `Heal predeploy`, `Heal area`
+and `Heal area top`. Poison's pinned row names `toxic_Predeploy`, `Toxic deploy ground
+halloween` and `Toxic deploy halloween`; alternate records are not substituted. Source
+rings, light rays, clouds, bubbles and skull particles keep their original finite
+lifetimes, scales, layers and fade fields under the existing native adapters. The source
+Healing field has 20-second emitter lives from deployment, longer than its 41 physical
+pulses at 300 ms spacing. Captured history lets those visuals fade without extending
+healing. The separate `Heal spell` pulse graphics remain outside this field-art pass;
+existing healing feedback and original pulse audio are preserved.
+
+Version 118 also enables `nativeSpellEffectTimelines` for original spell particles.
+A static outer export can contain a long animated child: Poison's cloud wraps 153 frames
+at 24 fps inside a one-frame root. Scaling only the root kept that child on its transparent
+first frame. The new sampler scales the complete descendant span over particle life,
+matching the existing Spell Tower interpretation. Durations and samplers are cached by
+graph and scale, with separate legacy and corrected caches. Source clips and rows remain
+unchanged, and earlier recordings retain their former sampling path.
+
+Version 118 adds Healing and Poison to the shared `nativeSpellArt` list; no new Battle
+history field is needed. Source art starts at 800 ms while physical pulses retain their
+1.5-second first-hit delay. Healing amounts, Poison damage/ramp, avoidance, immunities
+and expiry remain unchanged. Headhunter's `PoisonOnHitSpell` lookup reads scalar status
+values and never creates an ordinary cast, so enabling Poison field art does not spawn
+bottles or fields on Headhunter hits.
+
+Cold retained-history views request only the carried/captured spell's packs and samples.
+All required phase packs must be ready before replacing generic rings and auras. The
+shared loader's revision signal handles reconnect recovery in paused replays without a
+forced draw or simulation tick. Reduced motion keeps stationary fallbacks, and version
+117 and earlier retain their former capabilities and presentation.
+
+Original sound keys are reconstructed once from captured history. Healing keeps its
+bottle/landing sounds and per-pulse `healer_attack_01.ogg` cues (30% volume, 0.8–0.9 pitch).
+Poison keeps its `deploy2` landing cue (80% volume, 0.97 pitch). The catalog remains at
+340 files and 357 effects; no samples or effects are added.
+
+Checks cover all 24 source level profiles, cast phases, original cue parameters,
+read-only rendering and field retirement. Recorded Cannon wounds followed by Freeze and
+Healing verify real health recovery and exact physical equivalence with version 117;
+actual garrison Poison inputs verify damage and avoidance. Headhunter recordings guard
+the separate on-hit status path. Portable source-field recordings reconstruct through
+forward/reverse seeks. Phone/desktop Chromium checks cover original meshes and Web Audio,
+unused-art loading, cold late-history seeks, reduced motion, historical fallback and
+natural paused-replay recovery after held/failed downloads. Existing Rage/Haste, troop
+audio and projectile-loading checks cover the shared presentation path.

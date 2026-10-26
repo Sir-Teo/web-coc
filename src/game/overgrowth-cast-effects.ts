@@ -18,5 +18,6 @@ export function overgrowthCastEffects(
     source.spellLevels,
     iso,
     duration,
+    battle.nativeSpellEffectTimelines,
   );
 }

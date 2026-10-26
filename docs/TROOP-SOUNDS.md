@@ -179,3 +179,9 @@ log entries. Cold late-history views request samples even with no live or remain
 spells or deployed actors. Source volume/pitch remain 90%/0.75 for Rage's deployment and
 70%/0.97 for Haste's. No samples or sound effects are added: 340 files and 357 effects
 remain. See [field presentation](NATIVE-HEROES.md#version-117-original-rage-and-haste-fields).
+
+Version 118 adds Healing and Poison cast history. Healing preserves its original bottle,
+landing and per-pulse sound keys once each; Poison's landing is the source `deploy2`
+phase. Original pulse volume/pitch and late-history sample warming remain in use. The
+catalog remains at 340 files and 357 effects. See
+[Healing and Poison fields](NATIVE-HEROES.md#version-118-original-healing-and-poison-fields).

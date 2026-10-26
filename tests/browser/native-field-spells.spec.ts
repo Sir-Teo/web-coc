@@ -92,6 +92,10 @@ for (const { name, level, width } of [
   { name: 'Rage', level: 7, width: 390 },
   { name: 'Haste', level: 1, width: 390 },
   { name: 'Haste', level: 7, width: 1440 },
+  { name: 'Healing', level: 1, width: 390 },
+  { name: 'Healing', level: 12, width: 1440 },
+  { name: 'Poison', level: 1, width: 1440 },
+  { name: 'Poison', level: 12, width: 390 },
 ] as const)
   test(`original ${name} level ${level} fields and audio survive cold portable seeks at ${width}px`, async ({
     page,
@@ -111,15 +115,21 @@ for (const { name, level, width } of [
     expect(requests).toContain(`/assets/field-spells-native/${r.key}/graph.json`);
     if (name === 'Rage')
       expect(requests).toContain('/assets/effects-native/rage-deploy-top/graph.json');
-    expect(requests).not.toContain(
-      `/assets/field-spells-native/${name === 'Rage' ? 'haste' : 'rage'}/graph.json`,
-    );
+    for (const key of ['rage', 'haste', 'heal', 'poison'])
+      if (key !== r.key)
+        expect(requests).not.toContain(`/assets/field-spells-native/${key}/graph.json`);
     expect(requests).not.toContain('/assets/jump-spell-native/cast/graph.json');
-    const bottle = name === 'Rage' ? 'rage_bottleDrop' : 'speedup_bottleDrop',
-      ground =
-        name === 'Rage' ? 'rage_glowPurple' : `Speedup_deploy_range_low_lvl${Math.min(level, 5)}`,
-      upper =
-        name === 'Rage' ? 'rage_smokeRing' : `Speedup_deploy_range_glow_lvl${Math.min(level, 5)}`;
+    const visuals = {
+        Rage: { bottle: 'rage_bottleDrop', ground: 'rage_glowPurple', upper: 'rage_smokeRing' },
+        Haste: {
+          bottle: 'speedup_bottleDrop',
+          ground: `Speedup_deploy_range_low_lvl${Math.min(level, 5)}`,
+          upper: `Speedup_deploy_range_glow_lvl${Math.min(level, 5)}`,
+        },
+        Healing: { bottle: 'heal_bottleDrop', ground: 'heal_ring', upper: 'heal_ring5' },
+        Poison: { bottle: 'toxic_bottleDrop', ground: 'Toxic_glow', upper: 'Toxic_cloud' },
+      },
+      { bottle, ground, upper } = visuals[name];
     await open(page);
     for (const [at, names, stage] of [
       [r.bottle, [bottle], 'bottle'],
@@ -139,8 +149,15 @@ for (const { name, level, width } of [
         { iso } = await import('/src/game/scene.ts'),
         before = JSON.stringify(model.battle);
       scene.santaPresentation.render(model.battle, false, true, 1, iso, scene.lastCues);
-      const cue = scene.lastCues.find((c) => c.key === 'spell:1:deploy'),
-        node = audio.samples.active.get('spell:1:deploy');
+      const name = window.__field.name,
+        key =
+          name === 'Healing'
+            ? 'spell:1:hit:1'
+            : name === 'Poison'
+              ? 'spell:1:deploy2'
+              : 'spell:1:deploy';
+      const cue = scene.lastCues.find((c) => c.key === key),
+        node = audio.samples.active.get(key);
       if (!cue || !node) throw Error('Original field Web Audio missing after direct seek');
       const result = {
         at: cue.at,
@@ -154,16 +171,24 @@ for (const { name, level, width } of [
       scene.santaPresentation.render(model.battle, false, false, 1, iso, scene.lastCues);
       return result;
     });
-    const pitch = name === 'Rage' ? 0.75 : 0.97,
-      volume = name === 'Rage' ? 0.9 : 0.7;
+    const volume = { Rage: 0.9, Haste: 0.7, Healing: 0.3, Poison: 0.8 }[name],
+      keys =
+        name === 'Healing'
+          ? ['spell:1:preDeploy', 'spell:1:deploy', 'spell:1:hit:0', 'spell:1:hit:1']
+          : name === 'Poison'
+            ? ['spell:1:preDeploy', 'spell:1:deploy2']
+            : ['spell:1:preDeploy', 'spell:1:deploy'];
     expect(sound).toMatchObject({
-      at: 0.8,
-      pitch,
+      at: name === 'Healing' ? 1.8 : 0.8,
       volume,
       unchanged: true,
-      keys: ['spell:1:preDeploy', 'spell:1:deploy'],
+      keys,
     });
-    expect(sound.rate).toBeCloseTo(pitch, 6);
+    if (name === 'Healing') {
+      expect(sound.pitch).toBeGreaterThanOrEqual(0.8);
+      expect(sound.pitch).toBeLessThanOrEqual(0.9);
+    } else expect(sound.pitch).toBe({ Rage: 0.75, Haste: 0.97, Poison: 0.97 }[name]);
+    expect(sound.rate).toBeCloseTo(sound.pitch, 6);
     expect(sound.gain).toBeCloseTo(volume * 0.12, 6);
     const steady = await seek(page, r.steady);
     await visible(page, [ground]);
@@ -183,7 +208,8 @@ for (const { name, level, width } of [
       ),
     ).toBe(0);
     await page.evaluate(() => window.__game.model.toggleReducedMotion());
-    await open(page, 116);
+    const oldVersion = name === 'Healing' || name === 'Poison' ? 117 : 116;
+    await open(page, oldVersion);
     await seek(page, r.steady);
     expect(
       await page.evaluate(() => {
@@ -196,7 +222,12 @@ for (const { name, level, width } of [
           history: model.battle.nativeSpellCastHistory,
         };
       }),
-    ).toEqual({ ready: false, views: 0, names: ['Jump'], history: undefined });
+    ).toEqual({
+      ready: false,
+      views: 0,
+      names: oldVersion === 117 ? ['Jump', 'Rage', 'Haste'] : ['Jump'],
+      history: undefined,
+    });
     expect(errors).toEqual([]);
   });
 for (const { name, path, heldEffect, otherEffect } of [
@@ -216,6 +247,18 @@ for (const { name, path, heldEffect, otherEffect } of [
     name: 'Haste',
     path: 'field-spells-native/haste',
     heldEffect: 'Speedup_deploy_lvl1',
+    otherEffect: undefined,
+  },
+  {
+    name: 'Healing',
+    path: 'field-spells-native/heal',
+    heldEffect: 'Heal area',
+    otherEffect: undefined,
+  },
+  {
+    name: 'Poison',
+    path: 'field-spells-native/poison',
+    heldEffect: 'Toxic deploy ground halloween',
     otherEffect: undefined,
   },
 ] as const)
@@ -312,6 +355,13 @@ for (const { name, path, heldEffect, otherEffect } of [
       }),
     ).toEqual({ ready: true, rings: 0 });
     expect((await seek(page, r.landing)).battle).toBe(before.battle);
-    await visible(page, [name === 'Rage' ? 'rage_glowPurple' : 'Speedup_deploy_range_low_lvl1']);
+    await visible(page, [
+      {
+        Rage: 'rage_glowPurple',
+        Haste: 'Speedup_deploy_range_low_lvl1',
+        Healing: 'heal_ring',
+        Poison: 'Toxic_glow',
+      }[name],
+    ]);
     expect(errors).toEqual([]);
   });

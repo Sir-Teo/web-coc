@@ -58,6 +58,7 @@ it('casts and wall crossing retain the previous physical pulse and expiry deadli
     expect([...jumpWalls(a.model.battle!)]).toEqual([...jumpWalls(b.model.battle!)]);
     const now = JSON.parse(JSON.stringify(a.model.battle));
     delete now.nativeSpellArt;
+    delete now.nativeSpellEffectTimelines;
     delete now.nativeSpellCastHistory;
     expect(now).toEqual(JSON.parse(JSON.stringify(b.model.battle)));
   }

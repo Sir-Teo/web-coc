@@ -33,6 +33,8 @@ export interface NativeEffectEvent {
   until?: number;
   /** A caller-owned lifecycle repeats a source clip/emitter until this event ends. */
   sustain?: true;
+  /** Source spell particles may scale animated descendants of a static export. */
+  nestedTimelines?: true;
   /** Object-layer depth override, e.g. air effects above every rooftop. */
   depth?: number;
 }
@@ -141,9 +143,40 @@ const samplers = new WeakMap<
   NativeMeshGraph,
   Map<number, ReturnType<typeof nativeParticleSampler>>
 >();
-function sampler(graph: NativeMeshGraph, scale: number) {
-  let byScale = samplers.get(graph);
-  if (!byScale) samplers.set(graph, (byScale = new Map()));
+const nestedSamplers = new WeakMap<
+  NativeMeshGraph,
+  Map<number, ReturnType<typeof nativeParticleSampler>>
+>();
+const nestedDurations = new WeakMap<NativeMeshGraph, Record<string, number>>();
+/** Static outer clips can own long animated descendants (e.g. Poison's 153-frame clouds). */
+function particleTimelineDurations(graph: NativeMeshGraph) {
+  let durations = nestedDurations.get(graph);
+  if (durations) return durations;
+  durations = {};
+  for (const [name, id] of Object.entries(graph.exports)) {
+    const root = graph.clips[id];
+    if (!root || root.timeline.length !== 1) continue;
+    const pending = [id],
+      seen = new Set<number>();
+    let longest = 1 / root.fps;
+    while (pending.length) {
+      const current = pending.pop()!;
+      if (seen.has(current)) continue;
+      seen.add(current);
+      const clip = graph.clips[current];
+      if (!clip) continue;
+      longest = Math.max(longest, clip.timeline.length / clip.fps);
+      for (const child of clip.children) if (!seen.has(child)) pending.push(child);
+    }
+    if (longest > 1 / root.fps) durations[name] = longest;
+  }
+  nestedDurations.set(graph, durations);
+  return durations;
+}
+function sampler(graph: NativeMeshGraph, scale: number, nested = false) {
+  const cache = nested ? nestedSamplers : samplers;
+  let byScale = cache.get(graph);
+  if (!byScale) cache.set(graph, (byScale = new Map()));
   let result = byScale.get(scale);
   if (!result)
     byScale.set(
@@ -151,6 +184,7 @@ function sampler(graph: NativeMeshGraph, scale: number) {
       (result = nativeParticleSampler(graph, scale, {
         altitudeScale: NATIVE_ALTITUDE,
         orientTravelToParent: true,
+        timelineDurations: nested ? particleTimelineDurations(graph) : undefined,
       })),
     );
   return result;
@@ -370,7 +404,7 @@ export function nativeEffectPoses(
           });
         continue;
       }
-      const pose = sampler(graph, scale)(
+      const pose = sampler(graph, scale, event.nestedTimelines)(
         `${event.key}:${index}:${birth.index}`,
         name,
         [config],

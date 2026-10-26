@@ -15,5 +15,6 @@ export function freezeSpellEffectEvents(
     source.spellLevels,
     iso,
     duration,
+    battle.nativeSpellEffectTimelines,
   );
 }

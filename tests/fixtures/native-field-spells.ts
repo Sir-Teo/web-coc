@@ -2,8 +2,11 @@ import { GameModel, makeBuilding } from '../../src/game/model';
 import { emptyArmy, emptySpells } from '../../src/game/army';
 import { replayBattle, type ReplayData } from '../../src/game/replay';
 import { spellEndTime } from '../../src/game/native-spells';
-export function nativeFieldSpellRecording(name: 'Rage' | 'Haste', level = 1) {
-  const key = name === 'Rage' ? 'rage' : 'haste',
+export function nativeFieldSpellRecording(
+  name: 'Rage' | 'Haste' | 'Healing' | 'Poison',
+  level = 1,
+) {
+  const key = ({ Rage: 'rage', Haste: 'haste', Healing: 'heal', Poison: 'poison' } as const)[name],
     model = new GameModel();
   model.state.king = undefined;
   model.state.obstacles = [];
@@ -33,7 +36,7 @@ export function nativeFieldSpellRecording(name: 'Rage' | 'Haste', level = 1) {
     beforeEnd: end - 0.05,
     end,
     afterLive: end + 0.15,
-    fieldAfter: end + 5,
+    fieldAfter: end + (name === 'Healing' ? 8 : 5),
   };
   for (const k of (Object.keys(times) as (keyof typeof times)[]).sort(
     (a, b) => times[a] - times[b],

@@ -15,6 +15,7 @@ export function spellCastEffectEvents(
   profiles: readonly SpellEffectProfile[],
   iso: (x: number, y: number) => { x: number; y: number },
   duration: (name: string) => number | undefined,
+  nestedTimelines = false,
 ): (NativeEffectEvent & { sampleAt: number })[] {
   const events: (NativeEffectEvent & { sampleAt: number })[] = [];
   for (const cast of casts) {
@@ -34,6 +35,7 @@ export function spellCastEffectEvents(
         ground,
         depth: ground.y + 2,
         sampleAt: Math.max(elapsed, at),
+        ...(nestedTimelines ? { nestedTimelines: true as const } : {}),
       });
     }
   }
@@ -56,5 +58,6 @@ export function capturedSpellEffectEvents(
     profiles,
     iso,
     duration,
+    battle.nativeSpellEffectTimelines,
   );
 }

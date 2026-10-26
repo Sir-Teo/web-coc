@@ -918,6 +918,8 @@ export interface Battle {
   nativeFreezeCasts?: NativeSpellCast[];
   /** Version 116+: source spell names whose cast presentation is captured in this recording. */
   nativeSpellArt?: readonly string[];
+  /** Version 118: static spell particle exports scale their animated descendants. */
+  nativeSpellEffectTimelines?: true;
   nativeSpellCastHistory?: NativeSpellCast[];
   nativeOvergrowthRoots?: OvergrowthRoot[];
   nativeArcherShots?: ArcherPiercingShot[];
