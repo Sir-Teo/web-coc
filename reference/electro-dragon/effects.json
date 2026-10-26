@@ -1,0 +1,52 @@
+{
+  "clientVersion": "18.400.21",
+  "generator": "scripts/import-electro-dragon-art.py",
+  "character": {
+    "Name": "Electro Dragon",
+    "Animation": "ElectroDragon_lvl1",
+    "DeployEffect": "Electro Dragon Deploy",
+    "AttackEffect": "Electro Dragon Attack",
+    "HitEffect": "Mega Tesla Hit",
+    "DieEffect": "Dragon Die",
+    "ChainAttackEffect": "Electro Dragon Attack Chain",
+    "PreAttackEffect": "Electro Dragon Pre Attack",
+    "TargetedEffectOffset": "100"
+  },
+  "sources": {
+    "csv/particle_emitters.csv": "8d80bbf714386c4f24e6aed8f2eef671a2eac5c3b3ad41e4d275b757ced64cef",
+    "logic/characters.csv": "5c3acc5b46ff9e7978f406b540264e65c93a846b69d03cd43326a9853703cb89",
+    "logic/effects.csv": "5c6d5b67d6407345123b8d55872ed77ee6697b466d20d1fa21e25a723c511e9f",
+    "sc/buildings.sc": "f73ec949fc070bc03175d6bb3af8b62d8f607094bf2b343c9846a499a35be0ed",
+    "sc/buildings_39.sctx": "dd27d9612fe135c3be364840eeabe45b53a229b24192246b56a08fa0606fdb16"
+  },
+  "effects": {
+    "Electro Dragon Attack": "attack",
+    "Mega Tesla Hit": "hit"
+  },
+  "packs": {
+    "attack": {
+      "path": "assets/electro-dragon-native/attack/graph.json",
+      "sha256": "e7b4f70172e94c73df735fc0fd37217eafaa8df33db0dcec715339094ca8fc73",
+      "bytes": 227531
+    },
+    "hit": {
+      "path": "assets/electro-dragon-native/hit/graph.json",
+      "sha256": "4e34af59a9dc594705385f45aeff228fe98a529387ca5094ba3e84c4abc622ce",
+      "bytes": 53410
+    }
+  },
+  "externalEffects": {
+    "Electro Dragon Attack Chain": {
+      "path": "assets/effects-native/electro-dragon-attack-chain/graph.json",
+      "sha256": "06c4594a5c6167a2f59499674f52fbab763fd3e747ee1b869de3ea98f7679369",
+      "bytes": 227161
+    }
+  },
+  "noArt": [
+    "Electro Dragon Pre Attack"
+  ],
+  "conventions": {
+    "targeted": "Original targeted particles use the shared native effect stretch adapter; the client attachment and beam stretching code is not in the tables.",
+    "sounds": "Source samples already ship in reference/troop-sounds/sounds.json."
+  }
+}

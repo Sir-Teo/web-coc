@@ -1,3 +1,4 @@
+import type { ElectroDragonArc, ElectroDragonZap } from './native-electro-dragon';
 import type { ElectromiteArc, ElectromiteZap } from './native-electromite';
 import { stepDefendingHeroes } from './defending-heroes';
 import { ragePetAfterHeroDeath } from './native-pet-rage';
@@ -896,6 +897,10 @@ export interface Battle {
   nativeElectromites?: true;
   /** Version 108: source Meteor Golem throws split against defenders and retain clone lifetimes. */
   nativeMeteorThrows?: true;
+  /** Version 109: Electro Dragon source charge, mixed-target lightning and captured effects. */
+  nativeElectroDragon?: true;
+  nativeElectroDragonArcs?: ElectroDragonArc[];
+  nativeElectroDragonZaps?: ElectroDragonZap[];
   /** Captured throw packets retained for original art and sound through replay seeks. */
   nativeMeteorFlights?: CombatProjectile[];
   nativeElectromiteArcs?: ElectromiteArc[];
@@ -6254,7 +6259,7 @@ export class GameModel {
           (u.native ? unitSpeedScale(u, b.elapsed) : 1);
       if (native && nativeBehavior(b, u.kind)) {
         // Native rules read only the boosted damage, speed and heal: no copy of the stats row.
-        stepNativeUnit(native, u, { damage, speed, heal }, unitDt);
+        stepNativeUnit(native, u, { damage, speed, heal }, unitDt, actionDt * poison.attack);
         continue;
       }
       const d = { ...base, heal, damage, speed };
@@ -6746,6 +6751,7 @@ export class GameModel {
         !b.nativeDeaths?.some((blast) => !blast.resolved) &&
         !b.nativeChains?.length &&
         !b.nativeElectromiteArcs?.length &&
+        !b.nativeElectroDragonArcs?.length &&
         !b.nativePendingSpawns?.length &&
         !b.nativeSpells?.some((cast) => nativeSpellCanStillFight(cast)) &&
         !TROOP_KEYS.some(

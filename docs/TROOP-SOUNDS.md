@@ -17,7 +17,7 @@ Attacking troops and pets play the client's own sounds when they are deployed, w
 
 It also covers the 18 spells this game casts, from `logic/spells.csv`. For each spell it records the `PreDeployEffect` (the bottle falling), the `DeployEffect` and `DeployEffect2` (it landing), the `ChargingEffect` and the `HitEffect` (each pulse). Some of these change with level; Freeze, for example, has one deploy effect per level.
 
-The importer copies 338 Ogg files (4.82 MiB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`. An already shipped sample can supply a missing local source only when its SHA-256 matches that same source pin. Edited outputs cannot supply trusted source bytes; corrupt authoritative cache entries still fail validation.
+The importer copies 339 Ogg files (4.84 MiB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`. An already shipped sample can supply a missing local source only when its SHA-256 matches that same source pin. Edited outputs cannot supply trusted source bytes; corrupt authoritative cache entries still fail validation.
 
 | Troop     | Deploy                                                     | Attack                                                                                          | Death                                           |
 | --------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------- |
@@ -38,7 +38,7 @@ The take and its pitch come from a hash of the event's key: the unit's id and th
 ## When they play
 
 - **Deploy.** A deployed troop carries no deploy time, so the scene notes the battle time of the first frame that shows each unit. Units already on the field when the sound log starts, or after a seek, are noted silently, so seeking through a replay doesn't fire a burst of deploys. Units that another unit, a spell or an ability summons play no deploy sound.
-- **Attack and hit.** Most attacks use the scene's log of combat events against buildings or defenders, live or replayed. Captured Electromite arcs and Meteor Golem packets keep their own timelines:
+- **Attack and hit.** Most attacks use the scene's log of combat events against buildings or defenders, live or replayed. Captured Electromite/Electro Dragon arcs and Meteor Golem packets keep their own timelines:
   - a melee blow is the attack and the hit at once;
   - a shot attacks at its launch and hits at its impact;
   - a breath attacks.
@@ -102,6 +102,15 @@ samples. Captured throw packets preserve the original actor's tier and scheduled
 through its split, death and replay seeks; each cast and impact plays once. The importer
 also pins `logic/projectiles.csv`, and the complete 338-file catalog reproduces unchanged
 Ogg bytes. Phone/desktop checks exercise actual throw and impact Web Audio nodes.
+
+Version 109 adds `electro_dragon_sfx_atk_01.ogg` for `Electro Dragon Pre Attack`,
+bringing the catalog to 339 unchanged files. Charge audio is a source one-shot, at 50%
+volume and fixed pitch, stopped on cancellation/firing and held across native Freeze.
+Its offset follows active audio time independently of attack slowdown. Captured strikes
+retain the primary attack, secondary chain and per-target hit cues through caster death
+and reverse seeks. Primary attack uses the original 90% volume and 0.95–1.05 pitch;
+chain uses 40% and 0.9–1; hit uses 20% and 0.5–0.7. Carried dragons warm all samples
+before deployment. Phone/desktop checks exercise all four events in actual Web Audio.
 
 ## Tests
 

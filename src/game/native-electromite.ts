@@ -1,16 +1,17 @@
-import { BUILDINGS } from './data';
-import { hurtDefender, type Defender } from './defenders';
-import { defenderHidden } from './defender-visibility';
-import { garrisonDefenderTargetable } from './garrison-abilities';
-import { targetableBuilding } from './hidden-tesla';
+import {
+  chainKey as id,
+  chainPoint as point,
+  nearestChainTarget,
+  type ChainTarget as Target,
+} from './chain-targets';
+import { hurtDefender } from './defenders';
 import { nativeRow, num, seconds, tiles } from './native-data';
 import { buildingEffects } from './native-status';
 import { nativeUnitStats } from './native-units';
-import type { Building, Unit } from './model';
+import type { Unit } from './model';
 import type { NativeTroopContext } from './native-troops';
 
 type Point = { x: number; y: number };
-type Target = { building: Building } | { defender: Defender };
 export interface ElectromiteArc extends Point {
   key: string;
   sourceId: number;
@@ -43,23 +44,6 @@ const rules = (level: number) => {
   const s = nativeUnitStats('electromite', level);
   return { stats: s, ability: nativeRow('abilities', s.ability, s.abilityLevel) };
 };
-const id = (target: Target) =>
-  'building' in target ? `building:${target.building.id}` : `defender:${target.defender.id}`;
-const order = (a: Target, b: Target) =>
-  'building' in a
-    ? 'building' in b
-      ? a.building.id - b.building.id
-      : -1
-    : 'building' in b
-      ? 1
-      : a.defender.id - b.defender.id;
-const point = (target: Target): Point =>
-  'building' in target
-    ? {
-        x: target.building.x + BUILDINGS[target.building.kind].size / 2,
-        y: target.building.y + BUILDINGS[target.building.kind].size / 2,
-      }
-    : target.defender;
 function strike(ctx: NativeTroopContext, arc: ElectromiteArc, target: Target, primary: boolean) {
   const { battle } = ctx,
     { stats, ability } = rules(arc.level),
@@ -144,46 +128,6 @@ export function attackElectromite(
   unit.defeatedAt = ctx.battle.elapsed;
 }
 
-/** Nearest eligible target at each hop; edge distance and stable ids match the shared chain adapter. */
-function nextTarget(ctx: NativeTroopContext, arc: ElectromiteArc): Target | undefined {
-  const { ability } = rules(arc.level),
-    radius = tiles(ability, 'ChainAttackDistance');
-  let nearest: Target | undefined,
-    best = Infinity;
-  const consider = (target: Target, distance: number) => {
-    if (arc.hit.includes(id(target)) || distance > radius + EPS) return;
-    if (
-      distance < best - EPS ||
-      (Math.abs(distance - best) <= EPS && (!nearest || order(target, nearest) < 0))
-    ) {
-      nearest = target;
-      best = distance;
-    }
-  };
-  for (const b of ctx.buildings) {
-    if (b.kind === 'wall' || !targetableBuilding(ctx.battle, b)) continue;
-    const size = BUILDINGS[b.kind].size;
-    consider(
-      { building: b },
-      Math.hypot(
-        Math.max(b.x - arc.x, 0, arc.x - b.x - size),
-        Math.max(b.y - arc.y, 0, arc.y - b.y - size),
-      ),
-    );
-  }
-  for (const d of ctx.battle.defenders ?? []) {
-    if (
-      d.hp <= 0 ||
-      d.spawnedAt > arc.at + EPS ||
-      (d.invisibleUntil ?? 0) > arc.at + EPS ||
-      defenderHidden(ctx.battle, d) ||
-      !garrisonDefenderTargetable(ctx.battle, d)
-    )
-      continue;
-    consider({ defender: d }, Math.hypot(d.x - arc.x, d.y - arc.y));
-  }
-  return nearest;
-}
 export function stepElectromiteArcs(ctx: NativeTroopContext) {
   const battle = ctx.battle;
   if (
@@ -202,7 +146,13 @@ export function stepElectromiteArcs(ctx: NativeTroopContext) {
       pending.push(arc, ...queue);
       break;
     }
-    const target = nextTarget(ctx, arc);
+    const target = nearestChainTarget(
+      ctx,
+      arc,
+      tiles(rules(arc.level).ability, 'ChainAttackDistance'),
+      arc.hit,
+      arc.at,
+    );
     if (target) strike(ctx, arc, target, false);
   }
   battle.nativeElectromiteArcs = pending;

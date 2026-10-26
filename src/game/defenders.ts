@@ -463,7 +463,7 @@ function preferredHeroTarget(battle: Battle, unit: Unit, troop: DefenderFightTra
   return best;
 }
 /** Min-scan: identical winner to the old filter+sort (distance, then larger id). */
-function nearestAlertedDefender(battle: Battle, unit: Unit, troop: DefenderFightTraits) {
+export function nearestAlertedDefender(battle: Battle, unit: Unit, troop: DefenderFightTraits) {
   let bestDist = Infinity;
   let best: Defender | undefined;
   for (const d of battle.defenders ?? []) {

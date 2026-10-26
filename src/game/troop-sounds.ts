@@ -12,7 +12,8 @@ import { seconds } from './native-data';
  * lists alternative takes; one is chosen per event from the event's key, so a replay picks the
  * same take. See docs/TROOP-SOUNDS.md.
  */
-export type TroopSoundEvent = 'deploy' | 'attack' | 'hit' | 'die' | 'projectileHit';
+export type TroopSoundEvent =
+  'deploy' | 'attack' | 'hit' | 'die' | 'projectileHit' | 'preAttack' | 'chain';
 export type SpellSoundEvent = 'preDeploy' | 'deploy' | 'deploy2' | 'charging' | 'hit';
 type Named = string | (string | null)[];
 type Take = { sound: string; volume: number; minPitch: number; maxPitch: number; delay: number };
@@ -52,7 +53,7 @@ export const troopSoundEffect = (kind: string, level: number, event: TroopSoundE
   atLevel(TROOPS[kind]?.[event], level);
 /** Every sound file a troop kind can play, at any level. */
 export const troopSoundFiles = (kind: string) =>
-  files(TROOPS[kind], ['deploy', 'attack', 'hit', 'die', 'projectileHit']);
+  files(TROOPS[kind], ['deploy', 'attack', 'hit', 'die', 'projectileHit', 'preAttack', 'chain']);
 /** The effect a spell (by its client name) plays for an event at its level. */
 export const spellSoundEffect = (name: string, level: number, event: SpellSoundEvent) =>
   atLevel(SPELLS[name]?.[event], level);
@@ -319,6 +320,34 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
       if (at > elapsed || !cueAudible(at, elapsed)) continue;
       const key = `troop:${shot.sourceId}:${event}:${at}`,
         cue = troopCue(battle, actor, event, key, at);
+      if (cue) cues.push(cue);
+    }
+  }
+  for (const unit of battle.units) {
+    const dragon = unit.native?.electroDragon,
+      charge = dragon?.charge;
+    if (
+      !battle.nativeElectroDragon ||
+      unit.kind !== 'electrodragon' ||
+      unit.hp <= 0 ||
+      !dragon ||
+      !charge ||
+      dragon.lastAt < elapsed - 1e-9
+    )
+      continue;
+    const frozen =
+      Math.max(unit.native?.effects?.frozenUntil ?? 0, unit.native?.effects?.stunUntil ?? 0) >
+      elapsed + 1e-9;
+    if (frozen) continue;
+    const at = elapsed - (dragon.audioClock - charge.audioAt),
+      cue = troopCue(battle, unit, 'preAttack', `${charge.key}:preAttack`, at);
+    if (cue) cues.push(cue);
+  }
+  for (const zap of battle.nativeElectroDragonZaps ?? []) {
+    if (zap.at > elapsed || !cueAudible(zap.at, elapsed)) continue;
+    const actor = { id: zap.sourceId, kind: 'electrodragon' as const, level: zap.level };
+    for (const event of [zap.primary ? 'attack' : 'chain', 'hit'] as const) {
+      const cue = troopCue(battle, actor, event, `${zap.key}:${event}`, zap.at);
       if (cue) cues.push(cue);
     }
   }

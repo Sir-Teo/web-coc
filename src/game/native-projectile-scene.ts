@@ -1,3 +1,4 @@
+import { electroDragonEffectEvents } from './electro-dragon-effects';
 import { electromiteEffectEvents } from './electromite-effects';
 import type Phaser from 'phaser';
 import type { Battle } from './model';
@@ -146,6 +147,7 @@ export class NativeProjectilePresentation {
     airLift: number,
     /** Presentation detail (RenderDetail): 1 trails every other shot, 2 draws no trails. */
     detail = 0,
+    attachment?: (id: number, name: string) => Point | undefined,
   ) {
     const covered = new Set<string>();
     const shown = new Set<string>();
@@ -161,6 +163,10 @@ export class NativeProjectilePresentation {
       this.layer.end();
       return covered;
     }
+    for (const event of electroDragonEffectEvents(battle, iso, airLift, attachment, (name) =>
+      this.layer.duration(name),
+    ))
+      this.layer.play(event, elapsed, reduced);
     for (const event of electromiteEffectEvents(battle, iso, airLift))
       this.layer.play(event, elapsed, reduced);
     for (const p of [

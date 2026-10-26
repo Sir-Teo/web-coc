@@ -1231,3 +1231,60 @@ sound cues. Actual deployment and Clone Spell inputs in
 seeks. Phone/desktop checks verify cold tier warming, original body namespaces and
 ballistic meshes, real throw/impact Web Audio, exact landing, clone deadlines, reduced
 motion, read-only rendering and historical version 107 playback.
+
+## Version 109 Electro Dragon charge and mixed-target lightning
+
+Electro Dragons previously hit buildings immediately and used a generic ranged packet
+against defenders. The native controller now charges either primary target for 2.875
+seconds, then strikes directly and chains through up to five eligible targets across
+buildings and ground/air defenders. The pinned character rows supply a 3.5-second attack
+period, 625-ms cooldown override, three-tile hops, 0.128-second hop delay and 20% damage
+loss per hop. The older captured `LogicAttackerItemData` split-timing adapter interprets
+the override as recovery, leaving 2.875 seconds for windup; the current original attack
+clip independently places its action at frame 69 of 24 fps, the same 2.875 seconds.
+The simulation resolves the first hit on its next 20-Hz update and retains the full
+3.5-second period without accumulating that update's rounding error.
+
+Charge and recovery use active action time: native Freeze/stun pauses them, and chill,
+shrink and poison retain their existing attack-clock scaling. The original attack pose
+samples that same clock. Dead or concealed primary targets cancel the charge; an alerted
+defender interrupts a building charge through the existing retaliation selector. A
+committed defender that moves out of range is chased while the charge completes, matching
+the existing garrison commitment adapter. This does not reconstruct the client's full
+retargeting code. The existing Electro Dragon death-lightning ability is unchanged.
+
+Each hop selects the nearest unvisited eligible target. Equal distances prefer highest
+maximum health, as described by the pinned Electro Dragon reference, then use stable
+building/id ordering. The shared two-dimensional adapter measures building-edge and
+defender-point distance; walls, traps, hidden/dead/future targets and visited targets are
+excluded. A surviving previous target supplies its current position at the next hop;
+otherwise the captured endpoint remains. Committed hops retain outgoing damage and tier
+after the caster disappears and keep the last attacker's raid open until resolution.
+Electromite reuses this selector without the maximum-health tie rule, preserving version
+107's ordering. Version 108 and earlier retain their former Electro Dragon combat.
+
+`scripts/import-electro-dragon-art.py --check` verifies pinned source files, graph bytes
+and decoded texture pixels. Two lazy packs add 280,941 bytes for `Electro Dragon Attack`
+and `Mega Tesla Hit`. The 227,161-byte original `Electro Dragon Attack Chain` pack is
+reused. Sound-only `Electro Dragon Pre Attack` adds no texture pack. Original targeted
+particles follow the living caster or previous target, using the original `attack_pivot`
+attachment when available. Shared endpoint stretching and fixed ground/air lifts remain
+presentation adapters because the client placement code is not in the tables. Each pack's
+actual particle duration controls retention, and reduced motion suppresses particles.
+
+The importer adds the original pre-attack sample, bringing the catalog to 339 files.
+Charge audio uses active, unscaled audio time with the original pitch; Freeze omits its
+cue and resumes from the held offset, while cancellation and firing stop it. Captured
+zaps retain one primary attack cue, one chain cue per secondary target and a hit cue per
+target through the ten-second seek horizon. Original volume and pitch ranges apply.
+Carried dragons warm the body, all three effect packs and samples before deployment,
+including when entering battle with an already warmed home army.
+
+Unit tests cover both end tiers, charge/recovery clocks, interruptions, mixed chains,
+maximum-health ties, visibility, moving origins, captured damage, clone expiration and
+pending-attack completion. Actual deployed dragons in
+`tests/fixtures/native-electro-dragon.ts` supply portable forward/reverse replay checks.
+Asset tests verify pins, pack sizes, deterministic particles, attachment placement,
+independent effect lifetimes and retained sound parameters. Phone/desktop browser checks
+exercise original lightning, actual charge/attack/chain/hit Web Audio, cold battle warming,
+read-only rendering, reduced motion and historical version 108 playback.

@@ -365,7 +365,23 @@ export class TroopNativePresentation {
         facing.dx = motion.dx;
         facing.dy = motion.dy;
       }
-      const requested = u.hp <= 0 ? 'die' : u.attacking ? 'attack' : moving ? 'walk' : 'idle';
+      const dragon =
+        battle?.nativeElectroDragon && u.kind === 'electrodragon'
+          ? u.native?.electroDragon
+          : undefined;
+      const dragonPhase =
+        dragon?.animAt !== undefined &&
+        dragon.clock < dragon.animAt + TROOPS.electrodragon.rate - 1e-9
+          ? Math.max(0, dragon.clock - dragon.animAt)
+          : undefined;
+      const requested =
+        u.hp <= 0
+          ? 'die'
+          : dragonPhase !== undefined || u.attacking
+            ? 'attack'
+            : moving
+              ? 'walk'
+              : 'idle';
       const state = level.states[requested] ?? level.states.idle ?? level.states.walk;
       if (!state) continue;
       const deathAge = elapsed - (u.defeatedAt ?? elapsed);
@@ -395,6 +411,7 @@ export class TroopNativePresentation {
       let seconds: number;
       if (reduced) seconds = 0;
       else if (u.hp <= 0) seconds = deathAge;
+      else if (dragonPhase !== undefined) seconds = dragonPhase;
       else if (u.attacking) {
         // Cooldowns reset to the scaled attack interval (boosts, poison, chill), as for heroes.
         const interval = Math.max(

@@ -1,3 +1,4 @@
+import { ELECTRO_DRAGON_EFFECTS } from './electro-dragon-effects';
 import { ELECTROMITE_EFFECTS } from './electromite-effects';
 import { carriedMiteArt, MITE_SPAWN_PARENTS } from './native-mite-jumps';
 import { builderHutArt } from './builder-hut-art';
@@ -2648,6 +2649,12 @@ export class VillageScene extends Phaser.Scene {
       if (kinds.includes('electromite'))
         this.nativeProjectiles?.prefetchEffects(ELECTROMITE_EFFECTS);
     }
+    if (
+      this.model.battle?.nativeElectroDragon &&
+      !this.model.reducedMotion &&
+      kinds.includes('electrodragon')
+    )
+      this.nativeProjectiles?.prefetchEffects(ELECTRO_DRAGON_EFFECTS);
     const setups = this.model.reducedMotion
       ? []
       : [...this.model.heroSetups(), ...(this.model.battle?.nativeHeroes ?? [])];
@@ -6047,6 +6054,7 @@ export class VillageScene extends Phaser.Scene {
       iso,
       AIR_LIFT,
       this.detailLevel,
+      (id, name) => this.troopNativePresentation.attachment(id, name),
     );
     const retained = this.retainedShots;
     retained.clear();

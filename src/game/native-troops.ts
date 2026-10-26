@@ -1,3 +1,9 @@
+import {
+  stepElectroDragonCharge,
+  beginElectroDragonCharge,
+  stepElectroDragonArcs,
+  type ElectroDragonState,
+} from './native-electro-dragon';
 import { attackElectromite, stepElectromiteArcs } from './native-electromite';
 import { preferredDefense } from './native-defense-preference';
 import { monolithArrow, stepEquipmentDash } from './native-equipment-effects';
@@ -71,6 +77,8 @@ import { breachTarget, distanceTo, findPath, type Battle, type Building, type Un
 
 /** Version 45+ native roster behavior state, created lazily on the unit. */
 export interface NativeUnitState {
+  /** Version 109: action-clock charge and recovery, independent of the retained chain packets. */
+  electroDragon?: ElectroDragonState;
   /** Version 95: the source waiting bird and its separately drawn Egg. */
   phoenixWaiting?: true;
   phoenixEgg?: true;
@@ -651,6 +659,7 @@ export function stepNativeUnit(
   u: Unit,
   boosted: NativeStepStats,
   dt: number,
+  actionDt = dt,
 ) {
   const battle = ctx.battle;
   let s = statsFor(battle, u);
@@ -779,6 +788,8 @@ export function stepNativeUnit(
     }
     return;
   }
+  const electroDragon = !!(battle.nativeElectroDragon && u.kind === 'electrodragon');
+  if (electroDragon && stepElectroDragonCharge(ctx, u, s, damage, speed, dt, actionDt)) return;
   const miteJump = nativeMiteJump(battle, u.kind);
   const electromite = battle.nativeElectromites && u.kind === 'electromite';
   const meteorThrow = battle.nativeMeteorThrows && u.kind === 'meteorgolem';
@@ -887,6 +898,15 @@ export function stepNativeUnit(
               },
             }
           : {}),
+        ...(electroDragon
+          ? {
+              attackReady: () => {
+                const target = battle.defenders?.find((d) => d.id === u.defenderTarget);
+                if (target) beginElectroDragonCharge(ctx, u, s, { defender: target });
+                return false;
+              },
+            }
+          : {}),
         wallTile: ctx.wallTile,
         passableWalls: ctx.passableWalls,
         budget: ctx.pathBudget,
@@ -972,6 +992,10 @@ export function stepNativeUnit(
     if (s.underground) surfaceUndergroundUnit(ctx, u, at, target);
     if (at + 1e-9 < (state.targetAt ?? 0) + s.newTargetDelay) return;
     if (u.cooldown > 0) return;
+    if (electroDragon) {
+      beginElectroDragonCharge(ctx, u, s, { building: target });
+      return;
+    }
     u.cooldown = s.rate * unitAttackIntervalScale(u, at);
     if (damageRamp) {
       strike(ctx, u, s, target, rampedDamage(u, damageRamp, damage, target.id, false, at));
@@ -2285,5 +2309,6 @@ export function stepNativeBattle(ctx: NativeTroopContext) {
   stepNativeDeaths(ctx);
   stepNativeChains(ctx);
   stepElectromiteArcs(ctx);
+  stepElectroDragonArcs(ctx);
   stepPendingSpawns(ctx);
 }

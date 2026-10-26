@@ -471,3 +471,14 @@ the parent's deadline and cannot merge. Captured packets reconstruct original ar
 throw/impact sounds through reverse seeks. Version 107 retains its generic defender
 shots, unsplit cloned building attackers and earlier short-flight/birth timing.
 See the [source and adapter details](NATIVE-HEROES.md#version-108-meteor-golem-defender-throws).
+
+## Version 109: Electro Dragon charge and mixed-target lightning
+
+Electro Dragons charge their primary building or defender on an active action clock,
+then chain across both defender layers and structures. Hops retain captured damage and
+tier, prefer maximum health on distance ties and follow a surviving previous target.
+Captured zaps reconstruct original lightning and sound through portable reverse seeks;
+charge audio and body animation follow the paused charge clock. Pending hops delay raid
+completion. Version 108 and earlier retain their previous immediate building hits and
+generic defender shots. See the
+[source and adapter details](NATIVE-HEROES.md#version-109-electro-dragon-charge-and-mixed-target-lightning).

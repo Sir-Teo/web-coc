@@ -1,3 +1,4 @@
+import electroDragonArt from '../../reference/electro-dragon/effects.json' with { type: 'json' };
 import electromiteArt from '../../reference/electromite/effects.json' with { type: 'json' };
 import type Phaser from 'phaser';
 import effectArt from '../../reference/full-client/effect-art.json' with { type: 'json' };
@@ -20,14 +21,14 @@ type EffectIndex = {
   packs: Record<string, { path: string }>;
 };
 const index = effectArt as unknown as EffectIndex;
-const electromiteIndex = electromiteArt as unknown as EffectIndex;
+const catalogs = [index, electromiteArt, electroDragonArt] as unknown as EffectIndex[];
 /** Pack of an effects.csv record, or undefined for sound-only and unreferenced records. */
-export const nativeEffectPack = (effect: string | undefined) =>
-  effect && Object.hasOwn(index.effects, effect)
-    ? index.packs[index.effects[effect]].path
-    : effect && Object.hasOwn(electromiteIndex.effects, effect)
-      ? electromiteIndex.packs[electromiteIndex.effects[effect]].path
-      : undefined;
+export function nativeEffectPack(effect: string | undefined) {
+  if (!effect) return undefined;
+  for (const catalog of catalogs)
+    if (Object.hasOwn(catalog.effects, effect)) return catalog.packs[catalog.effects[effect]].path;
+  return undefined;
+}
 export const nativeEmitterPack = (emitter: string | undefined) =>
   emitter && Object.hasOwn(index.emitters, emitter)
     ? index.packs[index.emitters[emitter]].path

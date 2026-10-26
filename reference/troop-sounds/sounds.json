@@ -156,6 +156,7 @@
     "sfx/druid_bear_deploy.ogg": "782bdf0cff2f905867a10b49ed975ab2ecb4870ab06d9250b8d926ca18cd3571",
     "sfx/druid_bear_die.ogg": "5625bde82ee78c4232075e352be9aa949a320c8b87ea31c0a1b53fc0610fbfe0",
     "sfx/druid_bear_transform.ogg": "023f5c38da0a712617e33bfe5ea0fc8db598915f679d9f6790979f2af67fed2d",
+    "sfx/electro_dragon_sfx_atk_01.ogg": "e2944a697345e194c07cf0fa3314e6c37e03ab521457d89082a028ba397bba91",
     "sfx/electro_dragon_sfx_atk_02.ogg": "9e70b720c5aa2d41a5b13aadabff984ee2ef59b9eb620ff9c0ccc1ff64bfed19",
     "sfx/electro_dragon_sfx_dep_01.ogg": "feae3ee2745e55f361c2ec8efb30d14e393c90e83d30c8446c8eb67f0171c443",
     "sfx/elektro_titan_atk_01.ogg": "43c503949447ba2306c0c08f53f17b704424a8f364400c7a46bd56c823f6b9ba",
@@ -461,7 +462,9 @@
       "deploy": "Electro Dragon Deploy",
       "attack": "Electro Dragon Attack",
       "hit": "Mega Tesla Hit",
-      "die": "Dragon Die"
+      "die": "Dragon Die",
+      "preAttack": "Electro Dragon Pre Attack",
+      "chain": "Electro Dragon Attack Chain"
     },
     "electromite": {
       "name": "Electromite",
@@ -2107,10 +2110,28 @@
         "delay": 0.0
       }
     ],
+    "Electro Dragon Attack Chain": [
+      {
+        "sound": "sfx/tesla_zap_01.ogg",
+        "volume": 0.4,
+        "minPitch": 0.9,
+        "maxPitch": 1.0,
+        "delay": 0.0
+      }
+    ],
     "Electro Dragon Deploy": [
       {
         "sound": "sfx/electro_dragon_sfx_dep_01.ogg",
         "volume": 0.9,
+        "minPitch": 1.0,
+        "maxPitch": 1.0,
+        "delay": 0.0
+      }
+    ],
+    "Electro Dragon Pre Attack": [
+      {
+        "sound": "sfx/electro_dragon_sfx_atk_01.ogg",
+        "volume": 0.5,
         "minPitch": 1.0,
         "maxPitch": 1.0,
         "delay": 0.0
@@ -5785,6 +5806,11 @@
       "path": "assets/audio/troops-native/druid_bear_transform.ogg",
       "bytes": 22429,
       "sha256": "023f5c38da0a712617e33bfe5ea0fc8db598915f679d9f6790979f2af67fed2d"
+    },
+    "sfx/electro_dragon_sfx_atk_01.ogg": {
+      "path": "assets/audio/troops-native/electro_dragon_sfx_atk_01.ogg",
+      "bytes": 22389,
+      "sha256": "e2944a697345e194c07cf0fa3314e6c37e03ab521457d89082a028ba397bba91"
     },
     "sfx/electro_dragon_sfx_atk_02.ogg": {
       "path": "assets/audio/troops-native/electro_dragon_sfx_atk_02.ogg",

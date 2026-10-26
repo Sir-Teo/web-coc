@@ -165,6 +165,8 @@ def build():
         rows = table.get(name)
         require(rows, f'Absent character {name}')
         entry = entries(rows, EVENTS)
+        if key == 'electrodragon':
+            entry.update(entries(rows, {'preAttack': 'PreAttackEffect', 'chain': 'ChainAttackEffect'}))
         if key == 'meteorgolem':
             # This actor's impact sound belongs to its projectile, not characters.HitEffect.
             current, impacts = None, []
