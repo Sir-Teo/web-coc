@@ -140,6 +140,7 @@ export function nativeProjectilePoses(
   flight: ReturnType<typeof nativeProjectileFlight>,
   elapsed: number,
   launched: number,
+  staticChildClock = false,
 ): {
   scene: string;
   poses: NativeScenePose[];
@@ -152,7 +153,11 @@ export function nativeProjectilePoses(
   const duration = nativeClipDuration(graph, root.name);
   const age = Math.max(0, elapsed - launched);
   let seconds = row.ScaleTimeline === 'TRUE' ? flight.t * duration : age;
-  if (row.PlayOnce === 'TRUE') seconds = Math.min(seconds, Math.max(0, duration - 1e-3));
+  if (
+    row.PlayOnce === 'TRUE' &&
+    !(staticChildClock && graph.clips[graph.exports[root.name]]?.timeline.length === 1)
+  )
+    seconds = Math.min(seconds, Math.max(0, duration - 1e-3));
   const s = (NATIVE_ART_SCALE * num(row.Scale, 100)) / 100;
   const c = Math.cos(flight.rotation) * s,
     sn = Math.sin(flight.rotation) * s,

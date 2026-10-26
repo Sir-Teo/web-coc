@@ -1,5 +1,6 @@
 import { startEquipmentDash, stepEquipmentEffects } from './native-equipment-effects';
 import { launchWardenFireball } from './native-fireball';
+import { launchGiantArrow } from './native-giant-arrow';
 import { distance2D } from './distance';
 import { TROOPS, type UnitKind } from './data';
 import { flag, nativeRow, num, seconds, text, tiles, type NativeRow } from './native-data';
@@ -56,6 +57,7 @@ function applyAbility(
   at: number,
 ) {
   launchWardenFireball(ctx, unit, ability, at);
+  launchGiantArrow(ctx, unit, ability, at);
   startEquipmentDash(ctx, unit, ability);
   const row = ability.row;
   const battle = ctx.battle;

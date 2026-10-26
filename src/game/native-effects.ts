@@ -480,6 +480,7 @@ export function nativeTrailPoses(
   reduced: boolean,
   facing: Point = { x: 1, y: 0 },
   depth?: number,
+  options?: { scale: number; timeScale: number },
 ): NativeEffectPose[] {
   const emitter = pack.emitters[emitterName];
   if (!emitter || reduced) return [];
@@ -491,11 +492,11 @@ export function nativeTrailPoses(
     const config = emitterVariant(emitter, Math.floor(random(1) * emitter.length));
     const graph = pack.scenes[nativeSceneId(config.ParticleSwf)];
     if (!graph || graph.exports[config.ParticleExportName] === undefined) continue;
-    const pose = sampler(graph, NATIVE_ART_SCALE)(
+    const pose = sampler(graph, NATIVE_ART_SCALE * (options?.scale ?? 1))(
       `${key}:${birth.index}`,
       emitterName,
       [config],
-      elapsed - birth.at,
+      (elapsed - birth.at) / (options?.timeScale ?? 1),
       birth.ground,
       random,
       config.IsoLayer ?? 'Object',

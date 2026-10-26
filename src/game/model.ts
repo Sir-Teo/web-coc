@@ -930,6 +930,9 @@ export interface Battle {
   nativeReviveTargets?: true;
   /** Version 130: Warden Fireball uses its original flight and captured area damage. */
   nativeWardenFireball?: true;
+  /** Version 131: Queen Giant Arrow uses source piercing damage and a fixed copied heading. */
+  nativeGiantArrow?: true;
+  nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
   nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */
   nativeSpellPulsePresentation?: true;
@@ -6871,6 +6874,7 @@ export class GameModel {
         !b.nativeElectroDragonArcs?.length &&
         !b.nativeSuperWizardBranches?.length &&
         !b.nativeArcherShots?.some((s) => s.travelled < s.length - 1e-9) &&
+        !b.nativeGiantArrows?.some((s) => s.travelled < s.length - 1e-9) &&
         !b.nativePendingSpawns?.length &&
         !b.nativeSpells?.some((cast) => nativeSpellCanStillFight(cast)) &&
         !TROOP_KEYS.some(

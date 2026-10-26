@@ -94,11 +94,14 @@ function circle(shot: ArcherPiercingShot, x: number, y: number): [number, number
   return [along - half, along + half];
 }
 /** Advance fixed arrows through both enemy layers; collateral invisibility does not grant immunity. */
-export function stepArcherPiercing(ctx: NativeTroopContext) {
+export function stepPiercingShots<T extends ArcherPiercingShot>(
+  ctx: NativeTroopContext,
+  shots: readonly T[],
+  power?: (shot: T, target: ChainTarget, at: number) => number,
+) {
   const b = ctx.battle;
-  if (!b.nativeArcherPiercing || !b.nativeArcherShots?.length) return;
-  const candidates: (ChainTarget & { shot: ArcherPiercingShot; at: number })[] = [];
-  for (const shot of b.nativeArcherShots) {
+  const candidates: (ChainTarget & { shot: T; at: number })[] = [];
+  for (const shot of shots) {
     const from = shot.travelled,
       travelled = Math.min(shot.length, Math.max(0, b.elapsed - shot.launched) * shot.speed);
     if (travelled <= from + EPS) continue;
@@ -147,9 +150,16 @@ export function stepArcherPiercing(ctx: NativeTroopContext) {
       y: point.y,
       air: 'defender' in target && target.defender.mode === 'air',
     });
-    if ('building' in target) ctx.damageBuilding(target.building, shot.damage, at);
-    else hurtDefender(b, target.defender, shot.damage, at);
+    const damage = power ? power(shot, target, at) : shot.damage;
+    if ('building' in target) ctx.damageBuilding(target.building, damage, at);
+    else hurtDefender(b, target.defender, damage, at);
   }
+}
+
+export function stepArcherPiercing(ctx: NativeTroopContext) {
+  const b = ctx.battle;
+  if (!b.nativeArcherPiercing || !b.nativeArcherShots?.length) return;
+  stepPiercingShots(ctx, b.nativeArcherShots);
   b.nativeArcherShots = b.nativeArcherShots.filter(
     (s) => s.launched + s.length / s.speed + 10 >= b.elapsed - EPS,
   );

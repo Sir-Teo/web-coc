@@ -1,5 +1,6 @@
 import { launchArcherPiercing, stepArcherPiercing } from './native-super-archer';
 import { resolveWardenFireball } from './native-fireball';
+import { stepGiantArrows } from './native-giant-arrow';
 import { attackSuperWizard, stepSuperWizardBranches } from './native-super-wizard';
 import {
   stepElectroDragonCharge,
@@ -2339,6 +2340,7 @@ export function stepNativeBattle(ctx: NativeTroopContext) {
   stepElectromiteArcs(ctx);
   stepElectroDragonArcs(ctx);
   stepSuperWizardBranches(ctx);
-  stepArcherPiercing(ctx);
+  if (ctx.battle.nativeGiantArrow) stepGiantArrows(ctx);
+  else stepArcherPiercing(ctx);
   stepPendingSpawns(ctx);
 }

@@ -7,6 +7,7 @@ export function heroProjectileNames(
   heroes: readonly HeroSetup[],
   phoenixResurrection = false,
   wardenFireball = false,
+  giantArrow = false,
 ) {
   const names = new Set<string>();
   for (const hero of heroes) {
@@ -15,6 +16,8 @@ export function heroProjectileNames(
       names.add(text(ability.row, 'Projectile'));
       names.add(text(ability.row, 'ReflectProjectile'));
       if (wardenFireball && ability.name === 'GrandWardenFireball')
+        names.add(text(ability.row, 'ProjectileOnActivation'));
+      if (giantArrow && ability.name === 'ArcherQueenPierceProjectile')
         names.add(text(ability.row, 'ProjectileOnActivation'));
     }
     if (hero.pet) names.add(petStatsFor(hero.pet).projectile);

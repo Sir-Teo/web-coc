@@ -2144,3 +2144,12 @@ buildings and ground/air defenders, and launched damage survives Recall or defea
 activation, smoke trails and three explosion tiers reconstruct from a captured launch packet.
 The source activation cue replaces ordinary Warden attack/hit sounds for this equipment shot.
 Versions 129 and earlier retain their former activation. See [source pins, mechanics and validation](../reference/fireball/README.md).
+
+## Version 131 Queen Giant Arrow
+
+All 18 Giant Arrow levels now launch the original piercing projectile, retaining equipment damage
+independently of Rage, a one-tile collision radius and the source Air Defense bonus. Direction
+copies the Queen's existing target rather than automatically aiming at an Air Defense. The ray
+survives Recall and defeat, contacts each object once, and finishes at the map edge. Original
+body and trail sampling remains deterministic through paused playback and portable seeks.
+See [source details, validation and the construct interaction limit](../reference/giant-arrow/README.md).

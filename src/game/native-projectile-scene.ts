@@ -32,6 +32,7 @@ interface Snapshot {
   sourceId: number;
   bounce: number;
   fireballLevel?: number;
+  giantArrow?: true;
   fromX: number;
   fromY: number;
   x: number;
@@ -74,6 +75,10 @@ export class NativeProjectilePresentation {
   ) {
     this.packs = new NativeArtPacks<NativeProjectilePack>(scene);
     this.layer = new NativeEffectLayer(scene, effects, 'projectile');
+  }
+  /** A completed or newly retryable flight pack invalidates paused presentation. */
+  get artRevision() {
+    return this.packs.revision;
   }
   /** Warm original troop flight art alongside the carried army, before its first shot. */
   prefetch(names: Iterable<string>) {
@@ -207,7 +212,7 @@ export class NativeProjectilePresentation {
       if (!packPath) continue;
       this.history.set(p.id, snapshot(p, packPath));
     }
-    for (const shot of battle.nativeArcherShots ?? []) {
+    for (const shot of [...(battle.nativeArcherShots ?? []), ...(battle.nativeGiantArrows ?? [])]) {
       const end = shot.launched + shot.length / shot.speed;
       if (elapsed > end + AFTERLIFE || this.history.has(shot.id)) continue;
       const packPath = nativeProjectilePack(shot.projectile);
@@ -218,6 +223,9 @@ export class NativeProjectilePresentation {
         packPath,
         sourceId: shot.sourceId,
         bounce: 0,
+        ...(shot.projectile === 'QueenPierceProjectile' && battle.nativeGiantArrow
+          ? { giantArrow: true as const }
+          : {}),
         fromX: shot.fromX,
         fromY: shot.fromY,
         x: shot.fromX + shot.dirX * shot.length,
@@ -284,7 +292,14 @@ export class NativeProjectilePresentation {
         continue;
       const span = { launched: snap.launched, end: flight.end };
       if (elapsed <= flight.end) {
-        const art = nativeProjectilePoses(pack, row, flight, elapsed, snap.launched);
+        const art = nativeProjectilePoses(
+          pack,
+          row,
+          flight,
+          elapsed,
+          snap.launched,
+          !!snap.giantArrow,
+        );
         if (art.poses.length)
           shown.add(
             this.draw(
@@ -330,6 +345,7 @@ export class NativeProjectilePresentation {
           reduced,
           facing,
           FLIGHT_DEPTH - 1,
+          !!snap.giantArrow,
         );
       if (row.SpawnEffect && this.running(row.SpawnEffect, snap.launched, elapsed))
         this.layer.play(

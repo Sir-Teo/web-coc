@@ -186,11 +186,14 @@ export class NativeEffectLayer {
     reduced: boolean,
     facing?: Point,
     depth?: number,
+    sourceRows = false,
   ) {
     const path = nativeEffectPack(effect);
     const pack = path ? this.packs.get(path) : undefined;
     if (!path || !pack) return false;
-    for (const [i, row] of (pack.effects[effect] ?? []).entries())
+    const rows = pack.effects[effect] ?? [];
+    for (const [i, own] of rows.entries()) {
+      const row = sourceRows ? { ...rows[0], ...own } : own;
       if (row.ParticleEmitter)
         this.trailPoses(
           path,
@@ -203,7 +206,14 @@ export class NativeEffectLayer {
           reduced,
           facing,
           depth,
+          sourceRows
+            ? {
+                scale: Number(row.Scale || 100) / 100,
+                timeScale: Math.max(0.01, Number(row.LifeTimeScale || 100) / 100),
+              }
+            : undefined,
         );
+    }
     return true;
   }
   private trailPoses(
@@ -217,6 +227,7 @@ export class NativeEffectLayer {
     reduced: boolean,
     facing?: Point,
     depth?: number,
+    options?: { scale: number; timeScale: number },
   ) {
     const rows = pack.emitters[emitter];
     if (!rows || reduced) return;
@@ -225,7 +236,15 @@ export class NativeEffectLayer {
     this.usedTrails.add(key);
     const births: { index: number; at: number; ground: Point }[] = [];
     let oldest = Infinity;
-    for (const birth of nativeTrailBirths(rows[0], span.launched, span.end, elapsed)) {
+    const timing = options
+      ? {
+          ...rows[0],
+          EmissionTime: String(Number(rows[0].EmissionTime || 0) * options.timeScale),
+          MinLife: String(Number(rows[0].MinLife || 0) * options.timeScale),
+          MaxLife: String(Number(rows[0].MaxLife || 0) * options.timeScale),
+        }
+      : rows[0];
+    for (const birth of nativeTrailBirths(timing, span.launched, span.end, elapsed)) {
       if (birth.index < oldest) oldest = birth.index;
       let ground = points.get(birth.index);
       if (!ground) points.set(birth.index, (ground = pointAt(birth.at)));
@@ -235,7 +254,17 @@ export class NativeEffectLayer {
     // Births older than the oldest live one never come back.
     for (const index of points.keys()) if (index < oldest) points.delete(index);
     if (!births.length) return;
-    const poses = nativeTrailPoses(pack, emitter, key, births, elapsed, reduced, facing, depth);
+    const poses = nativeTrailPoses(
+      pack,
+      emitter,
+      key,
+      births,
+      elapsed,
+      reduced,
+      facing,
+      depth,
+      options,
+    );
     if (depth === undefined) this.draw(path, poses);
     else this.drawBatched(path, key, poses);
   }

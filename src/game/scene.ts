@@ -2725,9 +2725,10 @@ export class VillageScene extends Phaser.Scene {
       setups.map(({ kind, level, items, pet }) => ({ kind, level, items, pet })),
     );
     const fireball = !this.model.battle || !!this.model.battle.nativeWardenFireball;
+    const giantArrow = !this.model.battle || !!this.model.battle.nativeGiantArrow;
     const projectiles = this.model.reducedMotion
       ? ''
-      : `${signature}|${setupSignature}|phoenix:${!!this.model.battle?.nativePhoenixResurrection}|fireball:${fireball}`;
+      : `${signature}|${setupSignature}|phoenix:${!!this.model.battle?.nativePhoenixResurrection}|fireball:${fireball}|giant-arrow:${giantArrow}`;
     if (projectiles !== this.projectilePrefetchSignature) {
       this.projectilePrefetchSignature = projectiles;
       this.nativeProjectiles?.prefetch(
@@ -2738,12 +2739,22 @@ export class VillageScene extends Phaser.Scene {
                 setups,
                 !!this.model.battle?.nativePhoenixResurrection,
                 fireball,
+                giantArrow,
               ),
             ]
           : [],
       );
       if (fireball && !this.model.reducedMotion)
         this.nativeProjectiles?.prefetchEffects(fireballEffects(setups));
+      if (
+        giantArrow &&
+        !this.model.reducedMotion &&
+        setups.some(
+          (hero) =>
+            hero.kind === 'queen' && hero.items.some((item) => item.slug === 'piercing-arrow'),
+        )
+      )
+        this.nativeProjectiles?.prefetchEffects(['Hero_Equip_AQ_Giant_Arrow_Trail']);
     }
     const heroes = this.wantedHeroArt();
     const heroSignature = [...heroes].sort().join(',');
@@ -4202,7 +4213,7 @@ export class VillageScene extends Phaser.Scene {
   private sameBattleFrame(battle: NonNullable<GameModel['battle']>) {
     const key = this.frameKey,
       cam = this.cameras.main;
-    const art = `${this.heavyArtReady}:${this.deferredArtSettled}:${this.lateAssetsReady}:${this.cannonPresentation.artRevision}:${this.villageArcherTowers.artRevision}:${this.villageNativePresentation.artRevision}:${this.nativeEffectPacks.revision}`;
+    const art = `${this.heavyArtReady}:${this.deferredArtSettled}:${this.lateAssetsReady}:${this.cannonPresentation.artRevision}:${this.villageArcherTowers.artRevision}:${this.villageNativePresentation.artRevision}:${this.nativeEffectPacks.revision}:${this.nativeProjectiles?.artRevision ?? 0}`;
     const same =
       !this.fxDrained &&
       // The grace window after the finish animates on the presentation clock, not elapsed.
@@ -4349,9 +4360,10 @@ export class VillageScene extends Phaser.Scene {
     if (!battle || !this.audible()) return;
     if (
       (fx.type === 'projectile' || fx.type === 'impact') &&
-      battle.nativeFireballs?.some((shot) => shot.id === fx.projectileId)
+      (battle.nativeFireballs?.some((shot) => shot.id === fx.projectileId) ||
+        battle.nativeGiantArrows?.some((shot) => shot.id === fx.projectileId))
     ) {
-      // The captured equipment activation owns its source cue, including after a cold seek.
+      // Equipment shots use their declared source cues rather than an ordinary Hero attack sound.
       this.fxSounded = true;
       return;
     }
