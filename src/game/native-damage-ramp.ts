@@ -10,6 +10,8 @@ export interface NativeDamageRamp {
   targetId: number;
   defender: boolean;
   startedAt: number;
+  /** Presentation only: the last detached stage-change burst already recorded. */
+  presentedStage?: number;
 }
 
 /** Both armies' target identifiers occupy separate namespaces. */

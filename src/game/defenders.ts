@@ -28,6 +28,7 @@ import { defenderHidden } from './defender-visibility';
 import { defenderRageStats } from './native-rage';
 import type { NativeBoost } from './native-boost';
 import { rampedDamage, finishRampingHit, type NativeDamageRampStats } from './native-damage-ramp';
+import { recordInfernoDragonTransition } from './inferno-dragon-transitions';
 import { untargetable } from './spell-effects';
 import {
   SKELETON_TRAP,
@@ -619,6 +620,8 @@ export function stepAttackerVsDefenders(
   const distance = distance2D(unit.x - target.x, unit.y - target.y);
   if (distance <= stats.range + 1e-6) {
     unit.attacking = true;
+    if (troop.nativeDamageRamp)
+      recordInfernoDragonTransition(battle, unit, troop.nativeDamageRamp, target.id, true);
     route?.enterRange?.();
     if (unit.cooldown <= 0) {
       unit.cooldown = stats.rate;

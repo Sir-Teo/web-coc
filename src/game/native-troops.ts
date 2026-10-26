@@ -22,6 +22,7 @@ import { applyDefenderFrost } from './defender-frost';
 import { activeAsDefense } from './native-defenses';
 import { mergeBoost } from './native-boost';
 import { rampedDamage, finishRampingHit, type NativeDamageRamp } from './native-damage-ramp';
+import { recordInfernoDragonTransition } from './inferno-dragon-transitions';
 import {
   applyDefenderHitPoison,
   nativeHitPoison,
@@ -878,6 +879,7 @@ export function stepNativeUnit(
   }
   if (distance <= s.range + 1e-6) {
     u.attacking = true;
+    if (damageRamp) recordInfernoDragonTransition(battle, u, damageRamp, target.id, false);
     if (s.underground) surfaceUndergroundUnit(ctx, u, at, target);
     if (at + 1e-9 < (state.targetAt ?? 0) + s.newTargetDelay) return;
     if (u.cooldown > 0) return;

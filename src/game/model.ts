@@ -1,4 +1,8 @@
 import { stepDefendingHeroes } from './defending-heroes';
+import {
+  retireInfernoDragonTransitions,
+  type InfernoDragonTransition,
+} from './inferno-dragon-transitions';
 import { chiefProgress, completionXp, finishTimerNow } from './experience';
 import {
   ACHIEVEMENTS,
@@ -864,6 +868,8 @@ export interface Battle {
   nativePhoenixResurrection?: true;
   /** Version 95: pets, including the waiting Egg, cannot be duplicated by Clone. */
   nativePetCloneImmunity?: true;
+  /** Recent detached troop stage effects; presentation only, retired deterministically. */
+  infernoDragonTransitions?: InfernoDragonTransition[];
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */
@@ -5964,6 +5970,7 @@ export class GameModel {
     // Practice and ladder matches have a deadline; campaign combat continues until resolved or ended.
     if (timedBattle(b)) dt = Math.min(dt, Math.max(0, BATTLE_SECONDS - b.elapsed));
     b.elapsed += dt;
+    retireInfernoDragonTransitions(b);
     this.spawnHeroSummons();
     if (revealTeslas(b, this.onEffect, (u) => this.teslaDiverts(b, u))) this.changed();
     // One wall index per tick, shared by the native context and the legacy loop below.

@@ -139,6 +139,7 @@ import { preloadMortars, MortarPresentation } from './mortar-scene';
 import { loadMortarArt, mortarArtLoaded, mortarBounds } from './mortar-poses';
 import { mortarShake } from './mortar-shake';
 import { infernoShake } from './inferno-shake';
+import { infernoDragonShake } from './inferno-dragon-effects';
 import { SPRING_AIRTIME } from './trap-stats';
 import { wallArt, wallTexture } from './wall-art';
 import { LazyTextures } from './lazy-textures';
@@ -983,6 +984,7 @@ export class VillageScene extends Phaser.Scene {
             seekingMineShake(battle, reduced, replay),
             mortarShake(battle, reduced, replay),
             infernoShake(battle, reduced, replay),
+            infernoDragonShake(battle, reduced, replay),
           ],
           shakeMemo.offset,
         );

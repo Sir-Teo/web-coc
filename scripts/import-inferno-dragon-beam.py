@@ -52,14 +52,38 @@ def main():
         'TransitionEffectLv2', 'TransitionEffectLv3', 'TargetedEffectOffset',
     )}
     all_effects = table('logic/effects.csv')
-    effects = {row[key]: all_effects[row[key]] for key in ('AttackEffect', 'AttackEffectLv2', 'AttackEffectLv3')}
+    effects = {row[key]: all_effects[row[key]] for key in (
+        'AttackEffect', 'AttackEffectLv2', 'AttackEffectLv3',
+        'TransitionEffectLv2', 'TransitionEffectLv3',
+    )}
     all_emitters = table('csv/particle_emitters.csv')
     emitters = {effect[0]['ParticleEmitter']: all_emitters[effect[0]['ParticleEmitter']] for effect in effects.values()}
     graph = json.loads((ROOT / 'reference/inferno/art-runtime.json').read_text())
     for emitter in emitters.values():
         assert emitter[0]['ParticleExportName'] in graph['exports']
+    sounds = {}
+    for key in ('TransitionEffectLv2', 'TransitionEffectLv3'):
+        path = effects[row[key]][0]['Sound']
+        entry = next(item for item in manifest['files'] if item['path'] == path)
+        cache = ROOT / 'output/native-campaign-source' / path
+        if not cache.exists():
+            data = urllib.request.urlopen(manifest['baseUrl'] + path, timeout=30).read()
+            assert hashlib.sha256(data).hexdigest() == entry['sha256'], path
+            cache.parent.mkdir(parents=True, exist_ok=True)
+            cache.write_bytes(data)
+        data = cache.read_bytes()
+        assert hashlib.sha256(data).hexdigest() == entry['sha256'], path
+        relative = 'assets/audio/inferno-dragon-native/' + Path(path).name
+        target = ROOT / 'public' / relative
+        if args.check:
+            assert target.read_bytes() == data, path
+        else:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+        sounds[path] = dict(path=relative, bytes=len(data), sha256=entry['sha256'])
     document = dict(clientVersion=manifest['clientVersion'], sources=pins, character=character,
                     effects=effects, particles=emitters,
+                    sounds=sounds,
                     graph='reference/inferno/art-runtime.json')
     target = ROOT / 'reference/inferno-dragon/beam.json'
     text = json.dumps(document, indent=2) + '\n'

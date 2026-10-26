@@ -1,6 +1,11 @@
 import { INFERNO_SOUNDS, infernoSample } from './inferno-sounds';
 import type { AudioManager } from './audio';
 import { infernoImpactPoses } from './inferno-effects';
+import {
+  INFERNO_DRAGON_SOUNDS,
+  infernoDragonSample,
+  infernoDragonTransitionPoses,
+} from './inferno-dragon-effects';
 import { TROOPS } from './data';
 import { infernoBeamAlpha, infernoBeamPoses, infernoBeamProfile } from './inferno-beam';
 import { infernoDamageStage, infernoStats } from './inferno-weapon';
@@ -25,6 +30,8 @@ import {
 const BEAM_DEPTH = 8000;
 
 export function preloadInfernos(scene: Phaser.Scene) {
+  for (const [path, sound] of Object.entries(INFERNO_DRAGON_SOUNDS))
+    scene.load.binary(infernoDragonSample(path), '/' + sound.path);
   for (const [path, sound] of Object.entries(INFERNO_SOUNDS))
     scene.load.binary(infernoSample(path), '/' + sound.path);
   preloadNativeMeshes(scene, infernoGraph(), 'inferno');
@@ -66,6 +73,8 @@ export class InfernoPresentation {
     this.impacts = this.fx.views;
     for (const path of Object.keys(INFERNO_SOUNDS))
       registerCachedSample(scene, audio.samples, infernoSample(path));
+    for (const path of Object.keys(INFERNO_DRAGON_SOUNDS))
+      registerCachedSample(scene, audio.samples, infernoDragonSample(path));
   }
   clear() {
     this.fx.clear();
@@ -88,7 +97,10 @@ export class InfernoPresentation {
     if (!infernoArtLoaded()) return;
     // Hit and transition bursts play out on the presentation clock after the finish.
     if (battle && presentationLive(battle))
-      for (const pose of infernoImpactPoses(battle, reduced, iso, presentationTime(battle)))
+      for (const pose of [
+        ...infernoImpactPoses(battle, reduced, iso, presentationTime(battle)),
+        ...infernoDragonTransitionPoses(battle, reduced, iso, presentationTime(battle)),
+      ])
         this.fx.show(pose);
     this.fx.sweep();
     const wanted = new Set<number>();

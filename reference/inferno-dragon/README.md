@@ -45,4 +45,32 @@ target namespace/id, first-hit clock and stage. Generic per-hit attack starts ar
 for combat version 94, while older recordings retain them. The shared sample player wraps
 seek offsets through the source loop, scales pitch with replay speed and stops it for pause,
 mute, lost beam ownership or battle completion. Existing mixer voice caps still apply.
-Stage transition bursts remain separate presentation work.
+
+The two transition effects `Inf Dragon Up 2` and `Inf Dragon Up 3` use the retained
+`DarkRay Up2` / `DarkRay Up3` emitters and original additive `dark_beamup_fx` export. Each
+emits one detached particle for 650–700 ms, starting at source Z 175 and scaling from 33%
+to 100% / 125%. Ground registration uses that authored height directly; there is no extra
+air-unit lift. Existing local particle scale, altitude projection and lifetime sampling apply.
+
+Combat samples record a presentation event when an eligible in-range attack reaches a new
+stage, including ticks between damage pulses and a pulse that kills its target. The event
+stores the Dragon's ground position before the lock can disappear; it survives Freeze,
+target death and source death until its detached effect ends. JSON restoration and backward
+replay seeking reproduce its seed. These records do not change damage, targeting or the
+combat version. The version 94 Freeze heat-clock behavior remains unchanged: after Freeze,
+the next eligible attack can report the current higher stage. Exact native Freeze reset or
+pause behavior still requires separate evidence.
+
+Both transitions play the unchanged `sfx/infdragon_lvl_up_03.ogg` at 60% volume, with
+95% / 115% fixed pitch. The importer verifies its original SHA-256 and retains the file
+unchanged. The Inferno art family preloads and registers the sample, including scouting with
+a carried Dragon. Shared sample playback handles pause, mute, speed and seek offsets;
+one-shots and particles finish through the standard presentation grace. Event records retire
+after two seconds, beyond this sample's longest pitched duration. Camera shake retains
+source strength 30/40, duration 300/400 ms and replay permission with the existing local
+30 Hz waveform. Reduced motion suppresses bursts and shake while preserving sound cues.
+
+Tests cover both target namespaces, crossings between hits, killing crossings, detached
+lifetime, original sample bytes, source parameters, deterministic particles and shake,
+retirement and read-only presentation. Desktop/phone browser recordings verify the original
+burst and actual Web Audio one-shot, portable backward seeks, reduced motion and cleanup.

@@ -1,9 +1,13 @@
 import { expect, it, vi } from 'vitest';
-import { infernoDragonSoundCues } from '../src/game/inferno-dragon-sounds';
+import { infernoDragonSoundCues as allInfernoDragonSoundCues } from '../src/game/inferno-dragon-sounds';
 import { nativeDamageRampRecording } from './fixtures/native-damage-ramp';
 import { BattleSoundLog, troopSample } from '../src/game/troop-sounds';
 import { SampleAudio } from '../src/game/sample-audio';
 import type { Battle } from '../src/game/model';
+
+// This suite verifies sustained loops; detached one-shots have separate transition coverage.
+const infernoDragonSoundCues = (battle: Battle) =>
+  allInfernoDragonSoundCues(battle).filter((c) => c.loop);
 
 const recording = nativeDamageRampRecording('infernodragon', true);
 const snapshot = (index = 2) => structuredClone(recording.snapshots[index].battle) as Battle;

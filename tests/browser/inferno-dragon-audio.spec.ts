@@ -59,7 +59,7 @@ for (const { defenders, width } of [
       function play(at: number, speed = 1) {
         seek(at);
         const cues = scene.lastCues;
-        const cue = cues.find((c) => c.key.startsWith('inferno-dragon:'));
+        const cue = cues.find((c) => c.key.startsWith('inferno-dragon:') && c.loop);
         if (!cue) throw Error('Missing source dragon loop');
         const before = JSON.stringify(model.battle);
         const render = (playing: boolean, rate = speed) =>
@@ -79,8 +79,9 @@ for (const { defenders, width } of [
           loop: node.source.loop,
           rate: node.source.playbackRate.value,
           gain: node.gain.gain.value,
-          voices: [...audio.samples.active.keys()].filter((k) => k.startsWith('inferno-dragon:'))
-            .length,
+          voices: [...audio.samples.active.entries()].filter(
+            ([k, v]) => k.startsWith('inferno-dragon:') && v.source.loop,
+          ).length,
         };
         render(true);
         const retained = audio.samples.active.get(cue.key).source === node.source;
