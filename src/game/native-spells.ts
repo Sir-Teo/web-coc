@@ -1,3 +1,4 @@
+import { fieldSpellHistoryUntil } from './field-spell-effects';
 import {
   recordOvergrowthRoot,
   retireOvergrowthRoots,
@@ -205,7 +206,8 @@ export function stepNativeSpells(ctx: NativeSpellContext) {
     );
   if (battle.nativeSpellCastHistory)
     battle.nativeSpellCastHistory = battle.nativeSpellCastHistory.filter(
-      (cast) => spellEndTime(cast) + 10 >= battle.elapsed - 1e-9,
+      (cast) =>
+        Math.max(spellEndTime(cast) + 10, fieldSpellHistoryUntil(cast)) >= battle.elapsed - 1e-9,
     );
   for (const cast of battle.nativeSpells ?? []) {
     if (cast.ended) continue;

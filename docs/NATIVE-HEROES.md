@@ -1916,3 +1916,43 @@ retargeting reconstruct through portable forward/reverse seeks with version-123
 physical equivalence. Browser cases cover phone/desktop source meshes and Web Audio,
 cold history, reduced motion, older asset requests and natural paused recovery after
 a held/failed pack.
+
+## Version 125 original Earthquake fields and persistent scars
+
+Earthquake now uses its original bottle, ground/top rings, airborne debris, dust,
+stones and cracked ground. The 196,132-byte lazy pack preserves the eight source levels'
+effect mappings and their emitter variants, source graphs and decoded pixels. Levels
+one through five use their respective ring sizes; levels six through eight inherit
+level five's presentation. All prior field packs remain byte-identical.
+
+Both deployment phases begin at 800 ms. The unchanged five physical damage pulses
+start at 1.5 seconds and end at 3.1 seconds. The ground phase contains seven crack
+particles, one central crack, eight darkening particles and fifty small stones, each
+with a 300-second source lifetime. Their source motion, random variants, scale and
+layers use the existing sampler. The final stones' 2500-ms emission window establishes
+a conservative ground tail of 302.5 seconds after deployment.
+
+The importer derives `retainSeconds` from the finite particle rows, including emitter
+delay, emission and maximum lifetime, and checks that this durable field has particle-only
+effects with the supported 100% lifetime scale. `fieldSpellHistoryUntil` uses that small
+profile metadata to retain the cast until 303.3 seconds after casting. Combat code does
+not load mesh graphs. Other source fields preserve their previous last-pulse-plus-ten-
+seconds retirement. Only version 125's presentation list captures Earthquake in this
+history, so earlier recordings retain their former behavior. Normal battle completion
+clears the displayed field; the long source tail grants no additional damage pulses.
+
+The original vial fall and landing sounds keep their existing two cue keys. Cold views
+of old scars warm the art from history even when all Earthquake inventory is spent,
+without replaying expired sounds. Reduced motion omits the source effects. Failed or
+pending art uses the existing ring feedback; natural paused recovery removes that
+fallback once the complete source pack is available. Camera-shake columns remain
+retained source metadata; this field adapter does not reconstruct the client's camera
+motion.
+
+Tests sample every level, check all 66 ground particles beyond the former history and
+30-second rendering bounds, verify source-derived tail retirement and preserve original
+audio keys. Four real casts verify diminishing building damage and fourth-cast wall
+destruction through portable forward/reverse seeks with version-124 physical equivalence.
+Browser coverage includes phone/desktop meshes and original Web Audio, cold 45-second
+scars, reduced motion, battle completion, old-version asset requests and natural paused
+recovery after a held/failed pack.

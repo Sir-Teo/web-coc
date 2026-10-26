@@ -46,7 +46,18 @@
     "Lightning Spell": "lightning",
     "Lightning Spell Hit": "lightning",
     "Lightning area small": "lightning",
-    "Lightning predeploy": "lightning"
+    "Lightning predeploy": "lightning",
+    "EarthQuake_deploy": "earthquake",
+    "EarthQuake_deploy_0": "earthquake",
+    "EarthQuake_deploy_2": "earthquake",
+    "EarthQuake_deploy_3": "earthquake",
+    "EarthQuake_deploy_4": "earthquake",
+    "EarthQuake_deploy_ground": "earthquake",
+    "EarthQuake_deploy_ground_0": "earthquake",
+    "EarthQuake_deploy_ground_2": "earthquake",
+    "EarthQuake_deploy_ground_3": "earthquake",
+    "EarthQuake_deploy_ground_4": "earthquake",
+    "Earthquake_Predeploy": "earthquake"
   },
   "packs": {
     "rage": {
@@ -88,6 +99,11 @@
       "path": "assets/field-spells-native/lightning/graph.json",
       "sha256": "647d48a4d3d7ba6355bc5640cbc23a6adc0b233c88195e5235ccb457e1736e2f",
       "bytes": 491070
+    },
+    "earthquake": {
+      "path": "assets/field-spells-native/earthquake/graph.json",
+      "sha256": "88a448391401a9221710fefc14d4bb278d17d55c9231519e0266267d229c82c5",
+      "bytes": 196132
     }
   },
   "spells": {
@@ -780,6 +796,83 @@
           "HitEffect": "Lightning Spell Hit",
           "hitRadiusTiles": 0,
           "graphicsOnlyRadius": true
+        }
+      ]
+    },
+    "Earthquake": {
+      "key": "earthquake",
+      "levels": [
+        {
+          "PreDeployEffect": "Earthquake_Predeploy",
+          "DeployEffect": "EarthQuake_deploy_ground_0",
+          "DeployEffect2": "EarthQuake_deploy_0",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "retainSeconds": 303.3
+        },
+        {
+          "PreDeployEffect": "Earthquake_Predeploy",
+          "DeployEffect": "EarthQuake_deploy_ground",
+          "DeployEffect2": "EarthQuake_deploy",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "retainSeconds": 303.3
+        },
+        {
+          "PreDeployEffect": "Earthquake_Predeploy",
+          "DeployEffect": "EarthQuake_deploy_ground_2",
+          "DeployEffect2": "EarthQuake_deploy_2",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "retainSeconds": 303.3
+        },
+        {
+          "PreDeployEffect": "Earthquake_Predeploy",
+          "DeployEffect": "EarthQuake_deploy_ground_3",
+          "DeployEffect2": "EarthQuake_deploy_3",
+          "level": 4,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "retainSeconds": 303.3
+        },
+        {
+          "PreDeployEffect": "Earthquake_Predeploy",
+          "DeployEffect": "EarthQuake_deploy_ground_4",
+          "DeployEffect2": "EarthQuake_deploy_4",
+          "level": 5,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "retainSeconds": 303.3
+        },
+        {
+          "PreDeployEffect": "Earthquake_Predeploy",
+          "DeployEffect": "EarthQuake_deploy_ground_4",
+          "DeployEffect2": "EarthQuake_deploy_4",
+          "level": 6,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "retainSeconds": 303.3
+        },
+        {
+          "PreDeployEffect": "Earthquake_Predeploy",
+          "DeployEffect": "EarthQuake_deploy_ground_4",
+          "DeployEffect2": "EarthQuake_deploy_4",
+          "level": 7,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "retainSeconds": 303.3
+        },
+        {
+          "PreDeployEffect": "Earthquake_Predeploy",
+          "DeployEffect": "EarthQuake_deploy_ground_4",
+          "DeployEffect2": "EarthQuake_deploy_4",
+          "level": 8,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "retainSeconds": 303.3
         }
       ]
     }

@@ -39,11 +39,27 @@ def main():
         return read_source(path)
 
     art.read = read
+    def particle_tail(name):
+        # Durable scars contain finite particle rows only. Match the runtime's conservative
+        # emission + maximum-life bound without importing a mesh graph into combat code.
+        rows = lib.effects[name]
+        longest = 0
+        for own in rows:
+            row = {**rows[0], **own}
+            require(not own.get('SWF'), f'Expected particle-only durable field: {name}')
+            require(int(row.get('LifeTimeScale', '100')) == 100, f'Unexpected durable field time scale: {name}')
+            emitter = own.get('ParticleEmitter')
+            if emitter:
+                source = lib.emitters[emitter][0]
+                longest = max(longest, (int(own.get('EmitterDelayMs', '0')) + int(source['EmissionTime']) +
+                                       max(int(source['MinLife']), int(source['MaxLife']))) / 1000)
+        return longest
+
     existing = json.loads((ROOT / 'reference/full-client/effect-art.json').read_text())
     effects, packs, spells, external = {}, {}, {}, {}
     for spell, key in [('Rage', 'rage'), ('Haste', 'haste'), ('Healing', 'heal'), ('Poison', 'poison'),
                        ('Clone', 'clone'), ('Invisibility', 'invisibility'), ('Recall', 'recall'),
-                       ('Lightning', 'lightning')]:
+                       ('Lightning', 'lightning'), ('Earthquake', 'earthquake')]:
         profiles, current, names = [], {}, set()
         for level, row in enumerate(lib.table('logic/spells.csv')[spell], 1):
             current.update(row)
@@ -57,6 +73,9 @@ def main():
                 radius = int(current.get('RandomRadius', '0'))
                 profile['hitRadiusTiles'] = radius // 100 if radius % 100 == 0 else radius / 100
                 profile['graphicsOnlyRadius'] = current.get('RandomRadiusAffectsOnlyGfx') == 'TRUE'
+            if spell == 'Earthquake':
+                profile['retainSeconds'] = profile['deploySeconds'] + max(
+                    particle_tail(profile[k]) for k in ['DeployEffect', 'DeployEffect2'])
             profiles.append(profile)
             names.update(profile[k] for k in ['PreDeployEffect', 'DeployEffect', 'DeployEffect2', 'ChargingEffect', 'HitEffect'] if profile.get(k))
         spells[spell] = dict(key=key, levels=profiles)

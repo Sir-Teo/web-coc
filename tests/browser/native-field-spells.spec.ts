@@ -19,7 +19,10 @@ async function boot(
       audio.unlock();
       await audio.context.resume();
       model.battle = late
-        ? structuredClone(r.snapshots.find((s) => s.at === r.afterLive).battle)
+        ? structuredClone(
+            r.snapshots.find((s) => s.at === (r.name === 'Earthquake' ? r.steady : r.afterLive))
+              .battle,
+          )
         : replayBattle(r.data.initial, version);
       model.changed();
       scene.sync();
@@ -109,6 +112,8 @@ for (const { name, level, width } of [
   { name: 'Recall', level: 7, width: 1440 },
   { name: 'Lightning', level: 1, width: 390 },
   { name: 'Lightning', level: 13, width: 1440 },
+  { name: 'Earthquake', level: 1, width: 390 },
+  { name: 'Earthquake', level: 8, width: 1440 },
 ] as const)
   test(`original ${name} level ${level} fields and audio survive cold portable seeks at ${width}px`, async ({
     page,
@@ -137,6 +142,7 @@ for (const { name, level, width } of [
       'invisibility',
       'recall',
       'lightning',
+      'earthquake',
     ])
       if (key !== r.key)
         expect(requests).not.toContain(`/assets/field-spells-native/${key}/graph.json`);
@@ -159,6 +165,11 @@ for (const { name, level, width } of [
           bottle: 'invisibility_bottleDrop',
           ground: `invisibility_lvl${level}_ring`,
           upper: `invisibility_lvl${level}_ring2`,
+        },
+        Earthquake: {
+          bottle: 'Earthquake_bottleDrop',
+          ground: 'Earthquake_crackCenter',
+          upper: 'Earthquake_debris',
         },
         Lightning: {
           bottle: 'lightning_bottleDrop',
@@ -222,7 +233,7 @@ for (const { name, level, width } of [
             ? 'spell:1:charging'
             : name === 'Healing'
               ? 'spell:1:hit:1'
-              : name === 'Poison' || name === 'Recall'
+              : name === 'Poison' || name === 'Recall' || name === 'Earthquake'
                 ? 'spell:1:deploy2'
                 : 'spell:1:deploy';
       const cue = scene.lastCues.find((c) => c.key === key),
@@ -258,13 +269,14 @@ for (const { name, level, width } of [
         Invisibility: 0.9,
         Recall: 1,
         Lightning: 0.8,
+        Earthquake: 0.8,
       }[name],
       keys =
         name === 'Lightning'
           ? ['spell:1:preDeploy', 'spell:1:deploy', 'spell:1:charging', 'spell:1:hit:0']
           : name === 'Healing'
             ? ['spell:1:preDeploy', 'spell:1:deploy', 'spell:1:hit:0', 'spell:1:hit:1']
-            : name === 'Poison' || name === 'Recall'
+            : name === 'Poison' || name === 'Recall' || name === 'Earthquake'
               ? ['spell:1:preDeploy', 'spell:1:deploy2']
               : ['spell:1:preDeploy', 'spell:1:deploy'];
     expect(sound).toMatchObject({
@@ -285,7 +297,15 @@ for (const { name, level, width } of [
       expect(sound.pitch).toBeLessThanOrEqual(0.9);
     } else
       expect(sound.pitch).toBe(
-        { Rage: 0.75, Haste: 0.97, Poison: 0.97, Clone: 0.97, Invisibility: 1, Recall: 1 }[name],
+        {
+          Rage: 0.75,
+          Haste: 0.97,
+          Poison: 0.97,
+          Clone: 0.97,
+          Invisibility: 1,
+          Recall: 1,
+          Earthquake: 0.97,
+        }[name],
       );
     expect(sound.rate).toBeCloseTo(sound.pitch, 6);
     expect(sound.gain).toBeCloseTo(volume * 0.12, 6);
@@ -326,15 +346,17 @@ for (const { name, level, width } of [
       ).toEqual({ pulse: undefined, meshes: 0 });
     }
     const oldVersion =
-      name === 'Lightning'
-        ? 123
-        : name === 'Recall'
-          ? 120
-          : name === 'Clone' || name === 'Invisibility'
-            ? 119
-            : name === 'Healing' || name === 'Poison'
-              ? 117
-              : 116;
+      name === 'Earthquake'
+        ? 124
+        : name === 'Lightning'
+          ? 123
+          : name === 'Recall'
+            ? 120
+            : name === 'Clone' || name === 'Invisibility'
+              ? 119
+              : name === 'Healing' || name === 'Poison'
+                ? 117
+                : 116;
     await open(page, oldVersion);
     await seek(page, r.steady);
     expect(
@@ -352,20 +374,38 @@ for (const { name, level, width } of [
       ready: false,
       views: 0,
       names:
-        oldVersion === 123
-          ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison', 'Clone', 'Invisibility', 'Recall']
-          : oldVersion === 120
-            ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison', 'Clone', 'Invisibility']
-            : oldVersion === 119
-              ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison']
-              : oldVersion === 117
-                ? ['Jump', 'Rage', 'Haste']
-                : ['Jump'],
+        oldVersion === 124
+          ? [
+              'Jump',
+              'Rage',
+              'Haste',
+              'Healing',
+              'Poison',
+              'Clone',
+              'Invisibility',
+              'Recall',
+              'Lightning',
+            ]
+          : oldVersion === 123
+            ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison', 'Clone', 'Invisibility', 'Recall']
+            : oldVersion === 120
+              ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison', 'Clone', 'Invisibility']
+              : oldVersion === 119
+                ? ['Jump', 'Rage', 'Haste', 'Healing', 'Poison']
+                : oldVersion === 117
+                  ? ['Jump', 'Rage', 'Haste']
+                  : ['Jump'],
       history: undefined,
     });
     expect(errors).toEqual([]);
   });
 for (const { name, path, heldEffect, otherEffect } of [
+  {
+    name: 'Earthquake',
+    path: 'field-spells-native/earthquake',
+    heldEffect: 'EarthQuake_deploy_ground_0',
+    otherEffect: undefined,
+  },
   {
     name: 'Lightning',
     path: 'field-spells-native/lightning',
@@ -525,6 +565,7 @@ for (const { name, path, heldEffect, otherEffect } of [
         Invisibility: 'invisibility_lvl1_ring',
         Recall: 'RecallCircleGround',
         Lightning: 'LightningSky',
+        Earthquake: 'Earthquake_crackCenter',
       }[name],
     ]);
     if (name === 'Healing') await visible(page, ['heal_ring_effect', 'heal_ring_effect2']);
@@ -550,4 +591,25 @@ test('version-123 Lightning playback stays read-only and never requests the new 
     })),
   ).toEqual({ ready: false, views: 0, cast: false });
   expect(requests).not.toContain('/assets/field-spells-native/lightning/graph.json');
+});
+
+test('version-124 Earthquake playback stays read-only and never requests the durable field pack', async ({
+  page,
+}) => {
+  const r = nativeFieldSpellRecording('Earthquake'),
+    requests: string[] = [];
+  page.on('request', (request) => requests.push(new URL(request.url()).pathname));
+  await boot(page, r, false, 124);
+  await open(page, 124);
+  await seek(page, r.steady);
+  expect(
+    await page.evaluate(() => ({
+      ready: window.__game.scene.fieldSpellPresentations
+        .get('Earthquake')
+        .hasArt(window.__game.model.battle, false),
+      views: window.__game.scene.fieldSpellPresentations.get('Earthquake').layer.views.size,
+      cast: window.__game.model.castSpell(11.5, 11.5),
+    })),
+  ).toEqual({ ready: false, views: 0, cast: false });
+  expect(requests).not.toContain('/assets/field-spells-native/earthquake/graph.json');
 });

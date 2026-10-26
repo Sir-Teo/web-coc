@@ -643,3 +643,14 @@ the cast without extending damage or stun. Original audio keeps its existing fou
 keys. Version 123 and earlier retain their previous presentation and never request
 the new pack. See
 [source and adapter details](NATIVE-HEROES.md#version-124-original-lightning-cast-and-impact-effects).
+
+## Version 125: original Earthquake fields and persistent scars
+
+The source-spell presentation list adds Earthquake. All eight levels reconstruct their
+original bottle, level-specific rings, debris and long-lived ground scars from captured
+cast history. Damage remains five pulses from 1.5 to 3.1 seconds. Source-derived
+`retainSeconds` extends the Earthquake history bound to 303.3 seconds after casting,
+covering its finite ground particles throughout a normal battle. Other captured spells
+keep their former retirement rules. Version 124 and earlier request no Earthquake pack
+and retain their previous presentation. See
+[source and adapter details](NATIVE-HEROES.md#version-125-original-earthquake-fields-and-persistent-scars).
