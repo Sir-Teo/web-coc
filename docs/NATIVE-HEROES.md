@@ -1545,3 +1545,43 @@ state against version 114. Actual level-1 and level-8 portable recordings recons
 exactly through forward/reverse bottle, landing, freeze and expiry checkpoints. Chromium
 phone/desktop checks cover cold post-pulse sample loading, original meshes and Web Audio,
 reduced motion, historical replay fallback and held/failed/reconnected art downloads.
+
+## Version 116 original Jump Spell fields
+
+Jump now draws its original bottle, range markers, green glow, rising particles and
+light rays for all five levels. `scripts/import-jump-spell-art.py --check` reproduces
+11 source effect records and their emitter/export dependencies from client 18.400.21,
+verifying source pins, graph bytes and decoded texture pixels. The lazy cast pack adds
+172,747 bytes; no source rows, meshes or textures are modified.
+
+The bottle lasts 800 ms and both level-specific deployment effects start then. Native
+fields last 20, 40, 60, 80 or 100 seconds, with final emitted particles extending beyond
+the live spell's last pulse. These are finite, non-looping source lifetimes. Jump opts
+out of the shared effect-duration helper's default 30-second cap; other callers retain
+that safeguard for persistent emitters. Shared source projection, particle fade and
+timeline adapters still apply, including oversized source fade fields. Physical Jump
+still begins at 1.5 seconds and uses its existing pulse, wall-crossing and expiry rules.
+
+`nativeSpellArt` is a versioned list of additional source spell names to present; version
+116 enables only Jump. `nativeSpellCastHistory` shares each selected live cast object,
+then retains its completed timeline until ten seconds after its last scheduled pulse.
+This supports late final particles and portable backward/forward seeks without adding
+another per-spell capture array. Original Overgrowth and Freeze histories retain their
+prior fields and version gates. The cast sound log skips additionally captured spells,
+so original cue keys do not play twice. Retained history also requests samples and art
+with no live or remaining Jump spells and no deployed actors.
+
+Original art replaces generic rings and auras after loading. Pending or failed downloads
+keep the fallback, then hand off at the same battle time after a successful retry.
+Reduced motion keeps the previous stationary fallback instead of moving particles.
+Version 115 and earlier omit the new list/history and retain their former presentation.
+Existing `magic_bottle_fall_05.ogg` and `bottle_jump_spell_01.ogg` samples retain their
+source volume and pitch; the catalog remains at 340 files and 357 effects.
+
+Checks cover all five source levels, long-duration rendering past the generic cap,
+final-particle retirement, captured history bounds, overlapping cast keys, unchanged
+wall rules against version 115 and original source cue parameters. Actual level-1 and
+level-5 portable recordings reconstruct exactly through forward/reverse seeks past
+100 seconds. Phone/desktop Chromium checks cover cold late-history loading, original
+bottle/field meshes and Web Audio, reduced motion, historical fallback and held/failed/
+reconnected downloads. Shared-renderer regressions cover Freeze and Overgrowth.

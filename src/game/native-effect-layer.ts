@@ -1,3 +1,4 @@
+import jumpSpellArt from '../../reference/jump-spell/effects.json' with { type: 'json' };
 import freezeSpellArt from '../../reference/freeze-spell/effects.json' with { type: 'json' };
 import overgrowthArt from '../../reference/overgrowth/effects.json' with { type: 'json' };
 import superArcherArt from '../../reference/super-archer/effects.json' with { type: 'json' };
@@ -33,6 +34,7 @@ const catalogs = [
   superArcherArt,
   overgrowthArt,
   freezeSpellArt,
+  jumpSpellArt,
 ] as unknown as EffectIndex[];
 /** Pack of an effects.csv record, or undefined for sound-only and unreferenced records. */
 export function nativeEffectPack(effect: string | undefined) {
@@ -129,10 +131,10 @@ export class NativeEffectLayer {
     if (!path || this.packs.unavailable(path)) return 'none';
     return this.packs.get(path) ? 'ready' : 'loading';
   }
-  duration(effect: string) {
+  duration(effect: string, maximum = 30) {
     const path = nativeEffectPack(effect);
     const pack = path ? this.packs.get(path) : undefined;
-    return pack ? nativeEffectDuration(pack, effect) : undefined;
+    return pack ? nativeEffectDuration(pack, effect, maximum) : undefined;
   }
   play(event: NativeEffectEvent, elapsed: number, reduced: boolean) {
     const path = nativeEffectPack(event.effect);

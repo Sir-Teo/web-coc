@@ -394,12 +394,13 @@ export function nativeEffectPoses(
 
 /** Longest time an effect record can keep drawing after it starts (non-looping rows). */
 const durations = new WeakMap<NativeArtPack, Map<string, number>>();
-export function nativeEffectDuration(pack: NativeArtPack, effect: string) {
+export function nativeEffectDuration(pack: NativeArtPack, effect: string, maximum = 30) {
   let cache = durations.get(pack);
   if (!cache) durations.set(pack, (cache = new Map()));
   let duration = cache.get(effect);
   if (duration === undefined) cache.set(effect, (duration = effectDuration(pack, effect)));
-  return duration;
+  // Persistent beam emitters declare near-infinite lives; finite source fields may opt out.
+  return Math.min(duration, maximum);
 }
 function effectDuration(pack: NativeArtPack, effect: string) {
   let longest = 0;
@@ -422,8 +423,7 @@ function effectDuration(pack: NativeArtPack, effect: string) {
             1000,
       );
   }
-  // Persistent beam emitters declare near-infinite lives; their callers stop them explicitly.
-  return Math.min(longest, 30);
+  return longest;
 }
 
 /** Trail births along a flight: each birth keeps the projected point where it was emitted. */

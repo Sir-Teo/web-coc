@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 115;
+export const REPLAY_VERSION = 116;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -143,7 +143,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 112 makes native chain geometry consistent and lets Overgrowth absorb secondary hops.
  * Version 113 captures Overgrowth root lifetimes for original presentation.
  * Version 114 retains Overgrowth bottle, field and cast-audio timelines.
- * Version 115 retains original Freeze Spell cast art and audio timelines. */
+ * Version 115 retains original Freeze Spell cast art and audio timelines.
+ * Version 116 captures Jump in a versioned source-spell presentation history. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -226,6 +227,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 112 ||
   version === 113 ||
   version === 114 ||
+  version === 115 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -374,6 +376,7 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 116 ? { nativeSpellArt: ['Jump'] } : {}),
     ...(version >= 115 ? { nativeFreezeCastPresentation: true as const } : {}),
     ...(version >= 114 ? { nativeOvergrowthCastPresentation: true as const } : {}),
     ...(version >= 113 ? { nativeOvergrowthPresentation: true as const } : {}),

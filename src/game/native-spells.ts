@@ -125,6 +125,7 @@ export function castNativeSpell(
     (battle.nativeOvergrowthCasts ??= []).push(cast);
   if (battle.nativeFreezeCastPresentation && name === 'Freeze')
     (battle.nativeFreezeCasts ??= []).push(cast);
+  if (battle.nativeSpellArt?.includes(name)) (battle.nativeSpellCastHistory ??= []).push(cast);
   return cast;
 }
 
@@ -189,6 +190,10 @@ export function stepNativeSpells(ctx: NativeSpellContext) {
       (cast) =>
         cast.firstHit + seconds(spellRow('Freeze', cast.level), 'FreezeTimeMS') + 10 >=
         battle.elapsed - 1e-9,
+    );
+  if (battle.nativeSpellCastHistory)
+    battle.nativeSpellCastHistory = battle.nativeSpellCastHistory.filter(
+      (cast) => spellEndTime(cast) + 10 >= battle.elapsed - 1e-9,
     );
   for (const cast of battle.nativeSpells ?? []) {
     if (cast.ended) continue;

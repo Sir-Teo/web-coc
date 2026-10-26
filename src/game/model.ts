@@ -916,6 +916,9 @@ export interface Battle {
   /** Version 115: original Freeze cast art and audio survive the one-pulse live record. */
   nativeFreezeCastPresentation?: true;
   nativeFreezeCasts?: NativeSpellCast[];
+  /** Version 116+: source spell names whose cast presentation is captured in this recording. */
+  nativeSpellArt?: readonly string[];
+  nativeSpellCastHistory?: NativeSpellCast[];
   nativeOvergrowthRoots?: OvergrowthRoot[];
   nativeArcherShots?: ArcherPiercingShot[];
   nativeSuperWizardBranches?: SuperWizardBranch[];

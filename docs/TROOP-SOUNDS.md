@@ -164,3 +164,11 @@ loading with no live spells or deployed actors. The live cast log skips captured
 casts, preventing duplicates. Original volume and pitch remain unchanged; the catalog
 still contains 340 files and 357 effects. See
 [Freeze cast presentation](NATIVE-HEROES.md#version-115-original-freeze-spell-casts).
+
+Version 116 reads additional captured cast cues from `nativeSpellCastHistory`, enabled
+by the recording's versioned `nativeSpellArt` list (Jump in version 116). The live cast
+log skips these names so each original key plays once. Cold replay views request samples
+from retained history even after all live and remaining Jump spells disappear. Existing
+Jump bottle and deployment samples retain their original source parameters; the catalog
+remains at 340 files and 357 effects. See
+[Jump cast presentation](NATIVE-HEROES.md#version-116-original-jump-spell-fields).

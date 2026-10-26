@@ -115,6 +115,7 @@ it('cast capture leaves physical spell behavior and root lifetimes unchanged', (
   const now = JSON.parse(JSON.stringify(a.model.battle));
   delete now.nativeOvergrowthCasts;
   delete now.nativeFreezeCastPresentation;
+  delete now.nativeSpellArt;
   delete now.nativeOvergrowthCastPresentation;
   expect(now).toEqual(JSON.parse(JSON.stringify(b.model.battle)));
 });

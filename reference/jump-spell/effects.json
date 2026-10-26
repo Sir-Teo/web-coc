@@ -1,0 +1,77 @@
+{
+  "clientVersion": "18.400.21",
+  "generator": "scripts/import-jump-spell-art.py",
+  "sources": {
+    "csv/particle_emitters.csv": "8d80bbf714386c4f24e6aed8f2eef671a2eac5c3b3ad41e4d275b757ced64cef",
+    "logic/effects.csv": "5c6d5b67d6407345123b8d55872ed77ee6697b466d20d1fa21e25a723c511e9f",
+    "logic/spells.csv": "385159e00327e6a1567cd91f1585b4ed0717d3f4475f0823398243482598289d",
+    "sc/buildings.sc": "f73ec949fc070bc03175d6bb3af8b62d8f607094bf2b343c9846a499a35be0ed",
+    "sc/buildings_39.sctx": "dd27d9612fe135c3be364840eeabe45b53a229b24192246b56a08fa0606fdb16"
+  },
+  "effects": {
+    "Jump predeploy": "jump",
+    "Jump deploy lvl1": "jump",
+    "Jump deploy top lvl1": "jump",
+    "Jump deploy lvl2": "jump",
+    "Jump deploy top lvl2": "jump",
+    "Jump deploy lvl3": "jump",
+    "Jump deploy top lvl3": "jump",
+    "Jump deploy lvl4": "jump",
+    "Jump deploy top lvl4": "jump",
+    "Jump deploy lvl5": "jump",
+    "Jump deploy top lvl5": "jump"
+  },
+  "packs": {
+    "jump": {
+      "path": "assets/jump-spell-native/cast/graph.json",
+      "sha256": "3672897ddccb556d759fabd350125b7c1b5e30dd4fefab0e32da3abd15b6fc4c",
+      "bytes": 172747
+    }
+  },
+  "spellLevels": [
+    {
+      "PreDeployEffect": "Jump predeploy",
+      "DeployEffect": "Jump deploy lvl1",
+      "DeployEffect2": "Jump deploy top lvl1",
+      "level": 1,
+      "deploySeconds": 0.8,
+      "pulseSeconds": 1.5
+    },
+    {
+      "PreDeployEffect": "Jump predeploy",
+      "DeployEffect": "Jump deploy lvl2",
+      "DeployEffect2": "Jump deploy top lvl2",
+      "level": 2,
+      "deploySeconds": 0.8,
+      "pulseSeconds": 1.5
+    },
+    {
+      "PreDeployEffect": "Jump predeploy",
+      "DeployEffect": "Jump deploy lvl3",
+      "DeployEffect2": "Jump deploy top lvl3",
+      "level": 3,
+      "deploySeconds": 0.8,
+      "pulseSeconds": 1.5
+    },
+    {
+      "PreDeployEffect": "Jump predeploy",
+      "DeployEffect": "Jump deploy lvl4",
+      "DeployEffect2": "Jump deploy top lvl4",
+      "level": 4,
+      "deploySeconds": 0.8,
+      "pulseSeconds": 1.5
+    },
+    {
+      "PreDeployEffect": "Jump predeploy",
+      "DeployEffect": "Jump deploy lvl5",
+      "DeployEffect2": "Jump deploy top lvl5",
+      "level": 5,
+      "deploySeconds": 0.8,
+      "pulseSeconds": 1.5
+    }
+  ],
+  "conventions": {
+    "lifecycle": "Source cast art starts at deployment time; physical jump timing is unchanged.",
+    "placement": "Source effect offsets use the shared native isometric projection adapter."
+  }
+}

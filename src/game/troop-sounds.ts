@@ -226,7 +226,8 @@ export class BattleSoundLog {
     for (const cast of battle.nativeSpells ?? []) {
       if (
         (battle.nativeOvergrowthCastPresentation && cast.name === 'Overgrowth') ||
-        (battle.nativeFreezeCastPresentation && cast.name === 'Freeze')
+        (battle.nativeFreezeCastPresentation && cast.name === 'Freeze') ||
+        battle.nativeSpellArt?.includes(cast.name)
       )
         continue;
       live.add(cast.id);
@@ -388,7 +389,11 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
     const cue = spellCue('Overgrowth', 1, event, `${root.key}:stop`, root.until);
     if (cue) cues.push(cue);
   }
-  for (const cast of [...(battle.nativeOvergrowthCasts ?? []), ...(battle.nativeFreezeCasts ?? [])])
+  for (const cast of [
+    ...(battle.nativeOvergrowthCasts ?? []),
+    ...(battle.nativeFreezeCasts ?? []),
+    ...(battle.nativeSpellCastHistory ?? []),
+  ])
     castCues(
       cues,
       elapsed,

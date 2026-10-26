@@ -115,6 +115,7 @@ it('cast capture leaves physical spell behavior and frozen status deadlines unch
   const now = JSON.parse(JSON.stringify(a.model.battle));
   delete now.nativeFreezeCasts;
   delete now.nativeFreezeCastPresentation;
+  delete now.nativeSpellArt;
   expect(now).toEqual(JSON.parse(JSON.stringify(b.model.battle)));
 });
 it('overlapping actual casts retain independent audio keys and the longer freeze deadline', () => {
