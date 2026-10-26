@@ -1055,3 +1055,38 @@ Real deployments in `tests/fixtures/native-frostmite.ts` cross a standing wall l
 chill a Cannon through portable reverse seeks. Phone/desktop browser checks verify
 original body, leap, impact art, actual Web Audio, reduced motion and historical playback.
 Versions 103 and earlier retain the missing Frostmite lookup and their original results.
+
+## Version 105 Yetimite and Firemite defender jumps
+
+Yetimites and Firemites previously used repeated direct melee hits against released
+defenders. They now retain their source single-use bodies: acquiring a target starts
+the 0.5-second delay, then the creature spends itself and launches its original ballistic
+projectile at four tiles/second. Both ground and air defenders receive the captured
+damage at arrival, even after the caster disappears. The original attack timeline uses
+the target acquisition clock before handing the body to the jump projectile.
+
+The blast hits its primary once and splashes both defender layers, including when a
+building was the primary target. Coverage uses the existing two-dimensional radius;
+future defenders are excluded at impact time. Each building retains its own preferred
+target and resource damage modifiers. Source trap immunity remains, and `DoesNotOpenCC`
+now also excludes these two summons from pulling Castle reserves.
+
+Firemite retains the existing `FireSpiritBurn` adapter at its captured tier: the first
+pulse arrives 0.5 seconds after impact, with 25 total hits at 0.4-second intervals.
+This change does not alter the burn's boost or overlap rules. Furnace has four
+source tiers although the standalone Firemite source table has five.
+
+All three mite jump families now use the source 0.01-second minimum projectile duration,
+including short Frostmite jumps. Version 104 preserves Frostmite's former 0.12-second
+minimum; Yetimite and Firemite retain their previous repeated melee and Castle-pull
+behavior in that version. Older recordings keep their existing rules.
+
+Carried Yetis and Furnaces warm their summons' existing original body, projectile and
+audio assets before deployment, using the parent's tier. No new art or sound substitutes
+are introduced. `tests/native-mite-jumps.test.ts` covers acquisition delay, one-use
+attacks, captured boosts, ground/air splash, primary-once damage, dead and future targets,
+burn timing, trap/Castle immunity, building modifiers and historical flight timing.
+Real Yeti wound-spawns and Furnace timer-spawns in `tests/fixtures/native-mite-jumps.ts`
+fight a defending Queen through portable forward and reverse seeks. Desktop and phone
+browser checks verify cold roster warming, original bodies and ballistic art, actual
+Web Audio at launch, burn arrival, reduced motion and version 104 playback.

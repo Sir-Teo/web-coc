@@ -83,6 +83,11 @@ Frostmite adds its original deploy and jump-death samples. A carried Frosty warm
 samples before deployment in combat version 104; the jump cue is dated at its single-use
 attack launch. Its original ballistic projectile and splat replace the spent creature.
 
+Version 105 also warms existing Yetimite and Firemite samples from carried Yetis and
+Furnaces before deployment. Their single-use defender jumps play the original death cue
+at launch, when the ballistic projectile replaces the creature. Desktop and phone checks
+verify those cues reach actual Web Audio nodes through portable replay seeks.
+
 ## Tests
 
 `tests/troop-sounds.test.ts` checks:

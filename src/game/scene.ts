@@ -1,3 +1,4 @@
+import { MITE_SPAWN_PARENTS } from './native-mite-jumps';
 import { builderHutArt } from './builder-hut-art';
 import { phoenixLifeFraction } from './native-status';
 import { HeroNativePresentation } from './hero-native-scene';
@@ -2600,6 +2601,9 @@ export class VillageScene extends Phaser.Scene {
       this.model.battle.nativeHeroes?.some((hero) => hero.pet?.kind === 'frosty')
     )
       wanted.add('frostmite');
+    if (this.model.battle?.nativeSingleUseMiteJumps)
+      for (const [child, parent] of Object.entries(MITE_SPAWN_PARENTS))
+        if ((this.model.battle.carriedArmy?.[parent] ?? 0) > 0) wanted.add(child);
     return [...wanted].sort();
   }
   /** Baked character atlases the home lineup or current battle needs. */
@@ -2632,7 +2636,12 @@ export class VillageScene extends Phaser.Scene {
    */
   private prefetchArmyArt() {
     const kinds = this.wantedTroopArt();
-    const level = (kind: string) => this.model.troopLevel(kind as TroopKind);
+    const level = (kind: string) =>
+      this.model.troopLevel(
+        (Object.hasOwn(MITE_SPAWN_PARENTS, kind)
+          ? MITE_SPAWN_PARENTS[kind as keyof typeof MITE_SPAWN_PARENTS]
+          : kind) as TroopKind,
+      );
     const signature = kinds.map((kind) => `${kind}:${level(kind)}`).join(',');
     if (signature !== this.armyPrefetchSignature) {
       this.armyPrefetchSignature = signature;
@@ -4189,6 +4198,9 @@ export class VillageScene extends Phaser.Scene {
         }
       }
       for (const [kind, count] of Object.entries(battle.remaining)) if (count) kinds.add(kind);
+      if (battle.nativeSingleUseMiteJumps)
+        for (const [child, parent] of Object.entries(MITE_SPAWN_PARENTS))
+          if ((battle.carriedArmy?.[parent] ?? 0) > 0) kinds.add(child);
       for (const [kind, count] of Object.entries(battle.spells))
         if (count) spells.add(SPELL_SOURCE[kind as SpellKind]);
     }

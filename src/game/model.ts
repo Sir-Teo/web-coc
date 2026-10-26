@@ -887,6 +887,8 @@ export interface Battle {
   nativePetSummonRecall?: true;
   /** Version 104: Frosty summons source Frostmites with a single-use area frost jump. */
   nativeFrostmites?: true;
+  /** Version 105: Yetimite and Firemite defender attacks retain their one-use ballistic bodies. */
+  nativeSingleUseMiteJumps?: true;
   /** Recent detached troop stage effects; presentation only, retired deterministically. */
   infernoDragonTransitions?: InfernoDragonTransition[];
   /** Version 53: passive hero auras and Royal Rampage. */

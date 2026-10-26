@@ -428,3 +428,13 @@ defender layers, and chills affected targets for four seconds at 50%. Original a
 and audio warm from the carried Frosty roster. See the
 [source and adapter details](NATIVE-HEROES.md#version-104-frosty-frostmites).
 Versions 103 and earlier retain their original missing summon lookup.
+
+## Version 105: Yetimite and Firemite defender jumps
+
+Yetimites and Firemites spend themselves on a delayed ballistic leap against defenders,
+with primary-once splash on both layers. Their source Castle-pull immunity now applies.
+All three mite jump families use the source 0.01-second minimum flight time. Version 104
+retains its repeated Yetimite/Firemite melee attacks and 0.12-second Frostmite minimum.
+Portable recordings cover natural parent spawns, original jump presentation and sound,
+and the retained Firemite burn through reverse seeks. See the
+[source and adapter details](NATIVE-HEROES.md#version-105-yetimite-and-firemite-defender-jumps).

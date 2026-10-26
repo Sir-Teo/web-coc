@@ -1,5 +1,6 @@
 import { monolithArrow, stepEquipmentDash } from './native-equipment-effects';
 import { isSiege } from './special-troops';
+import { nativeMiteJump } from './native-mite-jumps';
 import { sneezyCombatStats, sneezySpawner, sneezySummon } from './native-sneezy';
 import { distance2D } from './distance';
 import {
@@ -768,7 +769,7 @@ export function stepNativeUnit(
     }
     return;
   }
-  const frostmite = battle.nativeFrostmites && u.kind === 'frostmite';
+  const miteJump = nativeMiteJump(battle, u.kind);
   const heroHunter = battle.nativeHeadhunterHeroRules && u.kind === 'headhunter';
   const poisonLizard = battle.nativeAttackerHitPoison && u.kind === 'poisonlizard';
   const jumpingChase =
@@ -782,12 +783,12 @@ export function stepNativeUnit(
   const nativeHeroAttack = battle.nativeHeroDefenderAttacks && isHeroUnitKind(u.kind);
   const frostArrow = rangedFrost || nativeHeroAttack ? monolithArrow(ctx, u) : undefined;
   const defenderProjectile =
-    rangedFrost || frostmite
+    rangedFrost || miteJump
       ? {
           name: (frostArrow && text(frostArrow, 'Projectile')) || s.frostProjectile || s.projectile,
           kind: u.kind,
           level: s.level,
-          frost: { seconds: s.frostTime, percent: s.frostPercent },
+          ...(s.frostTime > 0 ? { frost: { seconds: s.frostTime, percent: s.frostPercent } } : {}),
         }
       : ((battle.nativeHeadhunterCards && u.kind === 'headhunter') ||
             poisonLizard ||
@@ -841,7 +842,7 @@ export function stepNativeUnit(
           : (ctx.routableBuildings ?? ctx.buildings),
         ...(jumpingChase ? { jumpWalls: true } : {}),
         ...(undergroundChase ? { enterRange: () => surfaceUndergroundUnit(ctx, u, at) } : {}),
-        ...(frostmite
+        ...(miteJump
           ? {
               targetAcquired: () => {
                 state.targetAt = at;
@@ -873,7 +874,7 @@ export function stepNativeUnit(
     }
     if (readyToAttack && u.cooldown > 0) {
       completeHeroAttack(battle, u);
-      if (frostmite) {
+      if (miteJump) {
         state.attacks = (state.attacks ?? 0) + 1;
         u.hp = 0;
         u.spent = true;
@@ -1446,6 +1447,7 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
   );
   const phoenixSplash = !!(battle.nativePhoenixResurrection && source.kind === 'phoenix');
   const frostmiteSplash = !!(battle.nativeFrostmites && source.kind === 'frostmite');
+  const miteSplash = nativeMiteJump(battle, source.kind);
   // Native defender-targeted shots retain their captured direct hit on either defender layer.
   if (p.targetDefender) {
     const defender = battle.defenders?.find((d) => d.id === p.targetId);
@@ -1457,7 +1459,7 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
         p.damage,
         rocketSplash ||
           phoenixSplash ||
-          frostmiteSplash ||
+          miteSplash ||
           (battle.nativeHeroDefenderAttacks && isHeroUnitKind(source.kind))
           ? p.impact
           : undefined,
@@ -1494,11 +1496,9 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
       p,
       p.damage,
       p.splash,
-      frostmiteSplash ? 'both' : (rocketSplash || phoenixSplash) && p.toAir ? 'air' : 'ground',
-      (rocketSplash || phoenixSplash || frostmiteSplash) && p.targetDefender
-        ? p.targetId
-        : undefined,
-      rocketSplash || phoenixSplash || frostmiteSplash ? p.impact : undefined,
+      miteSplash ? 'both' : (rocketSplash || phoenixSplash) && p.toAir ? 'air' : 'ground',
+      (rocketSplash || phoenixSplash || miteSplash) && p.targetDefender ? p.targetId : undefined,
+      rocketSplash || phoenixSplash || miteSplash ? p.impact : undefined,
     );
   if (frostmiteSplash && p.splash)
     for (const defender of battle.defenders ?? [])

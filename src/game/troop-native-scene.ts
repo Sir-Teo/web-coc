@@ -1,4 +1,5 @@
 import { isPetUnitKind } from './native-units';
+import { nativeMiteJump } from './native-mite-jumps';
 import type Phaser from 'phaser';
 import { TROOPS, type TroopKind } from './data';
 import type { Battle, Building } from './model';
@@ -400,7 +401,7 @@ export class TroopNativePresentation {
           u.cooldown,
         );
         seconds =
-          u.kind === 'frostmite' && battle?.nativeFrostmites && u.native?.targetAt !== undefined
+          battle && nativeMiteJump(battle, u.kind) && u.native?.targetAt !== undefined
             ? Math.max(0, elapsed - u.native.targetAt)
             : Math.max(0, interval - u.cooldown);
       } else

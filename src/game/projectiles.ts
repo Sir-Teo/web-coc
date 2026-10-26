@@ -1,3 +1,4 @@
+import { nativeMiteJump } from './native-mite-jumps';
 import { archerTowerProjectileRow } from './archer-tower-stats';
 import { cannonProjectileRow } from './cannon-stats';
 import { recordCannonFlight, recordCannonHit } from './cannon-attack';
@@ -159,6 +160,9 @@ export function launchProjectile(
               nativeArcherTower(shot) ||
               shot.weapon === 'healing' ||
               !!shot.native?.healing ||
+              (battle.nativeSingleUseMiteJumps &&
+                !!shot.native &&
+                nativeMiteJump(battle, shot.native.kind)) ||
               shot.weapon === 'towerbomb' ||
               shot.weapon === 'fireball' ||
               shot.weapon === 'arcane' ||
