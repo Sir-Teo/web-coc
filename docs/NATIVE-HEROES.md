@@ -1334,3 +1334,58 @@ seeks. Asset tests verify source pins, pack sizes, deterministic particles, atta
 independent lifetimes and captured sound parameters. Phone/desktop browser checks cover
 original primary/branch art, actual attack/chain/hit Web Audio, identical-roster warming,
 read-only rendering, reduced motion and historical version 109 playback.
+
+## Version 111 Super Archer piercing flight
+
+Super Archer previously launched a normal packet at a building, then damaged the entire
+penetrating line at that packet's arrival. Defender primaries used a generic arrow and
+never pierced. Version 111 captures one original `magic_archer_projectile` for either
+primary type and advances it at the source 14 tiles/second. It strikes each crossed
+building or ground/air defender once, then continues beyond the aim point. Captured tier,
+damage and line survive the caster's defeat, Recall or clone expiry; a final attacker's
+arrow keeps the raid open until its flight ends. Version 110 and earlier retain their
+former packet and instant-line behavior.
+
+The pinned character specifies radius 0.3 tiles and four tiles of extra travel beyond
+the captured aim point. Its target-acquisition range is six tiles, measured at building
+edges by the existing selector; the aim point is the building center. This differs from
+the pinned wiki's stated 12-tile projectile range, so the implementation does not claim
+to reconstruct that reach. Attack-start timing remains the existing adapter. The source
+`DontTrackTarget` flag fixes the direction at launch: a moving primary can leave the line
+while an enemy farther along still receives the arrow.
+
+Collision uses explicit `distance2D` arithmetic, expanded axis-aligned building footprints
+and circular defender bounds. These two-dimensional hitboxes, fixed source flight height,
+and current simulation-sample positions are local adapters; client vertical collision and
+continuous moving-target geometry are not in the tables. Entry timestamps follow traveled
+distance, and crossing events from all arrows resolve together in arrival order, with
+stable tie ordering. Future defenders cannot be hit before birth; newly revealed Teslas
+cannot be struck before reveal. Point-blank shots use a deterministic fallback direction
+and still hit an overlapping primary once. Unlimited piercing applies no damage decay.
+
+Invisibility blocks acquisition but does not protect collateral from indirect damage,
+as the pinned Invisibility Spell reference specifies. Overgrowth absorbs crossings without
+damage through the existing immunity rules. Buried Teslas, traps, dead enemies and allies
+are excluded. Walls can receive collateral damage. A moving enemy's position is sampled
+at the current 20-Hz update; an arrow cannot retroactively hit a target behind its previous
+front after that target appears or moves into the line.
+
+Original projectile and trail art already ship. The renderer now samples the complete
+straight flight through `nativePiercingFlight`, retaining source `StartOffset` 25 and
+`StartHeight` 30 through the existing projection adapter. Captured records reconstruct
+flight/trail art after direct seeks and keep ten seconds of audio history. Two new lazy
+packs retain exact `IceArcher_attack` and `IceArcher Hit` particles, totaling 26,754 bytes;
+`scripts/import-super-archer-art.py --check` verifies graph bytes and decoded pixels. The
+legacy Ice Archer effect names do not add frost gameplay. The hit effect is silent, and
+no impact audio is invented. Each captured launch plays the original firing sample once,
+including after source removal and replay seeks. Carried archers warm the arrow, both
+packs and existing samples before deployment, including with an identical home roster.
+
+Unit tests cover end tiers, progressive timestamps, full reach, primary-once collisions,
+both layers, moving misses, captured boosts, visibility, immunity, birth timing, radius,
+allies, negative axes, point-blank shots, inter-arrow arrival order, clone expiry and old
+combat. Actual deployment fixtures retain the base Archer research needed to derive the
+Super Troop tier. Portable recordings and browser checks compare Node-generated battle
+states with Chromium after the arrow passes its aim point, then repeat reverse seeks.
+Phone/desktop checks also verify original body/arrow meshes, actual firing Web Audio,
+read-only rendering, reduced motion and historical version 110 playback.

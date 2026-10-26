@@ -1,3 +1,4 @@
+import superArcherArt from '../../reference/super-archer/effects.json' with { type: 'json' };
 import superWizardArt from '../../reference/super-wizard/effects.json' with { type: 'json' };
 import electroDragonArt from '../../reference/electro-dragon/effects.json' with { type: 'json' };
 import electromiteArt from '../../reference/electromite/effects.json' with { type: 'json' };
@@ -27,6 +28,7 @@ const catalogs = [
   electromiteArt,
   electroDragonArt,
   superWizardArt,
+  superArcherArt,
 ] as unknown as EffectIndex[];
 /** Pack of an effects.csv record, or undefined for sound-only and unreferenced records. */
 export function nativeEffectPack(effect: string | undefined) {

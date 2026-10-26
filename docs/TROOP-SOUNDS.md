@@ -119,6 +119,12 @@ and one hit cue; the primary plays its original attack and hit. The sample count
 removal and reverse seeks, and identical-roster battle warming loads every sample before
 deployment. Phone/desktop checks exercise actual primary and branch Web Audio nodes.
 
+Version 111 captures Super Archer launches for its full piercing flight. One original
+`ice_archer_fire_01.ogg` cue plays at launch, with source volume 50% and pitch 0.9–1,
+through caster removal and replay seeks. Its character hit effect is silent; crossing
+targets add particles without inventing an impact sound. The existing 339-file catalog
+is unchanged. Node-generated phone/desktop replay checks exercise the actual firing node.
+
 ## Tests
 
 `tests/troop-sounds.test.ts` checks:

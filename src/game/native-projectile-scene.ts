@@ -1,3 +1,4 @@
+import { superArcherEffectEvents } from './super-archer-effects';
 import { superWizardEffectEvents } from './super-wizard-effects';
 import { electroDragonEffectEvents } from './electro-dragon-effects';
 import { electromiteEffectEvents } from './electromite-effects';
@@ -172,6 +173,10 @@ export class NativeProjectilePresentation {
       this.layer.duration(name),
     ))
       this.layer.play(event, elapsed, reduced);
+    for (const event of superArcherEffectEvents(battle, iso, airLift, (name) =>
+      this.layer.duration(name),
+    ))
+      this.layer.play(event, elapsed, reduced);
     for (const event of electromiteEffectEvents(battle, iso, airLift))
       this.layer.play(event, elapsed, reduced);
     for (const p of [
@@ -192,6 +197,26 @@ export class NativeProjectilePresentation {
       const packPath = nativeProjectilePack(p.native.name);
       if (!packPath) continue;
       this.history.set(p.id, snapshot(p, packPath));
+    }
+    for (const shot of battle.nativeArcherShots ?? []) {
+      const end = shot.launched + shot.length / shot.speed;
+      if (elapsed > end + AFTERLIFE || this.history.has(shot.id)) continue;
+      const packPath = nativeProjectilePack(shot.projectile);
+      if (!packPath) continue;
+      this.history.set(shot.id, {
+        id: shot.id,
+        name: shot.projectile,
+        packPath,
+        sourceId: shot.sourceId,
+        bounce: 0,
+        fromX: shot.fromX,
+        fromY: shot.fromY,
+        x: shot.fromX + shot.dirX * shot.length,
+        y: shot.fromY + shot.dirY * shot.length,
+        launched: shot.launched,
+        impact: end,
+        piercing: { dirX: shot.dirX, dirY: shot.dirY, length: shot.length, speed: shot.speed },
+      });
     }
     for (const shot of battle.nativePiercing ?? []) {
       const seen = this.history.get(`pierce:${shot.id}`);

@@ -1,3 +1,4 @@
+import { launchArcherPiercing, stepArcherPiercing } from './native-super-archer';
 import { attackSuperWizard, stepSuperWizardBranches } from './native-super-wizard';
 import {
   stepElectroDragonCharge,
@@ -850,6 +851,14 @@ export function stepNativeUnit(
                 attackElectromite(ctx, u, power, { defender: target }),
             }
           : {}),
+        ...(battle.nativeArcherPiercing && u.kind === 'superarcher'
+          ? {
+              nativeAttack: (target: Defender, power: number) =>
+                launchArcherPiercing(ctx, u, power, { defender: target }),
+              nativeBuildingAttack: (target: Building, power: number) =>
+                strike(ctx, u, s, target, power),
+            }
+          : {}),
         ...(battle.nativeSuperWizard && u.kind === 'superwizard'
           ? {
               nativeAttack: (target: Defender, power: number) =>
@@ -1176,6 +1185,10 @@ function strike(
 ) {
   const battle = ctx.battle;
   const state = (u.native ??= {});
+  if (battle.nativeArcherPiercing && u.kind === 'superarcher') {
+    launchArcherPiercing(ctx, u, damage, { building: target });
+    return;
+  }
   if (battle.nativeSuperWizard && u.kind === 'superwizard') {
     attackSuperWizard(ctx, u, damage, { building: target });
     return;
@@ -2324,5 +2337,6 @@ export function stepNativeBattle(ctx: NativeTroopContext) {
   stepElectromiteArcs(ctx);
   stepElectroDragonArcs(ctx);
   stepSuperWizardBranches(ctx);
+  stepArcherPiercing(ctx);
   stepPendingSpawns(ctx);
 }

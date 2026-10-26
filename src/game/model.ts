@@ -1,3 +1,4 @@
+import type { ArcherPiercingShot } from './native-super-archer';
 import type { SuperWizardBranch, SuperWizardZap } from './native-super-wizard';
 import type { ElectroDragonArc, ElectroDragonZap } from './native-electro-dragon';
 import type { ElectromiteArc, ElectromiteZap } from './native-electromite';
@@ -902,6 +903,9 @@ export interface Battle {
   nativeElectroDragon?: true;
   /** Version 110: Super Wizard branches once from the primary to nine secondary targets. */
   nativeSuperWizard?: true;
+  /** Version 111: source straight arrows hit each crossed enemy once at its arrival time. */
+  nativeArcherPiercing?: true;
+  nativeArcherShots?: ArcherPiercingShot[];
   nativeSuperWizardBranches?: SuperWizardBranch[];
   nativeSuperWizardZaps?: SuperWizardZap[];
   nativeElectroDragonArcs?: ElectroDragonArc[];
@@ -6758,6 +6762,7 @@ export class GameModel {
         !b.nativeElectromiteArcs?.length &&
         !b.nativeElectroDragonArcs?.length &&
         !b.nativeSuperWizardBranches?.length &&
+        !b.nativeArcherShots?.some((s) => s.travelled < s.length - 1e-9) &&
         !b.nativePendingSpawns?.length &&
         !b.nativeSpells?.some((cast) => nativeSpellCanStillFight(cast)) &&
         !TROOP_KEYS.some(

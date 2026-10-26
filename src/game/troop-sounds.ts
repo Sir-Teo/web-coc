@@ -359,6 +359,12 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
       if (cue) cues.push(cue);
     }
   }
+  for (const shot of battle.nativeArcherShots ?? []) {
+    if (shot.launched > elapsed || !cueAudible(shot.launched, elapsed)) continue;
+    const actor = { id: shot.sourceId, kind: 'superarcher' as const, level: shot.level };
+    const cue = troopCue(battle, actor, 'attack', `${shot.id}:attack`, shot.launched);
+    if (cue) cues.push(cue);
+  }
   for (const cue of logged) cues.push(cue);
   return cues;
 }
