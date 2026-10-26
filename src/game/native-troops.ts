@@ -23,6 +23,7 @@ import { activeAsDefense } from './native-defenses';
 import { mergeBoost } from './native-boost';
 import { rampedDamage, finishRampingHit, type NativeDamageRamp } from './native-damage-ramp';
 import { recordInfernoDragonTransition } from './inferno-dragon-transitions';
+import { friendlyCombatant, healingEligible } from './friendly-unit';
 import {
   applyDefenderHitPoison,
   nativeHitPoison,
@@ -524,7 +525,12 @@ function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats) {
   // own must not read weights measured with another's.
   if (!cached || cached.tick !== battle.elapsed || cached.radius !== s.groupRadius) {
     let living = 0;
-    for (const other of battle.units) if (other.hp > 0) living++;
+    for (const other of battle.units)
+      if (
+        other.hp > 0 &&
+        (!battle.nativeFriendlyEligibility || friendlyCombatant(other, battle.elapsed))
+      )
+        living++;
     cached = {
       tick: battle.elapsed,
       radius: s.groupRadius,
@@ -540,7 +546,11 @@ function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats) {
     const cell = Math.max(1, s.groupRadius);
     let i = 0;
     for (const other of battle.units) {
-      if (other.hp <= 0) continue;
+      if (
+        other.hp <= 0 ||
+        (battle.nativeFriendlyEligibility && !friendlyCombatant(other, battle.elapsed))
+      )
+        continue;
       cached.x[i] = other.x;
       cached.y[i] = other.y;
       cached.space[i] = TROOPS[other.kind].space;
@@ -1020,6 +1030,7 @@ function aloneScale(battle: Battle, u: Unit, s: NativeUnitStats, state: NativeUn
     (other) =>
       other.id !== u.id &&
       other.hp > 0 &&
+      (!battle.nativeFriendlyEligibility || friendlyCombatant(other, battle.elapsed)) &&
       !other.ejected &&
       (other.spawnedAt ?? 0) <= battle.elapsed + 1e-9 &&
       !!TROOPS[other.kind].flying === s.flying &&
@@ -1892,7 +1903,11 @@ function stepNativeHealer(
   const battle = ctx.battle;
   const units = battle.units;
   const ally = (a: Unit) =>
-    a.id !== u.id && a.hp > 0 && !a.ejected && (a.spawnedAt ?? 0) <= battle.elapsed + 1e-9;
+    a.id !== u.id &&
+    a.hp > 0 &&
+    !a.ejected &&
+    (a.spawnedAt ?? 0) <= battle.elapsed + 1e-9 &&
+    healingEligible(battle, a);
   let target: Unit | undefined;
   if (u.healTarget !== undefined)
     for (const a of units)

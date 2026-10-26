@@ -868,6 +868,8 @@ export interface Battle {
   nativePhoenixResurrection?: true;
   /** Version 95: pets, including the waiting Egg, cannot be duplicated by Clone. */
   nativePetCloneImmunity?: true;
+  /** Version 96: waiting/recalled allies and native healing immunity share eligibility rules. */
+  nativeFriendlyEligibility?: true;
   /** Recent detached troop stage effects; presentation only, retired deterministically. */
   infernoDragonTransitions?: InfernoDragonTransition[];
   /** Version 53: passive hero auras and Royal Rampage. */

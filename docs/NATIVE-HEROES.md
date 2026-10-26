@@ -792,3 +792,33 @@ traps, automatic ability ordering, healing, projectile/splash rules, Recall, his
 and real portable backward seeks. Desktop/phone browser recordings verify native actors,
 the life bar and card states, expiry, Recall-paused time, reduced motion and version 94
 playback. Versions 94 and earlier keep their previous immediate-bird behavior.
+
+## Version 96 friendly participation and healing immunity
+
+The waiting Phoenix bird is not an active flying ally. It no longer cancels Baby Dragon
+Tantrum or another Hero's Dragon Duke Royal Rampage. Recalled, ejected and not-yet-spawned
+actors also stay out of these nearby-ally checks. A hatched, living bird counts normally.
+Friendly invisibility and burrowing still allow allied support; enemy visibility rules
+are not used to discard those allies.
+
+Native group followers also ignore waiting and recalled actors. The source Egg has zero
+`FriendlyGroupWeight`, so its untargetable ground actor does not supply a follow anchor or
+housing cluster. This repairs eligibility within the existing local housing-based group
+algorithm; it does not replace that algorithm with the client's full group-weight system.
+
+The [Healer](../reference/official-wiki/troops/healer.md) and
+[Druid](../reference/official-wiki/troops/druid.md) references exclude Siege Machines from
+healing, matching their native `ImmuneToHealing` rows. Shared recovery and Healer projectile
+impacts now honor the initialized immunity flag. A pulse can still heal an eligible neighbor
+inside its splash while leaving an immune siege untouched. Healer primary/cluster selection
+and native healing chains skip immune, waiting, recalled and not-yet-spawned actors, so they
+do not consume a lock, cluster threshold or chain hop. No eligible ground patient clears a
+stale Healer target. The Phoenix temporary-life recovery block introduced in version 95
+continues to apply; this change does not infer a different following policy for that life.
+
+`tests/friendly-eligibility.test.ts` covers every siege, shared and projectile healing,
+primary/chain selection, group following, both innate rage checks, friendly invisibility
+and burrowing, and version 95 behavior. Actual Cannon deployments record an idle Healer
+beside a damaged siege, its later Giant target, and Tantrum before/after a Phoenix hatch.
+Portable files, reverse seeks, desktop/phone rendering and reduced motion reproduce those
+states. Versions 95 and earlier retain their original eligibility rules.

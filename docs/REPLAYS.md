@@ -343,3 +343,13 @@ recordings reproduce through portable files and backward seeks. Versions 94 and 
 retain their prior Phoenix behavior. Version 95 also excludes every pet, including the Egg,
 from Clone without spending Clone housing; older versions preserve their previous selection.
 See [source and validation details](NATIVE-HEROES.md#version-95-phoenix-egg-and-revival).
+
+## Version 96: friendly participation and healing immunity
+
+Waiting Phoenix actors, recalled/ejected allies and future spawns no longer influence
+nearby-unit boosts or group following. Healer target selection, native healing chains,
+shared recovery and Healer projectiles respect native healing immunity. Eligible nearby
+troops still receive splash healing without restoring siege HP. Actual deployments record
+Healer retargeting and Baby Dragon Tantrum before/after a Phoenix hatch through portable
+files and backward seeks. Versions 95 and earlier keep their previous rules. See
+[source and validation details](NATIVE-HEROES.md#version-96-friendly-participation-and-healing-immunity).

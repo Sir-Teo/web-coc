@@ -3,13 +3,15 @@ import { TROOPS } from './data';
 import type { Battle, Unit } from './model';
 import { launchProjectile } from './projectiles';
 import type { FX } from './model';
+import { healingEligible } from './friendly-unit';
 
 /** Supercell's HEAL_STACK_PERCENT and Healer records; see docs/LATE-TROOPS.md. */
 export const HEALER_STACK = [1, 1, 0.9, 0.9, 0.7, 0.4, 0.1, 0] as const;
 export const HEALER_HERO_SCALE = 0.55;
 export const HEALER_RADIUS = 1.5;
 const HEALER_RADIUS_SQ = HEALER_RADIUS * HEALER_RADIUS;
-const groundAlly = (u: Unit) => u.hp > 0 && !TROOPS[u.kind].flying;
+const groundAlly = (battle: Battle, u: Unit) =>
+  u.hp > 0 && !TROOPS[u.kind].flying && healingEligible(battle, u);
 const distance = (a: Unit, b: Unit) => distance2D(a.x - b.x, a.y - b.y);
 const distanceSq = (a: Unit, b: Unit) => distanceSquared2D(a.x - b.x, a.y - b.y);
 
@@ -17,8 +19,13 @@ const distanceSq = (a: Unit, b: Unit) => distanceSquared2D(a.x - b.x, a.y - b.y)
 export function prepareHealerTargets(battle: Battle) {
   // Early-return when no healers are on the field: avoids O(units²) clustering.
   if (!battle.units.some((u) => TROOPS[u.kind].healer && u.hp > 0)) return;
-  const allies = battle.units.filter(groundAlly);
-  if (!allies.length) return;
+  const allies = battle.units.filter((u) => groundAlly(battle, u));
+  if (!allies.length) {
+    if (battle.nativeFriendlyEligibility)
+      for (const healer of battle.units)
+        if (TROOPS[healer.kind].healer && healer.hp > 0) delete healer.healTarget;
+    return;
+  }
   const allyIds = new Set(allies.map((u) => u.id));
   // Cluster housing is only read when a healer picks a new target, and only for allies that
   // would win the pick: compute it lazily per ally from a spatial hash built on first use.
@@ -84,7 +91,7 @@ export function stepHealer(
   dt: number,
   emit: (fx: FX) => void,
 ) {
-  const target = battle.units.find((u) => u.id === healer.healTarget && groundAlly(u));
+  const target = battle.units.find((u) => u.id === healer.healTarget && groundAlly(battle, u));
   if (!target) return;
   const range = distance(healer, target);
   if (range > stats.range + 1e-9) {
@@ -134,7 +141,7 @@ export function healerContribution(battle: Battle, recipient: Unit, sourceId: nu
   for (const healer of battle.units) {
     if (!TROOPS[healer.kind].healer || healer.hp <= 0) continue;
     const target = byId.get(healer.healTarget ?? -1);
-    if (!target || !groundAlly(target)) continue;
+    if (!target || !groundAlly(battle, target)) continue;
     const healerRange = TROOPS.healer.range + 1e-9;
     if (
       target &&

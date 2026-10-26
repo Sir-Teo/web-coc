@@ -5,6 +5,7 @@ import { flag, nativeRow, num, seconds, text, tiles, type NativeRow } from './na
 import { castNativeSpell } from './native-spells';
 import { healUnit, unitEffects } from './native-status';
 import { mergeBoost } from './native-boost';
+import { friendlyCombatant } from './friendly-unit';
 import { unitKindForName } from './native-units';
 import {
   activeAbilities,
@@ -268,6 +269,7 @@ export function refreshHeroPassives(ctx: NativeTroopContext, hero: NativeBattleH
           other.id !== unit.id &&
           other.id !== hero.petId &&
           other.hp > 0 &&
+          (!ctx.battle.nativeFriendlyEligibility || friendlyCombatant(other, at)) &&
           !other.ejected &&
           !other.native?.recalled &&
           (other.spawnedAt ?? 0) <= at + EPS &&

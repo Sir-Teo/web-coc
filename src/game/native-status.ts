@@ -1,5 +1,6 @@
 import type { Battle, Building, Unit } from './model';
 import { activeBoost, type NativeBoost } from './native-boost';
+import { healingEligible } from './friendly-unit';
 
 /**
  * Version 45+ timed effects. Every field is a battle-clock deadline so replays, seeking and
@@ -200,6 +201,7 @@ export function hurtUnit(
 }
 export function healUnit(battle: Battle, unit: Unit, amount: number) {
   if (!(amount > 0) || unit.hp <= 0) return 0;
+  if (!healingEligible(battle, unit)) return 0;
   if ((unit.native?.effects?.phoenixRevive?.until ?? 0) > battle.elapsed + 1e-9) return 0;
   const before = unit.hp;
   unit.hp = Math.min(unit.maxHp, unit.hp + amount);
