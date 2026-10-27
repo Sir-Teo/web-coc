@@ -69,6 +69,16 @@ export interface CombatProjectile {
       visited: string[];
       continues?: true;
     };
+    /** Version 136: four distinct Seeking Shield contacts, including a captured wasted throw. */
+    seekingShield?: {
+      castId: string;
+      index: number;
+      left: number;
+      reach: number;
+      visited: string[];
+      continues?: true;
+      wasted?: true;
+    };
     /** Version 108: kind-changing throws keep the original actor’s sound identity. */
     captureSource?: true;
     /** Version 71: frost captured at launch, retained after the shooter leaves. */
@@ -177,6 +187,7 @@ export function launchProjectile(
               !!shot.native?.healing ||
               (battle.nativeFrostFlake && !!shot.native?.frostFlake) ||
               (battle.nativeSpikyBall && !!shot.native?.spikyBall) ||
+              (battle.nativeSeekingShield && !!shot.native?.seekingShield) ||
               (battle.nativeSingleUseMiteJumps &&
                 !!shot.native &&
                 nativeMiteJump(battle, shot.native.kind)) ||
@@ -202,7 +213,7 @@ export function launchProjectile(
           );
   const projectile: CombatProjectile = {
     ...shot,
-    id: `${shot.sourceId}:${at}${shot.native?.bounce ? `:${shot.native.bounce}` : ''}${shot.native?.frostFlake ? `:frost${shot.native.frostFlake.index}` : ''}${shot.native?.spikyBall ? `:spiky${shot.native.spikyBall.index}` : ''}${
+    id: `${shot.sourceId}:${at}${shot.native?.bounce ? `:${shot.native.bounce}` : ''}${shot.native?.frostFlake ? `:frost${shot.native.frostFlake.index}` : ''}${shot.native?.spikyBall ? `:spiky${shot.native.spikyBall.index}` : ''}${shot.native?.seekingShield ? `:shield${shot.native.seekingShield.index}` : ''}${
       // Multi-target defenses release several shots in one instant.
       shot.defense ? `:d${(battle.nativeShotSequence = (battle.nativeShotSequence ?? 0) + 1)}` : ''
     }`,
@@ -309,9 +320,10 @@ export function stepProjectiles(
     p.flight.at = Math.min(battle.elapsed, p.impact);
   }
   const shots = battle.projectiles ?? [];
-  // Historical ricochets join after the sample. Source Spiky Ball legs enter the ordered queue.
+  // Historical ricochets join after the sample. Source equipment legs enter the ordered queue.
   const ordered = shots.length < 2 ? shots.slice() : [...shots].sort((a, b) => a.impact - b.impact);
-  const transferred = battle.nativeSpikyBall ? new Set<CombatProjectile>() : undefined;
+  const transferred =
+    battle.nativeSpikyBall || battle.nativeSeekingShield ? new Set<CombatProjectile>() : undefined;
   let appendedAt = initial;
   for (let index = 0; index < ordered.length; index++) {
     const p = ordered[index];
@@ -352,6 +364,13 @@ export function stepProjectiles(
     if (battle.nativeSpikyBall && p.native?.spikyBall) {
       const own = p.native.spikyBall;
       const record = battle.nativeSpikyBallCasts?.find((cast) => cast.id === own.castId)?.shots[
+        own.index
+      ];
+      if (record?.id === p.id) Object.assign(record, { x: p.x, y: p.y, impact: p.impact });
+    }
+    if (battle.nativeSeekingShield && p.native?.seekingShield) {
+      const own = p.native.seekingShield;
+      const record = battle.nativeSeekingShieldCasts?.find((cast) => cast.id === own.castId)?.shots[
         own.index
       ];
       if (record?.id === p.id) Object.assign(record, { x: p.x, y: p.y, impact: p.impact });
@@ -455,7 +474,7 @@ export function stepProjectiles(
       const appended = battle.projectiles ?? [];
       for (; appendedAt < appended.length; appendedAt++) {
         const next = appended[appendedAt];
-        if (!next.native?.spikyBall) continue;
+        if (!next.native?.spikyBall && !next.native?.seekingShield) continue;
         transferred.add(next);
         let position = index + 1;
         while (position < ordered.length && ordered[position].impact <= next.impact) position++;

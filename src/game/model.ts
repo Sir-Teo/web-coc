@@ -516,6 +516,7 @@ import {
   type NativeBattleHero,
 } from './native-heroes';
 import { activateHero, refreshHeroPassives, stepHeroAbilities } from './native-hero-abilities';
+import { stepSeekingShieldLaunches } from './native-seeking-shield';
 import { initializePhoenix, stepPhoenix, hatchPhoenix, recallPhoenix } from './native-phoenix';
 import { recordRecallEvent, type RecallEvent } from './native-recall';
 import { revivableHero, pendingHeroRevive, reviveTargetUnit } from './revive-targets';
@@ -941,6 +942,8 @@ export interface Battle {
   nativeSpikyBallCasts?: import('./native-spiky-ball').SpikyBallCast[];
   nativeDarkOrb?: true;
   nativeDarkOrbs?: import('./native-dark-orb').DarkOrbShot[];
+  nativeSeekingShield?: true;
+  nativeSeekingShieldCasts?: import('./native-seeking-shield').SeekingShieldCast[];
   nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
   nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */
@@ -6188,6 +6191,7 @@ export class GameModel {
             b.practice || b.catalog === 'goblin-v1' ? 1 : CAMPAIGN_LAYOUTS[b.index].defense,
         }
       : null;
+    if (native) stepSeekingShieldLaunches(native);
     stepProjectiles(
       b,
       (target, power, at) => this.damage(target, power, at),
@@ -6887,6 +6891,7 @@ export class GameModel {
         !b.nativeArcherShots?.some((s) => s.travelled < s.length - 1e-9) &&
         !b.nativeGiantArrows?.some((s) => s.travelled < s.length - 1e-9) &&
         !b.nativeDarkOrbs?.some((s) => s.travelled < s.length - 1e-9) &&
+        !b.nativeSeekingShieldCasts?.some((cast) => !cast.released) &&
         !b.nativePendingSpawns?.length &&
         !b.nativeSpells?.some((cast) => nativeSpellCanStillFight(cast)) &&
         !TROOP_KEYS.some(

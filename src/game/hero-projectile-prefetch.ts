@@ -9,6 +9,7 @@ export interface HeroProjectileOptions {
   giantArrow?: boolean;
   frostFlake?: boolean;
   spikyBall?: boolean;
+  seekingShield?: boolean;
 }
 export function heroProjectileNames(
   heroes: readonly HeroSetup[],
@@ -20,6 +21,7 @@ export function heroProjectileNames(
     giantArrow = false,
     frostFlake = false,
     spikyBall = false,
+    seekingShield = false,
   } = options;
   const names = new Set<string>();
   for (const hero of heroes) {
@@ -34,6 +36,8 @@ export function heroProjectileNames(
       if (frostFlake && ability.name === 'FrostBlast')
         names.add(text(ability.row, 'ProjectileOnActivation'));
       if (spikyBall && ability.name === 'FootballBounce')
+        names.add(text(ability.row, 'ProjectileOnActivation'));
+      if (seekingShield && ability.name === 'RoyalChampionShieldBounce')
         names.add(text(ability.row, 'ProjectileOnActivation'));
     }
     if (hero.pet) names.add(petStatsFor(hero.pet).projectile);

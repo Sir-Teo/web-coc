@@ -38,6 +38,10 @@ interface Snapshot {
   giantArrow?: true;
   frostFlake?: true;
   spikyContinues?: true;
+  seekingShield?: true;
+  shieldContinues?: true;
+  /** One continuous shield spin clock across its captured flight legs. */
+  animationAt?: number;
   darkOrb?: true;
   fromX: number;
   fromY: number;
@@ -124,6 +128,7 @@ export class NativeProjectilePresentation {
     const shot = this.history.get(id);
     const resolved = shot ? this.row(shot) : undefined;
     if (!resolved?.row) return false;
+    if (shot?.shieldContinues && !resolved.row.BounceEffect) return true;
     const effect = shot?.fireballLevel
       ? fireballProfile(shot.fireballLevel)?.HitEffect
       : resolved.row.DestroyedEffect;
@@ -222,6 +227,9 @@ export class NativeProjectilePresentation {
     ))
       this.layer.play(event, elapsed, reduced);
     for (const p of [
+      ...(battle.nativeSeekingShieldCasts ?? [])
+        .flatMap((cast) => cast.shots)
+        .filter((shot) => elapsed <= shot.impact + AFTERLIFE),
       ...(battle.nativeSpikyBallCasts ?? [])
         .flatMap((cast) => cast.shots)
         .filter((shot) => elapsed <= shot.impact + AFTERLIFE),
@@ -240,13 +248,21 @@ export class NativeProjectilePresentation {
         known.launched === p.launched &&
         known.impact === p.impact &&
         known.spikyContinues === p.native.spikyBall?.continues &&
+        known.shieldContinues === p.native.seekingShield?.continues &&
         known.x === p.x &&
         known.y === p.y
       )
         continue;
       const packPath = nativeProjectilePack(p.native.name);
       if (!packPath) continue;
-      this.history.set(p.id, snapshot(p, packPath));
+      const captured = snapshot(p, packPath);
+      if (p.native.seekingShield) {
+        const cast = battle.nativeSeekingShieldCasts?.find(
+          (cast) => cast.id === p.native!.seekingShield!.castId,
+        );
+        if (cast) captured.animationAt = cast.launchAt;
+      }
+      this.history.set(p.id, captured);
     }
     for (const shot of [
       ...(battle.nativeArcherShots ?? []),
@@ -309,7 +325,13 @@ export class NativeProjectilePresentation {
       if (!resolved?.row) continue;
       const { pack, row } = resolved;
       const line = snap.piercing ? (snap.line ??= { ...snap, ...snap.piercing }) : undefined;
-      const options = { iso, airLift };
+      const options = {
+        iso,
+        airLift,
+        ...(snap.seekingShield && snap.bounce > 0
+          ? { launchHeight: snap.fromAir ? airLift : 16 }
+          : {}),
+      };
       const flightAt = (time: number) =>
         line
           ? nativePiercingFlight(row, line, time, iso, snap.darkOrb ? airLift : 0)
@@ -340,7 +362,7 @@ export class NativeProjectilePresentation {
           row,
           flight,
           elapsed,
-          snap.launched,
+          snap.animationAt ?? snap.launched,
           snap.giantArrow
             ? { staticChildClock: true }
             : snap.frostFlake
@@ -426,6 +448,7 @@ export class NativeProjectilePresentation {
       if (
         row.DestroyedEffect &&
         !snap.spikyContinues &&
+        !snap.shieldContinues &&
         elapsed >= flight.end &&
         this.running(row.DestroyedEffect, flight.end, elapsed)
       ) {
@@ -466,6 +489,8 @@ function snapshot(p: CombatProjectile, packPath: string): Snapshot {
     ...(p.native!.fireball ? { fireballLevel: p.native!.fireball.level } : {}),
     ...(p.native!.frostFlake ? { frostFlake: true as const } : {}),
     ...(p.native!.spikyBall?.continues ? { spikyContinues: true as const } : {}),
+    ...(p.native!.seekingShield ? { seekingShield: true as const } : {}),
+    ...(p.native!.seekingShield?.continues ? { shieldContinues: true as const } : {}),
     fromX: p.fromX,
     fromY: p.fromY,
     x: p.x,

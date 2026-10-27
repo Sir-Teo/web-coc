@@ -3,6 +3,7 @@ import { resolveWardenFireball } from './native-fireball';
 import { stepHeroPiercing } from './native-hero-piercing';
 import { resolveFrostFlake } from './native-frost-flake';
 import { resolveSpikyBall } from './native-spiky-ball';
+import { resolveSeekingShield } from './native-seeking-shield';
 import { attackSuperWizard, stepSuperWizardBranches } from './native-super-wizard';
 import {
   stepElectroDragonCharge,
@@ -707,6 +708,10 @@ export function stepNativeUnit(
     u.kind === 'minionprince' &&
     heroOf(battle, u)
   );
+  const attackDisabled =
+    battle.nativeSeekingShield &&
+    u.kind === 'royalchampion' &&
+    (state.effects?.attackDisabledUntil ?? 0) > at + 1e-9;
   const chargedHero = nativeChampion || nativePrince;
   const gauntlet = state.effects?.splash;
   const gauntletSplash =
@@ -929,6 +934,7 @@ export function stepNativeUnit(
               },
             }
           : {}),
+        ...(attackDisabled ? { attackReady: () => false } : {}),
         wallTile: ctx.wallTile,
         passableWalls: ctx.passableWalls,
         budget: ctx.pathBudget,
@@ -936,6 +942,7 @@ export function stepNativeUnit(
       },
     )
   ) {
+    if (attackDisabled) u.attacking = false;
     if (damageRamp && !u.attacking) delete state.damageRamp;
     if (undergroundChase && !u.attacking) {
       state.surfaced = false;
@@ -1009,6 +1016,10 @@ export function stepNativeUnit(
     }
   }
   if (distance <= s.range + 1e-6) {
+    if (attackDisabled) {
+      u.attacking = false;
+      return;
+    }
     u.attacking = true;
     if (damageRamp) recordInfernoDragonTransition(battle, u, damageRamp, target.id, false);
     if (s.underground) surfaceUndergroundUnit(ctx, u, at, target);
@@ -1097,6 +1108,10 @@ export function stepNativeUnit(
           ));
     const wall = hit && hit.hp > 0 && !ctx.passableWalls.has(hit.id) ? hit : undefined;
     if (wall && distanceTo(u, wall) <= s.range + 1e-6) {
+      if (attackDisabled) {
+        u.attacking = false;
+        return;
+      }
       u.attacking = true;
       if (battle.nativeDiggyMasterTarget && isHeroUnitKind(u.kind)) state.wallTarget = wall.id;
       if (u.cooldown <= 0) {
@@ -1575,6 +1590,7 @@ export function stepNativeChains(ctx: NativeTroopContext) {
 
 /** Native projectile arrival: damage, splash, bounces and on-hit spells. */
 export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile) {
+  if (resolveSeekingShield(ctx, p)) return;
   if (resolveSpikyBall(ctx, p)) return;
   if (resolveFrostFlake(ctx, p)) return;
   if (resolveWardenFireball(ctx, p)) return;

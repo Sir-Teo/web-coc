@@ -2185,3 +2185,12 @@ five-tile corridor. Its 12.5-tile/second path is bounded by the source 1.25-seco
 air-defense fire slows without stopping completely, and the path survives Recall or defeat. The
 original crystal now retains its opaque source mask through verified mesh clipping. Portal,
 contact and impact particles and original activation audio follow battle time. See [the Dark Orb reference](../reference/dark-orb/README.md).
+
+## Version 136 Royal Champion Seeking Shield
+
+All 18 Seeking Shield levels use seven mapped source ability levels, dealing 1,000–2,500 damage
+across four distinct contacts. Defense preference, copied targets, ground/air defenders, short
+chronological bounces and wasted top-corner throws use captured state. Manual release follows the
+fixed source windup; a real knockout releases immediately. Ordinary attacks pause for 1.2 seconds
+without spending their cooldown or Rocket Spear charges. Original shield spin continues across legs,
+with its shadow, glow trail and final landing particles/audio. See [the Seeking Shield reference](../reference/seeking-shield/README.md).

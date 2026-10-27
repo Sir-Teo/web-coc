@@ -40,6 +40,7 @@ import { fireballEffects } from './fireball-effects';
 import { heroAbilityActivation } from './hero-ability-feedback';
 import { SPIKY_BALL_PRESENTATION, spikyBallCarried } from './spiky-ball-effects';
 import { DARK_ORB_PRESENTATION, darkOrbCarried } from './dark-orb-effects';
+import { SEEKING_SHIELD_PRESENTATION, seekingShieldCarried } from './seeking-shield-effects';
 import {
   FROST_FLAKE_PRESENTATION,
   frostFlakeCarried,
@@ -2741,9 +2742,10 @@ export class VillageScene extends Phaser.Scene {
     const frostFlake = !this.model.battle || !!this.model.battle.nativeFrostFlake;
     const spikyBall = !this.model.battle || !!this.model.battle.nativeSpikyBall;
     const darkOrb = !this.model.battle || !!this.model.battle.nativeDarkOrb;
+    const seekingShield = !this.model.battle || !!this.model.battle.nativeSeekingShield;
     const projectiles = this.model.reducedMotion
       ? ''
-      : `${signature}|${setupSignature}|phoenix:${!!this.model.battle?.nativePhoenixResurrection}|fireball:${fireball}|giant-arrow:${giantArrow}|frost-flake:${frostFlake}|spiky-ball:${spikyBall}|dark-orb:${darkOrb}`;
+      : `${signature}|${setupSignature}|phoenix:${!!this.model.battle?.nativePhoenixResurrection}|fireball:${fireball}|giant-arrow:${giantArrow}|frost-flake:${frostFlake}|spiky-ball:${spikyBall}|dark-orb:${darkOrb}|seeking-shield:${seekingShield}`;
     if (projectiles !== this.projectilePrefetchSignature) {
       this.projectilePrefetchSignature = projectiles;
       this.nativeProjectiles?.prefetch(
@@ -2756,6 +2758,7 @@ export class VillageScene extends Phaser.Scene {
                 giantArrow,
                 frostFlake,
                 spikyBall,
+                seekingShield,
               }),
             ]
           : [],
@@ -2785,6 +2788,10 @@ export class VillageScene extends Phaser.Scene {
           DARK_ORB_PRESENTATION.DestroyedEffect,
           DARK_ORB_PRESENTATION.HitEffect,
         ]);
+      if (seekingShield && !this.model.reducedMotion && seekingShieldCarried(setups)) {
+        this.nativeProjectiles?.prefetchEffects([SEEKING_SHIELD_PRESENTATION.destroyed]);
+        this.nativeProjectiles?.prefetchEmitters([SEEKING_SHIELD_PRESENTATION.trail]);
+      }
     }
     const heroes = this.wantedHeroArt();
     const heroSignature = [...heroes].sort().join(',');
@@ -4357,6 +4364,7 @@ export class VillageScene extends Phaser.Scene {
       ...(battle.nativeFrostFlake ? frostFlakeSoundEffects : []),
       ...(battle.nativeSpikyBall ? [SPIKY_BALL_PRESENTATION.impact] : []),
       ...(battle.nativeDarkOrb ? [DARK_ORB_PRESENTATION.ActivationEffect] : []),
+      ...(battle.nativeSeekingShield ? [SEEKING_SHIELD_PRESENTATION.destroyed] : []),
     ]);
   }
   /** Whether a spell's falling bottle is decoded, so it replaces the generated tones. */
@@ -4399,6 +4407,9 @@ export class VillageScene extends Phaser.Scene {
       (battle.nativeFireballs?.some((shot) => shot.id === fx.projectileId) ||
         battle.nativeGiantArrows?.some((shot) => shot.id === fx.projectileId) ||
         battle.nativeDarkOrbs?.some((shot) => shot.id === fx.projectileId) ||
+        battle.nativeSeekingShieldCasts?.some((cast) =>
+          cast.shots.some((shot) => shot.id === fx.projectileId),
+        ) ||
         battle.nativeSpikyBallCasts?.some((cast) =>
           cast.shots.some((shot) => shot.id === fx.projectileId),
         ) ||

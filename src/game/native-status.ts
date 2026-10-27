@@ -42,6 +42,8 @@ export interface UnitEffects {
   quakeCasts?: number[];
   /** Hero ability attack-interval override (Haste Vial, Stick Horse). */
   attackInterval?: { until: number; seconds: number };
+  /** Source ability attack lock; its fixed clock is independent of animation slowdowns. */
+  attackDisabledUntil?: number;
   /** Flat damage an equipment ability adds, optionally for a number of hits. */
   extraDamage?: {
     until: number;

@@ -3,6 +3,7 @@ import { fireballProfile } from './fireball-effects';
 import { frostFlakeSoundEvents } from './frost-flake-effects';
 import { spikyBallSoundEvents } from './spiky-ball-effects';
 import { DARK_ORB_PRESENTATION } from './dark-orb-effects';
+import { seekingShieldSoundEvents } from './seeking-shield-effects';
 import source from '../../reference/troop-sounds/sounds.json' with { type: 'json' };
 import type { Battle, Unit } from './model';
 import { CUE_HORIZON, cueAudible, type SampleCue } from './sample-audio';
@@ -317,7 +318,11 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
     const cue = effectCue(DARK_ORB_PRESENTATION.ActivationEffect, `${orb.id}:sound`, orb.launched);
     if (cue) cues.push(cue);
   }
-  for (const event of [...frostFlakeSoundEvents(battle), ...spikyBallSoundEvents(battle)]) {
+  for (const event of [
+    ...frostFlakeSoundEvents(battle),
+    ...spikyBallSoundEvents(battle),
+    ...seekingShieldSoundEvents(battle),
+  ]) {
     if (event.at > elapsed + 1e-9 || !cueAudible(event.at, elapsed)) continue;
     const cue = effectCue(event.effect, event.key, event.at);
     if (cue) cues.push(cue);

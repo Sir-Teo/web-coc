@@ -4,6 +4,7 @@ import { launchGiantArrow } from './native-giant-arrow';
 import { launchFrostFlake } from './native-frost-flake';
 import { launchSpikyBall } from './native-spiky-ball';
 import { launchDarkOrb } from './native-dark-orb';
+import { launchSeekingShield } from './native-seeking-shield';
 import { itemName } from './native-hero-data';
 import { distance2D } from './distance';
 import { TROOPS, type UnitKind } from './data';
@@ -40,6 +41,7 @@ export function activateHero(
   townhall: number,
   at = ctx.battle.elapsed,
 ) {
+  const knockout = unit.hp <= 0;
   hero.abilityUsed = true;
   hero.abilityAt = at;
   hero.spawned = {};
@@ -47,7 +49,7 @@ export function activateHero(
   const heal = heroAbilityHeal(hero, townhall);
   if (heal > 0 && (unit.native?.effects?.phoenixRevive?.until ?? 0) <= at + 1e-9)
     unit.hp = Math.min(unit.maxHp, unit.hp + heal);
-  for (const ability of activeAbilities(hero)) applyAbility(ctx, hero, unit, ability, at);
+  for (const ability of activeAbilities(hero)) applyAbility(ctx, hero, unit, ability, at, knockout);
   const cast =
     ctx.battle.nativeFrostFlakeCasts?.find(
       (entry) => entry.sourceId === unit.id && entry.at === at,
@@ -74,12 +76,14 @@ function applyAbility(
   unit: Unit,
   ability: HeroAbility,
   at: number,
+  knockout = false,
 ) {
   launchWardenFireball(ctx, unit, ability, at);
   launchGiantArrow(ctx, unit, ability, at);
   launchFrostFlake(ctx, unit, ability, at);
   launchSpikyBall(ctx, unit, ability, at);
   launchDarkOrb(ctx, unit, ability, at);
+  launchSeekingShield(ctx, unit, ability, at, knockout);
   startEquipmentDash(ctx, unit, ability);
   const row = ability.row;
   const battle = ctx.battle;

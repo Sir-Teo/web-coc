@@ -16,7 +16,12 @@ export interface AbilityProjectileTarget {
 }
 
 /** Source Defense preference, then visible ordinary buildings and both defender layers. */
-export function abilityProjectileTargets(battle: Battle, unit: Unit, at: number, count = 1) {
+export function abilityProjectileTargets(
+  battle: Battle,
+  unit: Pick<Unit, 'x' | 'y'>,
+  at: number,
+  count = 1,
+) {
   const buildings = battle.buildings.filter(
     (b) => b.kind !== 'wall' && targetableBuilding(battle, b),
   );

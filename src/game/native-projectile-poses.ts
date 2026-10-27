@@ -96,6 +96,8 @@ export interface NativeFlightOptions {
   airLift: number;
   /** Screen height of a ground target's hit point. */
   targetHeight?: number;
+  /** A source equipment ricochet begins on the previous landing plane. */
+  launchHeight?: number;
 }
 
 /** Projected flight point, tangent and presentation clock of one native projectile. */
@@ -105,7 +107,7 @@ export function nativeProjectileFlight(
   elapsed: number,
   options: NativeFlightOptions,
 ) {
-  const { iso, airLift, targetHeight = 16 } = options;
+  const { iso, airLift, targetHeight = 16, launchHeight } = options;
   const dx = shot.x - shot.fromX,
     dy = shot.y - shot.fromY,
     length = Math.hypot(dx, dy);
@@ -121,7 +123,7 @@ export function nativeProjectileFlight(
   const offset = Math.min(num(row.StartOffset) / 100, length * 0.9);
   const start = iso(shot.fromX + ux * offset, shot.fromY + uy * offset);
   const finish = iso(shot.x, shot.y);
-  const h0 = num(row.StartHeight) * NATIVE_ALTITUDE + (shot.fromAir ? airLift : 0);
+  const h0 = launchHeight ?? num(row.StartHeight) * NATIVE_ALTITUDE + (shot.fromAir ? airLift : 0);
   const h1 = shot.toAir ? airLift : targetHeight;
   const peak = row.IsBallistic === 'TRUE' ? num(row.BallisticHeight) * NATIVE_ALTITUDE : 0;
   const height = h0 + (h1 - h0) * t + 4 * peak * t * (1 - t);
