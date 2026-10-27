@@ -967,6 +967,8 @@ export interface Battle {
   nativeGarrisonSounds?: true;
   /** Version 148: recalled Witch/Super Witch casters retain their summon ownership and cadence. */
   nativeWitchRecall?: true;
+  /** Version 149: deployed Furnace, Siege Barracks and Druid age from their actual birth. */
+  nativeLifecycleBirth?: true;
   nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
   nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */
@@ -5836,6 +5838,9 @@ export class GameModel {
       pathAt: 0,
       attacking: false,
       ...(nativeBehavior(b, k) ? { native: initialNativeState(k, this.troopLevel(k)) } : {}),
+      ...(b.nativeLifecycleBirth && (k === 'furnace' || k === 'siegebarracks' || k === 'druid')
+        ? { spawnedAt: b.elapsed }
+        : {}),
     });
     if (b.nativeYetiRecall && (k === 'yeti' || k === 'superyeti') && recalled !== undefined) {
       const stock = b.recalledYeti?.[k]?.shift();
