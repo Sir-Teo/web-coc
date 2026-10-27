@@ -38,6 +38,7 @@ import { nativeUnitStats } from './native-units';
 import { heroProjectileNames } from './hero-projectile-prefetch';
 import { fireballEffects } from './fireball-effects';
 import { heroAbilityActivation } from './hero-ability-feedback';
+import { SPIKY_BALL_PRESENTATION, spikyBallCarried } from './spiky-ball-effects';
 import {
   FROST_FLAKE_PRESENTATION,
   frostFlakeCarried,
@@ -2737,9 +2738,10 @@ export class VillageScene extends Phaser.Scene {
     const fireball = !this.model.battle || !!this.model.battle.nativeWardenFireball;
     const giantArrow = !this.model.battle || !!this.model.battle.nativeGiantArrow;
     const frostFlake = !this.model.battle || !!this.model.battle.nativeFrostFlake;
+    const spikyBall = !this.model.battle || !!this.model.battle.nativeSpikyBall;
     const projectiles = this.model.reducedMotion
       ? ''
-      : `${signature}|${setupSignature}|phoenix:${!!this.model.battle?.nativePhoenixResurrection}|fireball:${fireball}|giant-arrow:${giantArrow}|frost-flake:${frostFlake}`;
+      : `${signature}|${setupSignature}|phoenix:${!!this.model.battle?.nativePhoenixResurrection}|fireball:${fireball}|giant-arrow:${giantArrow}|frost-flake:${frostFlake}|spiky-ball:${spikyBall}`;
     if (projectiles !== this.projectilePrefetchSignature) {
       this.projectilePrefetchSignature = projectiles;
       this.nativeProjectiles?.prefetch(
@@ -2751,6 +2753,7 @@ export class VillageScene extends Phaser.Scene {
                 wardenFireball: fireball,
                 giantArrow,
                 frostFlake,
+                spikyBall,
               }),
             ]
           : [],
@@ -2769,6 +2772,10 @@ export class VillageScene extends Phaser.Scene {
       if (frostFlake && !this.model.reducedMotion && frostFlakeCarried(setups)) {
         this.nativeProjectiles?.prefetchEffects([FROST_FLAKE_PRESENTATION.ActivationEffect]);
         this.nativeProjectiles?.prefetchEmitters([FROST_FLAKE_PRESENTATION.ParticleEmitter]);
+      }
+      if (spikyBall && !this.model.reducedMotion && spikyBallCarried(setups)) {
+        this.nativeProjectiles?.prefetchEffects([SPIKY_BALL_PRESENTATION.impact]);
+        this.nativeProjectiles?.prefetchEmitters([SPIKY_BALL_PRESENTATION.trail]);
       }
     }
     const heroes = this.wantedHeroArt();
@@ -4340,6 +4347,7 @@ export class VillageScene extends Phaser.Scene {
       ...(needsRecallPresentation(battle) ? ['RecallRedeployAuraTop'] : []),
       ...(battle.nativeWardenFireball ? ['FireballActivationEffect'] : []),
       ...(battle.nativeFrostFlake ? frostFlakeSoundEffects : []),
+      ...(battle.nativeSpikyBall ? [SPIKY_BALL_PRESENTATION.impact] : []),
     ]);
   }
   /** Whether a spell's falling bottle is decoded, so it replaces the generated tones. */
@@ -4381,6 +4389,9 @@ export class VillageScene extends Phaser.Scene {
       (fx.type === 'projectile' || fx.type === 'impact') &&
       (battle.nativeFireballs?.some((shot) => shot.id === fx.projectileId) ||
         battle.nativeGiantArrows?.some((shot) => shot.id === fx.projectileId) ||
+        battle.nativeSpikyBallCasts?.some((cast) =>
+          cast.shots.some((shot) => shot.id === fx.projectileId),
+        ) ||
         battle.nativeFrostFlakeCasts?.some((cast) =>
           cast.shots.some((shot) => shot.id === fx.projectileId),
         ))

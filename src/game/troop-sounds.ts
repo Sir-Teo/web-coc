@@ -1,6 +1,7 @@
 import { fieldSpellDeploy2Delay, fieldSpellUsesResolvedRevive } from './field-spell-effects';
 import { fireballProfile } from './fireball-effects';
 import { frostFlakeSoundEvents } from './frost-flake-effects';
+import { spikyBallSoundEvents } from './spiky-ball-effects';
 import source from '../../reference/troop-sounds/sounds.json' with { type: 'json' };
 import type { Battle, Unit } from './model';
 import { CUE_HORIZON, cueAudible, type SampleCue } from './sample-audio';
@@ -310,7 +311,7 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
   if (!battle) return logged;
   const cues: SampleCue[] = [];
   const elapsed = battle.elapsed;
-  for (const event of frostFlakeSoundEvents(battle)) {
+  for (const event of [...frostFlakeSoundEvents(battle), ...spikyBallSoundEvents(battle)]) {
     if (event.at > elapsed + 1e-9 || !cueAudible(event.at, elapsed)) continue;
     const cue = effectCue(event.effect, event.key, event.at);
     if (cue) cues.push(cue);

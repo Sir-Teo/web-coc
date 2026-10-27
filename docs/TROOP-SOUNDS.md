@@ -160,7 +160,7 @@ bounded backoff, reconnects, deduplication and changing battle rosters.
 `tests/browser/troop-sound-recovery.spec.ts` returns a real 503 for Frost Flake's activation
 sample, then verifies automatic and online recovery with unchanged paused replay state.
 
-Not included: the heroes' other sounds (the client's hero rows name only hits, so the rest presumably play from their animations), Siege Machine special effects and movement sounds. Fireball and Frost Flake additionally import their declared equipment cues; other ability-specific effects still need their own source mapping.
+Not included: the heroes' other sounds (the client's hero rows name only hits, so the rest presumably play from their animations), Siege Machine special effects and movement sounds. Fireball, Frost Flake and Spiky Ball additionally import their declared equipment cues; other ability-specific effects still need their own source mapping.
 
 Version 114 retains Overgrowth's cast timeline after its one-pulse live record disappears.
 The original vial and level-specific field cues now reconstruct on a fresh seek beyond

@@ -2,6 +2,7 @@ import { startEquipmentDash, stepEquipmentEffects } from './native-equipment-eff
 import { launchWardenFireball } from './native-fireball';
 import { launchGiantArrow } from './native-giant-arrow';
 import { launchFrostFlake } from './native-frost-flake';
+import { launchSpikyBall } from './native-spiky-ball';
 import { itemName } from './native-hero-data';
 import { distance2D } from './distance';
 import { TROOPS, type UnitKind } from './data';
@@ -75,6 +76,7 @@ function applyAbility(
   launchWardenFireball(ctx, unit, ability, at);
   launchGiantArrow(ctx, unit, ability, at);
   launchFrostFlake(ctx, unit, ability, at);
+  launchSpikyBall(ctx, unit, ability, at);
   startEquipmentDash(ctx, unit, ability);
   const row = ability.row;
   const battle = ctx.battle;

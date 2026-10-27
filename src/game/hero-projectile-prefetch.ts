@@ -8,6 +8,7 @@ export interface HeroProjectileOptions {
   wardenFireball?: boolean;
   giantArrow?: boolean;
   frostFlake?: boolean;
+  spikyBall?: boolean;
 }
 export function heroProjectileNames(
   heroes: readonly HeroSetup[],
@@ -18,6 +19,7 @@ export function heroProjectileNames(
     wardenFireball = false,
     giantArrow = false,
     frostFlake = false,
+    spikyBall = false,
   } = options;
   const names = new Set<string>();
   for (const hero of heroes) {
@@ -30,6 +32,8 @@ export function heroProjectileNames(
       if (giantArrow && ability.name === 'ArcherQueenPierceProjectile')
         names.add(text(ability.row, 'ProjectileOnActivation'));
       if (frostFlake && ability.name === 'FrostBlast')
+        names.add(text(ability.row, 'ProjectileOnActivation'));
+      if (spikyBall && ability.name === 'FootballBounce')
         names.add(text(ability.row, 'ProjectileOnActivation'));
     }
     if (hero.pet) names.add(petStatsFor(hero.pet).projectile);

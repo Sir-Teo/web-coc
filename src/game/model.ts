@@ -937,6 +937,8 @@ export interface Battle {
   /** Version 133: source distinct-target Frost Flakes and full on-impact freezes. */
   nativeFrostFlake?: true;
   nativeFrostFlakeCasts?: import('./native-frost-flake').FrostFlakeCast[];
+  nativeSpikyBall?: true;
+  nativeSpikyBallCasts?: import('./native-spiky-ball').SpikyBallCast[];
   nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
   nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */

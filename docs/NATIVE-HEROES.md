@@ -2169,3 +2169,11 @@ distinct targets, 105–294 damage and 5.2–7 seconds of full freeze. Actual Ca
 resumes at the source expiry. Projectiles retain their original targets after Recall or defeat
 and do not consume Rocket Spears charges. Original activation, flight, trail and audio follow
 captured battle time. See [the Frost Flake reference](../reference/frost-flake/README.md).
+
+## Version 134 Barbarian King Spiky Ball
+
+All 27 Spiky Ball item levels use their mapped source ability levels, with two to eight distinct
+contacts dealing 1,000–3,250 damage each. The initial leg copies a valid building target; later
+legs prefer unvisited buildings and fall back to ground defenders. Damage and later ricochets
+survive Recall or defeat. The original ball, shadow, trail, contact bursts and audio reuse existing
+assets. See [the Spiky Ball reference](../reference/spiky-ball/README.md).

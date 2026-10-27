@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 133;
+export const REPLAY_VERSION = 134;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -161,7 +161,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 130 launches Warden Fireball with source flight and area damage.
  * Version 131 launches the Queen's source Giant Arrow through both enemy layers.
  * Version 132 preserves Giant Arrow constructs in Invisibility Spell Tower triggers.
- * Version 133 launches distinct-target Frost Flakes with captured full freezes. */
+ * Version 133 launches distinct-target Frost Flakes with captured full freezes.
+ * Version 134 launches the King's distinct-target Spiky Ball ricochets. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -262,6 +263,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 130 ||
   version === 131 ||
   version === 132 ||
+  version === 133 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -410,6 +412,12 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 134 &&
+    s.heroes?.some(
+      (hero) => hero.kind === 'king' && hero.items.some((item) => item.slug === 'spiky-ball'),
+    )
+      ? { nativeSpikyBall: true as const }
+      : {}),
     ...(version >= 133 &&
     s.heroes?.some(
       (hero) => hero.kind === 'champion' && hero.items.some((item) => item.slug === 'frost-charm'),

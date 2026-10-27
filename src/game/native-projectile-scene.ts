@@ -36,6 +36,7 @@ interface Snapshot {
   fireballLevel?: number;
   giantArrow?: true;
   frostFlake?: true;
+  spikyContinues?: true;
   fromX: number;
   fromY: number;
   x: number;
@@ -211,6 +212,9 @@ export class NativeProjectilePresentation {
     ))
       this.layer.play(event, elapsed, reduced);
     for (const p of [
+      ...(battle.nativeSpikyBallCasts ?? [])
+        .flatMap((cast) => cast.shots)
+        .filter((shot) => elapsed <= shot.impact + AFTERLIFE),
       ...(battle.nativeFrostFlakeCasts ?? [])
         .flatMap((cast) => cast.shots)
         .filter((shot) => elapsed <= shot.impact + AFTERLIFE),
@@ -225,6 +229,7 @@ export class NativeProjectilePresentation {
         known &&
         known.launched === p.launched &&
         known.impact === p.impact &&
+        known.spikyContinues === p.native.spikyBall?.continues &&
         known.x === p.x &&
         known.y === p.y
       )
@@ -402,6 +407,7 @@ export class NativeProjectilePresentation {
         );
       if (
         row.DestroyedEffect &&
+        !snap.spikyContinues &&
         elapsed >= flight.end &&
         this.running(row.DestroyedEffect, flight.end, elapsed)
       ) {
@@ -440,6 +446,7 @@ function snapshot(p: CombatProjectile, packPath: string): Snapshot {
     bounce: p.native!.bounce ?? 0,
     ...(p.native!.fireball ? { fireballLevel: p.native!.fireball.level } : {}),
     ...(p.native!.frostFlake ? { frostFlake: true as const } : {}),
+    ...(p.native!.spikyBall?.continues ? { spikyContinues: true as const } : {}),
     fromX: p.fromX,
     fromY: p.fromY,
     x: p.x,

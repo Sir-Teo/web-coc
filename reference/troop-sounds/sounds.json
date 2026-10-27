@@ -1189,6 +1189,15 @@
   },
   "destroyed": "Building Destroyed",
   "effects": {
+    "Air Defense Barrel Hit": [
+      {
+        "sound": "sfx/cannon_fire3.ogg",
+        "volume": 0.8,
+        "minPitch": 0.95,
+        "maxPitch": 1.05,
+        "delay": 0.0
+      }
+    ],
     "AmazonQ ability hit": [
       {
         "sound": "sfx/rg_atk_hit_01.ogg",

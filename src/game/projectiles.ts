@@ -60,6 +60,15 @@ export interface CombatProjectile {
     fireball?: { level: number };
     /** Version 133: one distinct Frost Flake target, with full freeze captured at launch. */
     frostFlake?: { castId: string; index: number; seconds: number };
+    /** Version 134: source equipment damage and distinct visited targets survive every bounce. */
+    spikyBall?: {
+      castId: string;
+      index: number;
+      left: number;
+      reach: number;
+      visited: string[];
+      continues?: true;
+    };
     /** Version 108: kind-changing throws keep the original actor’s sound identity. */
     captureSource?: true;
     /** Version 71: frost captured at launch, retained after the shooter leaves. */
@@ -167,6 +176,7 @@ export function launchProjectile(
               shot.weapon === 'healing' ||
               !!shot.native?.healing ||
               (battle.nativeFrostFlake && !!shot.native?.frostFlake) ||
+              (battle.nativeSpikyBall && !!shot.native?.spikyBall) ||
               (battle.nativeSingleUseMiteJumps &&
                 !!shot.native &&
                 nativeMiteJump(battle, shot.native.kind)) ||
@@ -192,7 +202,7 @@ export function launchProjectile(
           );
   const projectile: CombatProjectile = {
     ...shot,
-    id: `${shot.sourceId}:${at}${shot.native?.bounce ? `:${shot.native.bounce}` : ''}${shot.native?.frostFlake ? `:frost${shot.native.frostFlake.index}` : ''}${
+    id: `${shot.sourceId}:${at}${shot.native?.bounce ? `:${shot.native.bounce}` : ''}${shot.native?.frostFlake ? `:frost${shot.native.frostFlake.index}` : ''}${shot.native?.spikyBall ? `:spiky${shot.native.spikyBall.index}` : ''}${
       // Multi-target defenses release several shots in one instant.
       shot.defense ? `:d${(battle.nativeShotSequence = (battle.nativeShotSequence ?? 0) + 1)}` : ''
     }`,
@@ -299,9 +309,12 @@ export function stepProjectiles(
     p.flight.at = Math.min(battle.elapsed, p.impact);
   }
   const shots = battle.projectiles ?? [];
-  // Snapshot semantics: ricochets launched mid-sample join after it, even when skipping the sort.
+  // Historical ricochets join after the sample. Source Spiky Ball legs enter the ordered queue.
   const ordered = shots.length < 2 ? shots.slice() : [...shots].sort((a, b) => a.impact - b.impact);
-  for (const p of ordered) {
+  const transferred = battle.nativeSpikyBall ? new Set<CombatProjectile>() : undefined;
+  let appendedAt = initial;
+  for (let index = 0; index < ordered.length; index++) {
+    const p = ordered[index];
     const target = p.targetDefender
       ? defenderById.get(p.targetId)
       : p.targetBuilding
@@ -332,6 +345,13 @@ export function stepProjectiles(
     if (battle.nativeFrostFlake && p.native?.frostFlake) {
       const own = p.native.frostFlake;
       const record = battle.nativeFrostFlakeCasts?.find((cast) => cast.id === own.castId)?.shots[
+        own.index
+      ];
+      if (record?.id === p.id) Object.assign(record, { x: p.x, y: p.y, impact: p.impact });
+    }
+    if (battle.nativeSpikyBall && p.native?.spikyBall) {
+      const own = p.native.spikyBall;
+      const record = battle.nativeSpikyBallCasts?.find((cast) => cast.id === own.castId)?.shots[
         own.index
       ];
       if (record?.id === p.id) Object.assign(record, { x: p.x, y: p.y, impact: p.impact });
@@ -431,6 +451,20 @@ export function stepProjectiles(
       });
     }
     emit(projectileEffect(p, 'impact'));
+    if (transferred) {
+      const appended = battle.projectiles ?? [];
+      for (; appendedAt < appended.length; appendedAt++) {
+        const next = appended[appendedAt];
+        if (!next.native?.spikyBall) continue;
+        transferred.add(next);
+        let position = index + 1;
+        while (position < ordered.length && ordered[position].impact <= next.impact) position++;
+        ordered.splice(position, 0, next);
+      }
+    }
   }
-  battle.projectiles = [...pending, ...(battle.projectiles ?? []).slice(initial)];
+  battle.projectiles = [
+    ...pending,
+    ...(battle.projectiles ?? []).slice(initial).filter((p) => !transferred?.has(p)),
+  ];
 }
