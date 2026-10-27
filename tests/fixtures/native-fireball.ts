@@ -1,11 +1,11 @@
 import { defaultSpellLevels, emptyArmy, emptySpells } from '../../src/game/army';
-import { GameModel, makeBuilding } from '../../src/game/model';
+import { GameModel, makeBuilding, type Building } from '../../src/game/model';
 import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
 
-export function fireballBattle(level = 1, version = REPLAY_VERSION) {
+export function fireballBattle(level = 1, version = REPLAY_VERSION, buildings?: Building[]) {
   const model = new GameModel();
   model.state.obstacles = [];
-  model.state.buildings = [
+  model.state.buildings = buildings ?? [
     makeBuilding(1, 'townhall', 36, 36, 18),
     makeBuilding(2, 'cannon', 20, 10, 21),
     makeBuilding(3, 'elixirstorage', 24, 10, 16),
@@ -33,6 +33,22 @@ export function fireballBattle(level = 1, version = REPLAY_VERSION) {
     }
   };
   return { model, battle, data, wardenId, until };
+}
+
+/** The real area hit destroys both remaining buildings and finishes on the impact sample. */
+export function nativeWinningFireballRecording() {
+  const r = fireballBattle(1, undefined, [
+    makeBuilding(1, 'townhall', 24, 10, 1),
+    makeBuilding(2, 'cannon', 20, 10, 1),
+  ]);
+  r.until(0.1);
+  if (!r.model.activateNativeHeroAbility('warden')) throw Error('Winning Fireball failed');
+  for (let steps = 0; !r.battle.finished && steps < 100; steps++) r.model.step(0.05);
+  if (!r.battle.finished || r.battle.destruction !== 100) throw Error('Fireball did not finish');
+  return {
+    battle: JSON.parse(JSON.stringify(r.battle)),
+    data: JSON.parse(JSON.stringify(r.model.state.raidLog![0].replay!)) as ReplayData,
+  };
 }
 
 /** Real activation, original flight, area hit and tail, all reconstructed from portable inputs. */

@@ -44,3 +44,18 @@ its manifest pins and unchanged Ogg bytes. Unit tests cover all levels, targetin
 immunity, Recall, source audio and portable seeks. Browser tests cover all three tiers on desktop
 and phone, reduced motion, delayed-pack recovery while paused, live activation feedback with
 missing-art/audio fallbacks, and version-129 playback.
+
+The three source explosion tiers specify `CameraShake=60`, `CameraShakeTimeMS=800` and
+`CameraShakeInReplay=FALSE`. Their metadata is retained in the generated index. Live explosions
+use the existing local camera adapter: a smoothed 30 Hz displacement, source strength multiplied
+by 0.32 world pixels, and decay over 800 ms. Overlapping events remain bounded; reduced motion
+and replays suppress the impulse. A paused running battle holds the same displacement, and camera
+projection and pointer picking share the shaken transform. This adapter retains source timing
+and strength without claiming the client's unverified random waveform.
+
+Native projectile effects now follow the existing two-second presentation grace after a battle
+finishes. A winning Fireball therefore keeps its original explosion, while its shake decays with
+presentation time and the finished simulation remains frozen. Cold finished imports stay settled.
+An airborne Fireball cancelled by End Battle cannot invent a later area-hit impulse. No images,
+audio files, combat rules or replay version change. Browser checks cover desktop/phone pause,
+zoom, picking, replay suppression and the actual final-hit explosion under a controlled clock.

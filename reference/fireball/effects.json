@@ -187,6 +187,28 @@
       "level": 27
     }
   ],
+  "shakes": {
+    "FireballActivationEffect": {
+      "CameraShake": "0",
+      "CameraShakeTimeMS": "0",
+      "CameraShakeInReplay": "FALSE"
+    },
+    "ps_chr_gw_fireballl_explosion_lvl1": {
+      "CameraShake": "60",
+      "CameraShakeTimeMS": "800",
+      "CameraShakeInReplay": "FALSE"
+    },
+    "ps_chr_gw_fireballl_explosion_lvl2": {
+      "CameraShake": "60",
+      "CameraShakeTimeMS": "800",
+      "CameraShakeInReplay": "FALSE"
+    },
+    "ps_chr_gw_fireballl_explosion_lvl3": {
+      "CameraShake": "60",
+      "CameraShakeTimeMS": "800",
+      "CameraShakeInReplay": "FALSE"
+    }
+  },
   "conventions": {
     "lifecycle": "Activation at launch; area explosion at the resolved source projectile impact.",
     "flight": "Original projectile body, source, trail and destroyed effects reuse the full-client catalogs."

@@ -37,6 +37,7 @@ import { NativeProjectilePresentation } from './native-projectile-scene';
 import { nativeUnitStats } from './native-units';
 import { heroProjectileNames } from './hero-projectile-prefetch';
 import { fireballEffects } from './fireball-effects';
+import { fireballShake } from './fireball-shake';
 import { heroAbilityActivation } from './hero-ability-feedback';
 import { SPIKY_BALL_PRESENTATION, spikyBallCarried } from './spiky-ball-effects';
 import { DARK_ORB_PRESENTATION, darkOrbCarried } from './dark-orb-effects';
@@ -1019,14 +1020,15 @@ export class VillageScene extends Phaser.Scene {
         reduced = this.model.reducedMotion,
         replay = !!this.model.replay;
       if (!battle) return ZERO;
+      const elapsed = battle.finished ? this.effectClock(battle, true) : battle.elapsed;
       if (
         shakeMemo.battle !== battle ||
-        shakeMemo.elapsed !== battle.elapsed ||
+        shakeMemo.elapsed !== elapsed ||
         shakeMemo.reduced !== reduced ||
         shakeMemo.replay !== replay
       ) {
         shakeMemo.battle = battle;
-        shakeMemo.elapsed = battle.elapsed;
+        shakeMemo.elapsed = elapsed;
         shakeMemo.reduced = reduced;
         shakeMemo.replay = replay;
         combineShakes(
@@ -1037,6 +1039,7 @@ export class VillageScene extends Phaser.Scene {
             mortarShake(battle, reduced, replay),
             infernoShake(battle, reduced, replay),
             infernoDragonShake(battle, reduced, replay),
+            fireballShake(battle, reduced, replay, elapsed),
           ],
           shakeMemo.offset,
         );

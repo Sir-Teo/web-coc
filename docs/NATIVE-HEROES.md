@@ -2215,3 +2215,16 @@ including real hits, RNG, cooldowns and moving-target restoration for all three 
 Portable browser recordings with a real released Dragon reproduce the former discrepancy and now
 match dense rendering, sparse rendering, a fresh presentation and backward seeking exactly.
 Rendering leaves battle state unchanged. Version 136 and earlier retain endpoint-only behavior.
+
+## Fireball shake and finishing effects
+
+The original Fireball explosion now supplies its source 800 ms live camera impulse. The source
+disables it in replays; reduced motion also suppresses it. Live pause preserves the same offset,
+zoom scales it with the world, and pointer picking uses the same camera transform. The local
+30 Hz displacement adapter follows the existing native-shake convention.
+
+Native projectile bodies, trails and captured impacts use the shared presentation grace after
+victory, so the winning Fireball's original explosion can finish. Its camera impulse follows that
+presentation clock too, then returns to rest while battle state stays frozen. Cold finished
+imports remain settled, and a cancelled airborne packet produces no area-hit shake. This changes
+presentation only, with no replay-version bump or new assets. See [source values and validation](../reference/fireball/README.md).

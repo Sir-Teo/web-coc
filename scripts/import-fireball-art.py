@@ -20,7 +20,7 @@ def main():
     art = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(art)
     lib = Library(art)
-    current, levels, effects = {}, [], {}
+    current, levels, effects, shakes = {}, [], {}, {}
     collector = Collector(lib)
     for level, row in enumerate(lib.table('logic/special_abilities.csv')['GrandWardenFireball'], 1):
         current.update(row)
@@ -31,6 +31,9 @@ def main():
             name = profile[key]
             collector.effect(name)
             effects[name] = 'fireball'
+            effect = lib.effects[name][0]
+            shakes[name] = {key: effect.get(key, '0' if key != 'CameraShakeInReplay' else 'FALSE')
+                            for key in ['CameraShake', 'CameraShakeTimeMS', 'CameraShakeInReplay']}
     require(not collector.missing, f'Missing Fireball source: {collector.missing}')
     prefix = 'assets/fireball-native/effects'
     result = write_pack(lib, collector, ROOT / 'public' / prefix, prefix,
@@ -39,7 +42,7 @@ def main():
     index = dict(clientVersion='18.400.21', generator='scripts/import-fireball-art.py',
                  sources=dict(sorted(art.PINS.items())), effects=effects,
                  packs=dict(fireball=dict(path=f'{prefix}/graph.json', sha256=result['sha256'], bytes=result['bytes'])),
-                 levels=levels,
+                 levels=levels, shakes=shakes,
                  conventions=dict(lifecycle='Activation at launch; area explosion at the resolved source projectile impact.',
                                   flight='Original projectile body, source, trail and destroyed effects reuse the full-client catalogs.'))
     target = ROOT / 'reference/fireball/effects.json'

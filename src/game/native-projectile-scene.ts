@@ -9,6 +9,7 @@ import { electromiteEffectEvents } from './electromite-effects';
 import type Phaser from 'phaser';
 import type { Battle } from './model';
 import type { CombatProjectile } from './projectiles';
+import { presentationLive, presentationTime } from './presentation-clock';
 import { nativeProjectileAimAt, type NativeProjectileAim } from './native-projectile-aim';
 import { NativeSceneView, effectSceneView } from './native-scene-view';
 import { NativeArtPacks, nativePackPrefix, type NativeArtPack } from './native-art-pack';
@@ -191,8 +192,8 @@ export class NativeProjectilePresentation {
     const covered = new Set<string>();
     const shown = new Set<string>();
     this.layer.begin();
-    const elapsed = battle?.elapsed ?? 0;
-    if (!battle || battle.finished || reduced) {
+    const elapsed = battle && presentationLive(battle) ? presentationTime(battle) : Infinity;
+    if (!battle || !Number.isFinite(elapsed) || reduced) {
       this.history.clear();
       this.covered = covered;
       for (const [key, { view }] of this.views) {
