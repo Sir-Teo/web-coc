@@ -63,6 +63,19 @@ the same battle or replay is paused. Pending and successful requests stay dedupl
 Only the current battle's wanted files retry, including its undeployed army, Heroes/pets and
 uncast spells after roster changes. Recovery does not advance the battle or play paused cues.
 
+Troop, pet, spell and equipment downloads carry browser `integrity` values from the pinned
+source SHA-256 hashes. A corrupt HTTP 200 response therefore follows the same retry path as a
+failed request, including when its length matches the original file. Retries use `cache: reload`
+so a broken HTTP-cache response cannot keep supplying the same bytes. The runtime service worker
+already verifies source bytes before storing them in its own release cache.
+
+The shared sample decoder quarantines rejected encoded data instead of retrying it every frame.
+Registering fresh bytes can recover that sample; an older pending success or failure cannot
+replace or discard the newer registration. Successfully decoded samples remain deduplicated,
+and compressed bytes are released once decoding completes. This does not change combat, source
+volume/pitch, replay clocks or voice limits. Browser checks exercise both 503 and same-length
+corrupt responses through cooldown and reconnect recovery while playback stays paused.
+
 ## Pet and friendly healing cues
 
 Pet deploy/attack/hit/death effects now come from their own `pets.csv` rows. Phoenix's waiting

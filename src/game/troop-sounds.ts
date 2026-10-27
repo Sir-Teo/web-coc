@@ -490,7 +490,12 @@ export class TroopSoundLoader {
     this.requested.add(path);
     const sound = TROOP_SOUNDS[path as keyof typeof TROOP_SOUNDS];
     try {
-      const response = await fetch('/' + sound.path);
+      const hash = sound.sha256.match(/../g)!.map((byte) => parseInt(byte, 16));
+      const response = await fetch('/' + sound.path, {
+        // A 200 response containing broken audio must follow the same bounded retry as a 503.
+        integrity: `sha256-${btoa(String.fromCharCode(...hash))}`,
+        ...(failure ? { cache: 'reload' as const } : {}),
+      });
       if (!response.ok) throw Error(`${sound.path}: ${response.status}`);
       this.register(troopSample(path), await response.arrayBuffer());
       this.failed.delete(path);

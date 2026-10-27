@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import {
   DESTROYED_EFFECT,
   TROOP_SOUNDS,
@@ -145,4 +147,27 @@ it('retries only samples still wanted by the current battle', async () => {
   await settle();
   expect(fetcher.mock.calls.filter(([path]) => path === url)).toHaveLength(initial + 1);
   expect(register).toHaveBeenCalledWith(troopSample(target), expect.any(ArrayBuffer));
+});
+
+it('pins requested source bytes with browser integrity and reloads failed HTTP cache entries', async () => {
+  const fetcher = vi.fn(async (_path: string, _options?: RequestInit) => response(false));
+  vi.stubGlobal('fetch', fetcher);
+  const loader = new TroopSoundLoader(() => {});
+  loader.need([], [], [activation]);
+  await settle();
+  const initial = fetcher.mock.calls.length;
+  expect(initial).toBeGreaterThan(0);
+  for (const [url, options] of fetcher.mock.calls) {
+    const expected = createHash('sha256')
+      .update(readFileSync('public' + url))
+      .digest('base64');
+    expect(options?.integrity).toBe(`sha256-${expected}`);
+    expect(options?.cache).toBeUndefined();
+  }
+  now = 5000;
+  loader.retry();
+  await settle();
+  expect(fetcher).toHaveBeenCalledTimes(initial * 2);
+  for (const [, options] of fetcher.mock.calls.slice(initial))
+    expect(options?.cache).toBe('reload');
 });
