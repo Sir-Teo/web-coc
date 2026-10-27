@@ -262,6 +262,8 @@
     "sfx/rg_atk_hit_01.ogg": "830adf5ff581cf5008e932c5b4bac03a5f8b6bc5ef84bf8c90fc3be97f0df528",
     "sfx/rock_troll_dep_02.ogg": "4a4b05793ada952085cdb757d09cee4c351320d18d41625bb5e36f07292385d9",
     "sfx/rock_troll_explo_01.ogg": "412228f1a90526911d899b4c60e5d35c366a1122c28d97b09700a24de9915bcd",
+    "sfx/rock_troll_throw_01.ogg": "7d2f694ba4ecc831b1dfb8edfa2525ec0eaf9faf5b093ec85c6fd31441e5c399",
+    "sfx/rock_troll_throw_02.ogg": "89b15e79122c8c1a4d65b211b03c006444d6056c6d4d669d945c294f549621a0",
     "sfx/root_rider_atk_01.ogg": "e3dc599c922f28d2a49b1e7af35c3b5c9dc3e1f9439a4352d92d204ce86ce391",
     "sfx/root_rider_atk_02.ogg": "dd7082f71f500ff79f9535d401b27dcd527b645411a356a6fb017d18651500f0",
     "sfx/root_rider_dep_01.ogg": "4a9d030e540f6eecc3ea31be9a54a0990efa5f8e2ed49f87579f85be27c8da38",
@@ -1074,7 +1076,8 @@
         "name": "Bowler",
         "row": 4,
         "deploy": "Troll Deploy",
-        "die": "Wizard Die"
+        "die": "Wizard Die",
+        "preAttack": "trollAttack"
       }
     },
     "dragon": {
@@ -5505,6 +5508,22 @@
         "delay": 0.0
       }
     ],
+    "trollAttack": [
+      {
+        "sound": "sfx/rock_troll_throw_01.ogg",
+        "volume": 0.7,
+        "minPitch": 0.98,
+        "maxPitch": 1.02,
+        "delay": 0.0
+      },
+      {
+        "sound": "sfx/rock_troll_throw_02.ogg",
+        "volume": 0.7,
+        "minPitch": 0.98,
+        "maxPitch": 1.02,
+        "delay": 0.0
+      }
+    ],
     "trollBoulder_destroyed": [
       {
         "sound": "sfx/rock_troll_explo_01.ogg",
@@ -6780,6 +6799,16 @@
       "path": "assets/audio/troops-native/rock_troll_explo_01.ogg",
       "bytes": 14242,
       "sha256": "412228f1a90526911d899b4c60e5d35c366a1122c28d97b09700a24de9915bcd"
+    },
+    "sfx/rock_troll_throw_01.ogg": {
+      "path": "assets/audio/troops-native/rock_troll_throw_01.ogg",
+      "bytes": 14410,
+      "sha256": "7d2f694ba4ecc831b1dfb8edfa2525ec0eaf9faf5b093ec85c6fd31441e5c399"
+    },
+    "sfx/rock_troll_throw_02.ogg": {
+      "path": "assets/audio/troops-native/rock_troll_throw_02.ogg",
+      "bytes": 13716,
+      "sha256": "89b15e79122c8c1a4d65b211b03c006444d6056c6d4d669d945c294f549621a0"
     },
     "sfx/root_rider_atk_01.ogg": {
       "path": "assets/audio/troops-native/root_rider_atk_01.ogg",

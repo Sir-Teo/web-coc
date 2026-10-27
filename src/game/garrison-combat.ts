@@ -458,6 +458,7 @@ export function stepGarrisonDefender(
     }
   }
   const distance = distance2D(target.x - defender.x, target.y - defender.y);
+  let fresh = false;
   // Split-timing families use the older LogicCombatComponent.IsInRange tolerance for character
   // targets (AttackRange + 256 units, half a tile) and approach to GetAttackDist (range - 1/16
   // tile, at least 1/16), so a slightly drifting target does not reset a long windup.
@@ -491,6 +492,7 @@ export function stepGarrisonDefender(
     if (!committed || defender.cooldown > 1e-9) return;
   } else {
     if (!defender.engaged) {
+      fresh = true;
       defender.engaged = true;
       // Split timing: any post-hit recovery still running precedes the new target's windup.
       // Corrected clocks spend this tick once; historical split families keep their old clock.
@@ -503,7 +505,7 @@ export function stepGarrisonDefender(
     }
     defender.attacking = true;
     if (!stats.flying) defender.path = [];
-    stepGarrisonPreAttack(battle, defender, activeDt, attackDt, recoveryAtStart);
+    stepGarrisonPreAttack(battle, defender, activeDt, attackDt, recoveryAtStart, fresh);
     if (defender.cooldown > 1e-9) return;
   }
   stopGarrisonPreAttack(battle, defender);

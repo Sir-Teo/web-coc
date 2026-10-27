@@ -22,8 +22,10 @@ The importer also records 21 garrison kinds at their 22 enabled VisualLevels, af
 they do not add NPCs to the attacking troop roster. Version 154 also binds defending
 Electro Dragon's `PreAttackEffect` to its active-time charge clock; see the
 [charge-audio reference](../reference/garrison/README.md#electro-dragon-charge-audio-recording-version-154).
+Version 155 adds Bowler's original windup takes, including the fresh-target charge offset
+and natural one-shot tails; see the [Bowler reference](../reference/garrison/README.md#bowler-windup-audio-recording-version-155).
 
-The importer copies 357 Ogg files (5.09 MiB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`. An already shipped sample can supply a missing local source only when its SHA-256 matches that same source pin. Edited outputs cannot supply trusted source bytes; corrupt authoritative cache entries still fail validation.
+The importer copies 359 Ogg files (5.11 MiB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`. An already shipped sample can supply a missing local source only when its SHA-256 matches that same source pin. Edited outputs cannot supply trusted source bytes; corrupt authoritative cache entries still fail validation.
 
 | Troop     | Deploy                                                     | Attack                                                                                          | Death                                           |
 | --------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------- |

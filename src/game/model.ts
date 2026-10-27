@@ -979,6 +979,8 @@ export interface Battle {
   nativeGarrisonRecovery?: true;
   /** Version 154: defending Electro Dragons play the original charge sample on active time. */
   nativeGarrisonPreAttack?: true;
+  /** Version 155: defending Bowler windups play original throw takes. */
+  nativeGarrisonBowlerPreAttack?: true;
   nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
   nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */

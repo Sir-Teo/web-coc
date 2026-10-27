@@ -225,7 +225,7 @@ def build():
         for level in levels:
             actual, ordinal, row = defending_row(name, level)
             events = {**EVENTS, **({'chain': 'ChainAttackEffect'} if key == 'electrodragon' else {})}
-            if key == 'electrodragon':
+            if key in ('electrodragon', 'bowler'):
                 events['preAttack'] = 'PreAttackEffect'
             garrisons[key][str(level)] = dict(name=actual, row=ordinal, **entries([row], events))
     spells = {}

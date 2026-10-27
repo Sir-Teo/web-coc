@@ -370,8 +370,7 @@ snapshots with exact version-145 physical equality after removing the audio capa
 Desktop/phone Chromium checks original bodies, actual Web Audio gain/pitch at replay speed,
 pause, backward seeks, historical silence and reconnect recovery without advancing playback.
 
-This version-146 boundary covers primary-event audio. Version 154 below adds Electro Dragon charge audio. Other pre-attack charging (including Bowler's
-`trollAttack`), Witch summon effects, Electro Titan aura, death-spell effects and movement
+This version-146 boundary covers primary-event audio. Version 154 below adds Electro Dragon charge audio. Version 155 below adds Bowler's `trollAttack`. Witch summon effects, Electro Titan aura, death-spell effects and movement
 still need their own source timing adapters. No native executable sound-scheduler parity is
 claimed. The source profiles imported here all have zero `SoundDelay`; their existing combat
 event clocks remain the local presentation alignment.
@@ -514,3 +513,48 @@ parity and complete current/historical portable reverse seeks. The browser spec
 Web Audio nodes, 0.06 mixer gain, 2× playback, sample start offsets, pause, rewind, reduced
 motion and historical silence. A blocked 503 sample recovers on reconnect while the portable
 replay stays paused, with unchanged battle state and no autoplay.
+
+## Bowler windup audio (recording version 155)
+
+The pinned 18.400.21 `characters.Bowler` row 4 declares `PreAttackEffect=trollAttack`.
+Its two original alternatives have volume 0.7, pitch 0.98–1.02 and zero delay:
+
+| Original source | Bytes | SHA-256 |
+| --------------- | ----- | ------- |
+| `sfx/rock_troll_throw_01.ogg` | 14,410 | `7d2f694ba4ecc831b1dfb8edfa2525ec0eaf9faf5b093ec85c6fd31441e5c399` |
+| `sfx/rock_troll_throw_02.ogg` | 13,716 | `89b15e79122c8c1a4d65b211b03c006444d6056c6d4d669d945c294f549621a0` |
+
+They are copied unchanged from the source manifest. The shared catalog now has 372 effects
+and 359 samples, with 28,126 new bytes. One take and its pitch are chosen by the existing
+stable key hash; both alternatives are warmed from the reserve.
+
+The older [LogicCombatComponent](https://github.com/bns34/Supercell.Magic-my-turn/blob/52c5953f5e5802c64ac36e53d5599f8700976085/Supercell.Magic.Logic/GameObject/Component/LogicCombatComponent.cs)
+checks `GetPreAttackEffect` in its concrete-target branch while the hit timer advances.
+Its separate no-target group branch has a `hitTime < 64` condition; that condition does not
+justify suppressing Bowler's fresh-target take. The listener bodies are absent from this
+reconstruction, so the exact native sample startup and offset remain unverified.
+
+The local split timer has a 1.5 s full windup but only a 0.4 s fresh-target wait because
+`NewTargetAttackDelay=1100` produces a 1.1 s initial charge. Version 155 preloads that same
+1.1 s phase into fresh-target audio age, then advances active wall time like Electro Dragon.
+This aligns the sample with the existing partial attack animation. A target acquired during
+recovery waits before audio starts; repeat same-target windups start from age zero. This is
+a deterministic local presentation alignment, not native executable scheduler parity.
+
+The takes last approximately 2.435 and 2.348 seconds. Release records the final virtual start
+in a bounded 16-entry history so the original one-shot tail can finish, rather than being cut
+when the projectile launches. Full Freeze holds the active charge's age and suspends that
+cue; already released one-shots retain their own clock. Active target loss/death cancels the
+charge. The source shot, bounce, damage, first-hit and recovery clocks are unchanged.
+
+Only Bowler garrisons enable this adapter. Per-kind warm guards keep version-154 mixed
+Electro Dragon/Bowler rosters from preloading the new Bowler takes. Versions 154 and earlier
+retain their former sound behavior. Attacking Bowler audio and original pre-attack particles
+remain outside this defender binding.
+
+`tests/garrison-bowler-audio.test.ts` checks fresh/repeat phases, stable original takes,
+Freeze, release-tail continuity, unique captured starts, mixed historical warming,
+exact version-154 physical parity and full portable reverse seeks. The browser spec
+`tests/browser/garrison-bowler-audio.spec.ts` verifies complete Node/Chromium states, decoded
+alternatives, 0.084 mixer gain, seeded pitch at replay speed, source sample offsets after
+Freeze and release, pause, rewind, reduced motion, historical silence and paused 503 recovery.

@@ -10,6 +10,7 @@ import {
 import type { Battle } from './model';
 import { cueAudible, type SampleCue } from './sample-audio';
 import { effectCue } from './troop-sounds';
+import { garrisonPreAttackEnabled } from './garrison-pre-attack';
 
 type Event = 'deploy' | 'preAttack' | 'attack' | 'hit' | 'die' | 'chain';
 type Binding = { name: string; row: number } & Partial<Record<Event, string>>;
@@ -37,13 +38,17 @@ export function nativeGarrisonSoundCues(battle: Battle, defender: GarrisonDefend
   push('deploy', 'deploy', defender.spawnedAt);
   const charge = defender.preAttack;
   if (
-    battle.nativeGarrisonPreAttack &&
+    garrisonPreAttackEnabled(battle, defender.kind) &&
     defender.hp > 0 &&
     charge &&
+    !charge.waiting &&
     charge.lastAt >= elapsed - 1e-9 &&
     (defender.stunnedUntil ?? 0) <= elapsed + 1e-9
   )
     push('preAttack', `preAttack:${charge.n}:${charge.targetId}`, elapsed - charge.age);
+  if (garrisonPreAttackEnabled(battle, defender.kind))
+    for (const started of defender.preAttackHistory ?? [])
+      push('preAttack', `preAttack:${started.n}:${started.targetId}`, started.at);
   for (const [index, attack] of defender.attacks.entries()) {
     const ordinal = attack.n ?? index;
     push('attack', `attack:${ordinal}`, attack.at);
@@ -69,7 +74,7 @@ export function garrisonSoundEffects(battle: Battle): Set<string> {
     const binding = bindings[kind]?.[level];
     if (!binding) return;
     for (const event of EVENTS)
-      if (binding[event] && (event !== 'preAttack' || battle.nativeGarrisonPreAttack))
+      if (binding[event] && (event !== 'preAttack' || garrisonPreAttackEnabled(battle, kind)))
         effects.add(binding[event]!);
     const stats = garrisonStats(kind, level);
     if (stats.secondary) {
