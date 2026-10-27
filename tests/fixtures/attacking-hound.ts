@@ -9,7 +9,7 @@ export function attackingHoundBattle(
   version = REPLAY_VERSION,
   x = 11.4,
   ice = false,
-  defense = false,
+  defense: boolean | 'monolith' = false,
 ) {
   const model = new GameModel();
   model.state.king = undefined;
@@ -17,7 +17,13 @@ export function attackingHoundBattle(
   model.state.nextId = 100;
   model.state.buildings = [
     makeBuilding(1, 'townhall', 36, 36, 18),
-    makeBuilding(2, defense ? 'airdefense' : 'goldstorage', 13, 10, defense ? 1 : 18),
+    makeBuilding(
+      2,
+      defense === 'monolith' ? 'monolith' : defense ? 'airdefense' : 'goldstorage',
+      13,
+      10,
+      defense ? 1 : 18,
+    ),
   ];
   model.state.army = {
     ...emptyArmy(),

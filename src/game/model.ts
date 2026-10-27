@@ -1011,6 +1011,8 @@ export interface Battle {
   nativeWitchSounds?: true;
   /** Version 169: Hound parents use source attack phases and Lava Hound projectiles. */
   nativeHoundWindup?: true;
+  /** Version 170: seeded Hound death positions do not depend on host trigonometry. */
+  nativeHoundSpawnGeometry?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;

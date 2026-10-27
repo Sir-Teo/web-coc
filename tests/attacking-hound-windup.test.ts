@@ -63,7 +63,7 @@ for (const ice of [false, true]) {
   for (let level = 1; level <= 8; level++)
     it(`${kind} ${level} preserves complete death-release child states`, () => {
       const old = attackingHoundBattle(level, 168, 11.4, ice),
-        current = attackingHoundBattle(level, undefined, 11.4, ice);
+        current = attackingHoundBattle(level, 169, 11.4, ice);
       for (const r of [old, current]) {
         r.until(0.1);
         r.unit.hp = 0;

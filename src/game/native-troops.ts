@@ -1,3 +1,4 @@
+import { houndUnitDirection } from './native-hound-geometry';
 import { releaseHoundAtDefender } from './native-hound-attack';
 import { releaseWitchAtDefender, resolveWitchImpact } from './native-witch-attack';
 import { sweepValkyrie } from './native-valkyrie-sweep';
@@ -429,11 +430,16 @@ function ringPoint(
   count: number,
   distance: number,
   random: boolean,
+  stableHound = false,
 ) {
   const turn = random ? hash(battle.seed + source.id * 31, index) : index / Math.max(1, count);
   const reach = random
     ? distance * Math.sqrt(hash(battle.seed + source.id * 17, index + 101))
     : distance;
+  if (stableHound) {
+    const direction = houndUnitDirection(turn);
+    return { x: source.x + direction.x * reach, y: source.y + direction.y * reach };
+  }
   const angle = turn * Math.PI * 2;
   return { x: source.x + Math.cos(angle) * reach, y: source.y + Math.sin(angle) * reach };
 }
@@ -2259,7 +2265,19 @@ function spawnSecondaries(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, 
   const kind = unitKindForName(s.secondary) as UnitKind | undefined;
   if (!kind) return;
   for (let i = 0; i < s.secondaryCount; i++) {
-    const p = ringPoint(ctx.battle, u, i, s.secondaryCount, s.secondaryDistance, s.secondaryRandom);
+    const stable = !!(
+      ctx.battle.nativeHoundSpawnGeometry &&
+      (u.kind === 'lavahound' || u.kind === 'icehound')
+    );
+    const p = ringPoint(
+      ctx.battle,
+      u,
+      i,
+      s.secondaryCount,
+      s.secondaryDistance,
+      s.secondaryRandom,
+      stable,
+    );
     spawnNativeUnit(ctx, kind, s.level, p.x, p.y, at, u.id);
   }
 }
