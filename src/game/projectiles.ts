@@ -251,6 +251,11 @@ export function launchProjectile(
     (battle.nativeMeteorFlights ??= []).push({ ...projectile, native: { ...projectile.native } });
   if (battle.nativeBowlerImpactArt && projectile.native?.kind === 'bowler')
     (battle.nativeBowlerFlights ??= []).push({ ...projectile, native: { ...projectile.native } });
+  if (
+    battle.nativeWitchFlightArt &&
+    (projectile.native?.kind === 'witch' || projectile.native?.kind === 'superwitch')
+  )
+    (battle.nativeWitchFlights ??= []).push({ ...projectile, native: { ...projectile.native } });
   emit(projectileEffect(projectile, 'projectile'));
   return projectile;
 }
@@ -290,6 +295,11 @@ export function stepProjectiles(
   emit: (fx: FX) => void,
   nativeImpact?: (projectile: CombatProjectile) => void,
 ) {
+  // The renderer keeps landed native flights for at most three seconds. Witch aim is fixed.
+  if (battle.nativeWitchFlights)
+    battle.nativeWitchFlights = battle.nativeWitchFlights.filter(
+      (shot) => shot.impact + 3 >= battle.elapsed - 1e-9,
+    );
   if (battle.nativeBowlerImpacts)
     battle.nativeBowlerImpacts = battle.nativeBowlerImpacts.filter(
       (impact) => impact.at + 10 >= battle.elapsed - 1e-9,

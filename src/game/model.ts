@@ -1004,6 +1004,9 @@ export interface Battle {
   nativeValkyrieWindup?: true;
   /** Version 166: Witch family source windup on both ground and air targets. */
   nativeWitchWindup?: true;
+  /** Version 167: bounded Witch flight snapshots reconstruct original trail tails after seeks. */
+  nativeWitchFlightArt?: true;
+  nativeWitchFlights?: CombatProjectile[];
   nativeBowlerFlights?: CombatProjectile[];
   nativeBowlerImpacts?: {
     id: string;

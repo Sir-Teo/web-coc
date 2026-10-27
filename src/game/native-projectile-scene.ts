@@ -258,6 +258,7 @@ export class NativeProjectilePresentation {
       ...(battle.nativeFireballs ?? []).filter((shot) => elapsed <= shot.impact + AFTERLIFE),
       ...(battle.nativeMeteorFlights ?? []).filter((shot) => elapsed <= shot.impact + AFTERLIFE),
       ...(battle.nativeBowlerFlights ?? []).filter((shot) => elapsed <= shot.impact + AFTERLIFE),
+      ...(battle.nativeWitchFlights ?? []).filter((shot) => elapsed <= shot.impact + AFTERLIFE),
       ...(battle.projectiles ?? []),
     ]) {
       if (p.weapon !== 'native' || !p.native) continue;

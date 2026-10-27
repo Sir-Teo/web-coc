@@ -56,3 +56,33 @@ Witch research level too, so maximum-level cases actually deploy their requested
 level. Real Castle recordings capture the exact first defender-projectile release, which
 can follow an earlier building attack; historical arrows and current native meshes are
 checked at that captured state.
+
+
+## Retained flight art (recording version 167)
+
+The already shipped source `witch_trail_emitter` emits `looping_witch_sparks1` every 75 ms,
+with 450–550 ms particle life, additive blending and the retained source scale/rotation/gravity
+fields. Its original graph is `assets/effects-native/emitter-witch-trail-emitter/graph.json`,
+38,419 bytes, SHA-256 `417bf0ff2a4227d1be58966619a8eeb41b97b68f627583cbb59e62da4265f646`.
+Flight already uses this emitter through the shared effect library; an empty emitter map in
+the separate projectile-body pack does not mean the trail is missing.
+
+The missing case was a cold seek after physical impact. The renderer retained tails for a
+flight it had seen, but no live packet remained to reconstruct an unseen, landed flight.
+Version 167 captures immutable Witch/Super Witch flight packets at launch and retains them
+for three seconds after impact, matching the existing renderer window. Fixed launch aim
+means no tracking updates are needed. Records expire during normal simulation; they also
+survive caster defeat and battle completion for the established presentation window.
+Reduced motion follows its existing particle suppression path. Damage, release and impact
+times, target selection, source stats and audio keep their version-166 behavior.
+
+`tests/witch-flight-history.test.ts` covers all eight levels of both casters, immutable packet
+identity, post-landing availability, bounded expiry, caster defeat/finish, exact physical
+version-166 parity, ground/air defender packets and complete portable forward/reverse states.
+Browser recordings compare actual visible original mesh geometry, transforms and alpha for
+a seen flight and a cold seek after explicitly clearing renderer history. Historical cases
+preserve the missing cold tail. Desktop/phone minimum/maximum casters also check expiration,
+reduced-motion/read-only rendering and WebGL health. A real emitter-graph 503 recovers online
+while the replay stays paused and its complete battle state stays unchanged. No source art,
+audio file or particle parameters change; modern native-engine particle parity remains
+unverified.
