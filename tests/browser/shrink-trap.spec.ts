@@ -155,14 +155,21 @@ test('portable Magic Practice replay restores status, particles, audio and the h
       while (m.replay.seeking) m.step(0.05);
       scene.sync();
       scene.drawOverlay(0);
+      // These registries are keyed Maps; compare every keyed pose independently of allocation order.
       return JSON.stringify({
         battle: m.battle,
-        effects: [...scene.shrinkTrapPresentation.effects].map(([key, v]) => [
-          key,
-          [...v.meshes].map(([k, m]) => [k, m.vertices, m.alpha]),
-        ]),
-        bodies: [...scene.shrinkTrapPresentation.bodies.keys()],
-        scales: [...scene.unitSprites].map(([id, v]) => [id, v.getData('shrinkScale')]),
+        effects: [...scene.shrinkTrapPresentation.effects]
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([key, v]) => [
+            key,
+            [...v.meshes]
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([k, m]) => [k, m.vertices, m.alpha]),
+          ]),
+        bodies: [...scene.shrinkTrapPresentation.bodies.keys()].sort((a, b) => a - b),
+        scales: [...scene.unitSprites]
+          .sort(([a], [b]) => a - b)
+          .map(([id, v]) => [id, v.getData('shrinkScale')]),
       });
     };
     const times = [0.1, 0.5, 1, 1.95, 4, 20.5, 21, 27.5];

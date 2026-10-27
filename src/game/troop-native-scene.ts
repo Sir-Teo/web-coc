@@ -377,7 +377,8 @@ export class TroopNativePresentation {
       const windupOffset =
         battle?.nativeBowlerWindup && u.kind === 'bowler'
           ? u.native?.bowler?.animationOffset
-          : battle?.nativeGolemWindup && (u.kind === 'golem' || u.kind === 'golemite')
+          : (battle?.nativeGolemWindup && (u.kind === 'golem' || u.kind === 'golemite')) ||
+              (battle?.nativePekkaWindup && u.kind === 'pekka')
             ? u.native?.attackWindup?.animationOffset
             : undefined;
       const requested =

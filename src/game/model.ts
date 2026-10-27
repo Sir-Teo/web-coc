@@ -327,6 +327,7 @@ import {
   type HeroProgress,
   type BattleHero,
 } from './heroes';
+import { beginPekkaWindup, stepPekkaWindup } from './native-pekka-windup';
 import {
   launchProjectile,
   stepProjectiles,
@@ -997,6 +998,8 @@ export interface Battle {
   nativeGolemWindup?: true;
   /** Version 163: Bowler defender-pursuit walls use the native windup/boulder release. */
   nativeBowlerWallWindup?: true;
+  /** Version 164: legacy-path PEKKA attacks use source split windup/recovery. */
+  nativePekkaWindup?: true;
   nativeBowlerFlights?: CombatProjectile[];
   nativeBowlerImpacts?: {
     id: string;
@@ -6518,6 +6521,8 @@ export class GameModel {
         stepNativeUnit(native, u, { damage, speed, heal }, unitDt, actionDt * poison.attack);
         continue;
       }
+      const pekka = !!(native && b.nativePekkaWindup && u.kind === 'pekka');
+      if (pekka && stepPekkaWindup(native!, u, unitDt, actionDt * poison.attack, damage)) continue;
       const d = { ...base, heal, damage, speed };
       if (troop.healer) {
         stepHealer(b, u, d, unitDt, this.onEffect);
@@ -6532,10 +6537,28 @@ export class GameModel {
           solidBuildings,
           (target, power) => this.damage(target, power),
           this.onEffect,
-          undefined,
+          pekka
+            ? {
+                ...troop,
+                airTargets: false,
+                nativeBuildingAttack: (target: Building) =>
+                  beginPekkaWindup(native!, u, { building: target }),
+              }
+            : undefined,
           isTargetableLive,
           {
             buildings: routeBuildings,
+            ...(pekka
+              ? {
+                  enterRange: () => {
+                    const target = b.defenders?.find(
+                      (defender) => defender.id === u.defenderTarget,
+                    );
+                    if (target) beginPekkaWindup(native!, u, { defender: target });
+                  },
+                  attackReady: () => false,
+                }
+              : {}),
             wallTile,
             passableWalls,
             budget: repathState,
@@ -6584,6 +6607,10 @@ export class GameModel {
       const distance = distanceTo(u, target);
       if (distance <= d.range) {
         u.attacking = true;
+        if (pekka) {
+          beginPekkaWindup(native!, u, { building: target });
+          continue;
+        }
         if (u.cooldown <= 0) {
           u.cooldown = d.rate;
           if (troop.wallBreaker) {
@@ -6681,6 +6708,10 @@ export class GameModel {
         const wall = hit && hit.hp > 0 && !passableWalls?.has(hit.id) ? hit : undefined;
         if (wall && distanceTo(u, wall) <= d.range) {
           u.attacking = true;
+          if (pekka) {
+            beginPekkaWindup(native!, u, { building: wall });
+            continue;
+          }
           if (u.cooldown <= 0) {
             u.cooldown = d.rate;
             if (troop.wallBreaker) {

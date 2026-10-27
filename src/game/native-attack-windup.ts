@@ -142,6 +142,7 @@ export function stepNativeAttackWindup(
   const wantsBuilding =
     target &&
     unit.kind !== 'bowler' &&
+    (traits.prefersDefenses || traits.prefersResources) &&
     preferredOrCommitted(
       ctx.battle,
       unit,
