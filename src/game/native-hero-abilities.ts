@@ -288,7 +288,15 @@ export function refreshHeroPassives(ctx: NativeTroopContext, hero: NativeBattleH
           'attack',
           unit.x,
           unit.y,
-          { at, follow: unit.id, owner: unit.id, immediate: true },
+          {
+            at:
+              ctx.battle.nativeHeroAuraRevival && hero.auraResume?.unitId === unit.id
+                ? hero.auraResume.at
+                : at,
+            follow: unit.id,
+            owner: unit.id,
+            immediate: true,
+          },
         );
       }
     }
@@ -316,6 +324,7 @@ export function refreshHeroPassives(ctx: NativeTroopContext, hero: NativeBattleH
         };
     }
   }
+  if (ctx.battle.nativeHeroAuraRevival) delete hero.auraResume;
 }
 
 function stepPassive(

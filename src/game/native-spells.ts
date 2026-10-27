@@ -1,4 +1,5 @@
 import { fieldSpellHistoryUntil } from './field-spell-effects';
+import { reviveHeroAuras } from './native-hero-aura-revival';
 import {
   recordOvergrowthRoot,
   retireOvergrowthRoots,
@@ -759,6 +760,7 @@ function reviveHero(
   fallen.target = null;
   fallen.path = [];
   fallen.pathAt = 0;
+  reviveHeroAuras(ctx.battle, fallen, at);
   if (ctx.battle.nativeSpellArt?.includes('Revive'))
     cast.revivePresentation = { targetId: fallen.id, x: fallen.x, y: fallen.y, at };
   ctx.effect({ type: 'spawn', x: fallen.x, y: fallen.y });

@@ -353,6 +353,11 @@ it.each([false, true])(
     const pending = r.snapshots.find((s) => s.at === r.pending)!.battle as Battle;
     expect(pending.nativeSeekingShieldCasts![0].shots).toEqual([]);
     if (recall) {
+      const before = r.snapshots.find((s) => s.at === r.beforeLaunch)!.battle as Battle;
+      expect(before.nativeHeroes![0].unitId).toBeNull();
+      expect(before.nativeSeekingShieldCasts![0].shots).toEqual([]);
+      expect(before.nativeSeekingShieldCasts![0].released).toBeUndefined();
+      expect(before.elapsed).toBeLessThan(before.nativeSeekingShieldCasts![0].launchAt);
       const flight = r.snapshots.find((s) => s.at === r.flight)!.battle as Battle;
       expect(flight.units.some((unit) => unit.id === r.championId)).toBe(false);
       expect(flight.nativeSeekingShieldCasts![0].shots).toHaveLength(1);

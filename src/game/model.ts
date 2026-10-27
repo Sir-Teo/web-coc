@@ -946,6 +946,8 @@ export interface Battle {
   nativeSeekingShieldCasts?: import('./native-seeking-shield').SeekingShieldCast[];
   /** Version 137: moving equipment targets retain fixed-step aims for original trail births. */
   nativeEquipmentFlightHistory?: true;
+  /** Version 138: Revive and Phoenix restart passive equipment auras on the same body. */
+  nativeHeroAuraRevival?: true;
   nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
   nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */

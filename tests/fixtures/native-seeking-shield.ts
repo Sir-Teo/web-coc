@@ -55,11 +55,10 @@ export function nativeSeekingShieldRecording(level = 1, recall = false, version 
     throw Error('Seeking Shield activation failed');
   const castAt = r.battle.elapsed;
   if (recall) {
-    r.until(0.15);
     r.model.activeSpell = 'recall';
     if (!r.model.castSpell(champion.x, champion.y)) throw Error('Seeking Shield Recall failed');
   }
-  const times = { pending: 0.8, flight: 1.2, bounce: 1.65, landed: 3.5, after: 7 };
+  const times = { pending: 0.8, beforeLaunch: 1, flight: 1.2, bounce: 1.65, landed: 3.5, after: 7 };
   const snapshots: { at: number; battle: unknown }[] = [];
   for (const key of Object.keys(times) as (keyof typeof times)[]) {
     r.until(times[key]);

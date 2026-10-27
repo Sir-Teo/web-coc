@@ -62,6 +62,8 @@ export interface NativeBattleHero extends HeroSetup {
   recalledAttackExtra?: UnitEffects['extraDamage'];
   /** Extra attacks the ability granted (Rocket Spears, Noble Iron). */
   charges?: Record<string, number>;
+  /** Version 138: canonical resurrection time consumed by the next passive-aura upkeep. */
+  auraResume?: { unitId: number; at: number };
 }
 
 export const heroUnitKind = (kind: HeroKind) => HERO_UNIT[kind] as UnitKind;

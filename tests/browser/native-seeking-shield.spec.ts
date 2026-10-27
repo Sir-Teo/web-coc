@@ -165,10 +165,16 @@ for (const { level, count, width } of [
     expect(errors).toEqual([]);
   });
 
-test('the original shield keeps ricocheting after the recorded Champion is Recalled', async ({
+test('the original shield finishes its pending throw after the recorded Champion is Recalled', async ({
   page,
 }) => {
   const r = await open(page, 18, true);
+  const before = await seek(page, r.beforeLaunch);
+  expect(before.battle).toBe(
+    JSON.stringify(r.snapshots.find((s) => s.at === r.beforeLaunch)!.battle),
+  );
+  expect(await page.evaluate(() => window.__game.model.battle.nativeHeroes[0].unitId)).toBeNull();
+  expect(await body(page)).toBe(false);
   const later = await seek(page, r.flight);
   expect(later.battle).toBe(JSON.stringify(r.snapshots.find((s) => s.at === r.flight)!.battle));
   expect(

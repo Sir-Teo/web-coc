@@ -2228,3 +2228,22 @@ victory, so the winning Fireball's original explosion can finish. Its camera imp
 presentation clock too, then returns to rest while battle state stays frozen. Cold finished
 imports remain settled, and a cancelled airborne packet produces no area-hit shake. This changes
 presentation only, with no replay-version bump or new assets. See [source values and validation](../reference/fireball/README.md).
+
+## Version 138 passive auras after Revive and Phoenix
+
+A real Monolith knockout exposed a shared guard bug: Electro Boots, Rage Gem and Life Gem stopped
+when their owner died, then stayed off after resurrection because the owner's unit ID was the
+same. Successful Revive and Phoenix restoration now reset only the passive-aura deployment guards.
+The next upkeep creates exactly one fresh field for each passive aura, anchored to the revival's
+canonical time. Superseded casts end before overdue pulses can catch up through the knockout.
+
+The pending clock includes its body ID. If Recall removes that body before upkeep, a later
+redeployment starts at its own time. Active abilities remain spent, Rocket Spear charges stay
+spent, and naturally exhausted fields do not restart while their owner stays alive. Native aura
+radii, pulse intervals, health/damage modifiers and eligibility rules remain unchanged.
+
+Portable Monolith/Revive/Phoenix recordings verify all three items, actual buffs on a newly
+introduced Giant, forward/backward snapshots and historical version 137 behavior. Additional
+coverage checks simultaneous Revive/Recall pulses, body replacement, charged equipment and stale
+fields. Browser checks retain original living Hero art, phone/desktop playback, reduced motion,
+Revive touch controls and Recall during Phoenix revival. See [source notes and phase conventions](../reference/hero-aura-revival/README.md).
