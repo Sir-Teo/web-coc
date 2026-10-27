@@ -403,7 +403,13 @@ function attack(
         live(u, at) &&
         (u.id === target.id || distance2D(u.x - target.x, u.y - target.y) <= stats.splash + EPS)
       )
-        hurtUnit(battle, u, damage, at);
+        hurtUnit(
+          battle,
+          u,
+          damage,
+          at,
+          battle.nativeRevengeDeck && u.id === target.id ? g.id : undefined,
+        );
     ctx.effect({
       type: 'hit',
       sourceDefender: true,

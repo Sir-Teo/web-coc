@@ -1,6 +1,7 @@
 import { poisonAvoidanceTarget } from './poison-avoidance';
 import { defenderPoisonScales } from './defender-poison';
 import { defenderFrostScales } from './defender-frost';
+import { hurtGarrisonUnit } from './garrison-damage';
 import { TROOPS } from './data';
 import { nonWallBuildings } from './building-lists';
 import { distance2D, distanceSquared2D } from './distance';
@@ -176,9 +177,15 @@ function resolveHit(
         (air ? stats.airTargets : stats.groundTargets) &&
         distance2D(unit.x - center.x, unit.y - center.y) <= stats.splash
       )
-        unit.hp = Math.max(0, unit.hp - damageFor(unit, damage, stats));
+        hurtGarrisonUnit(
+          battle,
+          unit,
+          damageFor(unit, damage, stats),
+          at,
+          unit.id === target?.id ? defender.id : undefined,
+        );
   } else if (target && active(target, at))
-    target.hp = Math.max(0, target.hp - damageFor(target, damage, stats));
+    hurtGarrisonUnit(battle, target, damageFor(target, damage, stats), at, defender.id);
   const poison = garrisonPoisonOnHit(stats);
   if (poison && target && target.hp > 0 && (!air || poison.affectsAir))
     applyGarrisonPoison(battle, target, poison, defender.id, at);
@@ -311,7 +318,7 @@ export function stepGarrisonDefender(
           !TROOPS[unit.kind].flying &&
           distance2D(unit.x - defender.x, unit.y - defender.y) <= stats.deathRadius
         )
-          unit.hp = Math.max(0, unit.hp - stats.deathDamage);
+          hurtGarrisonUnit(battle, unit, stats.deathDamage, defender.defeatedAt + stats.deathDelay);
       effect({
         type: 'hit',
         sourceDefender: true,
@@ -505,7 +512,13 @@ export function stepGarrisonDefender(
         !!TROOPS[unit.kind].flying === !!TROOPS[target.kind].flying &&
         distance2D(unit.x - center.x, unit.y - center.y) <= stats.splash
       )
-        unit.hp = Math.max(0, unit.hp - damage);
+        hurtGarrisonUnit(
+          battle,
+          unit,
+          damage,
+          battle.elapsed,
+          unit.id === target.id ? defender.id : undefined,
+        );
   } else {
     const n = defender.attackCount ?? 0;
     defender.attackCount = n + 1;

@@ -178,6 +178,7 @@ export function hurtUnit(
   at = battle.elapsed,
   sourceId?: number,
   trap = false,
+  secondary = false,
 ) {
   if (!(amount > 0) || unit.hp <= 0) return 0;
   const state = battle.nativeRoster ? unit.native : undefined;
@@ -198,6 +199,15 @@ export function hurtUnit(
   if (battle.nativeContentExpansion && state && sourceId !== undefined)
     state.lastDamageSource = sourceId;
   if (state) state.damageTaken = (state.damageTaken ?? 0) + Math.min(amount, unit.hp);
+  if (
+    battle.nativeRevengeDeck &&
+    unit.hero === 'duke' &&
+    state &&
+    sourceId !== undefined &&
+    !trap &&
+    !secondary
+  )
+    (state.revengeHits ??= []).push({ sourceId, at, x: unit.x, y: unit.y });
   unit.hp -= amount;
   return amount;
 }

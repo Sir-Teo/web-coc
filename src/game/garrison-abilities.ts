@@ -1,4 +1,5 @@
 import { TROOPS } from './data';
+import { hurtGarrisonUnit } from './garrison-damage';
 import { distance2D } from './distance';
 import { MAP_SIZE } from './grid';
 import { groundCollision, type GroundCollision } from './subtile-path';
@@ -419,7 +420,7 @@ export function stepChain(battle: Battle, defender: GarrisonDefender, stats: Gar
       break;
     }
     const air = !!TROOPS[best.kind].flying;
-    best.hp = Math.max(0, best.hp - chain.damage);
+    hurtGarrisonUnit(battle, best, chain.damage, chain.next);
     const jump = {
       targetId: best.id,
       at: chain.next,
@@ -512,9 +513,11 @@ export function stepDeathBolts(battle: Battle, defender: GarrisonDefender, stats
     resolved.push(bolt);
     for (const unit of battle.units)
       if (active(unit, bolt.at) && distance2D(unit.x - bolt.x, unit.y - bolt.y) <= spell.radius)
-        unit.hp = Math.max(
-          0,
-          unit.hp - (unit.hero ? spell.damage * spell.heroDamageScale : spell.damage),
+        hurtGarrisonUnit(
+          battle,
+          unit,
+          unit.hero ? spell.damage * spell.heroDamageScale : spell.damage,
+          bolt.at,
         );
   }
   return resolved;
@@ -538,9 +541,11 @@ export function stepAura(battle: Battle, defender: GarrisonDefender, stats: Garr
     pulses++;
     for (const unit of battle.units)
       if (active(unit, at) && distance2D(unit.x - defender.x, unit.y - defender.y) <= aura.radius)
-        unit.hp = Math.max(
-          0,
-          unit.hp - (unit.hero ? aura.damage * aura.heroDamageScale : aura.damage),
+        hurtGarrisonUnit(
+          battle,
+          unit,
+          unit.hero ? aura.damage * aura.heroDamageScale : aura.damage,
+          at,
         );
   }
   return pulses;

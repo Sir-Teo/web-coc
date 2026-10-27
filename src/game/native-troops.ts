@@ -97,6 +97,8 @@ export interface NativeUnitState {
   damageTaken?: number;
   deploymentAbility?: boolean;
   lastDamageSource?: number;
+  /** Version 143: direct incoming hits awaiting Revenge Deck's passive upkeep. */
+  revengeHits?: import('./native-revenge-deck').RevengeHit[];
   firingSince?: number;
   /** Version 94: heat belongs to one building or defender, never to a previous target. */
   damageRamp?: NativeDamageRamp;

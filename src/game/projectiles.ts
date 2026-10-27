@@ -217,6 +217,10 @@ export function launchProjectile(
   const projectile: CombatProjectile = {
     ...shot,
     id: `${shot.sourceId}:${at}${shot.native?.bounce ? `:${shot.native.bounce}` : ''}${shot.native?.frostFlake ? `:frost${shot.native.frostFlake.index}` : ''}${shot.native?.spikyBall ? `:spiky${shot.native.spikyBall.index}` : ''}${shot.native?.seekingShield ? `:shield${shot.native.seekingShield.index}` : ''}${
+      battle.nativeRevengeDeck && shot.native?.name === 'ddreversalcardprojectile'
+        ? `:reflect${shot.targetId}`
+        : ''
+    }${
       // Multi-target defenses release several shots in one instant.
       shot.defense ? `:d${(battle.nativeShotSequence = (battle.nativeShotSequence ?? 0) + 1)}` : ''
     }`,
@@ -468,7 +472,7 @@ export function stepProjectiles(
           distance2D(u.x - p.x, u.y - p.y) <= p.splash &&
           !u.native?.burrowed
         )
-          hurtUnit(battle, u, p.damage, p.impact, p.sourceId);
+          hurtUnit(battle, u, p.damage, p.impact, p.sourceId, false, u.id !== p.targetId);
     } else if (
       target &&
       target.hp > 0 &&

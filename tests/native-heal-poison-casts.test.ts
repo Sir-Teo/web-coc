@@ -60,7 +60,8 @@ it.each([1, 12])(
   },
 );
 it('actual garrison Poison damage and avoidance retain version-117 physical states', () => {
-  const r = defenderPoisonRecording(),
+  // Compare the version-118 presentation change before later garrison protection rules.
+  const r = defenderPoisonRecording(1, 0.05, 118),
     poisoned = r.snapshots.find((s) => s.at === r.poisoned)!.battle as Battle,
     defender = poisoned.defenders!.find((d) => d.id === r.defenderId)!;
   expect(defender.poison).toBeDefined();

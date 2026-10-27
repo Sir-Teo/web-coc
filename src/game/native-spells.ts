@@ -763,6 +763,7 @@ function reviveHero(
   fallen.target = null;
   fallen.path = [];
   fallen.pathAt = 0;
+  if (ctx.battle.nativeRevengeDeck && fallen.native) delete fallen.native.revengeHits;
   const activationId = reviveHeroAuras(ctx.battle, fallen, at);
   resetHeroRegeneration(ctx.battle, fallen, at);
   if (ctx.battle.nativeSpellArt?.includes('Revive'))

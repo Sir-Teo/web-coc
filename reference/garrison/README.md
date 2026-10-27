@@ -314,3 +314,25 @@ Local exit choice: sample sixteen directions on each cloud boundary, choose the 
 The shared avoidance rule now also covers idle defending Heroes and Skeleton Trap defenders, both explicitly named by the pinned Poison reference. Heroes wait clear of a poisoned home point, then resume their existing return-home behavior after the native cloud deadline. Static cloud records last through `firstHit + (NumberOfHits - 1) × interval + max(BoostTimeMS, interval)`, so leaving the damage area does not make a Hero immediately return to the active cloud. Eligible attackers still take priority, and Freeze still holds movement. Native health and movement speeds are unchanged; weak Skeletons can die while escaping. Version 64 and earlier keep their previous behavior. Guardian avoidance is not inferred from the other classes.
 
 `tests/idle-defender-avoidance.test.ts` covers ground/air escape, native health, home waiting and return, combat priority, Freeze and exact portable backward seeks. `tests/browser/idle-defender-avoidance.spec.ts` checks original Hero and Skeleton bodies, expiry, seeks, old playback and cleanup at desktop and phone sizes.
+
+## Shared attacker protection (recording version 143+)
+
+Released Clan Castle troops now pass incoming damage through the same attacker protection
+rules as defenses: invulnerability, damage reduction, temporary hitpoints and actual HP damage
+accounting. Previously their direct, area, chain, death, aura and poison paths subtracted HP
+directly. A real Dragon 7 could therefore injure a Warden during Eternal Tome. Original source
+damage, target layers, event times and the garrison engine's lethal zero floor are retained.
+Poison advances its damage clock while protection is active, so blocked exposure cannot become
+overdue damage after immunity expires. Continuous poison retains the existing end-of-interval
+sampling convention rather than reconstructing sub-interval protection boundaries.
+
+Primary attacks retain their negative defender ID for [Revenge Deck](../revenge-deck/README.md).
+Splash bystanders, chains, death effects, aura pulses and poison do not count as direct hits.
+Versions 142 and earlier preserve raw garrison damage. The capability is recorded only for a
+setup containing garrisons, leaving unrelated recording state unchanged.
+
+Coverage uses native Dragon, P.E.K.K.A, Valkyrie, Balloon, Electro Dragon, Electro Titan and
+Headhunter damage, with full protection, partial shields, temporary HP and poison expiry.
+An actual Castle release and Eternal Tome input verifies protection and resumed damage after
+expiry. Portable forward/backward snapshots match in Node and desktop/phone Chromium, including
+historical playback, original Hero art and read-only reduced-motion redraws.

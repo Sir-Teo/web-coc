@@ -94,7 +94,13 @@ export function stepDefendingHeroes(battle: Battle, dt: number, effect: (fx: FX)
       d.attacking = true;
       if (d.cooldown <= 0) {
         d.cooldown += stats.rate;
-        hurtUnit(battle, target, stats.damage);
+        hurtUnit(
+          battle,
+          target,
+          stats.damage,
+          battle.elapsed,
+          battle.nativeRevengeDeck ? d.id : undefined,
+        );
         effect({ type: 'hit', x: d.x, y: d.y, toX: target.x, toY: target.y, sourceId: d.id });
       }
       continue;

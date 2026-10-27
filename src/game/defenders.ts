@@ -334,7 +334,13 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
       if (defender.cooldown <= 0) {
         defender.cooldown = Math.max(0, stats.rate + (cooling ? defender.cooldown : 0));
         defender.alerted = true;
-        hurtUnit(battle, target, stats.damage);
+        hurtUnit(
+          battle,
+          target,
+          stats.damage,
+          battle.elapsed,
+          battle.nativeRevengeDeck ? defender.id : undefined,
+        );
         effect({
           type: 'hit',
           sourceDefender: true,

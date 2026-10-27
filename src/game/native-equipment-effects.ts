@@ -11,6 +11,7 @@ import { distance2D } from './distance';
 import type { NativeTroopContext } from './native-troops';
 import { MAP_SIZE } from './grid';
 import { meteorStaffTarget } from './native-meteor-staff';
+import { stepRevengeDeck } from './native-revenge-deck';
 
 /** Stateful equipment effects are sampled on the deterministic battle clock. */
 export function stepEquipmentEffects(ctx: NativeTroopContext, hero: NativeBattleHero, unit: Unit) {
@@ -77,6 +78,10 @@ export function stepEquipmentEffects(ctx: NativeTroopContext, hero: NativeBattle
       }
     }
     if (flag(row, 'ReflectsDamage')) {
+      if (battle.nativeRevengeDeck && ability.name === 'DragonScaleReflect') {
+        stepRevengeDeck(ctx, unit, ability, state);
+        continue;
+      }
       const taken = unit.native?.damageTaken ?? 0,
         key = `reflect:${ability.name}`;
       if (taken > (state[`${key}:damage`] ?? 0) && at >= (state[key] ?? 0)) {

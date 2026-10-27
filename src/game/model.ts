@@ -955,6 +955,10 @@ export interface Battle {
   nativeElectroBootsActivations?: import('./native-electro-boots').ElectroBootsActivation[];
   /** Version 141: Meteor Staff selects visible defenses, with ordinary-building fallback. */
   nativeMeteorStaffTargeting?: true;
+  /** Version 143: Clan Castle damage observes shared shields, protection and damage provenance. */
+  nativeGarrisonDamage?: true;
+  /** Version 143: Revenge Deck responds to individual direct hits with per-attacker cooldowns. */
+  nativeRevengeDeck?: true;
   nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
   nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */
@@ -6080,6 +6084,7 @@ export class GameModel {
   /** Recall Spell: the unit leaves the field and its card returns with the same health. */
   private recallUnit(b: Battle, u: Unit, at = b.elapsed) {
     const original = recordRecallEvent(b, u, 'disappear', at);
+    if (b.nativeRevengeDeck && u.native) delete u.native.revengeHits;
     for (const cast of b.nativeSpellCastHistory ?? [])
       if (cast.owner === u.id && cast.activationOrigin) {
         cast.activationOrigin.x = u.x;
@@ -6771,7 +6776,7 @@ export class GameModel {
               nativeBoost;
         const power = boost.damage === 1 ? basePower : basePower * boost.damage;
         if (tower.kind === 'tesla') {
-          hurtUnit(b, target, power);
+          hurtUnit(b, target, power, b.elapsed, b.nativeRevengeDeck ? tower.id : undefined);
           recordTeslaShot(b, tower, target);
           this.onEffect({
             type: 'tesla-zap',

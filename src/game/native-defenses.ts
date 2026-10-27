@@ -238,7 +238,7 @@ function stepCraftedEffects(ctx: NativeDefenseContext, tower: Building, state: N
       const unit = battle.units.find((u) => u.id === p.unit);
       const end = Math.min(at, p.until);
       if (unit && unit.hp > 0 && end > p.tickAt)
-        hurtUnit(battle, unit, p.dps * (end - p.tickAt), end, tower.id);
+        hurtUnit(battle, unit, p.dps * (end - p.tickAt), end, tower.id, false, true);
       p.tickAt = end;
     }
     state.poisons = state.poisons.filter((p) => p.until > at + EPS);
@@ -254,7 +254,7 @@ function stepCraftedEffects(ctx: NativeDefenseContext, tower: Building, state: N
         !u.native?.burrowed &&
         distance2D(u.x - bomb.x, u.y - bomb.y) <= bomb.radius + EPS
       )
-        hurtUnit(battle, u, bomb.damage * ctx.defenseScale, bomb.at, tower.id);
+        hurtUnit(battle, u, bomb.damage * ctx.defenseScale, bomb.at, tower.id, false, true);
     ctx.effect({ type: 'blast', x: bomb.x, y: bomb.y, radius: bomb.radius, color: 0xff8fc4 });
   }
 }
@@ -972,7 +972,13 @@ export function stepPiercingShots(ctx: NativeTroopContext) {
     for (const c of candidates) {
       if (shot.hit.length >= shot.hits) break;
       shot.hit.push(c.u.id);
-      hurtUnit(battle, c.u, shot.damage, shot.launched + Math.max(0, c.along) / shot.speed);
+      hurtUnit(
+        battle,
+        c.u,
+        shot.damage,
+        shot.launched + Math.max(0, c.along) / shot.speed,
+        battle.nativeRevengeDeck ? shot.sourceId : undefined,
+      );
       if (shot.pushback && c.u.hp > 0 && !c.u.native?.siege)
         knockback(ctx, c.u, c.u.x - shot.dirX, c.u.y - shot.dirY, shot.pushback);
     }
@@ -1009,7 +1015,7 @@ export function resolveDefenseImpact(ctx: NativeTroopContext, p: CombatProjectil
       if (!liveTarget(u, at) || u.native?.burrowed) continue;
       const d = distance2D(u.x - p.x, u.y - p.y);
       if (d <= shot.shock.inner + EPS || d > shot.shock.outer + EPS) continue;
-      hurtUnit(battle, u, shot.shock.damage, at, p.sourceId);
+      hurtUnit(battle, u, shot.shock.damage, at, p.sourceId, false, true);
       if (shot.shock.pushback > 0 && housing(u) <= shot.shock.housing && !u.native?.siege)
         knockback(ctx, u, p.x, p.y, shot.shock.pushback);
     }
@@ -1035,7 +1041,7 @@ export function resolveDefenseImpact(ctx: NativeTroopContext, p: CombatProjectil
         !u.native?.burrowed &&
         distance2D(u.x - p.x, u.y - p.y) <= shot.layerSplash + EPS
       )
-        hurtUnit(battle, u, p.damage, at, p.sourceId);
+        hurtUnit(battle, u, p.damage, at, p.sourceId, false, true);
   }
   if (shot.splash) {
     // Geared-up Mortar shells: ground splash around the landing point (the target is included).
@@ -1047,7 +1053,7 @@ export function resolveDefenseImpact(ctx: NativeTroopContext, p: CombatProjectil
         u.id !== (struck ? target!.id : -1) &&
         distance2D(u.x - p.x, u.y - p.y) <= shot.splash + EPS
       )
-        hurtUnit(battle, u, p.damage, at, p.sourceId);
+        hurtUnit(battle, u, p.damage, at, p.sourceId, false, true);
   }
   if (shot.bounces > (p.native?.bounce ?? 0) && shot.bounceDistance > 0) {
     const from = { x: p.x, y: p.y };

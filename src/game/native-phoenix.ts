@@ -181,6 +181,7 @@ export function resolvePhoenixRevive(ctx: NativeTroopContext, projectile: Combat
   delete hero.defenderTarget;
   hero.path = [];
   hero.pathAt = 0;
+  if (ctx.battle.nativeRevengeDeck && hero.native) delete hero.native.revengeHits;
   unitEffects(hero).phoenixRevive = { until, duration };
   protection(hero, until);
   const activationId = reviveHeroAuras(ctx.battle, hero, projectile.impact);

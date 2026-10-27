@@ -157,7 +157,8 @@ const combatOnly = (value: unknown) =>
 it.each(['frost-charm', 'seeking-shield'] as const)(
   '%s history preserves version 136 combat exactly and reconstructs portable seeks',
   (equipment) => {
-    const r = nativeEquipmentFlightRecording(equipment),
+    // Isolate version 137's history from later garrison damage changes.
+    const r = nativeEquipmentFlightRecording(equipment, 137),
       old = nativeEquipmentFlightRecording(equipment, 136);
     expect(combatOnly(r.battle)).toEqual(old.battle);
     expect(combatOnly(r.finalBattle)).toEqual(old.finalBattle);
