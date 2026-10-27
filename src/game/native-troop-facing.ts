@@ -14,6 +14,7 @@ export function nativeTroopFacingTarget(
   const windup =
     (battle.nativeGolemWindup && (unit.kind === 'golem' || unit.kind === 'golemite')) ||
     (battle.nativePekkaWindup && unit.kind === 'pekka') ||
+    (battle.nativeHoundWindup && (unit.kind === 'lavahound' || unit.kind === 'icehound')) ||
     (battle.nativeWitchWindup && (unit.kind === 'witch' || unit.kind === 'superwitch')) ||
     (battle.nativeValkyrieWindup && (unit.kind === 'valkyrie' || unit.kind === 'supervalkyrie'))
       ? unit.native?.attackWindup

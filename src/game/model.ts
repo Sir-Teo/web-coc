@@ -1009,6 +1009,8 @@ export interface Battle {
   nativeWitchFlights?: CombatProjectile[];
   /** Version 168: original Witch launch/impact cues survive seeks, independently of view history. */
   nativeWitchSounds?: true;
+  /** Version 169: Hound parents use source attack phases and Lava Hound projectiles. */
+  nativeHoundWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;
