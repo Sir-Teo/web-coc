@@ -985,6 +985,15 @@ export interface Battle {
   nativeBowlerWindup?: true;
   /** Version 157: native defender-targeted boulders and fixed source-radius bounce landings. */
   nativeBowlerBoulders?: true;
+  /** Version 158: source bounce/shatter cues retain exact resolved impact clocks. */
+  nativeBowlerImpactSounds?: true;
+  nativeBowlerImpacts?: {
+    id: string;
+    sourceId: number;
+    level: number;
+    bounce: number;
+    at: number;
+  }[];
   nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
   nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */

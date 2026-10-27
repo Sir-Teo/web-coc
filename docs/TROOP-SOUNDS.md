@@ -267,3 +267,14 @@ Meteor Staff warms all six samples before the Prince's first periodic cast. Deco
 replaces generated cast tones independently of art readiness. Version 141 and earlier neither
 play nor preload these new samples. The catalog contains 367 effects and 354 sound files.
 See [source phases and lifecycle details](../reference/meteor-staff/README.md#version-142-original-presentation).
+
+
+## Attacking Bowler impact phases
+
+Version 158 follows every Bowler projectile's source `BounceEffect` and `DestroyedEffect`.
+The first contact uses `rock_troll_hit_02.ogg` at 50% volume, 96–104% pitch; the second landing
+uses the existing `rock_troll_explo_01.ogg` at 40% volume, 98–102% pitch. Both have zero delay.
+Captured exact impact clocks restore one-shot tails after seeks and survive the thrower's
+death. Decoded cues cover generated impact tones; missing samples retain fallback and retries.
+Older player Bowler battles keep their original preload list. One new 17,176-byte original
+Ogg brings the catalog to 374 effects and 360 files. See the [source bindings and scope](../reference/attacking-bowler/README.md#original-boulder-impact-audio-recording-version-158).

@@ -288,6 +288,10 @@ export function stepProjectiles(
   emit: (fx: FX) => void,
   nativeImpact?: (projectile: CombatProjectile) => void,
 ) {
+  if (battle.nativeBowlerImpacts)
+    battle.nativeBowlerImpacts = battle.nativeBowlerImpacts.filter(
+      (impact) => impact.at + 10 >= battle.elapsed - 1e-9,
+    );
   const pending: CombatProjectile[] = [];
   // Ricochets launched while resolving impacts join the list after this sample.
   const initial = battle.projectiles?.length ?? 0;
@@ -507,6 +511,14 @@ export function stepProjectiles(
         air: !!p.toAir,
       });
     }
+    if (battle.nativeBowlerImpactSounds && p.weapon === 'native' && p.native?.kind === 'bowler')
+      (battle.nativeBowlerImpacts ??= []).push({
+        id: p.id,
+        sourceId: p.sourceId,
+        level: p.native.level,
+        bounce: p.native.bounce ?? 0,
+        at: p.impact,
+      });
     emit(projectileEffect(p, 'impact'));
     if (transferred) {
       const appended = battle.projectiles ?? [];

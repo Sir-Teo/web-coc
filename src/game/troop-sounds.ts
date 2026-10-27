@@ -24,7 +24,7 @@ export const spellSoundEnabled = (battle: Battle, name: string) =>
  * same take. See docs/TROOP-SOUNDS.md.
  */
 export type TroopSoundEvent =
-  'deploy' | 'attack' | 'hit' | 'die' | 'projectileHit' | 'preAttack' | 'chain';
+  'deploy' | 'attack' | 'hit' | 'die' | 'projectileHit' | 'preAttack' | 'chain' | 'bounce';
 export type SpellSoundEvent =
   'preDeploy' | 'deploy' | 'deploy2' | 'charging' | 'hit' | 'rootStop2' | 'rootStop3' | 'rootStop4';
 type Named = string | (string | null)[];
@@ -64,8 +64,16 @@ function files(record: Partial<Record<string, Named>> | undefined, events: reado
 export const troopSoundEffect = (kind: string, level: number, event: TroopSoundEvent) =>
   atLevel(TROOPS[kind]?.[event], level);
 /** Every sound file a troop kind can play, at any level. */
-export const troopSoundFiles = (kind: string) =>
-  files(TROOPS[kind], ['deploy', 'attack', 'hit', 'die', 'projectileHit', 'preAttack', 'chain']);
+export const troopSoundFiles = (kind: string, bowlerImpacts = true) =>
+  files(TROOPS[kind], [
+    'deploy',
+    'attack',
+    'hit',
+    'die',
+    'preAttack',
+    'chain',
+    ...(kind !== 'bowler' || bowlerImpacts ? ['projectileHit', 'bounce'] : []),
+  ]);
 /** The effect a spell (by its client name) plays for an event at its level. */
 export const spellSoundEffect = (name: string, level: number, event: SpellSoundEvent) =>
   atLevel(SPELLS[name]?.[event], level);
@@ -374,6 +382,14 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
       if (cue) cues.push(cue);
     }
   }
+  if (battle.nativeBowlerImpactSounds)
+    for (const impact of battle.nativeBowlerImpacts ?? []) {
+      if (impact.at > elapsed + 1e-9 || !cueAudible(impact.at, elapsed)) continue;
+      const actor = { id: impact.sourceId, kind: 'bowler' as const, level: impact.level },
+        event = impact.bounce === 0 ? 'bounce' : 'projectileHit',
+        cue = troopCue(battle, actor, event, `bowler:${impact.id}:${event}`, impact.at);
+      if (cue) cues.push(cue);
+    }
   for (const shot of battle.nativeMeteorFlights ?? []) {
     if (!shot.native) continue;
     const actor = { id: shot.sourceId, kind: 'meteorgolem' as const, level: shot.native.level };
@@ -473,9 +489,15 @@ export class TroopSoundLoader {
    * Replaces the current battle's wanted files and starts any missing requests.
    * Successful and pending files are shared between battles.
    */
-  need(kinds: Iterable<string>, spells: Iterable<string> = [], effects: Iterable<string> = []) {
+  need(
+    kinds: Iterable<string>,
+    spells: Iterable<string> = [],
+    effects: Iterable<string> = [],
+    bowlerImpacts = true,
+  ) {
     const wanted = new Set<string>();
-    for (const kind of kinds) for (const path of troopSoundFiles(kind)) wanted.add(path);
+    for (const kind of kinds)
+      for (const path of troopSoundFiles(kind, bowlerImpacts)) wanted.add(path);
     for (const name of spells) for (const path of spellSoundFiles(name)) wanted.add(path);
     for (const name of effects) for (const path of effectSoundFiles(name)) wanted.add(path);
     for (const take of EFFECTS[DESTROYED_EFFECT]) wanted.add(take.sound);

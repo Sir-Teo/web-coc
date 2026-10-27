@@ -4405,18 +4405,23 @@ export class VillageScene extends Phaser.Scene {
     this.troopSoundFreezeCasts = freezeCasts;
     this.troopSoundSpellHistory = history;
     this.troopSoundRecallHistory = recallHistory;
-    this.troopSoundLoader.need(kinds, spells, [
-      ...garrisonSoundEffects(battle),
-      ...(needsRecallPresentation(battle) ? ['RecallRedeployAuraTop'] : []),
-      ...(battle.nativeWardenFireball ? ['FireballActivationEffect'] : []),
-      ...(battle.nativeFrostFlake ? frostFlakeSoundEffects : []),
-      ...(battle.nativeElectroBootsPresentation
-        ? [ELECTRO_BOOTS_PRESENTATION.ActivationEffect]
-        : []),
-      ...(battle.nativeSpikyBall ? [SPIKY_BALL_PRESENTATION.impact] : []),
-      ...(battle.nativeDarkOrb ? [DARK_ORB_PRESENTATION.ActivationEffect] : []),
-      ...(battle.nativeSeekingShield ? [SEEKING_SHIELD_PRESENTATION.destroyed] : []),
-    ]);
+    this.troopSoundLoader.need(
+      kinds,
+      spells,
+      [
+        ...garrisonSoundEffects(battle),
+        ...(needsRecallPresentation(battle) ? ['RecallRedeployAuraTop'] : []),
+        ...(battle.nativeWardenFireball ? ['FireballActivationEffect'] : []),
+        ...(battle.nativeFrostFlake ? frostFlakeSoundEffects : []),
+        ...(battle.nativeElectroBootsPresentation
+          ? [ELECTRO_BOOTS_PRESENTATION.ActivationEffect]
+          : []),
+        ...(battle.nativeSpikyBall ? [SPIKY_BALL_PRESENTATION.impact] : []),
+        ...(battle.nativeDarkOrb ? [DARK_ORB_PRESENTATION.ActivationEffect] : []),
+        ...(battle.nativeSeekingShield ? [SEEKING_SHIELD_PRESENTATION.destroyed] : []),
+      ],
+      !!battle.nativeBowlerImpactSounds,
+    );
   }
   /** Whether a spell's falling bottle is decoded, so it replaces the generated tones. */
   private spellReady(kind: SpellKind) {
@@ -4457,6 +4462,21 @@ export class VillageScene extends Phaser.Scene {
     this.fxSounded = false;
     const battle = this.model.battle;
     if (!battle || !this.audible()) return;
+    if (battle.nativeBowlerImpactSounds && fx.type === 'impact') {
+      const impact = battle.nativeBowlerImpacts?.find((event) => event.id === fx.projectileId);
+      if (impact) {
+        this.fxSounded = this.cueReady(
+          troopCue(
+            battle,
+            { id: impact.sourceId, kind: 'bowler', level: impact.level },
+            impact.bounce === 0 ? 'bounce' : 'projectileHit',
+            'ready',
+            impact.at,
+          ),
+        );
+        return;
+      }
+    }
     const activation = heroAbilityActivation(battle, fx.abilityCastId);
     if (activation) {
       this.fxSounded = this.cueReady(effectCue(activation.effect, activation.key, activation.at));

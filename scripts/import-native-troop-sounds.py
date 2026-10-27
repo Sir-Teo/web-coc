@@ -192,15 +192,19 @@ def build():
             entry.update(entries(rows, {'chain': 'ChainAttackEffect'}))
         if key == 'electrodragon':
             entry.update(entries(rows, {'preAttack': 'PreAttackEffect', 'chain': 'ChainAttackEffect'}))
-        if key == 'meteorgolem':
+        if key in ('meteorgolem', 'bowler'):
             # This actor's impact sound belongs to its projectile, not characters.HitEffect.
             current, impacts = None, []
             for row in rows:
                 current = row.get('Projectile', current)
-                require(current in projectiles, f'Missing Meteor Golem projectile: {current}')
-                effect = projectiles[current][0].get('DestroyedEffect')
-                impacts.append({'HitEffect': effect} if effect else {})
-            entry.update(entries(impacts, {'projectileHit': 'HitEffect'}))
+                require(current in projectiles, f'Missing {name} projectile: {current}')
+                projectile = projectiles[current][0]
+                impacts.append({column: projectile[column] for column in ('DestroyedEffect', 'BounceEffect')
+                                if projectile.get(column)})
+            events = {'projectileHit': 'DestroyedEffect'}
+            if key == 'bowler':
+                events['bounce'] = 'BounceEffect'
+            entry.update(entries(impacts, events))
         if entry:
             troops[key] = dict(name=name, **entry)
     garrisons = {}

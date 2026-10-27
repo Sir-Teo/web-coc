@@ -262,6 +262,7 @@
     "sfx/rg_atk_hit_01.ogg": "830adf5ff581cf5008e932c5b4bac03a5f8b6bc5ef84bf8c90fc3be97f0df528",
     "sfx/rock_troll_dep_02.ogg": "4a4b05793ada952085cdb757d09cee4c351320d18d41625bb5e36f07292385d9",
     "sfx/rock_troll_explo_01.ogg": "412228f1a90526911d899b4c60e5d35c366a1122c28d97b09700a24de9915bcd",
+    "sfx/rock_troll_hit_02.ogg": "3b19a27dce6a965dcb7b83bea0b51917ddeeeebaea3fc423bb1beb98ae532687",
     "sfx/rock_troll_throw_01.ogg": "7d2f694ba4ecc831b1dfb8edfa2525ec0eaf9faf5b093ec85c6fd31441e5c399",
     "sfx/rock_troll_throw_02.ogg": "89b15e79122c8c1a4d65b211b03c006444d6056c6d4d669d945c294f549621a0",
     "sfx/root_rider_atk_01.ogg": "e3dc599c922f28d2a49b1e7af35c3b5c9dc3e1f9439a4352d92d204ce86ce391",
@@ -449,7 +450,20 @@
     "bowler": {
       "name": "Bowler",
       "deploy": "Troll Deploy",
-      "die": "Wizard Die"
+      "die": "Wizard Die",
+      "projectileHit": [
+        "trollBoulder_destroyed",
+        "trollBoulder_destroyed",
+        "trollBoulder_destroyed",
+        "trollBoulder_destroyed",
+        "trollBoulder_destroyed",
+        "trollBoulder_destroyed",
+        "trollBoulder_destroyed",
+        "trollBoulder_destroyed_lvl8",
+        "trollBoulder_destroyed_lvl8",
+        "trollBoulder_destroyed_lvl8"
+      ],
+      "bounce": "trollBoulder_bounce"
     },
     "diggy": {
       "name": "Diggy",
@@ -5524,7 +5538,25 @@
         "delay": 0.0
       }
     ],
+    "trollBoulder_bounce": [
+      {
+        "sound": "sfx/rock_troll_hit_02.ogg",
+        "volume": 0.5,
+        "minPitch": 0.96,
+        "maxPitch": 1.04,
+        "delay": 0.0
+      }
+    ],
     "trollBoulder_destroyed": [
+      {
+        "sound": "sfx/rock_troll_explo_01.ogg",
+        "volume": 0.4,
+        "minPitch": 0.98,
+        "maxPitch": 1.02,
+        "delay": 0.0
+      }
+    ],
+    "trollBoulder_destroyed_lvl8": [
       {
         "sound": "sfx/rock_troll_explo_01.ogg",
         "volume": 0.4,
@@ -6799,6 +6831,11 @@
       "path": "assets/audio/troops-native/rock_troll_explo_01.ogg",
       "bytes": 14242,
       "sha256": "412228f1a90526911d899b4c60e5d35c366a1122c28d97b09700a24de9915bcd"
+    },
+    "sfx/rock_troll_hit_02.ogg": {
+      "path": "assets/audio/troops-native/rock_troll_hit_02.ogg",
+      "bytes": 17176,
+      "sha256": "3b19a27dce6a965dcb7b83bea0b51917ddeeeebaea3fc423bb1beb98ae532687"
     },
     "sfx/rock_troll_throw_01.ogg": {
       "path": "assets/audio/troops-native/rock_troll_throw_01.ogg",

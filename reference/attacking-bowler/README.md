@@ -81,3 +81,40 @@ Castle-release fixture uses ordinary deployments with no injected health/status 
 `tests/browser/attacking-bowler-boulders.spec.ts` checks complete Node/Chromium snapshots,
 original first-leg and second-leg meshes, historical arrows, rewind, reduced motion and
 read-only rendering on desktop and phone.
+
+
+## Original boulder impact audio (recording version 158)
+
+The same pinned client projectile rows declare `BounceEffect=trollBoulder_bounce` for all
+ten attacking levels. `DestroyedEffect` is `trollBoulder_destroyed` through level 7 and
+`trollBoulder_destroyed_lvl8` for levels 8–10. The importer follows each character level's
+projectile link and retains both effect bindings; it does not infer names from the level.
+The original effect rows bind:
+
+| Phase | Source sound | Volume | Pitch | Delay |
+| --- | --- | --- | --- | --- |
+| First bounce | `sfx/rock_troll_hit_02.ogg` | 50% | 96–104% | 0 |
+| Final shatter, both variants | `sfx/rock_troll_explo_01.ogg` | 40% | 98–102% | 0 |
+
+The new bounce Ogg is copied unchanged: 17,176 bytes, SHA-256
+`3b19a27dce6a965dcb7b83bea0b51917ddeeeebaea3fc423bb1beb98ae532687`.
+The existing 14,242-byte shatter Ogg retains SHA-256
+`412228f1a90526911d899b4c60e5d35c366a1122c28d97b09700a24de9915bcd`.
+Both match the immutable full-client manifest. The catalog now has 374 effects and 360 sounds.
+
+The simulation captures one compact record per resolved impact, with the projectile's exact
+impact time, source level and leg index. The first leg plays the bounce effect; the fixed
+second landing plays its declared destroyed effect. Recent records expire after the shared
+ten-second audio horizon. Stable projectile/phase keys reconstruct sample offsets after a
+seek and retain released tails after the actor falls. Cues read battle state without mutation.
+Only decoded original cues cover generated impact feedback; unavailable samples keep the
+existing fallback and retry lifecycle. Older player Bowler battles neither bind nor preload
+the new impact sounds. Existing Seeking Shield and defending Bowler bindings are independent.
+
+Fifteen focused checks cover all ten source levels, both phases and pitch ranges, exact
+version-157 physical parity, post-death tails and retirement, historical preloads, and full
+portable replay snapshots in both directions. Chromium checks on phone and desktop exercise
+actual Ogg decoding, gain, replay-speed pitch, seek offsets, generated-tone coverage, pause,
+reduced motion and a paused 503/reconnect recovery. These verify this adapter's lifecycle;
+no native executable audio trace is available. Attacking throw-windup audio remains separate
+work; its pre-attack sample needs an active-time clock rather than an impact binding.
