@@ -240,6 +240,9 @@ function stepShots(battle: Battle, defender: GarrisonDefender, effect: (fx: FX) 
       sourceDefender: true,
       sourceId: defender.id,
       targetId: shot.targetId,
+      ...(battle.nativeBowlerImpactArt && defender.kind === 'bowler'
+        ? { projectileBounce: leg }
+        : {}),
       x: shot.fromX,
       y: shot.fromY,
       toX: shot.x,

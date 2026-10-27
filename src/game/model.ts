@@ -991,6 +991,9 @@ export interface Battle {
   nativeBowlerPreAttack?: true;
   /** Version 160: defending Bowler boulders bind source bounce/shatter cues to retained impacts. */
   nativeGarrisonBowlerImpacts?: true;
+  /** Version 161: source boulder impact phases and retained attacker flights for seeks. */
+  nativeBowlerImpactArt?: true;
+  nativeBowlerFlights?: CombatProjectile[];
   nativeBowlerImpacts?: {
     id: string;
     sourceId: number;

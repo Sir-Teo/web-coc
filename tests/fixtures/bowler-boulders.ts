@@ -5,7 +5,7 @@ import { GameModel, makeBuilding, type Battle } from '../../src/game/model';
 import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
 
 /** Actual Castle release and attacking Bowler inputs; no injected combat/status state. */
-export function bowlerBouldersRecording(version = REPLAY_VERSION) {
+export function bowlerBouldersRecording(version = REPLAY_VERSION, level = 10) {
   const model = new GameModel();
   model.state.king = undefined;
   model.state.obstacles = [];
@@ -15,7 +15,7 @@ export function bowlerBouldersRecording(version = REPLAY_VERSION) {
     makeBuilding(2, 'clancastle', 13, 10, 9),
   ];
   model.state.army = { ...emptyArmy(), bowler: 1, giant: 1 };
-  model.state.troopLevels = { ...model.state.troopLevels, bowler: 10 };
+  model.state.troopLevels = { ...model.state.troopLevels, bowler: level };
   model.state.spells = emptySpells();
   model.startBattle(0, true);
   const data = (model as unknown as { recording: ReplayData }).recording;

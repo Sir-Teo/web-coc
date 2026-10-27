@@ -163,3 +163,39 @@ portable replays at two approach distances. Controlled status checks are isolate
 portable fixtures use ordinary deployments. Chromium tests exercise decoded source buffers,
 gain, replay-speed pitch, sample offsets, pause/reverse/reduced rendering, historical player
 silence/preloads, and a 503/reconnect recovery without advancing paused playback.
+
+
+## Original impact phases and retained flight art (recording version 161)
+
+The pinned projectile rows declare separate first-bounce and destroyed effects.
+`trollBoulder_bounce` contains sound only, while `trollBoulder_destroyed` and the level-8+
+variant contain the original shatter emitter. Previously the generic projectile renderer
+also drew that destroyed burst at the first landing. Version 161 suppresses that first burst
+and its generic impact fallback; the boulder continues to its fixed second landing, where
+its declared destroyed graph draws normally. The existing first-bounce audio remains.
+
+Recent original attacker flight packets now survive their removal from the live projectile
+list. Copies capture the source level, original launch point and native identity; a per-update
+ID map refreshes the primary's tracked coordinates and impact time before resolution. The
+fixed second packet retains its own immutable landing. Histories retire deterministically
+after ten battle seconds, and are absent in older replays. The renderer uses those packets
+after cold seeks and during the existing battle-finish presentation grace. This is retained
+presentation metadata; hit timing, target tracking and damage calculations are unchanged.
+
+Both final graph variants already ship in the native effect index. The level-specific effect
+identities come from the retained, hash-pinned projectile bindings shared with the sound
+catalog; art selection does not depend on audio being enabled or decoded. Original graphs
+warm with the carried army and retained history. Final contacts keep their existing fallback
+until graph readiness, including after a 503; the intentionally visual-free first contact
+needs none. Reduced motion retains the existing final-impact fallback. No art is fabricated
+and no new asset file is required. Native trajectory/pixel parity remains subject to the
+local projection limits described above.
+
+`tests/bowler-impact-art.test.ts` covers all ten retained attacker packets, live tracking,
+fixed second points, post-death retention and expiry, source graph variants, cold warm-up,
+exact version-160 physical parity and full portable seeks for both attacking and defending
+Bowlers. It also samples original final particles after real Freeze and lethal Lightning.
+Chromium checks inspect the intended projectile's original shatter meshes rather than other
+throws still on screen, verify first-bounce suppression and late-art fallback, and exercise
+phone/desktop, cold seeks, reverse/reduced rendering and paused graph recovery. The source
+art is original; event alignment and projection are deterministic local adaptations.

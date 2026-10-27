@@ -1,3 +1,4 @@
+import { garrisonBowlerImpactEvents } from './bowler-impact-effects';
 import { superArcherEffectEvents } from './super-archer-effects';
 import { fireballEffectEvents, fireballProfile } from './fireball-effects';
 import { frostFlakeEffectEvents } from './frost-flake-effects';
@@ -37,6 +38,7 @@ interface Snapshot {
   packPath: string;
   sourceId: number;
   bounce: number;
+  bowlerContinues?: true;
   fireballLevel?: number;
   giantArrow?: true;
   frostFlake?: true;
@@ -132,12 +134,17 @@ export class NativeProjectilePresentation {
     const shot = this.history.get(id);
     const resolved = shot ? this.row(shot) : undefined;
     if (!resolved?.row) return false;
+    if (shot?.bowlerContinues) return true;
     if (shot?.shieldContinues && !resolved.row.BounceEffect) return true;
     const effect = shot?.fireballLevel
       ? fireballProfile(shot.fireballLevel)?.HitEffect
       : resolved.row.DestroyedEffect;
-    // Rows without an indexed visual impact keep their existing native coverage.
+    return this.coversEffect(effect);
+  }
+  /** Sound-only contacts need no fallback; indexed final effects keep one until ready. */
+  coversEffect(effect: string | undefined, reduced = false) {
     if (!effect || !nativeEffectPack(effect)) return true;
+    if (reduced) return false;
     // Request a bounded retry even when the previous graph request failed.
     this.layer.duration(effect);
     return this.layer.status(effect) === 'ready';
@@ -204,6 +211,10 @@ export class NativeProjectilePresentation {
       this.layer.end();
       return covered;
     }
+    for (const event of garrisonBowlerImpactEvents(battle, iso, elapsed, (name) =>
+      this.layer.duration(name),
+    ))
+      this.layer.play(event, elapsed, reduced);
     for (const event of electroDragonEffectEvents(battle, iso, airLift, attachment, (name) =>
       this.layer.duration(name),
     ))
@@ -246,6 +257,7 @@ export class NativeProjectilePresentation {
         .filter((shot) => elapsed <= shot.impact + AFTERLIFE),
       ...(battle.nativeFireballs ?? []).filter((shot) => elapsed <= shot.impact + AFTERLIFE),
       ...(battle.nativeMeteorFlights ?? []).filter((shot) => elapsed <= shot.impact + AFTERLIFE),
+      ...(battle.nativeBowlerFlights ?? []).filter((shot) => elapsed <= shot.impact + AFTERLIFE),
       ...(battle.projectiles ?? []),
     ]) {
       if (p.weapon !== 'native' || !p.native) continue;
@@ -264,7 +276,7 @@ export class NativeProjectilePresentation {
         continue;
       const packPath = nativeProjectilePack(p.native.name);
       if (!packPath) continue;
-      const captured = snapshot(p, packPath);
+      const captured = snapshot(p, packPath, !!battle.nativeBowlerImpactArt);
       if (p.native.seekingShield) {
         const cast = battle.nativeSeekingShieldCasts?.find(
           (cast) => cast.id === p.native!.seekingShield!.castId,
@@ -462,6 +474,7 @@ export class NativeProjectilePresentation {
       if (
         row.DestroyedEffect &&
         !snap.spikyContinues &&
+        !snap.bowlerContinues &&
         !snap.shieldContinues &&
         elapsed >= flight.end &&
         this.running(row.DestroyedEffect, flight.end, elapsed)
@@ -493,13 +506,16 @@ export class NativeProjectilePresentation {
   }
 }
 
-function snapshot(p: CombatProjectile, packPath: string): Snapshot {
+function snapshot(p: CombatProjectile, packPath: string, bowlerArt = false): Snapshot {
   return {
     id: p.id,
     name: p.native!.name,
     packPath,
     sourceId: p.sourceId,
     bounce: p.native!.bounce ?? 0,
+    ...(bowlerArt && p.native!.kind === 'bowler' && !p.native!.bounce
+      ? { bowlerContinues: true as const }
+      : {}),
     ...(p.native!.fireball ? { fireballLevel: p.native!.fireball.level } : {}),
     ...(p.native!.frostFlake ? { frostFlake: true as const } : {}),
     ...(p.native!.spikyBall?.continues ? { spikyContinues: true as const } : {}),

@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 160;
+export const REPLAY_VERSION = 161;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -188,7 +188,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 157 uses native Bowler boulders against defenders and fixes second landings.
  * Version 158 captures Bowler bounce and shatter sound clocks.
  * Version 159 retains original attacking Bowler windup clocks and throw tails.
- * Version 160 binds original defending Bowler bounce and shatter samples. */
+ * Version 160 binds original defending Bowler bounce and shatter samples.
+ * Version 161 separates boulder bounce/shatter art and retains flights through seeks. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -316,6 +317,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 157 ||
   version === 158 ||
   version === 159 ||
+  version === 160 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -464,6 +466,11 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 161 &&
+    (s.army.bowler > 0 ||
+      s.garrisons?.some((reserve) => reserve.troops.some((troop) => troop.kind === 'bowler')))
+      ? { nativeBowlerImpactArt: true as const }
+      : {}),
     ...(version >= 160 &&
     s.garrisons?.some((reserve) => reserve.troops.some((troop) => troop.kind === 'bowler'))
       ? { nativeGarrisonBowlerImpacts: true as const }

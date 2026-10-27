@@ -6,6 +6,7 @@ import { ReviveTargetPresentation } from './revive-target-scene';
 import { JumpSpellPresentation } from './jump-spell-scene';
 import { FreezeSpellPresentation } from './freeze-spell-scene';
 import { OvergrowthPresentation } from './overgrowth-scene';
+import { bowlerImpactArtNeeded, garrisonBowlerContactEffect } from './bowler-impact-effects';
 import { SUPER_ARCHER_EFFECTS } from './super-archer-effects';
 import { SUPER_WIZARD_EFFECTS } from './super-wizard-effects';
 import { ELECTRO_DRAGON_EFFECTS } from './electro-dragon-effects';
@@ -2754,6 +2755,8 @@ export class VillageScene extends Phaser.Scene {
       kinds.includes('superarcher')
     )
       this.nativeProjectiles?.prefetchEffects(SUPER_ARCHER_EFFECTS);
+    if (!this.model.reducedMotion)
+      this.nativeProjectiles?.prefetchEffects(bowlerImpactArtNeeded(this.model.battle));
     this.overgrowthPresentation?.prefetch(this.model.battle);
     this.freezeSpellPresentation?.prefetch(this.model.battle);
     this.jumpSpellPresentation?.prefetch(this.model.battle);
@@ -5671,6 +5674,20 @@ export class VillageScene extends Phaser.Scene {
   }
   private renderEffect(fx: FX) {
     this.recordBattleSound(fx);
+    if (
+      this.model.battle?.nativeBowlerImpactArt &&
+      fx.type === 'impact' &&
+      this.model.battle.nativeBowlerImpacts?.some(
+        (impact) => impact.id === fx.projectileId && impact.bounce === 0,
+      )
+    )
+      return;
+    const bowlerContact = garrisonBowlerContactEffect(this.model.battle, fx);
+    if (
+      bowlerContact &&
+      this.nativeProjectiles.coversEffect(bowlerContact, this.model.reducedMotion)
+    )
+      return;
     // Native defense effects carry their own geometry; record them before the drawn fallbacks.
     if (fx.type === 'defense-zap' || fx.type === 'impact' || fx.type === 'blast')
       this.nativeDefenses.note(fx, this.model.battle, iso, AIR_LIFT);

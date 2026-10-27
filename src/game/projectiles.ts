@@ -249,6 +249,8 @@ export function launchProjectile(
   (battle.projectiles ??= []).push(projectile);
   if (projectile.native?.captureSource && projectile.native.kind === 'meteorgolem')
     (battle.nativeMeteorFlights ??= []).push({ ...projectile, native: { ...projectile.native } });
+  if (battle.nativeBowlerImpactArt && projectile.native?.kind === 'bowler')
+    (battle.nativeBowlerFlights ??= []).push({ ...projectile, native: { ...projectile.native } });
   emit(projectileEffect(projectile, 'projectile'));
   return projectile;
 }
@@ -292,6 +294,13 @@ export function stepProjectiles(
     battle.nativeBowlerImpacts = battle.nativeBowlerImpacts.filter(
       (impact) => impact.at + 10 >= battle.elapsed - 1e-9,
     );
+  if (battle.nativeBowlerFlights)
+    battle.nativeBowlerFlights = battle.nativeBowlerFlights.filter(
+      (shot) => shot.impact + 10 >= battle.elapsed - 1e-9,
+    );
+  const bowlerFlights = battle.nativeBowlerFlights
+    ? new Map(battle.nativeBowlerFlights.map((shot) => [shot.id, shot]))
+    : undefined;
   const pending: CombatProjectile[] = [];
   // Ricochets launched while resolving impacts join the list after this sample.
   const initial = battle.projectiles?.length ?? 0;
@@ -377,6 +386,8 @@ export function stepProjectiles(
       p.x = aim.x;
       p.y = aim.y;
     }
+    const bowlerFlight = bowlerFlights?.get(p.id);
+    if (bowlerFlight) Object.assign(bowlerFlight, { x: p.x, y: p.y, impact: p.impact });
     if (battle.nativeEquipmentFlightHistory) recordNativeProjectileAim(p, battle.elapsed);
     if (battle.nativeFrostFlake && p.native?.frostFlake) {
       const own = p.native.frostFlake;

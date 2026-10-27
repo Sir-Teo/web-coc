@@ -602,3 +602,23 @@ uses ordinary troop deployments and spell inputs; the fallen-primary case is an 
 check. Chromium exercises actual decoded buffers, gain, replay-speed pitch, sample offsets,
 read-only/reduced rendering, reverse seeks, historical preloads and paused 503 recovery on
 phone and desktop.
+
+
+## Original Bowler final shatter (recording version 161)
+
+The defending level-4 boulder's existing `trollBoulder_destroyed` graph now plays at its
+captured `bounceAt`/`bounceX`/`bounceY`, using the stable attack ordinal. The first contact's
+`trollBoulder_bounce` source effect contains sound only and adds no visual burst. Released
+final effects continue after the defender freezes or dies and reconstruct after cold seeks.
+The shared native effect layer samples the original emitter with the established local
+16-pixel troop-body lift and depth convention. These projection choices do not establish
+native pixel parity. No graph, texture or sound file is added.
+
+The source graph warms from an enabled reserve; decoded audio is independent of art readiness.
+An unavailable final graph keeps the existing generic impact fallback and retries through the
+shared loader. Once ready, the original particles cover that fallback. Reduced motion keeps
+its existing final-impact fallback. Only version-161 attacking/defending Bowler armies enable
+the presentation; earlier recordings retain their prior visual paths. Shot damage, tracking,
+landing times and audio do not change. Existing resolved attack records supply the defender
+geometry; only attacker flights require new bounded history. See the [shared source checks and
+browser validation](../attacking-bowler/README.md#original-impact-phases-and-retained-flight-art-recording-version-161).
