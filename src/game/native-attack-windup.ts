@@ -154,7 +154,10 @@ export function stepNativeAttackWindup(
       ? nearestAlertedDefender(ctx.battle, unit, traits)
       : undefined;
   const committedWall =
-    target && 'building' in target && target.building.kind === 'wall' && unit.kind !== 'bowler';
+    target &&
+    'building' in target &&
+    target.building.kind === 'wall' &&
+    (unit.kind !== 'bowler' || !!ctx.battle.nativeBowlerWallWindup);
   const retaliate =
     candidate &&
     (!committedWall ||

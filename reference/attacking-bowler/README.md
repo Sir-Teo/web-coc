@@ -199,3 +199,41 @@ Chromium checks inspect the intended projectile's original shatter meshes rather
 throws still on screen, verify first-bounce suppression and late-art fallback, and exercise
 phone/desktop, cold seeks, reverse/reduced rendering and paused graph recovery. The source
 art is original; event alignment and projection are deterministic local adaptations.
+
+
+## Defender-pursuit wall attacks (recording version 163)
+
+A real Castle Archer behind a full wall barrier exposed a second route that bypassed the
+native Bowler release. The generic defender-pursuit wall branch could fire an arrow while
+the split controller retired a conflicting wall target and reset its cooldown. Once that
+branch was active, it emitted one arrow each 50 ms update instead of a 2.2 s throw period.
+In the archived version-162 probe, the first ordinary native wall throw occurred at 0.95 s;
+after the Archer approached, generic arrows appeared every update from 3.2 s onward. The
+native attack counter remained at one. This was a gameplay cadence defect as well as an
+incorrect projectile shape.
+
+Version 163 supplies a native wall callback to that pursuit route. It prepares the existing
+Bowler windup and releases through the same source boulder handler used by ordinary wall
+and building attacks. The source 0.4 s fresh windup, 0.7 s recovery and 2.2 s same-target
+period now apply, with existing Freeze/attack-clock behavior. Both boulder legs retain their
+4.75 tiles/s speed, fixed second point, 0.3-tile ground splash, captured flight art and original
+throw/bounce/shatter cues. Damage stats and source assets are unchanged.
+
+A committed wall is held while the pursued defender stays out of attack range behind it.
+This prevents retirement/repreparation every update. A defender entering range can interrupt
+the wall charge and starts the normal fresh defender windup. The actor's visual aim follows
+the committed wall, rather than a defender moving behind it. Normal non-wall retargeting and
+building preference keep their existing rules.
+
+Only carried Bowler armies enable this boundary. Earlier replays preserve the original arrow
+burst, including its resulting damage and outcomes. The deterministic Castle fixture uses
+ordinary deployment, a level-nine Archer reserve and a complete level-fifteen wall barrier;
+health and status fields are not injected. The source interpretation and projection limits
+from the earlier chapters still apply; native executable parity is not claimed.
+
+`tests/bowler-pursuit-wall.test.ts` checks all ten levels, native packet identity, wall damage,
+source cadence, lack of per-update arrows, Freeze, one original throw cue through release,
+wall facing, in-range defender interruption and scoped allocation. Full current/historical
+portable snapshots seek both directions, and the old case explicitly retains its arrow burst.
+Chromium checks the real replay states, original boulder mesh, historical arrows, phone/desktop,
+reverse seeks, reduced-motion/read-only rendering and WebGL health.

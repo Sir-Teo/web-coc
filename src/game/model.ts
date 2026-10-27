@@ -995,6 +995,8 @@ export interface Battle {
   nativeBowlerImpactArt?: true;
   /** Version 162: attacking Golem/Golemite use source split windup and recovery. */
   nativeGolemWindup?: true;
+  /** Version 163: Bowler defender-pursuit walls use the native windup/boulder release. */
+  nativeBowlerWallWindup?: true;
   nativeBowlerFlights?: CombatProjectile[];
   nativeBowlerImpacts?: {
     id: string;

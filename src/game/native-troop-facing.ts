@@ -19,6 +19,12 @@ export function nativeTroopFacingTarget(
     windup?.engaged && windup.target?.building ? buildings.get(windup.target.id) : undefined;
   if (committedWall?.kind === 'wall' && committedWall.hp > 0)
     return { x: committedWall.x + 0.5, y: committedWall.y + 0.5 };
+  const charge =
+    battle.nativeBowlerWallWindup && unit.kind === 'bowler' ? unit.native?.bowler : undefined;
+  const committed =
+    charge?.engaged && charge.target?.building ? buildings.get(charge.target.id) : undefined;
+  if (committed?.kind === 'wall' && committed.hp > 0)
+    return { x: committed.x + 0.5, y: committed.y + 0.5 };
   const defender = defenderIndex(battle).get(unit.defenderTarget ?? NaN);
   if (
     defender &&

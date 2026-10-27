@@ -958,7 +958,7 @@ export function stepNativeUnit(
           : {}),
         wallBreaker: s.preferredClass === 'Wall' || undefined,
         healer: s.heal > 0 && s.dps <= 0,
-        ...(golem
+        ...(golem || (bowler && battle.nativeBowlerWallWindup)
           ? {
               nativeBuildingAttack: (target: Building) =>
                 beginNativeAttackWindup(u, s, { building: target }, battle),
