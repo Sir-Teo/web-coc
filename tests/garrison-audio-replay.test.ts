@@ -36,7 +36,7 @@ for (const kind of ['archer', 'superminion', 'electrodragon', 'royalghost'] as c
 
 for (const kind of ['archer', 'superminion', 'electrodragon', 'royalghost'] as const)
   it(`${kind} source-audio presentation preserves exact version-145 physical combat`, () => {
-    const current = garrisonAudioRecording(kind),
+    const current = garrisonAudioRecording(kind, 146),
       old = garrisonAudioRecording(kind, 145);
     expect(current.snapshots.map((s) => s.at)).toEqual(old.snapshots.map((s) => s.at));
     for (let i = 0; i < current.snapshots.length; i++) {

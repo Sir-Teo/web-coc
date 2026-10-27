@@ -375,3 +375,23 @@ This is primary-event audio coverage. Separate pre-attack charging (including Bo
 still need their own source timing adapters. No native executable sound-scheduler parity is
 claimed. The source profiles imported here all have zero `SoundDelay`; their existing combat
 event clocks remain the local presentation alignment.
+
+## Trap-born damage protection (recording version 147+)
+
+Royal Ghosts use the garrison combat engine, but Ghost Traps can exist in a layout with no
+Castle reserve. Version 143's protection gate checked only the reserve, leaving those Ghosts
+on raw HP subtraction. A real trap release dealt 720 damage to a Giant with Eternal Tome's
+100% shield active, and the same damage failed to advance a King's Snake Bracelet counter.
+
+Version 147 enables the existing shared damage handler for a layout containing `ghost-trap`.
+The same shields, invulnerability, temporary HP and actual-damage accounting now apply to a
+trap-born Ghost. The defender's source stats, attack timing, frost and primary-hit identity
+are retained. Existing Castle setups keep their version-143 boundary; trap-only recordings
+through version 146 preserve their prior damage behavior. Ordinary layouts gain no new state.
+
+Actual Warden/Tome and King/Snake Bracelet recordings cover a trap-only layout with no Castle.
+The protected Giant retains full HP, damage resumes after Tome expires, and one unshielded
+720-damage hit releases two source Snakes. Complete forward/backward portable snapshots match
+in Node and desktop/phone Chromium for both versions. Browser checks inspect original Ghost,
+Hero and Snake artwork, reduced motion and read-only redraws. Version 146's audio-only physical
+comparison remains pinned to its own version so this subsequent combat fix is tested separately.

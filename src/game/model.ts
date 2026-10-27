@@ -955,7 +955,7 @@ export interface Battle {
   nativeElectroBootsActivations?: import('./native-electro-boots').ElectroBootsActivation[];
   /** Version 141: Meteor Staff selects visible defenses, with ordinary-building fallback. */
   nativeMeteorStaffTargeting?: true;
-  /** Version 143: Clan Castle damage observes shared shields, protection and damage provenance. */
+  /** Shared defender damage protections: Castle setups from version 143; Ghost Traps from 147. */
   nativeGarrisonDamage?: true;
   /** Version 143: Revenge Deck responds to individual direct hits with per-attacker cooldowns. */
   nativeRevengeDeck?: true;

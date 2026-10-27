@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 146;
+export const REPLAY_VERSION = 147;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -174,7 +174,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 143 shares garrison damage protections and records direct Revenge Deck hit sources.
  * Version 144 preserves Snake Bracelet damage and the per-battle summon cap through Recall.
  * Version 145 preserves normal/Super Yeti damage progress and mite stock through Recall.
- * Version 146 enables original primary and chain samples for later garrison defenders. */
+ * Version 146 enables original primary and chain samples for later garrison defenders.
+ * Version 147 extends shared incoming-damage protections to trap-only Royal Ghost layouts. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -288,6 +289,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 143 ||
   version === 144 ||
   version === 145 ||
+  version === 146 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -452,7 +454,10 @@ export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
     )
       ? { nativeSnakeBraceletRecall: true as const }
       : {}),
-    ...(version >= 143 && s.garrisons?.length ? { nativeGarrisonDamage: true as const } : {}),
+    ...((version >= 143 && s.garrisons?.length) ||
+    (version >= 147 && s.buildings.some((building) => building.npc === 'ghost-trap'))
+      ? { nativeGarrisonDamage: true as const }
+      : {}),
     ...(version >= 143 &&
     s.heroes?.some(
       (hero) => hero.kind === 'duke' && hero.items.some((item) => item.slug === 'draconic-counter'),
