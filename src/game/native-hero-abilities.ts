@@ -1,6 +1,8 @@
 import { startEquipmentDash, stepEquipmentEffects } from './native-equipment-effects';
 import { launchWardenFireball } from './native-fireball';
 import { launchGiantArrow } from './native-giant-arrow';
+import { launchFrostFlake } from './native-frost-flake';
+import { itemName } from './native-hero-data';
 import { distance2D } from './distance';
 import { TROOPS, type UnitKind } from './data';
 import { flag, nativeRow, num, seconds, text, tiles, type NativeRow } from './native-data';
@@ -44,10 +46,20 @@ export function activateHero(
   if (heal > 0 && (unit.native?.effects?.phoenixRevive?.until ?? 0) <= at + 1e-9)
     unit.hp = Math.min(unit.maxHp, unit.hp + heal);
   for (const ability of activeAbilities(hero)) applyAbility(ctx, hero, unit, ability, at);
-  ctx.effect({ type: 'trap', x: unit.x, y: unit.y, text: abilityLabel(hero), color: 0xffcc4d });
+  const cast = ctx.battle.nativeFrostFlakeCasts?.find(
+    (entry) => entry.sourceId === unit.id && entry.at === at,
+  );
+  ctx.effect({
+    type: 'trap',
+    x: unit.x,
+    y: unit.y,
+    text: abilityLabel(hero),
+    color: 0xffcc4d,
+    ...(cast ? { abilityCastId: cast.id, at } : {}),
+  });
 }
 const abilityLabel = (hero: NativeBattleHero) =>
-  hero.items.map((item) => item.slug.replace(/-/g, ' ').toUpperCase()).join(' + ') || 'ABILITY';
+  hero.items.map((item) => itemName(item.slug).toUpperCase()).join(' + ') || 'ABILITY';
 
 function applyAbility(
   ctx: NativeTroopContext,
@@ -58,6 +70,7 @@ function applyAbility(
 ) {
   launchWardenFireball(ctx, unit, ability, at);
   launchGiantArrow(ctx, unit, ability, at);
+  launchFrostFlake(ctx, unit, ability, at);
   startEquipmentDash(ctx, unit, ability);
   const row = ability.row;
   const battle = ctx.battle;

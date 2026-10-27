@@ -6,7 +6,7 @@ it('warms the Phoenix Egg resurrection packet only with the versioned controller
     { kind: 'king' as const, level: 1, items: [], pet: { kind: 'phoenix' as const, level: 10 } },
   ];
   expect(heroProjectileNames(heroes)).not.toContain('PhoenixResurrect');
-  expect(heroProjectileNames(heroes, true)).toEqual(
+  expect(heroProjectileNames(heroes, { phoenixResurrection: true })).toEqual(
     expect.arrayContaining(['PhoenixProjectile', 'PhoenixResurrect']),
   );
 });

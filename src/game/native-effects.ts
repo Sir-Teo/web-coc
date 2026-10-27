@@ -175,6 +175,10 @@ function particleTimelineDurations(graph: NativeMeshGraph) {
   nestedDurations.set(graph, durations);
   return durations;
 }
+/** Source timeline scaling can span animated descendants of a static export. */
+export function nativeNestedClipDuration(graph: NativeMeshGraph, name: string) {
+  return particleTimelineDurations(graph)[name] ?? nativeClipDuration(graph, name);
+}
 function sampler(graph: NativeMeshGraph, scale: number, nested = false) {
   const cache = nested ? nestedSamplers : samplers;
   let byScale = cache.get(graph);

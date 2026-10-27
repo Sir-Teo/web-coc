@@ -934,6 +934,9 @@ export interface Battle {
   nativeGiantArrow?: true;
   /** Version 132: a live Giant Arrow can sustain an Invisibility Spell Tower trigger. */
   nativeGiantArrowConstructs?: true;
+  /** Version 133: source distinct-target Frost Flakes and full on-impact freezes. */
+  nativeFrostFlake?: true;
+  nativeFrostFlakeCasts?: import('./native-frost-flake').FrostFlakeCast[];
   nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
   nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */
@@ -1150,6 +1153,8 @@ export type FX = {
   /** Presentation only: weapon identity and the source/target entities. */
   weapon?: Weapon;
   projectileId?: string;
+  /** Presentation only: a captured equipment activation can replace authored feedback. */
+  abilityCastId?: string;
   sourceId?: number;
   targetId?: number;
   targetBuilding?: boolean;

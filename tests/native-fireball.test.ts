@@ -277,7 +277,7 @@ describe('Warden Fireball', () => {
     const heroes = [{ kind: 'warden' as const, level: 40, items: [{ slug: 'fireball', level }] }];
     const name = fireballProfile(level)!.ProjectileOnActivation;
     expect(heroProjectileNames(heroes)).not.toContain(name);
-    expect(heroProjectileNames(heroes, false, true)).toContain(name);
+    expect(heroProjectileNames(heroes, { wardenFireball: true })).toContain(name);
   });
 
   it.each([1, 9, 24])(

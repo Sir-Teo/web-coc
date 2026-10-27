@@ -42,13 +42,17 @@ it('plays the original animated child of the static arrow root without altering 
   expect(Object.values(graph.clips).some((clip) => clip.timeline.length === 10)).toBe(true);
   const flight = { ...nativePiercingFlight(row, shot, 2.25, iso), rotation: 0 };
   const before = JSON.stringify(pack);
-  const original = nativeProjectilePoses(pack, row, flight, 2.25, 2, true).poses;
+  const original = nativeProjectilePoses(pack, row, flight, 2.25, 2, {
+    staticChildClock: true,
+  }).poses;
   expect(original).toEqual(
     nativeScenePoses(graph, row.ExportName, 0.25, {}, [1.2, -0, 0, 0, 1.2, 0]),
   );
   expect(original).not.toEqual(nativeProjectilePoses(pack, row, flight, 2.25, 2).poses);
-  nativeProjectilePoses(pack, row, flight, 2.35, 2, true);
-  expect(nativeProjectilePoses(pack, row, flight, 2.25, 2, true).poses).toEqual(original);
+  nativeProjectilePoses(pack, row, flight, 2.35, 2, { staticChildClock: true });
+  expect(
+    nativeProjectilePoses(pack, row, flight, 2.25, 2, { staticChildClock: true }).poses,
+  ).toEqual(original);
   expect(leaves(original).length).toBeGreaterThan(0);
   expect(leaves(original).every((p) => [...p.matrix, ...p.vertices].every(Number.isFinite))).toBe(
     true,
@@ -94,5 +98,5 @@ it('prefetches the original activation arrow only for the new equipped-Queen con
     { kind: 'queen' as const, level: 1, items: [{ slug: 'piercing-arrow', level: 18 }] },
   ];
   expect(heroProjectileNames(heroes)).not.toContain('QueenPierceProjectile');
-  expect(heroProjectileNames(heroes, false, false, true)).toContain('QueenPierceProjectile');
+  expect(heroProjectileNames(heroes, { giantArrow: true })).toContain('QueenPierceProjectile');
 });

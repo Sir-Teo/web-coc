@@ -1,5 +1,6 @@
 import fieldSpellArt from '../../reference/field-spells/effects.json' with { type: 'json' };
 import fireballArt from '../../reference/fireball/effects.json' with { type: 'json' };
+import frostFlakeArt from '../../reference/frost-flake/effects.json' with { type: 'json' };
 import recallUnitArt from '../../reference/recall/effects.json' with { type: 'json' };
 import reviveTargetArt from '../../reference/revive/effects.json' with { type: 'json' };
 import jumpSpellArt from '../../reference/jump-spell/effects.json' with { type: 'json' };
@@ -33,6 +34,7 @@ const index = effectArt as unknown as EffectIndex;
 const catalogs = [
   index,
   fireballArt,
+  frostFlakeArt,
   electromiteArt,
   electroDragonArt,
   superWizardArt,
@@ -89,6 +91,11 @@ function shiftGroup(poses: readonly NativeScenePose[], dx: number, dy: number): 
  * trail births and particles outside the camera view (plus a margin) are neither sampled nor drawn.
  */
 export class NativeEffectLayer {
+  /** Warm a source trail's graph and texture pages before its first launch. */
+  prefetchEmitter(name: string) {
+    const path = nativeEmitterPack(name);
+    if (path) this.packs.get(path);
+  }
   private views = new Map<string, NativeSceneView>();
   private used = new Set<string>();
   /** Ground point of each trail birth, computed once per birth instead of once per frame. */

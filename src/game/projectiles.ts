@@ -58,6 +58,8 @@ export interface CombatProjectile {
     bounce?: number;
     /** Version 130: captured equipment level; Fireball resolves a fixed-position area blast. */
     fireball?: { level: number };
+    /** Version 133: one distinct Frost Flake target, with full freeze captured at launch. */
+    frostFlake?: { castId: string; index: number; seconds: number };
     /** Version 108: kind-changing throws keep the original actor’s sound identity. */
     captureSource?: true;
     /** Version 71: frost captured at launch, retained after the shooter leaves. */
@@ -164,6 +166,7 @@ export function launchProjectile(
               nativeArcherTower(shot) ||
               shot.weapon === 'healing' ||
               !!shot.native?.healing ||
+              (battle.nativeFrostFlake && !!shot.native?.frostFlake) ||
               (battle.nativeSingleUseMiteJumps &&
                 !!shot.native &&
                 nativeMiteJump(battle, shot.native.kind)) ||
@@ -189,7 +192,7 @@ export function launchProjectile(
           );
   const projectile: CombatProjectile = {
     ...shot,
-    id: `${shot.sourceId}:${at}${shot.native?.bounce ? `:${shot.native.bounce}` : ''}${
+    id: `${shot.sourceId}:${at}${shot.native?.bounce ? `:${shot.native.bounce}` : ''}${shot.native?.frostFlake ? `:frost${shot.native.frostFlake.index}` : ''}${
       // Multi-target defenses release several shots in one instant.
       shot.defense ? `:d${(battle.nativeShotSequence = (battle.nativeShotSequence ?? 0) + 1)}` : ''
     }`,
@@ -325,6 +328,13 @@ export function stepProjectiles(
       const aim = p.targetBuilding ? buildingAim(p, target as Building) : target;
       p.x = aim.x;
       p.y = aim.y;
+    }
+    if (battle.nativeFrostFlake && p.native?.frostFlake) {
+      const own = p.native.frostFlake;
+      const record = battle.nativeFrostFlakeCasts?.find((cast) => cast.id === own.castId)?.shots[
+        own.index
+      ];
+      if (record?.id === p.id) Object.assign(record, { x: p.x, y: p.y, impact: p.impact });
     }
     if (p.weapon === 'cannonball') recordCannonFlight(battle, p);
     if (p.impact > battle.elapsed + 1e-9) {

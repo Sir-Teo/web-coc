@@ -37,6 +37,11 @@ import { NativeProjectilePresentation } from './native-projectile-scene';
 import { nativeUnitStats } from './native-units';
 import { heroProjectileNames } from './hero-projectile-prefetch';
 import { fireballEffects } from './fireball-effects';
+import {
+  FROST_FLAKE_PRESENTATION,
+  frostFlakeCarried,
+  frostFlakeSoundEffects,
+} from './frost-flake-effects';
 import { NativeDefensePresentation } from './native-defense-scene';
 import { nativeRow, tiles as nativeTiles } from './native-data';
 import {
@@ -2726,21 +2731,22 @@ export class VillageScene extends Phaser.Scene {
     );
     const fireball = !this.model.battle || !!this.model.battle.nativeWardenFireball;
     const giantArrow = !this.model.battle || !!this.model.battle.nativeGiantArrow;
+    const frostFlake = !this.model.battle || !!this.model.battle.nativeFrostFlake;
     const projectiles = this.model.reducedMotion
       ? ''
-      : `${signature}|${setupSignature}|phoenix:${!!this.model.battle?.nativePhoenixResurrection}|fireball:${fireball}|giant-arrow:${giantArrow}`;
+      : `${signature}|${setupSignature}|phoenix:${!!this.model.battle?.nativePhoenixResurrection}|fireball:${fireball}|giant-arrow:${giantArrow}|frost-flake:${frostFlake}`;
     if (projectiles !== this.projectilePrefetchSignature) {
       this.projectilePrefetchSignature = projectiles;
       this.nativeProjectiles?.prefetch(
         projectiles
           ? [
               ...kinds.map((kind) => nativeUnitStats(kind, level(kind)).projectile),
-              ...heroProjectileNames(
-                setups,
-                !!this.model.battle?.nativePhoenixResurrection,
-                fireball,
+              ...heroProjectileNames(setups, {
+                phoenixResurrection: !!this.model.battle?.nativePhoenixResurrection,
+                wardenFireball: fireball,
                 giantArrow,
-              ),
+                frostFlake,
+              }),
             ]
           : [],
       );
@@ -2755,6 +2761,10 @@ export class VillageScene extends Phaser.Scene {
         )
       )
         this.nativeProjectiles?.prefetchEffects(['Hero_Equip_AQ_Giant_Arrow_Trail']);
+      if (frostFlake && !this.model.reducedMotion && frostFlakeCarried(setups)) {
+        this.nativeProjectiles?.prefetchEffects([FROST_FLAKE_PRESENTATION.ActivationEffect]);
+        this.nativeProjectiles?.prefetchEmitters([FROST_FLAKE_PRESENTATION.ParticleEmitter]);
+      }
     }
     const heroes = this.wantedHeroArt();
     const heroSignature = [...heroes].sort().join(',');
@@ -4326,6 +4336,7 @@ export class VillageScene extends Phaser.Scene {
     this.troopSoundLoader.need(kinds, spells, [
       ...(needsRecallPresentation(battle) ? ['RecallRedeployAuraTop'] : []),
       ...(battle.nativeWardenFireball ? ['FireballActivationEffect'] : []),
+      ...(battle.nativeFrostFlake ? frostFlakeSoundEffects : []),
     ]);
   }
   /** Whether a spell's falling bottle is decoded, so it replaces the generated tones. */
@@ -4358,10 +4369,22 @@ export class VillageScene extends Phaser.Scene {
     this.fxSounded = false;
     const battle = this.model.battle;
     if (!battle || !this.audible()) return;
+    if (fx.abilityCastId) {
+      const cast = battle.nativeFrostFlakeCasts?.find((entry) => entry.id === fx.abilityCastId);
+      if (cast) {
+        this.fxSounded = this.cueReady(
+          effectCue(FROST_FLAKE_PRESENTATION.ActivationEffect, `${cast.id}:sound`, cast.at),
+        );
+        return;
+      }
+    }
     if (
       (fx.type === 'projectile' || fx.type === 'impact') &&
       (battle.nativeFireballs?.some((shot) => shot.id === fx.projectileId) ||
-        battle.nativeGiantArrows?.some((shot) => shot.id === fx.projectileId))
+        battle.nativeGiantArrows?.some((shot) => shot.id === fx.projectileId) ||
+        battle.nativeFrostFlakeCasts?.some((cast) =>
+          cast.shots.some((shot) => shot.id === fx.projectileId),
+        ))
     ) {
       // Equipment shots use their declared source cues rather than an ordinary Hero attack sound.
       this.fxSounded = true;
@@ -5787,6 +5810,10 @@ export class VillageScene extends Phaser.Scene {
     if (fx.type === 'gust') return;
     if (fx.type === 'trap' || fx.type === 'spring') {
       const reduced = this.model.reducedMotion;
+      const original =
+        !!fx.abilityCastId &&
+        !!this.model.battle?.nativeFrostFlakeCasts?.some((cast) => cast.id === fx.abilityCastId) &&
+        this.nativeProjectiles.coversFrostActivation(reduced);
       const label = this.add
         .text(p.x, p.y - 38, fx.text ?? 'SPRUNG!', {
           fontFamily: 'Trebuchet MS',
@@ -5805,8 +5832,8 @@ export class VillageScene extends Phaser.Scene {
         duration: 950,
         onComplete: () => label.destroy(),
       });
-      this.audio.play('hit');
-      if (!reduced) this.sparks(p.x, p.y - 10, fx.color ?? 0xffd175, 8);
+      if (!this.fxSounded) this.audio.play('hit');
+      if (!reduced && !original) this.sparks(p.x, p.y - 10, fx.color ?? 0xffd175, 8);
       return;
     }
     if (fx.type === 'upgrade') {

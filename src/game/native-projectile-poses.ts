@@ -1,7 +1,12 @@
 import projectileArt from '../../reference/full-client/projectile-art.json' with { type: 'json' };
 import { nativeScenePoses, type NativeMatrix, type NativeScenePose } from './native-mesh';
 import { nativeSceneId, type NativeArtPack } from './native-art-pack';
-import { NATIVE_ALTITUDE, NATIVE_ART_SCALE, nativeClipDuration } from './native-effects';
+import {
+  NATIVE_ALTITUDE,
+  NATIVE_ART_SCALE,
+  nativeClipDuration,
+  nativeNestedClipDuration,
+} from './native-effects';
 
 type Point = { x: number; y: number };
 /** logic/projectiles.csv presentation columns retained by scripts/import-native-projectile-art.py. */
@@ -140,7 +145,7 @@ export function nativeProjectilePoses(
   flight: ReturnType<typeof nativeProjectileFlight>,
   elapsed: number,
   launched: number,
-  staticChildClock = false,
+  playback?: { staticChildClock?: true; nestedTimeline?: true },
 ): {
   scene: string;
   poses: NativeScenePose[];
@@ -150,12 +155,14 @@ export function nativeProjectilePoses(
   const graph = pack.scenes[scene];
   const root = nativeDirectionRoot(row.exports, flight.direction.x, flight.direction.y);
   if (!graph || !root.name || graph.exports[root.name] === undefined) return { scene, poses: [] };
-  const duration = nativeClipDuration(graph, root.name);
+  const duration = playback?.nestedTimeline
+    ? nativeNestedClipDuration(graph, root.name)
+    : nativeClipDuration(graph, root.name);
   const age = Math.max(0, elapsed - launched);
   let seconds = row.ScaleTimeline === 'TRUE' ? flight.t * duration : age;
   if (
     row.PlayOnce === 'TRUE' &&
-    !(staticChildClock && graph.clips[graph.exports[root.name]]?.timeline.length === 1)
+    !(playback?.staticChildClock && graph.clips[graph.exports[root.name]]?.timeline.length === 1)
   )
     seconds = Math.min(seconds, Math.max(0, duration - 1e-3));
   const s = (NATIVE_ART_SCALE * num(row.Scale, 100)) / 100;

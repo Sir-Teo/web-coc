@@ -1,5 +1,6 @@
 import { superArcherEffectEvents } from './super-archer-effects';
 import { fireballEffectEvents, fireballProfile } from './fireball-effects';
+import { frostFlakeEffectEvents, FROST_FLAKE_PRESENTATION } from './frost-flake-effects';
 import { superWizardEffectEvents } from './super-wizard-effects';
 import { electroDragonEffectEvents } from './electro-dragon-effects';
 import { electromiteEffectEvents } from './electromite-effects';
@@ -33,6 +34,7 @@ interface Snapshot {
   bounce: number;
   fireballLevel?: number;
   giantArrow?: true;
+  frostFlake?: true;
   fromX: number;
   fromY: number;
   x: number;
@@ -92,6 +94,12 @@ export class NativeProjectilePresentation {
   /** Targeted effects without a projectile warm through the same shared pack loader. */
   prefetchEffects(names: Iterable<string>) {
     for (const name of names) this.layer.duration(name);
+  }
+  prefetchEmitters(names: Iterable<string>) {
+    for (const name of names) this.layer.prefetchEmitter(name);
+  }
+  coversFrostActivation(reduced: boolean) {
+    return !reduced && this.layer.status(FROST_FLAKE_PRESENTATION.ActivationEffect) === 'ready';
   }
   /** True when the native presentation already shows this shot's flight. */
   covers(id: string | undefined) {
@@ -192,7 +200,14 @@ export class NativeProjectilePresentation {
       this.layer.duration(name, Infinity),
     ))
       this.layer.play(event, elapsed, reduced);
+    for (const event of frostFlakeEffectEvents(battle, iso, (name) =>
+      this.layer.duration(name, Infinity),
+    ))
+      this.layer.play(event, elapsed, reduced);
     for (const p of [
+      ...(battle.nativeFrostFlakeCasts ?? [])
+        .flatMap((cast) => cast.shots)
+        .filter((shot) => elapsed <= shot.impact + AFTERLIFE),
       ...(battle.nativeFireballs ?? []).filter((shot) => elapsed <= shot.impact + AFTERLIFE),
       ...(battle.nativeMeteorFlights ?? []).filter((shot) => elapsed <= shot.impact + AFTERLIFE),
       ...(battle.projectiles ?? []),
@@ -298,7 +313,11 @@ export class NativeProjectilePresentation {
           flight,
           elapsed,
           snap.launched,
-          !!snap.giantArrow,
+          snap.giantArrow
+            ? { staticChildClock: true }
+            : snap.frostFlake
+              ? { nestedTimeline: true }
+              : undefined,
         );
         if (art.poses.length)
           shown.add(
@@ -414,6 +433,7 @@ function snapshot(p: CombatProjectile, packPath: string): Snapshot {
     sourceId: p.sourceId,
     bounce: p.native!.bounce ?? 0,
     ...(p.native!.fireball ? { fireballLevel: p.native!.fireball.level } : {}),
+    ...(p.native!.frostFlake ? { frostFlake: true as const } : {}),
     fromX: p.fromX,
     fromY: p.fromY,
     x: p.x,

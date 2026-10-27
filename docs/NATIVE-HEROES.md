@@ -2161,3 +2161,11 @@ construct when it damages a covered building. Its capture survives the Queen's r
 at the existing ray endpoint and cannot trigger a tower from an immune contact. The tower still
 uses its own release clock, so Freeze can outlast the projectile. Actual Recall recordings verify
 the original bottle, field, portable seeks and historical cancellation. See the [Giant Arrow reference](../reference/giant-arrow/README.md).
+
+## Version 133 Royal Champion Frost Flake
+
+All 27 Frost Flake item levels now use their mapped source ability levels, with four to seven
+distinct targets, 105–294 damage and 5.2–7 seconds of full freeze. Actual Cannon fire stops and
+resumes at the source expiry. Projectiles retain their original targets after Recall or defeat
+and do not consume Rocket Spears charges. Original activation, flight, trail and audio follow
+captured battle time. See [the Frost Flake reference](../reference/frost-flake/README.md).
