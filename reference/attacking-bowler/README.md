@@ -118,3 +118,48 @@ actual Ogg decoding, gain, replay-speed pitch, seek offsets, generated-tone cove
 reduced motion and a paused 503/reconnect recovery. These verify this adapter's lifecycle;
 no native executable audio trace is available. Attacking throw-windup audio remains separate
 work; its pre-attack sample needs an active-time clock rather than an impact binding.
+
+
+## Original attacking throw audio (recording version 159)
+
+All ten pinned attacking Bowler character levels inherit `PreAttackEffect=trollAttack`.
+The two original takes, already shipped for [defending Bowler](../garrison/README.md#bowler-windup-audio-recording-version-155),
+are `sfx/rock_troll_throw_01.ogg` (14,410 bytes, SHA-256
+`7d2f694ba4ecc831b1dfb8edfa2525ec0eaf9faf5b093ec85c6fd31441e5c399`) and
+`sfx/rock_troll_throw_02.ogg` (13,716 bytes, SHA-256
+`89b15e79122c8c1a4d65b211b03c006444d6056c6d4d669d945c294f549621a0`).
+Both declare volume 70%, pitch 98–102% and zero delay. The importer now retains the attacking
+character's own pre-attack link. No file or effect is added: 374 effects, 360 sounds remain.
+
+The local audio clock follows active wall time independently of poison/boost-scaled attack
+time, matching the established Electro Dragon and defending Bowler convention. A fresh target
+preloads the source-derived 1.1 s initial charge, then advances only the active portion of its
+first update. A fresh target acquired during recovery waits without sounding. Repeat same-target
+windups begin at age zero after recovery; a partial crossing advances only its wall-time fraction.
+Freeze/stun holds and suspends the active cue; thaw resumes its saved age and stable key.
+
+Release captures the virtual start so the approximately 2.435/2.348-second take can finish
+naturally after the 1.5 s full windup. Already released tails continue during later Freeze or
+after death. Target loss cancels unfinished cues, and reacquisition allocates a new key even
+when the target ID repeats. Each actor retains at most 16 completed starts. Presentation reads
+this metadata without changing combat. Version 158's separate bounce/shatter clocks remain.
+
+This is the same explicit local phase alignment used by the defending adapter. The older
+component's concrete-target branch invokes the pre-attack listener while advancing windup;
+its listener implementation and a modern native audio trace are unavailable. Exact native
+sample startup/offset parity is therefore unverified. The active-wall-time convention also
+means attack-speed modifiers change combat duration without stretching the original recording.
+
+Only carried player Bowler armies enable this capability. Earlier player battles neither
+play nor preload these two takes through the player binding. Existing defending Bowler audio
+still warms its own takes independently. There is no new generated launch tone to replace:
+the ordinary projectile event only emits its existing visual muzzle feedback.
+
+`tests/attacking-bowler-audio.test.ts` checks all ten levels, fresh/repeat phases, source takes
+and pitch, release continuity, full and partial Freeze, attack-speed independence, recovery
+retargets, unique keys after cancellation, death, bounded history, defender-targeted throws, exact physical
+version-158 parity (including every sampled Freeze/Poison state), and full current/historical
+portable replays at two approach distances. Controlled status checks are isolated model tests;
+portable fixtures use ordinary deployments. Chromium tests exercise decoded source buffers,
+gain, replay-speed pitch, sample offsets, pause/reverse/reduced rendering, historical player
+silence/preloads, and a 503/reconnect recovery without advancing paused playback.

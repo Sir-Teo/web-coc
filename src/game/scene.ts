@@ -4421,6 +4421,7 @@ export class VillageScene extends Phaser.Scene {
         ...(battle.nativeSeekingShield ? [SEEKING_SHIELD_PRESENTATION.destroyed] : []),
       ],
       !!battle.nativeBowlerImpactSounds,
+      !!battle.nativeBowlerPreAttack,
     );
   }
   /** Whether a spell's falling bottle is decoded, so it replaces the generated tones. */

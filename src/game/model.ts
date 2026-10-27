@@ -987,6 +987,8 @@ export interface Battle {
   nativeBowlerBoulders?: true;
   /** Version 158: source bounce/shatter cues retain exact resolved impact clocks. */
   nativeBowlerImpactSounds?: true;
+  /** Version 159: original attacking Bowler windups follow active wall time and retain released tails. */
+  nativeBowlerPreAttack?: true;
   nativeBowlerImpacts?: {
     id: string;
     sourceId: number;

@@ -451,6 +451,7 @@
       "name": "Bowler",
       "deploy": "Troll Deploy",
       "die": "Wizard Die",
+      "preAttack": "trollAttack",
       "projectileHit": [
         "trollBoulder_destroyed",
         "trollBoulder_destroyed",

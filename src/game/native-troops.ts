@@ -993,7 +993,7 @@ export function stepNativeUnit(
           ? {
               enterRange: () => {
                 const target = battle.defenders?.find((d) => d.id === u.defenderTarget);
-                if (target) beginBowlerWindup(u, s, { defender: target });
+                if (target) beginBowlerWindup(u, s, { defender: target }, battle);
               },
               attackReady: () => false,
             }
@@ -1089,7 +1089,7 @@ export function stepNativeUnit(
     if (s.underground) surfaceUndergroundUnit(ctx, u, at, target);
     if (!bowler && at + 1e-9 < (state.targetAt ?? 0) + s.newTargetDelay) return;
     if (bowler) {
-      beginBowlerWindup(u, s, { building: target });
+      beginBowlerWindup(u, s, { building: target }, battle);
       return;
     }
     if (u.cooldown > 0) return;
@@ -1183,7 +1183,7 @@ export function stepNativeUnit(
       u.attacking = true;
       if (battle.nativeDiggyMasterTarget && isHeroUnitKind(u.kind)) state.wallTarget = wall.id;
       if (bowler) {
-        beginBowlerWindup(u, s, { building: wall });
+        beginBowlerWindup(u, s, { building: wall }, battle);
         return;
       }
       if (u.cooldown <= 0) {

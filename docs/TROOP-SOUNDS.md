@@ -278,3 +278,14 @@ Captured exact impact clocks restore one-shot tails after seeks and survive the 
 death. Decoded cues cover generated impact tones; missing samples retain fallback and retries.
 Older player Bowler battles keep their original preload list. One new 17,176-byte original
 Ogg brings the catalog to 374 effects and 360 files. See the [source bindings and scope](../reference/attacking-bowler/README.md#original-boulder-impact-audio-recording-version-158).
+
+
+## Attacking Bowler pre-attack takes
+
+Version 159 binds the attacking character's `trollAttack` source effect at 70% volume,
+98–102% pitch and zero delay. Both original throw takes already ship for defending Bowler.
+A separate active-wall-time age holds during Freeze/stun and resumes at its saved offset;
+completed releases retain natural one-shot tails. Fresh targets preload the existing 1.1 s
+initial charge, while repeat windups begin after recovery. Older player battles keep their
+previous throw silence and preload list; defending bindings remain independent. No new asset
+or effect is added. See [the alignment convention and limits](../reference/attacking-bowler/README.md#original-attacking-throw-audio-recording-version-159).

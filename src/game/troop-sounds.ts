@@ -64,13 +64,13 @@ function files(record: Partial<Record<string, Named>> | undefined, events: reado
 export const troopSoundEffect = (kind: string, level: number, event: TroopSoundEvent) =>
   atLevel(TROOPS[kind]?.[event], level);
 /** Every sound file a troop kind can play, at any level. */
-export const troopSoundFiles = (kind: string, bowlerImpacts = true) =>
+export const troopSoundFiles = (kind: string, bowlerImpacts = true, bowlerPreAttack = true) =>
   files(TROOPS[kind], [
     'deploy',
     'attack',
     'hit',
     'die',
-    'preAttack',
+    ...(kind !== 'bowler' || bowlerPreAttack ? ['preAttack'] : []),
     'chain',
     ...(kind !== 'bowler' || bowlerImpacts ? ['projectileHit', 'bounce'] : []),
   ]);
@@ -382,6 +382,30 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
       if (cue) cues.push(cue);
     }
   }
+  if (battle.nativeBowlerPreAttack)
+    for (const unit of battle.units) {
+      if (unit.kind !== 'bowler') continue;
+      const audio = unit.native?.bowler?.audio,
+        charge = audio?.charge;
+      const add = (key: string, at: number) => {
+        if (at > elapsed + 1e-9 || !cueAudible(at, elapsed)) return;
+        const cue = troopCue(battle, unit, 'preAttack', key, at);
+        if (cue) cues.push(cue);
+      };
+      const hold = Math.max(
+        unit.native?.effects?.frozenUntil ?? 0,
+        unit.native?.effects?.stunUntil ?? 0,
+      );
+      if (
+        unit.hp > 0 &&
+        charge &&
+        !charge.waiting &&
+        charge.lastAt >= elapsed - 1e-9 &&
+        hold <= elapsed + 1e-9
+      )
+        add(charge.key, elapsed - charge.age);
+      for (const started of audio?.history ?? []) add(started.key, started.at);
+    }
   if (battle.nativeBowlerImpactSounds)
     for (const impact of battle.nativeBowlerImpacts ?? []) {
       if (impact.at > elapsed + 1e-9 || !cueAudible(impact.at, elapsed)) continue;
@@ -494,10 +518,11 @@ export class TroopSoundLoader {
     spells: Iterable<string> = [],
     effects: Iterable<string> = [],
     bowlerImpacts = true,
+    bowlerPreAttack = true,
   ) {
     const wanted = new Set<string>();
     for (const kind of kinds)
-      for (const path of troopSoundFiles(kind, bowlerImpacts)) wanted.add(path);
+      for (const path of troopSoundFiles(kind, bowlerImpacts, bowlerPreAttack)) wanted.add(path);
     for (const name of spells) for (const path of spellSoundFiles(name)) wanted.add(path);
     for (const name of effects) for (const path of effectSoundFiles(name)) wanted.add(path);
     for (const take of EFFECTS[DESTROYED_EFFECT]) wanted.add(take.sound);
