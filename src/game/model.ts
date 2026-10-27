@@ -965,6 +965,8 @@ export interface Battle {
   nativeYetiRecall?: true;
   /** Version 146: later garrison defenders play source-bound primary and chain samples. */
   nativeGarrisonSounds?: true;
+  /** Version 148: recalled Witch/Super Witch casters retain their summon ownership and cadence. */
+  nativeWitchRecall?: true;
   nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
   nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */
@@ -1031,6 +1033,17 @@ export interface Battle {
   /** Version 145: counters in the same FIFO order as each troop kind's recalledHp queue. */
   recalledYeti?: Partial<
     Record<'yeti' | 'superyeti', { damageTaken: number; damageSpawns: number }[]>
+  >;
+  /** Version 148: one caster record per matching recalledHp entry, first recalled first returned. */
+  recalledWitches?: Partial<
+    Record<
+      'witch' | 'superwitch',
+      {
+        summonerId: number;
+        summonAt?: number;
+        summoned?: number;
+      }[]
+    >
   >;
   catalog?: CampaignCatalog;
   scenery?: CampaignScenery[];
@@ -5828,6 +5841,15 @@ export class GameModel {
       const stock = b.recalledYeti?.[k]?.shift();
       if (stock) Object.assign(b.units.at(-1)!.native!, stock);
     }
+    if (b.nativeWitchRecall && (k === 'witch' || k === 'superwitch') && recalled !== undefined) {
+      const caster = b.recalledWitches?.[k]?.shift();
+      if (caster) {
+        const native = b.units.at(-1)!.native!;
+        native.summonerId = caster.summonerId;
+        if (caster.summoned !== undefined) native.summoned = caster.summoned;
+        if (caster.summonAt !== undefined) native.summonAt = Math.max(b.elapsed, caster.summonAt);
+      }
+    }
     this.onEffect(
       recalled !== undefined && recordRecallEvent(b, b.units.at(-1)!, 'redeploy')
         ? { type: 'recall-unit', sourceId: b.units.at(-1)!.id, text: 'redeploy', x, y }
@@ -6147,6 +6169,12 @@ export class GameModel {
         ((b.recalledYeti ??= {})[kind] ??= []).push({
           damageTaken: u.native?.damageTaken ?? 0,
           damageSpawns: u.native?.damageSpawns ?? 0,
+        });
+      if (b.nativeWitchRecall && (kind === 'witch' || kind === 'superwitch'))
+        ((b.recalledWitches ??= {})[kind] ??= []).push({
+          summonerId: u.native?.summonerId ?? u.id,
+          summonAt: u.native?.summonAt,
+          summoned: u.native?.summoned,
         });
     }
     this.onEffect(

@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 147;
+export const REPLAY_VERSION = 148;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -175,7 +175,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 144 preserves Snake Bracelet damage and the per-battle summon cap through Recall.
  * Version 145 preserves normal/Super Yeti damage progress and mite stock through Recall.
  * Version 146 enables original primary and chain samples for later garrison defenders.
- * Version 147 extends shared incoming-damage protections to trap-only Royal Ghost layouts. */
+ * Version 147 extends shared incoming-damage protections to trap-only Royal Ghost layouts.
+ * Version 148 retains Witch/Super Witch summon ownership and cooldown through Recall. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -290,6 +291,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 144 ||
   version === 145 ||
   version === 146 ||
+  version === 147 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -438,6 +440,9 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 148 && (s.army.witch > 0 || s.army.superwitch > 0)
+      ? { nativeWitchRecall: true as const }
+      : {}),
     ...(version >= 146 &&
     (s.garrisons?.some((reserve) =>
       reserve.troops.some((troop) => troop.kind !== 'dragon' && troop.kind !== 'balloon'),

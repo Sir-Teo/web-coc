@@ -126,6 +126,8 @@ export interface NativeUnitState {
   released?: number;
   /** Damage-triggered spawns released so far. */
   damageSpawns?: number;
+  /** Version 148: a recalled Witch caster keeps the original owner of its living summons. */
+  summonerId?: number;
   /** Next hitpoint decay tick. */
   decayAt?: number;
   /** Aura cast bound to this unit. */
@@ -1816,7 +1818,11 @@ function stepSummons(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: n
     battle.nativePetSummonRecall && isPetUnitKind(u.kind)
       ? battle.nativeHeroes?.find((hero) => hero.petId === u.id)
       : undefined;
-  const summonOwner = owner ? (owner.petSummonerId ??= u.id) : u.id;
+  const summonOwner = owner
+    ? (owner.petSummonerId ??= u.id)
+    : battle.nativeWitchRecall && (u.kind === 'witch' || u.kind === 'superwitch')
+      ? (state.summonerId ?? u.id)
+      : u.id;
   while (state.summonAt <= at + 1e-9 && u.hp > 0) {
     let alive = 0;
     for (const member of battle.units)
