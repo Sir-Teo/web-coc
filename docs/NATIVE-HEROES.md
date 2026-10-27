@@ -2297,3 +2297,14 @@ building leaves the existing ready cooldown available for a later target. Versio
 keeps the former selector. Real Prince/Invisibility and ordinary-building recordings verify exact
 portable seeks, original Hero art, health changes, reduced motion and desktop/phone playback.
 See [the source and validation reference](../reference/meteor-staff/README.md).
+
+## Finishing source spell fields and frame cleanup
+
+The shared finite field renderer now uses the presentation grace clock for a finishing spell,
+matching the existing finishing-projectile convention. Winning Lightning retains its original
+bolt, impact and crater instead of disappearing on the sample that ends combat. New phases
+remain bounded by the last actual simulation time, so cancelled spells cannot acquire later
+deployment, charging or hit effects. A live battle's two-second grace ends with one full cleanup
+frame before frame skipping resumes; otherwise a stale final effect could remain on screen.
+Cold finished imports stay settled. No combat, replay schema, art or sound changes are required.
+See [the field lifecycle and validation reference](../reference/field-spells/README.md).

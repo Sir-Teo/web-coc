@@ -809,3 +809,13 @@ selection; Walls and traps are excluded. Activated Town Hall and Builder weapons
 defense classification. The existing source cooldown, fixed cast position, 1.1-second damage
 delay and two-tile area damage remain. Version 140 and earlier retain the previous selector.
 See [source evidence, geometry and validation](../reference/meteor-staff/README.md).
+
+## Finishing source spell effects
+
+Original spell fields use the shared two-second presentation grace after a live battle ends,
+so a winning Lightning pulse retains its bolt, impact and crater while combat remains frozen.
+Presentation can continue already started phases; it cannot start unresolved phases after an
+early End Battle. One cleanup frame runs when grace expires before unchanged frames can be
+skipped again. Cold seeks to a finished recording stay settled, and reduced motion remains
+respected. Combat version 141 and portable simulation state are unchanged. See [lifecycle and
+validation details](../reference/field-spells/README.md).

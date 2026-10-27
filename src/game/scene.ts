@@ -4241,6 +4241,7 @@ export class VillageScene extends Phaser.Scene {
     battle: null as GameModel['battle'],
     elapsed: NaN,
     finished: false,
+    grace: false,
     revision: -1,
     synced: -1,
     selected: null as number | null,
@@ -4261,15 +4262,18 @@ export class VillageScene extends Phaser.Scene {
    */
   private sameBattleFrame(battle: NonNullable<GameModel['battle']>) {
     const key = this.frameKey,
-      cam = this.cameras.main;
+      cam = this.cameras.main,
+      grace = battle.finished && presentationLive(battle);
     const art = `${this.heavyArtReady}:${this.deferredArtSettled}:${this.lateAssetsReady}:${this.cannonPresentation.artRevision}:${this.villageArcherTowers.artRevision}:${this.villageNativePresentation.artRevision}:${this.nativeEffectPacks.revision}:${this.nativeProjectiles?.artRevision ?? 0}`;
     const same =
       !this.fxDrained &&
       // The grace window after the finish animates on the presentation clock, not elapsed.
-      (!battle.finished || !presentationLive(battle)) &&
+      !grace &&
       key.battle === battle &&
       key.elapsed === battle.elapsed &&
       key.finished === battle.finished &&
+      // Draw once when grace expires, retiring transient views before the idle memo resumes.
+      key.grace === grace &&
       key.revision === this.model.revision &&
       key.synced === this.syncCount &&
       key.selected === this.model.selected &&
@@ -4284,6 +4288,7 @@ export class VillageScene extends Phaser.Scene {
     key.battle = battle;
     key.elapsed = battle.elapsed;
     key.finished = battle.finished;
+    key.grace = grace;
     key.revision = this.model.revision;
     key.synced = this.syncCount;
     key.selected = this.model.selected;

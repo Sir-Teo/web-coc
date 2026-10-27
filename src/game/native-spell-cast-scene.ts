@@ -4,6 +4,7 @@ import type { SpellKind } from './data';
 import type { NativeArtPack, NativeArtPacks } from './native-art-pack';
 import { NativeEffectLayer, nativeEffectPack } from './native-effect-layer';
 import { capturedSpellEffectEvents, type SpellEffectProfile } from './native-spell-effects';
+import { presentationLive, presentationTime } from './presentation-clock';
 /** Finite source fields share a loader; all their phase packs must be ready before handoff. */
 export class NativeSpellCastPresentation {
   protected layer: NativeEffectLayer;
@@ -56,9 +57,10 @@ export class NativeSpellCastPresentation {
   ) {
     this.layer.begin();
     this.prefetch(battle);
+    const elapsed = battle && presentationLive(battle) ? presentationTime(battle) : Infinity;
     if (
       battle &&
-      !battle.finished &&
+      Number.isFinite(elapsed) &&
       battle.nativeSpellCastHistory?.some((cast) => cast.name === this.name) &&
       this.hasArt(battle, reduced)
     )
@@ -69,6 +71,7 @@ export class NativeSpellCastPresentation {
         iso,
         false,
         (name) => this.layer.duration(name, Infinity),
+        elapsed,
       ))
         this.layer.play(event, event.sampleAt, false);
     this.layer.end();

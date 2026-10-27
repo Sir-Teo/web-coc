@@ -25,6 +25,8 @@ export function spellCastEffectEvents(
   duration: (name: string) => number | undefined,
   nestedTimelines = false,
   pulsePresentation = false,
+  /** A finishing presentation clock can advance, but cannot start unresolved cast phases. */
+  startedThrough = elapsed,
 ): (NativeEffectEvent & { sampleAt: number })[] {
   const events: (NativeEffectEvent & { sampleAt: number })[] = [];
   for (const cast of casts) {
@@ -48,6 +50,7 @@ export function spellCastEffectEvents(
       if (
         !effect ||
         at === undefined ||
+        at > startedThrough + 1e-9 ||
         elapsed + 1e-9 < at ||
         elapsed - at > (duration(effect) ?? 30)
       )
@@ -74,7 +77,7 @@ export function spellCastEffectEvents(
       // The cast already retains resolved pulse counts and its seed. Sampling consumes no RNG.
       for (let i = first; i < Math.min(cast.hits, cast.total); i++) {
         const at = cast.firstHit + i * interval;
-        if (elapsed + 1e-9 < at || elapsed - at > tail) continue;
+        if (at > startedThrough + 1e-9 || elapsed + 1e-9 < at || elapsed - at > tail) continue;
         const point = randomPoint(cast, i, row.hitRadiusTiles ?? 0),
           ground = iso(point.x, point.y);
         events.push({
@@ -100,15 +103,17 @@ export function capturedSpellEffectEvents(
   iso: (x: number, y: number) => { x: number; y: number },
   reduced: boolean,
   duration: (name: string) => number | undefined,
+  elapsed = battle?.elapsed ?? 0,
 ) {
   if (!battle?.nativeSpellArt?.includes(name) || reduced) return [];
   return spellCastEffectEvents(
     battle.nativeSpellCastHistory?.filter((cast) => cast.name === name) ?? [],
-    battle.elapsed,
+    elapsed,
     profiles,
     iso,
     duration,
     battle.nativeSpellEffectTimelines,
     battle.nativeSpellPulsePresentation,
+    battle.elapsed,
   );
 }
