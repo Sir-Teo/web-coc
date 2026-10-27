@@ -402,6 +402,10 @@ fallback page or a newer deploy's file is served but never stored). A newer depl
 beside it and waits; the page then shows "Update ready · Reload", which activates the new
 worker and reloads onto its release. Unhashed asset URLs are therefore never paired with
 another release's page.
+If another tab has already started activating the offered worker, accepting the prompt
+reloads directly. It must not wait for a controller-change event that may have already
+arrived. `tests/offline-update.test.ts` covers that race, completed activation, normal
+activation and failed messaging; the production browser suite checks both update paths.
 
 If a deployment removes an uncached lazy chunk, automatic recovery checks for an update
 and allows up to ten seconds total for discovery and installation, then activates any
