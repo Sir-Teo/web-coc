@@ -2194,3 +2194,24 @@ chronological bounces and wasted top-corner throws use captured state. Manual re
 fixed source windup; a real knockout releases immediately. Ordinary attacks pause for 1.2 seconds
 without spending their cooldown or Rocket Spear charges. Original shield spin continues across legs,
 with its shadow, glow trail and final landing particles/audio. See [the Seeking Shield reference](../reference/seeking-shield/README.md).
+
+## Version 137 moving equipment flight history
+
+A real Clan Castle Dragon exposed different trail positions during live rendering and cold seeks:
+the live particle cache kept earlier aims, while a cold view rebuilt those births from the latest
+endpoint. Frost Flake, Spiky Ball and Seeking Shield now capture optional `nativeAim` observations
+for defender-targeted packets at launch and each physical simulation sample. The captured journal
+reattaches the updated history after JSON restoration. Other projectiles and stationary building
+targets allocate no new arrays.
+
+Presentation samples those observations by time, interpolating between adjacent fixed steps and
+clamping outside the recorded interval. Stationary observations are retained, and landing captures
+the canonical impact time. Thus adding future observations never changes an already rendered birth.
+This preserves the existing homing adapter's initial deadline and endpoint updates; it does not
+replace its flight physics. Original art, trail emission and sound timing remain unchanged.
+
+Unit checks compare complete combat state with version 136 after removing the added history,
+including real hits, RNG, cooldowns and moving-target restoration for all three controllers.
+Portable browser recordings with a real released Dragon reproduce the former discrepancy and now
+match dense rendering, sparse rendering, a fresh presentation and backward seeking exactly.
+Rendering leaves battle state unchanged. Version 136 and earlier retain endpoint-only behavior.

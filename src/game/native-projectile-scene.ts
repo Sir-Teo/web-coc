@@ -9,6 +9,7 @@ import { electromiteEffectEvents } from './electromite-effects';
 import type Phaser from 'phaser';
 import type { Battle } from './model';
 import type { CombatProjectile } from './projectiles';
+import { nativeProjectileAimAt, type NativeProjectileAim } from './native-projectile-aim';
 import { NativeSceneView, effectSceneView } from './native-scene-view';
 import { NativeArtPacks, nativePackPrefix, type NativeArtPack } from './native-art-pack';
 import { NativeEffectLayer, nativeEffectPack } from './native-effect-layer';
@@ -51,6 +52,7 @@ interface Snapshot {
   impact: number;
   fromAir?: boolean;
   toAir?: boolean;
+  nativeAim?: NativeProjectileAim[];
   piercing?: { dirX: number; dirY: number; length: number; speed: number };
   /** Piercing shots: snapshot and line merged once for nativePiercingFlight. */
   line?: Parameters<typeof nativePiercingFlight>[1];
@@ -249,6 +251,7 @@ export class NativeProjectilePresentation {
         known.impact === p.impact &&
         known.spikyContinues === p.native.spikyBall?.continues &&
         known.shieldContinues === p.native.seekingShield?.continues &&
+        known.nativeAim === p.nativeAim &&
         known.x === p.x &&
         known.y === p.y
       )
@@ -335,7 +338,12 @@ export class NativeProjectilePresentation {
       const flightAt = (time: number) =>
         line
           ? nativePiercingFlight(row, line, time, iso, snap.darkOrb ? airLift : 0)
-          : nativeProjectileFlight(row, snap, time, options);
+          : nativeProjectileFlight(
+              row,
+              snap.nativeAim ? { ...snap, ...nativeProjectileAimAt(snap, time) } : snap,
+              time,
+              options,
+            );
       const flight = flightAt(elapsed);
       covered.add(id);
       const facing = flight.direction;
@@ -499,6 +507,7 @@ function snapshot(p: CombatProjectile, packPath: string): Snapshot {
     impact: p.impact,
     fromAir: p.fromAir,
     toAir: p.toAir,
+    ...(p.nativeAim ? { nativeAim: p.nativeAim } : {}),
   };
 }
 

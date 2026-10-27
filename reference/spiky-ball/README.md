@@ -20,8 +20,9 @@ eligible objects the ball ends early. An activation with none still spends the a
 Flights use the existing native homing adapter: launch distance divided by 15 tiles/second,
 with a 10 ms minimum. A moving defender updates the selected endpoint without extending the
 initial arrival deadline. Captured records explicitly retain the last flight/impact coordinates
-after JSON snapshots break object aliases. This stores the final endpoint, rather than a full
-moving-target trajectory. Damage and later bounces survive the King's Recall or defeat.
+after JSON snapshots break object aliases. Version 134–136 stores only that endpoint; version 137
+also captures fixed-step defender aims so original trail births agree across live and cold views.
+This retains the existing flight physics. Damage and later bounces survive the King's Recall or defeat.
 
 New legs enter the existing physical projectile queue in arrival order, including multiple short
 contacts inside one 50 ms simulation sample. Each leg starts at its predecessor's scheduled
@@ -58,3 +59,7 @@ seeks. Art tests check the original ball timeline, shadow and effect references.
 cover desktop/phone bodies, trails, a single source bounce burst, full Node battle-state equality,
 Recall, backward seeks, reduced motion, paused pack recovery, historical playback and actual
 Web Audio gain/pitch.
+
+Version 137 adds [moving-target presentation history](../../docs/NATIVE-HEROES.md#version-137-moving-equipment-flight-history).
+It retains stationary aim observations, caps the final one at impact, and changes neither source
+damage nor arrival deadlines. Building-targeted legs carry no additional arrays.

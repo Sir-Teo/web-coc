@@ -1,4 +1,5 @@
 import { nativeMiteJump } from './native-mite-jumps';
+import { recordNativeProjectileAim, type NativeProjectileAim } from './native-projectile-aim';
 import { archerTowerProjectileRow } from './archer-tower-stats';
 import { cannonProjectileRow } from './cannon-stats';
 import { recordCannonFlight, recordCannonHit } from './cannon-attack';
@@ -50,6 +51,8 @@ export interface CombatProjectile {
   sequence?: number;
   /** Actual position of a tracking Cannon shot, tower arrow or X-Bow bolt at the last simulation sample. */
   flight?: { x: number; y: number; at: number };
+  /** Version 137: equipment defender-target observations, captured independently of rendering. */
+  nativeAim?: NativeProjectileAim[];
   /** Version 45+ native roster projectile: client projectile row, shooter kind/level and bounce index. */
   native?: {
     name: string;
@@ -229,6 +232,14 @@ export function launchProjectile(
       ? battle.buildings.find((b) => b.id === shot.targetId)
       : undefined;
   if (target) Object.assign(projectile, buildingAim(shot, target));
+  if (
+    battle.nativeEquipmentFlightHistory &&
+    projectile.targetDefender &&
+    (projectile.native?.frostFlake ||
+      projectile.native?.spikyBall ||
+      projectile.native?.seekingShield)
+  )
+    projectile.nativeAim = [{ at, x: projectile.x, y: projectile.y }];
   (battle.projectiles ??= []).push(projectile);
   if (projectile.native?.captureSource && projectile.native.kind === 'meteorgolem')
     (battle.nativeMeteorFlights ??= []).push({ ...projectile, native: { ...projectile.native } });
@@ -354,26 +365,45 @@ export function stepProjectiles(
       p.x = aim.x;
       p.y = aim.y;
     }
+    if (battle.nativeEquipmentFlightHistory) recordNativeProjectileAim(p, battle.elapsed);
     if (battle.nativeFrostFlake && p.native?.frostFlake) {
       const own = p.native.frostFlake;
       const record = battle.nativeFrostFlakeCasts?.find((cast) => cast.id === own.castId)?.shots[
         own.index
       ];
-      if (record?.id === p.id) Object.assign(record, { x: p.x, y: p.y, impact: p.impact });
+      if (record?.id === p.id)
+        Object.assign(record, {
+          x: p.x,
+          y: p.y,
+          impact: p.impact,
+          ...(p.nativeAim ? { nativeAim: p.nativeAim } : {}),
+        });
     }
     if (battle.nativeSpikyBall && p.native?.spikyBall) {
       const own = p.native.spikyBall;
       const record = battle.nativeSpikyBallCasts?.find((cast) => cast.id === own.castId)?.shots[
         own.index
       ];
-      if (record?.id === p.id) Object.assign(record, { x: p.x, y: p.y, impact: p.impact });
+      if (record?.id === p.id)
+        Object.assign(record, {
+          x: p.x,
+          y: p.y,
+          impact: p.impact,
+          ...(p.nativeAim ? { nativeAim: p.nativeAim } : {}),
+        });
     }
     if (battle.nativeSeekingShield && p.native?.seekingShield) {
       const own = p.native.seekingShield;
       const record = battle.nativeSeekingShieldCasts?.find((cast) => cast.id === own.castId)?.shots[
         own.index
       ];
-      if (record?.id === p.id) Object.assign(record, { x: p.x, y: p.y, impact: p.impact });
+      if (record?.id === p.id)
+        Object.assign(record, {
+          x: p.x,
+          y: p.y,
+          impact: p.impact,
+          ...(p.nativeAim ? { nativeAim: p.nativeAim } : {}),
+        });
     }
     if (p.weapon === 'cannonball') recordCannonFlight(battle, p);
     if (p.impact > battle.elapsed + 1e-9) {

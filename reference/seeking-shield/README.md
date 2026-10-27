@@ -27,7 +27,9 @@ early. With none, it still flies toward the map's top corner `(0, 0)` and deals 
 The existing native homing adapter uses launch distance divided by 20 tiles/second, with a 10 ms
 minimum. Moving defenders update the selected endpoint without extending the initial arrival
 deadline. Captured records explicitly retain those coordinates after JSON snapshots break object
-aliases; they store the last endpoint rather than a full moving-target trajectory. New short legs
+aliases. Version 136 stores the last endpoint; version 137 additionally captures fixed-step
+defender aims for consistent original trail births across live rendering and cold seeks. The
+existing flight physics and initial arrival deadline remain unchanged. New short legs
 join the physical arrival queue within the same 50 ms sample and launch at the previous scheduled
 impact. Pending releases and unfinished physical flights keep the battle alive.
 
@@ -60,3 +62,7 @@ knockout activation, ordinary attack resumption, Recall, defeat, wasted throws a
 snapshot restoration. Browser checks cover desktop/phone original bodies and trails, continuous
 spin across bounces, full Node battle-state equality, backward seeks, reduced motion, paused asset
 recovery, historical playback and actual Web Audio gain/pitch.
+
+See [version 137 moving-target history](../../docs/NATIVE-HEROES.md#version-137-moving-equipment-flight-history)
+for dense/sparse rendering and real Clan Castle Dragon replay checks. Building-targeted legs
+carry no additional history arrays.

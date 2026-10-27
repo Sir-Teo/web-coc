@@ -48,3 +48,9 @@ levels, independent tier boundaries, real Cannon freeze/thaw, both defender laye
 targets, immunity, Recall, defeat, spear charges, original geometry/audio and portable seeks.
 Browser checks cover all four target counts on desktop/phone, Node battle-state equality,
 reduced motion, Recall, paused asset recovery, historical playback and actual Web Audio gain.
+
+Version 137 adds [moving-target presentation history](../../docs/NATIVE-HEROES.md#version-137-moving-equipment-flight-history).
+Defender-targeted packets retain fixed-step aims, including stationary samples and the canonical
+landing. Original trail births now match dense/sparse playback and cold portable seeks with a
+real released Dragon. Source damage, freeze, target selection and the initial flight deadline
+are unchanged; building-targeted packets allocate no extra arrays.
