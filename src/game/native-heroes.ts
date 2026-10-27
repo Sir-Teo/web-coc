@@ -60,6 +60,8 @@ export interface NativeBattleHero extends HeroSetup {
   recalledPetHp?: number;
   /** Version 82: remaining finite-hit equipment retained while the Hero is recalled. */
   recalledAttackExtra?: UnitEffects['extraDamage'];
+  /** Version 144: Snake Bracelet's damage total and per-battle summon progress survive Recall. */
+  recalledDamageTaken?: number;
   /** Extra attacks the ability granted (Rocket Spears, Noble Iron). */
   charges?: Record<string, number>;
   /** Version 138: canonical resurrection time consumed by the next passive-aura upkeep. */

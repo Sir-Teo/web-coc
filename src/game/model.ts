@@ -959,6 +959,8 @@ export interface Battle {
   nativeGarrisonDamage?: true;
   /** Version 143: Revenge Deck responds to individual direct hits with per-attacker cooldowns. */
   nativeRevengeDeck?: true;
+  /** Version 144: Snake Bracelet retains cumulative damage through Recall body replacement. */
+  nativeSnakeBraceletRecall?: true;
   nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
   nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */
@@ -5184,6 +5186,10 @@ export class GameModel {
       spawnedAt: b.elapsed,
       native: initialNativeState(heroUnitKind(kind), hero.level),
     });
+    if (b.nativeSnakeBraceletRecall && hero.recalledDamageTaken !== undefined) {
+      b.units.at(-1)!.native!.damageTaken = hero.recalledDamageTaken;
+      delete hero.recalledDamageTaken;
+    }
     if (b.nativeChargedHeroRecall && hero.recalledAttackExtra) {
       unitEffects(b.units.find((u) => u.id === hero.unitId)!).extraDamage = {
         ...hero.recalledAttackExtra,
@@ -6097,6 +6103,12 @@ export class GameModel {
       recallPhoenix(b, roster, u);
       roster.unitId = null;
       roster.recalledHp = u.hp;
+      if (
+        b.nativeSnakeBraceletRecall &&
+        roster.kind === 'king' &&
+        roster.items.some((item) => item.slug === 'snake-bracelet')
+      )
+        roster.recalledDamageTaken = u.native?.damageTaken ?? 0;
       const extra = u.native?.effects?.extraDamage;
       if (
         b.nativeChargedHeroRecall &&
