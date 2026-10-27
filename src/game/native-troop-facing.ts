@@ -13,7 +13,8 @@ export function nativeTroopFacingTarget(
   if (wall && wall.hp > 0) return { x: wall.x + 0.5, y: wall.y + 0.5 };
   const windup =
     (battle.nativeGolemWindup && (unit.kind === 'golem' || unit.kind === 'golemite')) ||
-    (battle.nativePekkaWindup && unit.kind === 'pekka')
+    (battle.nativePekkaWindup && unit.kind === 'pekka') ||
+    (battle.nativeValkyrieWindup && (unit.kind === 'valkyrie' || unit.kind === 'supervalkyrie'))
       ? unit.native?.attackWindup
       : undefined;
   const committedWall =

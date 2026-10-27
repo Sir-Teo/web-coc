@@ -4525,9 +4525,14 @@ export class VillageScene extends Phaser.Scene {
       (fx.type === 'hit' ||
         fx.type === 'projectile' ||
         fx.type === 'impact' ||
-        fx.type === 'breath') &&
+        fx.type === 'breath' ||
+        (fx.type === 'blast' && fx.nativeValkyrieSweep)) &&
       fx.sourceId !== undefined &&
-      (fx.targetBuilding || fx.targetDefender || fx.targetFriendly || fx.weapon === 'healing')
+      (fx.targetBuilding ||
+        fx.targetDefender ||
+        fx.targetFriendly ||
+        fx.weapon === 'healing' ||
+        fx.nativeValkyrieSweep)
     ) {
       const u = fx.sourceKind
         ? { id: fx.sourceId, kind: fx.sourceKind, level: fx.sourceLevel }
@@ -4536,7 +4541,7 @@ export class VillageScene extends Phaser.Scene {
       // A melee blow is the swing and the impact at once; a shot swings at its launch and
       // lands at its impact.
       const events: ('attack' | 'hit' | 'projectileHit')[] =
-        fx.type === 'hit'
+        fx.type === 'hit' || fx.nativeValkyrieSweep
           ? ['attack', 'hit']
           : fx.type === 'impact'
             ? battle.nativeMeteorThrows && fx.sourceKind === 'meteorgolem'

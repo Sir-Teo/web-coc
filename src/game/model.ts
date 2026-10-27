@@ -1000,6 +1000,8 @@ export interface Battle {
   nativeBowlerWallWindup?: true;
   /** Version 164: legacy-path PEKKA attacks use source split windup/recovery. */
   nativePekkaWindup?: true;
+  /** Version 165: Valkyrie family split clocks and self-centered defender sweeps. */
+  nativeValkyrieWindup?: true;
   nativeBowlerFlights?: CombatProjectile[];
   nativeBowlerImpacts?: {
     id: string;
@@ -1241,6 +1243,8 @@ export type FX = {
   projectileId?: string;
   /** Presentation only: a captured equipment activation can replace authored feedback. */
   abilityCastId?: string;
+  /** Version 165: a self-centered Valkyrie sweep also owns one melee attack/impact cue. */
+  nativeValkyrieSweep?: true;
   sourceId?: number;
   targetId?: number;
   targetBuilding?: boolean;

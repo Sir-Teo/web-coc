@@ -1,3 +1,4 @@
+import { sweepValkyrie } from './native-valkyrie-sweep';
 import { launchArcherPiercing, stepArcherPiercing } from './native-super-archer';
 import { resolveWardenFireball } from './native-fireball';
 import { stepHeroPiercing } from './native-hero-piercing';
@@ -817,11 +818,16 @@ export function stepNativeUnit(
   if (electroDragon && stepElectroDragonCharge(ctx, u, s, damage, speed, dt, actionDt)) return;
   const bowler = !!(battle.nativeBowlerWindup && u.kind === 'bowler');
   const golem = !!(battle.nativeGolemWindup && (u.kind === 'golem' || u.kind === 'golemite'));
-  const splitAttack = bowler || golem;
+  const valkyrie = !!(
+    battle.nativeValkyrieWindup &&
+    (u.kind === 'valkyrie' || u.kind === 'supervalkyrie')
+  );
+  const splitAttack = bowler || golem || valkyrie;
   if (
     splitAttack &&
     stepNativeAttackWindup(ctx, u, s, dt, actionDt, (target) => {
-      if ('building' in target) strike(ctx, u, s, target.building, damage);
+      if (valkyrie) sweepValkyrie(ctx, u, s, damage);
+      else if ('building' in target) strike(ctx, u, s, target.building, damage);
       else if (golem) {
         hurtDefender(battle, target.defender, damage, at);
         ctx.effect({
@@ -958,7 +964,7 @@ export function stepNativeUnit(
           : {}),
         wallBreaker: s.preferredClass === 'Wall' || undefined,
         healer: s.heal > 0 && s.dps <= 0,
-        ...(golem || (bowler && battle.nativeBowlerWallWindup)
+        ...(golem || valkyrie || (bowler && battle.nativeBowlerWallWindup)
           ? {
               nativeBuildingAttack: (target: Building) =>
                 beginNativeAttackWindup(u, s, { building: target }, battle),
