@@ -50,7 +50,8 @@ it.each([1, 9])(
 it.each(['building', 'defender', 'tower'] as const)(
   'Invisibility %s retains target selection and impact physics against version 119',
   (mode) => {
-    const r = nativeInvisibilityRecording(mode),
+    // This presentation boundary compares its own version-120 combat to version 119.
+    const r = nativeInvisibilityRecording(mode, false, 120),
       hidden = r.snapshots.find((s) => s.at === r.hidden)!.battle as Battle;
     expect(hidden.nativeSpellCastHistory?.some((c) => c.name === 'Invisibility') ?? false).toBe(
       mode !== 'tower',
@@ -69,3 +70,19 @@ it.each(['Clone', 'Invisibility'] as const)(
     verify(r);
   },
 );
+
+it('current Golem windups cancel hidden defender targets and replay Invisibility exactly', () => {
+  const r = nativeInvisibilityRecording('defender'),
+    model = new GameModel(),
+    hidden = r.snapshots.find((s) => s.at === r.hidden)!.battle as Battle,
+    golem = hidden.units.find((u) => u.kind === 'golem')!,
+    ref = golem.native?.attackWindup?.target;
+  expect(hidden.nativeGolemWindup).toBe(true);
+  expect(!ref || ref.building || ref.id !== r.subjectId).toBe(true);
+  expect(model.openReplay(parseReplayFile(JSON.stringify(makeReplayFile(r.data))))).toBe(true);
+  for (const snapshot of [...r.snapshots, ...r.snapshots.slice().reverse()]) {
+    model.seekReplay(snapshot.at);
+    while (model.replay!.seeking) model.step(0.05);
+    expect(JSON.parse(JSON.stringify(model.battle))).toEqual(snapshot.battle);
+  }
+});

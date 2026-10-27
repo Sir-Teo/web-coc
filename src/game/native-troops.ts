@@ -20,10 +20,10 @@ import { sneezyCombatStats, sneezySpawner, sneezySummon } from './native-sneezy'
 import { distance2D } from './distance';
 import { furnaceReleasePoint } from './native-furnace-geometry';
 import {
-  stepBowlerWindup,
-  beginBowlerWindup,
-  type BowlerWindupState,
-} from './native-bowler-windup';
+  stepNativeAttackWindup,
+  beginNativeAttackWindup,
+  type NativeAttackWindupState,
+} from './native-attack-windup';
 import {
   BUILDINGS,
   TROOPS,
@@ -94,7 +94,8 @@ export interface NativeUnitState {
   regenerationAt?: number;
   /** Version 109: action-clock charge and recovery, independent of the retained chain packets. */
   electroDragon?: ElectroDragonState;
-  bowler?: BowlerWindupState;
+  bowler?: NativeAttackWindupState;
+  attackWindup?: NativeAttackWindupState;
   /** Version 95: the source waiting bird and its separately drawn Egg. */
   phoenixWaiting?: true;
   phoenixEgg?: true;
@@ -815,11 +816,27 @@ export function stepNativeUnit(
   const electroDragon = !!(battle.nativeElectroDragon && u.kind === 'electrodragon');
   if (electroDragon && stepElectroDragonCharge(ctx, u, s, damage, speed, dt, actionDt)) return;
   const bowler = !!(battle.nativeBowlerWindup && u.kind === 'bowler');
+  const golem = !!(battle.nativeGolemWindup && (u.kind === 'golem' || u.kind === 'golemite'));
+  const splitAttack = bowler || golem;
   if (
-    bowler &&
-    stepBowlerWindup(ctx, u, s, dt, actionDt, (target) => {
+    splitAttack &&
+    stepNativeAttackWindup(ctx, u, s, dt, actionDt, (target) => {
       if ('building' in target) strike(ctx, u, s, target.building, damage);
-      else {
+      else if (golem) {
+        hurtDefender(battle, target.defender, damage, at);
+        ctx.effect({
+          type: 'hit',
+          sourceId: u.id,
+          targetId: target.defender.id,
+          targetDefender: true,
+          x: u.x,
+          y: u.y,
+          toX: target.defender.x,
+          toY: target.defender.y,
+        });
+        state.lastAttackAt = at;
+        state.attacks = (state.attacks ?? 0) + 1;
+      } else {
         // Retain the existing defender-targeted release path at this timing boundary.
         launchProjectile(
           battle,
@@ -941,6 +958,12 @@ export function stepNativeUnit(
           : {}),
         wallBreaker: s.preferredClass === 'Wall' || undefined,
         healer: s.heal > 0 && s.dps <= 0,
+        ...(golem
+          ? {
+              nativeBuildingAttack: (target: Building) =>
+                beginNativeAttackWindup(u, s, { building: target }, battle),
+            }
+          : {}),
         flying: s.flying || undefined,
         splash: s.splash || undefined,
         airTargets: s.airTargets,
@@ -989,11 +1012,11 @@ export function stepNativeUnit(
               },
             }
           : {}),
-        ...(bowler
+        ...(splitAttack
           ? {
               enterRange: () => {
                 const target = battle.defenders?.find((d) => d.id === u.defenderTarget);
-                if (target) beginBowlerWindup(u, s, { defender: target }, battle);
+                if (target) beginNativeAttackWindup(u, s, { defender: target }, battle);
               },
               attackReady: () => false,
             }
@@ -1087,9 +1110,9 @@ export function stepNativeUnit(
     u.attacking = true;
     if (damageRamp) recordInfernoDragonTransition(battle, u, damageRamp, target.id, false);
     if (s.underground) surfaceUndergroundUnit(ctx, u, at, target);
-    if (!bowler && at + 1e-9 < (state.targetAt ?? 0) + s.newTargetDelay) return;
-    if (bowler) {
-      beginBowlerWindup(u, s, { building: target }, battle);
+    if (!splitAttack && at + 1e-9 < (state.targetAt ?? 0) + s.newTargetDelay) return;
+    if (splitAttack) {
+      beginNativeAttackWindup(u, s, { building: target }, battle);
       return;
     }
     if (u.cooldown > 0) return;
@@ -1182,8 +1205,8 @@ export function stepNativeUnit(
       }
       u.attacking = true;
       if (battle.nativeDiggyMasterTarget && isHeroUnitKind(u.kind)) state.wallTarget = wall.id;
-      if (bowler) {
-        beginBowlerWindup(u, s, { building: wall }, battle);
+      if (splitAttack) {
+        beginNativeAttackWindup(u, s, { building: wall }, battle);
         return;
       }
       if (u.cooldown <= 0) {

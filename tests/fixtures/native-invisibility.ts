@@ -1,13 +1,17 @@
 import { defaultSpellLevels, emptyArmy, emptySpells } from '../../src/game/army';
 import { GameModel, makeBuilding } from '../../src/game/model';
-import { replayBattle, type ReplayData } from '../../src/game/replay';
+import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
 import { spellEndTime } from '../../src/game/native-spells';
 import type { CombatProjectile } from '../../src/game/projectiles';
 import { defenderHidden } from '../../src/game/defender-visibility';
 
 export type InvisibilityScenario = 'building' | 'defender' | 'tower';
 /** Actual player inputs, or a Spell Tower triggered by a real Champion hit. */
-export function nativeInvisibilityRecording(mode: InvisibilityScenario, air = false) {
+export function nativeInvisibilityRecording(
+  mode: InvisibilityScenario,
+  air = false,
+  version = REPLAY_VERSION,
+) {
   const model = new GameModel();
   model.state.obstacles = [];
   model.state.buildings = [
@@ -32,6 +36,7 @@ export function nativeInvisibilityRecording(mode: InvisibilityScenario, air = fa
   model.state.spellLevels = defaultSpellLevels();
   model.startBattle(0, true);
   const data = (model as unknown as { recording: ReplayData }).recording;
+  data.version = version;
   const kind = mode === 'tower' ? 'champion' : 'queen';
   data.initial.heroes = [{ kind, level: 1, items: [] }];
   if (mode !== 'building')
@@ -43,7 +48,7 @@ export function nativeInvisibilityRecording(mode: InvisibilityScenario, air = fa
         y: 6.5,
       },
     ];
-  model.battle = replayBattle(data.initial);
+  model.battle = replayBattle(data.initial, version);
   const battle = model.battle;
   const defender = battle.defenders?.find((d) => d.kind === 'hero');
   const subject = mode === 'building' ? battle.buildings.find((b) => b.id === 2)! : defender!;

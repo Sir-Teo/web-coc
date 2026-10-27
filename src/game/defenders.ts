@@ -547,7 +547,7 @@ function preferenceIndex(
   return index;
 }
 /** Whether a preferred building still stands, or the unit's own building target does. */
-function preferredOrCommitted(
+export function preferredOrCommitted(
   battle: Battle,
   unit: Unit,
   troop: DefenderFightTraits,

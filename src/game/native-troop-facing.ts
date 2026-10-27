@@ -11,6 +11,14 @@ export function nativeTroopFacingTarget(
 ) {
   const wall = buildings.get(unit.native?.wallTarget ?? NaN);
   if (wall && wall.hp > 0) return { x: wall.x + 0.5, y: wall.y + 0.5 };
+  const windup =
+    battle.nativeGolemWindup && (unit.kind === 'golem' || unit.kind === 'golemite')
+      ? unit.native?.attackWindup
+      : undefined;
+  const committedWall =
+    windup?.engaged && windup.target?.building ? buildings.get(windup.target.id) : undefined;
+  if (committedWall?.kind === 'wall' && committedWall.hp > 0)
+    return { x: committedWall.x + 0.5, y: committedWall.y + 0.5 };
   const defender = defenderIndex(battle).get(unit.defenderTarget ?? NaN);
   if (
     defender &&

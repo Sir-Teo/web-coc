@@ -993,6 +993,8 @@ export interface Battle {
   nativeGarrisonBowlerImpacts?: true;
   /** Version 161: source boulder impact phases and retained attacker flights for seeks. */
   nativeBowlerImpactArt?: true;
+  /** Version 162: attacking Golem/Golemite use source split windup and recovery. */
+  nativeGolemWindup?: true;
   nativeBowlerFlights?: CombatProjectile[];
   nativeBowlerImpacts?: {
     id: string;
