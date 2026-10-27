@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 144;
+export const REPLAY_VERSION = 145;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -172,7 +172,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 141 corrects Meteor Staff visibility, defense preference and building fallback.
  * Version 142 retains original Meteor Staff cast origins, art and source audio.
  * Version 143 shares garrison damage protections and records direct Revenge Deck hit sources.
- * Version 144 preserves Snake Bracelet damage and the per-battle summon cap through Recall. */
+ * Version 144 preserves Snake Bracelet damage and the per-battle summon cap through Recall.
+ * Version 145 preserves normal/Super Yeti damage progress and mite stock through Recall. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -284,6 +285,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 141 ||
   version === 142 ||
   version === 143 ||
+  version === 144 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -432,6 +434,9 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 145 && (s.army.yeti > 0 || s.army.superyeti > 0)
+      ? { nativeYetiRecall: true as const }
+      : {}),
     ...(version >= 144 &&
     s.heroes?.some(
       (hero) => hero.kind === 'king' && hero.items.some((item) => item.slug === 'snake-bracelet'),

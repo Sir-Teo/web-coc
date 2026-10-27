@@ -961,6 +961,8 @@ export interface Battle {
   nativeRevengeDeck?: true;
   /** Version 144: Snake Bracelet retains cumulative damage through Recall body replacement. */
   nativeSnakeBraceletRecall?: true;
+  /** Version 145: recalled normal/Super Yetis retain damage progress and remaining mite stock. */
+  nativeYetiRecall?: true;
   nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
   nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */
@@ -1024,6 +1026,10 @@ export interface Battle {
   townhall?: number;
   /** Health of recalled troops waiting in the deployment bar, first recalled first redeployed. */
   recalledHp?: Partial<Record<TroopKind, number[]>>;
+  /** Version 145: counters in the same FIFO order as each troop kind's recalledHp queue. */
+  recalledYeti?: Partial<
+    Record<'yeti' | 'superyeti', { damageTaken: number; damageSpawns: number }[]>
+  >;
   catalog?: CampaignCatalog;
   scenery?: CampaignScenery[];
   troopLevels?: Army;
@@ -5816,6 +5822,10 @@ export class GameModel {
       attacking: false,
       ...(nativeBehavior(b, k) ? { native: initialNativeState(k, this.troopLevel(k)) } : {}),
     });
+    if (b.nativeYetiRecall && (k === 'yeti' || k === 'superyeti') && recalled !== undefined) {
+      const stock = b.recalledYeti?.[k]?.shift();
+      if (stock) Object.assign(b.units.at(-1)!.native!, stock);
+    }
     this.onEffect(
       recalled !== undefined && recordRecallEvent(b, b.units.at(-1)!, 'redeploy')
         ? { type: 'recall-unit', sourceId: b.units.at(-1)!.id, text: 'redeploy', x, y }
@@ -6131,6 +6141,11 @@ export class GameModel {
       b.remaining[kind]++;
       if (!b.practice && !b.fixedArmy) this.state.army[kind]++;
       ((b.recalledHp ??= {})[kind] ??= []).push(u.hp);
+      if (b.nativeYetiRecall && (kind === 'yeti' || kind === 'superyeti'))
+        ((b.recalledYeti ??= {})[kind] ??= []).push({
+          damageTaken: u.native?.damageTaken ?? 0,
+          damageSpawns: u.native?.damageSpawns ?? 0,
+        });
     }
     this.onEffect(
       original
