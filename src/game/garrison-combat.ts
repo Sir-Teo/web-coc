@@ -288,7 +288,14 @@ export function stepGarrisonDefender(
     defender.kind === 'hero'
   )
     return;
-  const stats = defenderRageStats(battle, defender, garrisonStats(defender.kind, defender.level));
+  const splitMelee =
+    !!battle.nativeGarrisonMeleeTiming &&
+    (defender.kind === 'pekka' || defender.kind === 'valkyrie');
+  const stats = defenderRageStats(
+    battle,
+    defender,
+    garrisonStats(defender.kind, defender.level, splitMelee),
+  );
   stepShots(battle, defender, effect);
   // Later families: effects already in progress resolve even if the defender dies or is stunned.
   if (stats.chain) stepChain(battle, defender, stats);
@@ -370,7 +377,8 @@ export function stepGarrisonDefender(
   const attackDt =
     (raged ? activeDt * tantrum!.attackScale : activeDt) * poison.attack * frost.attack;
   const moveDt = activeDt * poison.move * frost.move;
-  if (stats.split) defender.recovery = Math.max(0, (defender.recovery ?? 0) - attackDt);
+  const recoveryAtStart = defender.recovery ?? 0;
+  if (stats.split) defender.recovery = Math.max(0, recoveryAtStart - attackDt);
   if (stats.summon) {
     // The summon check reads the target held going into this step (a 50 ms local offset).
     stepSummons(battle, defender, stats, attackDt, defender.target !== null, spawnGarrisonDefender);
@@ -480,9 +488,11 @@ export function stepGarrisonDefender(
     if (!defender.engaged) {
       defender.engaged = true;
       // Split timing: any post-hit recovery still running precedes the new target's windup.
+      // New melee timing spends this tick once; older split families retain their old clock.
+      const recovery = splitMelee ? recoveryAtStart : (defender.recovery ?? 0);
       defender.cooldown = Math.max(
         0,
-        (stats.split ? (defender.recovery ?? 0) : 0) + stats.firstAttackDelay - attackDt,
+        (stats.split ? recovery : 0) + stats.firstAttackDelay - attackDt,
       );
     }
     defender.attacking = true;

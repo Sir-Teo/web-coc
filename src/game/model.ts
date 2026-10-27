@@ -973,6 +973,8 @@ export interface Battle {
   nativeFurnaceAuraDecay?: true;
   /** Version 151: Furnace's finite release directions do not depend on host trig rounding. */
   nativeFurnaceSpawnGeometry?: true;
+  /** Version 152: defending PEKKA/Valkyrie use split windup and recovery timing. */
+  nativeGarrisonMeleeTiming?: true;
   nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
   nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */

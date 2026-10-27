@@ -212,7 +212,7 @@ Electro Dragon 3, Golem 8, Witch 4, Bowler 4, Lava Hound 6 (Defensive Lava Hound
 
 All mechanics below cite the pinned older engine reconstruction [bns34/Supercell.Magic-my-turn@52c5953](https://github.com/bns34/Supercell.Magic-my-turn/tree/52c5953f5e5802c64ac36e53d5599f8700976085) (client 9.256.x; Electro Dragon, Electro Titan and the Royal Ghost postdate it). No native executable parity is claimed.
 
-**Split attack timer (these families only).** [LogicAttackerItemData](https://github.com/bns34/Supercell.Magic-my-turn/blob/52c5953f5e5802c64ac36e53d5599f8700976085/Supercell.Magic.Logic/Data/LogicAttackerItemData.cs) splits `AttackSpeed` into a post-hit recovery and a hit-timer windup. The recovery is `CoolDownOverride`, else `AttackSpeed − 1500` above 1,500 ms, or `AttackSpeed − 200` for healing rows. It also turns `NewTargetAttackDelay` into an initial charge, `clamp(AttackSpeed − delay, 0, AttackSpeed)`. [LogicCombatComponent](https://github.com/bns34/Supercell.Magic-my-turn/blob/52c5953f5e5802c64ac36e53d5599f8700976085/Supercell.Magic.Logic/GameObject/Component/LogicCombatComponent.cs) freezes the hit timer during recovery and strikes when the windup is full. The period stays `AttackSpeed`. A fresh target is struck after `recovery left + windup − charge`. The first hits are Electro Dragon 2.875 s (explicit 625 ms recovery), Golem/Golemite/Lava Hound/MOMMA 1.5 s, Bowler 0.4 s (1,100 ms charge, 700 ms recovery), and Witch 0.7 s. The Royal Ghost waits 1.0 s: its 2,400 ms delay exceeds `AttackSpeed`, so the clamped charge is 0. The same component keeps character targets in range up to `AttackRange + 256` units (half a tile). [LogicMovementComponent.GetAttackDist](https://github.com/bns34/Supercell.Magic-my-turn/blob/52c5953f5e5802c64ac36e53d5599f8700976085/Supercell.Magic.Logic/GameObject/Component/LogicMovementComponent.cs) approaches to `range − 32` units. Leaving range resets the hit timer only while it is still zero, so a windup that has started completes on its target while the unit chases. **Finding:** the earlier reading used by the frozen families (`wait = AttackSpeed − NewTargetAttackDelay`, no tolerance, cancellation on leaving range) coincides with this one for Dragon 7 and Balloon 8. It does not for PEKKA 8 (1.8 s rather than 1.5 s) or Valkyrie 7 (1.2 s rather than 0.3 s). Those two remain byte-identical here, pending a versioned decision.
+**Split attack timer (these families only).** [LogicAttackerItemData](https://github.com/bns34/Supercell.Magic-my-turn/blob/52c5953f5e5802c64ac36e53d5599f8700976085/Supercell.Magic.Logic/Data/LogicAttackerItemData.cs) splits `AttackSpeed` into a post-hit recovery and a hit-timer windup. The recovery is `CoolDownOverride`, else `AttackSpeed − 1500` above 1,500 ms, or `AttackSpeed − 200` for healing rows. It also turns `NewTargetAttackDelay` into an initial charge, `clamp(AttackSpeed − delay, 0, AttackSpeed)`. [LogicCombatComponent](https://github.com/bns34/Supercell.Magic-my-turn/blob/52c5953f5e5802c64ac36e53d5599f8700976085/Supercell.Magic.Logic/GameObject/Component/LogicCombatComponent.cs) freezes the hit timer during recovery and strikes when the windup is full. The period stays `AttackSpeed`. A fresh target is struck after `recovery left + windup − charge`. The first hits are Electro Dragon 2.875 s (explicit 625 ms recovery), Golem/Golemite/Lava Hound/MOMMA 1.5 s, Bowler 0.4 s (1,100 ms charge, 700 ms recovery), and Witch 0.7 s. The Royal Ghost waits 1.0 s: its 2,400 ms delay exceeds `AttackSpeed`, so the clamped charge is 0. The same component keeps character targets in range up to `AttackRange + 256` units (half a tile). [LogicMovementComponent.GetAttackDist](https://github.com/bns34/Supercell.Magic-my-turn/blob/52c5953f5e5802c64ac36e53d5599f8700976085/Supercell.Magic.Logic/GameObject/Component/LogicMovementComponent.cs) approaches to `range − 32` units. Leaving range resets the hit timer only while it is still zero, so a windup that has started completes on its target while the unit chases. **Finding:** the earlier reading used by the frozen families (`wait = AttackSpeed − NewTargetAttackDelay`, no tolerance, cancellation on leaving range) coincides with this one for Dragon 7 and Balloon 8. It does not for PEKKA 8 (1.8 s rather than 1.5 s) or Valkyrie 7 (1.2 s rather than 0.3 s). Those two remain byte-identical in this historical boundary; recording version 152 below enables their split timing.
 
 | Family                | Pinned values used                                                                    | Special mechanics and interpretation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | --------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -395,3 +395,45 @@ The protected Giant retains full HP, damage resumes after Tome expires, and one 
 in Node and desktop/phone Chromium for both versions. Browser checks inspect original Ghost,
 Hero and Snake artwork, reduced motion and read-only redraws. Version 146's audio-only physical
 comparison remains pinned to its own version so this subsequent combat fix is tested separately.
+
+## Melee split timing (recording version 152)
+
+The pinned 18.400.21 `characters.PEKKA` row 8 and `characters.Valkyrie` row 7 both declare
+`AttackSpeed=1800` with no `CoolDownOverride`. Their VisualLevels are 8 and 7. PEKKA has no
+`NewTargetAttackDelay`; Valkyrie declares 600 ms. Their source damage is 610 DPS × 1.8 = 1098
+and 185 DPS × 1.8 = 333. The archived [PEKKA dossier](../official-wiki/troops/pekka.md),
+revision **625276**, and [Valkyrie dossier](../official-wiki/troops/valkyrie.md), revision
+**624089**, corroborate the troop stats; they do not establish executable first-hit timing.
+
+The pinned older [LogicAttackerItemData](https://github.com/bns34/Supercell.Magic-my-turn/blob/52c5953f5e5802c64ac36e53d5599f8700976085/Supercell.Magic.Logic/Data/LogicAttackerItemData.cs)
+uses `AttackSpeed - 1500` for recovery when the override is absent and the interval exceeds
+1500 ms. It turns a positive new-target delay into `clamp(interval - delay, 0, interval)`
+initial charge. Applied through the existing local split controller:
+
+| Defender | Recovery | Windup | Initial charge | Fresh first hit | Same-target period |
+| -------- | -------- | ------ | -------------- | --------------- | ------------------ |
+| PEKKA 8 | 0.3 s | 1.5 s | 0 | 1.5 s | 1.8 s |
+| Valkyrie 7 | 0.3 s | 1.5 s | 1.2 s | 0.3 s | 1.8 s |
+
+The former frozen path waited 1.8 and 1.2 seconds. Version 152 opts these two families into
+split timing with separately cached stat variants; the unversioned source-reference API
+retains its frozen values. It also uses the controller's half-tile character range tolerance
+and finishes a committed windup while chasing the same target. A Valkyrie spin can still miss
+when the target leaves her one-tile self-centered splash. Damage, area/layer rules, source
+stats, projectiles, and other garrison families retain their prior behavior.
+
+When a fresh target is acquired during recovery, the new melee path captures recovery at the
+start of the step before applying its one attack-time advance. This avoids spending the same
+tick twice. A switch immediately after a hit therefore needs 1.8 s for PEKKA or 0.6 s for
+Valkyrie, including the 0.3 s recovery and the new target's initial charge. Poison/frost and
+Freeze retain the existing action-clock rules. Other split families keep their historical
+recovery accounting. Only carried PEKKA/Valkyrie garrisons enable the adapter; versions 151
+and earlier retain their former controller. The older reconstruction corroborates the local
+interpretation; native 18.400.21 executable timing remains unavailable.
+
+`tests/garrison-melee-timing.test.ts` covers source values, first hits, same-target periods,
+exact damage, recovery on retargeting, range tolerance, committed chase, Freeze, scoped
+allocation and complete current/historical portable reverse seeks. Its portable fixtures use
+real Castle releases, troop deployments and optional Freeze casts in a valid campaign setup.
+`tests/browser/garrison-melee-timing.spec.ts` verifies full battle snapshots, original meshes,
+read-only/reduced rendering and rewind on desktop and phone, including Freeze and thaw.
