@@ -1,9 +1,11 @@
 import { isPetUnitKind } from './native-units';
+import { nativeMiteJump } from './native-mite-jumps';
 import { cancelImageDecodes } from './cancel-image-decodes';
 import type Phaser from 'phaser';
 import { TROOPS, type TroopKind } from './data';
 import type { Battle, Building } from './model';
-import { nativeScenePosesShared, type NativeMeshGraph } from './native-mesh';
+import { nativeScenePosesShared, nativeSceneLocator, type NativeMeshGraph } from './native-mesh';
+import { nativeTroopFacingTarget } from './native-troop-facing';
 import { nativeMeshTexture } from './native-mesh-scene';
 import { NativeSceneView } from './native-scene-view';
 import type { NativeScenePose } from './native-mesh';
@@ -38,6 +40,7 @@ interface LevelRequest {
   images: Set<HTMLImageElement>;
 }
 interface TroopView {
+  kind: string;
   scene: string;
   view: NativeSceneView;
   /** Clip state drawn by the last full render: walk, idle, attack or die. */
@@ -50,12 +53,13 @@ interface TroopView {
   tagged: number;
   /** The last shared sample drawn, so an unchanged source frame skips the shared-cache lookup. */
   sample?: {
-    graph: object;
+    graph: NativeMeshGraph;
     name: string;
     frame: number;
     scale: number;
     mirror: number;
     poses: readonly NativeScenePose[];
+    attachments?: Record<string, { x: number; y: number } | undefined>;
   };
 }
 /** Source direction roots and native clip timing follow the deterministic battle clock. */
@@ -255,6 +259,27 @@ export class TroopNativePresentation {
   hasView(id: number) {
     return this.views.has(id);
   }
+  /** World point of a named locator in the exact pose retained by this unit's body. */
+  attachment(id: number, name: string) {
+    const owned = this.views.get(id);
+    const sample = owned?.sample;
+    if (!owned || !sample || !this.drewUnit(id)) return undefined;
+    const attachments = (sample.attachments ??= {});
+    if (!Object.hasOwn(attachments, name)) {
+      const fps = sample.graph.clips[sample.graph.exports[sample.name]]?.fps ?? 1;
+      const matrix = nativeSceneLocator(sample.graph, sample.name, sample.frame / fps, name, {}, [
+        sample.scale * sample.mirror,
+        0,
+        0,
+        0,
+        sample.scale,
+        0,
+      ]);
+      attachments[name] = matrix ? { x: matrix[2], y: matrix[5] } : undefined;
+    }
+    const point = attachments[name];
+    return point ? { x: owned.x + point.x, y: owned.y + point.y } : undefined;
+  }
   render(
     battle: Battle | null,
     reduced: boolean,
@@ -309,7 +334,8 @@ export class TroopNativePresentation {
     const nearEvery = detail ? 2 : 1;
     const elapsed = battle?.elapsed ?? 0;
     for (const u of battle?.units ?? []) {
-      if (u.hero || isPetUnitKind(u.kind) || u.ejected) continue;
+      // Booger shares the baked 3D character layer with Sneezy.
+      if (u.hero || isPetUnitKind(u.kind) || u.kind === 'booger' || u.ejected) continue;
       // Recalled units are gone: drop their meshes now, or a frozen frame stays.
       if (u.native?.recalled) {
         const owned = this.views.get(u.id);
@@ -335,7 +361,7 @@ export class TroopNativePresentation {
           // Off-screen: leave the (now invisible) fallback as-is; it is off screen.
           continue;
         }
-        if (lodActive && kept) {
+        if (lodActive && kept && kept.kind === u.kind) {
           const dx = point.x - cx;
           const dy = point.y - cy;
           const radius = lodRadius * LOD_HYSTERESIS;
@@ -373,17 +399,44 @@ export class TroopNativePresentation {
       // runs at 20 Hz without interpolation, so most rendered frames see no displacement.
       const motion = this.motion.update(u.id, u.x, u.y, elapsed, !u.attacking && u.path.length > 0);
       const moving = !u.attacking && motion.moving;
-      const target = typeof u.target === 'number' ? buildings?.get(u.target) : undefined;
+      const target = u.attacking ? nativeTroopFacingTarget(battle!, u, buildings) : undefined;
       let facing = this.facings.get(u.id);
       if (!facing) this.facings.set(u.id, (facing = { dx: 1, dy: 0 }));
       if (u.attacking && target) {
-        facing.dx = target.x + 1 - u.x;
-        facing.dy = target.y + 1 - u.y;
+        facing.dx = target.x - u.x;
+        facing.dy = target.y - u.y;
       } else if (moving && motion.heading) {
         facing.dx = motion.dx;
         facing.dy = motion.dy;
       }
-      const requested = u.hp <= 0 ? 'die' : u.attacking ? 'attack' : moving ? 'walk' : 'idle';
+      const dragon =
+        battle?.nativeElectroDragon && u.kind === 'electrodragon'
+          ? u.native?.electroDragon
+          : undefined;
+      const dragonPhase =
+        dragon?.animAt !== undefined &&
+        dragon.clock < dragon.animAt + TROOPS.electrodragon.rate - 1e-9
+          ? Math.max(0, dragon.clock - dragon.animAt)
+          : undefined;
+      const windupOffset =
+        battle?.nativeBowlerWindup && u.kind === 'bowler'
+          ? u.native?.bowler?.animationOffset
+          : (battle?.nativeGolemWindup && (u.kind === 'golem' || u.kind === 'golemite')) ||
+              (battle?.nativePekkaWindup && u.kind === 'pekka') ||
+              (battle?.nativeHoundWindup && (u.kind === 'lavahound' || u.kind === 'icehound')) ||
+              (battle?.nativeWitchWindup && (u.kind === 'witch' || u.kind === 'superwitch')) ||
+              (battle?.nativeValkyrieWindup &&
+                (u.kind === 'valkyrie' || u.kind === 'supervalkyrie'))
+            ? u.native?.attackWindup?.animationOffset
+            : undefined;
+      const requested =
+        u.hp <= 0
+          ? 'die'
+          : dragonPhase !== undefined || windupOffset !== undefined || u.attacking
+            ? 'attack'
+            : moving
+              ? 'walk'
+              : 'idle';
       const state = level.states[requested] ?? level.states.idle ?? level.states.walk;
       if (!state) continue;
       const deathAge = elapsed - (u.defeatedAt ?? elapsed);
@@ -413,13 +466,22 @@ export class TroopNativePresentation {
       let seconds: number;
       if (reduced) seconds = 0;
       else if (u.hp <= 0) seconds = deathAge;
+      else if (dragonPhase !== undefined) seconds = dragonPhase;
+      else if (windupOffset !== undefined)
+        seconds = Math.max(0, Math.max(0, state.actionFrame - 1) / (clip?.fps ?? 1) + windupOffset);
       else if (u.attacking) {
         // Cooldowns reset to the scaled attack interval (boosts, poison, chill), as for heroes.
         const interval = Math.max(
           TROOPS[u.kind].rate * unitAttackIntervalScale(u, elapsed),
           u.cooldown,
         );
-        seconds = Math.max(0, interval - u.cooldown);
+        seconds =
+          battle &&
+          (nativeMiteJump(battle, u.kind) ||
+            (battle.nativeElectromites && u.kind === 'electromite')) &&
+          u.native?.targetAt !== undefined
+            ? Math.max(0, elapsed - u.native.targetAt)
+            : Math.max(0, interval - u.cooldown);
       } else
         seconds =
           // Shrink and late campaign freezes hold the clock; loops get a per-unit phase.
@@ -429,7 +491,7 @@ export class TroopNativePresentation {
       const scale = 0.6 * state.scale * (isShrunk(u, elapsed) ? 0.5 : 1);
       const mirror = sx < 0 ? -1 : 1;
       let owned = this.views.get(u.id);
-      if (owned && owned.scene !== state.scene) {
+      if (owned && (owned.scene !== state.scene || owned.kind !== u.kind)) {
         owned.view.retire();
         this.views.delete(u.id);
         owned = undefined;
@@ -475,7 +537,16 @@ export class TroopNativePresentation {
         view.mergeLeaves = true;
         // Hit-flash texel bakes spread over frames instead of stalling the one they land on.
         view.bakeBudget = true;
-        owned = { scene: state.scene, view, state: requested, x: 0, y: 0, depth: 0, tagged: -1 };
+        owned = {
+          kind: u.kind,
+          scene: state.scene,
+          view,
+          state: requested,
+          x: 0,
+          y: 0,
+          depth: 0,
+          tagged: -1,
+        };
         this.views.set(u.id, owned);
       }
       owned.state = requested;

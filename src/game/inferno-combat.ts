@@ -92,7 +92,13 @@ export function tickInfernoCombat(
       damage +=
         ([charged.dps, charged.dpsLv2, charged.dpsLv3][pulse.stage] * pulse.intervalMs) / 1000;
       damage *= buildingDamageScale(native, tower as Building, at);
-      hurtUnit(native, target, damage, at);
+      hurtUnit(
+        native,
+        target,
+        damage,
+        at,
+        native.nativeRevengeDeck ? (tower as Building).id : undefined,
+      );
       killed = target.hp <= 0;
       if (killed) target.hp = 0;
     } else {

@@ -1,5 +1,8 @@
+import { preferredDefense } from './native-defense-preference';
 import { poisonAvoidanceTarget, type DefenderPoisonArea } from './poison-avoidance';
 import { defenderPoisonScales } from './defender-poison';
+import type { DefenderHitPoison } from './defender-hit-poison';
+import { defenderFrostScales, type DefenderFrost } from './defender-frost';
 import type { HeroKind } from './native-hero-data';
 import { MAP_SIZE } from './grid';
 import { hurtUnit } from './native-status';
@@ -17,11 +20,16 @@ import type { GarrisonKind } from './garrison-kinds';
 import { stepGarrisonStatus } from './garrison-status';
 import { TROOPS, isDefense, isResourceBuilding, isTrap, type TroopDef } from './data';
 import { findPath, distanceTo, type Battle, type Building, type Unit, type FX } from './model';
-import { launchProjectile } from './projectiles';
-import { targetableBuilding } from './hidden-tesla';
+import { launchProjectile, type CombatProjectile } from './projectiles';
+import { presentBuilding, targetableBuilding } from './hidden-tesla';
 // Late campaign Spell Tower Rage and Invisibility, and activated late Defense classes
 // (all neutral without version 44 late state).
-import { lateActivatedDefense, lateDefenderHidden, lateDefenderStats } from './late-campaign';
+import { lateActivatedDefense } from './late-campaign';
+import { defenderHidden } from './defender-visibility';
+import { defenderRageStats } from './native-rage';
+import type { NativeBoost } from './native-boost';
+import { rampedDamage, finishRampingHit, type NativeDamageRampStats } from './native-damage-ramp';
+import { recordInfernoDragonTransition } from './inferno-dragon-transitions';
 import { untargetable } from './spell-effects';
 import {
   SKELETON_TRAP,
@@ -50,6 +58,16 @@ interface DefenderState {
   avoidingPoison?: true;
   defeatedAt?: number;
   stunnedUntil?: number;
+  /** Version 68: full Freeze cue, separate from Lightning and other short stuns. */
+  frozenUntil?: number;
+  /** Version 92: concealment from native Invisibility pulses, independent of stun. */
+  invisibleUntil?: number;
+  /** Friendly Rage; version 93 extends native coverage beyond Guardians. */
+  boost?: NativeBoost;
+  /** Version 76: intrinsic attacker poison-on-hit, separate from area-spell exposure. */
+  hitPoison?: DefenderHitPoison;
+  /** Version 77: partial frost from a native ranged hit, independent of full Freeze. */
+  frost?: DefenderFrost;
   /** Version 45 Poison Spell exposure: slows movement and attacks while it lasts. */
   poison?: {
     since: number;
@@ -75,6 +93,10 @@ export interface GarrisonDefender extends DefenderState {
   tantrum?: boolean;
   /** Later families (see garrison-abilities.ts): split-timer recovery still to run. */
   recovery?: number;
+  /** Versions 154–155: active wall-time age of the current original pre-attack sample. */
+  preAttack?: { n: number; targetId: number; age: number; lastAt: number; waiting?: true };
+  /** Version 155: completed Bowler takes keep their natural tails; at most 16 releases. */
+  preAttackHistory?: { n: number; targetId: number; at: number }[];
   /** Secondary troops and summons: push-out from their spawn point, then summon SpawnIdle. */
   push?: GarrisonPush;
   idleUntil?: number;
@@ -106,8 +128,6 @@ export interface GuardianDefender extends DefenderState {
   releaseAt?: number;
   enraged?: boolean;
   deathResolved?: boolean;
-  /** Friendly defensive Rage (Spell Tower, Smasher death rage). */
-  boost?: { until: number; damage: number; speed: number };
 }
 /** Builder's Hut Defending Builder (version 45+): repairs buildings and cannot be attacked. */
 export interface RepairDefender extends DefenderState {
@@ -137,12 +157,14 @@ export type Defender =
 /** A Clan Castle defender: the skeleton, Guardian and repair families have their own rules. */
 export const isGarrisonDefender = (d: Defender): d is GarrisonDefender =>
   d.kind !== 'skeleton' && d.kind !== 'guardian' && d.kind !== 'repairer' && d.kind !== 'hero';
-export function hurtDefender(battle: Battle, defender: Defender, power: number) {
+export function hurtDefender(battle: Battle, defender: Defender, power: number, hitAt?: number) {
+  const at = hitAt ?? battle.elapsed;
   if (defender.hp <= 0 || defender.kind === 'repairer') return;
-  if (defender.kind !== 'skeleton' && defender.spawnedAt > battle.elapsed) return;
+  if (defender.kind !== 'skeleton' && defender.spawnedAt > at + (hitAt === undefined ? 0 : 1e-9))
+    return;
   defender.hp = Math.max(0, defender.hp - power);
   if (!defender.hp) {
-    defender.defeatedAt = battle.elapsed;
+    defender.defeatedAt = at;
     defender.attacking = false;
   }
 }
@@ -153,15 +175,17 @@ export function damageDefenders(
   radius: number,
   targets: 'ground' | 'air' | 'both' = 'ground',
   skipId?: number,
+  hitAt?: number,
 ) {
   for (const enemy of battle.defenders ?? [])
     if (
       enemy.id !== skipId &&
       enemy.hp > 0 &&
+      (hitAt === undefined || enemy.spawnedAt <= hitAt + 1e-9) &&
       (targets === 'both' || enemy.mode === targets) &&
       distance2D(enemy.x - point.x, enemy.y - point.y) <= radius
     )
-      hurtDefender(battle, enemy, power);
+      hurtDefender(battle, enemy, power, hitAt);
 }
 export function spawnSkeleton(battle: Battle, source: Building, at: number, index: number) {
   const mode = source.skeletonMode ?? 'ground',
@@ -242,7 +266,7 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
       ),
     );
     if (activeDt <= 0) continue;
-    const stats = lateDefenderStats(
+    const stats = defenderRageStats(
         battle,
         defender,
         skeletonStats(defender.mode, defender.spawnLevel),
@@ -274,9 +298,10 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
     const wasAvoiding = !!defender.avoidingPoison;
     delete defender.avoidingPoison;
     const poison = defenderPoisonScales(battle, defender);
-    const moveDt = activeDt * poison.move;
+    const frost = defenderFrostScales(defender, battle.elapsed);
+    const moveDt = activeDt * poison.move * frost.move;
     const cooling = defender.cooldown > 0;
-    defender.cooldown -= activeDt * poison.attack;
+    defender.cooldown -= activeDt * poison.attack * frost.attack;
     defender.pathAt -= activeDt;
     if (!target) {
       defender.target = null;
@@ -313,7 +338,13 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
       if (defender.cooldown <= 0) {
         defender.cooldown = Math.max(0, stats.rate + (cooling ? defender.cooldown : 0));
         defender.alerted = true;
-        hurtUnit(battle, target, stats.damage);
+        hurtUnit(
+          battle,
+          target,
+          stats.damage,
+          battle.elapsed,
+          battle.nativeRevengeDeck ? defender.id : undefined,
+        );
         effect({
           type: 'hit',
           sourceDefender: true,
@@ -352,33 +383,106 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
 export type DefenderFightTraits = Pick<
   TroopDef,
   'prefersDefenses' | 'prefersResources' | 'healer' | 'wallBreaker' | 'flying' | 'splash'
-> & { airTargets?: boolean };
+> & {
+  /** Source Any Building preference and a committed native attack callback. */
+  prefersBuildings?: boolean;
+  nativeAttack?(target: Defender, power: number): void;
+  /** Blocking walls use the same native cast as an ordinary building target. */
+  nativeBuildingAttack?(target: Building, power: number): void;
+  airTargets?: boolean;
+  preferHeroes?: boolean;
+  heroDamageScale?: number;
+  /** Poison Lizard prefers nearby enemy units even when they have not engaged. */
+  seekUnalerted?: boolean;
+  nativeProjectile?: CombatProjectile['native'];
+  /** Radius of a source-backed melee area hit; never grants air targeting. */
+  nativeMeleeSplash?: number;
+  /** Ground burrowers move directly below obstacles without becoming airborne. */
+  underground?: boolean;
+  /** A source hit without a projectile, including ranged or flying Heroes. */
+  nativeDirectHit?: boolean;
+  /** Fraction of the primary target's max HP, added after attack damage boosts. */
+  nativeTargetHpBonus?: number;
+  /** Source IncreasingDamage stages, keyed to the actual defender being hit. */
+  nativeDamageRamp?: NativeDamageRampStats;
+};
 const canFight = (unit: Unit, enemy: Defender, troop: DefenderFightTraits) =>
   !troop.healer &&
   !troop.wallBreaker &&
+  !(troop.seekUnalerted && enemy.kind === 'repairer') &&
   (enemy.mode === 'ground' ||
     (troop.airTargets ??
       (unit.kind === 'archer' || unit.kind === 'wizard' || unit.kind === 'dragon')));
+/** Resolve a committed defender with the shared visibility and targeting rules. */
+export function attackerDefenderTarget(
+  battle: Battle,
+  unit: Unit,
+  id: number | undefined,
+  troop: DefenderFightTraits,
+) {
+  if (id === undefined) return undefined;
+  return (battle.defenders ?? []).find(
+    (d) =>
+      d.id === id &&
+      d.hp > 0 &&
+      ((d.kind === 'skeleton' && !troop.seekUnalerted) || d.spawnedAt <= battle.elapsed) &&
+      canFight(unit, d, troop) &&
+      !defenderHidden(battle, d) &&
+      garrisonDefenderTargetable(battle, d),
+  );
+}
 type AttackStats = Pick<TroopDef, 'damage' | 'speed' | 'range' | 'rate'>;
 /** Routing shared with the building chase: wall index, Jump breaches, A* budget. */
 export interface DefenderRoute {
   buildings: Building[];
+  /** Native jumpers route without walls and never attack one on the chase. */
+  jumpWalls?: boolean;
   wallTile?: Map<number, Building>;
   passableWalls?: Set<number>;
   budget?: { count: number; limit: number };
   breaches?: readonly { x: number; y: number }[];
+  /** Prepare native targetability before a unit can strike its chosen defender. */
+  enterRange?(): void;
+  /** Source attack delay can begin when a new defender is acquired, before the chase. */
+  targetAcquired?(id: number): void;
+  attackReady?(): boolean;
+  /** Observe the actual blocker while a routed attacker keeps its defender destination. */
+  enterWallRange?(wall: Building): void;
+}
+/** Hero hunters ignore alert distance and ordinary defenders while a valid Hero remains. */
+function preferredHeroTarget(battle: Battle, unit: Unit, troop: DefenderFightTraits) {
+  let best: Defender | undefined;
+  let bestDist = Infinity;
+  for (const defender of battle.defenders ?? []) {
+    if (
+      defender.kind !== 'hero' ||
+      defender.hp <= 0 ||
+      defender.spawnedAt > battle.elapsed ||
+      !canFight(unit, defender, troop) ||
+      defenderHidden(battle, defender) ||
+      !garrisonDefenderTargetable(battle, defender)
+    )
+      continue;
+    if (defender.id === unit.defenderTarget) return defender;
+    const dist = distance2D(defender.x - unit.x, defender.y - unit.y);
+    if (dist < bestDist || (dist === bestDist && defender.id > best!.id)) {
+      best = defender;
+      bestDist = dist;
+    }
+  }
+  return best;
 }
 /** Min-scan: identical winner to the old filter+sort (distance, then larger id). */
-function nearestAlertedDefender(battle: Battle, unit: Unit, troop: DefenderFightTraits) {
+export function nearestAlertedDefender(battle: Battle, unit: Unit, troop: DefenderFightTraits) {
   let bestDist = Infinity;
   let best: Defender | undefined;
   for (const d of battle.defenders ?? []) {
     if (
       d.hp <= 0 ||
-      (d.kind !== 'skeleton' && d.spawnedAt > battle.elapsed) ||
-      !d.alerted ||
+      ((d.kind !== 'skeleton' || troop.seekUnalerted) && d.spawnedAt > battle.elapsed) ||
+      (!d.alerted && !troop.seekUnalerted) ||
       !canFight(unit, d, troop) ||
-      lateDefenderHidden(battle, d) ||
+      defenderHidden(battle, d) ||
       !garrisonDefenderTargetable(battle, d)
     )
       continue;
@@ -426,7 +530,12 @@ function preferenceIndex(
   let byId: Map<number, Building> | null = new Map();
   for (const b of buildings) {
     // Weapon and hut entries are created by the late phases, never inside the unit loop.
-    if (isDefense(b.kind) || (battle.late && (weapons?.[b.id] || huts?.[b.id]))) defenses.push(b);
+    if (
+      isDefense(b.kind) ||
+      (battle.nativeActivatedPreference && (b.kind === 'townhall' || b.kind === 'builder')) ||
+      (battle.late && (weapons?.[b.id] || huts?.[b.id]))
+    )
+      defenses.push(b);
     if (isResourceBuilding(b.kind) && b.npc !== 'goblin-castle') resources.push(b);
     if (byId) {
       if (byId.has(b.id)) byId = null;
@@ -438,7 +547,7 @@ function preferenceIndex(
   return index;
 }
 /** Whether a preferred building still stands, or the unit's own building target does. */
-function preferredOrCommitted(
+export function preferredOrCommitted(
   battle: Battle,
   unit: Unit,
   troop: DefenderFightTraits,
@@ -446,9 +555,16 @@ function preferredOrCommitted(
   targetable: (b: Building) => boolean,
 ) {
   const index = preferenceIndex(battle, buildings, targetable);
+  if (troop.prefersBuildings)
+    for (const b of buildings)
+      if (b.kind !== 'wall' && !isTrap(b.kind) && b.hp > 0 && targetable(b)) return true;
   if (troop.prefersDefenses)
     for (const b of index.defenses)
-      if (b.hp > 0 && targetable(b) && (isDefense(b.kind) || lateActivatedDefense(battle, b)))
+      if (
+        b.hp > 0 &&
+        targetable(b) &&
+        (preferredDefense(battle, b) || lateActivatedDefense(battle, b))
+      )
         return true;
   if (troop.prefersResources)
     for (const b of index.resources) if (b.hp > 0 && targetable(b)) return true;
@@ -473,7 +589,7 @@ export function stepAttackerVsDefenders(
   /** Routing shared with the building chase: wall index, Jump breaches, A* budget. */
   route?: DefenderRoute,
 ) {
-  const troop = traits ?? TROOPS[unit.kind];
+  const troop: DefenderFightTraits = traits ?? TROOPS[unit.kind];
   const targetable = isTargetable ?? ((b: Building) => targetableBuilding(battle, b));
   if (troop.healer || troop.wallBreaker) {
     delete unit.defenderTarget;
@@ -499,10 +615,12 @@ export function stepAttackerVsDefenders(
   // stands or while it is committed to its current building target. That answer only needs
   // computing when a defender could actually be engaged: an unengaged troop with no alerted
   // defender in reach returns here exactly as it would after the building checks.
-  const wantsPreferred = !!troop.prefersDefenses || !!troop.prefersResources;
+  const wantsPreferred =
+    !!troop.prefersDefenses || !!troop.prefersResources || !!troop.prefersBuildings;
+  const preferredHero = troop.preferHeroes ? preferredHeroTarget(battle, unit, troop) : undefined;
   let nearest: Defender | undefined;
   let searched = false;
-  if (wantsPreferred) {
+  if (wantsPreferred && !preferredHero) {
     if (unit.defenderTarget === undefined) {
       nearest = nearestAlertedDefender(battle, unit, troop);
       searched = true;
@@ -513,15 +631,7 @@ export function stepAttackerVsDefenders(
       return false;
     }
   }
-  let target = (battle.defenders ?? []).find(
-    (d) =>
-      d.id === unit.defenderTarget &&
-      d.hp > 0 &&
-      (d.kind === 'skeleton' || d.spawnedAt <= battle.elapsed) &&
-      canFight(unit, d, troop) &&
-      !lateDefenderHidden(battle, d) &&
-      garrisonDefenderTargetable(battle, d),
-  );
+  let target = preferredHero ?? attackerDefenderTarget(battle, unit, unit.defenderTarget, troop);
   if (!target) {
     target = searched ? nearest : nearestAlertedDefender(battle, unit, troop);
     if (!target) {
@@ -533,17 +643,31 @@ export function stepAttackerVsDefenders(
       }
       return false;
     }
+  }
+  if (unit.defenderTarget !== target.id) {
     unit.defenderTarget = target.id;
+    route?.targetAcquired?.(target.id);
     unit.path = [];
     unit.pathAt = 0;
   }
   const distance = distance2D(unit.x - target.x, unit.y - target.y);
   if (distance <= stats.range + 1e-6) {
     unit.attacking = true;
-    if (unit.cooldown <= 0) {
+    if (troop.nativeDamageRamp)
+      recordInfernoDragonTransition(battle, unit, troop.nativeDamageRamp, target.id, true);
+    route?.enterRange?.();
+    if (unit.cooldown <= 0 && (route?.attackReady?.() ?? true)) {
       unit.cooldown = stats.rate;
-      if (unit.kind === 'dragon') {
-        hurtDefender(battle, target, stats.damage);
+      const hitDamage = troop.nativeDamageRamp
+        ? rampedDamage(unit, troop.nativeDamageRamp, stats.damage, target.id, true, battle.elapsed)
+        : stats.damage;
+      const power =
+        hitDamage * (target.kind === 'hero' ? (troop.heroDamageScale ?? 1) : 1) +
+        target.maxHp * (troop.nativeTargetHpBonus ?? 0);
+      if (troop.nativeAttack) {
+        troop.nativeAttack(target, power);
+      } else if (unit.kind === 'dragon') {
+        hurtDefender(battle, target, power);
         damageDefenders(battle, target, stats.damage, troop.splash ?? 0, target.mode, target.id);
         if (target.mode === 'ground')
           for (const b of buildings)
@@ -561,11 +685,21 @@ export function stepAttackerVsDefenders(
           fromAir: true,
           toAir: target.mode === 'air',
         });
-      } else if (stats.range > 2 || troop.flying) {
+      } else if (
+        !troop.nativeDirectHit &&
+        (stats.range > 2 || troop.flying || !!troop.nativeProjectile)
+      ) {
         launchProjectile(
           battle,
           {
-            weapon: troop.flying ? 'bomb' : unit.kind === 'wizard' ? 'fireball' : 'arrow',
+            weapon: troop.nativeProjectile
+              ? 'native'
+              : troop.flying
+                ? 'bomb'
+                : unit.kind === 'wizard'
+                  ? 'fireball'
+                  : 'arrow',
+            ...(troop.nativeProjectile ? { native: troop.nativeProjectile } : {}),
             sourceId: unit.id,
             targetId: target.id,
             targetBuilding: false,
@@ -576,13 +710,29 @@ export function stepAttackerVsDefenders(
             y: target.y,
             fromAir: troop.flying,
             toAir: target.mode === 'air',
-            damage: stats.damage,
+            damage: power,
             splash: troop.splash,
           },
           effect,
         );
       } else {
-        hurtDefender(battle, target, stats.damage);
+        hurtDefender(battle, target, power);
+        if (troop.nativeMeleeSplash && target.mode === 'ground') {
+          const radius = troop.nativeMeleeSplash;
+          damageDefenders(
+            battle,
+            target,
+            stats.damage,
+            radius,
+            'ground',
+            target.id,
+            battle.elapsed,
+          );
+          for (const b of buildings)
+            if (presentBuilding(battle, b) && distanceTo(target, b) <= radius)
+              damage(b, stats.damage);
+          effect({ type: 'blast', x: target.x, y: target.y, radius, sourceId: unit.id });
+        }
         effect({
           type: 'hit',
           targetDefender: true,
@@ -594,8 +744,9 @@ export function stepAttackerVsDefenders(
           toY: target.y,
         });
       }
+      if (troop.nativeDamageRamp) finishRampingHit(unit, target, troop.nativeDamageRamp);
     }
-  } else if (troop.flying) {
+  } else if (troop.flying || troop.underground) {
     const move = Math.min(stats.speed * dt, distance);
     unit.x += ((target.x - unit.x) / distance) * move;
     unit.y += ((target.y - unit.y) / distance) * move;
@@ -636,12 +787,18 @@ export function stepAttackerVsDefenders(
                   b.y === Math.floor(next.y),
               )
             : undefined));
-    const wall = hit && hit.hp > 0 && !route?.passableWalls?.has(hit.id) ? hit : undefined;
+    const wall =
+      !route?.jumpWalls && hit && hit.hp > 0 && !route?.passableWalls?.has(hit.id)
+        ? hit
+        : undefined;
     if (wall && distanceTo(unit, wall) <= stats.range) {
       unit.attacking = true;
+      route?.enterWallRange?.(wall);
       if (unit.cooldown <= 0) {
         unit.cooldown = stats.rate;
-        if (stats.range > 2) {
+        if (troop.nativeBuildingAttack) {
+          troop.nativeBuildingAttack(wall, stats.damage);
+        } else if (stats.range > 2) {
           launchProjectile(
             battle,
             {

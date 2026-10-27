@@ -91,7 +91,7 @@ See [HERO-PROGRESSION.md](HERO-PROGRESSION.md) for the original hero implementat
 ## Next implementation order
 
 1. Extend the explicit building level tables to counts, troop/spell unlocks, housing and economy. Expand troop/spell and defense catalogs together and re-audit the campaign.
-2. Finish the hero pass: defending hero abilities, equipment and pets, placement, and the six equipment abilities that still need their own projectile flight.
+2. Continue the hero pass: defending hero abilities, equipment and pets, placement, and remaining interaction and presentation gaps. Fireball, Giant Arrow, Frost Flake, Spiky Ball, Dark Orb and Seeking Shield now have source activation projectiles.
 3. Keep combat-version compatibility explicit as the roster expands; local seeking and portable replay-file sharing now work. Hosted sharing and historical combat engines remain later work.
 4. Build accounts, authoritative saves and battle outcomes, then real matchmaking/defense. Clan and war features depend on that foundation.
 5. Expand remaining modes and activities while improving per-level art, directional animations, audio, and physical-device quality.

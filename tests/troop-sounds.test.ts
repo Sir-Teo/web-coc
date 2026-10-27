@@ -37,8 +37,8 @@ const spot = (m: GameModel) => {
 
 describe('troop sounds', () => {
   it('reads every troop’s deploy, attack and death effects from the client', () => {
-    // 78 troops and spawned units, and the four heroes whose rows name a sound.
-    expect(Object.keys(source.troops)).toHaveLength(82);
+    // 78 troops/spawns, four sounding Heroes, and all thirteen pet actors (including the Egg).
+    expect(Object.keys(source.troops)).toHaveLength(97);
     expect(source.troops.swordsman).toEqual({
       name: 'Barbarian',
       deploy: 'Barbarian Deploy',
@@ -146,7 +146,11 @@ describe('troop sounds', () => {
 
 describe('spell sounds', () => {
   it('reads every spell’s cast and pulse effects, per level where they change', () => {
-    expect(Object.keys(source.spells)).toHaveLength(18);
+    expect(Object.keys(source.spells)).toHaveLength(19);
+    expect(source.spells.MPMeteorStaffSpell).toMatchObject({
+      preDeploy: 'ps_chr_mp_MeteorStrike_Projectile',
+      deploy: 'ps_chr_mp_MeteorStrike_Impact',
+    });
     expect(source.spells.Lightning).toEqual({
       key: 'lightning',
       preDeploy: 'Lightning predeploy',

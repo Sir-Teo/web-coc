@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Import the attacking troops' and spells' own sounds: deploying, attacking, dying and casting.
+"""Import original deploy, attack, death and cast sounds for troops, Heroes, pets and spells.
 
-Each troop row of `logic/characters.csv` names its `DeployEffect`, `AttackEffect`, `HitEffect`
+Each troop or pet row of `logic/characters.csv` / `logic/pets.csv` names its `DeployEffect`, `AttackEffect`, `HitEffect`
 (the impact on its target) and `DieEffect`, and each hero row of `logic/heroes.csv` the same
 columns (heroes name only a hit sound). Each effect's rows in `logic/effects.csv` that name a
 `Sound` give the Ogg file, its volume, pitch range and delay. Those rows are alternative takes of one sound (the files are
@@ -10,12 +10,16 @@ plays one of them per event. A troop whose effect changes with level (the Wizard
 the Valkyrie's) keeps one effect per level. Destroyed buildings play the client's
 `Building Destroyed` effect; every Home Village destroy effect uses the same sound.
 
+Enabled garrison VisualLevels come from garrison-kinds.ts. Their actual character rows
+are resolved after DefensiveTroop substitution, including campaign-only and spawned
+defenders; source row ordinals and their primary/chain sound bindings are retained separately.
+
 Each spell row of `logic/spells.csv` names its `PreDeployEffect` (the bottle falling),
 `DeployEffect` and `DeployEffect2` (it landing), `ChargingEffect` and `HitEffect` (each pulse);
 those that vary by level keep one effect per level, as troops do.
 
 The troops are the trainable, spawned and hero units of src/game/native-units.ts
-(`TROOP_SOURCE`, `SPAWN_SOURCE` and `HERO_UNIT_SOURCE`); the spells are those of reference/troops/catalog.json and the native roster in
+(`TROOP_SOURCE`, `SPAWN_SOURCE`, `HERO_UNIT_SOURCE` and `PET_UNIT_SOURCE`); the spells are those of reference/troops/catalog.json and the native roster in
 src/game/troop-progression.ts (`NATIVE_SPELL_NAMES`). The Ogg files are copied unchanged to public/assets/audio/troops-native and
 every source must match its SHA-256 in reference/full-client/manifest.json. Sources are read
 from the local client archive when present (art/source/native-client-18.400.21/files),
@@ -48,6 +52,10 @@ SPELL_EVENTS = {
     'charging': 'ChargingEffect', 'hit': 'HitEffect',
 }
 DESTROYED = 'Building Destroyed'
+EXTRA_EFFECTS = ['RecallRedeployAuraTop', 'FireballActivationEffect',
+                 'Ability_Electro_Boots',
+                 'rc_gear_frostblast_snowflack_active', 'ability_rc_frostflake_hit_sfx',
+                 'Air Defense Barrel Hit', 'ps_chr_DarkOrb_ProjectileSfx', 'trollBoulder_destroyed']
 
 
 def require(condition, message):
@@ -63,6 +71,13 @@ def source(path, pins):
     else:
         target = CACHE / path
         if not target.exists():
+            # Reuse an already shipped original only after verifying the same source pin.
+            # This keeps rebuilds offline for existing samples, without trusting edited audio.
+            shipped = ROOT / 'public' / AUDIO / Path(path).name
+            if path.startswith('sfx/') and shipped.is_file():
+                data = shipped.read_bytes()
+                if hashlib.sha256(data).hexdigest() == pins[path]:
+                    return data
             target.parent.mkdir(parents=True, exist_ok=True)
             temporary = target.with_suffix(target.suffix + '.part')
             subprocess.run(['curl', '--fail', '--silent', '--show-error', '--retry', '2',
@@ -111,8 +126,23 @@ def spell_names():
     body = re.search(r'const NATIVE_SPELL_NAMES = \{(.*?)\} as const;', text, re.S)
     require(body, 'Missing NATIVE_SPELL_NAMES')
     names.update(re.findall(r"^\s+(\w+): '([^']+)',", body.group(1), re.M))
+    # Equipment casts use the same source spell phases without adding a player spell card.
+    names['meteorstaff'] = 'MPMeteorStaffSpell'
     require(len(names) > 15, 'Too few spells read')
     return names
+
+
+def garrison_roster():
+    """Enabled campaign VisualLevels, including spawned-only defenders."""
+    text = (ROOT / 'src/game/garrison-kinds.ts').read_text()
+    body = re.search(r'export const GARRISON_KINDS = \{(.*?)\n\} as const', text, re.S)
+    require(body, 'Missing garrison roster')
+    roster = {}
+    for key, character, levels in re.findall(
+            r"^\s+(\w+): \{ character: '([^']+)', levels: \{([^}]+)\}", body.group(1), re.M):
+        roster[key] = (character, [int(level) for level in re.findall(r'(\d+):', levels)])
+    require(len(roster) == 21, 'Garrison roster changed; review sound coverage')
+    return roster
 
 
 def build():
@@ -120,8 +150,10 @@ def build():
     pins = {f['path']: f['sha256'] for f in manifest['files']}
     characters = records(source('logic/characters.csv', pins))
     heroes = records(source('logic/heroes.csv', pins))
+    pets = records(source('logic/pets.csv', pins))
     spells_table = records(source('logic/spells.csv', pins))
     effects = records(source('logic/effects.csv', pins))
+    projectiles = records(source('logic/projectiles.csv', pins))
 
     def takes(name):
         rows = [row for row in effects.get(name, []) if row.get('Sound')]
@@ -150,21 +182,82 @@ def build():
     troops = {}
     roster = {key: (name, characters) for key, name in units('TROOP_SOURCE', 'SPAWN_SOURCE').items()}
     roster.update({key: (name, heroes) for key, name in units('HERO_UNIT_SOURCE').items()})
+    roster.update({key: (name, pets) for key, name in units('PET_UNIT_SOURCE').items()})
     require(len(roster) > 80, 'Too few units read from native-units.ts')
     for key, (name, table) in sorted(roster.items()):
         rows = table.get(name)
         require(rows, f'Absent character {name}')
         entry = entries(rows, EVENTS)
+        if key == 'superwizard':
+            entry.update(entries(rows, {'chain': 'ChainAttackEffect'}))
+        if key == 'bowler':
+            entry.update(entries(rows, {'preAttack': 'PreAttackEffect'}))
+        if key == 'electrodragon':
+            entry.update(entries(rows, {'preAttack': 'PreAttackEffect', 'chain': 'ChainAttackEffect'}))
+        if key in ('meteorgolem', 'bowler'):
+            # This actor's impact sound belongs to its projectile, not characters.HitEffect.
+            current, impacts = None, []
+            for row in rows:
+                current = row.get('Projectile', current)
+                require(current in projectiles, f'Missing {name} projectile: {current}')
+                projectile = projectiles[current][0]
+                impacts.append({column: projectile[column] for column in ('DestroyedEffect', 'BounceEffect')
+                                if projectile.get(column)})
+            events = {'projectileHit': 'DestroyedEffect'}
+            if key == 'bowler':
+                events['bounce'] = 'BounceEffect'
+            entry.update(entries(impacts, events))
         if entry:
             troops[key] = dict(name=name, **entry)
+    garrisons = {}
+
+    def inherited(rows):
+        merged = {}
+        for row in rows:
+            merged = {**merged, **row}
+            yield merged
+
+    def defending_row(name, visual_level):
+        rows = list(inherited(characters.get(name, [])))
+        matches = [(i + 1, row) for i, row in enumerate(rows)
+                   if int(row.get('VisualLevel', 0)) == visual_level]
+        require(len(matches) == 1, f'Unresolved defender {name} {visual_level}')
+        ordinal, row = matches[0]
+        defensive = row.get('DefensiveTroop')
+        return defending_row(defensive, visual_level) if defensive else (name, ordinal, row)
+
+    for key, (name, levels) in sorted(garrison_roster().items()):
+        garrisons[key] = {}
+        for level in levels:
+            actual, ordinal, row = defending_row(name, level)
+            events = {**EVENTS, **({'chain': 'ChainAttackEffect'} if key == 'electrodragon' else {})}
+            if key in ('electrodragon', 'bowler'):
+                events['preAttack'] = 'PreAttackEffect'
+            binding = entries([row], events)
+            if key == 'bowler':
+                projectile = row.get('Projectile')
+                require(projectile in projectiles, f'Missing defending Bowler projectile: {projectile}')
+                binding.update(entries([projectiles[projectile][0]], {
+                    'bounce': 'BounceEffect', 'projectileHit': 'DestroyedEffect',
+                }))
+            garrisons[key][str(level)] = dict(name=actual, row=ordinal, **binding)
     spells = {}
     for key, name in sorted(spell_names().items()):
         rows = spells_table.get(name)
         require(rows, f'Absent spell {name}')
         entry = entries(rows, SPELL_EVENTS)
+        if name == 'Overgrowth':
+            for size in [2, 3, 4]:
+                effect = f'entangle_spell_stop_{size}x{size}'
+                require(takes(effect), f'No source retract sound: {effect}')
+                entry[f'rootStop{size}'] = effect
+                used[effect] = takes(effect)
         if entry:
             spells[name] = dict(key=key, **entry)
     used[DESTROYED] = takes(DESTROYED)
+    for name in EXTRA_EFFECTS:
+        used[name] = takes(name)
+        require(used[name], f'{name} names no sound')
     require(used[DESTROYED], 'Building Destroyed names no sound')
 
     files, sounds = {}, {}
@@ -173,10 +266,10 @@ def build():
         target = f'{AUDIO}/{path.split("/")[-1]}'
         files[ROOT / 'public' / target] = blob
         sounds[path] = dict(path=target, bytes=len(blob), sha256=pins[path])
-    sources = {p: pins[p] for p in ['logic/characters.csv', 'logic/heroes.csv', 'logic/spells.csv',
-                                    'logic/effects.csv', *sounds]}
+    sources = {p: pins[p] for p in ['logic/characters.csv', 'logic/heroes.csv', 'logic/pets.csv', 'logic/spells.csv',
+                                    'logic/effects.csv', 'logic/projectiles.csv', *sounds]}
     catalog = dict(clientVersion='18.400.21', bundle=BUNDLE, baseUrl=BASE, sources=sources,
-                   troops=troops, spells=spells, destroyed=DESTROYED,
+                   troops=troops, garrisons=garrisons, spells=spells, destroyed=DESTROYED,
                    effects=dict(sorted(used.items())), sounds=sounds)
     files[TARGET] = (json.dumps(catalog, indent=2) + '\n').encode()
     return files, catalog
@@ -194,7 +287,7 @@ def main():
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
     total = sum(s['bytes'] for s in catalog['sounds'].values())
-    print(f'{len(catalog["troops"])} troops, {len(catalog["spells"])} spells, '
+    print(f'{len(catalog["troops"])} troops, {len(catalog["garrisons"])} garrison kinds, {len(catalog["spells"])} spells, '
           f'{len(catalog["effects"])} effects, '
           f'{len(catalog["sounds"])} sounds ({total / 1048576:.2f} MB)'
           + (' reproduce the client.' if args.check else f'; wrote {TARGET.relative_to(ROOT)}'))

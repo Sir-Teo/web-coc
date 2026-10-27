@@ -24,6 +24,7 @@
     "sc/buildings_45.sctx": "ce0425622f22f1dade3fd1614e1c3ce5fabe4e09d9c5f32d014dd1f12cdc9287",
     "sc/buildings_5.sctx": "6403f600eb8303935d63df9edfd7832ba8eb84d8fc4cd1ecf2f3788fc0285184",
     "sc/buildings_6.sctx": "68d97a39c2bfbcf94f820f4091c078a9516f41dafe27744e7de26e30864d1ffc",
+    "sc/buildings_62.sctx": "0f97f201e0fc95e31f3e1c3430c109858132b408a59db6704a0cedbc8ac3f94d",
     "sc/buildings_63.sctx": "489915a32ff1edf0036d5c4b9a1973572aca4305bd5fb528ea71bfae359efad0",
     "sc/buildings_66.sctx": "c65a2f6e362edfd51d5fc634d5a6c30ec353bd936fa06fa8775b856aeb7baff0",
     "sc/buildings_8.sctx": "588eba7d5739a5d9b53d3e14f2ab83bd170cad735363a81dd37bea7bcc0bb3bd",
@@ -71,7 +72,7 @@
     "sc/vfx_env.sc": "8a85e7cfb07c5b92f83a4c944b13a18beb65c1b68dc1fd9ea283aebb3073703e",
     "sc/vfx_env_2.sctx": "36578887a41381699efe7cf4e9f013254a053b02c95dc37db886a2d5415c9995"
   },
-  "totalBytes": 11401386,
+  "totalBytes": 11405385,
   "packs": {
     "arrow-small": {
       "path": "assets/projectiles-native/arrow-small/graph.json",
@@ -629,6 +630,14 @@
       "bytes": 63291,
       "projectiles": [
         "CrowProjectile"
+      ]
+    },
+    "hero-revive-projectile": {
+      "path": "assets/projectiles-native/hero-revive-projectile/graph.json",
+      "sha256": "209a6839a3e8ba29da0e77a67728c0e5edf62d492afa684b0c88d2e893cff0b4",
+      "bytes": 3999,
+      "projectiles": [
+        "Hero Revive Projectile"
       ]
     },
     "super-gargoyle-projectile-big": {
@@ -1663,6 +1672,7 @@
     "Fennec_projectile": "fennec-projectile",
     "pet_sneezy_projectile_ShockWave": "pet-sneezy-projectile-shockwave",
     "CrowProjectile": "crowprojectile",
+    "Hero Revive Projectile": "hero-revive-projectile",
     "super_gargoyle_projectile_big": "super-gargoyle-projectile-big",
     "JumpingRiderProjectile1": "jumpingriderprojectile1",
     "JumpingRiderProjectile2": "jumpingriderprojectile1",

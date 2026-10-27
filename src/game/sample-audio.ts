@@ -56,6 +56,7 @@ export class SampleAudio {
    */
   register(name: string, data: unknown) {
     if (!(data instanceof ArrayBuffer)) return false;
+    if (this.buffers.has(name)) return true;
     this.encoded.set(name, data);
     this.decode();
     return true;
@@ -70,10 +71,31 @@ export class SampleAudio {
     for (const [name, data] of this.encoded)
       if (!this.decoding.has(name) && data instanceof ArrayBuffer) {
         this.decoding.add(name);
-        void ctx
-          .decodeAudioData(data.slice(0))
-          .then((buffer) => this.buffers.set(name, buffer))
-          .catch(() => {});
+        let pending: Promise<AudioBuffer>;
+        try {
+          pending = ctx.decodeAudioData(data.slice(0));
+        } catch {
+          this.encoded.delete(name);
+          this.decoding.delete(name);
+          continue;
+        }
+        void pending
+          .then(
+            (buffer) => {
+              // A fresh registration may have replaced bytes while this decode was pending.
+              if (this.encoded.get(name) !== data) return;
+              this.buffers.set(name, buffer);
+              this.encoded.delete(name);
+            },
+            () => {
+              // Quarantine rejected bytes; per-frame decode() must not retry the same payload.
+              if (this.encoded.get(name) === data) this.encoded.delete(name);
+            },
+          )
+          .finally(() => {
+            this.decoding.delete(name);
+            if (this.encoded.has(name)) this.decode();
+          });
       }
   }
   /**
@@ -152,8 +174,9 @@ export class SampleAudio {
       voices.set(node.sample, (voices.get(node.sample) ?? 0) + 1);
     for (const cue of cues) {
       const buffer = this.buffers.get(cue.sample),
-        age = (elapsed - cue.at) * cue.pitch;
-      if (!buffer || age < 0 || (!cue.loop && age >= buffer.duration) || buffer.duration <= 0)
+        delta = elapsed - cue.at,
+        age = Math.max(0, delta * cue.pitch);
+      if (!buffer || delta < -1e-9 || (!cue.loop && age >= buffer.duration) || buffer.duration <= 0)
         continue;
       wanted.add(cue.key);
       // Audio can finish between fixed simulation ticks. Do not replay its final tail.

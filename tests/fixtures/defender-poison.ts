@@ -1,10 +1,10 @@
 import { GameModel, makeBuilding } from '../../src/game/model';
 import { defaultSpellLevels, emptyArmy, emptySpells } from '../../src/game/army';
 import { maxTroopLevel } from '../../src/game/data';
-import { replayBattle, type ReplayData } from '../../src/game/replay';
+import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
 
 /** A custom validated garrison setup, then only recorded deployment and spell inputs. */
-export function defenderPoisonRecording(poisonCasts = 1, step = 0.05) {
+export function defenderPoisonRecording(poisonCasts = 1, step = 0.05, version = REPLAY_VERSION) {
   const model = new GameModel();
   model.state.obstacles = [];
   model.state.buildings = [
@@ -20,10 +20,11 @@ export function defenderPoisonRecording(poisonCasts = 1, step = 0.05) {
   model.startBattle(0, true);
   // Like the released-combat fixture, change the initial setup before the first recorded action.
   const recording = (model as unknown as { recording: ReplayData }).recording;
+  recording.version = version;
   recording.initial.garrisons = [
     { castleId: 2, mode: 'guard', troops: [{ kind: 'dragon', level: 5, count: 1 }] },
   ];
-  model.battle = replayBattle(recording.initial);
+  model.battle = replayBattle(recording.initial, version);
   const battle = model.battle;
   const until = (ready: () => boolean) => {
     for (let remaining = 400; !ready(); remaining--) {

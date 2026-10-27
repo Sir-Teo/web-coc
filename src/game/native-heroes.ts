@@ -11,7 +11,7 @@ import {
 } from './native-hero-data';
 import { flag, nativeRow, num, seconds, text, tiles } from './native-data';
 import { nativeUnitStats, spawnStatsAt, type NativeUnitStats } from './native-units';
-import { unitEffects } from './native-status';
+import { unitEffects, type UnitEffects } from './native-status';
 import type { Battle, Unit } from './model';
 
 /**
@@ -31,6 +31,21 @@ export interface HeroSetup {
   pet?: { kind: PetKind; level: number };
 }
 export interface NativeBattleHero extends HeroSetup {
+  /** Version 97: the pet's Hero-death boost is spent for this raid, including later Revive. */
+  petHeroDeathUsed?: true;
+  /** Version 102: Sneezy's one-use spawner transform stays deactivated after Revive/Recall. */
+  sneezyTransformed?: true;
+  /** Version 103: first summoner body id remains stable when Recall creates a new body. */
+  petSummonerId?: number;
+  /** Version 95: one Phoenix hatch per raid, including Recall-paused temporary revival. */
+  phoenix?: {
+    used: boolean;
+    eggId: number | null;
+    pending?: true;
+    pausedRevive?: number;
+    pausedProtection?: number;
+    reviveDuration?: number;
+  };
   /** Deployed unit, or null while the hero is still in the bar. */
   unitId: number | null;
   petId?: number | null;
@@ -43,8 +58,14 @@ export interface NativeBattleHero extends HeroSetup {
   /** Hitpoints kept by a Recall Spell. */
   recalledHp?: number;
   recalledPetHp?: number;
+  /** Version 82: remaining finite-hit equipment retained while the Hero is recalled. */
+  recalledAttackExtra?: UnitEffects['extraDamage'];
+  /** Version 144: Snake Bracelet's damage total and per-battle summon progress survive Recall. */
+  recalledDamageTaken?: number;
   /** Extra attacks the ability granted (Rocket Spears, Noble Iron). */
   charges?: Record<string, number>;
+  /** Version 138: canonical resurrection time consumed by the next passive-aura upkeep. */
+  auraResume?: { unitId: number; at: number };
 }
 
 export const heroUnitKind = (kind: HeroKind) => HERO_UNIT[kind] as UnitKind;
@@ -69,8 +90,12 @@ export function itemBonuses(hero: HeroSetup) {
   }
   return { hp, dps, heal, attackSpeed };
 }
-/** Client stats with equipment: hitpoints and DPS add, attack-speed percentages divide the interval. */
-export function heroStatsFor(hero: HeroSetup, townhall: number): NativeUnitStats {
+/** Current equipment stats; versions through 83 reduce hit damage with passive attack speed. */
+export function heroStatsFor(
+  hero: HeroSetup,
+  townhall: number,
+  preserveHitDamage = true,
+): NativeUnitStats {
   const base = nativeUnitStats(heroUnitKind(hero.kind), hero.level);
   const bonus = itemBonuses(hero);
   const scale = heroTownHallScale(hero.kind, townhall);
@@ -79,8 +104,8 @@ export function heroStatsFor(hero: HeroSetup, townhall: number): NativeUnitStats
   return {
     ...base,
     hp: (base.hp + bonus.hp) * scale,
-    dps,
-    damage: dps * rate,
+    dps: preserveHitDamage ? dps * (1 + bonus.attackSpeed) : dps,
+    damage: dps * (preserveHitDamage ? base.rate : rate),
     rate,
     ...heroItemTraits(hero),
   };
@@ -94,6 +119,7 @@ function heroItemTraits(hero: HeroSetup): Partial<NativeUnitStats> {
       if (num(row, 'FrostOnHitTime') && !flag(row, 'ActiveAfterPlayerInput')) {
         traits.frostTime = seconds(row, 'FrostOnHitTime');
         traits.frostPercent = num(row, 'FrostOnHitPercent') / 100;
+        traits.frostProjectile = text(row, 'Projectile') || undefined;
       }
       if (num(row, 'ChainAttackFactor')) {
         traits.chainDistance = tiles(row, 'ChainAttackDistance');
@@ -157,8 +183,8 @@ export const activeAbilities = (hero: HeroSetup) => heroAbilities(hero).filter((
 export const petStatsFor = (pet: { kind: PetKind; level: number }) =>
   nativeUnitStats(petUnitKind(pet.kind), pet.level);
 /** TroopDef-shaped stats the shared battle loop reads (hero equipment included). */
-export function heroTroopStats(hero: HeroSetup, townhall: number) {
-  const stats = heroStatsFor(hero, townhall);
+export function heroTroopStats(hero: HeroSetup, townhall: number, preserveHitDamage = true) {
+  const stats = heroStatsFor(hero, townhall, preserveHitDamage);
   return {
     ...spawnStatsAt(heroUnitKind(hero.kind) as never, hero.level),
     hp: stats.hp,

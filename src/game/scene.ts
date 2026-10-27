@@ -1,4 +1,19 @@
+import { FIELD_SPELL_PROFILES, fieldSpellPresentationName } from './field-spell-effects';
+import { NativeSpellCastPresentation } from './native-spell-cast-scene';
+import { NativeRecallPresentation } from './native-recall-scene';
+import { needsRecallPresentation } from './native-recall';
+import { ReviveTargetPresentation } from './revive-target-scene';
+import { JumpSpellPresentation } from './jump-spell-scene';
+import { FreezeSpellPresentation } from './freeze-spell-scene';
+import { OvergrowthPresentation } from './overgrowth-scene';
+import { bowlerImpactArtNeeded, garrisonBowlerContactEffect } from './bowler-impact-effects';
+import { SUPER_ARCHER_EFFECTS } from './super-archer-effects';
+import { SUPER_WIZARD_EFFECTS } from './super-wizard-effects';
+import { ELECTRO_DRAGON_EFFECTS } from './electro-dragon-effects';
+import { ELECTROMITE_EFFECTS } from './electromite-effects';
+import { carriedMiteArt, MITE_SPAWN_PARENTS } from './native-mite-jumps';
 import { builderHutArt } from './builder-hut-art';
+import { phoenixLifeFraction } from './native-status';
 import { HeroNativePresentation } from './hero-native-scene';
 import { typingTarget } from '../ui/keyboard';
 import {
@@ -9,6 +24,7 @@ import {
   craftedTexture,
 } from './crafted-defenses';
 import { HERO_KINDS, heroPortraitImage, type HeroKind } from './native-hero-data';
+import { heroUnitKind, petUnitKind } from './native-heroes';
 import { TroopNativePresentation } from './troop-native-scene';
 import { DecorationNativePresentation } from './decoration-native-scene';
 import { invalidateLostFramebuffers } from './native-scene-view';
@@ -28,6 +44,30 @@ import {
 } from './village-native-scene';
 import { NativeArtPacks, type NativeArtPack } from './native-art-pack';
 import { NativeProjectilePresentation } from './native-projectile-scene';
+import { nativeUnitStats } from './native-units';
+import { heroProjectileNames } from './hero-projectile-prefetch';
+import { fireballEffects } from './fireball-effects';
+import { fireballShake } from './fireball-shake';
+import {
+  METEOR_STAFF_SPELL,
+  METEOR_STAFF_PROFILES,
+  METEOR_STAFF_CARRIED,
+  meteorStaffShake,
+} from './meteor-staff-effects';
+import {
+  electroBootsCarried,
+  electroBootsShake,
+  ELECTRO_BOOTS_PRESENTATION,
+} from './electro-boots-effects';
+import { heroAbilityActivation } from './hero-ability-feedback';
+import { SPIKY_BALL_PRESENTATION, spikyBallCarried } from './spiky-ball-effects';
+import { DARK_ORB_PRESENTATION, darkOrbCarried } from './dark-orb-effects';
+import { SEEKING_SHIELD_PRESENTATION, seekingShieldCarried } from './seeking-shield-effects';
+import {
+  FROST_FLAKE_PRESENTATION,
+  frostFlakeCarried,
+  frostFlakeSoundEffects,
+} from './frost-flake-effects';
 import { NativeDefensePresentation } from './native-defense-scene';
 import { nativeRow, tiles as nativeTiles } from './native-data';
 import {
@@ -47,6 +87,7 @@ import { darkDrillArtLoaded, darkDrillBounds, loadDarkDrillArt } from './dark-dr
 import { loadXbowArt, xbowArtLoaded } from './xbow-poses';
 import { infernoSoundCues } from './inferno-sounds';
 import { preloadInfernos, InfernoPresentation } from './inferno-scene';
+import { infernoDragonSoundCues } from './inferno-dragon-sounds';
 import { infernoPortrait } from './inferno-art';
 import { infernoArtLoaded, infernoBounds, loadInfernoArt } from './inferno-graph';
 import {
@@ -59,11 +100,13 @@ import {
   GarrisonPresentation,
 } from './garrison-scene';
 import { garrisonSoundCues } from './garrison-sounds';
+import { garrisonSoundEffects } from './garrison-native-sounds';
 import {
   BattleSoundLog,
   DESTROYED_EFFECT,
   effectCue,
   spellSoundEffect,
+  spellSoundEnabled,
   TroopSoundLoader,
   troopCue,
   troopSoundCues,
@@ -106,6 +149,7 @@ import { santaTrapFrame } from './santa-art';
 import { preloadSanta, SantaPresentation } from './santa-scene';
 import { preloadShrinkTraps, ShrinkTrapPresentation } from './shrink-trap-scene';
 import { isShrunk } from './shrink-trap';
+import { heroGrowthScale, heroKnockoutFadeAt } from './hero-growth';
 import { loadShrinkArt, shrinkArtLoaded } from './shrink-trap-poses';
 import { preloadXbows, XbowPresentation } from './xbow-scene';
 import { XBOW_ART, xbowTexture } from './xbow-art';
@@ -152,6 +196,7 @@ import { preloadMortars, MortarPresentation } from './mortar-scene';
 import { loadMortarArt, mortarArtLoaded, mortarBounds } from './mortar-poses';
 import { mortarShake } from './mortar-shake';
 import { infernoShake } from './inferno-shake';
+import { infernoDragonShake } from './inferno-dragon-effects';
 import { SPRING_AIRTIME } from './trap-stats';
 import { wallArt, wallTexture } from './wall-art';
 import { LazyTextures } from './lazy-textures';
@@ -523,6 +568,10 @@ const ART_FAMILIES: ArtFamily[] = [
   },
   {
     draws: (b) => b.kind === 'inferno',
+    needed: (model) =>
+      !!model.battle?.nativeTroopDamageRamp &&
+      (model.battle.remaining.infernodragon > 0 ||
+        model.battle.units.some((u) => u.kind === 'infernodragon')),
     preload: preloadInfernos,
     prepare: loadInfernoArt,
     prepared: infernoArtLoaded,
@@ -726,6 +775,7 @@ export class VillageScene extends Phaser.Scene {
   private passiveRevision = -1;
   private pendingFx: FX[] = [];
   private armyPrefetchSignature = '';
+  private projectilePrefetchSignature = '';
   private heroPrefetchSignature = '';
   private seekingMinePresentation!: SeekingMinePresentation;
   private bombTowerPresentation!: BombTowerPresentation;
@@ -744,6 +794,12 @@ export class VillageScene extends Phaser.Scene {
   private villageNativePresentation!: VillageNativePresentation;
   private decorationNativePresentation!: DecorationNativePresentation;
   private nativeEffectPacks!: NativeArtPacks<NativeArtPack>;
+  private overgrowthPresentation!: OvergrowthPresentation;
+  private freezeSpellPresentation!: FreezeSpellPresentation;
+  private jumpSpellPresentation!: JumpSpellPresentation;
+  private fieldSpellPresentations = new Map<string, NativeSpellCastPresentation>();
+  private recallPresentation!: NativeRecallPresentation;
+  private reviveTargets!: ReviveTargetPresentation;
   private nativeProjectiles!: NativeProjectilePresentation;
   private nativeDefenses!: NativeDefensePresentation;
   private darkDrillPresentation!: DarkDrillPresentation;
@@ -1060,9 +1116,42 @@ export class VillageScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
       this.decorationNativePresentation.destroy(),
     );
+    this.recallPresentation = new NativeRecallPresentation(this, this.nativeEffectPacks);
+    this.reviveTargets = new ReviveTargetPresentation(this, this.nativeEffectPacks);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.reviveTargets.destroy());
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.recallPresentation.destroy());
+    for (const [name, config] of Object.entries(FIELD_SPELL_PROFILES))
+      this.fieldSpellPresentations.set(
+        name,
+        new NativeSpellCastPresentation(
+          this,
+          this.nativeEffectPacks,
+          name,
+          config.key as SpellKind,
+          config.levels,
+        ),
+      );
+    this.jumpSpellPresentation = new JumpSpellPresentation(this, this.nativeEffectPacks);
+    this.fieldSpellPresentations.set(
+      METEOR_STAFF_SPELL,
+      new NativeSpellCastPresentation(
+        this,
+        this.nativeEffectPacks,
+        METEOR_STAFF_SPELL,
+        undefined,
+        METEOR_STAFF_PROFILES,
+        METEOR_STAFF_CARRIED,
+      ),
+    );
+    this.freezeSpellPresentation = new FreezeSpellPresentation(this, this.nativeEffectPacks);
+    this.overgrowthPresentation = new OvergrowthPresentation(this, this.nativeEffectPacks);
     this.nativeProjectiles = new NativeProjectilePresentation(this, this.nativeEffectPacks);
     this.nativeDefenses = new NativeDefensePresentation(this, this.nativeEffectPacks);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.overgrowthPresentation.destroy();
+      this.freezeSpellPresentation.destroy();
+      this.jumpSpellPresentation.destroy();
+      for (const view of this.fieldSpellPresentations.values()) view.destroy();
       this.nativeProjectiles.destroy();
       this.nativeDefenses.destroy();
       this.nativeEffectPacks.destroy();
@@ -1085,14 +1174,15 @@ export class VillageScene extends Phaser.Scene {
         reduced = this.model.reducedMotion,
         replay = !!this.model.replay;
       if (!battle) return ZERO;
+      const elapsed = battle.finished ? this.effectClock(battle, true) : battle.elapsed;
       if (
         shakeMemo.battle !== battle ||
-        shakeMemo.elapsed !== battle.elapsed ||
+        shakeMemo.elapsed !== elapsed ||
         shakeMemo.reduced !== reduced ||
         shakeMemo.replay !== replay
       ) {
         shakeMemo.battle = battle;
-        shakeMemo.elapsed = battle.elapsed;
+        shakeMemo.elapsed = elapsed;
         shakeMemo.reduced = reduced;
         shakeMemo.replay = replay;
         combineShakes(
@@ -1102,6 +1192,10 @@ export class VillageScene extends Phaser.Scene {
             seekingMineShake(battle, reduced, replay),
             mortarShake(battle, reduced, replay),
             infernoShake(battle, reduced, replay),
+            infernoDragonShake(battle, reduced, replay),
+            fireballShake(battle, reduced, replay, elapsed),
+            electroBootsShake(battle, reduced, replay, elapsed),
+            meteorStaffShake(battle, reduced, replay, elapsed),
           ],
           shakeMemo.offset,
         );
@@ -1969,6 +2063,10 @@ export class VillageScene extends Phaser.Scene {
     if (this.heavyArtRetryAt !== undefined) this.heavyArtRetryAt = 0;
     if (this.lateArtFailure) this.lateArtFailure.retryAt = 0;
     this.retryFailedArt(performance.now(), true);
+    if (this.model.battle && this.audible()) {
+      this.needTroopSounds(this.model.battle);
+      this.troopSoundLoader.retry(true);
+    }
   };
   /** Any art the current battle waits for: late campaign families or deferred defenses. */
   private battleArtPending() {
@@ -2642,6 +2740,12 @@ export class VillageScene extends Phaser.Scene {
         this.model.notify(LOADING_LATE_ART);
         return;
       }
+      const reviveHero =
+        !this.model.replay && this.reviveTargets.pick(world.x, world.y, this.cameras.main.zoom);
+      if (reviveHero) {
+        if (this.model.castReviveOnHero(reviveHero)) this.castFeedback();
+        return;
+      }
       if (this.model.activeSpell) {
         if (this.model.castSpell(grid.x, grid.y)) this.castFeedback();
         return;
@@ -2928,6 +3032,12 @@ export class VillageScene extends Phaser.Scene {
       if (!army) continue;
       for (const [kind, count] of Object.entries(army)) if (count > 0) wanted.add(kind);
     }
+    if (
+      this.model.battle?.nativeFrostmites &&
+      this.model.battle.nativeHeroes?.some((hero) => hero.pet?.kind === 'frosty')
+    )
+      wanted.add('frostmite');
+    for (const child of carriedMiteArt(this.model.battle)) wanted.add(child);
     return [...wanted].sort();
   }
   /** Baked character atlases the home lineup or current battle needs. */
@@ -2942,6 +3052,10 @@ export class VillageScene extends Phaser.Scene {
     for (const hero of this.model.battle?.nativeHeroes ?? []) {
       wanted.add(`heroes-native/${hero.kind}`);
       if (hero.pet) wanted.add(`heroes-native/${hero.pet.kind}`);
+      if (this.model.battle?.nativePhoenixResurrection && hero.pet?.kind === 'phoenix')
+        wanted.add('heroes-native/phoenixegg');
+      if (this.model.battle?.nativeSneezyController && hero.pet?.kind === 'sneezy')
+        wanted.add('heroes-native/booger');
     }
     for (const defender of this.model.battle?.defenders ?? []) {
       if (defender.kind === 'hero' && defender.hero) wanted.add(`heroes-native/${defender.hero}`);
@@ -2956,7 +3070,12 @@ export class VillageScene extends Phaser.Scene {
    */
   private prefetchArmyArt() {
     const kinds = this.wantedTroopArt();
-    const level = (kind: string) => this.model.troopLevel(kind as TroopKind);
+    const level = (kind: string) =>
+      this.model.troopLevel(
+        (Object.hasOwn(MITE_SPAWN_PARENTS, kind)
+          ? MITE_SPAWN_PARENTS[kind as keyof typeof MITE_SPAWN_PARENTS]
+          : kind) as TroopKind,
+      );
     const signature = kinds.map((kind) => `${kind}:${level(kind)}`).join(',');
     if (signature !== this.armyPrefetchSignature) {
       this.armyPrefetchSignature = signature;
@@ -2967,6 +3086,99 @@ export class VillageScene extends Phaser.Scene {
         this.troopNativePresentation?.releaseExcept(new Set(kinds));
       }
       if (kinds.length) this.troopNativePresentation?.prefetch(kinds, level);
+      if (kinds.includes('electromite'))
+        this.nativeProjectiles?.prefetchEffects(ELECTROMITE_EFFECTS);
+    }
+    if (
+      this.model.battle?.nativeElectroDragon &&
+      !this.model.reducedMotion &&
+      kinds.includes('electrodragon')
+    )
+      this.nativeProjectiles?.prefetchEffects(ELECTRO_DRAGON_EFFECTS);
+    if (
+      this.model.battle?.nativeSuperWizard &&
+      !this.model.reducedMotion &&
+      kinds.includes('superwizard')
+    )
+      this.nativeProjectiles?.prefetchEffects(SUPER_WIZARD_EFFECTS);
+    if (
+      this.model.battle?.nativeArcherPiercing &&
+      !this.model.reducedMotion &&
+      kinds.includes('superarcher')
+    )
+      this.nativeProjectiles?.prefetchEffects(SUPER_ARCHER_EFFECTS);
+    if (!this.model.reducedMotion)
+      this.nativeProjectiles?.prefetchEffects(bowlerImpactArtNeeded(this.model.battle));
+    this.overgrowthPresentation?.prefetch(this.model.battle);
+    this.freezeSpellPresentation?.prefetch(this.model.battle);
+    this.jumpSpellPresentation?.prefetch(this.model.battle);
+    for (const view of this.fieldSpellPresentations.values()) view.prefetch(this.model.battle);
+    this.recallPresentation?.prefetch(this.model.battle);
+    this.reviveTargets?.prefetch(this.model.battle);
+    const setups = this.model.reducedMotion
+      ? []
+      : [...this.model.heroSetups(), ...(this.model.battle?.nativeHeroes ?? [])];
+    const setupSignature = JSON.stringify(
+      setups.map(({ kind, level, items, pet }) => ({ kind, level, items, pet })),
+    );
+    const fireball = !this.model.battle || !!this.model.battle.nativeWardenFireball;
+    const giantArrow = !this.model.battle || !!this.model.battle.nativeGiantArrow;
+    const frostFlake = !this.model.battle || !!this.model.battle.nativeFrostFlake;
+    const electroBoots = !this.model.battle || !!this.model.battle.nativeElectroBootsPresentation;
+    const spikyBall = !this.model.battle || !!this.model.battle.nativeSpikyBall;
+    const darkOrb = !this.model.battle || !!this.model.battle.nativeDarkOrb;
+    const seekingShield = !this.model.battle || !!this.model.battle.nativeSeekingShield;
+    const projectiles = this.model.reducedMotion
+      ? ''
+      : `${signature}|${setupSignature}|phoenix:${!!this.model.battle?.nativePhoenixResurrection}|fireball:${fireball}|giant-arrow:${giantArrow}|frost-flake:${frostFlake}|electro-boots:${electroBoots}|spiky-ball:${spikyBall}|dark-orb:${darkOrb}|seeking-shield:${seekingShield}`;
+    if (projectiles !== this.projectilePrefetchSignature) {
+      this.projectilePrefetchSignature = projectiles;
+      this.nativeProjectiles?.prefetch(
+        projectiles
+          ? [
+              ...kinds.map((kind) => nativeUnitStats(kind, level(kind)).projectile),
+              ...heroProjectileNames(setups, {
+                phoenixResurrection: !!this.model.battle?.nativePhoenixResurrection,
+                wardenFireball: fireball,
+                giantArrow,
+                frostFlake,
+                spikyBall,
+                seekingShield,
+              }),
+            ]
+          : [],
+      );
+      if (fireball && !this.model.reducedMotion)
+        this.nativeProjectiles?.prefetchEffects(fireballEffects(setups));
+      if (
+        giantArrow &&
+        !this.model.reducedMotion &&
+        setups.some(
+          (hero) =>
+            hero.kind === 'queen' && hero.items.some((item) => item.slug === 'piercing-arrow'),
+        )
+      )
+        this.nativeProjectiles?.prefetchEffects(['Hero_Equip_AQ_Giant_Arrow_Trail']);
+      if (frostFlake && !this.model.reducedMotion && frostFlakeCarried(setups)) {
+        this.nativeProjectiles?.prefetchEffects([FROST_FLAKE_PRESENTATION.ActivationEffect]);
+        this.nativeProjectiles?.prefetchEmitters([FROST_FLAKE_PRESENTATION.ParticleEmitter]);
+      }
+      if (electroBoots && !this.model.reducedMotion && electroBootsCarried(setups))
+        this.nativeProjectiles?.prefetchEffects([ELECTRO_BOOTS_PRESENTATION.ActivationEffect]);
+      if (spikyBall && !this.model.reducedMotion && spikyBallCarried(setups)) {
+        this.nativeProjectiles?.prefetchEffects([SPIKY_BALL_PRESENTATION.impact]);
+        this.nativeProjectiles?.prefetchEmitters([SPIKY_BALL_PRESENTATION.trail]);
+      }
+      if (darkOrb && !this.model.reducedMotion && darkOrbCarried(setups))
+        this.nativeProjectiles?.prefetchEffects([
+          DARK_ORB_PRESENTATION.SpawnEffect,
+          DARK_ORB_PRESENTATION.DestroyedEffect,
+          DARK_ORB_PRESENTATION.HitEffect,
+        ]);
+      if (seekingShield && !this.model.reducedMotion && seekingShieldCarried(setups)) {
+        this.nativeProjectiles?.prefetchEffects([SEEKING_SHIELD_PRESENTATION.destroyed]);
+        this.nativeProjectiles?.prefetchEmitters([SEEKING_SHIELD_PRESENTATION.trail]);
+      }
     }
     const heroes = this.wantedHeroArt();
     const heroSignature = [...heroes].sort().join(',');
@@ -3040,9 +3252,17 @@ export class VillageScene extends Phaser.Scene {
         this.heroNativePresentation.releaseExcept(this.wantedHeroArt());
         // Released packs must be fetched again: the prefetch below only runs on a
         // signature change, so a second battle would otherwise open on portraits.
-        this.armyPrefetchSignature = this.heroPrefetchSignature = '';
+        this.armyPrefetchSignature = '';
+        this.projectilePrefetchSignature = '';
+        this.heroPrefetchSignature = '';
       }
       this.nativeProjectiles.clear();
+      this.overgrowthPresentation.clear();
+      this.freezeSpellPresentation.clear();
+      this.jumpSpellPresentation.clear();
+      for (const view of this.fieldSpellPresentations.values()) view.clear();
+      this.recallPresentation?.clear();
+      this.reviveTargets?.clear();
       this.nativeDefenses.clear();
       this.villageArcherTowers.clear();
       this.archerTowerProjectiles.clear();
@@ -4451,6 +4671,7 @@ export class VillageScene extends Phaser.Scene {
     battle: null as GameModel['battle'],
     elapsed: NaN,
     finished: false,
+    grace: false,
     revision: -1,
     synced: -1,
     selected: null as number | null,
@@ -4471,15 +4692,18 @@ export class VillageScene extends Phaser.Scene {
    */
   private sameBattleFrame(battle: NonNullable<GameModel['battle']>) {
     const key = this.frameKey,
-      cam = this.cameras.main;
-    const art = `${this.heavyArtReady}:${this.deferredArtSettled}:${this.lateAssetsReady}:${this.cannonPresentation.artRevision}:${this.villageArcherTowers.artRevision}:${this.villageNativePresentation.artRevision}`;
+      cam = this.cameras.main,
+      grace = battle.finished && presentationLive(battle);
+    const art = `${this.heavyArtReady}:${this.deferredArtSettled}:${this.lateAssetsReady}:${this.cannonPresentation.artRevision}:${this.villageArcherTowers.artRevision}:${this.villageNativePresentation.artRevision}:${this.nativeEffectPacks.revision}:${this.nativeProjectiles?.artRevision ?? 0}`;
     const same =
       !this.fxDrained &&
       // The grace window after the finish animates on the presentation clock, not elapsed.
-      (!battle.finished || !presentationLive(battle)) &&
+      !grace &&
       key.battle === battle &&
       key.elapsed === battle.elapsed &&
       key.finished === battle.finished &&
+      // Draw once when grace expires, retiring transient views before the idle memo resumes.
+      key.grace === grace &&
       key.revision === this.model.revision &&
       key.synced === this.syncCount &&
       key.selected === this.model.selected &&
@@ -4494,6 +4718,7 @@ export class VillageScene extends Phaser.Scene {
     key.battle = battle;
     key.elapsed = battle.elapsed;
     key.finished = battle.finished;
+    key.grace = grace;
     key.revision = this.model.revision;
     key.synced = this.syncCount;
     key.selected = this.model.selected;
@@ -4525,30 +4750,89 @@ export class VillageScene extends Phaser.Scene {
   );
   private troopSoundBattle: Battle | null = null;
   private troopSoundUnits = -1;
+  private troopSoundDefenders = -1;
   private troopSoundCasts = -1;
+  private troopSoundRoots = -1;
+  private troopSoundOvergrowthCasts = -1;
+  private troopSoundFreezeCasts = -1;
+  private troopSoundSpellHistory = -1;
+  private troopSoundRecallHistory = -1;
   /**
    * Fetches the sounds of the army and its spells, of every unit kind on the field and of every
    * spell cast, once each.
    */
   private needTroopSounds(battle: Battle) {
-    const casts = battle.nativeSpells?.length ?? 0;
+    const casts = battle.nativeSpells?.length ?? 0,
+      roots = battle.nativeOvergrowthRoots?.length ?? 0,
+      overgrowthCasts = battle.nativeOvergrowthCasts?.length ?? 0,
+      freezeCasts = battle.nativeFreezeCasts?.length ?? 0,
+      history = battle.nativeSpellCastHistory?.length ?? 0,
+      recallHistory = battle.nativeRecallEvents?.length ?? 0;
     if (
       battle === this.troopSoundBattle &&
       battle.units.length === this.troopSoundUnits &&
-      casts === this.troopSoundCasts
+      (battle.nativeGarrisonSounds ? (battle.defenders?.length ?? 0) : 0) ===
+        this.troopSoundDefenders &&
+      casts === this.troopSoundCasts &&
+      roots === this.troopSoundRoots &&
+      overgrowthCasts === this.troopSoundOvergrowthCasts &&
+      freezeCasts === this.troopSoundFreezeCasts &&
+      history === this.troopSoundSpellHistory &&
+      recallHistory === this.troopSoundRecallHistory
     )
       return;
     const kinds = new Set<string>(battle.units.map((u) => u.kind));
-    const spells = new Set<string>(battle.nativeSpells?.map((cast) => cast.name));
-    if (battle !== this.troopSoundBattle) {
-      for (const [kind, count] of Object.entries(this.model.state.army)) if (count) kinds.add(kind);
-      for (const [kind, count] of Object.entries(battle.spells))
-        if (count) spells.add(SPELL_SOURCE[kind as SpellKind]);
+    const spells = new Set<string>(
+      battle.nativeSpells
+        ?.filter((cast) => spellSoundEnabled(battle, cast.name))
+        .map((cast) => cast.name),
+    );
+    if (battle.nativeSpellArt?.includes(METEOR_STAFF_SPELL)) spells.add(METEOR_STAFF_SPELL);
+    if (roots || overgrowthCasts) spells.add('Overgrowth');
+    if (freezeCasts) spells.add('Freeze');
+    for (const cast of battle.nativeSpellCastHistory ?? [])
+      if (spellSoundEnabled(battle, cast.name)) spells.add(cast.name);
+    for (const hero of battle.nativeHeroes ?? []) {
+      kinds.add(heroUnitKind(hero.kind));
+      if (hero.pet) {
+        kinds.add(petUnitKind(hero.pet.kind));
+        if (battle.nativePhoenixResurrection && hero.pet.kind === 'phoenix')
+          kinds.add('phoenixegg');
+        if (battle.nativeSneezyController && hero.pet.kind === 'sneezy') kinds.add('booger');
+        if (battle.nativeFrostmites && hero.pet.kind === 'frosty') kinds.add('frostmite');
+      }
     }
+    for (const [kind, count] of Object.entries(battle.remaining)) if (count) kinds.add(kind);
+    for (const child of carriedMiteArt(battle)) kinds.add(child);
+    for (const [kind, count] of Object.entries(battle.spells))
+      if (count) spells.add(SPELL_SOURCE[kind as SpellKind]);
     this.troopSoundBattle = battle;
     this.troopSoundUnits = battle.units.length;
+    this.troopSoundDefenders = battle.nativeGarrisonSounds ? (battle.defenders?.length ?? 0) : 0;
     this.troopSoundCasts = casts;
-    this.troopSoundLoader.need(kinds, spells);
+    this.troopSoundRoots = roots;
+    this.troopSoundOvergrowthCasts = overgrowthCasts;
+    this.troopSoundFreezeCasts = freezeCasts;
+    this.troopSoundSpellHistory = history;
+    this.troopSoundRecallHistory = recallHistory;
+    this.troopSoundLoader.need(
+      kinds,
+      spells,
+      [
+        ...garrisonSoundEffects(battle),
+        ...(needsRecallPresentation(battle) ? ['RecallRedeployAuraTop'] : []),
+        ...(battle.nativeWardenFireball ? ['FireballActivationEffect'] : []),
+        ...(battle.nativeFrostFlake ? frostFlakeSoundEffects : []),
+        ...(battle.nativeElectroBootsPresentation
+          ? [ELECTRO_BOOTS_PRESENTATION.ActivationEffect]
+          : []),
+        ...(battle.nativeSpikyBall ? [SPIKY_BALL_PRESENTATION.impact] : []),
+        ...(battle.nativeDarkOrb ? [DARK_ORB_PRESENTATION.ActivationEffect] : []),
+        ...(battle.nativeSeekingShield ? [SEEKING_SHIELD_PRESENTATION.destroyed] : []),
+      ],
+      !!battle.nativeBowlerImpactSounds,
+      !!battle.nativeBowlerPreAttack,
+    );
   }
   /** Whether a spell's falling bottle is decoded, so it replaces the generated tones. */
   private spellReady(kind: SpellKind) {
@@ -4569,8 +4853,17 @@ export class VillageScene extends Phaser.Scene {
   /** A troop's deploy sound plays through the battle cues once decoded; the tone stands in. */
   private deployFeedback() {
     const battle = this.model.battle,
-      u = battle?.units.at(-1);
-    if (battle && u && this.cueReady(troopCue(battle, u, 'deploy', `troop:${u.id}:deploy`, 0)))
+      u = battle?.units.at(-1),
+      // Input feedback runs before the next frame drains queued battle effects.
+      deployment = this.pendingFx.at(-1),
+      activation =
+        deployment && (deployment.type === 'spawn' || deployment.type === 'recall-unit')
+          ? heroAbilityActivation(battle, deployment.abilityCastId)
+          : undefined;
+    if (
+      (activation && this.cueReady(effectCue(activation.effect, activation.key, activation.at))) ||
+      (battle && u && this.cueReady(troopCue(battle, u, 'deploy', `troop:${u.id}:deploy`, 0)))
+    )
       this.audio.feedback('deploy');
     else this.audio.play('deploy');
   }
@@ -4580,6 +4873,45 @@ export class VillageScene extends Phaser.Scene {
     this.fxSounded = false;
     const battle = this.model.battle;
     if (!battle || !this.audible()) return;
+    if (battle.nativeBowlerImpactSounds && fx.type === 'impact') {
+      const impact = battle.nativeBowlerImpacts?.find((event) => event.id === fx.projectileId);
+      if (impact) {
+        this.fxSounded = this.cueReady(
+          troopCue(
+            battle,
+            { id: impact.sourceId, kind: 'bowler', level: impact.level },
+            impact.bounce === 0 ? 'bounce' : 'projectileHit',
+            'ready',
+            impact.at,
+          ),
+        );
+        return;
+      }
+    }
+    const activation = heroAbilityActivation(battle, fx.abilityCastId);
+    if (activation) {
+      this.fxSounded = this.cueReady(effectCue(activation.effect, activation.key, activation.at));
+      return;
+    }
+    if (
+      (fx.type === 'projectile' || fx.type === 'impact') &&
+      (battle.nativeFireballs?.some((shot) => shot.id === fx.projectileId) ||
+        battle.nativeGiantArrows?.some((shot) => shot.id === fx.projectileId) ||
+        battle.nativeDarkOrbs?.some((shot) => shot.id === fx.projectileId) ||
+        battle.nativeSeekingShieldCasts?.some((cast) =>
+          cast.shots.some((shot) => shot.id === fx.projectileId),
+        ) ||
+        battle.nativeSpikyBallCasts?.some((cast) =>
+          cast.shots.some((shot) => shot.id === fx.projectileId),
+        ) ||
+        battle.nativeFrostFlakeCasts?.some((cast) =>
+          cast.shots.some((shot) => shot.id === fx.projectileId),
+        ))
+    ) {
+      // Equipment shots use their declared source cues rather than an ordinary Hero attack sound.
+      this.fxSounded = true;
+      return;
+    }
     if (fx.type === 'spell' && fx.spell) {
       this.battleSounds.spell(
         battle,
@@ -4600,17 +4932,32 @@ export class VillageScene extends Phaser.Scene {
       (fx.type === 'hit' ||
         fx.type === 'projectile' ||
         fx.type === 'impact' ||
-        fx.type === 'breath') &&
+        fx.type === 'breath' ||
+        (fx.type === 'blast' && fx.nativeValkyrieSweep)) &&
       fx.sourceId !== undefined &&
-      (fx.targetBuilding || fx.targetDefender)
+      (fx.targetBuilding ||
+        fx.targetDefender ||
+        fx.targetFriendly ||
+        fx.weapon === 'healing' ||
+        fx.nativeValkyrieSweep)
     ) {
-      const u = battle.units.find((v) => v.id === fx.sourceId);
+      const u = fx.sourceKind
+        ? { id: fx.sourceId, kind: fx.sourceKind, level: fx.sourceLevel }
+        : battle.units.find((v) => v.id === fx.sourceId);
       if (!u) return;
       // A melee blow is the swing and the impact at once; a shot swings at its launch and
       // lands at its impact.
-      const events: ('attack' | 'hit')[] =
-        fx.type === 'hit' ? ['attack', 'hit'] : fx.type === 'impact' ? ['hit'] : ['attack'];
-      for (const event of events) this.battleSounds.attack(battle, u, event);
+      const events: ('attack' | 'hit' | 'projectileHit')[] =
+        fx.type === 'hit' || fx.nativeValkyrieSweep
+          ? ['attack', 'hit']
+          : fx.type === 'impact'
+            ? battle.nativeMeteorThrows && fx.sourceKind === 'meteorgolem'
+              ? ['projectileHit']
+              : ['hit']
+            : fx.targetFriendly && (fx.projectileBounce ?? 0) > 0
+              ? []
+              : ['attack'];
+      for (const event of events) this.battleSounds.attack(battle, u, event, fx.at);
       this.fxSounded = events.some((event) =>
         this.cueReady(troopCue(battle, u, event, 'ready', 0)),
       );
@@ -4623,6 +4970,10 @@ export class VillageScene extends Phaser.Scene {
     );
   }
   private renderSanta(cues: SampleCue[]) {
+    if (this.model.battle && this.audible()) {
+      this.needTroopSounds(this.model.battle);
+      this.troopSoundLoader.retry();
+    }
     this.santaPresentation.render(
       this.model.battle,
       this.model.reducedMotion,
@@ -4636,6 +4987,38 @@ export class VillageScene extends Phaser.Scene {
   private visibleScratch: Building[] = [];
   private villageBodyScratch: Building[] = [];
   /** Buildings, defenses, traps, projectiles, selection and effects: everything but units. */
+  private spellFallbacks = new Map<
+    Phaser.GameObjects.Ellipse | Phaser.GameObjects.Graphics,
+    string
+  >();
+  private spellArtReady(name: string | undefined) {
+    name = fieldSpellPresentationName(name);
+    const battle = this.model.battle,
+      reduced = this.model.reducedMotion;
+    return name === 'Overgrowth'
+      ? this.overgrowthPresentation.hasCastArt(battle, reduced)
+      : name === 'Freeze'
+        ? this.freezeSpellPresentation.hasArt(battle, reduced)
+        : name === 'Jump'
+          ? this.jumpSpellPresentation.hasArt(battle, reduced)
+          : name !== undefined &&
+            (this.fieldSpellPresentations.get(name)?.hasArt(battle, reduced) ?? false);
+  }
+  private trackSpellFallback(
+    ring: Phaser.GameObjects.Ellipse | Phaser.GameObjects.Graphics,
+    name: string | undefined,
+  ) {
+    name = fieldSpellPresentationName(name);
+    if (
+      (name === 'Overgrowth' && this.model.battle?.nativeOvergrowthCastPresentation) ||
+      (name === 'Freeze' && this.model.battle?.nativeFreezeCastPresentation) ||
+      (name !== undefined && this.model.battle?.nativeSpellArt?.includes(name))
+    ) {
+      ring.setData('nativeSpellFallback', name);
+      if (name === 'Overgrowth') ring.setData('overgrowthFallback', true);
+      this.spellFallbacks.set(ring, name);
+    }
+  }
   private drawWorld() {
     const battle = this.model.battle;
     const reduced = this.model.reducedMotion;
@@ -4651,6 +5034,19 @@ export class VillageScene extends Phaser.Scene {
     if (!this.model.placement || !hasVillageNativeArt(this.model.placement))
       this.villageNativePresentation.preview();
     this.drawProjectiles();
+    this.overgrowthPresentation.render(battle ?? null, reduced, iso);
+    this.freezeSpellPresentation.render(battle ?? null, reduced, iso);
+    this.jumpSpellPresentation.render(battle ?? null, reduced, iso);
+    for (const view of this.fieldSpellPresentations.values())
+      view.render(battle ?? null, reduced, iso, AIR_LIFT, this.project);
+    this.recallPresentation.render(battle ?? null, reduced, iso);
+    this.reviveTargets.render(battle ?? null, reduced, iso);
+    for (const [ring, name] of this.spellFallbacks) {
+      if (!battle || this.spellArtReady(name)) {
+        ring.destroy();
+        this.spellFallbacks.delete(ring);
+      }
+    }
     // One visible-building pass per frame; every presentation below filters by kind.
     const visible = this.visibleScratch;
     visible.length = 0;
@@ -4733,7 +5129,6 @@ export class VillageScene extends Phaser.Scene {
       airLift: AIR_LIFT,
     });
     const shrinkCues = this.shrinkTrapPresentation.render(visible, battle, reduced, iso);
-    if (battle && this.audible()) this.needTroopSounds(battle);
     // Presentations still produce their cues; only the merge is skipped while silent.
     const cues = this.audible()
       ? [
@@ -4751,6 +5146,7 @@ export class VillageScene extends Phaser.Scene {
           ...garrisonSoundCues(battle),
           ...troopSoundCues(battle, this.battleSounds),
           ...infernoSoundCues(battle),
+          ...infernoDragonSoundCues(battle),
           ...lateCues,
         ]
       : NO_CUES;
@@ -4915,6 +5311,7 @@ export class VillageScene extends Phaser.Scene {
       const reduced = this.model.reducedMotion;
       const p = this.auraPoint;
       for (const cast of active.nativeSpells ?? []) {
+        if (this.spellArtReady(cast.name)) continue;
         if (cast.firstHit - 0.9 > active.elapsed) continue;
         const row = nativeRow('spells', cast.name, cast.level);
         const radius = nativeTiles(row, 'Radius') || nativeTiles(row, 'TargetingRadius');
@@ -5070,7 +5467,10 @@ export class VillageScene extends Phaser.Scene {
         const e = battle.buildingEffects[v.id];
         if (!e || v.hp <= 0) continue;
         const frozen = (e.frozenUntil ?? 0) > battle.elapsed;
-        const rooted = (e.overgrownUntil ?? 0) > battle.elapsed;
+        const rooted =
+          (e.overgrownUntil ?? 0) >
+            battle.elapsed + (battle.nativeOvergrowthPresentation ? 1e-9 : 0) &&
+          !this.overgrowthPresentation.covers(v.id);
         if (!frozen && !rooted) continue;
         const size = BUILDINGS[v.kind].size;
         const pts = this.diamondPoints;
@@ -5181,6 +5581,9 @@ export class VillageScene extends Phaser.Scene {
       this.unitSprites,
       this.defenderSprites,
     );
+    this.infernoPresentation.renderTroops(battle, reduced, this.project, AIR_LIFT, (id, locator) =>
+      this.troopNativePresentation.attachment(id, locator),
+    );
     // Troops without a walk sheet (and pets) have an invisible fallback sprite. The marker
     // stands in only while no native model draws them; it used to cover every real model.
     const marks = this.fallbackMarks;
@@ -5222,7 +5625,7 @@ export class VillageScene extends Phaser.Scene {
       // Recalled units leave the battle at once; drop their sprite here instead
       // of waiting for a mode change, or a frozen frame is left behind.
       // (The mesh presentations skip/prune them in their own passes below.)
-      if (u.native?.recalled) {
+      if (u.native?.recalled || u.native?.phoenixWaiting) {
         const recalled = this.unitSprites.get(u.id);
         if (recalled) {
           recalled.destroy();
@@ -5231,6 +5634,7 @@ export class VillageScene extends Phaser.Scene {
         continue;
       }
       const art = troopArt(u.kind);
+      const phoenixLife = phoenixLifeFraction(u, battle.elapsed);
       const flying = !!TROOPS[u.kind].flying;
       this.interpolation.projectInto(p, u.x, u.y);
       let im = this.unitSprites.get(u.id);
@@ -5285,8 +5689,8 @@ export class VillageScene extends Phaser.Scene {
       const statusTime = u.hp <= 0 ? (u.defeatedAt ?? battle.elapsed) : battle.elapsed;
       // Local visual half-scale; health, collision space and projectile speed are unchanged.
       const shrinkScale = isShrunk(u, statusTime) ? 0.5 : 1;
-      const width =
-        (u.hero ? KING_ART.width : TROOPS[u.kind].width * art.displayScale) * shrinkScale;
+      const bodyScale = shrinkScale * heroGrowthScale(battle, u);
+      const width = (u.hero ? KING_ART.width : TROOPS[u.kind].width * art.displayScale) * bodyScale;
       if (im.displayWidth !== width || im.displayHeight !== width) im.setDisplaySize(width, width);
       if (im.getData('shrinkScale') !== shrinkScale) im.setData('shrinkScale', shrinkScale);
       // A native view stands in for this unit and hides its sprite every frame: only the
@@ -5323,15 +5727,23 @@ export class VillageScene extends Phaser.Scene {
             0.28,
           );
         if (u.hp < u.maxHp)
-          this.bar(p.x, p.y - lift - width, 22, u.hp / u.maxHp, 0x8dea68, this.unitBars);
+          this.bar(
+            p.x,
+            p.y - lift - width,
+            22,
+            phoenixLife ?? u.hp / u.maxHp,
+            phoenixLife === undefined ? 0x8dea68 : 0xfff2bf,
+            this.unitBars,
+          );
         continue;
       }
       const defenderTarget =
         u.defenderTarget !== undefined ? defenderById.get(u.defenderTarget) : undefined;
       const liveDefender = defenderTarget && defenderTarget.hp > 0 ? defenderTarget : undefined;
+      const wallTarget = buildingById.get(u.native?.wallTarget ?? -1);
       const target = TROOPS[u.kind].healer
         ? unitById.get(u.healTarget ?? -1)
-        : (liveDefender ?? buildingById.get(u.target ?? -1));
+        : (wallTarget ?? liveDefender ?? buildingById.get(u.target ?? -1));
       // Fallback sprites are invisible by design; a ground marker stands in (after the
       // native pass, only if no mesh drew the unit).
       // A walk sheet that arrived after the unit was made replaces its stand-in.
@@ -5360,13 +5772,25 @@ export class VillageScene extends Phaser.Scene {
       }
       if (u.hp <= 0) {
         const at = u.defeatedAt ?? im.getData('defeatedAt') ?? battle.elapsed;
+        const fadeAt = u.defeatedAt === undefined ? at : heroKnockoutFadeAt(battle, u);
+        const gauntletKnockout = fadeAt > at + 1e-9;
         const pose = defeatPose(
-          battle.finished ? Infinity : battle.elapsed - at,
+          gauntletKnockout
+            ? Math.max(0, battle.elapsed - fadeAt)
+            : battle.finished
+              ? Infinity
+              : battle.elapsed - at,
           u.ejected ? 'spring' : flying ? 'air' : 'ground',
           im.getData('facing') ?? -1,
           reduced,
           AIR_LIFT,
         );
+        if (gauntletKnockout) {
+          pose.angle = (im.getData('facing') ?? -1) < 0 ? -70 : 70;
+          const fadeAge = Math.max(0, battle.elapsed - fadeAt);
+          pose.visible = fadeAge < 1.5;
+          pose.alpha = Math.max(0, 1 - fadeAge / 1.5);
+        }
         // One-time death styling; the animated fade values below are guarded so
         // a settled corpse writes nothing (any depth write re-sorts Phaser's
         // whole display list).
@@ -5466,10 +5890,10 @@ export class VillageScene extends Phaser.Scene {
       if (u.hp < u.maxHp)
         this.bar(
           p.x,
-          p.y - lift - (u.hero ? KING_ART.healthHeight * shrinkScale : im.displayHeight),
+          p.y - lift - (u.hero ? KING_ART.healthHeight * bodyScale : im.displayHeight),
           22,
-          u.hp / u.maxHp,
-          0x8dea68,
+          phoenixLife ?? u.hp / u.maxHp,
+          phoenixLife === undefined ? 0x8dea68 : 0xfff2bf,
           this.unitBars,
         );
     }
@@ -5664,6 +6088,20 @@ export class VillageScene extends Phaser.Scene {
   }
   private renderEffect(fx: FX) {
     this.recordBattleSound(fx);
+    if (
+      this.model.battle?.nativeBowlerImpactArt &&
+      fx.type === 'impact' &&
+      this.model.battle.nativeBowlerImpacts?.some(
+        (impact) => impact.id === fx.projectileId && impact.bounce === 0,
+      )
+    )
+      return;
+    const bowlerContact = garrisonBowlerContactEffect(this.model.battle, fx);
+    if (
+      bowlerContact &&
+      this.nativeProjectiles.coversEffect(bowlerContact, this.model.reducedMotion)
+    )
+      return;
     // Native defense effects carry their own geometry; record them before the drawn fallbacks.
     if (fx.type === 'defense-zap' || fx.type === 'impact' || fx.type === 'blast')
       this.nativeDefenses.note(fx, this.model.battle, iso, AIR_LIFT);
@@ -5904,6 +6342,11 @@ export class VillageScene extends Phaser.Scene {
       }
     }
     const p = iso(fx.x, fx.y);
+    if (fx.type === 'recall-unit') {
+      if (!this.recallPresentation.hasArt(this.model.battle, this.model.reducedMotion))
+        this.sparks(p.x, p.y - 8, 0xefffc5, 5);
+      return;
+    }
     if (fx.type === 'quake') {
       this.combatEffects.quake(p, fx.radius ?? 8, this.model.reducedMotion);
       this.audio.play('hit');
@@ -5913,6 +6356,11 @@ export class VillageScene extends Phaser.Scene {
     if (fx.type === 'gust') return;
     if (fx.type === 'trap' || fx.type === 'spring') {
       const reduced = this.model.reducedMotion;
+      const original = this.nativeProjectiles.coversAbilityActivation(
+        this.model.battle,
+        fx.abilityCastId,
+        reduced,
+      );
       const label = this.add
         .text(p.x, p.y - 38, fx.text ?? 'SPRUNG!', {
           fontFamily: 'Trebuchet MS',
@@ -5931,8 +6379,8 @@ export class VillageScene extends Phaser.Scene {
         duration: 950,
         onComplete: () => label.destroy(),
       });
-      this.audio.play('hit');
-      if (!reduced) this.sparks(p.x, p.y - 10, fx.color ?? 0xffd175, 8);
+      if (!this.fxSounded) this.audio.play('hit');
+      if (!reduced && !original) this.sparks(p.x, p.y - 10, fx.color ?? 0xffd175, 8);
       return;
     }
     if (fx.type === 'upgrade') {
@@ -5990,6 +6438,7 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     if (fx.type === 'spell-native') {
+      if (this.spellArtReady(fx.text)) return;
       if (this.model.reducedMotion) return;
       const color = NATIVE_SPELL_COLOR[fx.text ?? ''] ?? 0xfff0c2;
       const radius = Math.max(0.6, fx.radius ?? 1) * 64;
@@ -5997,34 +6446,48 @@ export class VillageScene extends Phaser.Scene {
         .ellipse(p.x, p.y, radius * 0.5, radius * 0.25)
         .setStrokeStyle(3, color, 0.9)
         .setDepth(7200);
+      this.trackSpellFallback(ring, fx.text);
       this.animateEffect({
         targets: ring,
         scaleX: 4,
         scaleY: 4,
         alpha: 0,
         duration: 420,
-        onComplete: () => ring.destroy(),
+        onComplete: () => {
+          this.spellFallbacks.delete(ring);
+          ring.destroy();
+        },
       });
       return;
     }
     if (fx.type === 'spell') {
+      const nativeName = fx.spell ? SPELL_SOURCE[fx.spell] : undefined;
+      if (this.spellArtReady(nativeName)) {
+        if (!this.fxSounded) this.audio.play('collect');
+        return;
+      }
       const color = SPELL_COLOR[fx.spell ?? 'rage'];
       const radius = (fx.radius ?? 3) * 64;
       const ring = this.add
         .ellipse(p.x, p.y, radius * 0.4, radius * 0.2)
         .setStrokeStyle(4, color, 0.95)
         .setDepth(7200);
+      this.trackSpellFallback(ring, nativeName);
       this.animateEffect({
         targets: ring,
         scaleX: 5,
         scaleY: 5,
         alpha: 0,
         duration: 520,
-        onComplete: () => ring.destroy(),
+        onComplete: () => {
+          this.spellFallbacks.delete(ring);
+          ring.destroy();
+        },
       });
       if (fx.spell === 'lightning') {
         const bolt = this.add.graphics().setPosition(p.x, p.y).setDepth(7300);
         bolt.setData('spell', 'lightning');
+        this.trackSpellFallback(bolt, nativeName);
         const paths = [
           [
             [-18, -310],
@@ -6065,10 +6528,13 @@ export class VillageScene extends Phaser.Scene {
           targets: bolt,
           alpha: 0,
           duration: 260,
-          onComplete: () => bolt.destroy(),
+          onComplete: () => {
+            this.spellFallbacks.delete(bolt);
+            bolt.destroy();
+          },
         });
       }
-      this.sparks(p.x, p.y - 20, color, 16);
+      if (!ring.getData('nativeSpellFallback')) this.sparks(p.x, p.y - 20, color, 16);
       if (!this.fxSounded) this.audio.play(fx.spell === 'lightning' ? 'destroy' : 'collect');
       if (fx.spell === 'lightning' && !this.model.reducedMotion) this.shakeCamera(140, 0.0022);
       return;
@@ -6136,6 +6602,18 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     if (
+      fx.type === 'hit' &&
+      fx.abilityCastId &&
+      this.nativeProjectiles.coversAbilityActivation(
+        this.model.battle,
+        fx.abilityCastId,
+        this.model.reducedMotion,
+      )
+    ) {
+      if (!this.fxSounded) this.audio.play('hit');
+      return;
+    }
+    if (
       (fx.type === 'projectile' || fx.type === 'impact' || fx.type === 'hit') &&
       fx.toX !== undefined
     ) {
@@ -6159,7 +6637,13 @@ export class VillageScene extends Phaser.Scene {
       const nativeGarrison =
         fx.sourceDefender &&
         this.model.battle?.defenders?.some((d) => d.id === fx.sourceId && d.kind !== 'skeleton');
-      if (!nativeGarrison && !this.fxSounded && fx.weapon !== 'healing' && Math.random() < 0.2)
+      if (
+        !nativeGarrison &&
+        !this.fxSounded &&
+        fx.weapon !== 'healing' &&
+        !fx.targetFriendly &&
+        Math.random() < 0.2
+      )
         this.audio.play('hit');
       return;
     }
@@ -6179,7 +6663,15 @@ export class VillageScene extends Phaser.Scene {
         onComplete: () => smoke.destroy(),
       });
       this.ruinsDirty = true;
-    } else this.sparks(p.x, p.y - 8, fx.type === 'spawn' ? 0xefffc5 : 0xffe1a0, 5);
+    } else if (
+      fx.type !== 'spawn' ||
+      !this.nativeProjectiles.coversAbilityActivation(
+        this.model.battle,
+        fx.abilityCastId,
+        this.model.reducedMotion,
+      )
+    )
+      this.sparks(p.x, p.y - 8, fx.type === 'spawn' ? 0xefffc5 : 0xffe1a0, 5);
   }
   /**
    * Feedback shake. `intensity` keeps Phaser's `camera.shake` meaning on a 1x display at the
@@ -6350,6 +6842,7 @@ export class VillageScene extends Phaser.Scene {
       iso,
       AIR_LIFT,
       this.detailLevel,
+      (id, name) => this.troopNativePresentation.attachment(id, name),
     );
     const retained = this.retainedShots;
     retained.clear();

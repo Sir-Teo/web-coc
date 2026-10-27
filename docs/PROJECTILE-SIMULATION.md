@@ -6,6 +6,26 @@ Arrows, cannonballs, rockets, fireballs, arcane shots, and Balloon bombs apply d
 
 A launched shot survives destruction of its source. Direct shots follow their original target and cannot redirect damage to a replacement when that target dies. Splash shots retain their last target position if the target dies. Attack damage, including Rage, is captured at launch. Impacts due in one simulation step resolve in impact-time order. The last attacker dying does not end the raid while shots remain airborne. Surrender, timeout, full destruction, and a new battle discard pending shots. Long frames stop at the 180-second deadline.
 
+From recording version 71, native building-targeted shots also capture their frost-on-hit values at launch. Frozen Arrow uses its client projectile and equipment slow, including when the Queen is recalled before it lands. Frost expiry follows the scheduled impact rather than the later update that processes it. `tests/frozen-arrow-impact.test.ts` and `tests/browser/frozen-arrow-impact.spec.ts` cover that sequence and preserve the older replay rule.
+
+Version 74 also routes defender-targeted Headhunter shots through the native card projectile and direct-impact resolver. Its source speed is 14 tiles per second, compared with the previous generic arrow’s local 18. Ground and air defender hits keep their launch damage and original target after the shooter disappears. `tests/headhunter-cards.test.ts` and `tests/browser/headhunter-cards.spec.ts` check the source rows, uploaded art, actual impact boundary and version-73 playback.
+
+Native troop flight packs are prefetched with the home and carried armies at their current levels,
+including an imported replay's roster. This starts graph and texture loading before the first shot
+rather than waiting for its render. Shared packs deduplicate through the existing loader; unavailable
+art keeps the existing fallback and retry policy. The prefetch is presentation-only and does not
+change replay rules. `tests/browser/battle-projectile-prefetch.spec.ts` checks held graph requests
+and native flight artwork on the first real shot at desktop and phone sizes. Reduced motion skips
+this flight-only prefetch; disabling it warms the current roster immediately.
+
+Hero and pet flight packs use the ready home lineup and the recorded hero setups, including item
+levels. Equipment projectile and reflection rows warm alongside the hero's base shot and its pet's
+shot. Changing a loadout refreshes the prefetch even when its hero kind is unchanged; Frozen Arrow
+and all three Monolith Arrow flight packs can therefore be ready before the first equipment shot.
+`tests/hero-projectile-prefetch.test.ts` checks the source names, and
+`tests/browser/hero-projectile-prefetch.spec.ts` checks cold requests, loadout changes and first-shot
+rendering on desktop and phone.
+
 Reduced motion suppresses flight graphics and muzzle flashes; stationary feedback still appears at the actual impact time. Temporary graphics are removed on impact or a scene transition. Intact building heights anchor shots even when a source or target changes to rubble.
 
 ## Local tuning

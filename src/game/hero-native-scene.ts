@@ -3,7 +3,10 @@ import { cancelImageDecodes } from './cancel-image-decodes';
 import { BUILDINGS, TROOPS } from './data';
 import { HERO_UNIT, PET_UNIT } from './native-hero-data';
 import { heroStatsFor } from './native-heroes';
+import { nativeUnitStats } from './native-units';
 import { heroAttackInterval } from './native-hero-abilities';
+import { sneezySpawner, sneezySummon, SNEEZY_SPAWNER_SCALE } from './native-sneezy';
+import { heroGrowthScale, heroKnockoutFadeAt } from './hero-growth';
 import { unitAttackIntervalScale } from './native-status';
 import type { Battle, Unit } from './model';
 import type { Defender } from './defenders';
@@ -11,6 +14,8 @@ import { buildingIndex, defenderIndex, unitIndex } from './battle-index';
 import { isShrunk } from './shrink-trap';
 import { unitDepth } from './unit-depth';
 import { UnitMotionTracker } from './unit-motion';
+import { guardianAttackAnimationTime } from './guardian-animation';
+import { defenderOpacity } from './defender-opacity';
 import {
   TINT_MULTIPLY,
   defenderStatusTint,
@@ -22,7 +27,7 @@ import {
 interface Actor {
   /** Unit id, or the defender id for guardians and defending heroes. */
   id: number;
-  /** Motion/state key: unit ids as-is, defender ids mapped below zero (separate id spaces). */
+  /** Native attacker IDs are positive; native Hero/Guardian defender IDs are negative. */
   track: number;
   unit?: Unit;
   defender?: Defender;
@@ -64,7 +69,12 @@ export const heroArtDirectory = (key: string) => {
   return `/assets/${key}`;
 };
 const KEYS: Record<string, string> = Object.fromEntries(
-  [...Object.entries(HERO_UNIT), ...Object.entries(PET_UNIT)].map(([key, unit]) => [unit, key]),
+  [
+    ...Object.entries(HERO_UNIT),
+    ...Object.entries(PET_UNIT),
+    ['phoenixegg', 'phoenixegg'],
+    ['booger', 'booger'],
+  ].map(([key, unit]) => [unit, key]),
 );
 /** The baker's direction order is screen E, SE, S, SW, W, NW, N, NE. */
 export const bakedDirection = (dx: number, dy: number) =>
@@ -218,7 +228,13 @@ export class HeroNativePresentation {
     if (battle) {
       for (const u of battle.units) {
         const key = KEYS[u.kind] ?? (u.hero ? 'king' : undefined);
-        if (!key || u.ejected || u.native?.recalled || (u.spawnedAt ?? 0) > battle.elapsed)
+        if (
+          !key ||
+          u.ejected ||
+          u.native?.recalled ||
+          u.native?.phoenixWaiting ||
+          (u.spawnedAt ?? 0) > battle.elapsed
+        )
           continue;
         const actor = (actorPool[count++] ??= { id: 0, track: 0, key: '', flying: false });
         actor.id = actor.track = u.id;
@@ -231,7 +247,7 @@ export class HeroNativePresentation {
         if (d.kind !== 'guardian' && d.kind !== 'hero') continue;
         const actor = (actorPool[count++] ??= { id: 0, track: 0, key: '', flying: false });
         actor.id = d.id;
-        actor.track = -1 - d.id;
+        actor.track = d.id;
         actor.unit = undefined;
         actor.defender = d;
         actor.key =
@@ -282,6 +298,11 @@ export class HeroNativePresentation {
       const u = actor.unit,
         d = actor.defender;
       const body = (u ?? d)!;
+      const deathAt = body.defeatedAt ?? elapsed;
+      const deathAge = elapsed - deathAt;
+      const fadeAt = u ? heroKnockoutFadeAt(battle, u) : deathAt;
+      const fadeAge = elapsed - fadeAt;
+      const gauntletKnockout = body.hp <= 0 && fadeAt > deathAt + 1e-9;
       this.seen.add(actor.track);
       const fallback = u ? units.get(actor.id) : defenders.get(actor.id);
       const point = iso(body.x, body.y);
@@ -306,16 +327,21 @@ export class HeroNativePresentation {
       const moving = !body.attacking && motion.moving;
       const old = this.positions.get(actor.track);
       let heading: { x: number; y: number } | undefined;
-      if (body.attacking) {
+      if (body.attacking || gauntletKnockout) {
         if (u) {
+          const wall =
+            typeof u.native?.wallTarget === 'number'
+              ? buildingIndex(battle).get(u.native.wallTarget)
+              : undefined;
           const enemy =
             typeof u.defenderTarget === 'number'
               ? defenderIndex(battle).get(u.defenderTarget)
               : undefined;
           const target =
-            typeof u.target === 'number' ? buildingIndex(battle).get(u.target) : undefined;
+            wall ??
+            (typeof u.target === 'number' ? buildingIndex(battle).get(u.target) : undefined);
           heading =
-            enemy ??
+            (!wall ? enemy : undefined) ??
             (target
               ? {
                   x: target.x + BUILDINGS[target.kind].size / 2,
@@ -329,6 +355,8 @@ export class HeroNativePresentation {
         : moving && motion.heading
           ? bakedDirection(motion.dx, motion.dy)
           : (old?.direction ?? 2);
+      const summon = u ? sneezySummon(battle, u) : undefined;
+      const spawner = !!u && sneezySpawner(battle, u);
       const stateName =
         body.hp <= 0
           ? 'die'
@@ -336,11 +364,13 @@ export class HeroNativePresentation {
             ? 'idle'
             : d?.kind === 'guardian' && d.phase === 'leaping'
               ? 'jump'
-              : body.attacking
-                ? 'attack'
-                : moving
-                  ? 'walk'
-                  : 'idle';
+              : summon
+                ? 'attack2'
+                : body.attacking
+                  ? 'attack'
+                  : moving
+                    ? 'walk'
+                    : 'idle';
       // Animation clock: shrink and late campaign freezes hold a unit's frame.
       const clock = u ? unitAnimationClock(u, elapsed) : elapsed;
       // `since` survives frames without a sim step: only a real state change restarts a clip.
@@ -353,21 +383,33 @@ export class HeroNativePresentation {
       const state =
         pack.states[(actor.flying ? 'alt_' : '') + stateName] ??
         pack.states[stateName] ??
-        pack.states.idle;
+        pack.states.idle ??
+        pack.states.walk;
       if (!state) continue;
-      const deathAge = elapsed - (body.defeatedAt ?? elapsed);
       fallback?.setVisible(false);
-      if (body.hp <= 0 && deathAge > 1.5) continue;
-      const rate = u ? this.rate(battle, u) : 1;
+      if (body.hp <= 0 && fadeAge > 1.5) continue;
+      const rate = u
+        ? this.rate(battle, u)
+        : d?.kind === 'hero'
+          ? nativeUnitStats(HERO_UNIT[d.hero], d.level).rate
+          : 1;
       let seconds = reduced
         ? 0
         : body.hp <= 0
           ? deathAge
-          : body.attacking && d?.kind !== 'guardian'
-            ? Math.max(0, rate - body.cooldown)
-            : clock - since;
+          : summon
+            ? elapsed - summon.at
+            : body.attacking
+              ? d?.kind === 'guardian'
+                ? guardianAttackAnimationTime(d)
+                : Math.max(0, rate - body.cooldown)
+              : clock - since;
       if (pack.normalizedAttack && body.attacking && body.hp > 0) seconds /= Math.max(0.01, rate);
-      const frame = bakedFrame(state, direction, seconds);
+      const frames = state.frames[direction % state.frames.length];
+      const frame =
+        reduced && gauntletKnockout
+          ? frames[frames.length - 1]
+          : bakedFrame(state, direction, seconds);
       const texture = `baked:${actor.key}/${frame.image}`,
         name = `${frame.x}:${frame.y}:${frame.w}:${frame.h}`;
       // Guard every frame selection with a texture lookup: a miss would draw
@@ -379,17 +421,25 @@ export class HeroNativePresentation {
         sprite = this.scene.add.image(0, 0, texture, name).setData('nativeHero', actor.id);
         this.sprites.set(actor.track, sprite);
       }
-      const scale = u && isShrunk(u, elapsed) ? 0.5 : 1;
+      const scale =
+        (spawner ? SNEEZY_SPAWNER_SCALE : 1) *
+        (u && isShrunk(u, gauntletKnockout ? deathAt : elapsed) ? 0.5 : 1) *
+        (u ? heroGrowthScale(battle, u) : 1);
       const invisible = !!u && (u.native?.effects?.invisibleUntil ?? 0) > elapsed;
+      const livingAlpha = d ? defenderOpacity(battle, d) : invisible ? 0.35 : 1;
       // Unique per-actor depth, like troops (ids of units and defenders are separate spaces).
       const wantDepth = unitDepth(point.y, actor.id, actor.flying, 1.2);
       if (sprite.texture.key !== texture || sprite.frame.name !== name)
         sprite.setTexture(texture, name);
+      // The approved King atlas aliases die to attack recovery. Tilt that static
+      // frame into the same collapse used by its portrait fallback while held.
+      const angle = gauntletKnockout ? -70 : 0;
+      if (sprite.angle !== angle) sprite.setAngle(angle);
       sprite
         .setOrigin(frame.anchorX / frame.w, frame.anchorY / frame.h)
         .setPosition(point.x, point.y - (actor.flying ? lift : 0))
         .setScale((pack.scale ?? 0.6) * scale)
-        .setAlpha(body.hp <= 0 ? Math.max(0, 1 - deathAge / 1.5) : invisible ? 0.35 : 1);
+        .setAlpha(body.hp <= 0 ? Math.min(1, Math.max(0, 1 - fadeAge / 1.5)) : livingAlpha);
       // Attackers keep their shared status priority; defenders share the living Poison cue.
       const status =
         u && u.hp > 0
@@ -412,6 +462,6 @@ export class HeroNativePresentation {
     return hero
       ? heroAttackInterval(u, battle.elapsed, heroStatsFor(hero, battle.townhall ?? 18).rate) *
           unitAttackIntervalScale(u, battle.elapsed)
-      : TROOPS[u.kind].rate;
+      : TROOPS[u.kind].rate * unitAttackIntervalScale(u, battle.elapsed);
   }
 }

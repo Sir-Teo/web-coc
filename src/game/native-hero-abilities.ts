@@ -1,15 +1,26 @@
 import { startEquipmentDash, stepEquipmentEffects } from './native-equipment-effects';
+import { launchWardenFireball } from './native-fireball';
+import { launchGiantArrow } from './native-giant-arrow';
+import { launchFrostFlake } from './native-frost-flake';
+import { launchSpikyBall } from './native-spiky-ball';
+import { launchDarkOrb } from './native-dark-orb';
+import { launchSeekingShield } from './native-seeking-shield';
+import { captureElectroBootsActivation } from './native-electro-boots';
+import { itemName } from './native-hero-data';
 import { distance2D } from './distance';
 import { TROOPS, type UnitKind } from './data';
 import { flag, nativeRow, num, seconds, text, tiles, type NativeRow } from './native-data';
 import { castNativeSpell } from './native-spells';
 import { healUnit, unitEffects } from './native-status';
+import { mergeBoost } from './native-boost';
+import { friendlyCombatant } from './friendly-unit';
 import { unitKindForName } from './native-units';
 import {
   activeAbilities,
   heroAbilities,
   heroAbilityHeal,
   heroStatsFor,
+  itemBonuses,
   type NativeBattleHero,
   type HeroAbility,
 } from './native-heroes';
@@ -31,17 +42,34 @@ export function activateHero(
   townhall: number,
   at = ctx.battle.elapsed,
 ) {
+  const knockout = unit.hp <= 0;
   hero.abilityUsed = true;
   hero.abilityAt = at;
   hero.spawned = {};
   // The ability rescues a hero that has just been knocked out, so healing ignores the zero floor.
   const heal = heroAbilityHeal(hero, townhall);
-  if (heal > 0) unit.hp = Math.min(unit.maxHp, unit.hp + heal);
-  for (const ability of activeAbilities(hero)) applyAbility(ctx, hero, unit, ability, at);
-  ctx.effect({ type: 'trap', x: unit.x, y: unit.y, text: abilityLabel(hero), color: 0xffcc4d });
+  if (heal > 0 && (unit.native?.effects?.phoenixRevive?.until ?? 0) <= at + 1e-9)
+    unit.hp = Math.min(unit.maxHp, unit.hp + heal);
+  for (const ability of activeAbilities(hero)) applyAbility(ctx, hero, unit, ability, at, knockout);
+  const cast =
+    ctx.battle.nativeFrostFlakeCasts?.find(
+      (entry) => entry.sourceId === unit.id && entry.at === at,
+    ) ??
+    ctx.battle.nativeFireballs?.find(
+      (entry) => entry.sourceId === unit.id && entry.launched === at,
+    ) ??
+    ctx.battle.nativeDarkOrbs?.find((entry) => entry.sourceId === unit.id && entry.launched === at);
+  ctx.effect({
+    type: 'trap',
+    x: unit.x,
+    y: unit.y,
+    text: abilityLabel(hero),
+    color: 0xffcc4d,
+    ...(cast ? { abilityCastId: cast.id, at } : {}),
+  });
 }
 const abilityLabel = (hero: NativeBattleHero) =>
-  hero.items.map((item) => item.slug.replace(/-/g, ' ').toUpperCase()).join(' + ') || 'ABILITY';
+  hero.items.map((item) => itemName(item.slug).toUpperCase()).join(' + ') || 'ABILITY';
 
 function applyAbility(
   ctx: NativeTroopContext,
@@ -49,7 +77,14 @@ function applyAbility(
   unit: Unit,
   ability: HeroAbility,
   at: number,
+  knockout = false,
 ) {
+  launchWardenFireball(ctx, unit, ability, at);
+  launchGiantArrow(ctx, unit, ability, at);
+  launchFrostFlake(ctx, unit, ability, at);
+  launchSpikyBall(ctx, unit, ability, at);
+  launchDarkOrb(ctx, unit, ability, at);
+  launchSeekingShield(ctx, unit, ability, at, knockout);
   startEquipmentDash(ctx, unit, ability);
   const row = ability.row;
   const battle = ctx.battle;
@@ -59,13 +94,29 @@ function applyAbility(
   const damage = num(row, 'BoostDamagePercentage') / 100;
   const rate = seconds(row, 'AttackSpeed');
   if ((speed || damage || rate) && duration > 0) {
-    effects.boost = {
-      until: Math.max(effects.boost?.until ?? 0, at + duration),
-      speed: Math.max(effects.boost?.speed ?? 0, speed),
-      damage: Math.max(effects.boost?.damage ?? 0, damage),
-      attackSpeed: effects.boost?.attackSpeed ?? 0,
-    };
-    if (rate > 0) effects.attackInterval = { until: at + duration, seconds: rate };
+    effects.boost = battle.nativeRageRules
+      ? mergeBoost(
+          effects.boost,
+          `ability:${ability.name}`,
+          { until: at + duration, speed, damage, attackSpeed: 0 },
+          at,
+        )
+      : {
+          until: Math.max(effects.boost?.until ?? 0, at + duration),
+          speed: Math.max(effects.boost?.speed ?? 0, speed),
+          damage: Math.max(effects.boost?.damage ?? 0, damage),
+          attackSpeed: effects.boost?.attackSpeed ?? 0,
+        };
+    if (rate > 0)
+      effects.attackInterval = {
+        until: at + duration,
+        seconds:
+          rate /
+          ((battle.nativeChampionHaste && hero.kind === 'champion') ||
+          (battle.nativeKingStickHorse && hero.kind === 'king')
+            ? 1 + itemBonuses(hero).attackSpeed
+            : 1),
+      };
   }
   const shield = num(row, 'ShieldProtectionPercent') / 100;
   if (shield > 0 && duration > 0)
@@ -84,11 +135,20 @@ function applyAbility(
       hits: hits > 0 ? hits : undefined,
       range: tiles(row, 'AttackRange') || undefined,
       projectile: text(row, 'Projectile') || undefined,
+      ...(battle.nativeChampionRocketSpears &&
+      hero.kind === 'champion' &&
+      tiles(row, 'DamageRadius') > 0
+        ? { splash: tiles(row, 'DamageRadius') }
+        : {}),
     };
   }
   const splash = tiles(row, 'DamageRadius');
   if (splash > 0 && duration > 0 && num(row, 'GrowthScale'))
-    effects.splash = { until: at + duration, radius: splash, jumper: true };
+    effects.splash = {
+      until: at + duration,
+      radius: splash,
+      ...(battle.nativeKingGauntletSplash && hero.kind === 'king' ? {} : { jumper: true }),
+    };
   const self = text(row, 'SelfSpell');
   if (self)
     castNativeSpell(battle, self, num(row, 'SelfSpellLevel', 1) || 1, 'attack', unit.x, unit.y, {
@@ -141,7 +201,7 @@ export function releaseSpawns(
         text(row, 'GivenAbility'),
         num(row, 'GivenAbilityLevel', 1) || 1,
       );
-      applyGiven(spawn, given, when);
+      applyGiven(spawn, given, when, ctx.battle);
     }
     spawned[ability.name] = index + 1;
   }
@@ -153,13 +213,21 @@ function spawnOffset(row: NativeRow, index: number, perHit: number) {
   return { x: Math.cos(angle) * 0.8, y: Math.sin(angle) * 0.8 };
 }
 /** Boosts a summoned troop carries (Barbarian Puppet rage, Archer Puppet invisibility). */
-export function applyGiven(unit: Unit, row: NativeRow, at: number) {
+export function applyGiven(unit: Unit, row: NativeRow, at: number, battle: Battle) {
   const effects = unitEffects(unit);
   const duration = seconds(row, 'DeactivateAfterTime');
   if (duration <= 0) return;
   const speed = num(row, 'SpeedBoost') / 100;
   const damage = num(row, 'BoostDamagePercentage') / 100;
-  if (speed || damage) effects.boost = { until: at + duration, speed, damage, attackSpeed: 0 };
+  if (speed || damage)
+    effects.boost = battle.nativeRageRules
+      ? mergeBoost(
+          effects.boost,
+          `given:${text(row, 'Name')}`,
+          { until: at + duration, speed, damage, attackSpeed: 0 },
+          at,
+        )
+      : { until: at + duration, speed, damage, attackSpeed: 0 };
   if (flag(row, 'IsInvisible'))
     effects.invisibleUntil = Math.max(effects.invisibleUntil ?? 0, at + duration);
 }
@@ -181,14 +249,32 @@ export function stepHeroAbilities(
     stepPassive(ctx, hero, unit, ability, at, townhall);
   }
 }
-/** Recompute continuous effects before combat so new air deployments count immediately. */
+/** Prime deployment abilities and recompute continuous effects before combat. */
 export function refreshHeroPassives(ctx: NativeTroopContext, hero: NativeBattleHero, unit: Unit) {
   if (!ctx.battle.nativeHeroPassives || unit.hp <= 0 || unit.ejected || unit.native?.recalled)
     return;
   const at = ctx.battle.elapsed;
+  let activationId: string | undefined;
   for (const ability of heroAbilities(hero)) {
     if (!ability.passive) continue;
     const row = ability.row;
+    if (
+      (ctx.battle.nativePrinceNobleIron &&
+        hero.kind === 'prince' &&
+        num(row, 'ExtraDamageFlat') > 0 &&
+        num(row, 'DeactivateAfterNumberOfHits') > 0) ||
+      (ctx.battle.nativeKingStickHorse &&
+        hero.kind === 'king' &&
+        flag(row, 'IsJumper') &&
+        seconds(row, 'DeactivateAfterTime') > 0)
+    ) {
+      const state = (hero.charges ??= {});
+      const key = `deploy:${ability.name}`;
+      if (!state[key]) {
+        state[key] = 1;
+        applyAbility(ctx, hero, unit, ability, unit.spawnedAt ?? at);
+      }
+    }
     // Passive equipment auras start without spending the player's ability. Track
     // the unit id so Recall starts a fresh aura on the newly deployed unit.
     const aura = text(row, 'AuraSpell');
@@ -197,6 +283,10 @@ export function refreshHeroPassives(ctx: NativeTroopContext, hero: NativeBattleH
       const key = `aura:${ability.name}`;
       if (state[key] !== unit.id) {
         state[key] = unit.id;
+        const auraAt =
+          ctx.battle.nativeHeroAuraRevival && hero.auraResume?.unitId === unit.id
+            ? hero.auraResume.at
+            : at;
         castNativeSpell(
           ctx.battle,
           aura,
@@ -204,8 +294,15 @@ export function refreshHeroPassives(ctx: NativeTroopContext, hero: NativeBattleH
           'attack',
           unit.x,
           unit.y,
-          { at, follow: unit.id, owner: unit.id, immediate: true },
+          {
+            at: auraAt,
+            follow: unit.id,
+            owner: unit.id,
+            immediate: true,
+          },
         );
+        if (ability.name === 'Electro Boots Aura')
+          activationId = captureElectroBootsActivation(ctx.battle, unit, auraAt);
       }
     }
     const radius = tiles(row, 'ActiveWhileAloneRadius');
@@ -215,6 +312,7 @@ export function refreshHeroPassives(ctx: NativeTroopContext, hero: NativeBattleH
           other.id !== unit.id &&
           other.id !== hero.petId &&
           other.hp > 0 &&
+          (!ctx.battle.nativeFriendlyEligibility || friendlyCombatant(other, at)) &&
           !other.ejected &&
           !other.native?.recalled &&
           (other.spawnedAt ?? 0) <= at + EPS &&
@@ -231,6 +329,8 @@ export function refreshHeroPassives(ctx: NativeTroopContext, hero: NativeBattleH
         };
     }
   }
+  if (ctx.battle.nativeHeroAuraRevival) delete hero.auraResume;
+  return activationId;
 }
 
 function stepPassive(
@@ -247,10 +347,21 @@ function stepPassive(
     const interval = seconds(row, 'RegenerationTimeBetweenHitsMS') || 1;
     const state = (hero.charges ??= {});
     const key = `regen:${ability.name}`;
-    const next = state[key] ?? (unit.spawnedAt ?? 0) + interval;
+    const nativeClock = ctx.battle.nativeHeroRegeneration;
+    const first =
+      (nativeClock ? (unit.native?.regenerationAt ?? unit.spawnedAt ?? 0) : (unit.spawnedAt ?? 0)) +
+      interval;
+    const next = nativeClock ? Math.max(state[key] ?? first, first) : (state[key] ?? first);
     if (at + EPS >= next) {
-      healUnit(ctx.battle, unit, regeneration);
-      state[key] = next + interval;
+      if (nativeClock) {
+        const count = 1 + Math.floor(Math.max(0, at - next + EPS) / interval);
+        for (let pulse = 0; pulse < count; pulse++)
+          healUnit(ctx.battle, unit, regeneration, next + pulse * interval);
+        state[key] = next + count * interval;
+      } else {
+        healUnit(ctx.battle, unit, regeneration);
+        state[key] = next + interval;
+      }
     }
   }
   // Items that boost on deployment (Stick Horse) apply once, for their own duration.
@@ -296,7 +407,12 @@ export function heroCombatOverrides(unit: Unit, at: number) {
   return {
     range: extra && extra.until > at + EPS ? extra.range : undefined,
     projectile: extra && extra.until > at + EPS ? extra.projectile : undefined,
-    splash: splash && splash.until > at + EPS ? splash.radius : undefined,
+    splash:
+      extra && extra.until > at + EPS && extra.splash !== undefined
+        ? extra.splash
+        : splash && splash.until > at + EPS
+          ? splash.radius
+          : undefined,
     jumper: splash && splash.until > at + EPS ? splash.jumper : undefined,
   };
 }

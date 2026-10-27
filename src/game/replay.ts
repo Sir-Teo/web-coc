@@ -40,7 +40,7 @@ import { validSkeletonMode } from './skeleton-stats';
 import { validXbowMode } from './xbow-stats';
 import { initializeGarrison, isGarrisonBunker, type GarrisonSetup } from './garrison-release';
 import { createGarrisonReserve, MAX_GARRISON_TROOPS } from './garrison-reserve';
-import { garrisonTroopVersion } from './garrison-kinds';
+import { garrisonStats, garrisonTroopVersion } from './garrison-kinds';
 import { gridSize, footprintSize, type GridVersion } from './grid';
 import {
   BUILDINGS,
@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 65;
+export const REPLAY_VERSION = 170;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -93,7 +93,112 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 62 caps aggregate poison damage on defenders, including staggered clouds.
  * Version 63 prevents overdue poison pulses from rewinding the shared allowance clock.
  * Version 64 lets idle garrison troops avoid active offensive poison clouds.
- * Version 65 adds idle hero and Skeleton Trap avoidance, holding heroes clear of poisoned homes. */
+ * Version 65 adds idle hero and Skeleton Trap avoidance, holding heroes clear of poisoned homes.
+ * Version 66 prevents overdue defensive Poison pulses from rewinding the attacker damage clock.
+ * Version 67 applies the client hero movement multiplier to native spell Poison slows.
+ * Version 68 records distinct full-freeze deadlines for defender status artwork.
+ * Version 69 fixes equipment dash hits on stacked/unborn defenders and clips hero stun time.
+ * Version 70 applies offensive spell defender immunities, hero damage scaling and spawn time.
+ * Version 71 captures projectile frost and selects the native Frozen Arrow projectile.
+ * Version 72 counts Monolith Arrow housing cumulatively, including heroes and siege machines.
+ * Version 73 applies Headhunter Hero targeting, damage and wall-jumping against defenders.
+ * Version 74 launches native Headhunter cards against defenders, including their flight speed.
+ * Version 75 keeps non-strike spell pulses centered on their cast or following owner.
+ * Version 76 applies intrinsic attacker poison-on-hit to defenders, including native Lizard spit.
+ * Version 77 carries ranged frost-on-hit into defender movement and attack clocks.
+ * Version 78 applies Royal Champion Haste to combat intervals with passive equipment speed.
+ * Version 79 applies equipped Hero life steal after actual building and defender attacks.
+ * Version 80 applies the Queen's Invisibility Vial flat bonus to ordinary attack damage.
+ * Version 81 applies charged Royal Champion spear overrides and spends actual throws.
+ * Version 82 grants Noble Iron on deployment and retains finite-hit Hero effects through Recall.
+ * Version 83 applies Stick Horse's deployment timing, attack interval and personal wall jumping.
+ * Version 84 preserves Hero damage per hit while passive equipment shortens the attack interval.
+ * Version 85 applies the King's active Giant Gauntlet ground splash without granting wall jumping.
+ * Version 86 retains every native source jumper's wall bypass during defender pursuit.
+ * Version 87 applies underground defender pursuit and surfaces attackers before their hits.
+ * Version 88 applies native Hero projectile/direct-hit shapes during defender combat.
+ * Version 89 captures Monolith Arrow's target-max-HP damage against defenders.
+ * Version 90 applies Diggy's defense stun once per emergence.
+ * Version 91 follows the living Hero's eligible target with Diggy.
+ * Version 92 conceals building and defending-unit targets with Invisibility.
+ * Version 93 applies source Rage coverage, movement, healing and independent source expiries.
+ * Version 94 applies per-target native troop damage stages to buildings and defenders.
+ * Version 95 runs Phoenix's waiting Egg, hatch and temporary Hero revival, and excludes pets from Clone.
+ * Version 96 respects friendly participation and native healing immunity across support paths.
+ * Version 97 gives Mighty Yak its source Hero-death boost once per raid.
+ * Version 98 captures each Healer level's source Hero healing ratio in its pulse.
+ * Version 99 binds Unicorn healing to its living Hero and applies its single-target support rules.
+ * Version 100 resolves native healing through source projectile travel and chain hops.
+ * Version 101 routes ground healing units around buildings while allowing their wall jumps.
+ * Version 102 gives Sneezy its source spawner/attacker modes and summon wind-up.
+ * Version 103 retains logical pet summon ownership through Recall and redeployment.
+ * Version 104 restores Frosty Frostmites and their source single-use area frost jump.
+ * Version 105 gives Yetimite/Firemite defender attacks their source single-use jumps.
+ * Version 106 includes activated native weapons in preferred targets and damage.
+ * Version 107 restores Electromite source chain lightning and its single-use cast.
+ * Version 108 preserves Meteor Golem throws, split arrivals and clone lifetimes against defenders.
+ * Version 109 restores Electro Dragon charge and mixed-target chain lightning.
+ * Version 110 restores Super Wizard primary-centered Chain Magic.
+ * Version 111 advances Super Archer piercing arrows through both enemy layers.
+ * Version 112 makes native chain geometry consistent and lets Overgrowth absorb secondary hops.
+ * Version 113 captures Overgrowth root lifetimes for original presentation.
+ * Version 114 retains Overgrowth bottle, field and cast-audio timelines.
+ * Version 115 retains original Freeze Spell cast art and audio timelines.
+ * Version 116 captures Jump in a versioned source-spell presentation history.
+ * Version 117 enables original Rage and Haste cast presentation.
+ * Version 118 enables original Healing and Poison cast fields.
+ * Version 119 reconstructs original Healing pulse graphics from captured cast seeds.
+ * Version 120 enables original Clone and Invisibility cast fields.
+ * Version 121 retains original Recall cast effects and audio after its live pulse ends.
+ * Version 122 captures primary unit Recall disappearance and redeployment presentation.
+ * Version 123 preserves the selected Hero in direct Revive commands.
+ * Version 124 enables original Lightning bottle, charging and impact presentation.
+ * Version 125 retains original Earthquake fields and durable ground scars.
+ * Version 126 retains original Skeleton and Bat spell summon fields.
+ * Version 127 enables Totem and delayed Angry spell presentation.
+ * Version 128 retains the original Ice Block platform and delayed melt sequence.
+ * Version 129 captures original Revive effects at the actual restored Hero.
+ * Version 130 launches Warden Fireball with source flight and area damage.
+ * Version 131 launches the Queen's source Giant Arrow through both enemy layers.
+ * Version 132 preserves Giant Arrow constructs in Invisibility Spell Tower triggers.
+ * Version 133 launches distinct-target Frost Flakes with captured full freezes.
+ * Version 134 launches the King's distinct-target Spiky Ball ricochets.
+ * Version 135 launches the Prince's bounded Dark Orb corridor with captured frost.
+ * Version 136 launches the Champion's Seeking Shield after its source wind-up.
+ * Version 137 retains moving equipment target aims for cadence-independent original trails.
+ * Version 138 resumes passive Hero auras after Revive or Phoenix resurrection.
+ * Version 139 prevents self-regeneration debt across death and Recall.
+ * Version 140 captures original Electro Boots passive activation effects.
+ * Version 141 corrects Meteor Staff visibility, defense preference and building fallback.
+ * Version 142 retains original Meteor Staff cast origins, art and source audio.
+ * Version 143 shares garrison damage protections and records direct Revenge Deck hit sources.
+ * Version 144 preserves Snake Bracelet damage and the per-battle summon cap through Recall.
+ * Version 145 preserves normal/Super Yeti damage progress and mite stock through Recall.
+ * Version 146 enables original primary and chain samples for later garrison defenders.
+ * Version 147 extends shared incoming-damage protections to trap-only Royal Ghost layouts.
+ * Version 148 retains Witch/Super Witch summon ownership and cooldown through Recall.
+ * Version 149 starts deployed bunker decay and Druid evolution at the body's actual birth.
+ * Version 150 lets live life-aura health extend Furnace's fixed-rate degeneration lifetime.
+ * Version 151 pins Furnace release geometry to remove host sine/cosine rounding differences.
+ * Version 152 corrects defending PEKKA/Valkyrie split windup and recovery timing.
+ * Version 153 makes later split families spend each recovery tick once when retargeting.
+ * Version 154 binds original Electro Dragon garrison charge audio to active wall time.
+ * Version 155 binds original Bowler pre-attack takes to garrison windups and their natural tails.
+ * Version 156 starts attacking Bowler windups at engagement and holds them through Freeze.
+ * Version 157 uses native Bowler boulders against defenders and fixes second landings.
+ * Version 158 captures Bowler bounce and shatter sound clocks.
+ * Version 159 retains original attacking Bowler windup clocks and throw tails.
+ * Version 160 binds original defending Bowler bounce and shatter samples.
+ * Version 161 separates boulder bounce/shatter art and retains flights through seeks.
+ * Version 162 gives attacking Golem/Golemite source split windup/recovery.
+ * Version 163 routes Bowler pursuit-wall attacks through native timing and boulders.
+ * Version 164 gives legacy-path PEKKA source split attack phases.
+ * Version 165 gives Valkyrie/Super Valkyrie split clocks and defender sweeps.
+ * Version 166 gives Witch/Super Witch a source first-projectile windup.
+ * Version 167 retains Witch flights for original trail tails after replay seeks.
+ * Version 168 reconstructs original Witch launch/impact audio from physical events.
+ * Version 169 gives Hound parents source phases and Lava Hound flight.
+ * Version 170 makes seeded Hound death-spawn geometry independent of host trigonometry. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -126,6 +231,111 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 62 ||
   version === 63 ||
   version === 64 ||
+  version === 65 ||
+  version === 66 ||
+  version === 67 ||
+  version === 68 ||
+  version === 69 ||
+  version === 70 ||
+  version === 71 ||
+  version === 72 ||
+  version === 73 ||
+  version === 74 ||
+  version === 75 ||
+  version === 76 ||
+  version === 77 ||
+  version === 78 ||
+  version === 79 ||
+  version === 80 ||
+  version === 81 ||
+  version === 82 ||
+  version === 83 ||
+  version === 84 ||
+  version === 85 ||
+  version === 86 ||
+  version === 87 ||
+  version === 88 ||
+  version === 89 ||
+  version === 90 ||
+  version === 91 ||
+  version === 92 ||
+  version === 93 ||
+  version === 94 ||
+  version === 95 ||
+  version === 96 ||
+  version === 97 ||
+  version === 98 ||
+  version === 99 ||
+  version === 100 ||
+  version === 101 ||
+  version === 102 ||
+  version === 103 ||
+  version === 104 ||
+  version === 105 ||
+  version === 106 ||
+  version === 107 ||
+  version === 108 ||
+  version === 109 ||
+  version === 110 ||
+  version === 111 ||
+  version === 112 ||
+  version === 113 ||
+  version === 114 ||
+  version === 115 ||
+  version === 116 ||
+  version === 117 ||
+  version === 118 ||
+  version === 119 ||
+  version === 120 ||
+  version === 121 ||
+  version === 122 ||
+  version === 123 ||
+  version === 124 ||
+  version === 125 ||
+  version === 126 ||
+  version === 127 ||
+  version === 128 ||
+  version === 129 ||
+  version === 130 ||
+  version === 131 ||
+  version === 132 ||
+  version === 133 ||
+  version === 134 ||
+  version === 135 ||
+  version === 136 ||
+  version === 137 ||
+  version === 138 ||
+  version === 139 ||
+  version === 140 ||
+  version === 141 ||
+  version === 142 ||
+  version === 143 ||
+  version === 144 ||
+  version === 145 ||
+  version === 146 ||
+  version === 147 ||
+  version === 148 ||
+  version === 149 ||
+  version === 150 ||
+  version === 151 ||
+  version === 152 ||
+  version === 153 ||
+  version === 154 ||
+  version === 155 ||
+  version === 156 ||
+  version === 157 ||
+  version === 158 ||
+  version === 159 ||
+  version === 160 ||
+  version === 161 ||
+  version === 162 ||
+  version === 163 ||
+  version === 164 ||
+  version === 165 ||
+  version === 166 ||
+  version === 167 ||
+  version === 168 ||
+  version === 169 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -224,7 +434,7 @@ export const MAX_REPLAY_STEPS_PER_UPDATE = 100;
 export const MAX_REPLAY_UPDATE_MS = 8;
 export type ReplayAction = { step: number } & (
   | { type: 'troop'; kind: keyof Army; x: number; y: number }
-  | { type: 'spell'; kind: keyof SpellBook; x: number; y: number }
+  | { type: 'spell'; kind: keyof SpellBook; x: number; y: number; targetHero?: HeroKind }
   | { type: 'hero'; x: number; y: number; hero?: HeroKind }
   | { type: 'ability'; hero?: HeroKind }
   | { type: 'end' }
@@ -274,6 +484,282 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 170 && (s.army.lavahound > 0 || s.army.icehound > 0)
+      ? { nativeHoundSpawnGeometry: true as const }
+      : {}),
+    ...(version >= 169 && (s.army.lavahound > 0 || s.army.icehound > 0)
+      ? { nativeHoundWindup: true as const }
+      : {}),
+    ...(version >= 168 && (s.army.witch > 0 || s.army.superwitch > 0)
+      ? { nativeWitchSounds: true as const }
+      : {}),
+    ...(version >= 167 && (s.army.witch > 0 || s.army.superwitch > 0)
+      ? { nativeWitchFlightArt: true as const }
+      : {}),
+    ...(version >= 166 && (s.army.witch > 0 || s.army.superwitch > 0)
+      ? { nativeWitchWindup: true as const }
+      : {}),
+    ...(version >= 165 && (s.army.valkyrie > 0 || s.army.supervalkyrie > 0)
+      ? { nativeValkyrieWindup: true as const }
+      : {}),
+    ...(version >= 164 && (s.army.pekka > 0 || s.army.siegebarracks > 0)
+      ? { nativePekkaWindup: true as const }
+      : {}),
+    ...(version >= 163 && s.army.bowler > 0 ? { nativeBowlerWallWindup: true as const } : {}),
+    ...(version >= 162 && s.army.golem > 0 ? { nativeGolemWindup: true as const } : {}),
+    ...(version >= 161 &&
+    (s.army.bowler > 0 ||
+      s.garrisons?.some((reserve) => reserve.troops.some((troop) => troop.kind === 'bowler')))
+      ? { nativeBowlerImpactArt: true as const }
+      : {}),
+    ...(version >= 160 &&
+    s.garrisons?.some((reserve) => reserve.troops.some((troop) => troop.kind === 'bowler'))
+      ? { nativeGarrisonBowlerImpacts: true as const }
+      : {}),
+    ...(version >= 159 && s.army.bowler > 0 ? { nativeBowlerPreAttack: true as const } : {}),
+    ...(version >= 158 && s.army.bowler > 0 ? { nativeBowlerImpactSounds: true as const } : {}),
+    ...(version >= 157 && s.army.bowler > 0 ? { nativeBowlerBoulders: true as const } : {}),
+    ...(version >= 156 && s.army.bowler > 0 ? { nativeBowlerWindup: true as const } : {}),
+    ...(version >= 155 &&
+    s.garrisons?.some((reserve) => reserve.troops.some((troop) => troop.kind === 'bowler'))
+      ? { nativeGarrisonBowlerPreAttack: true as const }
+      : {}),
+    ...(version >= 154 &&
+    s.garrisons?.some((reserve) => reserve.troops.some((troop) => troop.kind === 'electrodragon'))
+      ? { nativeGarrisonPreAttack: true as const }
+      : {}),
+    ...(version >= 153 &&
+    s.garrisons?.some((reserve) =>
+      reserve.troops.some((troop) => {
+        const stats = garrisonStats(troop.kind, troop.level);
+        return stats.split && stats.recovery > 0;
+      }),
+    )
+      ? { nativeGarrisonRecovery: true as const }
+      : {}),
+    ...(version >= 152 &&
+    s.garrisons?.some((reserve) =>
+      reserve.troops.some((troop) => troop.kind === 'pekka' || troop.kind === 'valkyrie'),
+    )
+      ? { nativeGarrisonMeleeTiming: true as const }
+      : {}),
+    ...(version >= 151 && s.army.furnace > 0 ? { nativeFurnaceSpawnGeometry: true as const } : {}),
+    ...(version >= 150 &&
+    s.army.furnace > 0 &&
+    (s.army.apprenticewarden > 0 ||
+      s.heroes?.some(
+        (hero) => hero.kind === 'warden' && hero.items.some((item) => item.slug === 'life-gem'),
+      ))
+      ? { nativeFurnaceAuraDecay: true as const }
+      : {}),
+    ...(version >= 149 && (s.army.furnace > 0 || s.army.siegebarracks > 0 || s.army.druid > 0)
+      ? { nativeLifecycleBirth: true as const }
+      : {}),
+    ...(version >= 148 && (s.army.witch > 0 || s.army.superwitch > 0)
+      ? { nativeWitchRecall: true as const }
+      : {}),
+    ...(version >= 146 &&
+    (s.garrisons?.some((reserve) =>
+      reserve.troops.some((troop) => troop.kind !== 'dragon' && troop.kind !== 'balloon'),
+    ) ||
+      s.buildings.some((building) => building.npc === 'ghost-trap'))
+      ? { nativeGarrisonSounds: true as const }
+      : {}),
+    ...(version >= 145 && (s.army.yeti > 0 || s.army.superyeti > 0)
+      ? { nativeYetiRecall: true as const }
+      : {}),
+    ...(version >= 144 &&
+    s.heroes?.some(
+      (hero) => hero.kind === 'king' && hero.items.some((item) => item.slug === 'snake-bracelet'),
+    )
+      ? { nativeSnakeBraceletRecall: true as const }
+      : {}),
+    ...((version >= 143 && s.garrisons?.length) ||
+    (version >= 147 && s.buildings.some((building) => building.npc === 'ghost-trap'))
+      ? { nativeGarrisonDamage: true as const }
+      : {}),
+    ...(version >= 143 &&
+    s.heroes?.some(
+      (hero) => hero.kind === 'duke' && hero.items.some((item) => item.slug === 'draconic-counter'),
+    )
+      ? { nativeRevengeDeck: true as const }
+      : {}),
+    ...(version >= 141 &&
+    s.heroes?.some(
+      (hero) => hero.kind === 'prince' && hero.items.some((item) => item.slug === 'meteor-staff'),
+    )
+      ? { nativeMeteorStaffTargeting: true as const }
+      : {}),
+    ...(version >= 140 &&
+    s.heroes?.some(
+      (hero) =>
+        hero.kind === 'champion' && hero.items.some((item) => item.slug === 'electro-boots'),
+    )
+      ? { nativeElectroBootsPresentation: true as const }
+      : {}),
+    ...(version >= 139 &&
+    s.heroes?.some((hero) =>
+      hero.items.some(
+        (item) =>
+          (hero.kind === 'king' && item.slug === 'giant-gauntlet') ||
+          (hero.kind === 'queen' &&
+            (item.slug === 'healer-puppet' || item.slug === 'action-figure')) ||
+          (hero.kind === 'champion' && item.slug === 'electro-boots') ||
+          (hero.kind === 'duke' && item.slug === 'fire-heart'),
+      ),
+    )
+      ? { nativeHeroRegeneration: true as const }
+      : {}),
+    ...(version >= 138 &&
+    s.heroes?.some((hero) =>
+      hero.items.some(
+        (item) =>
+          (hero.kind === 'champion' && item.slug === 'electro-boots') ||
+          (hero.kind === 'warden' && (item.slug === 'life-gem' || item.slug === 'rage-gem')),
+      ),
+    )
+      ? { nativeHeroAuraRevival: true as const }
+      : {}),
+    ...(version >= 137 &&
+    s.heroes?.some((hero) =>
+      hero.items.some(
+        (item) =>
+          (hero.kind === 'champion' &&
+            (item.slug === 'frost-charm' || item.slug === 'seeking-shield')) ||
+          (hero.kind === 'king' && item.slug === 'spiky-ball'),
+      ),
+    )
+      ? { nativeEquipmentFlightHistory: true as const }
+      : {}),
+    ...(version >= 136 &&
+    s.heroes?.some(
+      (hero) =>
+        hero.kind === 'champion' && hero.items.some((item) => item.slug === 'seeking-shield'),
+    )
+      ? { nativeSeekingShield: true as const }
+      : {}),
+    ...(version >= 135 &&
+    s.heroes?.some(
+      (hero) => hero.kind === 'prince' && hero.items.some((item) => item.slug === 'dark-orb'),
+    )
+      ? { nativeDarkOrb: true as const }
+      : {}),
+    ...(version >= 134 &&
+    s.heroes?.some(
+      (hero) => hero.kind === 'king' && hero.items.some((item) => item.slug === 'spiky-ball'),
+    )
+      ? { nativeSpikyBall: true as const }
+      : {}),
+    ...(version >= 133 &&
+    s.heroes?.some(
+      (hero) => hero.kind === 'champion' && hero.items.some((item) => item.slug === 'frost-charm'),
+    )
+      ? { nativeFrostFlake: true as const }
+      : {}),
+    ...(version >= 131 &&
+    s.heroes?.some(
+      (hero) => hero.kind === 'queen' && hero.items.some((item) => item.slug === 'piercing-arrow'),
+    )
+      ? {
+          nativeGiantArrow: true as const,
+          ...(version >= 132 ? { nativeGiantArrowConstructs: true as const } : {}),
+        }
+      : {}),
+    ...(version >= 130 &&
+    s.heroes?.some(
+      (hero) => hero.kind === 'warden' && hero.items.some((item) => item.slug === 'fireball'),
+    )
+      ? { nativeWardenFireball: true as const }
+      : {}),
+    ...(version >= 123 ? { nativeReviveTargets: true as const } : {}),
+    ...(version >= 122 ? { nativeRecallPresentation: true as const } : {}),
+    ...(version >= 119 ? { nativeSpellPulsePresentation: true as const } : {}),
+    ...(version >= 118
+      ? {
+          nativeSpellArt: [
+            'Jump',
+            'Rage',
+            'Haste',
+            'Healing',
+            'Poison',
+            ...(version >= 120 ? ['Clone', 'Invisibility'] : []),
+            ...(version >= 121 ? ['Recall'] : []),
+            ...(version >= 124 ? ['Lightning'] : []),
+            ...(version >= 125 ? ['Earthquake'] : []),
+            ...(version >= 126 ? ['Skeleton Spell', 'Bat Spell'] : []),
+            ...(version >= 127 ? ['Totem Spell', 'AngrySpell'] : []),
+            ...(version >= 128 ? ['Ice Block'] : []),
+            ...(version >= 129 ? ['Revive'] : []),
+            ...(version >= 142 &&
+            s.heroes?.some(
+              (hero) =>
+                hero.kind === 'prince' && hero.items.some((item) => item.slug === 'meteor-staff'),
+            )
+              ? ['MPMeteorStaffSpell']
+              : []),
+          ],
+          nativeSpellEffectTimelines: true as const,
+        }
+      : version >= 117
+        ? { nativeSpellArt: ['Jump', 'Rage', 'Haste'] }
+        : version >= 116
+          ? { nativeSpellArt: ['Jump'] }
+          : {}),
+    ...(version >= 115 ? { nativeFreezeCastPresentation: true as const } : {}),
+    ...(version >= 114 ? { nativeOvergrowthCastPresentation: true as const } : {}),
+    ...(version >= 113 ? { nativeOvergrowthPresentation: true as const } : {}),
+    ...(version >= 112 ? { nativeChainGeometry: true as const } : {}),
+    ...(version >= 111 ? { nativeArcherPiercing: true as const } : {}),
+    ...(version >= 110 ? { nativeSuperWizard: true as const } : {}),
+    ...(version >= 109 ? { nativeElectroDragon: true as const } : {}),
+    ...(version >= 108 ? { nativeMeteorThrows: true as const } : {}),
+    ...(version >= 107 ? { nativeElectromites: true as const } : {}),
+    ...(version >= 106 ? { nativeActivatedPreference: true as const } : {}),
+    ...(version >= 105 ? { nativeSingleUseMiteJumps: true as const } : {}),
+    ...(version >= 104 ? { nativeFrostmites: true as const } : {}),
+    ...(version >= 103 ? { nativePetSummonRecall: true as const } : {}),
+    ...(version >= 102 ? { nativeSneezyController: true as const } : {}),
+    ...(version >= 101 ? { nativeHealerRoutes: true as const } : {}),
+    ...(version >= 100 ? { nativeHealingProjectiles: true as const } : {}),
+    ...(version >= 99 ? { nativeUnicornController: true as const } : {}),
+    ...(version >= 98 ? { nativeHealerHeroScaling: true as const } : {}),
+    ...(version >= 97 ? { nativeYakMasterRage: true as const } : {}),
+    ...(version >= 96 ? { nativeFriendlyEligibility: true as const } : {}),
+    ...(version >= 95 ? { nativePhoenixResurrection: true as const } : {}),
+    ...(version >= 95 ? { nativePetCloneImmunity: true as const } : {}),
+    ...(version >= 94 ? { nativeTroopDamageRamp: true as const } : {}),
+    ...(version >= 93 ? { nativeRageRules: true as const } : {}),
+    ...(version >= 92 ? { nativeInvisibilityTargets: true as const } : {}),
+    ...(version >= 91 ? { nativeDiggyMasterTarget: true as const } : {}),
+    ...(version >= 90 ? { nativeDiggySurfaceStun: true as const } : {}),
+    ...(version >= 89 ? { nativeMonolithDefenderDamage: true as const } : {}),
+    ...(version >= 88 ? { nativeHeroDefenderAttacks: true as const } : {}),
+    ...(version >= 87 ? { nativeUndergroundDefenderChase: true as const } : {}),
+    ...(version >= 86 ? { nativeSourceJumperChase: true as const } : {}),
+    ...(version >= 85 ? { nativeKingGauntletSplash: true as const } : {}),
+    ...(version >= 84 ? { nativeHeroPassiveSpeedDamage: true as const } : {}),
+    ...(version >= 83 ? { nativeKingStickHorse: true as const } : {}),
+    ...(version >= 82
+      ? { nativePrinceNobleIron: true as const, nativeChargedHeroRecall: true as const }
+      : {}),
+    ...(version >= 81 ? { nativeChampionRocketSpears: true as const } : {}),
+    ...(version >= 80 ? { nativeQueenVialDamage: true as const } : {}),
+    ...(version >= 79 ? { nativeHeroLifeSteal: true as const } : {}),
+    ...(version >= 78 ? { nativeChampionHaste: true as const } : {}),
+    ...(version >= 77 ? { nativeDefenderFrost: true as const } : {}),
+    ...(version >= 76 ? { nativeAttackerHitPoison: true as const } : {}),
+    ...(version >= 75 ? { nativeSpellAreaCenters: true as const } : {}),
+    ...(version >= 74 ? { nativeHeadhunterCards: true as const } : {}),
+    ...(version >= 73 ? { nativeHeadhunterHeroRules: true as const } : {}),
+    ...(version >= 72 ? { nativeMonolithHousing: 0 } : {}),
+    ...(version >= 71 ? { nativeProjectileFrost: true as const } : {}),
+    ...(version >= 70 ? { nativeDefenderSpellRules: true as const } : {}),
+    ...(version >= 69
+      ? { nativeEquipmentDashHits: true as const, nativeDefendingHeroStunTime: true as const }
+      : {}),
+    ...(version >= 68 ? { nativeDefenderFreezeCue: true as const } : {}),
+    ...(version >= 67 ? { nativeHeroPoisonSpeed: true as const } : {}),
+    ...(version >= 66 ? { nativeAttackerPoisonClock: true as const } : {}),
     ...(version >= 65 ? { nativeIdlePoisonAvoidance: true as const } : {}),
     ...(version >= 64 ? { nativePoisonAvoidance: true as const } : {}),
     ...(version >= 63 ? { nativePoisonClock: true as const } : {}),
@@ -701,6 +1187,18 @@ export function validateReplay(value: unknown): value is ReplayData {
   let last = 0;
   for (const [i, a] of value.actions.entries()) {
     if (!object(a) || !integer(a.step, last, value.steps.length)) return false;
+    if (
+      a.targetHero !== undefined &&
+      (value.version < 123 ||
+        a.type !== 'spell' ||
+        a.kind !== 'revive' ||
+        !validHero(a.targetHero) ||
+        !(
+          s.heroes?.some((hero: HeroSetup) => hero.kind === a.targetHero) ||
+          (a.targetHero === 'king' && !!s.hero)
+        ))
+    )
+      return false;
     last = a.step;
     if (a.type === 'end') {
       if (i !== value.actions.length - 1 || a.step !== value.steps.length) return false;

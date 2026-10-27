@@ -63,7 +63,7 @@ export interface NativeDefenseState {
   /** Spell Tower: unit inside the activation radius and when it entered. */
   dwell?: { unit: number; since: number };
   /** Spell Tower Invisibility: attackers that hit a covered building, and when. */
-  trigger?: { units: number[]; at: number };
+  trigger?: { units: number[]; at: number; constructs?: { key: string; until: number }[] };
   /** Spell Tower clock time a new spell is loaded. */
   loadedAt?: number;
   /** Super Wizard Tower chain hits waiting to land. */
@@ -238,7 +238,7 @@ function stepCraftedEffects(ctx: NativeDefenseContext, tower: Building, state: N
       const unit = battle.units.find((u) => u.id === p.unit);
       const end = Math.min(at, p.until);
       if (unit && unit.hp > 0 && end > p.tickAt)
-        hurtUnit(battle, unit, p.dps * (end - p.tickAt), end, tower.id);
+        hurtUnit(battle, unit, p.dps * (end - p.tickAt), end, tower.id, false, true);
       p.tickAt = end;
     }
     state.poisons = state.poisons.filter((p) => p.until > at + EPS);
@@ -254,7 +254,7 @@ function stepCraftedEffects(ctx: NativeDefenseContext, tower: Building, state: N
         !u.native?.burrowed &&
         distance2D(u.x - bomb.x, u.y - bomb.y) <= bomb.radius + EPS
       )
-        hurtUnit(battle, u, bomb.damage * ctx.defenseScale, bomb.at, tower.id);
+        hurtUnit(battle, u, bomb.damage * ctx.defenseScale, bomb.at, tower.id, false, true);
     ctx.effect({ type: 'blast', x: bomb.x, y: bomb.y, radius: bomb.radius, color: 0xff8fc4 });
   }
 }
@@ -272,20 +272,26 @@ const wakeTime = (battle: Battle, space: number) =>
   battle.nativeDeployments?.find((entry) => entry.space >= space)?.at;
 
 /** Whether a Town Hall or Builder's Hut currently counts as a defense for troop targeting. */
-export function activeAsDefense(battle: Battle, b: Building) {
+export function activeAsDefense(battle: Battle, b: Building, at = battle.elapsed) {
   if (!battle.nativeRoster || b.npc) return isDefense(b.kind);
   if (b.kind === 'spelltower') return true;
   if (b.kind !== 'townhall' && b.kind !== 'builder') return isDefense(b.kind);
   if (b.constructing || b.upgradeEnd || !weaponFor(b)) return false;
   const state = battle.nativeDefenses?.[b.id];
-  return state?.awakeAt !== undefined && state.awakeAt <= battle.elapsed + EPS;
+  return state?.awakeAt !== undefined && state.awakeAt <= at + EPS;
 }
 
 /**
  * Model damage hook. Town Hall weapons wake on any damage; Spell Tower Invisibility watches
  * attacker (non-spell) hits on buildings inside its radius.
  */
-export function noteBuildingDamage(battle: Battle, b: Building, at: number, spell: boolean) {
+export function noteBuildingDamage(
+  battle: Battle,
+  b: Building,
+  at: number,
+  spell: boolean,
+  construct?: { key: string; until: number },
+) {
   if (!battle.nativeRoster) return;
   if (b.kind === 'townhall' && !b.npc) {
     const activation = townHallActivation(b.level);
@@ -312,6 +318,10 @@ export function noteBuildingDamage(battle: Battle, b: Building, at: number, spel
     else
       for (const id of attackers)
         if (!state.trigger.units.includes(id)) state.trigger.units.push(id);
+    if (battle.nativeGiantArrowConstructs && construct) {
+      const constructs = (state.trigger.constructs ??= []);
+      if (!constructs.some((entry) => entry.key === construct.key)) constructs.push(construct);
+    }
   }
 }
 
@@ -962,7 +972,13 @@ export function stepPiercingShots(ctx: NativeTroopContext) {
     for (const c of candidates) {
       if (shot.hit.length >= shot.hits) break;
       shot.hit.push(c.u.id);
-      hurtUnit(battle, c.u, shot.damage, shot.launched + Math.max(0, c.along) / shot.speed);
+      hurtUnit(
+        battle,
+        c.u,
+        shot.damage,
+        shot.launched + Math.max(0, c.along) / shot.speed,
+        battle.nativeRevengeDeck ? shot.sourceId : undefined,
+      );
       if (shot.pushback && c.u.hp > 0 && !c.u.native?.siege)
         knockback(ctx, c.u, c.u.x - shot.dirX, c.u.y - shot.dirY, shot.pushback);
     }
@@ -999,7 +1015,7 @@ export function resolveDefenseImpact(ctx: NativeTroopContext, p: CombatProjectil
       if (!liveTarget(u, at) || u.native?.burrowed) continue;
       const d = distance2D(u.x - p.x, u.y - p.y);
       if (d <= shot.shock.inner + EPS || d > shot.shock.outer + EPS) continue;
-      hurtUnit(battle, u, shot.shock.damage, at, p.sourceId);
+      hurtUnit(battle, u, shot.shock.damage, at, p.sourceId, false, true);
       if (shot.shock.pushback > 0 && housing(u) <= shot.shock.housing && !u.native?.siege)
         knockback(ctx, u, p.x, p.y, shot.shock.pushback);
     }
@@ -1025,7 +1041,7 @@ export function resolveDefenseImpact(ctx: NativeTroopContext, p: CombatProjectil
         !u.native?.burrowed &&
         distance2D(u.x - p.x, u.y - p.y) <= shot.layerSplash + EPS
       )
-        hurtUnit(battle, u, p.damage, at, p.sourceId);
+        hurtUnit(battle, u, p.damage, at, p.sourceId, false, true);
   }
   if (shot.splash) {
     // Geared-up Mortar shells: ground splash around the landing point (the target is included).
@@ -1037,7 +1053,7 @@ export function resolveDefenseImpact(ctx: NativeTroopContext, p: CombatProjectil
         u.id !== (struck ? target!.id : -1) &&
         distance2D(u.x - p.x, u.y - p.y) <= shot.splash + EPS
       )
-        hurtUnit(battle, u, p.damage, at, p.sourceId);
+        hurtUnit(battle, u, p.damage, at, p.sourceId, false, true);
   }
   if (shot.bounces > (p.native?.bounce ?? 0) && shot.bounceDistance > 0) {
     const from = { x: p.x, y: p.y };
@@ -1179,11 +1195,16 @@ function stepSpellTower(
   if (mode === 'invisibility') {
     const trigger = state.trigger;
     if (!trigger) return;
-    // A cast needs at least one attacker from the triggering hits to survive the 1.2 s dwell.
+    // A cast needs an ordinary triggering attacker or a live source construct at release.
     const since = state.dwell?.since ?? state.clock;
     state.dwell ??= { unit: trigger.units[0] ?? -1, since };
     if (state.clock - state.dwell.since + EPS < weapon.windup) return;
-    const survivors = trigger.units.some((id) => battle.units.some((u) => u.id === id && u.hp > 0));
+    const survivors =
+      trigger.units.some((id) => battle.units.some((u) => u.id === id && u.hp > 0)) ||
+      !!(
+        battle.nativeGiantArrowConstructs &&
+        trigger.constructs?.some((entry) => entry.until > battleTime(state.clock) + EPS)
+      );
     delete state.trigger;
     delete state.dwell;
     if (!survivors) return;

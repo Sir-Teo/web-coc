@@ -1,4 +1,7 @@
 import { poisonAvoidanceTarget } from './poison-avoidance';
+import { defenderHitPoisonScales } from './defender-hit-poison';
+import { defenderFrostScales } from './defender-frost';
+import { defenderRageStats } from './native-rage';
 import { TROOPS } from './data';
 import { heroRow, HERO_UNIT, type HeroKind } from './native-hero-data';
 import { nativeUnitStats } from './native-units';
@@ -40,8 +43,16 @@ export function stepDefendingHeroes(battle: Battle, dt: number, effect: (fx: FX)
   for (const d of battle.defenders ?? []) {
     if (d.kind !== 'hero' || d.hp <= 0) continue;
     d.attacking = false;
-    if ((d.stunnedUntil ?? 0) > battle.elapsed) continue;
-    const stats = nativeUnitStats(HERO_UNIT[d.hero], d.level),
+    const stunnedUntil = d.stunnedUntil ?? 0;
+    if (stunnedUntil > battle.elapsed) continue;
+    const activeDt =
+      battle.nativeDefendingHeroStunTime && stunnedUntil > 0
+        ? Math.min(dt, Math.max(0, battle.elapsed - stunnedUntil))
+        : dt;
+    if (activeDt <= 0) continue;
+    const stats = battle.nativeRageRules
+        ? defenderRageStats(battle, d, nativeUnitStats(HERO_UNIT[d.hero], d.level))
+        : nativeUnitStats(HERO_UNIT[d.hero], d.level),
       row = heroRow(d.hero, d.level);
     const alert = tiles(row, 'AlertRadius') || 12,
       leash = tiles(row, 'MaxSearchRadiusForDefender') || 10;
@@ -72,15 +83,24 @@ export function stepDefendingHeroes(battle: Battle, dt: number, effect: (fx: FX)
     const point = target ?? escape ?? d.home,
       distance = distance2D(point.x - d.x, point.y - d.y);
     const poison = d.poison && d.poison.until > battle.elapsed ? d.poison : undefined;
-    const attackScale = battle.nativeDefendingHeroPoison
+    const hitPoison = defenderHitPoisonScales(d, battle.elapsed);
+    const frost = defenderFrostScales(d, battle.elapsed);
+    const areaAttackScale = battle.nativeDefendingHeroPoison
       ? Math.max(0.05, 1 + (poison?.attack ?? 0))
       : 1 - (poison?.attack ?? 0);
-    d.cooldown -= dt * attackScale;
+    const attackScale = hitPoison ? Math.min(areaAttackScale, hitPoison.attack) : areaAttackScale;
+    d.cooldown -= activeDt * attackScale * frost.attack;
     if (target && distance <= stats.range) {
       d.attacking = true;
       if (d.cooldown <= 0) {
         d.cooldown += stats.rate;
-        hurtUnit(battle, target, stats.damage);
+        hurtUnit(
+          battle,
+          target,
+          stats.damage,
+          battle.elapsed,
+          battle.nativeRevengeDeck ? d.id : undefined,
+        );
         effect({ type: 'hit', x: d.x, y: d.y, toX: target.x, toY: target.y, sourceId: d.id });
       }
       continue;
@@ -89,7 +109,7 @@ export function stepDefendingHeroes(battle: Battle, dt: number, effect: (fx: FX)
       if (escape) d.path = [];
       continue;
     }
-    d.pathAt -= dt;
+    d.pathAt -= activeDt;
     if (d.mode === 'air') d.path = [point];
     else if (d.pathAt <= 0 || !d.path.length) {
       const dummy = { ...battle.buildings[0], x: point.x, y: point.y, kind: 'wall' as const };
@@ -101,10 +121,11 @@ export function stepDefendingHeroes(battle: Battle, dt: number, effect: (fx: FX)
       );
       d.pathAt = 1;
     }
-    const moveScale = battle.nativeDefendingHeroPoison
+    const areaMoveScale = battle.nativeDefendingHeroPoison
       ? Math.max(0, 1 + (poison?.speed ?? 0))
       : 1 - (poison?.speed ?? 0);
-    let travel = stats.speed * dt * moveScale;
+    const moveScale = hitPoison ? Math.min(areaMoveScale, hitPoison.move) : areaMoveScale;
+    let travel = stats.speed * activeDt * moveScale * frost.move;
     while (travel > 0 && d.path.length) {
       const p = d.path[0],
         length = distance2D(p.x - d.x, p.y - d.y),

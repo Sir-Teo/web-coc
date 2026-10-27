@@ -1,5 +1,6 @@
 import type { Battle, Unit } from './model';
 import type { garrisonPoisonOnHit } from './garrison-kinds';
+import { hurtGarrisonUnit } from './garrison-damage';
 
 type PoisonOnHit = NonNullable<ReturnType<typeof garrisonPoisonOnHit>>;
 /** Attacker status applied by campaign garrison defenders (`unit.late.garrison`). */
@@ -83,7 +84,7 @@ export function stepGarrisonStatus(battle: Battle) {
     if (!poison) continue;
     const end = Math.min(battle.elapsed, poison.until);
     if (unit.hp > 0 && end > poison.ticked)
-      unit.hp = Math.max(0, unit.hp - poison.dps * (end - poison.ticked));
+      hurtGarrisonUnit(battle, unit, poison.dps * (end - poison.ticked), end);
     poison.ticked = Math.max(poison.ticked, end);
     if (battle.elapsed >= poison.until) delete unit.late!.garrison!.poison;
   }

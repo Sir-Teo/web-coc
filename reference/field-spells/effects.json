@@ -1,0 +1,1291 @@
+{
+  "clientVersion": "18.400.21",
+  "generator": "scripts/import-field-spell-art.py",
+  "sources": {
+    "csv/particle_emitters.csv": "8d80bbf714386c4f24e6aed8f2eef671a2eac5c3b3ad41e4d275b757ced64cef",
+    "logic/effects.csv": "5c6d5b67d6407345123b8d55872ed77ee6697b466d20d1fa21e25a723c511e9f",
+    "logic/spells.csv": "385159e00327e6a1567cd91f1585b4ed0717d3f4475f0823398243482598289d",
+    "sc/buildings.sc": "f73ec949fc070bc03175d6bb3af8b62d8f607094bf2b343c9846a499a35be0ed",
+    "sc/buildings_39.sctx": "dd27d9612fe135c3be364840eeabe45b53a229b24192246b56a08fa0606fdb16",
+    "sc/buildings_62.sctx": "0f97f201e0fc95e31f3e1c3430c109858132b408a59db6704a0cedbc8ac3f94d",
+    "sc/buildings_66.sctx": "c65a2f6e362edfd51d5fc634d5a6c30ec353bd936fa06fa8775b856aeb7baff0",
+    "sc/vfx_spells.sc": "01e6556059ed1a80dda2df6366ad7dcf6305bf7c7ebccaa2128843e534c100e7",
+    "sc/vfx_spells_0.sctx": "f7758db085e837a7ab23f9911c1f3d87a4998bc46057cd68de63f8005042b9e1",
+    "sc/vfx_spells_2.sctx": "9d7443c66a982441694d5ecf083441beaddaa2472287f39347247214052e0caf",
+    "sc/vfx_spells_3.sctx": "6379872091cf1d7d61425c79514de9234dbe059386c5033af5bda5b2fbf77e19"
+  },
+  "effects": {
+    "Rage deploy": "rage",
+    "Rage predeploy": "rage",
+    "Speedup_deploy_lvl1": "haste",
+    "Speedup_deploy_lvl2": "haste",
+    "Speedup_deploy_lvl3": "haste",
+    "Speedup_deploy_lvl4": "haste",
+    "Speedup_deploy_lvl5": "haste",
+    "Speedup_deploy_lvl6": "haste",
+    "Speedup_deploy_top_lvl1": "haste",
+    "Speedup_deploy_top_lvl2": "haste",
+    "Speedup_deploy_top_lvl3": "haste",
+    "Speedup_deploy_top_lvl4": "haste",
+    "Speedup_deploy_top_lvl5": "haste",
+    "Speedup_deploy_top_lvl6": "haste",
+    "speedup_Predeploy": "haste",
+    "Heal area": "heal",
+    "Heal area top": "heal",
+    "Heal predeploy": "heal",
+    "Heal spell": "heal",
+    "Toxic deploy ground halloween": "poison",
+    "Toxic deploy halloween": "poison",
+    "toxic_Predeploy": "poison",
+    "Clone deploy": "clone",
+    "Clone deploy top": "clone",
+    "Clone_Predeploy": "clone",
+    "Invisibility area lvl1": "invisibility",
+    "Invisibility area lvl2": "invisibility",
+    "Invisibility area lvl3": "invisibility",
+    "Invisibility area lvl4": "invisibility",
+    "Invisibility_Predeploy": "invisibility",
+    "RecallDeployAuraGround": "recall",
+    "RecallDeployAuraTop": "recall",
+    "Recall_Predeploy": "recall",
+    "Lightning Spell": "lightning",
+    "Lightning Spell Hit": "lightning",
+    "Lightning area small": "lightning",
+    "Lightning predeploy": "lightning",
+    "EarthQuake_deploy": "earthquake",
+    "EarthQuake_deploy_0": "earthquake",
+    "EarthQuake_deploy_2": "earthquake",
+    "EarthQuake_deploy_3": "earthquake",
+    "EarthQuake_deploy_4": "earthquake",
+    "EarthQuake_deploy_ground": "earthquake",
+    "EarthQuake_deploy_ground_0": "earthquake",
+    "EarthQuake_deploy_ground_2": "earthquake",
+    "EarthQuake_deploy_ground_3": "earthquake",
+    "EarthQuake_deploy_ground_4": "earthquake",
+    "Earthquake_Predeploy": "earthquake",
+    "SkeleSpell Summon1": "skeleton",
+    "SkeleSpell Summon2": "skeleton",
+    "SkeleSpell Summon3": "skeleton",
+    "SkeleSpell Summon4": "skeleton",
+    "SkeleSpell Summon5": "skeleton",
+    "SkeleSpell Summon6": "skeleton",
+    "SkeleSpell Summon7": "skeleton",
+    "SkeleSpell Summon8": "skeleton",
+    "skele_Predeploy": "skeleton",
+    "BatSpell Summon1": "bat",
+    "BatSpell Summon2": "bat",
+    "BatSpell Summon3": "bat",
+    "BatSpell Summon4": "bat",
+    "BatSpell Summon5": "bat",
+    "BatSpell Summon6": "bat",
+    "BatSpell Summon7": "bat",
+    "BatSpell Summon8": "bat",
+    "bat_Predeploy": "bat",
+    "ps_spells_meteortotem_Impact": "totem",
+    "ps_spells_meteortotem_predeploy": "totem",
+    "AngrySpell_area_Start": "angry",
+    "AngrySpell_area_top": "angry",
+    "ps_spells_angryspell_predeploy": "angry",
+    "IceBlock predeploy": "iceblock",
+    "ps_spells_iceblock_Area": "iceblock",
+    "ps_spells_iceblock_Despawn": "iceblock",
+    "ps_spells_iceblock_explode": "iceblock",
+    "hero_revive_bottle_effect": "revive",
+    "hero_revive_ground_layer": "revive",
+    "hero_revive_top_layer": "revive"
+  },
+  "packs": {
+    "rage": {
+      "path": "assets/field-spells-native/rage/graph.json",
+      "sha256": "1f79f596058f7a004eb55dd114a79f609552b43ae520c56b9ca90285c7137ba6",
+      "bytes": 262068
+    },
+    "haste": {
+      "path": "assets/field-spells-native/haste/graph.json",
+      "sha256": "bcff8f4333a2535cf8ca2dd1751605ae9477d550c8d4c115e7b55c230eab8381",
+      "bytes": 169017
+    },
+    "heal": {
+      "path": "assets/field-spells-native/heal/graph.json",
+      "sha256": "aa1dbb550f5168e321820d20c39ca3a83a0114e601872bec3c68bc521e207703",
+      "bytes": 122267
+    },
+    "poison": {
+      "path": "assets/field-spells-native/poison/graph.json",
+      "sha256": "e3d0ddf8df1e94bfde463acf8704c0d938c5fcef7391cf7a792c8d3c28abf7ac",
+      "bytes": 292020
+    },
+    "clone": {
+      "path": "assets/field-spells-native/clone/graph.json",
+      "sha256": "05ee92059bb09877cf29ad86bcc397be07607ae9ad794037f99de99d31d5e872",
+      "bytes": 43494
+    },
+    "invisibility": {
+      "path": "assets/field-spells-native/invisibility/graph.json",
+      "sha256": "13d0239d5b2861d2a646c9fc2d7698a479b089e98ec75dcabe720c526a936788",
+      "bytes": 150035
+    },
+    "recall": {
+      "path": "assets/field-spells-native/recall/graph.json",
+      "sha256": "6eaaec45f45fc15244936be5a662fb416dcab271ef38ae5e7792c6cb951ccf14",
+      "bytes": 54956
+    },
+    "lightning": {
+      "path": "assets/field-spells-native/lightning/graph.json",
+      "sha256": "647d48a4d3d7ba6355bc5640cbc23a6adc0b233c88195e5235ccb457e1736e2f",
+      "bytes": 491070
+    },
+    "earthquake": {
+      "path": "assets/field-spells-native/earthquake/graph.json",
+      "sha256": "88a448391401a9221710fefc14d4bb278d17d55c9231519e0266267d229c82c5",
+      "bytes": 196132
+    },
+    "skeleton": {
+      "path": "assets/field-spells-native/skeleton/graph.json",
+      "sha256": "ef007eb65f9f8636cd5aef25db0759f47a743f22bfda6c4f2060894eb2dfc263",
+      "bytes": 53289
+    },
+    "bat": {
+      "path": "assets/field-spells-native/bat/graph.json",
+      "sha256": "adf4771ec86813f4693b5486b10b0bfd97768318ab1da458b743e826161af36d",
+      "bytes": 53155
+    },
+    "totem": {
+      "path": "assets/field-spells-native/totem/graph.json",
+      "sha256": "57183be4a9d9cc79932698a6d6273cb29efd4d98c5c6b1fdf35f9737fed40df4",
+      "bytes": 689232
+    },
+    "angry": {
+      "path": "assets/field-spells-native/angry/graph.json",
+      "sha256": "75d55da6b02b026778aefc4eed3abfee22443cf63f6654c14aaf41912c2e3594",
+      "bytes": 259331
+    },
+    "iceblock": {
+      "path": "assets/field-spells-native/iceblock/graph.json",
+      "sha256": "1cf70976bd15c0d9f6dcaa94f066dea25e923b7668a7194c71235d8d21ba0585",
+      "bytes": 1109185
+    },
+    "revive": {
+      "path": "assets/field-spells-native/revive/graph.json",
+      "sha256": "dd02e0ccc966f48bb20a0c634d35fa87e8b17db65247ed661106f2a17346414c",
+      "bytes": 138941
+    }
+  },
+  "spells": {
+    "Rage": {
+      "key": "rage",
+      "levels": [
+        {
+          "PreDeployEffect": "Rage predeploy",
+          "DeployEffect": "Rage deploy",
+          "DeployEffect2": "Rage deploy top",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Rage predeploy",
+          "DeployEffect": "Rage deploy",
+          "DeployEffect2": "Rage deploy top",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Rage predeploy",
+          "DeployEffect": "Rage deploy",
+          "DeployEffect2": "Rage deploy top",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Rage predeploy",
+          "DeployEffect": "Rage deploy",
+          "DeployEffect2": "Rage deploy top",
+          "level": 4,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Rage predeploy",
+          "DeployEffect": "Rage deploy",
+          "DeployEffect2": "Rage deploy top",
+          "level": 5,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Rage predeploy",
+          "DeployEffect": "Rage deploy",
+          "DeployEffect2": "Rage deploy top",
+          "level": 6,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Rage predeploy",
+          "DeployEffect": "Rage deploy",
+          "DeployEffect2": "Rage deploy top",
+          "level": 7,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        }
+      ]
+    },
+    "Haste": {
+      "key": "haste",
+      "levels": [
+        {
+          "PreDeployEffect": "speedup_Predeploy",
+          "DeployEffect": "Speedup_deploy_lvl1",
+          "DeployEffect2": "Speedup_deploy_top_lvl1",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "speedup_Predeploy",
+          "DeployEffect": "Speedup_deploy_lvl2",
+          "DeployEffect2": "Speedup_deploy_top_lvl2",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "speedup_Predeploy",
+          "DeployEffect": "Speedup_deploy_lvl3",
+          "DeployEffect2": "Speedup_deploy_top_lvl3",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "speedup_Predeploy",
+          "DeployEffect": "Speedup_deploy_lvl4",
+          "DeployEffect2": "Speedup_deploy_top_lvl4",
+          "level": 4,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "speedup_Predeploy",
+          "DeployEffect": "Speedup_deploy_lvl5",
+          "DeployEffect2": "Speedup_deploy_top_lvl5",
+          "level": 5,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "speedup_Predeploy",
+          "DeployEffect": "Speedup_deploy_lvl5",
+          "DeployEffect2": "Speedup_deploy_top_lvl5",
+          "level": 6,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "speedup_Predeploy",
+          "DeployEffect": "Speedup_deploy_lvl6",
+          "DeployEffect2": "Speedup_deploy_top_lvl6",
+          "level": 7,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        }
+      ]
+    },
+    "Healing": {
+      "key": "heal",
+      "levels": [
+        {
+          "PreDeployEffect": "Heal predeploy",
+          "DeployEffect": "Heal area",
+          "DeployEffect2": "Heal area top",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "HitEffect": "Heal spell",
+          "hitRadiusTiles": 2,
+          "graphicsOnlyRadius": true
+        },
+        {
+          "PreDeployEffect": "Heal predeploy",
+          "DeployEffect": "Heal area",
+          "DeployEffect2": "Heal area top",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "HitEffect": "Heal spell",
+          "hitRadiusTiles": 2,
+          "graphicsOnlyRadius": true
+        },
+        {
+          "PreDeployEffect": "Heal predeploy",
+          "DeployEffect": "Heal area",
+          "DeployEffect2": "Heal area top",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "HitEffect": "Heal spell",
+          "hitRadiusTiles": 2,
+          "graphicsOnlyRadius": true
+        },
+        {
+          "PreDeployEffect": "Heal predeploy",
+          "DeployEffect": "Heal area",
+          "DeployEffect2": "Heal area top",
+          "level": 4,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "HitEffect": "Heal spell",
+          "hitRadiusTiles": 2,
+          "graphicsOnlyRadius": true
+        },
+        {
+          "PreDeployEffect": "Heal predeploy",
+          "DeployEffect": "Heal area",
+          "DeployEffect2": "Heal area top",
+          "level": 5,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "HitEffect": "Heal spell",
+          "hitRadiusTiles": 2,
+          "graphicsOnlyRadius": true
+        },
+        {
+          "PreDeployEffect": "Heal predeploy",
+          "DeployEffect": "Heal area",
+          "DeployEffect2": "Heal area top",
+          "level": 6,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "HitEffect": "Heal spell",
+          "hitRadiusTiles": 2,
+          "graphicsOnlyRadius": true
+        },
+        {
+          "PreDeployEffect": "Heal predeploy",
+          "DeployEffect": "Heal area",
+          "DeployEffect2": "Heal area top",
+          "level": 7,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "HitEffect": "Heal spell",
+          "hitRadiusTiles": 2,
+          "graphicsOnlyRadius": true
+        },
+        {
+          "PreDeployEffect": "Heal predeploy",
+          "DeployEffect": "Heal area",
+          "DeployEffect2": "Heal area top",
+          "level": 8,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "HitEffect": "Heal spell",
+          "hitRadiusTiles": 2,
+          "graphicsOnlyRadius": true
+        },
+        {
+          "PreDeployEffect": "Heal predeploy",
+          "DeployEffect": "Heal area",
+          "DeployEffect2": "Heal area top",
+          "level": 9,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "HitEffect": "Heal spell",
+          "hitRadiusTiles": 2,
+          "graphicsOnlyRadius": true
+        },
+        {
+          "PreDeployEffect": "Heal predeploy",
+          "DeployEffect": "Heal area",
+          "DeployEffect2": "Heal area top",
+          "level": 10,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "HitEffect": "Heal spell",
+          "hitRadiusTiles": 2,
+          "graphicsOnlyRadius": true
+        },
+        {
+          "PreDeployEffect": "Heal predeploy",
+          "DeployEffect": "Heal area",
+          "DeployEffect2": "Heal area top",
+          "level": 11,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "HitEffect": "Heal spell",
+          "hitRadiusTiles": 2,
+          "graphicsOnlyRadius": true
+        },
+        {
+          "PreDeployEffect": "Heal predeploy",
+          "DeployEffect": "Heal area",
+          "DeployEffect2": "Heal area top",
+          "level": 12,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "HitEffect": "Heal spell",
+          "hitRadiusTiles": 2,
+          "graphicsOnlyRadius": true
+        }
+      ]
+    },
+    "Poison": {
+      "key": "poison",
+      "levels": [
+        {
+          "PreDeployEffect": "toxic_Predeploy",
+          "DeployEffect": "Toxic deploy ground halloween",
+          "DeployEffect2": "Toxic deploy halloween",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "toxic_Predeploy",
+          "DeployEffect": "Toxic deploy ground halloween",
+          "DeployEffect2": "Toxic deploy halloween",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "toxic_Predeploy",
+          "DeployEffect": "Toxic deploy ground halloween",
+          "DeployEffect2": "Toxic deploy halloween",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "toxic_Predeploy",
+          "DeployEffect": "Toxic deploy ground halloween",
+          "DeployEffect2": "Toxic deploy halloween",
+          "level": 4,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "toxic_Predeploy",
+          "DeployEffect": "Toxic deploy ground halloween",
+          "DeployEffect2": "Toxic deploy halloween",
+          "level": 5,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "toxic_Predeploy",
+          "DeployEffect": "Toxic deploy ground halloween",
+          "DeployEffect2": "Toxic deploy halloween",
+          "level": 6,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "toxic_Predeploy",
+          "DeployEffect": "Toxic deploy ground halloween",
+          "DeployEffect2": "Toxic deploy halloween",
+          "level": 7,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "toxic_Predeploy",
+          "DeployEffect": "Toxic deploy ground halloween",
+          "DeployEffect2": "Toxic deploy halloween",
+          "level": 8,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "toxic_Predeploy",
+          "DeployEffect": "Toxic deploy ground halloween",
+          "DeployEffect2": "Toxic deploy halloween",
+          "level": 9,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "toxic_Predeploy",
+          "DeployEffect": "Toxic deploy ground halloween",
+          "DeployEffect2": "Toxic deploy halloween",
+          "level": 10,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "toxic_Predeploy",
+          "DeployEffect": "Toxic deploy ground halloween",
+          "DeployEffect2": "Toxic deploy halloween",
+          "level": 11,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "toxic_Predeploy",
+          "DeployEffect": "Toxic deploy ground halloween",
+          "DeployEffect2": "Toxic deploy halloween",
+          "level": 12,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        }
+      ]
+    },
+    "Clone": {
+      "key": "clone",
+      "levels": [
+        {
+          "PreDeployEffect": "Clone_Predeploy",
+          "DeployEffect": "Clone deploy",
+          "DeployEffect2": "Clone deploy top",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Clone_Predeploy",
+          "DeployEffect": "Clone deploy",
+          "DeployEffect2": "Clone deploy top",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Clone_Predeploy",
+          "DeployEffect": "Clone deploy",
+          "DeployEffect2": "Clone deploy top",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Clone_Predeploy",
+          "DeployEffect": "Clone deploy",
+          "DeployEffect2": "Clone deploy top",
+          "level": 4,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Clone_Predeploy",
+          "DeployEffect": "Clone deploy",
+          "DeployEffect2": "Clone deploy top",
+          "level": 5,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Clone_Predeploy",
+          "DeployEffect": "Clone deploy",
+          "DeployEffect2": "Clone deploy top",
+          "level": 6,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Clone_Predeploy",
+          "DeployEffect": "Clone deploy",
+          "DeployEffect2": "Clone deploy top",
+          "level": 7,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Clone_Predeploy",
+          "DeployEffect": "Clone deploy",
+          "DeployEffect2": "Clone deploy top",
+          "level": 8,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Clone_Predeploy",
+          "DeployEffect": "Clone deploy",
+          "DeployEffect2": "Clone deploy top",
+          "level": 9,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        }
+      ]
+    },
+    "Invisibility": {
+      "key": "invisibility",
+      "levels": [
+        {
+          "PreDeployEffect": "Invisibility_Predeploy",
+          "DeployEffect": "Invisibility area lvl1",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Invisibility_Predeploy",
+          "DeployEffect": "Invisibility area lvl2",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Invisibility_Predeploy",
+          "DeployEffect": "Invisibility area lvl3",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        },
+        {
+          "PreDeployEffect": "Invisibility_Predeploy",
+          "DeployEffect": "Invisibility area lvl4",
+          "level": 4,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5
+        }
+      ]
+    },
+    "Recall": {
+      "key": "recall",
+      "levels": [
+        {
+          "PreDeployEffect": "Recall_Predeploy",
+          "DeployEffect": "RecallDeployAuraGround",
+          "DeployEffect2": "RecallDeployAuraTop",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9
+        },
+        {
+          "PreDeployEffect": "Recall_Predeploy",
+          "DeployEffect": "RecallDeployAuraGround",
+          "DeployEffect2": "RecallDeployAuraTop",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9
+        },
+        {
+          "PreDeployEffect": "Recall_Predeploy",
+          "DeployEffect": "RecallDeployAuraGround",
+          "DeployEffect2": "RecallDeployAuraTop",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9
+        },
+        {
+          "PreDeployEffect": "Recall_Predeploy",
+          "DeployEffect": "RecallDeployAuraGround",
+          "DeployEffect2": "RecallDeployAuraTop",
+          "level": 4,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9
+        },
+        {
+          "PreDeployEffect": "Recall_Predeploy",
+          "DeployEffect": "RecallDeployAuraGround",
+          "DeployEffect2": "RecallDeployAuraTop",
+          "level": 5,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9
+        },
+        {
+          "PreDeployEffect": "Recall_Predeploy",
+          "DeployEffect": "RecallDeployAuraGround",
+          "DeployEffect2": "RecallDeployAuraTop",
+          "level": 6,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9
+        },
+        {
+          "PreDeployEffect": "Recall_Predeploy",
+          "DeployEffect": "RecallDeployAuraGround",
+          "DeployEffect2": "RecallDeployAuraTop",
+          "level": 7,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9
+        }
+      ]
+    },
+    "Lightning": {
+      "key": "lightning",
+      "levels": [
+        {
+          "PreDeployEffect": "Lightning predeploy",
+          "DeployEffect": "Lightning area small",
+          "ChargingEffect": "Lightning Spell",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9,
+          "chargingTargeted": true,
+          "HitEffect": "Lightning Spell Hit",
+          "hitRadiusTiles": 0,
+          "graphicsOnlyRadius": true
+        },
+        {
+          "PreDeployEffect": "Lightning predeploy",
+          "DeployEffect": "Lightning area small",
+          "ChargingEffect": "Lightning Spell",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9,
+          "chargingTargeted": true,
+          "HitEffect": "Lightning Spell Hit",
+          "hitRadiusTiles": 0,
+          "graphicsOnlyRadius": true
+        },
+        {
+          "PreDeployEffect": "Lightning predeploy",
+          "DeployEffect": "Lightning area small",
+          "ChargingEffect": "Lightning Spell",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9,
+          "chargingTargeted": true,
+          "HitEffect": "Lightning Spell Hit",
+          "hitRadiusTiles": 0,
+          "graphicsOnlyRadius": true
+        },
+        {
+          "PreDeployEffect": "Lightning predeploy",
+          "DeployEffect": "Lightning area small",
+          "ChargingEffect": "Lightning Spell",
+          "level": 4,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9,
+          "chargingTargeted": true,
+          "HitEffect": "Lightning Spell Hit",
+          "hitRadiusTiles": 0,
+          "graphicsOnlyRadius": true
+        },
+        {
+          "PreDeployEffect": "Lightning predeploy",
+          "DeployEffect": "Lightning area small",
+          "ChargingEffect": "Lightning Spell",
+          "level": 5,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9,
+          "chargingTargeted": true,
+          "HitEffect": "Lightning Spell Hit",
+          "hitRadiusTiles": 0,
+          "graphicsOnlyRadius": true
+        },
+        {
+          "PreDeployEffect": "Lightning predeploy",
+          "DeployEffect": "Lightning area small",
+          "ChargingEffect": "Lightning Spell",
+          "level": 6,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9,
+          "chargingTargeted": true,
+          "HitEffect": "Lightning Spell Hit",
+          "hitRadiusTiles": 0,
+          "graphicsOnlyRadius": true
+        },
+        {
+          "PreDeployEffect": "Lightning predeploy",
+          "DeployEffect": "Lightning area small",
+          "ChargingEffect": "Lightning Spell",
+          "level": 7,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9,
+          "chargingTargeted": true,
+          "HitEffect": "Lightning Spell Hit",
+          "hitRadiusTiles": 0,
+          "graphicsOnlyRadius": true
+        },
+        {
+          "PreDeployEffect": "Lightning predeploy",
+          "DeployEffect": "Lightning area small",
+          "ChargingEffect": "Lightning Spell",
+          "level": 8,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9,
+          "chargingTargeted": true,
+          "HitEffect": "Lightning Spell Hit",
+          "hitRadiusTiles": 0,
+          "graphicsOnlyRadius": true
+        },
+        {
+          "PreDeployEffect": "Lightning predeploy",
+          "DeployEffect": "Lightning area small",
+          "ChargingEffect": "Lightning Spell",
+          "level": 9,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9,
+          "chargingTargeted": true,
+          "HitEffect": "Lightning Spell Hit",
+          "hitRadiusTiles": 0,
+          "graphicsOnlyRadius": true
+        },
+        {
+          "PreDeployEffect": "Lightning predeploy",
+          "DeployEffect": "Lightning area small",
+          "ChargingEffect": "Lightning Spell",
+          "level": 10,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9,
+          "chargingTargeted": true,
+          "HitEffect": "Lightning Spell Hit",
+          "hitRadiusTiles": 0,
+          "graphicsOnlyRadius": true
+        },
+        {
+          "PreDeployEffect": "Lightning predeploy",
+          "DeployEffect": "Lightning area small",
+          "ChargingEffect": "Lightning Spell",
+          "level": 11,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9,
+          "chargingTargeted": true,
+          "HitEffect": "Lightning Spell Hit",
+          "hitRadiusTiles": 0,
+          "graphicsOnlyRadius": true
+        },
+        {
+          "PreDeployEffect": "Lightning predeploy",
+          "DeployEffect": "Lightning area small",
+          "ChargingEffect": "Lightning Spell",
+          "level": 12,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9,
+          "chargingTargeted": true,
+          "HitEffect": "Lightning Spell Hit",
+          "hitRadiusTiles": 0,
+          "graphicsOnlyRadius": true
+        },
+        {
+          "PreDeployEffect": "Lightning predeploy",
+          "DeployEffect": "Lightning area small",
+          "ChargingEffect": "Lightning Spell",
+          "level": 13,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.9,
+          "chargingTargeted": true,
+          "HitEffect": "Lightning Spell Hit",
+          "hitRadiusTiles": 0,
+          "graphicsOnlyRadius": true
+        }
+      ]
+    },
+    "Earthquake": {
+      "key": "earthquake",
+      "levels": [
+        {
+          "PreDeployEffect": "Earthquake_Predeploy",
+          "DeployEffect": "EarthQuake_deploy_ground_0",
+          "DeployEffect2": "EarthQuake_deploy_0",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "retainSeconds": 303.3
+        },
+        {
+          "PreDeployEffect": "Earthquake_Predeploy",
+          "DeployEffect": "EarthQuake_deploy_ground",
+          "DeployEffect2": "EarthQuake_deploy",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "retainSeconds": 303.3
+        },
+        {
+          "PreDeployEffect": "Earthquake_Predeploy",
+          "DeployEffect": "EarthQuake_deploy_ground_2",
+          "DeployEffect2": "EarthQuake_deploy_2",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "retainSeconds": 303.3
+        },
+        {
+          "PreDeployEffect": "Earthquake_Predeploy",
+          "DeployEffect": "EarthQuake_deploy_ground_3",
+          "DeployEffect2": "EarthQuake_deploy_3",
+          "level": 4,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "retainSeconds": 303.3
+        },
+        {
+          "PreDeployEffect": "Earthquake_Predeploy",
+          "DeployEffect": "EarthQuake_deploy_ground_4",
+          "DeployEffect2": "EarthQuake_deploy_4",
+          "level": 5,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "retainSeconds": 303.3
+        },
+        {
+          "PreDeployEffect": "Earthquake_Predeploy",
+          "DeployEffect": "EarthQuake_deploy_ground_4",
+          "DeployEffect2": "EarthQuake_deploy_4",
+          "level": 6,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "retainSeconds": 303.3
+        },
+        {
+          "PreDeployEffect": "Earthquake_Predeploy",
+          "DeployEffect": "EarthQuake_deploy_ground_4",
+          "DeployEffect2": "EarthQuake_deploy_4",
+          "level": 7,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "retainSeconds": 303.3
+        },
+        {
+          "PreDeployEffect": "Earthquake_Predeploy",
+          "DeployEffect": "EarthQuake_deploy_ground_4",
+          "DeployEffect2": "EarthQuake_deploy_4",
+          "level": 8,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "retainSeconds": 303.3
+        }
+      ]
+    },
+    "Skeleton Spell": {
+      "key": "skeleton",
+      "levels": [
+        {
+          "PreDeployEffect": "skele_Predeploy",
+          "DeployEffect": "SkeleSpell Summon1",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 11.801
+        },
+        {
+          "PreDeployEffect": "skele_Predeploy",
+          "DeployEffect": "SkeleSpell Summon2",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 12.801
+        },
+        {
+          "PreDeployEffect": "skele_Predeploy",
+          "DeployEffect": "SkeleSpell Summon3",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 13.801
+        },
+        {
+          "PreDeployEffect": "skele_Predeploy",
+          "DeployEffect": "SkeleSpell Summon4",
+          "level": 4,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 14.801
+        },
+        {
+          "PreDeployEffect": "skele_Predeploy",
+          "DeployEffect": "SkeleSpell Summon5",
+          "level": 5,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 15.801
+        },
+        {
+          "PreDeployEffect": "skele_Predeploy",
+          "DeployEffect": "SkeleSpell Summon6",
+          "level": 6,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 16.801
+        },
+        {
+          "PreDeployEffect": "skele_Predeploy",
+          "DeployEffect": "SkeleSpell Summon7",
+          "level": 7,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 17.801
+        },
+        {
+          "PreDeployEffect": "skele_Predeploy",
+          "DeployEffect": "SkeleSpell Summon8",
+          "level": 8,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 18.801
+        }
+      ]
+    },
+    "Bat Spell": {
+      "key": "bat",
+      "levels": [
+        {
+          "PreDeployEffect": "bat_Predeploy",
+          "DeployEffect": "BatSpell Summon1",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 7.001
+        },
+        {
+          "PreDeployEffect": "bat_Predeploy",
+          "DeployEffect": "BatSpell Summon2",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 8.201
+        },
+        {
+          "PreDeployEffect": "bat_Predeploy",
+          "DeployEffect": "BatSpell Summon3",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 9.401
+        },
+        {
+          "PreDeployEffect": "bat_Predeploy",
+          "DeployEffect": "BatSpell Summon4",
+          "level": 4,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 12.401
+        },
+        {
+          "PreDeployEffect": "bat_Predeploy",
+          "DeployEffect": "BatSpell Summon5",
+          "level": 5,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 15.401
+        },
+        {
+          "PreDeployEffect": "bat_Predeploy",
+          "DeployEffect": "BatSpell Summon6",
+          "level": 6,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 16.001
+        },
+        {
+          "PreDeployEffect": "bat_Predeploy",
+          "DeployEffect": "BatSpell Summon7",
+          "level": 7,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 16.601
+        },
+        {
+          "PreDeployEffect": "bat_Predeploy",
+          "DeployEffect": "BatSpell Summon8",
+          "level": 8,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8,
+          "retainSeconds": 17.801
+        }
+      ]
+    },
+    "Totem Spell": {
+      "key": "totem",
+      "levels": [
+        {
+          "PreDeployEffect": "ps_spells_meteortotem_predeploy",
+          "DeployEffect": "ps_spells_meteortotem_Impact",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8
+        },
+        {
+          "PreDeployEffect": "ps_spells_meteortotem_predeploy",
+          "DeployEffect": "ps_spells_meteortotem_Impact",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8
+        },
+        {
+          "PreDeployEffect": "ps_spells_meteortotem_predeploy",
+          "DeployEffect": "ps_spells_meteortotem_Impact",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8
+        },
+        {
+          "PreDeployEffect": "ps_spells_meteortotem_predeploy",
+          "DeployEffect": "ps_spells_meteortotem_Impact",
+          "level": 4,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 0.8
+        }
+      ]
+    },
+    "AngrySpell": {
+      "key": "angry",
+      "levels": [
+        {
+          "PreDeployEffect": "ps_spells_angryspell_predeploy",
+          "DeployEffect": "AngrySpell_area_Start",
+          "DeployEffect2": "AngrySpell_area_top",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "deploy2DelaySeconds": 0.3,
+          "retainSeconds": 201.2
+        },
+        {
+          "PreDeployEffect": "ps_spells_angryspell_predeploy",
+          "DeployEffect": "AngrySpell_area_Start",
+          "DeployEffect2": "AngrySpell_area_top",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "deploy2DelaySeconds": 0.3,
+          "retainSeconds": 201.2
+        },
+        {
+          "PreDeployEffect": "ps_spells_angryspell_predeploy",
+          "DeployEffect": "AngrySpell_area_Start",
+          "DeployEffect2": "AngrySpell_area_top",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "deploy2DelaySeconds": 0.3,
+          "retainSeconds": 201.2
+        },
+        {
+          "PreDeployEffect": "ps_spells_angryspell_predeploy",
+          "DeployEffect": "AngrySpell_area_Start",
+          "DeployEffect2": "AngrySpell_area_top",
+          "level": 4,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "deploy2DelaySeconds": 0.3,
+          "retainSeconds": 201.2
+        }
+      ]
+    },
+    "Ice Block": {
+      "key": "iceblock",
+      "levels": [
+        {
+          "PreDeployEffect": "IceBlock predeploy",
+          "DeployEffect": "ps_spells_iceblock_explode",
+          "DeployEffect2": "ps_spells_iceblock_Area",
+          "EndEffect": "ps_spells_iceblock_Despawn",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "deploy2DelaySeconds": 0.1
+        },
+        {
+          "PreDeployEffect": "IceBlock predeploy",
+          "DeployEffect": "ps_spells_iceblock_explode",
+          "DeployEffect2": "ps_spells_iceblock_Area",
+          "EndEffect": "ps_spells_iceblock_Despawn",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "deploy2DelaySeconds": 0.1
+        },
+        {
+          "PreDeployEffect": "IceBlock predeploy",
+          "DeployEffect": "ps_spells_iceblock_explode",
+          "DeployEffect2": "ps_spells_iceblock_Area",
+          "EndEffect": "ps_spells_iceblock_Despawn",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "deploy2DelaySeconds": 0.1
+        },
+        {
+          "PreDeployEffect": "IceBlock predeploy",
+          "DeployEffect": "ps_spells_iceblock_explode",
+          "DeployEffect2": "ps_spells_iceblock_Area",
+          "EndEffect": "ps_spells_iceblock_Despawn",
+          "level": 4,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "deploy2DelaySeconds": 0.1
+        },
+        {
+          "PreDeployEffect": "IceBlock predeploy",
+          "DeployEffect": "ps_spells_iceblock_explode",
+          "DeployEffect2": "ps_spells_iceblock_Area",
+          "EndEffect": "ps_spells_iceblock_Despawn",
+          "level": 5,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "deploy2DelaySeconds": 0.1
+        },
+        {
+          "PreDeployEffect": "IceBlock predeploy",
+          "DeployEffect": "ps_spells_iceblock_explode",
+          "DeployEffect2": "ps_spells_iceblock_Area",
+          "EndEffect": "ps_spells_iceblock_Despawn",
+          "level": 6,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "deploy2DelaySeconds": 0.1
+        }
+      ]
+    },
+    "Revive": {
+      "key": "revive",
+      "levels": [
+        {
+          "PreDeployEffect": "hero_revive_bottle_effect",
+          "DeployEffect": "hero_revive_top_layer",
+          "DeployEffect2": "hero_revive_ground_layer",
+          "level": 1,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "resolvedRevive": true
+        },
+        {
+          "PreDeployEffect": "hero_revive_bottle_effect",
+          "DeployEffect": "hero_revive_top_layer",
+          "DeployEffect2": "hero_revive_ground_layer",
+          "level": 2,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "resolvedRevive": true
+        },
+        {
+          "PreDeployEffect": "hero_revive_bottle_effect",
+          "DeployEffect": "hero_revive_top_layer",
+          "DeployEffect2": "hero_revive_ground_layer",
+          "level": 3,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "resolvedRevive": true
+        },
+        {
+          "PreDeployEffect": "hero_revive_bottle_effect",
+          "DeployEffect": "hero_revive_top_layer",
+          "DeployEffect2": "hero_revive_ground_layer",
+          "level": 4,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "resolvedRevive": true
+        },
+        {
+          "PreDeployEffect": "hero_revive_bottle_effect",
+          "DeployEffect": "hero_revive_top_layer",
+          "DeployEffect2": "hero_revive_ground_layer",
+          "level": 5,
+          "deploySeconds": 0.8,
+          "pulseSeconds": 1.5,
+          "resolvedRevive": true
+        }
+      ]
+    }
+  },
+  "externalEffects": {
+    "Rage deploy top": {
+      "path": "assets/effects-native/rage-deploy-top/graph.json",
+      "sha256": "89855ac57b50b9c40561c0445e14b0981b41d3e29972bdfc97252d2c0cad64ad",
+      "bytes": 54656
+    }
+  },
+  "silentChildren": {
+    "TotemSummon": "Totem Spell"
+  },
+  "conventions": {
+    "lifecycle": "Source cast phases retain original finite emitter lifetimes; combat pulse timing is unchanged.",
+    "reuse": "Existing effects are verified against source without modifying their packs.",
+    "placement": "Source offsets use the shared native isometric projection adapter."
+  }
+}

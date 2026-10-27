@@ -18,7 +18,10 @@ function poisonedKing(legacy = false) {
   model.state.heroLineup = ['king'];
   model.startBattle(0, true);
   const battle = model.battle!;
-  if (legacy) delete battle.nativeDefendingHeroPoison;
+  if (legacy) {
+    delete battle.nativeDefendingHeroPoison;
+    delete battle.nativeHeroPoisonSpeed;
+  }
   const defender = battle.defenders!.find((defender) => defender.kind === 'hero')!;
   model.activeTroop = 'giant';
   expect(model.deploy(5, 5)).toBe(true);
@@ -54,7 +57,7 @@ it('native Poison slows the defending King movement', async () => {
   defender.path = [{ x: attacker.x, y: attacker.y }];
   defender.pathAt = 1;
   stepDefendingHeroes(battle, 0.1, () => {});
-  expect(defender.x - from).toBeCloseTo(nativeUnitStats('barbarianking', 1).speed * 0.1 * 0.74, 8);
+  expect(defender.x - from).toBeCloseTo(nativeUnitStats('barbarianking', 1).speed * 0.1 * 0.87, 8);
 });
 
 it('keeps the released version-59 poison calculation on defending heroes', () => {

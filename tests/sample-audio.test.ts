@@ -136,3 +136,32 @@ it('loops native samples past their duration and resumes seeks at a wrapped offs
   expect(sources[0].stop).toHaveBeenCalledOnce();
   expect(sources[0].disconnect).toHaveBeenCalled();
 });
+
+it('keeps interface samples through replay pause but stops every voice on sound off', async () => {
+  const { samples, sources, gains, cue, unlock } = audio();
+  await unlock();
+  expect(samples.shot('native', 1)).toBe(true);
+  samples.sync([cue], 1, 1, true);
+  samples.stop();
+  expect(sources[0].stop).not.toHaveBeenCalled();
+  expect(sources[1].stop).toHaveBeenCalledOnce();
+  samples.sync([cue], 1, 1, true);
+  samples.stopAll();
+  expect(sources.every((source) => source.stop.mock.calls.length === 1)).toBe(true);
+  expect(gains.every((gain) => gain.disconnect.mock.calls.length === 1)).toBe(true);
+  expect(sources[0].onended).toBeNull();
+  samples.stopAll();
+  expect(sources.every((source) => source.stop.mock.calls.length === 1)).toBe(true);
+  // Muting releases the interface voice budget too.
+  for (let i = 0; i < 8; i++) expect(samples.shot('native', 1)).toBe(true);
+  expect(sources).toHaveLength(11);
+});
+it('starts a cue at zero offset across clock roundoff, while keeping genuinely future cues silent', async () => {
+  const { samples, sources, cue, unlock } = audio();
+  await unlock();
+  samples.sync([cue], cue.at - 0.001, 1, true);
+  expect(sources).toHaveLength(0);
+  samples.sync([cue], cue.at - 1e-13, 1, true);
+  expect(sources).toHaveLength(1);
+  expect(sources[0].start).toHaveBeenCalledWith(0, 0);
+});

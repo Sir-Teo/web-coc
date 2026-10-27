@@ -47,8 +47,8 @@ def slug(name):
 class Library:
     """Source tables and scenes read through the fingerprint-verified catalog reader."""
 
-    def __init__(self, art):
-        raw = (art.ARCHIVE / 'fingerprint.json').read_bytes()
+    def __init__(self, art, fingerprint=None):
+        raw = (fingerprint or art.ARCHIVE / 'fingerprint.json').read_bytes()
         require(digest(raw) == FINGERPRINT, 'Fingerprint differs')
         art.MEMBERS = {r['file']: r['sha'] for r in json.loads(raw)['files']}
         self.art = art

@@ -71,9 +71,13 @@ export function registerOfflineSupport() {
   let reloadPending = false;
   const activateUpdate = (worker: ServiceWorker) => {
     reloadPending = true;
-    // Another tab may have activated this prompt's worker already. There will
+    // Another tab may already be activating this prompt's worker. There may
     // be no further controllerchange event to reload this document for us.
-    if (worker.state === 'activated' || worker.state === 'redundant') {
+    if (
+      worker.state === 'activating' ||
+      worker.state === 'activated' ||
+      worker.state === 'redundant'
+    ) {
       window.location.reload();
       return;
     }

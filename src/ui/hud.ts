@@ -1,4 +1,6 @@
 import { isSiege, superOriginal, superMinimum, superLicence } from '../game/special-troops';
+import { phoenixLifeFraction } from '../game/native-status';
+import { nativeUnitStats } from '../game/native-units';
 import { archerTowerPortrait } from './archer-tower-portrait';
 import { positionBattleToast } from './battle-toast';
 import { infernoStats, type InfernoMode } from '../game/inferno-weapon';
@@ -56,6 +58,7 @@ import { traderWeekEnds, type TraderOffer } from '../game/trader';
 import { GEM_TEXTS, TREASURE_PACKS, type GemResource, type TreasurePack } from '../game/gem-costs';
 import { BUILDER_MENU_TEXTS, builderMenu, type BuilderOption } from '../game/builder-menu';
 import Phaser from 'phaser';
+import { pendingHeroRevive } from '../game/revive-targets';
 import { TROOP_ORDER, SPELL_ORDER, spellUnlockLabel } from './army-roster';
 import {
   TROOP_UNLOCK,
@@ -1696,12 +1699,21 @@ export class HUD {
           const kind = arg as HeroKind;
           const hero = m.battle?.nativeHeroes?.find((h) => h.kind === kind);
           if (!hero) break;
+          if (m.activeSpell === 'revive' && m.canReviveHero(kind)) {
+            m.castReviveOnHero(kind);
+            break;
+          }
           if (hero.unitId === null) m.selectNativeHero(kind);
           else void m.activateNativeHeroAbility(kind);
           break;
         }
         if (m.battle?.nativeHeroes?.length) {
           const heroes = m.battle.nativeHeroes;
+          if (m.activeSpell === 'revive' && m.battle.nativeReviveTargets) {
+            const target = heroes.find((hero) => m.canReviveHero(hero.kind));
+            if (target) m.castReviveOnHero(target.kind);
+            break;
+          }
           const ready = heroes.filter((h) => {
             const unit = m.battle!.units.find((u) => u.id === h.unitId);
             return h.unitId === null || (!!unit && unit.hp > 0 && !h.abilityUsed);
@@ -3515,17 +3527,35 @@ export class HUD {
     const m = this.model,
       battle = m.battle!;
     return battle
-      .nativeHeroes!.map((hero, index) => this.nativeHeroCard(hero.kind, index === 0))
+      .nativeHeroes!.map((hero) => this.nativeHeroCard(hero.kind, this.nativeHeroHotkey(hero.kind)))
       .join('');
+  }
+  private nativeHeroHotkey(kind: HeroKind) {
+    const m = this.model,
+      heroes = m.battle?.nativeHeroes ?? [],
+      first =
+        m.activeSpell === 'revive' && m.battle?.nativeReviveTargets
+          ? heroes.find((h) => m.canReviveHero(h.kind))
+          : heroes[0];
+    return first?.kind === kind;
   }
   private nativeHeroCard(kind: HeroKind, hotkey = false) {
     const m = this.model,
       battle = m.battle!,
       hero = battle.nativeHeroes!.find((h) => h.kind === kind)!;
     const unit = battle.units.find((u) => u.id === hero.unitId);
-    const defeated = !!unit && unit.hp <= 0;
+    const pending =
+      !!hero.phoenix?.pending || (!!unit && unit.hp <= 0 && pendingHeroRevive(battle, unit.id));
+    const phoenixLife = unit
+      ? phoenixLifeFraction(unit, battle.elapsed)
+      : hero.phoenix?.pausedRevive
+        ? hero.phoenix.pausedRevive / hero.phoenix.reviveDuration!
+        : undefined;
+    const defeated = !!unit && unit.hp <= 0 && !pending;
     const ready = hero.unitId === null;
-    const disabled = defeated || (!ready && !!hero.abilityUsed) || !!m.replay;
+    const reviveReady = m.activeSpell === 'revive' && m.canReviveHero(kind);
+    const disabled =
+      (!reviveReady && (defeated || (!ready && !!hero.abilityUsed))) || pending || !!m.replay;
     const name = HERO_SOURCE[hero.kind];
     const short = name
       .replace('Barbarian ', '')
@@ -3534,15 +3564,21 @@ export class HUD {
       .replace('Royal ', '')
       .replace('Minion ', '')
       .replace('Dragon ', '');
-    const label = ready
-      ? `Deploy ${short}`
-      : defeated
-        ? 'Defeated'
-        : hero.abilityUsed
-          ? 'Ability used'
-          : 'Activate ability';
+    const label = reviveReady
+      ? `Revive ${short}`
+      : ready
+        ? `Deploy ${short}`
+        : pending
+          ? 'Reviving'
+          : defeated
+            ? 'Defeated'
+            : hero.abilityUsed
+              ? phoenixLife === undefined
+                ? 'Ability used'
+                : 'Phoenix revival'
+              : 'Activate ability';
     const selected = m.activeHeroKind === hero.kind;
-    return `<button class="troop-card hero-card ${selected ? 'selected' : ''}" data-hero-state="${hero.kind}:${ready}:${defeated}:${!!hero.abilityUsed}:${selected}" data-action="hero-select:${hero.kind}" aria-label="${name}, ${label}" ${disabled ? 'disabled' : ''}>${hotkey ? '<kbd class="troop-key">H</kbd>' : ''}<img src="${heroPortrait(hero.kind)}" alt=""><span class="troop-level">★ ${hero.level}</span><span class="hero-health"><i style="width:${unit ? pct((unit.hp / unit.maxHp) * 100) : '100%'}"></i></span><span class="troop-name">${label}</span></button>`;
+    return `<button class="troop-card hero-card ${selected ? 'selected' : ''}" data-hero-state="${hero.kind}:${ready}:${defeated}:${!!hero.abilityUsed}:${selected}${pending ? '|reviving' : ''}${phoenixLife === undefined ? '' : '|phoenix'}|revive:${reviveReady}|key:${hotkey}" data-action="hero-select:${hero.kind}" aria-label="${name}, ${label}" ${disabled ? 'disabled' : ''}>${hotkey ? '<kbd class="troop-key">H</kbd>' : ''}<img src="${heroPortrait(hero.kind)}" alt=""><span class="troop-level">★ ${hero.level}</span><span class="hero-health"><i style="width:${phoenixLife !== undefined ? pct(phoenixLife * 100) : unit ? pct((unit.hp / unit.maxHp) * 100) : '100%'}${phoenixLife === undefined ? '' : ';background:#fff2bf'}"></i></span><span class="troop-name">${label}</span></button>`;
   }
   /** Home village tray: the saved lineup with levels; opens the Hero Hall. */
   private rosterCards() {
@@ -4512,8 +4548,15 @@ export class HUD {
   private troopInfo() {
     const kind = this.inspectedTroop,
       d = this.model.troopStats(kind);
+    const healingStats = d.healer ? nativeUnitStats(kind, this.model.troopLevel(kind)) : undefined;
+    const heroHealingScale =
+      kind === 'healer' && this.model.battle && !this.model.battle.nativeHealerHeroScaling
+        ? 0.55
+        : (healingStats?.heroMultiplier ?? 1);
     const target = d.healer
-      ? 'Friendly ground troops'
+      ? healingStats?.airTargets
+        ? 'Friendly ground and air troops'
+        : 'Friendly ground troops'
       : d.wallBreaker
         ? 'Walls (40× damage)'
         : d.prefersResources
@@ -4522,7 +4565,9 @@ export class HUD {
             ? 'Defenses'
             : 'Any building';
     const tactic = d.healer
-      ? 'Deploy behind a ground army. Healing pulses land where the ally was when cast, restoring nearby ground troops. Heroes receive 55% healing. Additional Healers have diminishing effectiveness; eight or more add no further healing to the same group.'
+      ? kind === 'druid'
+        ? `Heals friendly ground and air troops with bouncing pulses, then transforms into a Bear. Heroes receive ${Math.round(heroHealingScale * 100)}% healing.`
+        : `Deploy behind a ground army. Healing pulses land where the ally was when cast, restoring nearby ground troops. Heroes receive ${Math.round(heroHealingScale * 100)}% healing. Additional Healers have diminishing effectiveness; eight or more add no further healing to the same group.`
       : kind === 'dragon'
         ? 'Fly over walls and burn clustered buildings. Dragons have no favorite target, so clear outer buildings to guide them toward Air Defenses.'
         : kind === 'pekka'
@@ -4552,7 +4597,8 @@ export class HUD {
       [d.healer ? 'Healing interval' : 'Attack interval', `${d.rate}s`],
     ];
     if (d.splash) rows.push([d.healer ? 'Healing radius' : 'Attack splash', `${d.splash} tiles`]);
-    if (d.healer) rows.push(['Hero healing per second', damageNumber((d.heal! / d.rate) * 0.55)]);
+    if (d.healer)
+      rows.push(['Hero healing per second', damageNumber((d.heal! / d.rate) * heroHealingScale)]);
     if (d.deathDamage) {
       rows.push(['Damage on destruction', damageNumber(d.deathDamage)]);
       rows.push(['Death blast radius', `${d.deathRadius} tiles`]);
@@ -5270,11 +5316,18 @@ export class HUD {
         const hero = m.battle.nativeHeroes.find((h) => h.kind === kind);
         if (!hero) continue;
         const unit = m.battle.units.find((u) => u.id === hero.unitId);
-        const state = `${hero.kind}:${hero.unitId === null}:${!!unit && unit.hp <= 0}:${!!hero.abilityUsed}:${m.activeHeroKind === hero.kind}`;
+        const pending =
+          !!hero.phoenix?.pending ||
+          (!!unit && unit.hp <= 0 && pendingHeroRevive(m.battle, unit.id));
+        const phoenixLife = unit
+          ? phoenixLifeFraction(unit, m.battle.elapsed)
+          : hero.phoenix?.pausedRevive
+            ? hero.phoenix.pausedRevive / hero.phoenix.reviveDuration!
+            : undefined;
+        const state = `${hero.kind}:${hero.unitId === null}:${!!unit && unit.hp <= 0 && !pending}:${!!hero.abilityUsed}:${m.activeHeroKind === hero.kind}${pending ? '|reviving' : ''}${phoenixLife === undefined ? '' : '|phoenix'}|revive:${m.activeSpell === 'revive' && m.canReviveHero(kind)}|key:${this.nativeHeroHotkey(kind)}`;
         if (card.dataset.heroState !== state) {
           const focused = document.activeElement === card;
-          const order = m.battle.nativeHeroes.map((h) => h.kind);
-          card.outerHTML = this.nativeHeroCard(kind, order[0] === kind);
+          card.outerHTML = this.nativeHeroCard(kind, this.nativeHeroHotkey(kind));
           replaced = true;
           if (focused)
             this.hudEl
@@ -5284,7 +5337,7 @@ export class HUD {
         } else {
           const health = card.querySelector<HTMLElement>('.hero-health i');
           if (health && unit) {
-            const width = pct((unit.hp / unit.maxHp) * 100);
+            const width = pct((phoenixLife ?? unit.hp / unit.maxHp) * 100);
             if (health.style.width !== width) health.style.width = width;
           }
         }

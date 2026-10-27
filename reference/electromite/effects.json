@@ -1,0 +1,40 @@
+{
+  "clientVersion": "18.400.21",
+  "generator": "scripts/import-electromite-art.py",
+  "character": {
+    "Name": "Electromite",
+    "Animation": "electromite",
+    "DeployEffect": "SuperYetimite Deploy",
+    "AttackEffect": "Zappies Attack",
+    "HitEffect": "SuperYetimite Hit",
+    "DieEffect": "SuperYetimite Die",
+    "TargetedEffectOffset": "-50"
+  },
+  "sources": {
+    "csv/particle_emitters.csv": "8d80bbf714386c4f24e6aed8f2eef671a2eac5c3b3ad41e4d275b757ced64cef",
+    "logic/characters.csv": "5c3acc5b46ff9e7978f406b540264e65c93a846b69d03cd43326a9853703cb89",
+    "logic/effects.csv": "5c6d5b67d6407345123b8d55872ed77ee6697b466d20d1fa21e25a723c511e9f",
+    "sc/buildings.sc": "f73ec949fc070bc03175d6bb3af8b62d8f607094bf2b343c9846a499a35be0ed",
+    "sc/buildings_39.sctx": "dd27d9612fe135c3be364840eeabe45b53a229b24192246b56a08fa0606fdb16"
+  },
+  "effects": {
+    "Zappies Attack": "attack",
+    "SuperYetimite Hit": "hit"
+  },
+  "packs": {
+    "attack": {
+      "path": "assets/electromite-native/attack/graph.json",
+      "sha256": "704b3b2529b89ea0c6e76f8234cc9fefe01af5e9f39c00b153cb3550fed7c246",
+      "bytes": 46416
+    },
+    "hit": {
+      "path": "assets/electromite-native/hit/graph.json",
+      "sha256": "1a0c5d190617e1da19cee30ba14a41a4633a5deb591e3fc8b70ce69e4fc1fc4c",
+      "bytes": 25610
+    }
+  },
+  "conventions": {
+    "targeted": "Original targeted particles use the shared native effect stretch adapter; the client attachment and beam stretching code is not in the tables.",
+    "sounds": "Source samples already ship in reference/troop-sounds/sounds.json."
+  }
+}

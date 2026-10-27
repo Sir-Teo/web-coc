@@ -1,0 +1,143 @@
+{
+  "clientVersion": "18.400.21",
+  "generator": "scripts/import-meteor-staff-art.py",
+  "sources": {
+    "csv/particle_emitters.csv": "8d80bbf714386c4f24e6aed8f2eef671a2eac5c3b3ad41e4d275b757ced64cef",
+    "logic/effects.csv": "5c6d5b67d6407345123b8d55872ed77ee6697b466d20d1fa21e25a723c511e9f",
+    "logic/special_abilities.csv": "c978dd90ff2335e60d988f3476d78bec72672e8c074344d149096e89951181eb",
+    "logic/spells.csv": "385159e00327e6a1567cd91f1585b4ed0717d3f4475f0823398243482598289d",
+    "sc/vfx_character.sc": "1fedfef75fd781233c33535b2b0f11a45298ef02f93105d8f3730554c67e74e6",
+    "sc/vfx_character_4.sctx": "b114e33741f626bd468310aa1b97b44390cc8099cba1938d3527e155ae4a2a84",
+    "sc/vfx_env.sc": "8a85e7cfb07c5b92f83a4c944b13a18beb65c1b68dc1fd9ea283aebb3073703e",
+    "sc/vfx_env_4.sctx": "5bb1110554c9fdf84d380941bd3d52a07de97fb41c0df9a057a20d4ae9d7f892"
+  },
+  "ability": "MPMeteorStaff",
+  "spell": "MPMeteorStaffSpell",
+  "abilityLevelCount": 10,
+  "spellLevels": [
+    {
+      "PreDeployEffect": "ps_chr_mp_MeteorStrike_Projectile",
+      "DeployEffect": "ps_chr_mp_MeteorStrike_Impact",
+      "level": 1,
+      "deploySeconds": 0.8,
+      "pulseSeconds": 1.1,
+      "ActivationEffect": "ps_chr_mp_MeteorStrike_StartAura",
+      "SpawnEffect": "ps_chr_mp_MeteorStrike_ImpactCrater",
+      "spawnDelaySeconds": 0.0
+    },
+    {
+      "PreDeployEffect": "ps_chr_mp_MeteorStrike_Projectile",
+      "DeployEffect": "ps_chr_mp_MeteorStrike_Impact",
+      "level": 2,
+      "deploySeconds": 0.8,
+      "pulseSeconds": 1.1,
+      "ActivationEffect": "ps_chr_mp_MeteorStrike_StartAura",
+      "SpawnEffect": "ps_chr_mp_MeteorStrike_ImpactCrater",
+      "spawnDelaySeconds": 0.0
+    },
+    {
+      "PreDeployEffect": "ps_chr_mp_MeteorStrike_Projectile",
+      "DeployEffect": "ps_chr_mp_MeteorStrike_Impact",
+      "level": 3,
+      "deploySeconds": 0.8,
+      "pulseSeconds": 1.1,
+      "ActivationEffect": "ps_chr_mp_MeteorStrike_StartAura",
+      "SpawnEffect": "ps_chr_mp_MeteorStrike_ImpactCrater",
+      "spawnDelaySeconds": 0.0
+    },
+    {
+      "PreDeployEffect": "ps_chr_mp_MeteorStrike_Projectile",
+      "DeployEffect": "ps_chr_mp_MeteorStrike_Impact",
+      "level": 4,
+      "deploySeconds": 0.8,
+      "pulseSeconds": 1.1,
+      "ActivationEffect": "ps_chr_mp_MeteorStrike_StartAura",
+      "SpawnEffect": "ps_chr_mp_MeteorStrike_ImpactCrater",
+      "spawnDelaySeconds": 0.0
+    },
+    {
+      "PreDeployEffect": "ps_chr_mp_MeteorStrike_Projectile",
+      "DeployEffect": "ps_chr_mp_MeteorStrike_Impact",
+      "level": 5,
+      "deploySeconds": 0.8,
+      "pulseSeconds": 1.1,
+      "ActivationEffect": "ps_chr_mp_MeteorStrike_StartAura",
+      "SpawnEffect": "ps_chr_mp_MeteorStrike_ImpactCrater",
+      "spawnDelaySeconds": 0.0
+    },
+    {
+      "PreDeployEffect": "ps_chr_mp_MeteorStrike_Projectile",
+      "DeployEffect": "ps_chr_mp_MeteorStrike_Impact",
+      "level": 6,
+      "deploySeconds": 0.8,
+      "pulseSeconds": 1.1,
+      "ActivationEffect": "ps_chr_mp_MeteorStrike_StartAura",
+      "SpawnEffect": "ps_chr_mp_MeteorStrike_ImpactCrater",
+      "spawnDelaySeconds": 0.0
+    },
+    {
+      "PreDeployEffect": "ps_chr_mp_MeteorStrike_Projectile",
+      "DeployEffect": "ps_chr_mp_MeteorStrike_Impact",
+      "level": 7,
+      "deploySeconds": 0.8,
+      "pulseSeconds": 1.1,
+      "ActivationEffect": "ps_chr_mp_MeteorStrike_StartAura",
+      "SpawnEffect": "ps_chr_mp_MeteorStrike_ImpactCrater",
+      "spawnDelaySeconds": 0.0
+    },
+    {
+      "PreDeployEffect": "ps_chr_mp_MeteorStrike_Projectile",
+      "DeployEffect": "ps_chr_mp_MeteorStrike_Impact",
+      "level": 8,
+      "deploySeconds": 0.8,
+      "pulseSeconds": 1.1,
+      "ActivationEffect": "ps_chr_mp_MeteorStrike_StartAura",
+      "SpawnEffect": "ps_chr_mp_MeteorStrike_ImpactCrater",
+      "spawnDelaySeconds": 0.0
+    },
+    {
+      "PreDeployEffect": "ps_chr_mp_MeteorStrike_Projectile",
+      "DeployEffect": "ps_chr_mp_MeteorStrike_Impact",
+      "level": 9,
+      "deploySeconds": 0.8,
+      "pulseSeconds": 1.1,
+      "ActivationEffect": "ps_chr_mp_MeteorStrike_StartAura",
+      "SpawnEffect": "ps_chr_mp_MeteorStrike_ImpactCrater",
+      "spawnDelaySeconds": 0.0
+    },
+    {
+      "PreDeployEffect": "ps_chr_mp_MeteorStrike_Projectile",
+      "DeployEffect": "ps_chr_mp_MeteorStrike_Impact",
+      "level": 10,
+      "deploySeconds": 0.8,
+      "pulseSeconds": 1.1,
+      "ActivationEffect": "ps_chr_mp_MeteorStrike_StartAura",
+      "SpawnEffect": "ps_chr_mp_MeteorStrike_ImpactCrater",
+      "spawnDelaySeconds": 0.0
+    }
+  ],
+  "shake": {
+    "CameraShake": "70",
+    "CameraShakeTimeMS": "1000",
+    "CameraShakeInReplay": "FALSE"
+  },
+  "effects": {
+    "ps_chr_mp_MeteorStrike_Impact": "meteor-staff",
+    "ps_chr_mp_MeteorStrike_ImpactCrater": "meteor-staff",
+    "ps_chr_mp_MeteorStrike_Projectile": "meteor-staff",
+    "ps_chr_mp_MeteorStrike_StartAura": "meteor-staff"
+  },
+  "packs": {
+    "meteor-staff": {
+      "path": "assets/meteor-staff-native/effects/graph.json",
+      "sha256": "061b9aa2c642ac24d57b65f2ddc22c7346a0163f796866d10c5f0e7e4e7d2fb9",
+      "bytes": 918413
+    }
+  },
+  "conventions": {
+    "activation": "Attached to the casting Prince; retain the final attached point after Recall.",
+    "phases": "Source falling meteor begins on cast; impact begins at deployment, before the later damage pulse.",
+    "spawn": "The impact root spawns its crater and residue at the source SpawnEffectDelay.",
+    "timelines": "Retain animated descendants of static aura and residue exports."
+  }
+}

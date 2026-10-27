@@ -1,4 +1,14 @@
+import type { OvergrowthRoot } from './native-overgrowth';
+import type { ArcherPiercingShot } from './native-super-archer';
+import type { SuperWizardBranch, SuperWizardZap } from './native-super-wizard';
+import type { ElectroDragonArc, ElectroDragonZap } from './native-electro-dragon';
+import type { ElectromiteArc, ElectromiteZap } from './native-electromite';
 import { stepDefendingHeroes } from './defending-heroes';
+import { ragePetAfterHeroDeath } from './native-pet-rage';
+import {
+  retireInfernoDragonTransitions,
+  type InfernoDragonTransition,
+} from './inferno-dragon-transitions';
 import { chiefProgress, completionXp, finishTimerNow } from './experience';
 import {
   ACHIEVEMENTS,
@@ -246,6 +256,7 @@ import {
   CLONE_LIFETIME,
   recallHousing,
   reviveFraction,
+  REVIVE_RADIUS,
   RAGE_HERO_MULTIPLIER,
   SPELL_SPEED_SCALE,
 } from './spell-progression';
@@ -316,6 +327,7 @@ import {
   type HeroProgress,
   type BattleHero,
 } from './heroes';
+import { beginPekkaWindup, stepPekkaWindup } from './native-pekka-windup';
 import {
   launchProjectile,
   stepProjectiles,
@@ -403,6 +415,7 @@ import {
   buildingImmune,
   hurtUnit,
   unitDamageScale,
+  unitEffects,
   unitFrozen,
   unitSpeedBonus,
   unitSpeedScale,
@@ -504,6 +517,10 @@ import {
   type NativeBattleHero,
 } from './native-heroes';
 import { activateHero, refreshHeroPassives, stepHeroAbilities } from './native-hero-abilities';
+import { stepSeekingShieldLaunches } from './native-seeking-shield';
+import { initializePhoenix, stepPhoenix, hatchPhoenix, recallPhoenix } from './native-phoenix';
+import { recordRecallEvent, type RecallEvent } from './native-recall';
+import { revivableHero, pendingHeroRevive, reviveTargetUnit } from './revive-targets';
 
 /** What a Book finishes: a building's running upgrade, the research, a hero's or the pets'. */
 export type BookTarget =
@@ -800,6 +817,239 @@ export interface Battle {
   nativePoisonAvoidance?: true;
   /** Version 65: idle heroes and Skeleton Trap defenders avoid Poison clouds too. */
   nativeIdlePoisonAvoidance?: true;
+  /** Version 66: overdue defensive Poison pulses cannot rewind the shared damage clock. */
+  nativeAttackerPoisonClock?: true;
+  /** Version 67: native spell Poison movement modifiers use the client hero multiplier. */
+  nativeHeroPoisonSpeed?: true;
+  /** Version 68: full native freezes carry a distinct visual deadline on defenders. */
+  nativeDefenderFreezeCue?: true;
+  /** Version 69: penetrating equipment damages each spawned defender directly once. */
+  nativeEquipmentDashHits?: true;
+  /** Version 69: defending heroes act only for the unfrozen/unstunned part of a step. */
+  nativeDefendingHeroStunTime?: true;
+  /** Version 70: offensive spell pulses honor defender immunities, hero scaling and spawn time. */
+  nativeDefenderSpellRules?: true;
+  /** Version 71: native projectiles carry frost-on-hit values, including hero equipment. */
+  nativeProjectileFrost?: true;
+  /** Version 72: cumulative Monolith Arrow housing, independent of losses and Recall. */
+  nativeMonolithHousing?: number;
+  /** Version 73: attacking Headhunters prioritize Heroes, multiply their hits and jump walls. */
+  nativeHeadhunterHeroRules?: true;
+  /** Version 74: Headhunter shots against defenders use their native card and flight speed. */
+  nativeHeadhunterCards?: true;
+  /** Version 75: visual scatter does not move non-strike spell areas away from their center. */
+  nativeSpellAreaCenters?: true;
+  /** Version 76: Headhunter and Poison Lizard projectile hits poison defending units. */
+  nativeAttackerHitPoison?: true;
+  /** Version 77: native ranged frost applies to defending troops, Heroes and Guardians. */
+  nativeDefenderFrost?: true;
+  /** Version 78: Royal Champion Haste overrides combat intervals with passive speed applied. */
+  nativeChampionHaste?: true;
+  /** Version 79: equipped Hero life steal heals once after a completed attack. */
+  nativeHeroLifeSteal?: true;
+  /** Version 80: Invisibility Vial adds its captured flat bonus to the Queen's ordinary shots. */
+  nativeQueenVialDamage?: true;
+  /** Version 81: Royal Champion charged spears retain range, damage, splash and hit counts. */
+  nativeChampionRocketSpears?: true;
+  /** Version 82: Noble Iron grants the Prince's finite charged attacks on first deployment. */
+  nativePrinceNobleIron?: true;
+  /** Version 82: Recall preserves remaining finite-hit Hero attack effects. */
+  nativeChargedHeroRecall?: true;
+  /** Version 83: Stick Horse starts on deployment and controls King's attacks and routing. */
+  nativeKingStickHorse?: true;
+  /** Version 84: passive equipment attack speed preserves Hero damage per hit. */
+  nativeHeroPassiveSpeedDamage?: true;
+  /** Version 85: Giant Gauntlet melee hits damage nearby ground units and buildings. */
+  nativeKingGauntletSplash?: true;
+  /** Version 86: all native source jumpers retain wall bypass while chasing defenders. */
+  nativeSourceJumperChase?: true;
+  /** Version 87: burrowers pursue defenders underground and surface before striking. */
+  nativeUndergroundDefenderChase?: true;
+  /** Version 88: Heroes use source projectile/direct-hit shapes against defenders. */
+  nativeHeroDefenderAttacks?: true;
+  /** Version 89: Monolith Arrow captures its target-max-HP bonus against defenders. */
+  nativeMonolithDefenderDamage?: true;
+  /** Version 90: Diggy stuns a defense on emergence and burrows on leaving building range. */
+  nativeDiggySurfaceStun?: true;
+  /** Version 91: Diggy follows its living Hero's eligible target, including Walls. */
+  nativeDiggyMasterTarget?: true;
+  /** Version 92: Invisibility conceals offensive building targets and defending units. */
+  nativeInvisibilityTargets?: true;
+  /** Version 93: source Rage coverage, movement, healing and independent boost expiries. */
+  nativeRageRules?: true;
+  /** Version 94: per-target native troop damage stages against buildings and defenders. */
+  nativeTroopDamageRamp?: true;
+  /** Version 95: Phoenix waits as an Egg and grants its Hero one temporary revival. */
+  nativePhoenixResurrection?: true;
+  /** Version 95: pets, including the waiting Egg, cannot be duplicated by Clone. */
+  nativePetCloneImmunity?: true;
+  /** Version 96: waiting/recalled allies and native healing immunity share eligibility rules. */
+  nativeFriendlyEligibility?: true;
+  /** Version 97: Mighty Yak uses its source BoostSelf once when its own Hero falls. */
+  nativeYakMasterRage?: true;
+  /** Version 98: Healer pulses capture their source level's Hero healing ratio. */
+  nativeHealerHeroScaling?: true;
+  /** Version 99: Unicorn binds to its living Hero and uses single-target support rules. */
+  nativeUnicornController?: true;
+  /** Version 100: native healing resolves through source projectile travel and chain hops. */
+  nativeHealingProjectiles?: true;
+  /** Version 101: ground healing units follow allies around buildings, crossing jumpable walls. */
+  nativeHealerRoutes?: true;
+  /** Version 102: Sneezy spawns without attacking until its Hero falls, and pauses to sneeze. */
+  nativeSneezyController?: true;
+  /** Version 103: a recalled pet retains the same logical ownership of living/queued summons. */
+  nativePetSummonRecall?: true;
+  /** Version 104: Frosty summons source Frostmites with a single-use area frost jump. */
+  nativeFrostmites?: true;
+  /** Version 105: Yetimite and Firemite defender attacks retain their one-use ballistic bodies. */
+  nativeSingleUseMiteJumps?: true;
+  /** Version 106: activated native weapons count for preferred targets and damage. */
+  nativeActivatedPreference?: true;
+  /** Version 107: source Electromite chain lightning, building damage and one-use cast. */
+  nativeElectromites?: true;
+  /** Version 108: source Meteor Golem throws split against defenders and retain clone lifetimes. */
+  nativeMeteorThrows?: true;
+  /** Version 109: Electro Dragon source charge, mixed-target lightning and captured effects. */
+  nativeElectroDragon?: true;
+  /** Version 110: Super Wizard branches once from the primary to nine secondary targets. */
+  nativeSuperWizard?: true;
+  /** Version 111: source straight arrows hit each crossed enemy once at its arrival time. */
+  nativeArcherPiercing?: true;
+  /** Version 112: deterministic chain distances and rooted secondary-hop absorption. */
+  nativeChainGeometry?: true;
+  /** Version 113: captured roots select original grow, deployed and retract presentation. */
+  nativeOvergrowthPresentation?: true;
+  /** Version 114: original Overgrowth bottle/field and audio survive the live pulse record. */
+  nativeOvergrowthCastPresentation?: true;
+  nativeOvergrowthCasts?: NativeSpellCast[];
+  /** Version 115: original Freeze cast art and audio survive the one-pulse live record. */
+  nativeFreezeCastPresentation?: true;
+  nativeFreezeCasts?: NativeSpellCast[];
+  /** Version 116+: source spell names whose cast presentation is captured in this recording. */
+  nativeSpellArt?: readonly string[];
+  /** Version 118: static spell particle exports scale their animated descendants. */
+  nativeSpellEffectTimelines?: true;
+  /** Version 122: primary Recall transitions retain their actual positions for source presentation. */
+  nativeRecallPresentation?: true;
+  nativeRecallEvents?: RecallEvent[];
+  /** Version 123: direct Revive controls retain the selected Hero in portable commands. */
+  nativeReviveTargets?: true;
+  /** Version 130: Warden Fireball uses its original flight and captured area damage. */
+  nativeWardenFireball?: true;
+  /** Version 131: Queen Giant Arrow uses source piercing damage and a fixed copied heading. */
+  nativeGiantArrow?: true;
+  /** Version 132: a live Giant Arrow can sustain an Invisibility Spell Tower trigger. */
+  nativeGiantArrowConstructs?: true;
+  /** Version 133: source distinct-target Frost Flakes and full on-impact freezes. */
+  nativeFrostFlake?: true;
+  nativeFrostFlakeCasts?: import('./native-frost-flake').FrostFlakeCast[];
+  nativeSpikyBall?: true;
+  nativeSpikyBallCasts?: import('./native-spiky-ball').SpikyBallCast[];
+  nativeDarkOrb?: true;
+  nativeDarkOrbs?: import('./native-dark-orb').DarkOrbShot[];
+  nativeSeekingShield?: true;
+  nativeSeekingShieldCasts?: import('./native-seeking-shield').SeekingShieldCast[];
+  /** Version 137: moving equipment targets retain fixed-step aims for original trail births. */
+  nativeEquipmentFlightHistory?: true;
+  /** Version 138: Revive and Phoenix restart passive equipment auras on the same body. */
+  nativeHeroAuraRevival?: true;
+  /** Version 139: passive self-regeneration cannot bank ticks through death or Recall. */
+  nativeHeroRegeneration?: true;
+  /** Version 140: capture Electro Boots' original passive activation at each aura origin. */
+  nativeElectroBootsPresentation?: true;
+  nativeElectroBootsActivations?: import('./native-electro-boots').ElectroBootsActivation[];
+  /** Version 141: Meteor Staff selects visible defenses, with ordinary-building fallback. */
+  nativeMeteorStaffTargeting?: true;
+  /** Shared defender damage protections: Castle setups from version 143; Ghost Traps from 147. */
+  nativeGarrisonDamage?: true;
+  /** Version 143: Revenge Deck responds to individual direct hits with per-attacker cooldowns. */
+  nativeRevengeDeck?: true;
+  /** Version 144: Snake Bracelet retains cumulative damage through Recall body replacement. */
+  nativeSnakeBraceletRecall?: true;
+  /** Version 145: recalled normal/Super Yetis retain damage progress and remaining mite stock. */
+  nativeYetiRecall?: true;
+  /** Version 146: later garrison defenders play source-bound primary and chain samples. */
+  nativeGarrisonSounds?: true;
+  /** Version 148: recalled Witch/Super Witch casters retain their summon ownership and cadence. */
+  nativeWitchRecall?: true;
+  /** Version 149: deployed Furnace, Siege Barracks and Druid age from their actual birth. */
+  nativeLifecycleBirth?: true;
+  /** Version 150: Furnace's fixed degeneration consumes live life-aura health first. */
+  nativeFurnaceAuraDecay?: true;
+  /** Version 151: Furnace's finite release directions do not depend on host trig rounding. */
+  nativeFurnaceSpawnGeometry?: true;
+  /** Version 152: defending PEKKA/Valkyrie use split windup and recovery timing. */
+  nativeGarrisonMeleeTiming?: true;
+  /** Version 153: split-family retargeting spends each recovery tick only once. */
+  nativeGarrisonRecovery?: true;
+  /** Version 154: defending Electro Dragons play the original charge sample on active time. */
+  nativeGarrisonPreAttack?: true;
+  /** Version 155: defending Bowler windups play original throw takes. */
+  nativeGarrisonBowlerPreAttack?: true;
+  /** Version 156: attacking Bowler windup/recovery starts at engagement and uses active time. */
+  nativeBowlerWindup?: true;
+  /** Version 157: native defender-targeted boulders and fixed source-radius bounce landings. */
+  nativeBowlerBoulders?: true;
+  /** Version 158: source bounce/shatter cues retain exact resolved impact clocks. */
+  nativeBowlerImpactSounds?: true;
+  /** Version 159: original attacking Bowler windups follow active wall time and retain released tails. */
+  nativeBowlerPreAttack?: true;
+  /** Version 160: defending Bowler boulders bind source bounce/shatter cues to retained impacts. */
+  nativeGarrisonBowlerImpacts?: true;
+  /** Version 161: source boulder impact phases and retained attacker flights for seeks. */
+  nativeBowlerImpactArt?: true;
+  /** Version 162: attacking Golem/Golemite use source split windup and recovery. */
+  nativeGolemWindup?: true;
+  /** Version 163: Bowler defender-pursuit walls use the native windup/boulder release. */
+  nativeBowlerWallWindup?: true;
+  /** Version 164: legacy-path PEKKA attacks use source split windup/recovery. */
+  nativePekkaWindup?: true;
+  /** Version 165: Valkyrie family split clocks and self-centered defender sweeps. */
+  nativeValkyrieWindup?: true;
+  /** Version 166: Witch family source windup on both ground and air targets. */
+  nativeWitchWindup?: true;
+  /** Version 167: bounded Witch flight snapshots reconstruct original trail tails after seeks. */
+  nativeWitchFlightArt?: true;
+  nativeWitchFlights?: CombatProjectile[];
+  /** Version 168: original Witch launch/impact cues survive seeks, independently of view history. */
+  nativeWitchSounds?: true;
+  /** Version 169: Hound parents use source attack phases and Lava Hound projectiles. */
+  nativeHoundWindup?: true;
+  /** Version 170: seeded Hound death positions do not depend on host trigonometry. */
+  nativeHoundSpawnGeometry?: true;
+  nativeWitchShots?: {
+    id: string;
+    sourceId: number;
+    kind: 'witch' | 'superwitch';
+    level: number;
+    launched: number;
+    hitAt?: number;
+  }[];
+  nativeBowlerFlights?: CombatProjectile[];
+  nativeBowlerImpacts?: {
+    id: string;
+    sourceId: number;
+    level: number;
+    bounce: number;
+    at: number;
+  }[];
+  nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
+  nativeFireballs?: CombatProjectile[];
+  /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */
+  nativeSpellPulsePresentation?: true;
+  nativeSpellCastHistory?: NativeSpellCast[];
+  nativeOvergrowthRoots?: OvergrowthRoot[];
+  nativeArcherShots?: ArcherPiercingShot[];
+  nativeSuperWizardBranches?: SuperWizardBranch[];
+  nativeSuperWizardZaps?: SuperWizardZap[];
+  nativeElectroDragonArcs?: ElectroDragonArc[];
+  nativeElectroDragonZaps?: ElectroDragonZap[];
+  /** Captured throw packets retained for original art and sound through replay seeks. */
+  nativeMeteorFlights?: CombatProjectile[];
+  nativeElectromiteArcs?: ElectromiteArc[];
+  nativeElectromiteZaps?: ElectromiteZap[];
+  /** Recent detached troop stage effects; presentation only, retired deterministically. */
+  infernoDragonTransitions?: InfernoDragonTransition[];
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */
@@ -846,6 +1096,21 @@ export interface Battle {
   townhall?: number;
   /** Health of recalled troops waiting in the deployment bar, first recalled first redeployed. */
   recalledHp?: Partial<Record<TroopKind, number[]>>;
+  /** Version 145: counters in the same FIFO order as each troop kind's recalledHp queue. */
+  recalledYeti?: Partial<
+    Record<'yeti' | 'superyeti', { damageTaken: number; damageSpawns: number }[]>
+  >;
+  /** Version 148: one caster record per matching recalledHp entry, first recalled first returned. */
+  recalledWitches?: Partial<
+    Record<
+      'witch' | 'superwitch',
+      {
+        summonerId: number;
+        summonAt?: number;
+        summoned?: number;
+      }[]
+    >
+  >;
   catalog?: CampaignCatalog;
   scenery?: CampaignScenery[];
   troopLevels?: Army;
@@ -955,6 +1220,7 @@ export type FX = {
     | 'mortar-cancel'
     | 'collect'
     | 'spawn'
+    | 'recall-unit'
     | 'upgrade'
     | 'spell'
     | 'blast'
@@ -998,10 +1264,21 @@ export type FX = {
   /** Presentation only: weapon identity and the source/target entities. */
   weapon?: Weapon;
   projectileId?: string;
+  /** Presentation only: a captured equipment activation can replace authored feedback. */
+  abilityCastId?: string;
+  /** Version 165: a self-centered Valkyrie sweep also owns one melee attack/impact cue. */
+  nativeValkyrieSweep?: true;
   sourceId?: number;
   targetId?: number;
   targetBuilding?: boolean;
   targetDefender?: boolean;
+  /** Friendly native healing retains its caster identity through death, Recall and evolution. */
+  targetFriendly?: true;
+  /** Scheduled source-packet time; older events use the current simulation sample. */
+  at?: number;
+  sourceKind?: UnitKind;
+  sourceLevel?: number;
+  projectileBounce?: number;
   sourceDefender?: boolean;
   /** Marks either end of a projectile as airborne so the scene can lift it. */
   fromAir?: boolean;
@@ -1735,7 +2012,12 @@ export class GameModel {
     const battle = this.battle;
     if (battle?.nativeHeroes && u.id !== undefined) {
       const hero = heroOf(battle, { id: u.id });
-      if (hero) return heroTroopStats(hero, battle.townhall ?? this.townhallLevel);
+      if (hero)
+        return heroTroopStats(
+          hero,
+          battle.townhall ?? this.townhallLevel,
+          !!battle.nativeHeroPassiveSpeedDamage,
+        );
       const owner = petOwner(battle, { id: u.id });
       if (owner?.pet) return petTroopStats(owner.pet);
     }
@@ -4927,8 +5209,8 @@ export class GameModel {
     this.changed();
     return true;
   }
-  /** Hero setups for a version 46 battle: lineup order, equipped items and assigned pets. */
-  private heroSetups(): HeroSetup[] {
+  /** Snapshot the ready lineup, equipment and pets for battle setup and artwork prefetch. */
+  heroSetups(): HeroSetup[] {
     const gear = this.gear;
     const pets = this.petProgress;
     return this.heroLineup
@@ -4964,11 +5246,18 @@ export class GameModel {
     this.recordAction({ type: 'hero', hero: kind, x, y });
     const starting = !b.started;
     this.beginFight();
-    const stats = heroTroopStats(hero, b.townhall ?? this.townhallLevel);
+    const stats = heroTroopStats(
+      hero,
+      b.townhall ?? this.townhallLevel,
+      !!b.nativeHeroPassiveSpeedDamage,
+    );
     hero.unitId = this.state.nextId++;
     const recalled = hero.recalledHp;
     delete hero.recalledHp;
-    if (recalled === undefined) recordWakeSpace(b, heroWakeSpace());
+    if (recalled === undefined) {
+      recordWakeSpace(b, heroWakeSpace());
+      if (b.nativeMonolithHousing !== undefined) b.nativeMonolithHousing += 25;
+    }
     b.units.push({
       id: hero.unitId,
       kind: heroUnitKind(kind),
@@ -4986,6 +5275,16 @@ export class GameModel {
       spawnedAt: b.elapsed,
       native: initialNativeState(heroUnitKind(kind), hero.level),
     });
+    if (b.nativeSnakeBraceletRecall && hero.recalledDamageTaken !== undefined) {
+      b.units.at(-1)!.native!.damageTaken = hero.recalledDamageTaken;
+      delete hero.recalledDamageTaken;
+    }
+    if (b.nativeChargedHeroRecall && hero.recalledAttackExtra) {
+      unitEffects(b.units.find((u) => u.id === hero.unitId)!).extraDamage = {
+        ...hero.recalledAttackExtra,
+      };
+      delete hero.recalledAttackExtra;
+    }
     if (hero.pet) {
       const pet = petTroopStats(hero.pet);
       const recalledPet = hero.recalledPetHp;
@@ -5007,17 +5306,38 @@ export class GameModel {
         spawnedAt: b.elapsed,
         native: initialNativeState(petUnitKind(hero.pet.kind), hero.pet.level),
       });
+      if (b.nativePhoenixResurrection && hero.pet.kind === 'phoenix') {
+        const native = this.nativeContext(b, this.sharedWalls(b));
+        initializePhoenix(
+          native,
+          hero,
+          b.units.find((u) => u.id === hero.unitId)!,
+          b.units.at(-1)!,
+          (k, level, px, py, at, owner) => spawnNativeUnit(native, k, level, px, py, at, owner),
+        );
+      }
     }
     hero.deployed = true;
+    let passiveActivationId: string | undefined;
     if (b.nativeHeroPassives) {
       const native = this.nativeContext(b, this.sharedWalls(b));
-      refreshHeroPassives(
+      passiveActivationId = refreshHeroPassives(
         native,
         hero,
         b.units.find((u) => u.id === hero.unitId)!,
       );
     }
-    this.onEffect({ type: 'spawn', x, y });
+    const feedback: FX =
+      recalled !== undefined &&
+      recordRecallEvent(
+        b,
+        b.units.find((u) => u.id === hero.unitId)!,
+        'redeploy',
+      )
+        ? { type: 'recall-unit', sourceId: hero.unitId, text: 'redeploy', x, y }
+        : { type: 'spawn', x, y };
+    if (passiveActivationId) feedback.abilityCastId = passiveActivationId;
+    this.onEffect(feedback);
     this.guidePlaced({ hero: kind });
     this.deployChanged(starting);
     return true;
@@ -5058,7 +5378,10 @@ export class GameModel {
     h.unitId = this.state.nextId++;
     const recalled = h.recalledHp;
     delete h.recalledHp;
-    if (recalled === undefined) recordWakeSpace(b, heroWakeSpace());
+    if (recalled === undefined) {
+      recordWakeSpace(b, heroWakeSpace());
+      if (b.nativeMonolithHousing !== undefined) b.nativeMonolithHousing += 25;
+    }
     b.units.push({
       id: h.unitId,
       kind: 'swordsman',
@@ -5073,7 +5396,11 @@ export class GameModel {
       pathAt: 0,
       attacking: false,
     });
-    this.onEffect({ type: 'spawn', x, y });
+    this.onEffect(
+      recalled !== undefined && recordRecallEvent(b, b.units.at(-1)!, 'redeploy')
+        ? { type: 'recall-unit', sourceId: h.unitId, text: 'redeploy', x, y }
+        : { type: 'spawn', x, y },
+    );
     this.deployChanged(starting);
     return true;
   }
@@ -5559,7 +5886,11 @@ export class GameModel {
     if (!b.practice && !b.fixedArmy) this.state.army[k]--;
     const d = this.troopStats(k);
     const recalled = b.recalledHp?.[k]?.shift();
-    if (recalled === undefined) recordWakeSpace(b, troopWakeSpace(TROOPS[k].space));
+    if (recalled === undefined) {
+      recordWakeSpace(b, troopWakeSpace(TROOPS[k].space));
+      if (b.nativeMonolithHousing !== undefined)
+        b.nativeMonolithHousing += isSiege(k) ? 1 : TROOPS[k].space;
+    }
     b.units.push({
       id: this.state.nextId++,
       kind: k,
@@ -5573,8 +5904,28 @@ export class GameModel {
       pathAt: 0,
       attacking: false,
       ...(nativeBehavior(b, k) ? { native: initialNativeState(k, this.troopLevel(k)) } : {}),
+      ...(b.nativeLifecycleBirth && (k === 'furnace' || k === 'siegebarracks' || k === 'druid')
+        ? { spawnedAt: b.elapsed }
+        : {}),
     });
-    this.onEffect({ type: 'spawn', x, y });
+    if (b.nativeYetiRecall && (k === 'yeti' || k === 'superyeti') && recalled !== undefined) {
+      const stock = b.recalledYeti?.[k]?.shift();
+      if (stock) Object.assign(b.units.at(-1)!.native!, stock);
+    }
+    if (b.nativeWitchRecall && (k === 'witch' || k === 'superwitch') && recalled !== undefined) {
+      const caster = b.recalledWitches?.[k]?.shift();
+      if (caster) {
+        const native = b.units.at(-1)!.native!;
+        native.summonerId = caster.summonerId;
+        if (caster.summoned !== undefined) native.summoned = caster.summoned;
+        if (caster.summonAt !== undefined) native.summonAt = Math.max(b.elapsed, caster.summonAt);
+      }
+    }
+    this.onEffect(
+      recalled !== undefined && recordRecallEvent(b, b.units.at(-1)!, 'redeploy')
+        ? { type: 'recall-unit', sourceId: b.units.at(-1)!.id, text: 'redeploy', x, y }
+        : { type: 'spawn', x, y },
+    );
     this.guidePlaced({ troop: k });
     this.deployChanged(starting);
     return true;
@@ -5591,7 +5942,39 @@ export class GameModel {
     }
     return placed;
   }
-  castSpell(x: number, y: number) {
+  canReviveHero(kind: HeroKind) {
+    const b = this.battle,
+      unit = b ? reviveTargetUnit(b, kind) : undefined;
+    return (
+      !!b?.nativeReviveTargets &&
+      !!b.nativeContentExpansion &&
+      !b.finished &&
+      !this.replay &&
+      b.spells.revive > 0 &&
+      !!unit &&
+      revivableHero(b, unit) &&
+      !pendingHeroRevive(b, unit.id)
+    );
+  }
+  /** Quick targeting shares the normal cast validation and recorder, preserving the prior selection. */
+  castReviveOnHero(kind: HeroKind) {
+    if (!this.canReviveHero(kind)) return false;
+    const unit = reviveTargetUnit(this.battle!, kind)!,
+      previous = { spell: this.activeSpell, hero: this.activeHero, kind: this.activeHeroKind },
+      guided = !!this.guideStep;
+    this.activeSpell = 'revive';
+    this.activeHero = false;
+    this.activeHeroKind = null;
+    const cast = this.castSpell(unit.x, unit.y, kind);
+    if (!guided || !cast) {
+      if (previous.spell !== 'revive') this.activeSpell = previous.spell;
+      this.activeHero = previous.hero;
+      this.activeHeroKind = previous.kind;
+    }
+    this.changed();
+    return cast;
+  }
+  castSpell(x: number, y: number, targetHero?: HeroKind) {
     if (this.replay) return false;
     const b = this.battle,
       k = this.activeSpell;
@@ -5599,6 +5982,15 @@ export class GameModel {
     const spot = this.guidePlacement({ spell: k }, x, y);
     if (!spot) return false;
     ({ x, y } = spot);
+    const reviveTarget = targetHero === undefined ? undefined : reviveTargetUnit(b, targetHero);
+    if (
+      targetHero !== undefined &&
+      (k !== 'revive' ||
+        !this.canReviveHero(targetHero) ||
+        !reviveTarget ||
+        distance2D(reviveTarget.x - x, reviveTarget.y - y) > REVIVE_RADIUS + 1e-9)
+    )
+      return false;
     if (
       !Number.isFinite(x) ||
       !Number.isFinite(y) ||
@@ -5608,7 +6000,13 @@ export class GameModel {
       y > MAP_SIZE
     )
       return false;
-    this.recordAction({ type: 'spell', kind: k, x, y });
+    this.recordAction({
+      type: 'spell',
+      kind: k,
+      x,
+      y,
+      ...(targetHero !== undefined ? { targetHero } : {}),
+    });
     const starting = !b.started;
     this.beginFight();
     recordWakeSpace(b, spellWakeSpace(SPELLS[k].space));
@@ -5617,7 +6015,15 @@ export class GameModel {
     const d = this.spellStats(k);
     this.onEffect({ type: 'spell', x, y, spell: k, radius: d.radius });
     if (b.nativeContentExpansion) {
-      castNativeSpell(b, SPELL_SOURCE[k], this.spellLevel(k), 'attack', x, y);
+      castNativeSpell(
+        b,
+        SPELL_SOURCE[k],
+        this.spellLevel(k),
+        'attack',
+        x,
+        y,
+        reviveTarget ? { reviveTargetId: reviveTarget.id } : {},
+      );
     } else if (k === 'lightning') {
       damageDefenders(b, { x, y }, d.damage, d.radius, 'both');
       lateLightningStrike(b, x, y, d.radius);
@@ -5744,9 +6150,14 @@ export class GameModel {
     this.deployChanged(starting);
     return true;
   }
-  /** Pure healers never keep a battle open; a Druid does, because it becomes a fighting Bear. */
+  /** Ordinary Healers cannot hold the battle open; Druid and native Unicorn have explicit rules. */
   private supportOnly(b: Battle, kind: UnitKind) {
-    return !!TROOPS[kind].healer && !isSiege(kind) && !(b.nativeRoster && kind === 'druid');
+    return (
+      !!TROOPS[kind].healer &&
+      !isSiege(kind) &&
+      !(b.nativeRoster && kind === 'druid') &&
+      !(b.nativeUnicornController && kind === 'unicorn')
+    );
   }
   private readonly buildingIdCache = new WeakMap<
     Battle,
@@ -5807,7 +6218,7 @@ export class GameModel {
       nextId: () => this.state.nextId++,
       troopLevel: (kind) => this.troopLevel(kind),
       passableWalls: new Set(),
-      recall: (u) => this.recallUnit(b, u),
+      recall: (u, at) => this.recallUnit(b, u, at),
     };
   }
   /** Troops that would divert onto a newly revealed Hidden Tesla. */
@@ -5818,13 +6229,35 @@ export class GameModel {
     return s.preferredClass === 'Defense' || !!s.preferredBuilding;
   }
   /** Recall Spell: the unit leaves the field and its card returns with the same health. */
-  private recallUnit(b: Battle, u: Unit) {
+  private recallUnit(b: Battle, u: Unit, at = b.elapsed) {
+    const original = recordRecallEvent(b, u, 'disappear', at);
+    if (b.nativeRevengeDeck && u.native) delete u.native.revengeHits;
+    for (const cast of b.nativeSpellCastHistory ?? [])
+      if (cast.owner === u.id && cast.activationOrigin) {
+        cast.activationOrigin.x = u.x;
+        cast.activationOrigin.y = u.y;
+      }
     (u.native ??= {}).recalled = true;
     u.attacking = false;
     const roster = b.nativeHeroes?.find((hero) => hero.unitId === u.id);
     if (roster) {
+      recallPhoenix(b, roster, u);
       roster.unitId = null;
       roster.recalledHp = u.hp;
+      if (
+        b.nativeSnakeBraceletRecall &&
+        roster.kind === 'king' &&
+        roster.items.some((item) => item.slug === 'snake-bracelet')
+      )
+        roster.recalledDamageTaken = u.native?.damageTaken ?? 0;
+      const extra = u.native?.effects?.extraDamage;
+      if (
+        b.nativeChargedHeroRecall &&
+        extra?.hits !== undefined &&
+        extra.hits > 0 &&
+        extra.until > b.elapsed + 1e-9
+      )
+        roster.recalledAttackExtra = { ...extra };
       const pet = b.units.find((other) => other.id === roster.petId);
       if (pet) {
         (pet.native ??= {}).recalled = true;
@@ -5839,8 +6272,23 @@ export class GameModel {
       b.remaining[kind]++;
       if (!b.practice && !b.fixedArmy) this.state.army[kind]++;
       ((b.recalledHp ??= {})[kind] ??= []).push(u.hp);
+      if (b.nativeYetiRecall && (kind === 'yeti' || kind === 'superyeti'))
+        ((b.recalledYeti ??= {})[kind] ??= []).push({
+          damageTaken: u.native?.damageTaken ?? 0,
+          damageSpawns: u.native?.damageSpawns ?? 0,
+        });
+      if (b.nativeWitchRecall && (kind === 'witch' || kind === 'superwitch'))
+        ((b.recalledWitches ??= {})[kind] ??= []).push({
+          summonerId: u.native?.summonerId ?? u.id,
+          summonAt: u.native?.summonAt,
+          summoned: u.native?.summoned,
+        });
     }
-    this.onEffect({ type: 'spawn', x: u.x, y: u.y });
+    this.onEffect(
+      original
+        ? { type: 'recall-unit', sourceId: u.id, text: 'disappear', x: u.x, y: u.y }
+        : { type: 'spawn', x: u.x, y: u.y },
+    );
   }
   private beginFight() {
     const b = this.battle!;
@@ -5892,11 +6340,13 @@ export class GameModel {
     // Practice and ladder matches have a deadline; campaign combat continues until resolved or ended.
     if (timedBattle(b)) dt = Math.min(dt, Math.max(0, BATTLE_SECONDS - b.elapsed));
     b.elapsed += dt;
+    retireInfernoDragonTransitions(b);
     this.spawnHeroSummons();
     if (revealTeslas(b, this.onEffect, (u) => this.teslaDiverts(b, u))) this.changed();
     // One wall index per tick, shared by the native context and the legacy loop below.
     const shared = this.sharedWalls(b);
     const native = b.nativeRoster ? this.nativeContext(b, shared) : null;
+    if (native) stepPhoenix(native, dt);
     // Shared per-tick A* budget, spent by native units first and the legacy
     // loop after. Only enforced for large battles so small-battle determinism
     // (historical hashes) is unchanged.
@@ -5928,6 +6378,7 @@ export class GameModel {
             b.practice || b.catalog === 'goblin-v1' ? 1 : CAMPAIGN_LAYOUTS[b.index].defense,
         }
       : null;
+    if (native) stepSeekingShieldLaunches(native);
     stepProjectiles(
       b,
       (target, power, at) => this.damage(target, power, at),
@@ -6106,7 +6557,12 @@ export class GameModel {
             }
           : unitBase;
       const heal =
-        base.heal === undefined ? undefined : base.heal * (1 + (spellRage?.damageBoost ?? 0) / 100);
+        base.heal === undefined
+          ? undefined
+          : base.heal *
+            (b.nativeRageRules
+              ? Math.max(1 + (spellRage?.damageBoost ?? 0) / 100, unitDamageScale(u, b.elapsed))
+              : 1 + (spellRage?.damageBoost ?? 0) / 100);
       const damage =
         base.damage *
         Math.max(
@@ -6127,9 +6583,11 @@ export class GameModel {
           (u.native ? unitSpeedScale(u, b.elapsed) : 1);
       if (native && nativeBehavior(b, u.kind)) {
         // Native rules read only the boosted damage, speed and heal: no copy of the stats row.
-        stepNativeUnit(native, u, { damage, speed, heal }, unitDt);
+        stepNativeUnit(native, u, { damage, speed, heal }, unitDt, actionDt * poison.attack);
         continue;
       }
+      const pekka = !!(native && b.nativePekkaWindup && u.kind === 'pekka');
+      if (pekka && stepPekkaWindup(native!, u, unitDt, actionDt * poison.attack, damage)) continue;
       const d = { ...base, heal, damage, speed };
       if (troop.healer) {
         stepHealer(b, u, d, unitDt, this.onEffect);
@@ -6144,10 +6602,28 @@ export class GameModel {
           solidBuildings,
           (target, power) => this.damage(target, power),
           this.onEffect,
-          undefined,
+          pekka
+            ? {
+                ...troop,
+                airTargets: false,
+                nativeBuildingAttack: (target: Building) =>
+                  beginPekkaWindup(native!, u, { building: target }),
+              }
+            : undefined,
           isTargetableLive,
           {
             buildings: routeBuildings,
+            ...(pekka
+              ? {
+                  enterRange: () => {
+                    const target = b.defenders?.find(
+                      (defender) => defender.id === u.defenderTarget,
+                    );
+                    if (target) beginPekkaWindup(native!, u, { defender: target });
+                  },
+                  attackReady: () => false,
+                }
+              : {}),
             wallTile,
             passableWalls,
             budget: repathState,
@@ -6196,6 +6672,10 @@ export class GameModel {
       const distance = distanceTo(u, target);
       if (distance <= d.range) {
         u.attacking = true;
+        if (pekka) {
+          beginPekkaWindup(native!, u, { building: target });
+          continue;
+        }
         if (u.cooldown <= 0) {
           u.cooldown = d.rate;
           if (troop.wallBreaker) {
@@ -6293,6 +6773,10 @@ export class GameModel {
         const wall = hit && hit.hp > 0 && !passableWalls?.has(hit.id) ? hit : undefined;
         if (wall && distanceTo(u, wall) <= d.range) {
           u.attacking = true;
+          if (pekka) {
+            beginPekkaWindup(native!, u, { building: wall });
+            continue;
+          }
           if (u.cooldown <= 0) {
             u.cooldown = d.rate;
             if (troop.wallBreaker) {
@@ -6482,7 +6966,7 @@ export class GameModel {
               nativeBoost;
         const power = boost.damage === 1 ? basePower : basePower * boost.damage;
         if (tower.kind === 'tesla') {
-          hurtUnit(b, target, power);
+          hurtUnit(b, target, power, b.elapsed, b.nativeRevengeDeck ? tower.id : undefined);
           recordTeslaShot(b, tower, target);
           this.onEffect({
             type: 'tesla-zap',
@@ -6551,6 +7035,8 @@ export class GameModel {
         // A knocked-out hero fires its ability automatically (SimulatePlayerInputOnDeath).
         if (unit.hp <= 0 && !unit.spent && !hero.abilityUsed)
           this.activateNativeHeroAbility(hero.kind, true);
+        hatchPhoenix(native, hero, unit);
+        ragePetAfterHeroDeath(b, hero, unit);
         // Waves stop when the hero falls; the automatic activation above still fires once.
         if (unit.hp > 0)
           stepHeroAbilities(
@@ -6604,7 +7090,7 @@ export class GameModel {
       b.destruction === 100 ||
       (timedBattle(b) && b.elapsed >= BATTLE_SECONDS) ||
       (!b.shells.length &&
-        !b.projectiles?.some((p) => p.weapon !== 'healing') &&
+        !b.projectiles?.some((p) => p.weapon !== 'healing' && !p.native?.healing) &&
         !Object.values(b.deathBombs ?? {}).some((bomb) => !bomb.resolved && !bomb.cancelled) &&
         !lateCampaignPending(b) &&
         !b.units.some(
@@ -6612,6 +7098,13 @@ export class GameModel {
         ) &&
         !b.nativeDeaths?.some((blast) => !blast.resolved) &&
         !b.nativeChains?.length &&
+        !b.nativeElectromiteArcs?.length &&
+        !b.nativeElectroDragonArcs?.length &&
+        !b.nativeSuperWizardBranches?.length &&
+        !b.nativeArcherShots?.some((s) => s.travelled < s.length - 1e-9) &&
+        !b.nativeGiantArrows?.some((s) => s.travelled < s.length - 1e-9) &&
+        !b.nativeDarkOrbs?.some((s) => s.travelled < s.length - 1e-9) &&
+        !b.nativeSeekingShieldCasts?.some((cast) => !cast.released) &&
         !b.nativePendingSpawns?.length &&
         !b.nativeSpells?.some((cast) => nativeSpellCanStillFight(cast)) &&
         !TROOP_KEYS.some(
@@ -7281,7 +7774,7 @@ export class GameModel {
         runner.deploy(a.x, a.y);
       } else if (a.type === 'spell') {
         runner.activeSpell = a.kind;
-        runner.castSpell(a.x, a.y);
+        runner.castSpell(a.x, a.y, a.targetHero);
       } else if (a.type === 'hero')
         a.hero ? runner.deployNativeHero(a.hero, a.x, a.y) : runner.deployHero(a.x, a.y);
       else if (a.type === 'ability')
@@ -7900,14 +8393,16 @@ export function separateUnits(
 ) {
   // Fewer than two living units cannot push each other; skip the collision rebuild.
   let living = 0;
-  for (const u of units) if (u.hp > 0 && ++living > 1) break;
+  for (const u of units)
+    if (u.hp > 0 && !u.native?.phoenixWaiting && !u.native?.phoenixEgg && ++living > 1) break;
   if (living < 2) return;
   // Version-44 native campaign crowds use the same sub-tile building collision as routes.
   // Whole-tile battles read the route grid for the list: blocked or walled is solid.
   const lanes = subtiles ? subtileSolid(buildings) : undefined;
   const tiles = lanes ? undefined : tileGridFor(buildings, []);
   const alive: Unit[] = [];
-  for (const u of units) if (u.hp > 0) alive.push(u);
+  for (const u of units)
+    if (u.hp > 0 && !u.native?.phoenixWaiting && !u.native?.phoenixEgg) alive.push(u);
   const count = alive.length;
   if (separationNext.length < count) {
     separationNext = new Int32Array(count * 2);

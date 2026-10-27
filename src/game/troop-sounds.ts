@@ -1,3 +1,10 @@
+import { fieldSpellDeploy2Delay, fieldSpellUsesResolvedRevive } from './field-spell-effects';
+import { fireballProfile } from './fireball-effects';
+import { frostFlakeSoundEvents } from './frost-flake-effects';
+import { electroBootsSoundEvents } from './electro-boots-effects';
+import { spikyBallSoundEvents } from './spiky-ball-effects';
+import { DARK_ORB_PRESENTATION } from './dark-orb-effects';
+import { seekingShieldSoundEvents } from './seeking-shield-effects';
 import source from '../../reference/troop-sounds/sounds.json' with { type: 'json' };
 import type { Battle, Unit } from './model';
 import { CUE_HORIZON, cueAudible, type SampleCue } from './sample-audio';
@@ -5,15 +12,21 @@ import { unitLevel } from './native-troops';
 import { spellRow } from './native-spells';
 import { seconds } from './native-data';
 
+/** Equipment spell samples are introduced with their source-presentation replay boundary. */
+export const spellSoundEnabled = (battle: Battle, name: string) =>
+  name !== 'MPMeteorStaffSpell' || !!battle.nativeSpellArt?.includes(name);
+
 /**
- * The attacking troops' own deploy, attack and death sounds, the spells' cast and pulse sounds
+ * The attacking troops' and pets' own deploy, attack and death sounds, the spells' cast and pulse sounds
  * and the client's Building Destroyed sound (reference/troop-sounds, imported by
  * scripts/import-native-troop-sounds.py). Each effect
  * lists alternative takes; one is chosen per event from the event's key, so a replay picks the
  * same take. See docs/TROOP-SOUNDS.md.
  */
-export type TroopSoundEvent = 'deploy' | 'attack' | 'hit' | 'die';
-export type SpellSoundEvent = 'preDeploy' | 'deploy' | 'deploy2' | 'charging' | 'hit';
+export type TroopSoundEvent =
+  'deploy' | 'attack' | 'hit' | 'die' | 'projectileHit' | 'preAttack' | 'chain' | 'bounce';
+export type SpellSoundEvent =
+  'preDeploy' | 'deploy' | 'deploy2' | 'charging' | 'hit' | 'rootStop2' | 'rootStop3' | 'rootStop4';
 type Named = string | (string | null)[];
 type Take = { sound: string; volume: number; minPitch: number; maxPitch: number; delay: number };
 const TROOPS = source.troops as Record<
@@ -51,13 +64,31 @@ function files(record: Partial<Record<string, Named>> | undefined, events: reado
 export const troopSoundEffect = (kind: string, level: number, event: TroopSoundEvent) =>
   atLevel(TROOPS[kind]?.[event], level);
 /** Every sound file a troop kind can play, at any level. */
-export const troopSoundFiles = (kind: string) =>
-  files(TROOPS[kind], ['deploy', 'attack', 'hit', 'die']);
+export const troopSoundFiles = (kind: string, bowlerImpacts = true, bowlerPreAttack = true) =>
+  files(TROOPS[kind], [
+    'deploy',
+    'attack',
+    'hit',
+    'die',
+    ...(kind !== 'bowler' || bowlerPreAttack ? ['preAttack'] : []),
+    'chain',
+    ...(kind !== 'bowler' || bowlerImpacts ? ['projectileHit', 'bounce'] : []),
+  ]);
 /** The effect a spell (by its client name) plays for an event at its level. */
 export const spellSoundEffect = (name: string, level: number, event: SpellSoundEvent) =>
   atLevel(SPELLS[name]?.[event], level);
 export const spellSoundFiles = (name: string) =>
-  files(SPELLS[name], ['preDeploy', 'deploy', 'deploy2', 'charging', 'hit']);
+  files(SPELLS[name], [
+    'preDeploy',
+    'deploy',
+    'deploy2',
+    'charging',
+    'hit',
+    'rootStop2',
+    'rootStop3',
+    'rootStop4',
+  ]);
+export const effectSoundFiles = (name: string) => (EFFECTS[name] ?? []).map((take) => take.sound);
 /** Stable selection in [0, 1) for a key, the same after seeks and in replays. */
 function fraction(key: string) {
   let h = 2166136261;
@@ -101,21 +132,27 @@ const spellCue = (name: string, level: number, event: SpellSoundEvent, key: stri
 function castCues(
   cues: SampleCue[],
   elapsed: number,
-  cast: { key: string; name: string; level: number; at: number },
+  cast: { key: string; name: string; level: number; at: number; deployedAt?: number | null },
   hits?: { first: number; interval: number; count: number },
+  precise = false,
 ) {
   const { key, name, level, at } = cast;
   if (!SPELLS[name]) return;
-  const landed = at + seconds(spellRow(name, level), 'DeployTimeMS');
+  const landed =
+    cast.deployedAt === null
+      ? undefined
+      : (cast.deployedAt ?? at + seconds(spellRow(name, level), 'DeployTimeMS'));
   const push = (event: SpellSoundEvent, when: number, suffix = '') => {
-    if (when > elapsed || !cueAudible(when, elapsed)) return;
+    if (when > elapsed + (precise ? 1e-9 : 0) || !cueAudible(when, elapsed)) return;
     const cue = spellCue(name, level, event, `${key}:${event}${suffix}`, when);
     if (cue) cues.push(cue);
   };
   push('preDeploy', at);
-  push('deploy', landed);
-  push('deploy2', landed);
-  push('charging', landed);
+  if (landed !== undefined) {
+    push('deploy', landed);
+    push('deploy2', landed + (precise ? fieldSpellDeploy2Delay(cast) : 0));
+    push('charging', landed);
+  }
   if (!hits?.count) return;
   // Only pulses that can still be heard: a long Healing Spell pulses dozens of times.
   const step = Math.max(hits.interval, 1e-3);
@@ -180,15 +217,29 @@ export class BattleSoundLog {
    * A troop's attack (its swing or launch) or hit (the impact on its target), at the moment
    * the combat event was reported.
    */
-  attack(battle: Battle, u: Unit, event: 'attack' | 'hit' = 'attack') {
+  attack(
+    battle: Battle,
+    u: Pick<Unit, 'id' | 'kind' | 'level'>,
+    event: 'attack' | 'hit' | 'projectileHit' = 'attack',
+    at = battle.elapsed,
+  ) {
     this.sync(battle);
-    const cue = troopCue(
-      battle,
-      u,
-      event,
-      `troop:${u.id}:${event}:${battle.elapsed}`,
-      battle.elapsed,
-    );
+    // Version 94's beam owns a sustained loop; do not restart the same clip every damage tick.
+    if (battle.nativeTroopDamageRamp && u.kind === 'infernodragon' && event === 'attack') return;
+    if (
+      battle.nativeWitchSounds &&
+      (u.kind === 'witch' || u.kind === 'superwitch') &&
+      (event === 'attack' || event === 'hit')
+    )
+      return;
+    // Captured throw packets reconstruct these cues after seeks, including after the actor changes kind.
+    if (
+      battle.nativeMeteorThrows &&
+      u.kind === 'meteorgolem' &&
+      (event === 'attack' || event === 'projectileHit')
+    )
+      return;
+    const cue = troopCue(battle, u, event, `troop:${u.id}:${event}:${at}`, at);
     if (cue) this.events.push(cue);
   }
   /**
@@ -204,6 +255,13 @@ export class BattleSoundLog {
   private noteCasts(battle: Battle) {
     const live = new Set<number>();
     for (const cast of battle.nativeSpells ?? []) {
+      if (!spellSoundEnabled(battle, cast.name)) continue;
+      if (
+        (battle.nativeOvergrowthCastPresentation && cast.name === 'Overgrowth') ||
+        (battle.nativeFreezeCastPresentation && cast.name === 'Freeze') ||
+        battle.nativeSpellArt?.includes(cast.name)
+      )
+        continue;
       live.add(cast.id);
       const known = this.casts.get(cast.id);
       if (known) known.count = cast.hits;
@@ -269,13 +327,62 @@ export class BattleSoundLog {
   }
 }
 
+/** Physical launch/landing events own one source sample each, including after caster defeat. */
+export function witchFlightSoundCues(battle: Battle): SampleCue[] {
+  if (!battle.nativeWitchSounds) return [];
+  const cues: SampleCue[] = [];
+  for (const shot of battle.nativeWitchShots ?? []) {
+    const unit = { id: shot.sourceId, kind: shot.kind, level: shot.level };
+    for (const [event, at] of [
+      ['attack', shot.launched],
+      ['hit', shot.hitAt],
+    ] as const) {
+      if (at === undefined || at > battle.elapsed + 1e-9 || !cueAudible(at, battle.elapsed))
+        continue;
+      const cue = troopCue(battle, unit, event, `troop:${shot.sourceId}:${event}:${at}`, at);
+      if (cue) cues.push(cue);
+    }
+  }
+  return cues;
+}
+
 /** Deploys and deaths, read from the units themselves, plus the logged attacks and ruins. */
 export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): SampleCue[] {
   const logged = log.cues(battle);
   if (!battle) return logged;
-  const cues: SampleCue[] = [];
+  const cues: SampleCue[] = witchFlightSoundCues(battle);
   const elapsed = battle.elapsed;
+  for (const orb of battle.nativeDarkOrbs ?? []) {
+    if (orb.launched > elapsed + 1e-9 || !cueAudible(orb.launched, elapsed)) continue;
+    const cue = effectCue(DARK_ORB_PRESENTATION.ActivationEffect, `${orb.id}:sound`, orb.launched);
+    if (cue) cues.push(cue);
+  }
+  for (const event of [
+    ...frostFlakeSoundEvents(battle),
+    ...electroBootsSoundEvents(battle),
+    ...spikyBallSoundEvents(battle),
+    ...seekingShieldSoundEvents(battle),
+  ]) {
+    if (event.at > elapsed + 1e-9 || !cueAudible(event.at, elapsed)) continue;
+    const cue = effectCue(event.effect, event.key, event.at);
+    if (cue) cues.push(cue);
+  }
+  for (const shot of battle.nativeFireballs ?? []) {
+    if (shot.launched > elapsed + 1e-9 || !cueAudible(shot.launched, elapsed)) continue;
+    const profile = shot.native?.fireball && fireballProfile(shot.native.fireball.level);
+    const cue =
+      profile && effectCue(profile.ActivationEffect, `${shot.id}:fireball:sound`, shot.launched);
+    if (cue) cues.push(cue);
+  }
+  if (battle.nativeRecallPresentation)
+    for (const event of battle.nativeRecallEvents ?? []) {
+      if (event.phase !== 'redeploy' || event.at > elapsed + 1e-9 || !cueAudible(event.at, elapsed))
+        continue;
+      const cue = effectCue('RecallRedeployAuraTop', `${event.key}:sound`, event.at);
+      if (cue) cues.push(cue);
+    }
   for (const u of battle.units) {
+    if (u.native?.phoenixWaiting) continue;
     // Units another unit, spell or ability summons arrive without a deploy call.
     const arrived = u.summoned ? -Infinity : log.arrived(battle, u);
     if (cueAudible(arrived, elapsed)) {
@@ -287,6 +394,133 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
       if (cue) cues.push(cue);
     }
   }
+  for (const zap of battle.nativeElectromiteZaps ?? []) {
+    if (!cueAudible(zap.at, elapsed)) continue;
+    for (const event of (zap.primary ? ['attack', 'hit'] : ['hit']) as ('attack' | 'hit')[]) {
+      const cue = troopCue(
+        battle,
+        { id: zap.sourceId, kind: 'electromite', level: zap.level },
+        event,
+        `${zap.key}:${event}`,
+        zap.at,
+      );
+      if (cue) cues.push(cue);
+    }
+  }
+  if (battle.nativeBowlerPreAttack)
+    for (const unit of battle.units) {
+      if (unit.kind !== 'bowler') continue;
+      const audio = unit.native?.bowler?.audio,
+        charge = audio?.charge;
+      const add = (key: string, at: number) => {
+        if (at > elapsed + 1e-9 || !cueAudible(at, elapsed)) return;
+        const cue = troopCue(battle, unit, 'preAttack', key, at);
+        if (cue) cues.push(cue);
+      };
+      const hold = Math.max(
+        unit.native?.effects?.frozenUntil ?? 0,
+        unit.native?.effects?.stunUntil ?? 0,
+      );
+      if (
+        unit.hp > 0 &&
+        charge &&
+        !charge.waiting &&
+        charge.lastAt >= elapsed - 1e-9 &&
+        hold <= elapsed + 1e-9
+      )
+        add(charge.key, elapsed - charge.age);
+      for (const started of audio?.history ?? []) add(started.key, started.at);
+    }
+  if (battle.nativeBowlerImpactSounds)
+    for (const impact of battle.nativeBowlerImpacts ?? []) {
+      if (impact.at > elapsed + 1e-9 || !cueAudible(impact.at, elapsed)) continue;
+      const actor = { id: impact.sourceId, kind: 'bowler' as const, level: impact.level },
+        event = impact.bounce === 0 ? 'bounce' : 'projectileHit',
+        cue = troopCue(battle, actor, event, `bowler:${impact.id}:${event}`, impact.at);
+      if (cue) cues.push(cue);
+    }
+  for (const shot of battle.nativeMeteorFlights ?? []) {
+    if (!shot.native) continue;
+    const actor = { id: shot.sourceId, kind: 'meteorgolem' as const, level: shot.native.level };
+    for (const [event, at] of [
+      ['attack', shot.launched],
+      ['projectileHit', shot.impact],
+    ] as const) {
+      if (at > elapsed || !cueAudible(at, elapsed)) continue;
+      const key = `troop:${shot.sourceId}:${event}:${at}`,
+        cue = troopCue(battle, actor, event, key, at);
+      if (cue) cues.push(cue);
+    }
+  }
+  for (const unit of battle.units) {
+    const dragon = unit.native?.electroDragon,
+      charge = dragon?.charge;
+    if (
+      !battle.nativeElectroDragon ||
+      unit.kind !== 'electrodragon' ||
+      unit.hp <= 0 ||
+      !dragon ||
+      !charge ||
+      dragon.lastAt < elapsed - 1e-9
+    )
+      continue;
+    const frozen =
+      Math.max(unit.native?.effects?.frozenUntil ?? 0, unit.native?.effects?.stunUntil ?? 0) >
+      elapsed + 1e-9;
+    if (frozen) continue;
+    const at = elapsed - (dragon.audioClock - charge.audioAt),
+      cue = troopCue(battle, unit, 'preAttack', `${charge.key}:preAttack`, at);
+    if (cue) cues.push(cue);
+  }
+  for (const zap of battle.nativeElectroDragonZaps ?? []) {
+    if (zap.at > elapsed || !cueAudible(zap.at, elapsed)) continue;
+    const actor = { id: zap.sourceId, kind: 'electrodragon' as const, level: zap.level };
+    for (const event of [zap.primary ? 'attack' : 'chain', 'hit'] as const) {
+      const cue = troopCue(battle, actor, event, `${zap.key}:${event}`, zap.at);
+      if (cue) cues.push(cue);
+    }
+  }
+  for (const zap of battle.nativeSuperWizardZaps ?? []) {
+    if (zap.at > elapsed || !cueAudible(zap.at, elapsed)) continue;
+    const actor = { id: zap.sourceId, kind: 'superwizard' as const, level: zap.level };
+    for (const event of [zap.primary ? 'attack' : 'chain', 'hit'] as const) {
+      const cue = troopCue(battle, actor, event, `${zap.key}:${event}`, zap.at);
+      if (cue) cues.push(cue);
+    }
+  }
+  for (const shot of battle.nativeArcherShots ?? []) {
+    if (shot.launched > elapsed || !cueAudible(shot.launched, elapsed)) continue;
+    const actor = { id: shot.sourceId, kind: 'superarcher' as const, level: shot.level };
+    const cue = troopCue(battle, actor, 'attack', `${shot.id}:attack`, shot.launched);
+    if (cue) cues.push(cue);
+  }
+  for (const root of battle.nativeOvergrowthRoots ?? []) {
+    if (root.until > elapsed + 1e-9 || !cueAudible(root.until, elapsed)) continue;
+    const size = root.size <= 2 ? 2 : root.size <= 3 ? 3 : 4;
+    const event = `rootStop${size}` as SpellSoundEvent;
+    const cue = spellCue('Overgrowth', 1, event, `${root.key}:stop`, root.until);
+    if (cue) cues.push(cue);
+  }
+  for (const cast of [
+    ...(battle.nativeOvergrowthCasts ?? []),
+    ...(battle.nativeFreezeCasts ?? []),
+    ...(battle.nativeSpellCastHistory ?? []),
+  ])
+    castCues(
+      cues,
+      elapsed,
+      {
+        key: `spell:${cast.id}`,
+        name: cast.name,
+        level: cast.level,
+        at: cast.castAt,
+        ...(fieldSpellUsesResolvedRevive(cast)
+          ? { deployedAt: cast.revivePresentation?.at ?? null }
+          : {}),
+      },
+      { first: cast.firstHit, interval: cast.interval, count: cast.hits },
+      true,
+    );
   for (const cue of logged) cues.push(cue);
   return cues;
 }
@@ -297,46 +531,60 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
  */
 export class TroopSoundLoader {
   private requested = new Set<string>();
-  private kinds = new Set<string>();
+  private wanted = new Set<string>();
+  private failed = new Map<string, { attempts: number; retryAt: number }>();
   constructor(private register: (name: string, data: ArrayBuffer) => void) {}
   /**
-   * Starts loading what these troop kinds, these spells (client names) and the
-   * destroyed-building effect need.
+   * Replaces the current battle's wanted files and starts any missing requests.
+   * Successful and pending files are shared between battles.
    */
-  need(kinds: Iterable<string>, spells: Iterable<string> = []) {
-    for (const kind of kinds) {
-      if (this.kinds.has(kind)) continue;
-      this.kinds.add(kind);
-      for (const path of troopSoundFiles(kind)) this.fetch(path);
-    }
-    for (const name of spells) {
-      if (this.kinds.has(`spell:${name}`)) continue;
-      this.kinds.add(`spell:${name}`);
-      for (const path of spellSoundFiles(name)) this.fetch(path);
-    }
-    for (const take of EFFECTS[DESTROYED_EFFECT]) this.fetch(take.sound);
+  need(
+    kinds: Iterable<string>,
+    spells: Iterable<string> = [],
+    effects: Iterable<string> = [],
+    bowlerImpacts = true,
+    bowlerPreAttack = true,
+  ) {
+    const wanted = new Set<string>();
+    for (const kind of kinds)
+      for (const path of troopSoundFiles(kind, bowlerImpacts, bowlerPreAttack)) wanted.add(path);
+    for (const name of spells) for (const path of spellSoundFiles(name)) wanted.add(path);
+    for (const name of effects) for (const path of effectSoundFiles(name)) wanted.add(path);
+    for (const take of EFFECTS[DESTROYED_EFFECT]) wanted.add(take.sound);
+    this.wanted = wanted;
+    for (const path of wanted) void this.fetch(path);
   }
-  private fetch(path: string) {
+  /** Called by presentation, including paused frames; reconnect bypasses the cooldown once. */
+  retry(immediate = false) {
+    for (const [path, failure] of this.failed) {
+      if (!this.wanted.has(path)) continue;
+      if (immediate) failure.retryAt = 0;
+      void this.fetch(path);
+    }
+  }
+  private async fetch(path: string) {
     if (this.requested.has(path) || typeof fetch === 'undefined') return;
+    const failure = this.failed.get(path);
+    if (failure && performance.now() < failure.retryAt) return;
     this.requested.add(path);
     const sound = TROOP_SOUNDS[path as keyof typeof TROOP_SOUNDS];
-    void fetch('/' + sound.path)
-      .then((response) => {
-        if (!response.ok) throw Error(`${sound.path}: ${response.status}`);
-        return response.arrayBuffer();
-      })
-      .then(
-        (data) => this.register(troopSample(path), data),
-        // A failed download is asked for again the next time a battle needs it.
-        () => {
-          this.requested.delete(path);
-          for (const kind of this.kinds) {
-            const paths = kind.startsWith('spell:')
-              ? spellSoundFiles(kind.slice(6))
-              : troopSoundFiles(kind);
-            if (paths.includes(path)) this.kinds.delete(kind);
-          }
-        },
-      );
+    try {
+      const hash = sound.sha256.match(/../g)!.map((byte) => parseInt(byte, 16));
+      const response = await fetch('/' + sound.path, {
+        // A 200 response containing broken audio must follow the same bounded retry as a 503.
+        integrity: `sha256-${btoa(String.fromCharCode(...hash))}`,
+        ...(failure ? { cache: 'reload' as const } : {}),
+      });
+      if (!response.ok) throw Error(`${sound.path}: ${response.status}`);
+      this.register(troopSample(path), await response.arrayBuffer());
+      this.failed.delete(path);
+    } catch {
+      this.requested.delete(path);
+      const attempts = (failure?.attempts ?? 0) + 1;
+      this.failed.set(path, {
+        attempts,
+        retryAt: performance.now() + Math.min(300_000, 5000 * 2 ** (attempts - 1)),
+      });
+    }
   }
 }

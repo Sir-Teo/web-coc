@@ -2,6 +2,7 @@ import source from '../../reference/garrison/sounds.json' with { type: 'json' };
 import type { Battle } from './model';
 import { cueAudible, type SampleCue } from './sample-audio';
 import { garrisonStats } from './garrison-reserve';
+import { nativeGarrisonSoundCues } from './garrison-native-sounds';
 
 export const GARRISON_SOUNDS = source.sounds;
 export const garrisonSample = (path: string) => `garrison-${path.split('/').at(-1)}`;
@@ -48,11 +49,14 @@ export function garrisonSoundCues(battle: Battle | null): SampleCue[] {
       defender.kind === 'hero'
     )
       continue;
-    // Dragon levels share the Dragon effect rows; later families' original sounds are pending.
+    // The original Dragon/Balloon path remains unchanged in every recording version.
     const binding = (
       source.bindings as Partial<Record<string, (typeof source.bindings)['dragon']>>
     )[defender.kind];
-    if (!binding) continue;
+    if (!binding) {
+      if (battle?.nativeGarrisonSounds) cues.push(...nativeGarrisonSoundCues(battle, defender));
+      continue;
+    }
     const key = `garrison:${defender.id}`;
     if (audible(defender.spawnedAt)) effect(binding.deploy, `${key}:deploy`, defender.spawnedAt);
     for (const [index, attack] of defender.attacks.entries()) {

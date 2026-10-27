@@ -1,7 +1,13 @@
 import projectileArt from '../../reference/full-client/projectile-art.json' with { type: 'json' };
+import darkOrbArt from '../../reference/dark-orb/effects.json' with { type: 'json' };
 import { nativeScenePoses, type NativeMatrix, type NativeScenePose } from './native-mesh';
 import { nativeSceneId, type NativeArtPack } from './native-art-pack';
-import { NATIVE_ALTITUDE, NATIVE_ART_SCALE, nativeClipDuration } from './native-effects';
+import {
+  NATIVE_ALTITUDE,
+  NATIVE_ART_SCALE,
+  nativeClipDuration,
+  nativeNestedClipDuration,
+} from './native-effects';
 
 type Point = { x: number; y: number };
 /** logic/projectiles.csv presentation columns retained by scripts/import-native-projectile-art.py. */
@@ -39,10 +45,14 @@ const index = projectileArt as unknown as {
   packs: Record<string, { path: string }>;
 };
 /** Flight pack of a client projectile row, when the row has retained original art. */
-export const nativeProjectilePack = (name: string | undefined) =>
-  name && Object.hasOwn(index.projectiles, name)
+export const nativeProjectilePack = (name: string | undefined) => {
+  if (!name) return undefined;
+  const own = darkOrbArt as unknown as typeof index;
+  if (Object.hasOwn(own.projectiles, name)) return own.packs[own.projectiles[name]].path;
+  return Object.hasOwn(index.projectiles, name)
     ? index.packs[index.projectiles[name]].path
     : undefined;
+};
 
 const num = (value: string | undefined, fallback = 0) => {
   const parsed = Number(value);
@@ -86,6 +96,8 @@ export interface NativeFlightOptions {
   airLift: number;
   /** Screen height of a ground target's hit point. */
   targetHeight?: number;
+  /** A source equipment ricochet begins on the previous landing plane. */
+  launchHeight?: number;
 }
 
 /** Projected flight point, tangent and presentation clock of one native projectile. */
@@ -95,7 +107,7 @@ export function nativeProjectileFlight(
   elapsed: number,
   options: NativeFlightOptions,
 ) {
-  const { iso, airLift, targetHeight = 16 } = options;
+  const { iso, airLift, targetHeight = 16, launchHeight } = options;
   const dx = shot.x - shot.fromX,
     dy = shot.y - shot.fromY,
     length = Math.hypot(dx, dy);
@@ -111,7 +123,7 @@ export function nativeProjectileFlight(
   const offset = Math.min(num(row.StartOffset) / 100, length * 0.9);
   const start = iso(shot.fromX + ux * offset, shot.fromY + uy * offset);
   const finish = iso(shot.x, shot.y);
-  const h0 = num(row.StartHeight) * NATIVE_ALTITUDE + (shot.fromAir ? airLift : 0);
+  const h0 = launchHeight ?? num(row.StartHeight) * NATIVE_ALTITUDE + (shot.fromAir ? airLift : 0);
   const h1 = shot.toAir ? airLift : targetHeight;
   const peak = row.IsBallistic === 'TRUE' ? num(row.BallisticHeight) * NATIVE_ALTITUDE : 0;
   const height = h0 + (h1 - h0) * t + 4 * peak * t * (1 - t);
@@ -140,6 +152,7 @@ export function nativeProjectilePoses(
   flight: ReturnType<typeof nativeProjectileFlight>,
   elapsed: number,
   launched: number,
+  playback?: { staticChildClock?: true; nestedTimeline?: true },
 ): {
   scene: string;
   poses: NativeScenePose[];
@@ -149,10 +162,16 @@ export function nativeProjectilePoses(
   const graph = pack.scenes[scene];
   const root = nativeDirectionRoot(row.exports, flight.direction.x, flight.direction.y);
   if (!graph || !root.name || graph.exports[root.name] === undefined) return { scene, poses: [] };
-  const duration = nativeClipDuration(graph, root.name);
+  const duration = playback?.nestedTimeline
+    ? nativeNestedClipDuration(graph, root.name)
+    : nativeClipDuration(graph, root.name);
   const age = Math.max(0, elapsed - launched);
   let seconds = row.ScaleTimeline === 'TRUE' ? flight.t * duration : age;
-  if (row.PlayOnce === 'TRUE') seconds = Math.min(seconds, Math.max(0, duration - 1e-3));
+  if (
+    row.PlayOnce === 'TRUE' &&
+    !(playback?.staticChildClock && graph.clips[graph.exports[root.name]]?.timeline.length === 1)
+  )
+    seconds = Math.min(seconds, Math.max(0, duration - 1e-3));
   const s = (NATIVE_ART_SCALE * num(row.Scale, 100)) / 100;
   const c = Math.cos(flight.rotation) * s,
     sn = Math.sin(flight.rotation) * s,
@@ -171,7 +190,7 @@ export function nativeProjectilePoses(
   return { scene, poses, shadow };
 }
 
-/** Firespitter balls: straight flight at the launch height, from the muzzle offset along the line. */
+/** Straight piercing flight at launch height, with opt-in airborne equipment lift. */
 export function nativePiercingFlight(
   row: NativeProjectileRow,
   shot: {
@@ -182,15 +201,17 @@ export function nativePiercingFlight(
     length: number;
     speed: number;
     launched: number;
+    fromAir?: boolean;
   },
   elapsed: number,
   iso: (x: number, y: number) => Point,
+  airLift = 0,
 ) {
   const travelled = Math.min(shot.length, Math.max(0, elapsed - shot.launched) * shot.speed);
   const along = Math.max(travelled, Math.min(num(row.StartOffset) / 100, shot.length));
   const ground = iso(shot.fromX + shot.dirX * along, shot.fromY + shot.dirY * along);
   const ahead = iso(shot.fromX + shot.dirX * (along + 1), shot.fromY + shot.dirY * (along + 1));
-  const height = num(row.StartHeight) * NATIVE_ALTITUDE;
+  const height = num(row.StartHeight) * NATIVE_ALTITUDE + (shot.fromAir ? airLift : 0);
   return {
     t: shot.length > 0 ? travelled / shot.length : 1,
     end: shot.launched + shot.length / Math.max(1e-6, shot.speed),

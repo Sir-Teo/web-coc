@@ -1,0 +1,307 @@
+{
+  "clientVersion": "18.400.21",
+  "generator": "scripts/native3d/bake_hero_art.py --set booger",
+  "conventions": {
+    "camera": {
+      "source": "csv/client_globals.csv: 3D_CAMERA_POSITION, 3D_CAMERA_LOOK_AT, 3D_CAMERA_FOV, USE_3D_ORTHO_PROJECTION (grouped with 3D_CHARACTER_ATLAS_* sizes)",
+      "position": [
+        0,
+        70,
+        45
+      ],
+      "lookAt": [
+        0,
+        0,
+        0
+      ],
+      "fov": 35,
+      "orthographic": true,
+      "elevationDegrees": 57.2648,
+      "viewDirection": [
+        -0.0,
+        -0.841178,
+        -0.540758
+      ],
+      "axes": "Y-up like every Odin model and the skins.csv portrait/reward cameras (x;y;z); feet at y=0, models face +Z; screen right = +X"
+    },
+    "crossChecks": "2D art is drawn from a shallower camera than the client 3D character camera (57.26 deg): building_bases.sc base_2x2..base_5x5 diamonds measure 1.34:1 (orthographic elevation ~48 deg; 4:3 = 48.6 deg) and the Wall Wrecker 2D direction sprites (wheel layers, edge-on vs side view) give ~46-52 deg; this project draws a 2:1 (30 deg) grid. Pass --elevation to re-bake for another camera.",
+    "pixelsPerWorldUnit": 3.568044,
+    "clientPixelsPerWorldUnit": 3.568044,
+    "pixelScaleNote": "Client character viewport 225x225 px covers 2*(CameraDistance 10000/100)*tan(FOV/2) world units; atlases are baked at 1x that density. Draw at 1/1 for client scale.",
+    "directions": {
+      "count": 8,
+      "names": [
+        "E",
+        "SE",
+        "S",
+        "SW",
+        "W",
+        "NW",
+        "N",
+        "NE"
+      ],
+      "index": "frames[k] faces screen angle 45*k degrees clockwise from screen right (y down): 0=E, 2=S (toward camera), 6=N",
+      "yaw": "model yaw about +Y = atan2(cos(phi), sin(phi)/sin(elevation)); no mirroring is used"
+    },
+    "anchor": "anchorX/anchorY: pixel offset inside the frame rectangle of the projected model origin, i.e. the ground point under the character. Flying heights are part of the source animations (sprites float above the anchor); the CSV OffsetY is recorded per state but not baked.",
+    "sampling": "Sources are 30 fps. A state uses native frames from its range (whole clip; for looping walk states only the cycle from LoopStartFrame; other looping states keep the intro and set loopStart). The last native frame is dropped when it repeats the cycle start pose. Frames are decimated by the smallest integer step that keeps <= 24 frames; state fps = 30 / step. actionFrame maps the 1-based CSV ActionFrame to the nearest sampled frame.",
+    "lookAtCamera": "States flagged LookAtCamera (die/stunned) are rendered once facing the camera (S) and referenced by all 8 directions.",
+    "rig": "Animation clips contain the full authoring rig; joint globals are evaluated in the clip hierarchy (untracked nodes keep the clip node TRS) and mapped to geometry joints by name.",
+    "shading": "Same pinned geometry, textures and approximate character shading as the hero baker; 3D particles, bloom and ground shadows are not baked.",
+    "antialiasing": "4x4 supersampled, box filtered, straight alpha, tight alpha crop.",
+    "states": "Original AirSplitPetSpawn walk, idle, attack and die rows. Booger is a spawned troop, not a selectable Hero pet. Rendered through the shared baked-character presentation.",
+    "sharedCamera": "Camera, pixelsPerWorldUnit, sampling and antialiasing are identical to reference/full-client/hero-art.json (its elevationOverrideDegrees, if any, is inherited unless --elevation is given)."
+  },
+  "sources": {
+    "csv/animations.csv": "b0be152c98d06ccd0689320acfa19b07e04dd2a07fc6a1253558592f67bf29d8",
+    "csv/client_globals.csv": "2844ea910bc4c464fc38b8be35eee81cacdf186648976cdeb311e58a52bd717d",
+    "logic/characters.csv": "5c3acc5b46ff9e7978f406b540264e65c93a846b69d03cd43326a9853703cb89",
+    "logic/skins.csv": "709da5743c729dedff1d1b9b02946452fc346dfaf09e385fda637c00eb812ad4",
+    "sc3d/batbubble_default_a.sctx": "6a2711940a16275306aec3c8bfb44e9a8cbcdc619cd530a4eb9382e9e353bc97",
+    "sc3d/batbubble_default_attack1.glb": "c9d088010ce99121d781546eec3109ee2466325de20b59bb0a4406e0975a1427",
+    "sc3d/batbubble_default_fly1.glb": "9cf07a3b177443ead42fcc335cced1544ef5ca9b2db69c0d7ec7963ccfa0c217",
+    "sc3d/batbubble_default_geo.glb": "cd614fa5082a3ded85d998c2e2946a626f51fc2350206572bdb8a24a2b98a8b3",
+    "sc3d/batbubble_default_idle1.glb": "7afd255fd33e78d8742ed0983e9d93566c88fc6a3d517507a8b9bf6be22ba651",
+    "sc3d/batbubble_default_m.sctx": "9b6b174d86346685f4e3903b14a0cf77d936faf21113eed8e319ae0c747e4cef",
+    "sc3d/batbubble_default_n.sctx": "f636271efa263d67c22b91d4714cf48a09ab5d387f7a96c01b59ca58c34ea132"
+  },
+  "characters": {
+    "booger": {
+      "record": "logic/characters.csv:Booger",
+      "clientSkin": "PetBatBubbleDefault",
+      "clientCharacter": "Booger",
+      "animation": "AirSplitPetSpawn",
+      "altAnimation": null,
+      "geometry": "sc3d/batbubble_default_geo.glb",
+      "textures": {
+        "base": "sc3d/batbubble_default_a.sctx",
+        "normal": "sc3d/batbubble_default_n.sctx",
+        "material": "sc3d/batbubble_default_m.sctx"
+      },
+      "appliedMaps": {
+        "normal": true,
+        "emission": false
+      },
+      "shadowScale": 80,
+      "csvSkinEffects": {
+        "GunBone": "hips_s",
+        "ShadowBone": "hip_s"
+      },
+      "vertexBuffers": 1,
+      "joints": 46,
+      "vertices": 1798,
+      "triangles": 3170,
+      "states": {
+        "walk": {
+          "clip": "sc3d/batbubble_default_fly1.glb",
+          "block": "AirSplitPetSpawn",
+          "event": "walk",
+          "loop": true,
+          "csvActionFrame": null,
+          "csvLoopStartFrame": null,
+          "scale": 0.8,
+          "lookAtCamera": false,
+          "csvOffsetY": null,
+          "csvNotBaked": {
+            "DepthBias": "50"
+          },
+          "frames": 24,
+          "fps": 30.0,
+          "nativeFrames": 24,
+          "nativeFps": 30.0,
+          "nativeRange": [
+            0,
+            23
+          ],
+          "step": 1,
+          "sampledNativeFrames": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23
+          ],
+          "lastFrameRepeatsCycleStart": false
+        },
+        "idle": {
+          "clip": "sc3d/batbubble_default_idle1.glb",
+          "block": "AirSplitPetSpawn",
+          "event": "idle",
+          "loop": true,
+          "csvActionFrame": null,
+          "csvLoopStartFrame": null,
+          "scale": 0.8,
+          "lookAtCamera": false,
+          "csvOffsetY": null,
+          "csvNotBaked": {
+            "DepthBias": "50"
+          },
+          "frames": 17,
+          "fps": 10.0,
+          "nativeFrames": 49,
+          "nativeFps": 30.0,
+          "nativeRange": [
+            0,
+            48
+          ],
+          "step": 3,
+          "sampledNativeFrames": [
+            0,
+            3,
+            6,
+            9,
+            12,
+            15,
+            18,
+            21,
+            24,
+            27,
+            30,
+            33,
+            36,
+            39,
+            42,
+            45,
+            48
+          ],
+          "lastFrameRepeatsCycleStart": false
+        },
+        "attack": {
+          "clip": "sc3d/batbubble_default_attack1.glb",
+          "block": "AirSplitPetSpawn",
+          "event": "attack",
+          "loop": false,
+          "csvActionFrame": 19,
+          "csvLoopStartFrame": null,
+          "scale": 0.8,
+          "lookAtCamera": false,
+          "csvOffsetY": null,
+          "csvNotBaked": {
+            "StopToLast": "TRUE",
+            "DepthBias": "50"
+          },
+          "frames": 15,
+          "fps": 15.0,
+          "nativeFrames": 29,
+          "nativeFps": 30.0,
+          "nativeRange": [
+            0,
+            28
+          ],
+          "step": 2,
+          "sampledNativeFrames": [
+            0,
+            2,
+            4,
+            6,
+            8,
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            26,
+            28
+          ]
+        },
+        "die": {
+          "clip": "sc3d/batbubble_default_idle1.glb",
+          "block": "AirSplitPetSpawn",
+          "event": "die",
+          "loop": false,
+          "csvActionFrame": null,
+          "csvLoopStartFrame": null,
+          "scale": 0.01,
+          "lookAtCamera": false,
+          "csvOffsetY": null,
+          "csvNotBaked": {
+            "DepthBias": "50",
+            "Effect": "ps_pet_sneezy_spirit_die"
+          },
+          "frames": 17,
+          "fps": 10.0,
+          "nativeFrames": 49,
+          "nativeFps": 30.0,
+          "nativeRange": [
+            0,
+            48
+          ],
+          "step": 3,
+          "sampledNativeFrames": [
+            0,
+            3,
+            6,
+            9,
+            12,
+            15,
+            18,
+            21,
+            24,
+            27,
+            30,
+            33,
+            36,
+            39,
+            42,
+            45,
+            48
+          ]
+        }
+      },
+      "atlas": {
+        "path": "assets/heroes-native/booger/atlas.json",
+        "sha256": "a4c246265ed75cbca969c49c9a01b1d67d41d951d33020e01d9fa267e12defd5"
+      },
+      "images": {
+        "walk.png": {
+          "sha256": "f2fc0333cdfd191aae15ba4032ea44a42a2e46e3769ed6c4aa0e9d77ba3fced9",
+          "width": 664,
+          "height": 628,
+          "bytes": 462259
+        },
+        "idle.png": {
+          "sha256": "0c150998c9fff94854f5364678d07171c102ed00df0e4e1a232c84c40064c6f5",
+          "width": 583,
+          "height": 558,
+          "bytes": 369707
+        },
+        "attack.png": {
+          "sha256": "6bd65055a7de845464f74ae96e91ed1639c4877f2e9966ce37e03923cc792151",
+          "width": 543,
+          "height": 507,
+          "bytes": 336480
+        },
+        "die.png": {
+          "sha256": "6b4ad09e85d1bd1edc8ed3a22968a097e5bd3c51ee9800bfcb753d87ab2fdd14",
+          "width": 29,
+          "height": 27,
+          "bytes": 1114
+        }
+      },
+      "bytes": 1213841
+    }
+  },
+  "totalBytes": 1213841
+}

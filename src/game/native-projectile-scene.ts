@@ -1,6 +1,18 @@
+import { garrisonBowlerImpactEvents } from './bowler-impact-effects';
+import { superArcherEffectEvents } from './super-archer-effects';
+import { fireballEffectEvents, fireballProfile } from './fireball-effects';
+import { frostFlakeEffectEvents } from './frost-flake-effects';
+import { electroBootsEffectEvents } from './electro-boots-effects';
+import { darkOrbEffectEvents } from './dark-orb-effects';
+import { heroAbilityActivation } from './hero-ability-feedback';
+import { superWizardEffectEvents } from './super-wizard-effects';
+import { electroDragonEffectEvents } from './electro-dragon-effects';
+import { electromiteEffectEvents } from './electromite-effects';
 import type Phaser from 'phaser';
 import type { Battle } from './model';
 import type { CombatProjectile } from './projectiles';
+import { presentationLive, presentationTime } from './presentation-clock';
+import { nativeProjectileAimAt, type NativeProjectileAim } from './native-projectile-aim';
 import { NativeSceneView, effectSceneView } from './native-scene-view';
 import { NativeArtPacks, nativePackPrefix, type NativeArtPack } from './native-art-pack';
 import { NativeEffectLayer, nativeEffectPack } from './native-effect-layer';
@@ -27,6 +39,16 @@ interface Snapshot {
   packPath: string;
   sourceId: number;
   bounce: number;
+  bowlerContinues?: true;
+  fireballLevel?: number;
+  giantArrow?: true;
+  frostFlake?: true;
+  spikyContinues?: true;
+  seekingShield?: true;
+  shieldContinues?: true;
+  /** One continuous shield spin clock across its captured flight legs. */
+  animationAt?: number;
+  darkOrb?: true;
   fromX: number;
   fromY: number;
   x: number;
@@ -35,6 +57,7 @@ interface Snapshot {
   impact: number;
   fromAir?: boolean;
   toAir?: boolean;
+  nativeAim?: NativeProjectileAim[];
   piercing?: { dirX: number; dirY: number; length: number; speed: number };
   /** Piercing shots: snapshot and line merged once for nativePiercingFlight. */
   line?: Parameters<typeof nativePiercingFlight>[1];
@@ -70,6 +93,38 @@ export class NativeProjectilePresentation {
     this.packs = new NativeArtPacks<NativeProjectilePack>(scene);
     this.layer = new NativeEffectLayer(scene, effects, 'projectile');
   }
+  /** A completed or newly retryable flight pack invalidates paused presentation. */
+  get artRevision() {
+    return this.packs.revision;
+  }
+  /** Warm original troop flight art alongside the carried army, before its first shot. */
+  prefetch(names: Iterable<string>) {
+    const paths = new Set<string>();
+    for (const name of names) {
+      const path = nativeProjectilePack(name);
+      if (path) paths.add(path);
+    }
+    for (const path of paths) this.packs.get(path);
+  }
+  /** Targeted effects without a projectile warm through the same shared pack loader. */
+  prefetchEffects(names: Iterable<string>) {
+    for (const name of names) this.layer.duration(name);
+  }
+  prefetchEmitters(names: Iterable<string>) {
+    for (const name of names) this.layer.prefetchEmitter(name);
+  }
+  coversAbilityActivation(
+    battle: Battle | null | undefined,
+    id: string | undefined,
+    reduced: boolean,
+  ) {
+    const activation = heroAbilityActivation(battle, id);
+    return (
+      !reduced &&
+      !!activation &&
+      this.layer.status(activation.visualEffect ?? activation.effect) === 'ready'
+    );
+  }
   /** True when the native presentation already shows this shot's flight. */
   covers(id: string | undefined) {
     return !!id && this.covered.has(id);
@@ -80,9 +135,17 @@ export class NativeProjectilePresentation {
     const shot = this.history.get(id);
     const resolved = shot ? this.row(shot) : undefined;
     if (!resolved?.row) return false;
-    const effect = resolved.row.DestroyedEffect;
-    // Rows without an indexed visual impact keep their existing native coverage.
+    if (shot?.bowlerContinues) return true;
+    if (shot?.shieldContinues && !resolved.row.BounceEffect) return true;
+    const effect = shot?.fireballLevel
+      ? fireballProfile(shot.fireballLevel)?.HitEffect
+      : resolved.row.DestroyedEffect;
+    return this.coversEffect(effect);
+  }
+  /** Sound-only contacts need no fallback; indexed final effects keep one until ready. */
+  coversEffect(effect: string | undefined, reduced = false) {
     if (!effect || !nativeEffectPack(effect)) return true;
+    if (reduced) return false;
     // Request a bounded retry even when the previous graph request failed.
     this.layer.duration(effect);
     return this.layer.status(effect) === 'ready';
@@ -133,12 +196,13 @@ export class NativeProjectilePresentation {
     airLift: number,
     /** Presentation detail (RenderDetail): 1 trails every other shot, 2 draws no trails. */
     detail = 0,
+    attachment?: (id: number, name: string) => Point | undefined,
   ) {
     const covered = new Set<string>();
     const shown = new Set<string>();
     this.layer.begin();
-    const elapsed = battle?.elapsed ?? 0;
-    if (!battle || battle.finished || reduced) {
+    const elapsed = battle && presentationLive(battle) ? presentationTime(battle) : Infinity;
+    if (!battle || !Number.isFinite(elapsed) || reduced) {
       this.history.clear();
       this.covered = covered;
       for (const [key, { view }] of this.views) {
@@ -148,7 +212,56 @@ export class NativeProjectilePresentation {
       this.layer.end();
       return covered;
     }
-    for (const p of battle.projectiles ?? []) {
+    for (const event of garrisonBowlerImpactEvents(battle, iso, elapsed, (name) =>
+      this.layer.duration(name),
+    ))
+      this.layer.play(event, elapsed, reduced);
+    for (const event of electroDragonEffectEvents(battle, iso, airLift, attachment, (name) =>
+      this.layer.duration(name),
+    ))
+      this.layer.play(event, elapsed, reduced);
+    for (const event of superWizardEffectEvents(battle, iso, airLift, attachment, (name) =>
+      this.layer.duration(name),
+    ))
+      this.layer.play(event, elapsed, reduced);
+    for (const event of superArcherEffectEvents(battle, iso, airLift, (name) =>
+      this.layer.duration(name),
+    ))
+      this.layer.play(event, elapsed, reduced);
+    for (const event of electromiteEffectEvents(battle, iso, airLift))
+      this.layer.play(event, elapsed, reduced);
+    for (const event of fireballEffectEvents(battle, iso, airLift, (name) =>
+      this.layer.duration(name, Infinity),
+    ))
+      this.layer.play(event, elapsed, reduced);
+    for (const event of frostFlakeEffectEvents(battle, iso, (name) =>
+      this.layer.duration(name, Infinity),
+    ))
+      this.layer.play(event, elapsed, reduced);
+    for (const event of electroBootsEffectEvents(battle, iso, (name) =>
+      this.layer.duration(name, Infinity),
+    ))
+      this.layer.play(event, elapsed, reduced);
+    for (const event of darkOrbEffectEvents(battle, iso, airLift, (name) =>
+      this.layer.duration(name, Infinity),
+    ))
+      this.layer.play(event, elapsed, reduced);
+    for (const p of [
+      ...(battle.nativeSeekingShieldCasts ?? [])
+        .flatMap((cast) => cast.shots)
+        .filter((shot) => elapsed <= shot.impact + AFTERLIFE),
+      ...(battle.nativeSpikyBallCasts ?? [])
+        .flatMap((cast) => cast.shots)
+        .filter((shot) => elapsed <= shot.impact + AFTERLIFE),
+      ...(battle.nativeFrostFlakeCasts ?? [])
+        .flatMap((cast) => cast.shots)
+        .filter((shot) => elapsed <= shot.impact + AFTERLIFE),
+      ...(battle.nativeFireballs ?? []).filter((shot) => elapsed <= shot.impact + AFTERLIFE),
+      ...(battle.nativeMeteorFlights ?? []).filter((shot) => elapsed <= shot.impact + AFTERLIFE),
+      ...(battle.nativeBowlerFlights ?? []).filter((shot) => elapsed <= shot.impact + AFTERLIFE),
+      ...(battle.nativeWitchFlights ?? []).filter((shot) => elapsed <= shot.impact + AFTERLIFE),
+      ...(battle.projectiles ?? []),
+    ]) {
       if (p.weapon !== 'native' || !p.native) continue;
       const known = this.history.get(p.id);
       // Recorded shots are immutable; keep the snapshot and its cached flight points.
@@ -156,13 +269,53 @@ export class NativeProjectilePresentation {
         known &&
         known.launched === p.launched &&
         known.impact === p.impact &&
+        known.spikyContinues === p.native.spikyBall?.continues &&
+        known.shieldContinues === p.native.seekingShield?.continues &&
+        known.nativeAim === p.nativeAim &&
         known.x === p.x &&
         known.y === p.y
       )
         continue;
       const packPath = nativeProjectilePack(p.native.name);
       if (!packPath) continue;
-      this.history.set(p.id, snapshot(p, packPath));
+      const captured = snapshot(p, packPath, !!battle.nativeBowlerImpactArt);
+      if (p.native.seekingShield) {
+        const cast = battle.nativeSeekingShieldCasts?.find(
+          (cast) => cast.id === p.native!.seekingShield!.castId,
+        );
+        if (cast) captured.animationAt = cast.launchAt;
+      }
+      this.history.set(p.id, captured);
+    }
+    for (const shot of [
+      ...(battle.nativeArcherShots ?? []),
+      ...(battle.nativeGiantArrows ?? []),
+      ...(battle.nativeDarkOrbs ?? []),
+    ]) {
+      const end = shot.launched + shot.length / shot.speed;
+      if (elapsed > end + AFTERLIFE || this.history.has(shot.id)) continue;
+      const packPath = nativeProjectilePack(shot.projectile);
+      if (!packPath) continue;
+      this.history.set(shot.id, {
+        id: shot.id,
+        name: shot.projectile,
+        packPath,
+        sourceId: shot.sourceId,
+        bounce: 0,
+        ...(shot.projectile === 'QueenPierceProjectile' && battle.nativeGiantArrow
+          ? { giantArrow: true as const }
+          : {}),
+        ...(shot.projectile === 'vfx_projectile_DarkOrb' && battle.nativeDarkOrb
+          ? { darkOrb: true as const, fromAir: true }
+          : {}),
+        fromX: shot.fromX,
+        fromY: shot.fromY,
+        x: shot.fromX + shot.dirX * shot.length,
+        y: shot.fromY + shot.dirY * shot.length,
+        launched: shot.launched,
+        impact: end,
+        piercing: { dirX: shot.dirX, dirY: shot.dirY, length: shot.length, speed: shot.speed },
+      });
     }
     for (const shot of battle.nativePiercing ?? []) {
       const seen = this.history.get(`pierce:${shot.id}`);
@@ -195,11 +348,22 @@ export class NativeProjectilePresentation {
       if (!resolved?.row) continue;
       const { pack, row } = resolved;
       const line = snap.piercing ? (snap.line ??= { ...snap, ...snap.piercing }) : undefined;
-      const options = { iso, airLift };
+      const options = {
+        iso,
+        airLift,
+        ...(snap.seekingShield && snap.bounce > 0
+          ? { launchHeight: snap.fromAir ? airLift : 16 }
+          : {}),
+      };
       const flightAt = (time: number) =>
         line
-          ? nativePiercingFlight(row, line, time, iso)
-          : nativeProjectileFlight(row, snap, time, options);
+          ? nativePiercingFlight(row, line, time, iso, snap.darkOrb ? airLift : 0)
+          : nativeProjectileFlight(
+              row,
+              snap.nativeAim ? { ...snap, ...nativeProjectileAimAt(snap, time) } : snap,
+              time,
+              options,
+            );
       const flight = flightAt(elapsed);
       covered.add(id);
       const facing = flight.direction;
@@ -221,7 +385,18 @@ export class NativeProjectilePresentation {
         continue;
       const span = { launched: snap.launched, end: flight.end };
       if (elapsed <= flight.end) {
-        const art = nativeProjectilePoses(pack, row, flight, elapsed, snap.launched);
+        const art = nativeProjectilePoses(
+          pack,
+          row,
+          flight,
+          elapsed,
+          snap.animationAt ?? snap.launched,
+          snap.giantArrow
+            ? { staticChildClock: true }
+            : snap.frostFlake
+              ? { nestedTimeline: true }
+              : undefined,
+        );
         if (art.poses.length)
           shown.add(
             this.draw(
@@ -267,6 +442,7 @@ export class NativeProjectilePresentation {
           reduced,
           facing,
           FLIGHT_DEPTH - 1,
+          !!snap.giantArrow,
         );
       if (row.SpawnEffect && this.running(row.SpawnEffect, snap.launched, elapsed))
         this.layer.play(
@@ -276,6 +452,7 @@ export class NativeProjectilePresentation {
             at: snap.launched,
             ground: launchPoint,
             facing,
+            ...(snap.darkOrb ? { nestedTimelines: true as const } : {}),
           },
           elapsed,
           reduced,
@@ -298,6 +475,9 @@ export class NativeProjectilePresentation {
         );
       if (
         row.DestroyedEffect &&
+        !snap.spikyContinues &&
+        !snap.bowlerContinues &&
+        !snap.shieldContinues &&
         elapsed >= flight.end &&
         this.running(row.DestroyedEffect, flight.end, elapsed)
       ) {
@@ -308,6 +488,7 @@ export class NativeProjectilePresentation {
             at: flight.end,
             ground: landing,
             facing,
+            ...(snap.darkOrb ? { nestedTimelines: true as const } : {}),
             depth: snap.toAir ? 7600 : undefined,
           },
           elapsed,
@@ -327,13 +508,21 @@ export class NativeProjectilePresentation {
   }
 }
 
-function snapshot(p: CombatProjectile, packPath: string): Snapshot {
+function snapshot(p: CombatProjectile, packPath: string, bowlerArt = false): Snapshot {
   return {
     id: p.id,
     name: p.native!.name,
     packPath,
     sourceId: p.sourceId,
     bounce: p.native!.bounce ?? 0,
+    ...(bowlerArt && p.native!.kind === 'bowler' && !p.native!.bounce
+      ? { bowlerContinues: true as const }
+      : {}),
+    ...(p.native!.fireball ? { fireballLevel: p.native!.fireball.level } : {}),
+    ...(p.native!.frostFlake ? { frostFlake: true as const } : {}),
+    ...(p.native!.spikyBall?.continues ? { spikyContinues: true as const } : {}),
+    ...(p.native!.seekingShield ? { seekingShield: true as const } : {}),
+    ...(p.native!.seekingShield?.continues ? { shieldContinues: true as const } : {}),
     fromX: p.fromX,
     fromY: p.fromY,
     x: p.x,
@@ -342,6 +531,7 @@ function snapshot(p: CombatProjectile, packPath: string): Snapshot {
     impact: p.impact,
     fromAir: p.fromAir,
     toAir: p.toAir,
+    ...(p.nativeAim ? { nativeAim: p.nativeAim } : {}),
   };
 }
 

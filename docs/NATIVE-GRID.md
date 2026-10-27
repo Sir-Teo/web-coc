@@ -39,3 +39,27 @@ Combat version 13 marks the 4×4 Camp/Hall geometry and campaign changes. Versio
 ## Verification
 
 Model suites cover full-footprint edge collisions, pathfinding and deployment, deterministic dense migration, paid deadlines, damaged health, hero progress, saved layouts, malformed overlap rejection, both stores' recovery behavior and all three replay geometry eras. Campaign checks audit every authored layout and viable attack compositions. Real phone shop tests place Camps and Hero Halls at (42,42), verify blocked (43,42), preview centers and scaled artwork, and reload the sixteen-tile footprint. Browser cases also cover format-2 and format-3 migration notices, import, paid progress and recovery downloads. See [QA.md](QA.md) for completed runs and visual limits.
+
+## Version 87 underground defender pursuit
+
+Miner, Super Miner, Diggy and Battle Drill now retain underground movement when pursuing a
+defending unit. The shared defender chase previously treated them as ordinary ground walkers,
+so they could attack blocking walls while remaining burrowed. It also skipped the surfacing
+transition on a direct defender hit, leaving the attacker untargetable and immune to damage.
+The [Miner reference](../reference/official-wiki/troops/miner.md) specifies invulnerability and
+wall bypass underground, then surfacing to attack. The [Diggy reference](../reference/official-wiki/heroes-pets/diggy.md)
+likewise specifies underground travel and ground attacks; defending troops and Heroes are not stunned.
+
+The chase now moves directly below obstacles without becoming airborne. On entering attack range,
+the unit surfaces before its hit callback: defenses can target it, normal damage can reach it,
+and trap eligibility resumes. It stays exposed while waiting for its attack cooldown. If the
+committed defender moves out of range, it burrows again. Freeze holds the current underground
+state without a surfacing event. The existing Battle Drill surfacing spell runs once per emergence
+through the same helper used for building attacks. Acquisition, pet/master preferences, Diggy's
+building-target stun and Super Miner's defender damage ramp remain separate behavior audits.
+
+Versions 86 and earlier preserve their previous routing and hidden defender attacks.
+`tests/underground-defender-chase.test.ts` checks all four classes, obstacle bypass, pre-hit
+exposure, damage/trap guards, reburrowing, cooldown/Freeze states and real Miner/Diggy attacks with
+retaliation through portable backward seeks. `tests/browser/underground-defender-chase.spec.ts`
+checks native actors, actual retaliation, reduced-motion parity and historical playback on desktop and phone.

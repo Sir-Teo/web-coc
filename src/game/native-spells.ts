@@ -1,6 +1,17 @@
+import { fieldSpellHistoryUntil } from './field-spell-effects';
+import { reviveHeroAuras } from './native-hero-aura-revival';
+import { resetHeroRegeneration } from './native-hero-regeneration';
+import {
+  recordOvergrowthRoot,
+  retireOvergrowthRoots,
+  retireOvergrowthCasts,
+} from './native-overgrowth';
 import { distance2D } from './distance';
 import { BUILDINGS, TROOPS, isTrap, type BuildingKind, type UnitKind } from './data';
 import { damageDefenders, hurtDefender, isGarrisonDefender, type Defender } from './defenders';
+import { mergeBoost } from './native-boost';
+import { rageModifiers } from './native-rage';
+import { garrisonStats } from './garrison-kinds';
 import {
   flag,
   nativeGlobal,
@@ -17,9 +28,11 @@ import { freezeDefendingBuilders } from './defending-builder-freeze';
 import { recordPoisonArea } from './poison-avoidance';
 import { poisonDefendingBuilders } from './defending-builder-poison';
 import { defendingBuilderLightning } from './defending-builder-lightning';
-import { unitKindForName } from './native-units';
+import { unitKindForName, isHeroUnitKind, isPetUnitKind, nativeUnitStats } from './native-units';
 import { tornadoPulse } from './native-traps';
 import { SPELL_SPEED_SCALE } from './spell-progression';
+import { retireRecallEvents } from './native-recall';
+import { revivableHero } from './revive-targets';
 import type { Battle, Building, FX, Unit } from './model';
 
 /** Buildings immune to storage/Town Hall flags, following the client's building classes. */
@@ -53,6 +66,12 @@ export interface NativeSpellCast {
   released?: number;
   summonGroups?: number[];
   ended?: boolean;
+  /** Version 123: a direct Hero control retains the selected body through the cast delay. */
+  reviveTargetId?: number;
+  /** Source success effects stay at the body and time that actually received Revive. */
+  revivePresentation?: { targetId: number; x: number; y: number; at: number };
+  /** Version 142: the attached Meteor Staff aura retains its final owner point after Recall. */
+  activationOrigin?: { x: number; y: number; air: boolean };
 }
 export interface NativeSpellContext {
   battle: Battle;
@@ -62,11 +81,21 @@ export interface NativeSpellContext {
   /** Creates a housing-free unit; supplied by the troop context. */
   spawn?(kind: UnitKind, level: number, x: number, y: number, at: number, owner?: number): Unit;
   /** Returns a unit to the deployment bar; supplied by the model. */
-  recall?(unit: Unit): void;
+  recall?(unit: Unit, at?: number): void;
 }
 
 export const spellRow = (name: string, level: number): NativeRow =>
   nativeRow('spells', name, level);
+
+/** The client scales hero movement boosts (including signed Poison slows) with integer truncation. */
+function poisonMoveBoost(battle: Battle, row: NativeRow, hero: boolean) {
+  const speed = num(row, 'SpeedBoost');
+  return (
+    (hero && battle.nativeHeroPoisonSpeed
+      ? Math.trunc((speed * nativeGlobal('HERO_RAGE_SPEED_MULTIPLIER', 50)) / 100)
+      : speed) / 100
+  );
+}
 
 /** Client timeline: deploy, charge and hit delays precede the first pulse. */
 export function castNativeSpell(
@@ -76,7 +105,13 @@ export function castNativeSpell(
   side: SpellSide,
   x: number,
   y: number,
-  options: { at?: number; follow?: number; owner?: number; immediate?: boolean } = {},
+  options: {
+    at?: number;
+    follow?: number;
+    owner?: number;
+    immediate?: boolean;
+    reviveTargetId?: number;
+  } = {},
 ) {
   const row = spellRow(name, level);
   const at = options.at ?? battle.elapsed;
@@ -99,10 +134,16 @@ export function castNativeSpell(
     total: Math.max(1, num(row, 'NumberOfHits', 1)),
     interval: seconds(row, 'TimeBetweenHitsMS'),
     seed: (Math.imul(battle.seed, 7919) + Math.imul(battle.nativeSpellSequence, 104729)) >>> 0,
+    ...(options.reviveTargetId !== undefined ? { reviveTargetId: options.reviveTargetId } : {}),
     ...(num(row, 'DuplicateHousing') ? { budget: num(row, 'DuplicateHousing') } : {}),
     ...(num(row, 'RecallHousing') ? { budget: num(row, 'RecallHousing') } : {}),
   };
   (battle.nativeSpells ??= []).push(cast);
+  if (battle.nativeOvergrowthCastPresentation && name === 'Overgrowth')
+    (battle.nativeOvergrowthCasts ??= []).push(cast);
+  if (battle.nativeFreezeCastPresentation && name === 'Freeze')
+    (battle.nativeFreezeCasts ??= []).push(cast);
+  if (battle.nativeSpellArt?.includes(name)) (battle.nativeSpellCastHistory ??= []).push(cast);
   return cast;
 }
 
@@ -113,7 +154,7 @@ export function spellRandom(seed: number, index: number) {
   v = Math.imul(v ^ (v >>> 13), 0xc2b2ae35) >>> 0;
   return ((v ^ (v >>> 16)) >>> 0) / 0x100000000;
 }
-const randomPoint = (cast: NativeSpellCast, index: number, radius: number) => {
+export const randomPoint = (cast: NativeSpellCast, index: number, radius: number) => {
   const angle = spellRandom(cast.seed, index * 2) * Math.PI * 2;
   const reach = Math.sqrt(spellRandom(cast.seed, index * 2 + 1)) * radius;
   return { x: cast.x + Math.cos(angle) * reach, y: cast.y + Math.sin(angle) * reach };
@@ -131,13 +172,28 @@ export function buildingSpellImmune(row: NativeRow, b: Building) {
       flag(row, 'ImmunityOtherBuildings'))
   );
 }
+/** Native spells distinguish Heroes, Guardians and ordinary defending characters. */
+function defenderSpellImmune(row: NativeRow, defender: Defender) {
+  return flag(
+    row,
+    defender.kind === 'hero'
+      ? 'ImmunityHeroes'
+      : defender.kind === 'guardian'
+        ? 'ImmunityGuardians'
+        : 'ImmunityOtherCharacters',
+  );
+}
 export const footprintDistance = (x: number, y: number, b: Building) => {
   const size = BUILDINGS[b.kind].size;
   return distance2D(Math.max(b.x - x, 0, x - b.x - size), Math.max(b.y - y, 0, y - b.y - size));
 };
 const isTotem = (u: Unit) => u.kind === 'totem';
 const liveAttacker = (u: Unit, at: number) =>
-  u.hp > 0 && !u.ejected && !u.native?.recalled && (u.spawnedAt ?? 0) <= at + 1e-9;
+  u.hp > 0 &&
+  !u.ejected &&
+  !u.native?.recalled &&
+  !u.native?.phoenixWaiting &&
+  (u.spawnedAt ?? 0) <= at + 1e-9;
 /** Stationary units (Furnace, Totem) and spawned units never return to the deployment bar. */
 const deployable = (u: Unit) => !!u.hero || u.level === undefined;
 const housing = (u: Unit) => (u.hero ? 25 : TROOPS[u.kind].space);
@@ -145,6 +201,20 @@ const housing = (u: Unit) => (u.hero ? 25 : TROOPS[u.kind].space);
 /** Resolve every pulse whose scheduled time has been reached, in cast order. */
 export function stepNativeSpells(ctx: NativeSpellContext) {
   const battle = ctx.battle;
+  retireOvergrowthRoots(battle);
+  retireOvergrowthCasts(battle);
+  retireRecallEvents(battle);
+  if (battle.nativeFreezeCastPresentation && battle.nativeFreezeCasts)
+    battle.nativeFreezeCasts = battle.nativeFreezeCasts.filter(
+      (cast) =>
+        cast.firstHit + seconds(spellRow('Freeze', cast.level), 'FreezeTimeMS') + 10 >=
+        battle.elapsed - 1e-9,
+    );
+  if (battle.nativeSpellCastHistory)
+    battle.nativeSpellCastHistory = battle.nativeSpellCastHistory.filter(
+      (cast) =>
+        Math.max(spellEndTime(cast) + 10, fieldSpellHistoryUntil(cast)) >= battle.elapsed - 1e-9,
+    );
   for (const cast of battle.nativeSpells ?? []) {
     if (cast.ended) continue;
     while (cast.hits < cast.total) {
@@ -180,7 +250,9 @@ function resolvePulse(ctx: NativeSpellContext, cast: NativeSpellCast, at: number
   const randomRadius = flag(row, 'RandomRadiusAffectsOnlyGfx') ? 0 : tiles(row, 'RandomRadius');
   let x = cast.x,
     y = cast.y;
-  if (randomRadius > 0) {
+  // Area buffs, healing and statuses use the aimed/following center. Positive-damage strikes
+  // (Electro Dragon death lightning) retain their actual scatter; repeat feedback keeps its cadence.
+  if (randomRadius > 0 && !(battle.nativeSpellAreaCenters && num(row, 'Damage') <= 0)) {
     const p = randomPoint(cast, cast.hits, randomRadius);
     x = p.x;
     y = p.y;
@@ -190,17 +262,17 @@ function resolvePulse(ctx: NativeSpellContext, cast: NativeSpellCast, at: number
   if (cast.side === 'attack') {
     harmDefense(ctx, cast, row, at, x, y, radius);
     supportAttackers(ctx, cast, row, at, x, y, radius);
-    if (flag(row, 'Overgrowth')) overgrow(battle, row, at, x, y, radius);
+    if (flag(row, 'Overgrowth')) overgrow(battle, row, at, x, y, radius, cast.id);
     if (num(row, 'DuplicateHousing')) cloneUnits(ctx, cast, row, at, radius);
     if (num(row, 'RecallHousing')) recallUnits(ctx, cast, at, radius);
-    if (num(row, 'ResurrectHitpointPercentage')) reviveHero(ctx, row, x, y);
+    if (num(row, 'ResurrectHitpointPercentage')) reviveHero(ctx, row, x, y, cast, at);
     const chain = text(row, 'ChainSpell');
     if (chain && cast.hits === 0)
       castNativeSpell(battle, chain, num(row, 'ChainSpellLevel', 1) || 1, cast.side, x, y, { at });
   } else {
     if (num(row, 'TornadoForce1') > 0) tornadoPulse(battle, cast, row, at, radius);
     else harmAttackers(ctx, cast, row, at, x, y, inRange);
-    supportDefense(battle, row, at, x, y, radius);
+    supportDefense(battle, cast, row, at, x, y, radius);
   }
   if (cast.hits === 0 || randomRadius > 0)
     ctx.effect({ type: 'spell-native', x, y, radius, text: cast.name, sourceId: cast.id });
@@ -228,6 +300,8 @@ function harmDefense(
   const quakeTroop = num(row, 'TroopDamagePermil') / 1000;
   const poison = num(row, 'PoisonDPS');
   const overgrowth = flag(row, 'Overgrowth');
+  const invisible =
+    battle.nativeInvisibilityTargets && !overgrowth ? seconds(row, 'InvisibilityTime') : 0;
   if (poison > 0)
     poisonDefendingBuilders(
       battle,
@@ -243,7 +317,14 @@ function harmDefense(
     defendingBuilderLightning(battle, x, y, radius, at);
   if (freeze > 0 && freezePercent === 0 && !overgrowth)
     freezeDefendingBuilders(battle, x, y, radius, at, freeze);
-  if (damage > 0 || (freeze > 0 && !overgrowth) || stun > 0 || quakeBuilding > 0 || poison > 0) {
+  if (
+    damage > 0 ||
+    (freeze > 0 && !overgrowth) ||
+    stun > 0 ||
+    quakeBuilding > 0 ||
+    poison > 0 ||
+    invisible > 0
+  ) {
     for (const b of battle.buildings) {
       if (b.hp <= 0 || buildingSpellImmune(row, b) || concealedTesla(battle, b)) continue;
       if (footprintDistance(x, y, b) > radius + 1e-9) continue;
@@ -277,15 +358,37 @@ function harmDefense(
         battle.defenseStuns[b.id] = Math.max(battle.defenseStuns[b.id] ?? 0, e.stunUntil);
         delete battle.defenseTargets[b.id];
       }
+      if (invisible > 0) {
+        const e = buildingEffects(battle, b);
+        e.invisibleUntil = Math.max(e.invisibleUntil ?? 0, at + invisible);
+      }
     }
   }
-  if (damage > 0) damageDefenders(battle, { x, y }, damage, radius, 'both');
+  if (damage > 0 && !battle.nativeDefenderSpellRules)
+    damageDefenders(battle, { x, y }, damage, radius, 'both');
   for (const d of battle.defenders ?? []) {
     // Defenders still inside their coffin or hut take nothing.
     if (d.hp <= 0 || d.spawnedAt > at + 1e-9) continue;
     if (distance2D(d.x - x, d.y - y) > radius + 1e-9) continue;
+    if (battle.nativeDefenderSpellRules) {
+      if (defenderSpellImmune(row, d)) continue;
+      if (damage > 0) {
+        const scale = d.kind === 'hero' ? num(row, 'HeroDamageMultiplier', 100) / 100 : 1;
+        hurtDefender(battle, d, damage * scale);
+        if (d.hp <= 0) continue;
+      }
+    }
     if ((freeze > 0 && !overgrowth) || stun > 0)
       d.stunnedUntil = Math.max(d.stunnedUntil ?? 0, at + Math.max(freeze, stun));
+    if (invisible > 0) d.invisibleUntil = Math.max(d.invisibleUntil ?? 0, at + invisible);
+    if (
+      battle.nativeDefenderFreezeCue &&
+      freeze > 0 &&
+      freezePercent === 0 &&
+      stun === 0 &&
+      !overgrowth
+    )
+      d.frozenUntil = Math.max(d.frozenUntil ?? 0, at + freeze);
     if (quakeTroop > 0 && d.mode === 'ground') hurtDefender(battle, d, d.maxHp * quakeTroop);
     if (poison > 0) {
       poisonDefender(battle, d, row, at, cast.interval);
@@ -347,9 +450,10 @@ function poisonDefender(battle: Battle, d: Defender, row: NativeRow, at: number,
   if (state.until + 6 < at) state.since = at;
   const until = at + Math.max(seconds(row, 'BoostTimeMS'), tick);
   state.until = battle.nativeDefenderPoisonOverlap ? Math.max(state.until, until) : until;
+  const speed = poisonMoveBoost(battle, row, d.kind === 'hero');
   state.speed = battle.nativeDefenderPoisonOverlap
-    ? Math.min(active ? state.speed : 0, num(row, 'SpeedBoost') / 100)
-    : num(row, 'SpeedBoost') / 100;
+    ? Math.min(active ? state.speed : 0, speed)
+    : speed;
   state.attack = battle.nativeDefenderPoisonOverlap
     ? Math.min(active ? state.attack : 0, num(row, 'AttackSpeedBoost') / 100)
     : num(row, 'AttackSpeedBoost') / 100;
@@ -433,18 +537,29 @@ function supportAttackers(
       healUnit(battle, u, -damage * (u.hero ? heroScale : 1));
     if (boostTime > 0 && !poison && given !== 'AngrySpellAnger') {
       const scale = u.hero ? 0.5 : 1;
-      const speed = (num(row, 'SpeedBoost') / SPELL_SPEED_SCALE) * scale;
-      const boostDamage = (num(row, 'DamageBoostPercent') / 100) * scale;
+      const hero = !!u.hero || isHeroUnitKind(u.kind);
+      const stats =
+        battle.nativeRageRules && !hero ? nativeUnitStats(u.kind, u.level ?? 1) : undefined;
+      const modifiers = battle.nativeRageRules
+        ? rageModifiers(row, hero, !!(stats?.preferredClass || stats?.preferredBuilding))
+        : {
+            speed: (num(row, 'SpeedBoost') / SPELL_SPEED_SCALE) * scale,
+            damage: (num(row, 'DamageBoostPercent') / 100) * scale,
+            attackSpeed: num(row, 'AttackSpeedBoost') / 100,
+          };
+      const speed = modifiers.speed;
+      const boostDamage = modifiers.damage;
       const e = unitEffects(u);
       const old = e.boost;
       // Rage-like boosts never stack; each component keeps the strongest active source.
-      e.boost =
-        old && old.until > at + 1e-9
+      e.boost = battle.nativeRageRules
+        ? mergeBoost(old, `spell:${cast.id}`, { until: at + boostTime, ...modifiers }, at)
+        : old && old.until > at + 1e-9
           ? {
               until: Math.max(old.until, at + boostTime),
-              speed: Math.max(old.speed, speed),
+              speed: Math.max(old.speed ?? 0, speed),
               damage: Math.max(old.damage, boostDamage),
-              attackSpeed: Math.max(old.attackSpeed, num(row, 'AttackSpeedBoost') / 100),
+              attackSpeed: Math.max(old.attackSpeed ?? 0, num(row, 'AttackSpeedBoost') / 100),
             }
           : {
               until: at + boostTime,
@@ -528,6 +643,7 @@ function overgrow(
   x: number,
   y: number,
   radius: number,
+  castId: number,
 ) {
   const duration = seconds(row, 'ShieldTime') || seconds(row, 'FreezeTimeMS');
   for (const b of battle.buildings) {
@@ -540,6 +656,7 @@ function overgrow(
       continue;
     const e = buildingEffects(battle, b);
     e.overgrownUntil = Math.max(e.overgrownUntil ?? 0, at + duration);
+    recordOvergrowthRoot(battle, b, at, e.overgrownUntil, castId);
     battle.defenseStuns[b.id] = Math.max(battle.defenseStuns[b.id] ?? 0, e.overgrownUntil);
     delete battle.defenseTargets[b.id];
   }
@@ -566,6 +683,7 @@ function cloneUnits(
       (u) =>
         liveAttacker(u, at) &&
         !u.hero &&
+        !(ctx.battle.nativePetCloneImmunity && isPetUnitKind(u.kind)) &&
         !isTotem(u) &&
         !u.native?.siege &&
         distance2D(u.x - cast.x, u.y - cast.y) <= radius + 1e-9,
@@ -616,15 +734,26 @@ function recallUnits(ctx: NativeSpellContext, cast: NativeSpellCast, at: number,
     const space = housing(u);
     if (space > (cast.budget ?? 0)) continue;
     cast.budget! -= space;
-    ctx.recall(u);
+    ctx.recall(u, at);
   }
 }
 
-function reviveHero(ctx: NativeSpellContext, row: NativeRow, x: number, y: number) {
+function reviveHero(
+  ctx: NativeSpellContext,
+  row: NativeRow,
+  x: number,
+  y: number,
+  cast: NativeSpellCast,
+  at: number,
+) {
+  const targetId = cast.reviveTargetId;
   const reach = tiles(row, 'TargetingRadius');
   const fallen = ctx.battle.units
     .filter(
-      (u) => u.hero && u.hp <= 0 && !u.ejected && distance2D(u.x - x, u.y - y) <= reach + 1e-9,
+      (u) =>
+        revivableHero(ctx.battle, u) &&
+        (targetId === undefined || u.id === targetId) &&
+        distance2D(u.x - x, u.y - y) <= reach + 1e-9,
     )
     .sort((a, b) => distance2D(a.x - x, a.y - y) - distance2D(b.x - x, b.y - y) || a.id - b.id)[0];
   if (!fallen) return;
@@ -634,7 +763,17 @@ function reviveHero(ctx: NativeSpellContext, row: NativeRow, x: number, y: numbe
   fallen.target = null;
   fallen.path = [];
   fallen.pathAt = 0;
-  ctx.effect({ type: 'spawn', x: fallen.x, y: fallen.y });
+  if (ctx.battle.nativeRevengeDeck && fallen.native) delete fallen.native.revengeHits;
+  const activationId = reviveHeroAuras(ctx.battle, fallen, at);
+  resetHeroRegeneration(ctx.battle, fallen, at);
+  if (ctx.battle.nativeSpellArt?.includes('Revive'))
+    cast.revivePresentation = { targetId: fallen.id, x: fallen.x, y: fallen.y, at };
+  ctx.effect({
+    type: 'spawn',
+    x: fallen.x,
+    y: fallen.y,
+    ...(activationId ? { abilityCastId: activationId } : {}),
+  });
 }
 
 /** Skeleton/Bat spells: a first group at the first hit, the remainder evenly over the spawn time. */
@@ -730,10 +869,12 @@ function harmAttackers(
       const last = e.poison?.tickAt;
       const exposure = last !== undefined && last > at - interval ? at - last : interval;
       e.poison = {
-        until: at + Math.max(seconds(row, 'BoostTimeMS'), interval),
+        until: battle.nativeAttackerPoisonClock
+          ? Math.max(e.poison?.until ?? 0, at + Math.max(seconds(row, 'BoostTimeMS'), interval))
+          : at + Math.max(seconds(row, 'BoostTimeMS'), interval),
         speed: Math.min(
           e.poison && e.poison.until > at ? e.poison.speed : 0,
-          num(row, 'SpeedBoost') / 100,
+          poisonMoveBoost(battle, row, !!u.hero),
         ),
         attackSpeed: Math.min(
           e.poison && e.poison.until > at ? e.poison.attackSpeed : 0,
@@ -741,7 +882,9 @@ function harmAttackers(
         ),
         dps: Math.max(poison, e.poison && e.poison.until > at ? e.poison.dps : 0),
         since,
-        tickAt: at,
+        // Cast-order catch-up can visit an older pulse after a later cloud's pulse.
+        // Keep the paid-through time monotonic so that time cannot be charged twice.
+        tickAt: battle.nativeAttackerPoisonClock ? Math.max(at, last ?? at) : at,
       };
       const ramp = flag(row, 'PoisonIncreaseSlowly') ? Math.min(1, (at - since + interval) / 5) : 1;
       if (exposure > 0) hurtUnit(battle, u, poison * exposure * ramp * scale, at);
@@ -758,6 +901,7 @@ function harmAttackers(
 /** Friendly effects of a defensive spell on buildings (Spell Tower Rage, Invisibility). */
 function supportDefense(
   battle: Battle,
+  cast: NativeSpellCast,
   row: NativeRow,
   at: number,
   x: number,
@@ -766,17 +910,42 @@ function supportDefense(
 ) {
   const boost = num(row, 'BuildingDamageBoostPercent') / 100;
   const invisible = seconds(row, 'InvisibilityTime');
-  // Defensive Rage boosts Guardians at full strength (official wiki).
+  // Guardians take full strength; version 93 also covers present combat defenders.
   const unitBoost = num(row, 'DamageBoostPercent') / 100;
   if (unitBoost > 0)
     for (const d of battle.defenders ?? [])
-      if (d.kind === 'guardian' && d.hp > 0 && distance2D(d.x - x, d.y - y) <= radius + 1e-9)
-        d.boost = {
-          until: Math.max(d.boost?.until ?? 0, at + seconds(row, 'BoostTimeMS')),
-          damage: unitBoost,
-          speed: num(row, 'SpeedBoost') / SPELL_SPEED_SCALE,
-        };
+      if (d.hp > 0 && distance2D(d.x - x, d.y - y) <= radius + 1e-9) {
+        if (battle.nativeRageRules) {
+          if (d.kind === 'repairer' || d.spawnedAt > at + 1e-9 || defenderSpellImmune(row, d))
+            continue;
+          const modifiers = rageModifiers(
+            row,
+            d.kind === 'hero',
+            isGarrisonDefender(d) && garrisonStats(d.kind, d.level).preferredTarget,
+          );
+          d.boost = mergeBoost(
+            d.boost,
+            `spell:${cast.id}`,
+            { until: at + seconds(row, 'BoostTimeMS'), ...modifiers },
+            at,
+          );
+        } else if (d.kind === 'guardian')
+          d.boost = {
+            until: Math.max(d.boost?.until ?? 0, at + seconds(row, 'BoostTimeMS')),
+            damage: unitBoost,
+            speed: num(row, 'SpeedBoost') / SPELL_SPEED_SCALE,
+          };
+      }
   if (!boost && !invisible) return;
+  if (battle.nativeInvisibilityTargets && invisible > 0 && !flag(row, 'Overgrowth'))
+    for (const d of battle.defenders ?? [])
+      if (
+        d.hp > 0 &&
+        d.spawnedAt <= at + 1e-9 &&
+        !defenderSpellImmune(row, d) &&
+        distance2D(d.x - x, d.y - y) <= radius + 1e-9
+      )
+        d.invisibleUntil = Math.max(d.invisibleUntil ?? 0, at + invisible);
   for (const b of battle.buildings) {
     if (
       b.hp <= 0 ||
@@ -787,10 +956,17 @@ function supportDefense(
       continue;
     const e = buildingEffects(battle, b);
     if (boost)
-      e.boost = {
-        until: Math.max(e.boost?.until ?? 0, at + seconds(row, 'BoostTimeMS')),
-        damage: boost,
-      };
+      e.boost = battle.nativeRageRules
+        ? mergeBoost(
+            e.boost,
+            `spell:${cast.id}`,
+            { until: at + seconds(row, 'BoostTimeMS'), damage: boost },
+            at,
+          )
+        : {
+            until: Math.max(e.boost?.until ?? 0, at + seconds(row, 'BoostTimeMS')),
+            damage: boost,
+          };
     if (invisible) e.invisibleUntil = Math.max(e.invisibleUntil ?? 0, at + invisible);
   }
 }

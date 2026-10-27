@@ -1,10 +1,36 @@
+import { houndUnitDirection } from './native-hound-geometry';
+import { releaseHoundAtDefender } from './native-hound-attack';
+import { releaseWitchAtDefender, resolveWitchImpact } from './native-witch-attack';
+import { sweepValkyrie } from './native-valkyrie-sweep';
+import { launchArcherPiercing, stepArcherPiercing } from './native-super-archer';
+import { resolveWardenFireball } from './native-fireball';
+import { stepHeroPiercing } from './native-hero-piercing';
+import { resolveFrostFlake } from './native-frost-flake';
+import { resolveSpikyBall } from './native-spiky-ball';
+import { resolveSeekingShield } from './native-seeking-shield';
+import { attackSuperWizard, stepSuperWizardBranches } from './native-super-wizard';
+import {
+  stepElectroDragonCharge,
+  beginElectroDragonCharge,
+  stepElectroDragonArcs,
+  type ElectroDragonState,
+} from './native-electro-dragon';
+import { attackElectromite, stepElectromiteArcs } from './native-electromite';
+import { preferredDefense } from './native-defense-preference';
 import { monolithArrow, stepEquipmentDash } from './native-equipment-effects';
 import { isSiege } from './special-troops';
+import { nativeMiteJump } from './native-mite-jumps';
+import { sneezyCombatStats, sneezySpawner, sneezySummon } from './native-sneezy';
 import { distance2D } from './distance';
+import { furnaceReleasePoint } from './native-furnace-geometry';
+import {
+  stepNativeAttackWindup,
+  beginNativeAttackWindup,
+  type NativeAttackWindupState,
+} from './native-attack-windup';
 import {
   BUILDINGS,
   TROOPS,
-  isDefense,
   isResourceBuilding,
   isTrap,
   type BuildingKind,
@@ -12,9 +38,28 @@ import {
   type UnitKind,
 } from './data';
 import { EXTRA_TROOP_KINDS } from './extra-troops';
-import { damageDefenders, stepAttackerVsDefenders } from './defenders';
+import {
+  type Defender,
+  attackerDefenderTarget,
+  damageDefenders,
+  hurtDefender,
+  stepAttackerVsDefenders,
+} from './defenders';
+import { applyDefenderFrost } from './defender-frost';
+import { activeAsDefense } from './native-defenses';
+import { mergeBoost } from './native-boost';
+import { rampedDamage, finishRampingHit, type NativeDamageRamp } from './native-damage-ramp';
+import { recordInfernoDragonTransition } from './inferno-dragon-transitions';
+import { friendlyCombatant, healingEligible } from './friendly-unit';
+import { healerContribution } from './healing';
+import { launchNativeHealing, resolveNativeHealing } from './native-healing';
+import {
+  applyDefenderHitPoison,
+  nativeHitPoison,
+  tickDefenderHitPoison,
+} from './defender-hit-poison';
 import { MAP_SIZE } from './grid';
-import { targetableBuilding } from './hidden-tesla';
+import { presentBuilding, targetableBuilding } from './hidden-tesla';
 import { flag, nativeRow, num, seconds as nativeSeconds, text, tiles } from './native-data';
 import { castNativeSpell, stepNativeSpells, type NativeSpellContext } from './native-spells';
 import {
@@ -25,7 +70,15 @@ import {
   unitFrozen,
   type UnitEffects,
 } from './native-status';
-import { heroStatsFor } from './native-heroes';
+import { heroOf, heroStatsFor, petAnchor } from './native-heroes';
+import { resolvePhoenixRevive } from './native-phoenix';
+import {
+  heroAttackInterval,
+  heroCombatOverrides,
+  heroExtraDamage,
+  heroLifeSteal,
+  spendHeroCharge,
+} from './native-hero-abilities';
 import {
   isHeroUnitKind,
   isPetUnitKind,
@@ -41,12 +94,26 @@ import { breachTarget, distanceTo, findPath, type Battle, type Building, type Un
 
 /** Version 45+ native roster behavior state, created lazily on the unit. */
 export interface NativeUnitState {
+  /** Version 139: canonical Hero resurrection time for the next self-regeneration interval. */
+  regenerationAt?: number;
+  /** Version 109: action-clock charge and recovery, independent of the retained chain packets. */
+  electroDragon?: ElectroDragonState;
+  bowler?: NativeAttackWindupState;
+  attackWindup?: NativeAttackWindupState;
+  /** Version 95: the source waiting bird and its separately drawn Egg. */
+  phoenixWaiting?: true;
+  phoenixEgg?: true;
+  untargetable?: true;
   effects?: UnitEffects;
   /** Hitpoints actually lost, for damage-triggered spawns. */
   damageTaken?: number;
   deploymentAbility?: boolean;
   lastDamageSource?: number;
+  /** Version 143: direct incoming hits awaiting Revenge Deck's passive upkeep. */
+  revengeHits?: import('./native-revenge-deck').RevengeHit[];
   firingSince?: number;
+  /** Version 94: heat belongs to one building or defender, never to a previous target. */
+  damageRamp?: NativeDamageRamp;
   dash?: {
     dx: number;
     dy: number;
@@ -60,13 +127,19 @@ export interface NativeUnitState {
   attacks?: number;
   /** Battle time the current building target was acquired. */
   targetAt?: number;
+  /** Version 91: Wall currently blocking a Hero's building or defender attack. */
+  wallTarget?: number;
   /** Next scheduled periodic summon and lifetime summon count. */
   summonAt?: number;
+  /** Version 102: original Sneezy attack2 wind-up, separate from ordinary attack cooldown. */
+  sneezySummon?: { at: number; until: number };
   summoned?: number;
   /** Bunker spawns released so far. */
   released?: number;
   /** Damage-triggered spawns released so far. */
   damageSpawns?: number;
+  /** Version 148: a recalled Witch caster keeps the original owner of its living summons. */
+  summonerId?: number;
   /** Next hitpoint decay tick. */
   decayAt?: number;
   /** Aura cast bound to this unit. */
@@ -95,6 +168,8 @@ export interface NativeUnitState {
   merged?: boolean;
   /** Last attack time; merging units only merge while not fighting. */
   lastAttackAt?: number;
+  /** Version 83: personal equipment jump mode, used to discard routes at expiry. */
+  equipmentJumping?: true;
   /** Battle time of the last lifetime drain sample (Furnace). */
   drainAt?: number;
   /** Ruin Witch rubble cycle: seek, vacuum, wind up and rest. */
@@ -109,6 +184,10 @@ export interface NativePendingSpawn {
   y: number;
   hp?: number;
   owner?: number;
+  /** Version 108: a thrown cloned half retains the original body’s deadline. */
+  cloneUntil?: number;
+  /** A thrown body materializes after its own packet damage, rather than before the unit step. */
+  projectileId?: string;
 }
 export interface NativeDeathBlast {
   sourceId: number;
@@ -180,9 +259,69 @@ export const unitLevel = (battle: Battle, u: Pick<Unit, 'kind' | 'level'>) =>
 export function statsFor(battle: Battle, u: Pick<Unit, 'kind' | 'level' | 'id'>) {
   if (battle.nativeHeroes && u.id !== undefined) {
     const hero = battle.nativeHeroes.find((entry) => entry.unitId === u.id);
-    if (hero) return heroStatsFor(hero, battle.townhall ?? 18);
+    if (hero)
+      return heroStatsFor(hero, battle.townhall ?? 18, !!battle.nativeHeroPassiveSpeedDamage);
   }
-  return nativeUnitStats(u.kind, unitLevel(battle, u));
+  return sneezyCombatStats(battle, u, nativeUnitStats(u.kind, unitLevel(battle, u)));
+}
+
+function completeHeroAttack(battle: Battle, unit: Unit) {
+  if (
+    !(
+      battle.nativeHeroLifeSteal ||
+      battle.nativeChampionRocketSpears ||
+      battle.nativePrinceNobleIron
+    ) ||
+    !isHeroUnitKind(unit.kind)
+  )
+    return;
+  const hero = heroOf(battle, unit);
+  if (!hero) return;
+  if (battle.nativeHeroLifeSteal) heroLifeSteal(battle, hero, unit);
+  if (
+    (battle.nativeChampionRocketSpears && hero.kind === 'champion') ||
+    (battle.nativePrinceNobleIron && hero.kind === 'prince')
+  )
+    spendHeroCharge(unit, battle.elapsed);
+}
+
+/** Shared surfacing transition; intrinsic abilities run once per emergence. */
+function surfaceUndergroundUnit(
+  ctx: NativeTroopContext,
+  unit: Unit,
+  at: number,
+  target?: Building,
+) {
+  const state = unit.native!;
+  if (
+    !state.surfaced &&
+    ctx.battle.nativeDiggySurfaceStun &&
+    unit.kind === 'diggy' &&
+    target &&
+    activeAsDefense(ctx.battle, target)
+  ) {
+    const s = statsFor(ctx.battle, unit);
+    const row = nativeRow('abilities', s.ability, s.abilityLevel);
+    const until = at + nativeSeconds(row, 'StunTargetOnActivateTime');
+    const e = buildingEffects(ctx.battle, target);
+    e.stunUntil = Math.max(e.stunUntil ?? 0, until);
+    ctx.battle.defenseStuns[target.id] = Math.max(ctx.battle.defenseStuns[target.id] ?? 0, until);
+    delete ctx.battle.defenseTargets[target.id];
+  }
+  if (!state.surfaced && unit.kind === 'battledrill') {
+    const row = nativeRow('abilities', 'BattleDrillStunOnSurface');
+    castNativeSpell(
+      ctx.battle,
+      text(row, 'SelfSpell'),
+      num(row, 'SelfSpellLevel', 1),
+      'attack',
+      unit.x,
+      unit.y,
+      { at, owner: unit.id },
+    );
+  }
+  state.surfaced = true;
+  state.burrowed = false;
 }
 
 /** Client building names used by preferred-target columns. */
@@ -192,11 +331,11 @@ const BUILDING_NAME: Partial<Record<BuildingKind, string>> = {
   wall: 'Wall',
 };
 const buildingName = (kind: BuildingKind) => BUILDING_NAME[kind] ?? BUILDINGS[kind].name;
-const matchesPreferred = (s: NativeUnitStats, b: Building) =>
+const matchesPreferred = (battle: Battle, s: NativeUnitStats, b: Building, at = battle.elapsed) =>
   s.preferredBuilding
     ? buildingName(b.kind) === s.preferredBuilding
     : s.preferredClass === 'Defense'
-      ? isDefense(b.kind) && b.npc !== 'tutorial-cannon'
+      ? preferredDefense(battle, b, at) && b.npc !== 'tutorial-cannon'
       : s.preferredClass === 'Resource'
         ? isResourceBuilding(b.kind)
         : s.preferredClass === 'Wall'
@@ -291,11 +430,16 @@ function ringPoint(
   count: number,
   distance: number,
   random: boolean,
+  stableHound = false,
 ) {
   const turn = random ? hash(battle.seed + source.id * 31, index) : index / Math.max(1, count);
   const reach = random
     ? distance * Math.sqrt(hash(battle.seed + source.id * 17, index + 101))
     : distance;
+  if (stableHound) {
+    const direction = houndUnitDirection(turn);
+    return { x: source.x + direction.x * reach, y: source.y + direction.y * reach };
+  }
   const angle = turn * Math.PI * 2;
   return { x: source.x + Math.cos(angle) * reach, y: source.y + Math.sin(angle) * reach };
 }
@@ -304,6 +448,49 @@ function hash(seed: number, index: number) {
   v = Math.imul(v ^ (v >>> 15), 0x85ebca6b) >>> 0;
   v = Math.imul(v ^ (v >>> 13), 0xc2b2ae35) >>> 0;
   return ((v ^ (v >>> 16)) >>> 0) / 0x100000000;
+}
+
+/** Source master-target pets borrow only their own living Hero's eligible target. */
+function followPetMaster(ctx: NativeTroopContext, unit: Unit, s: NativeUnitStats) {
+  if (!(
+    ((ctx.battle.nativeDiggyMasterTarget && unit.kind === 'diggy') ||
+      (ctx.battle.nativePhoenixResurrection && unit.kind === 'phoenix')) &&
+    s.preferMasterTarget
+  ))
+    return false;
+  const hero = petAnchor(ctx.battle, unit)?.hero;
+  if (!hero || hero.ejected || hero.native?.recalled) return false;
+  const at = ctx.battle.elapsed;
+  const reset = () => {
+    unit.path = [];
+    unit.pathAt = 0;
+    unit.native!.targetAt = at;
+    if (s.underground) {
+      unit.native!.surfaced = false;
+      unit.native!.burrowed = true;
+    }
+  };
+  const wall = ctx.buildingsById.get(hero.native?.wallTarget ?? -1);
+  const blocker =
+    wall?.kind === 'wall' && wall.hp > 0 && !ctx.passableWalls.has(wall.id) ? wall : undefined;
+  if (!blocker && hero.defenderTarget !== undefined) {
+    const target = attackerDefenderTarget(ctx.battle, unit, hero.defenderTarget, {
+      airTargets: s.airTargets,
+    });
+    if (target && target.spawnedAt <= at) {
+      if (unit.defenderTarget !== target.id) reset();
+      unit.defenderTarget = target.id;
+    }
+    return false;
+  }
+  const target = blocker ?? ctx.buildingsById.get(hero.target ?? -1);
+  const targetable = ctx.isTargetable ?? ((b: Building) => targetableBuilding(ctx.battle, b));
+  if (!target || !targetable(target)) return false;
+  if (unit.target !== target.id || unit.defenderTarget !== undefined) reset();
+  unit.target = target.id;
+  delete unit.defenderTarget;
+  // A committed Hero building target takes priority over Diggy's independent alert scan.
+  return true;
 }
 
 /** Choose the nearest eligible building, honoring the unit's native favorite target. */
@@ -341,13 +528,17 @@ function chooseTarget(ctx: NativeTroopContext, u: Unit, base: NativeUnitStats) {
       best = b;
       bestDistance = d;
     }
-    if (wantPreferred && matchesPreferred(s, b) && nearer(d, favoriteDistance, b, favorite)) {
+    if (
+      wantPreferred &&
+      matchesPreferred(battle, s, b) &&
+      nearer(d, favoriteDistance, b, favorite)
+    ) {
       favorite = b;
       favoriteDistance = d;
     }
     if (
       wantDefense &&
-      isDefense(b.kind) &&
+      preferredDefense(battle, b) &&
       b.npc !== 'tutorial-cannon' &&
       nearer(d, defenseDistance, b, defense)
     ) {
@@ -390,7 +581,12 @@ function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats, following: boo
   // own must not read weights measured with another's.
   if (!cached || cached.tick !== battle.elapsed || cached.radius !== s.groupRadius) {
     let living = 0;
-    for (const other of battle.units) if (other.hp > 0) living++;
+    for (const other of battle.units)
+      if (
+        other.hp > 0 &&
+        (!battle.nativeFriendlyEligibility || friendlyCombatant(other, battle.elapsed))
+      )
+        living++;
     if (!cached) {
       cached = {
         tick: battle.elapsed,
@@ -426,7 +622,11 @@ function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats, following: boo
     const cell = Math.max(1, s.groupRadius);
     let i = 0;
     for (const other of battle.units) {
-      if (other.hp <= 0) continue;
+      if (
+        other.hp <= 0 ||
+        (battle.nativeFriendlyEligibility && !friendlyCombatant(other, battle.elapsed))
+      )
+        continue;
       cached.x[i] = other.x;
       cached.y[i] = other.y;
       cached.space[i] = TROOPS[other.kind].space;
@@ -514,17 +714,92 @@ export function stepNativeUnit(
   u: Unit,
   boosted: NativeStepStats,
   dt: number,
+  actionDt = dt,
 ) {
   const battle = ctx.battle;
-  const s = statsFor(battle, u);
+  let s = statsFor(battle, u);
   const state = (u.native ??= {});
   const at = battle.elapsed;
+  const damageRamp = battle.nativeTroopDamageRamp ? s.damageRamp : undefined;
+  if (damageRamp && state.damageRamp) {
+    const previous = state.damageRamp.defender
+      ? battle.defenders?.find((d) => d.id === state.damageRamp!.targetId)
+      : ctx.buildingsById.get(state.damageRamp.targetId);
+    if (previous && previous.hp <= 0) finishRampingHit(u, previous, damageRamp);
+  }
+  const nativeStickHorse = !!(
+    battle.nativeKingStickHorse &&
+    u.kind === 'barbarianking' &&
+    heroOf(battle, u)
+  );
+  if ((battle.nativeChampionHaste && u.kind === 'royalchampion') || nativeStickHorse)
+    s = { ...s, rate: heroAttackInterval(u, at, s.rate) };
+  if (nativeStickHorse) {
+    const jumping = (state.effects?.jumpUntil ?? 0) > at + 1e-9;
+    if (jumping !== !!state.equipmentJumping) {
+      u.path = [];
+      u.pathAt = 0;
+      if (jumping) {
+        state.equipmentJumping = true;
+        if (ctx.buildingsById.get(u.target ?? -1)?.kind === 'wall') u.target = null;
+      } else delete state.equipmentJumping;
+    }
+    if (jumping) s = { ...s, jumper: true };
+  }
+  const nativeChampion = !!(
+    battle.nativeChampionRocketSpears &&
+    u.kind === 'royalchampion' &&
+    heroOf(battle, u)
+  );
+  const nativePrince = !!(
+    battle.nativePrinceNobleIron &&
+    u.kind === 'minionprince' &&
+    heroOf(battle, u)
+  );
+  const attackDisabled =
+    battle.nativeSeekingShield &&
+    u.kind === 'royalchampion' &&
+    (state.effects?.attackDisabledUntil ?? 0) > at + 1e-9;
+  const chargedHero = nativeChampion || nativePrince;
+  const gauntlet = state.effects?.splash;
+  const gauntletSplash =
+    battle.nativeKingGauntletSplash &&
+    u.kind === 'barbarianking' &&
+    heroOf(battle, u) &&
+    gauntlet &&
+    gauntlet.until > at + 1e-9
+      ? gauntlet.radius
+      : 0;
+  if (gauntletSplash > 0) s = { ...s, splash: gauntletSplash };
+  if (chargedHero) {
+    const override = heroCombatOverrides(u, at);
+    if (
+      override.range !== undefined ||
+      override.projectile !== undefined ||
+      override.splash !== undefined
+    )
+      s = {
+        ...s,
+        range: override.range ?? s.range,
+        projectile: override.projectile ?? s.projectile,
+        splash: override.splash ?? s.splash,
+      };
+  }
   stepLifecycle(ctx, u, s, at);
   if (u.hp <= 0) return;
+  if (state.phoenixWaiting || state.phoenixEgg) {
+    u.attacking = false;
+    return;
+  }
   if (unitFrozen(u, at)) {
     u.attacking = false;
     return;
   }
+  if (sneezySummon(battle, u)) {
+    u.attacking = true;
+    return;
+  }
+  if (battle.nativeDiggyMasterTarget && isHeroUnitKind(u.kind)) delete state.wallTarget;
   if (stepEquipmentDash(ctx, u, dt)) return;
   if (s.ability === 'DisableAttacking') {
     u.attacking = false;
@@ -532,7 +807,11 @@ export function stepNativeUnit(
   }
   // The model already folded boosts, poison and chill into these values.
   const speed = boosted.speed;
-  const damage = boosted.damage * aloneScale(battle, u, s, state);
+  const damage =
+    boosted.damage * aloneScale(battle, u, s, state) +
+    ((battle.nativeQueenVialDamage && u.kind === 'archerqueen' && heroOf(battle, u)) || chargedHero
+      ? heroExtraDamage(u, at)
+      : 0);
   if (s.speed <= 0 && !s.summon && !s.bunker && s.range < 0.05) return;
   if (s.heal > 0 && s.dps <= 0 && !isSiege(u.kind)) {
     stepNativeHealer(ctx, u, s, boosted.heal ?? s.heal, speed, dt);
@@ -548,7 +827,136 @@ export function stepNativeUnit(
     return;
   }
   if (s.mergeTo && stepMerge(ctx, u, s, speed, dt)) return;
+  if (sneezySpawner(battle, u)) {
+    // The ability's zero-DPS void attack carries no visible projectile or damage event.
+    delete u.defenderTarget;
+    let target = ctx.buildingsById.get(u.target ?? -1);
+    const targetable = ctx.isTargetable ?? ((b: Building) => targetableBuilding(battle, b));
+    if (!target || !targetable(target)) target = chooseTarget(ctx, u, s);
+    u.target = target?.id ?? null;
+    u.attacking = false;
+    if (target) {
+      const distance = distanceTo(u, target);
+      if (distance > s.range + 1e-9) {
+        const edge = {
+          x: Math.max(target.x, Math.min(u.x, target.x + BUILDINGS[target.kind].size)),
+          y: Math.max(target.y, Math.min(u.y, target.y + BUILDINGS[target.kind].size)),
+        };
+        moveToward(u, edge, Math.min(speed * dt, distance - s.range));
+      }
+    }
+    return;
+  }
+  const electroDragon = !!(battle.nativeElectroDragon && u.kind === 'electrodragon');
+  if (electroDragon && stepElectroDragonCharge(ctx, u, s, damage, speed, dt, actionDt)) return;
+  const bowler = !!(battle.nativeBowlerWindup && u.kind === 'bowler');
+  const golem = !!(battle.nativeGolemWindup && (u.kind === 'golem' || u.kind === 'golemite'));
+  const valkyrie = !!(
+    battle.nativeValkyrieWindup &&
+    (u.kind === 'valkyrie' || u.kind === 'supervalkyrie')
+  );
+  const witch = !!(battle.nativeWitchWindup && (u.kind === 'witch' || u.kind === 'superwitch'));
+  const hound = !!(battle.nativeHoundWindup && (u.kind === 'lavahound' || u.kind === 'icehound'));
+  const splitAttack = bowler || golem || valkyrie || witch || hound;
   if (
+    splitAttack &&
+    stepNativeAttackWindup(ctx, u, s, dt, actionDt, (target) => {
+      if (valkyrie) sweepValkyrie(ctx, u, s, damage);
+      else if ('building' in target) strike(ctx, u, s, target.building, damage);
+      else if (witch) releaseWitchAtDefender(ctx, u, s, target.defender, damage);
+      else if (hound) releaseHoundAtDefender(ctx, u, s, target.defender, damage);
+      else if (golem) {
+        hurtDefender(battle, target.defender, damage, at);
+        ctx.effect({
+          type: 'hit',
+          sourceId: u.id,
+          targetId: target.defender.id,
+          targetDefender: true,
+          x: u.x,
+          y: u.y,
+          toX: target.defender.x,
+          toY: target.defender.y,
+        });
+        state.lastAttackAt = at;
+        state.attacks = (state.attacks ?? 0) + 1;
+      } else {
+        // Retain the existing defender-targeted release path at this timing boundary.
+        launchProjectile(
+          battle,
+          {
+            weapon: battle.nativeBowlerBoulders ? 'native' : 'arrow',
+            ...(battle.nativeBowlerBoulders
+              ? {
+                  native: {
+                    name: s.projectile,
+                    kind: u.kind,
+                    level: s.level,
+                    bowlerAim: { x: target.defender.x, y: target.defender.y },
+                  },
+                }
+              : {}),
+            sourceId: u.id,
+            targetId: target.defender.id,
+            targetBuilding: false,
+            targetDefender: true,
+            fromX: u.x,
+            fromY: u.y,
+            x: target.defender.x,
+            y: target.defender.y,
+            fromAir: false,
+            toAir: false,
+            damage,
+            splash: s.splash,
+          },
+          ctx.effect,
+        );
+        state.lastAttackAt = at;
+        state.attacks = (state.attacks ?? 0) + 1;
+      }
+    })
+  )
+    return;
+  const miteJump = nativeMiteJump(battle, u.kind);
+  const electromite = battle.nativeElectromites && u.kind === 'electromite';
+  const meteorThrow = battle.nativeMeteorThrows && u.kind === 'meteorgolem';
+  const heroHunter = battle.nativeHeadhunterHeroRules && u.kind === 'headhunter';
+  const poisonLizard = battle.nativeAttackerHitPoison && u.kind === 'poisonlizard';
+  const jumpingChase =
+    s.jumper &&
+    (battle.nativeSourceJumperChase ||
+      heroHunter ||
+      poisonLizard ||
+      nativeChampion ||
+      nativeStickHorse);
+  const rangedFrost = battle.nativeDefenderFrost && s.frostTime > 0 && s.range > 2;
+  const nativeHeroAttack = battle.nativeHeroDefenderAttacks && isHeroUnitKind(u.kind);
+  const frostArrow = rangedFrost || nativeHeroAttack ? monolithArrow(ctx, u) : undefined;
+  const defenderProjectile =
+    rangedFrost || miteJump
+      ? {
+          name: (frostArrow && text(frostArrow, 'Projectile')) || s.frostProjectile || s.projectile,
+          kind: u.kind,
+          level: s.level,
+          ...(s.frostTime > 0 ? { frost: { seconds: s.frostTime, percent: s.frostPercent } } : {}),
+        }
+      : ((battle.nativeHeadhunterCards && u.kind === 'headhunter') ||
+            poisonLizard ||
+            chargedHero ||
+            (battle.nativePhoenixResurrection && u.kind === 'phoenix') ||
+            (battle.nativeSneezyController && u.kind === 'sneezy') ||
+            nativeHeroAttack) &&
+          s.projectile
+        ? {
+            name: (frostArrow && text(frostArrow, 'Projectile')) || s.projectile,
+            kind: u.kind,
+            level: s.level,
+          }
+        : undefined;
+  const readyToAttack = u.cooldown <= 0;
+  const undergroundChase = battle.nativeUndergroundDefenderChase && s.underground;
+  const masterBuilding = followPetMaster(ctx, u, s);
+  if (
+    !masterBuilding &&
     stepAttackerVsDefenders(
       battle,
       u,
@@ -560,23 +968,127 @@ export function stepNativeUnit(
       {
         prefersDefenses: s.preferredClass === 'Defense' || !!s.preferredBuilding || undefined,
         prefersResources: s.preferredClass === 'Resource' || undefined,
+        ...(electromite
+          ? {
+              prefersBuildings: true,
+              nativeAttack: (target: Defender, power: number) =>
+                attackElectromite(ctx, u, power, { defender: target }),
+            }
+          : {}),
+        ...(battle.nativeArcherPiercing && u.kind === 'superarcher'
+          ? {
+              nativeAttack: (target: Defender, power: number) =>
+                launchArcherPiercing(ctx, u, power, { defender: target }),
+              nativeBuildingAttack: (target: Building, power: number) =>
+                strike(ctx, u, s, target, power),
+            }
+          : {}),
+        ...(battle.nativeSuperWizard && u.kind === 'superwizard'
+          ? {
+              nativeAttack: (target: Defender, power: number) =>
+                attackSuperWizard(ctx, u, power, { defender: target }),
+              nativeBuildingAttack: (target: Building, power: number) =>
+                strike(ctx, u, s, target, power),
+            }
+          : {}),
+        ...(meteorThrow
+          ? {
+              nativeAttack: (target: Defender, power: number) =>
+                throwMeteorAtDefender(ctx, u, s, power, target),
+              nativeBuildingAttack: (target: Building, power: number) =>
+                strike(ctx, u, s, target, power),
+            }
+          : {}),
         wallBreaker: s.preferredClass === 'Wall' || undefined,
         healer: s.heal > 0 && s.dps <= 0,
+        ...(golem || valkyrie || witch || hound || (bowler && battle.nativeBowlerWallWindup)
+          ? {
+              nativeBuildingAttack: (target: Building) =>
+                beginNativeAttackWindup(u, s, { building: target }, battle),
+            }
+          : {}),
         flying: s.flying || undefined,
         splash: s.splash || undefined,
         airTargets: s.airTargets,
+        ...(heroHunter ? { preferHeroes: s.preferHeroes, heroDamageScale: s.heroMultiplier } : {}),
+        ...(poisonLizard ? { seekUnalerted: true } : {}),
+        ...(defenderProjectile ? { nativeProjectile: defenderProjectile } : {}),
+        ...(gauntletSplash > 0 ? { nativeMeleeSplash: gauntletSplash } : {}),
+        ...(undergroundChase ? { underground: true } : {}),
+        ...(nativeHeroAttack && !s.projectile ? { nativeDirectHit: true } : {}),
+        ...(damageRamp ? { nativeDamageRamp: damageRamp, nativeDirectHit: !s.projectile } : {}),
+        ...(battle.nativeMonolithDefenderDamage && frostArrow
+          ? { nativeTargetHpBonus: num(frostArrow, 'DamagePermilHp') / 1000 }
+          : {}),
       },
       ctx.isTargetable,
       {
-        buildings: ctx.routableBuildings ?? ctx.buildings,
+        buildings: jumpingChase
+          ? routeBuildings(ctx, true)
+          : (ctx.routableBuildings ?? ctx.buildings),
+        ...(jumpingChase ? { jumpWalls: true } : {}),
+        ...(undergroundChase ? { enterRange: () => surfaceUndergroundUnit(ctx, u, at) } : {}),
+        ...(miteJump || electromite
+          ? {
+              targetAcquired: () => {
+                state.targetAt = at;
+              },
+              attackReady: () => {
+                state.targetAt ??= at;
+                return at + 1e-9 >= state.targetAt + s.newTargetDelay;
+              },
+            }
+          : {}),
+        ...(battle.nativeDiggyMasterTarget && isHeroUnitKind(u.kind)
+          ? {
+              enterWallRange: (wall: Building) => {
+                state.wallTarget = wall.id;
+              },
+            }
+          : {}),
+        ...(electroDragon
+          ? {
+              attackReady: () => {
+                const target = battle.defenders?.find((d) => d.id === u.defenderTarget);
+                if (target) beginElectroDragonCharge(ctx, u, s, { defender: target });
+                return false;
+              },
+            }
+          : {}),
+        ...(splitAttack
+          ? {
+              enterRange: () => {
+                const target = battle.defenders?.find((d) => d.id === u.defenderTarget);
+                if (target) beginNativeAttackWindup(u, s, { defender: target }, battle);
+              },
+              attackReady: () => false,
+            }
+          : {}),
+        ...(attackDisabled ? { attackReady: () => false } : {}),
         wallTile: ctx.wallTile,
         passableWalls: ctx.passableWalls,
         budget: ctx.pathBudget,
         breaches: ctx.breaches,
       },
     )
-  )
+  ) {
+    if (attackDisabled) u.attacking = false;
+    if (damageRamp && !u.attacking) delete state.damageRamp;
+    if (undergroundChase && !u.attacking) {
+      state.surfaced = false;
+      state.burrowed = true;
+    }
+    if (readyToAttack && u.cooldown > 0) {
+      completeHeroAttack(battle, u);
+      if (miteJump) {
+        state.attacks = (state.attacks ?? 0) + 1;
+        u.hp = 0;
+        u.spent = true;
+        u.defeatedAt = at;
+      }
+    }
     return;
+  }
   let target = ctx.buildingsById.get(u.target ?? -1);
   const targetable = ctx.isTargetable ?? ((b: Building) => targetableBuilding(battle, b));
   if (!target || !targetable(target)) target = undefined;
@@ -584,6 +1096,7 @@ export function stepNativeUnit(
     target = chooseTarget(ctx, u, s);
     if (!target) {
       u.attacking = false;
+      if (damageRamp) delete state.damageRamp;
       return;
     }
     u.target = target.id;
@@ -633,55 +1146,63 @@ export function stepNativeUnit(
     }
   }
   if (distance <= s.range + 1e-6) {
-    u.attacking = true;
-    if (s.underground) {
-      if (!state.surfaced && u.kind === 'battledrill') {
-        const row = nativeRow('abilities', 'BattleDrillStunOnSurface');
-        castNativeSpell(
-          battle,
-          text(row, 'SelfSpell'),
-          num(row, 'SelfSpellLevel', 1),
-          'attack',
-          u.x,
-          u.y,
-          { at, owner: u.id },
-        );
-      }
-      state.surfaced = true;
-      state.burrowed = false;
+    if (attackDisabled) {
+      u.attacking = false;
+      return;
     }
-    if (at + 1e-9 < (state.targetAt ?? 0) + s.newTargetDelay) return;
+    u.attacking = true;
+    if (damageRamp) recordInfernoDragonTransition(battle, u, damageRamp, target.id, false);
+    if (s.underground) surfaceUndergroundUnit(ctx, u, at, target);
+    if (!splitAttack && at + 1e-9 < (state.targetAt ?? 0) + s.newTargetDelay) return;
+    if (splitAttack) {
+      beginNativeAttackWindup(u, s, { building: target }, battle);
+      return;
+    }
     if (u.cooldown > 0) return;
+    if (electroDragon) {
+      beginElectroDragonCharge(ctx, u, s, { building: target });
+      return;
+    }
     u.cooldown = s.rate * unitAttackIntervalScale(u, at);
-    const row = nativeUnitRow(u.kind, s.level);
-    state.firingSince ??= at;
-    const firing = at - state.firingSince;
-    const stage = flag(row, 'IncreasingDamage')
-      ? firing >= nativeSeconds(row, 'Lv3SwitchTime')
-        ? 'DPSLv3'
-        : firing >= nativeSeconds(row, 'Lv2SwitchTime')
-          ? 'DPSLv2'
-          : 'DPS'
-      : 'DPS';
-    strike(
-      ctx,
-      u,
-      s,
-      target,
-      flag(row, 'IncreasingDamage') && s.dps > 0
-        ? (damage * num(row, stage, s.dps)) / s.dps
-        : damage,
-    );
+    if (damageRamp) {
+      strike(ctx, u, s, target, rampedDamage(u, damageRamp, damage, target.id, false, at));
+      finishRampingHit(u, target, damageRamp);
+    } else {
+      const row = nativeUnitRow(u.kind, s.level);
+      state.firingSince ??= at;
+      const firing = at - state.firingSince;
+      const stage = flag(row, 'IncreasingDamage')
+        ? firing >= nativeSeconds(row, 'Lv3SwitchTime')
+          ? 'DPSLv3'
+          : firing >= nativeSeconds(row, 'Lv2SwitchTime')
+            ? 'DPSLv2'
+            : 'DPS'
+        : 'DPS';
+      strike(
+        ctx,
+        u,
+        s,
+        target,
+        flag(row, 'IncreasingDamage') && s.dps > 0
+          ? (damage * num(row, stage, s.dps)) / s.dps
+          : damage,
+      );
+    }
     return;
   }
   u.attacking = false;
   delete state.firingSince;
+  if (damageRamp) delete state.damageRamp;
   if (s.speed <= 0) return;
   const edge = {
     x: Math.max(target.x, Math.min(u.x, target.x + BUILDINGS[target.kind].size)),
     y: Math.max(target.y, Math.min(u.y, target.y + BUILDINGS[target.kind].size)),
   };
   if (s.flying || s.underground) {
+    if (battle.nativeDiggySurfaceStun && u.kind === 'diggy') {
+      state.surfaced = false;
+      state.burrowed = true;
+    }
     moveToward(u, edge, Math.min(speed * dt, distance2D(edge.x - u.x, edge.y - u.y)));
     return;
   }
@@ -721,7 +1242,16 @@ export function stepNativeUnit(
           ));
     const wall = hit && hit.hp > 0 && !ctx.passableWalls.has(hit.id) ? hit : undefined;
     if (wall && distanceTo(u, wall) <= s.range + 1e-6) {
+      if (attackDisabled) {
+        u.attacking = false;
+        return;
+      }
       u.attacking = true;
+      if (battle.nativeDiggyMasterTarget && isHeroUnitKind(u.kind)) state.wallTarget = wall.id;
+      if (splitAttack) {
+        beginNativeAttackWindup(u, s, { building: wall }, battle);
+        return;
+      }
       if (u.cooldown <= 0) {
         u.cooldown = s.rate * unitAttackIntervalScale(u, at);
         strike(ctx, u, s, wall, damage);
@@ -778,6 +1308,7 @@ function aloneScale(battle: Battle, u: Unit, s: NativeUnitStats, state: NativeUn
     (other) =>
       other.id !== u.id &&
       other.hp > 0 &&
+      (!battle.nativeFriendlyEligibility || friendlyCombatant(other, battle.elapsed)) &&
       !other.ejected &&
       (other.spawnedAt ?? 0) <= battle.elapsed + 1e-9 &&
       !!TROOPS[other.kind].flying === s.flying &&
@@ -793,8 +1324,8 @@ function aloneScale(battle: Battle, u: Unit, s: NativeUnitStats, state: NativeUn
   return 1 + num(row, 'BoostDamagePercentage') / 100;
 }
 
-function damageMultiplier(s: NativeUnitStats, b: Building) {
-  let scale = matchesPreferred(s, b) ? s.preferredMultiplier : 1;
+function damageMultiplier(battle: Battle, s: NativeUnitStats, b: Building, at = battle.elapsed) {
+  let scale = matchesPreferred(battle, s, b, at) ? s.preferredMultiplier : 1;
   if (s.damageMultiplierTarget && buildingName(b.kind) === s.damageMultiplierTarget)
     scale *= s.damageMultiplier;
   if (s.storageReduction && isResourceBuilding(b.kind)) scale *= 1 - s.storageReduction;
@@ -811,6 +1342,20 @@ function strike(
 ) {
   const battle = ctx.battle;
   const state = (u.native ??= {});
+  if (battle.nativeArcherPiercing && u.kind === 'superarcher') {
+    launchArcherPiercing(ctx, u, damage, { building: target });
+    return;
+  }
+  if (battle.nativeSuperWizard && u.kind === 'superwizard') {
+    attackSuperWizard(ctx, u, damage, { building: target });
+    return;
+  }
+  if (battle.nativeElectromites && u.kind === 'electromite') {
+    attackElectromite(ctx, u, damage, { building: target });
+    return;
+  }
+  if (battle.nativeProjectileFrost && s.frostProjectile)
+    s = { ...s, projectile: s.frostProjectile };
   const arrow = monolithArrow(ctx, u);
   if (arrow) {
     s = { ...s, projectile: text(arrow, 'Projectile') };
@@ -820,6 +1365,7 @@ function strike(
     x: target.x + BUILDINGS[target.kind].size / 2,
     y: target.y + BUILDINGS[target.kind].size / 2,
   };
+  let shot: CombatProjectile | undefined;
   if (s.selfAreaCenter || s.multipleBuildings) {
     const radius = Math.max(s.splash, s.range);
     for (const b of battle.buildings)
@@ -829,15 +1375,31 @@ function strike(
         targetableBuilding(battle, b) &&
         distanceTo(u, b) <= radius + 1e-9
       )
-        ctx.damageBuilding(b, damage * damageMultiplier(s, b), battle.elapsed);
+        ctx.damageBuilding(b, damage * damageMultiplier(battle, s, b), battle.elapsed);
     damageDefenders(battle, u, damage, radius, 'ground');
     ctx.effect({ type: 'blast', x: u.x, y: u.y, radius, sourceId: u.id });
-  } else if (s.projectile && s.range >= 1) {
-    launchProjectile(
+  } else if (
+    s.projectile &&
+    (s.range >= 1 || (battle.nativeHoundWindup && u.kind === 'lavahound'))
+  ) {
+    shot = launchProjectile(
       battle,
       {
         weapon: 'native',
-        native: { name: s.projectile, kind: u.kind, level: s.level },
+        native: {
+          name: s.projectile,
+          kind: u.kind,
+          level: s.level,
+          ...(battle.nativeBowlerBoulders && u.kind === 'bowler'
+            ? { bowlerAim: { x: center.x, y: center.y } }
+            : {}),
+          ...(battle.nativeMeteorThrows && u.kind === 'meteorgolem'
+            ? { captureSource: true as const }
+            : {}),
+          ...(battle.nativeProjectileFrost && s.frostTime > 0
+            ? { frost: { seconds: s.frostTime, percent: s.frostPercent } }
+            : {}),
+        },
         sourceId: u.id,
         targetId: target.id,
         targetBuilding: true,
@@ -854,11 +1416,26 @@ function strike(
   } else if (s.chainDepth > 0) {
     zapChain(ctx, u, s, target, damage);
   } else {
-    ctx.damageBuilding(target, damage * damageMultiplier(s, target), battle.elapsed);
+    const gauntlet =
+      battle.nativeKingGauntletSplash &&
+      u.kind === 'barbarianking' &&
+      s.splash > 0 &&
+      heroOf(battle, u);
+    ctx.damageBuilding(target, damage * damageMultiplier(battle, s, target), battle.elapsed);
     if (s.splash)
       for (const b of battle.buildings)
-        if (b.id !== target.id && b.hp > 0 && !isTrap(b.kind) && distanceTo(center, b) <= s.splash)
-          ctx.damageBuilding(b, damage * damageMultiplier(s, b), battle.elapsed);
+        if (
+          b.id !== target.id &&
+          b.hp > 0 &&
+          !isTrap(b.kind) &&
+          (!gauntlet || presentBuilding(battle, b)) &&
+          distanceTo(center, b) <= s.splash
+        )
+          ctx.damageBuilding(b, damage * damageMultiplier(battle, s, b), battle.elapsed);
+    if (gauntlet) {
+      damageDefenders(battle, center, damage, s.splash, 'ground', undefined, battle.elapsed);
+      ctx.effect({ type: 'blast', x: center.x, y: center.y, radius: s.splash, sourceId: u.id });
+    }
     applyFrost(battle, s, target);
     ctx.effect({
       type: 'hit',
@@ -873,9 +1450,17 @@ function strike(
   }
   state.lastAttackAt = battle.elapsed;
   state.attacks = (state.attacks ?? 0) + 1;
+  completeHeroAttack(battle, u);
   // A throwing golem's single attack ends in a split rather than its own defeat.
   if (s.secondaryOnAttack && s.secondary) {
-    splitOnThrow(ctx, u, s, center);
+    splitOnThrow(
+      ctx,
+      u,
+      s,
+      center,
+      battle.nativeMeteorThrows ? shot?.impact : undefined,
+      battle.nativeMeteorThrows ? shot?.id : undefined,
+    );
     return;
   }
   if (s.attackCount > 0 && state.attacks >= s.attackCount) {
@@ -883,6 +1468,39 @@ function strike(
     u.spent = true;
     u.defeatedAt = battle.elapsed;
   }
+}
+/** A native throw keeps its original source identity while the staying body becomes a Meteormite. */
+function throwMeteorAtDefender(
+  ctx: NativeTroopContext,
+  unit: Unit,
+  stats: NativeUnitStats,
+  damage: number,
+  target: Defender,
+) {
+  const shot = launchProjectile(
+    ctx.battle,
+    {
+      weapon: 'native',
+      native: { name: stats.projectile, kind: unit.kind, level: stats.level, captureSource: true },
+      sourceId: unit.id,
+      targetId: target.id,
+      targetDefender: true,
+      targetBuilding: false,
+      fromX: unit.x,
+      fromY: unit.y,
+      x: target.x,
+      y: target.y,
+      fromAir: stats.flying,
+      toAir: target.mode === 'air',
+      damage,
+      splash: stats.splash,
+    },
+    ctx.effect,
+  );
+  const state = (unit.native ??= {});
+  state.lastAttackAt = ctx.battle.elapsed;
+  state.attacks = (state.attacks ?? 0) + 1;
+  splitOnThrow(ctx, unit, stats, target, shot.impact, shot.id);
 }
 /**
  * Meteor Golem: one Meteormite is hurled at the target and the other stays. Each starts with half of
@@ -894,10 +1512,13 @@ function splitOnThrow(
   u: Unit,
   s: NativeUnitStats,
   landing: { x: number; y: number },
+  arrivalAt?: number,
+  projectileId?: string,
 ) {
   const battle = ctx.battle;
   const kind = unitKindForName(s.secondary) as UnitKind | undefined;
-  if (!kind || u.native?.cloneUntil !== undefined) return;
+  const cloneUntil = u.native?.cloneUntil;
+  if (!kind || (cloneUntil !== undefined && !battle.nativeMeteorThrows)) return;
   const mite = nativeUnitStats(kind, s.level);
   const step = mite.hp / 100;
   const half = Math.floor(u.hp / 2 / step) * step;
@@ -905,12 +1526,14 @@ function splitOnThrow(
   const flight =
     travel / Math.max(0.5, num(nativeRow('projectiles', s.projectile), 'Speed', 800) / 100);
   (battle.nativePendingSpawns ??= []).push({
-    at: battle.elapsed + flight,
+    at: arrivalAt ?? battle.elapsed + flight,
     kind,
     level: mite.level,
     x: landing.x,
     y: landing.y,
     hp: half >= step ? half : 1,
+    ...(cloneUntil !== undefined ? { cloneUntil } : {}),
+    ...(projectileId ? { projectileId } : {}),
   });
   if (half < step) {
     u.hp = 0;
@@ -926,6 +1549,10 @@ function splitOnThrow(
   u.path = [];
   u.pathAt = 0;
   u.cooldown = mite.rate;
+  if (battle.nativeMeteorThrows) {
+    u.attacking = false;
+    delete u.defenderTarget;
+  }
   const state = (u.native ??= {});
   state.lastAttackAt = battle.elapsed;
   state.attacks = 0;
@@ -999,10 +1626,15 @@ function stepMerge(
 /** The wiki describes the merged golem as briefly invulnerable; the client row names no duration. */
 const MERGE_INVULNERABLE_SECONDS = 1;
 
-function applyFrost(battle: Battle, s: NativeUnitStats, target: Building) {
+function applyFrost(
+  battle: Battle,
+  s: Pick<NativeUnitStats, 'frostTime' | 'frostPercent'>,
+  target: Building,
+  at = battle.elapsed,
+) {
   if (!s.frostTime) return;
   const e = buildingEffects(battle, target);
-  e.frost = { until: battle.elapsed + s.frostTime, percent: s.frostPercent };
+  e.frost = { until: at + s.frostTime, percent: s.frostPercent };
 }
 
 /** Chain lightning: primary hit now, each hop after the native delay with reduced damage. */
@@ -1102,19 +1734,85 @@ export function stepNativeChains(ctx: NativeTroopContext) {
 
 /** Native projectile arrival: damage, splash, bounces and on-hit spells. */
 export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile) {
+  if (resolveWitchImpact(ctx, p)) return;
+  if (resolveSeekingShield(ctx, p)) return;
+  if (resolveSpikyBall(ctx, p)) return;
+  if (resolveFrostFlake(ctx, p)) return;
+  if (resolveWardenFireball(ctx, p)) return;
+  if (resolvePhoenixRevive(ctx, p)) return;
+  if (resolveNativeHealing(ctx, p)) return;
   const battle = ctx.battle;
   const source = p.native!;
   const s = nativeUnitStats(source.kind, source.level);
+  const rocketSplash = !!(
+    battle.nativeChampionRocketSpears && source.name === 'RocketSpearProjectile'
+  );
+  const phoenixSplash = !!(battle.nativePhoenixResurrection && source.kind === 'phoenix');
+  const frostmiteSplash = !!(battle.nativeFrostmites && source.kind === 'frostmite');
+  const miteSplash = nativeMiteJump(battle, source.kind);
+  const meteorSplash = !!(battle.nativeMeteorThrows && source.kind === 'meteorgolem');
+  const bowlerSplash = !!(battle.nativeBowlerBoulders && source.kind === 'bowler');
+  const bothLayers = miteSplash || meteorSplash;
+  // Native defender-targeted shots retain their captured direct hit on either defender layer.
+  if (p.targetDefender) {
+    const defender = battle.defenders?.find((d) => d.id === p.targetId);
+    if (defender && defender.hp > 0 && defender.spawnedAt <= p.impact + 1e-9) {
+      if (battle.nativeAttackerHitPoison) tickDefenderHitPoison(defender, p.impact);
+      hurtDefender(
+        battle,
+        defender,
+        p.damage,
+        rocketSplash ||
+          phoenixSplash ||
+          bothLayers ||
+          bowlerSplash ||
+          (battle.nativeHeroDefenderAttacks && isHeroUnitKind(source.kind))
+          ? p.impact
+          : undefined,
+      );
+      if (battle.nativeDefenderFrost && source.frost)
+        applyDefenderFrost(defender, source.frost, p.impact);
+      if (battle.nativeAttackerHitPoison && defender.hp > 0) {
+        const poison = nativeHitPoison(s);
+        if (poison) applyDefenderHitPoison(defender, poison, p.impact);
+      }
+    }
+  }
   const target = p.targetBuilding ? battle.buildings.find((b) => b.id === p.targetId) : undefined;
   if (target && target.hp > 0) {
-    ctx.damageBuilding(target, p.damage * damageMultiplier(s, target), p.impact);
-    applyFrost(battle, s, target);
+    ctx.damageBuilding(target, p.damage * damageMultiplier(battle, s, target, p.impact), p.impact);
+    if (battle.nativeProjectileFrost && source.frost)
+      applyFrost(
+        battle,
+        { frostTime: source.frost.seconds, frostPercent: source.frost.percent },
+        target,
+        p.impact,
+      );
+    else applyFrost(battle, s, target);
   }
-  if (p.splash)
+  if (p.splash && !(phoenixSplash && p.toAir))
     for (const b of battle.buildings)
-      if (b.id !== p.targetId && b.hp > 0 && !isTrap(b.kind) && distanceTo(p, b) <= p.splash)
-        ctx.damageBuilding(b, p.damage * damageMultiplier(s, b), p.impact);
-  if (p.splash) damageDefenders(battle, p, p.damage, p.splash, 'ground');
+      if (b.id !== p.targetId && b.hp > 0 && !isTrap(b.kind) && distanceTo(p, b) <= p.splash) {
+        ctx.damageBuilding(b, p.damage * damageMultiplier(battle, s, b, p.impact), p.impact);
+        if (frostmiteSplash) applyFrost(battle, s, b, p.impact);
+      }
+  if (p.splash)
+    damageDefenders(
+      battle,
+      p,
+      p.damage,
+      p.splash,
+      bothLayers ? 'both' : (rocketSplash || phoenixSplash) && p.toAir ? 'air' : 'ground',
+      (rocketSplash || phoenixSplash || bothLayers || bowlerSplash) && p.targetDefender
+        ? p.targetId
+        : undefined,
+      rocketSplash || phoenixSplash || bothLayers || bowlerSplash ? p.impact : undefined,
+    );
+  if (frostmiteSplash && p.splash)
+    for (const defender of battle.defenders ?? [])
+      if (distance2D(defender.x - p.x, defender.y - p.y) <= p.splash)
+        applyDefenderFrost(defender, { seconds: s.frostTime, percent: s.frostPercent }, p.impact);
+  if (meteorSplash) releaseMeteorLanding(ctx, p.id);
   const projectile = nativeRow('projectiles', source.name);
   const hitSpell = text(projectile, 'HitSpell');
   if (hitSpell)
@@ -1145,25 +1843,29 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
       const along = (bx * dx + by * dy) / length;
       const across = Math.abs(bx * dy - by * dx) / length;
       if (along >= 0 && along <= reach && across <= radius + BUILDINGS[b.kind].size / 2)
-        ctx.damageBuilding(b, p.damage * damageMultiplier(s, b), p.impact);
+        ctx.damageBuilding(b, p.damage * damageMultiplier(battle, s, b, p.impact), p.impact);
     }
   }
   const bounced = source.bounce ?? 0;
   if (s.bounces > 1 && bounced + 1 < s.bounces && s.bounceDistance > 0) {
-    const dx = p.x - p.fromX,
-      dy = p.y - p.fromY,
+    const fixedBowler = battle.nativeBowlerBoulders && source.kind === 'bowler';
+    const aim = fixedBowler ? (source.bowlerAim ?? p) : p;
+    const dx = aim.x - p.fromX,
+      dy = aim.y - p.fromY,
       len = distance2D(dx, dy) || 1;
-    const x = p.x + (dx / len) * s.bounceDistance,
-      y = p.y + (dy / len) * s.bounceDistance;
+    const x = aim.x + (dx / len) * s.bounceDistance,
+      y = aim.y + (dy / len) * s.bounceDistance;
     let next: Building | undefined,
       best = Infinity;
-    for (const b of battle.buildings) {
-      if (b.hp <= 0 || isTrap(b.kind) || b.id === p.targetId || !targetableBuilding(battle, b))
-        continue;
-      const d = distanceTo({ x, y }, b);
-      if (d <= Math.max(0.5, s.splash) + 1e-9 && d < best) {
-        best = d;
-        next = b;
+    if (!fixedBowler) {
+      for (const b of battle.buildings) {
+        if (b.hp <= 0 || isTrap(b.kind) || b.id === p.targetId || !targetableBuilding(battle, b))
+          continue;
+        const d = distanceTo({ x, y }, b);
+        if (d <= Math.max(0.5, s.splash) + 1e-9 && d < best) {
+          best = d;
+          next = b;
+        }
       }
     }
     launchProjectile(
@@ -1179,7 +1881,7 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
         x,
         y,
         damage: p.damage,
-        splash: Math.max(0.5, s.splash),
+        splash: fixedBowler ? s.splash : Math.max(0.5, s.splash),
       },
       ctx.effect,
       p.impact,
@@ -1201,12 +1903,24 @@ function stepLifecycle(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at:
         until = (u.spawnedAt ?? at) + duration;
       if (flag(row, 'IsInvisible')) effects.invisibleUntil = until;
       if (num(row, 'SpeedBoost') || num(row, 'BoostDamagePercentage'))
-        effects.boost = {
-          until,
-          speed: num(row, 'SpeedBoost') / 100,
-          damage: num(row, 'BoostDamagePercentage') / 100,
-          attackSpeed: 0,
-        };
+        effects.boost = battle.nativeRageRules
+          ? mergeBoost(
+              effects.boost,
+              `deployment:${ability.name}`,
+              {
+                until,
+                speed: num(row, 'SpeedBoost') / 100,
+                damage: num(row, 'BoostDamagePercentage') / 100,
+                attackSpeed: 0,
+              },
+              at,
+            )
+          : {
+              until,
+              speed: num(row, 'SpeedBoost') / 100,
+              damage: num(row, 'BoostDamagePercentage') / 100,
+              attackSpeed: 0,
+            };
     }
   }
   if (s.aura && state.aura === undefined) {
@@ -1229,7 +1943,11 @@ function stepLifecycle(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at:
   if (s.bunker && s.bunkerCount > 0) stepBunker(ctx, u, s, at);
   if (s.evolveTo && s.evolveTime > 0 && at + 1e-9 >= (u.spawnedAt ?? 0) + s.evolveTime && u.hp > 0)
     evolve(ctx, u, s);
-  if (s.spawnWhenDamaged > 0 && s.ability) stepDamageSpawns(ctx, u, s, at, false);
+  if (
+    s.ability &&
+    (s.spawnWhenDamaged > 0 || (battle.nativeElectromites && u.kind === 'superyeti'))
+  )
+    stepDamageSpawns(ctx, u, s, at, false);
 }
 
 function stepSummons(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: number) {
@@ -1237,9 +1955,28 @@ function stepSummons(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: n
   const state = u.native!;
   state.summonAt ??= (u.spawnedAt ?? at) + s.summonDelay;
   const kind = unitKindForName(s.summon) as UnitKind | undefined;
-  if (!kind) return;
+  if (
+    !kind ||
+    (kind === 'booger' && !battle.nativeSneezyController) ||
+    (kind === 'frostmite' && !battle.nativeFrostmites)
+  )
+    return;
+  const owner =
+    battle.nativePetSummonRecall && isPetUnitKind(u.kind)
+      ? battle.nativeHeroes?.find((hero) => hero.petId === u.id)
+      : undefined;
+  const summonOwner = owner
+    ? (owner.petSummonerId ??= u.id)
+    : battle.nativeWitchRecall && (u.kind === 'witch' || u.kind === 'superwitch')
+      ? (state.summonerId ?? u.id)
+      : u.id;
   while (state.summonAt <= at + 1e-9 && u.hp > 0) {
-    const alive = battle.units.filter((m) => m.hp > 0 && m.native?.owner === u.id).length;
+    let alive = 0;
+    for (const member of battle.units)
+      if (member.hp > 0 && member.native?.owner === summonOwner) alive++;
+    if (battle.nativeSneezyController && u.kind === 'sneezy')
+      for (const spawn of battle.nativePendingSpawns ?? [])
+        if (spawn.owner === summonOwner) alive++;
     const lifetime = state.summoned ?? 0;
     if (s.summonLifetimeLimit > 0 && lifetime >= s.summonLifetimeLimit) {
       if (s.diesWhenSpawnLimitReached) {
@@ -1250,9 +1987,34 @@ function stepSummons(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: n
     }
     const room = Math.max(0, (s.summonLimit || Infinity) - alive);
     const count = Math.min(s.summonCount || 1, room);
+    if (battle.nativeSneezyController && u.kind === 'sneezy') {
+      // A full roster keeps the cooldown ready; a later vacancy starts a fresh wind-up now.
+      if (count <= 0) break;
+      if (state.summonAt < at - 1e-9) state.summonAt = at;
+    }
+    if (battle.nativeSneezyController && u.kind === 'sneezy' && count > 0)
+      state.sneezySummon = { at: state.summonAt, until: state.summonAt + s.summonTime };
     for (let i = 0; i < count; i++) {
       const p = ringPoint(battle, u, lifetime + i, count, s.secondaryDistance || 1, false);
-      spawnNativeUnit(ctx, kind, s.summonLevel, p.x, p.y, state.summonAt + s.summonTime, u.id);
+      if (battle.nativeSneezyController && u.kind === 'sneezy')
+        (battle.nativePendingSpawns ??= []).push({
+          kind,
+          level: s.summonLevel,
+          x: p.x,
+          y: p.y,
+          at: state.summonAt + s.summonTime,
+          owner: summonOwner,
+        });
+      else
+        spawnNativeUnit(
+          ctx,
+          kind,
+          s.summonLevel,
+          p.x,
+          p.y,
+          state.summonAt + s.summonTime,
+          summonOwner,
+        );
     }
     state.summoned = lifetime + count;
     state.summonAt += s.summonCooldown + s.summonTime;
@@ -1306,13 +2068,30 @@ function stepBunker(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: nu
     const index = state.released ?? 0;
     const due = start + (index + 1) * interval;
     if (due > at + 1e-9) break;
-    const p = ringPoint(ctx.battle, u, index, 6, s.bunkerDistance || 1, false);
+    const p =
+      ctx.battle.nativeFurnaceSpawnGeometry && u.kind === 'furnace'
+        ? furnaceReleasePoint(u, index, s.bunkerDistance || 1)
+        : ringPoint(ctx.battle, u, index, 6, s.bunkerDistance || 1, false);
     spawnNativeUnit(ctx, kind, s.level, p.x, p.y, due, u.id);
     state.released = index + 1;
   }
   const from = Math.max(start, state.drainAt ?? start);
   if (at > from) {
-    u.hp -= (u.maxHp * (at - from)) / s.bunkerDecay;
+    let decay = (u.maxHp * (at - from)) / s.bunkerDecay;
+    const extra = state.effects?.extraHp;
+    if (
+      ctx.battle.nativeFurnaceAuraDecay &&
+      u.kind === 'furnace' &&
+      extra &&
+      extra.until > at + 1e-9 &&
+      extra.amount > 0
+    ) {
+      // Degeneration spends bonus health at the fixed base rate; it is not an enemy hit.
+      const absorbed = Math.min(decay, extra.amount);
+      extra.amount -= absorbed;
+      decay -= absorbed;
+    }
+    u.hp -= decay;
     state.drainAt = at;
   }
   if (u.hp <= 0) u.defeatedAt ??= at;
@@ -1423,26 +2202,44 @@ function stepRuinWitch(
 }
 
 /** Scheduled arrivals that no longer depend on their creator being alive. */
+function materializePending(ctx: NativeTroopContext, spawn: NativePendingSpawn) {
+  if (spawn.cloneUntil !== undefined && spawn.cloneUntil <= ctx.battle.elapsed + 1e-9) return;
+  const unit = spawnNativeUnit(
+    ctx,
+    spawn.kind as UnitKind,
+    spawn.level,
+    spawn.x,
+    spawn.y,
+    spawn.at,
+    spawn.owner,
+  );
+  if (spawn.hp !== undefined) unit.hp = Math.min(unit.maxHp, spawn.hp);
+  if (spawn.cloneUntil !== undefined) {
+    (unit.native ??= {}).cloneUntil = spawn.cloneUntil;
+    unit.summoned = true;
+  }
+}
+/** A thrown half cannot act before the packet's direct hit and splash resolve. */
+function releaseMeteorLanding(ctx: NativeTroopContext, projectileId: string) {
+  const due =
+    ctx.battle.nativePendingSpawns?.filter((spawn) => spawn.projectileId === projectileId) ?? [];
+  if (!due.length) return;
+  ctx.battle.nativePendingSpawns = ctx.battle.nativePendingSpawns!.filter(
+    (spawn) => spawn.projectileId !== projectileId,
+  );
+  for (const spawn of due) materializePending(ctx, spawn);
+}
 function stepPendingSpawns(ctx: NativeTroopContext) {
   const battle = ctx.battle;
   if (!battle.nativePendingSpawns?.length) return;
-  const due = battle.nativePendingSpawns.filter((spawn) => spawn.at <= battle.elapsed + 1e-9);
+  const due = battle.nativePendingSpawns.filter(
+    (spawn) => !spawn.projectileId && spawn.at <= battle.elapsed + 1e-9,
+  );
   if (!due.length) return;
   battle.nativePendingSpawns = battle.nativePendingSpawns.filter(
-    (spawn) => spawn.at > battle.elapsed + 1e-9,
+    (spawn) => !!spawn.projectileId || spawn.at > battle.elapsed + 1e-9,
   );
-  for (const spawn of due) {
-    const unit = spawnNativeUnit(
-      ctx,
-      spawn.kind as UnitKind,
-      spawn.level,
-      spawn.x,
-      spawn.y,
-      spawn.at,
-      spawn.owner,
-    );
-    if (spawn.hp !== undefined) unit.hp = Math.min(unit.maxHp, spawn.hp);
-  }
+  for (const spawn of due) materializePending(ctx, spawn);
 }
 
 function evolve(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats) {
@@ -1493,7 +2290,19 @@ function spawnSecondaries(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, 
   const kind = unitKindForName(s.secondary) as UnitKind | undefined;
   if (!kind) return;
   for (let i = 0; i < s.secondaryCount; i++) {
-    const p = ringPoint(ctx.battle, u, i, s.secondaryCount, s.secondaryDistance, s.secondaryRandom);
+    const stable = !!(
+      ctx.battle.nativeHoundSpawnGeometry &&
+      (u.kind === 'lavahound' || u.kind === 'icehound')
+    );
+    const p = ringPoint(
+      ctx.battle,
+      u,
+      i,
+      s.secondaryCount,
+      s.secondaryDistance,
+      s.secondaryRandom,
+      stable,
+    );
     spawnNativeUnit(ctx, kind, s.level, p.x, p.y, at, u.id);
   }
 }
@@ -1563,16 +2372,25 @@ function stepNativeHealer(
 ) {
   const battle = ctx.battle;
   const units = battle.units;
+  const previousTarget = u.healTarget;
   const ally = (a: Unit) =>
-    a.id !== u.id && a.hp > 0 && !a.ejected && (a.spawnedAt ?? 0) <= battle.elapsed + 1e-9;
-  let target: Unit | undefined;
-  if (u.healTarget !== undefined)
+    a.id !== u.id &&
+    a.hp > 0 &&
+    !a.ejected &&
+    (a.spawnedAt ?? 0) <= battle.elapsed + 1e-9 &&
+    healingEligible(battle, a);
+  const boundMaster =
+    battle.nativeUnicornController && u.kind === 'unicorn' ? petAnchor(battle, u)?.hero : undefined;
+  let target = boundMaster && ally(boundMaster) ? boundMaster : undefined;
+  const bound = !!target;
+  if (bound) u.healTarget = target!.id;
+  if (!bound && u.healTarget !== undefined)
     for (const a of units)
       if (a.id === u.healTarget && ally(a)) {
         target = a;
         break;
       }
-  if (!target || target.hp >= target.maxHp) {
+  if (!bound && (!target || target.hp >= target.maxHp)) {
     // The first of the old sort by (already full, distance, id): a single pass over the
     // roster keeps the same winner without the filtered copy and the O(n log n) sort.
     target = undefined;
@@ -1593,6 +2411,10 @@ function stepNativeHealer(
     }
     u.healTarget = target?.id;
   }
+  if (battle.nativeHealerRoutes && previousTarget !== target?.id) {
+    u.path = [];
+    u.pathAt = 0;
+  }
   if (!target) {
     u.attacking = false;
     return;
@@ -1600,12 +2422,48 @@ function stepNativeHealer(
   const distance = distance2D(target.x - u.x, target.y - u.y);
   if (distance > s.range + 1e-9) {
     u.attacking = false;
-    moveToward(u, target, Math.min(speed * dt, distance - s.range));
+    if (battle.nativeHealerRoutes && !s.flying) {
+      if (!u.path.length || u.pathAt <= 0) {
+        if (ctx.pathBudget && ctx.pathBudget.count >= ctx.pathBudget.limit) {
+          u.pathAt = Math.min(Math.max(u.pathAt, 0.05), 0.15);
+        } else {
+          if (ctx.pathBudget) ctx.pathBudget.count++;
+          // A friendly unit is a point, even if its kind also names a building.
+          u.path = findPath(
+            u,
+            { x: target.x, y: target.y },
+            routeBuildings(ctx, s.jumper),
+            s.range,
+            !!battle.nativeSubtiles,
+          );
+          u.pathAt = 0.3;
+        }
+      }
+      let travel = Math.min(speed * dt, distance - s.range);
+      while (u.path.length && travel > 0) {
+        const point = u.path[0],
+          length = distance2D(point.x - u.x, point.y - u.y);
+        if (length <= travel) {
+          u.x = point.x;
+          u.y = point.y;
+          u.path.shift();
+          travel -= length;
+        } else {
+          moveToward(u, point, travel);
+          travel = 0;
+        }
+      }
+    } else moveToward(u, target, Math.min(speed * dt, distance - s.range));
     return;
   }
+  if (battle.nativeHealerRoutes) u.path = [];
   u.attacking = true;
   if (u.cooldown > 0) return;
   u.cooldown = s.rate * unitAttackIntervalScale(u, battle.elapsed);
+  if (battle.nativeHealingProjectiles && s.projectile) {
+    launchNativeHealing(ctx, u, s, target, heal);
+    return;
+  }
   const hits = [target];
   const bounceReach =
     tiles(nativeRow('projectiles', s.projectile || 'BattleDruidProjectile'), 'MaxBounceDistance') ||
@@ -1629,8 +2487,12 @@ function stepNativeHealer(
   }
   for (const ally of hits) {
     const scale = ally.hero ? s.heroMultiplier : 1;
+    const contribution =
+      battle.nativeUnicornController && u.kind === 'unicorn'
+        ? healerContribution(battle, ally, u.id)
+        : 1;
     if (!nativeUnitStats(ally.kind, unitLevel(battle, ally)).immuneToHealing)
-      healUnit(battle, ally, heal * scale);
+      healUnit(battle, ally, heal * scale * contribution);
   }
   ctx.effect({
     type: 'hit',
@@ -1641,6 +2503,7 @@ function stepNativeHealer(
     sourceId: u.id,
     targetId: target.id,
     color: 0x8dff8a,
+    weapon: 'healing',
   });
 }
 
@@ -1648,6 +2511,7 @@ function stepNativeHealer(
 export function targetableUnit(battle: Battle, u: Unit) {
   if (u.hp <= 0) return false;
   if (!battle.nativeRoster || !u.native) return true;
+  if (u.native.untargetable) return false;
   if ((u.native.effects?.invisibleUntil ?? 0) > battle.elapsed + 1e-9) return false;
   if (nativeBehavior(battle, u.kind) && statsFor(battle, u).underground && !u.native.surfaced)
     return false;
@@ -1656,6 +2520,12 @@ export function targetableUnit(battle: Battle, u: Unit) {
 
 export function stepNativeBattle(ctx: NativeTroopContext) {
   const battle = ctx.battle;
+  if (battle.nativeMeteorFlights)
+    battle.nativeMeteorFlights = battle.nativeMeteorFlights.filter(
+      (shot) => shot.impact + 10 >= battle.elapsed - 1e-9,
+    );
+  if (battle.nativeAttackerHitPoison)
+    for (const defender of battle.defenders ?? []) tickDefenderHitPoison(defender, battle.elapsed);
   // Clone Spell copies expire silently: no death damage, splits or spells.
   for (const u of battle.units)
     if (
@@ -1673,5 +2543,10 @@ export function stepNativeBattle(ctx: NativeTroopContext) {
   });
   stepNativeDeaths(ctx);
   stepNativeChains(ctx);
+  stepElectromiteArcs(ctx);
+  stepElectroDragonArcs(ctx);
+  stepSuperWizardBranches(ctx);
+  if (ctx.battle.nativeGiantArrow || ctx.battle.nativeDarkOrb) stepHeroPiercing(ctx);
+  else stepArcherPiercing(ctx);
   stepPendingSpawns(ctx);
 }

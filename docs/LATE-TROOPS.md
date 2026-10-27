@@ -45,7 +45,7 @@ projectiles 71cda0e457ad88a6772f6421a22419b24d6bcf78d0ed305f09184404889a72dc
 
 ## Combat behavior and remaining approximations
 
-Healers choose a living ground ally in a group with more than two housing spaces, or a hero. They follow directly through the air, stop at healing range, and retain a living patient. Each pulse flies at 12 tiles/s to the patient's launch location and restores living ground allies within 1.5 tiles when it arrives. A pulse survives the Healer's death. Air units, buildings and defeated units are excluded; health cannot exceed maximum HP. Heroes receive 55%. Rage on the Healer increases outgoing healing; Rage on the recipient does not multiply incoming healing.
+Healers choose a living ground ally in a group with more than two housing spaces, or a hero. They follow directly through the air, stop at healing range, and retain a living patient. Each pulse flies at 12 tiles/s to the patient's launch location and restores living ground allies within 1.5 tiles when it arrives. A pulse survives the Healer's death. Air units, buildings and defeated units are excluded; health cannot exceed maximum HP. Heroes receive 55% at Healer levels 1–4; version 98 applies the higher source ratios at later levels. Rage on the Healer increases outgoing healing; Rage on the recipient does not multiply incoming healing.
 
 The marginal contribution of successive Healers is 100%, 100%, 90%, 90%, 70%, 40%, 10%, then 0%. This implementation orders contributing source IDs deterministically for each recipient. Nearby in-range Healers and pulses in flight contribute to the group count. The acquisition score uses distance plus a local 0.75-tile penalty for a full-health candidate. These targeting and allocation details are deterministic approximations, not a reconstruction of the closed-source native AI. The data's `USE_SMARTER_HEALER=TRUE` does not disclose that algorithm. Spell healing remains independent of Healer stacking.
 
@@ -68,3 +68,38 @@ Save version stays 4. Migration adds absent troop counts to armies, Last Army, p
 Model tests cover all nine level records, Barracks and Laboratory gates, payment and reload, pulse flight and ground-only healing, stacking, hero/Rage factors, targeting, battle completion, direct breath splash, wall strikes, malformed imports and deterministic replay. Asset tests verify all twelve frames. Browser cases exercise the real training, research, info and keyboard controls at desktop, portrait phone and two landscape sizes, alongside effects, animation, pause, reduced motion and cleanup. The campaign matrix includes the original four armies plus a 200-space Healer/P.E.K.K.A army and ten Dragons: 288 battles over twelve stages and four deployment approaches. See the latest execution evidence in [QA.md](QA.md).
 
 The two newly tested TH8 compositions each clear all 48 stage/approach combinations with three stars. They are substantially stronger against these early authored maps than the earlier mixed army. This is reachability evidence, not proof of native campaign parity or balanced multiplayer matchups. Later campaign content and stronger defensive layouts remain needed.
+
+## Version 98 source Hero healing ratios
+
+The pinned `characters.Healer.HeroDamageMultiplier` rows and the
+[Healer reference](../reference/official-wiki/troops/healer.md) give the level-dependent
+Hero healing ratio. Version 98 replaces the fixed 55% used at every Healer level:
+
+| Healer level | Hero healing |
+| --- | --- |
+| 1–4 | 55% |
+| 5 | 67% |
+| 6 | 78% |
+| 7 | 87% |
+| 8 | 90% |
+| 9 | 94% |
+| 10 | 98% |
+| 11 | 108% |
+
+Each pulse captures the casting Healer's ratio before flight. An explicitly leveled summoned
+Healer uses its own level; an army Healer uses the carried army level. Source death, removal
+or later lookup changes cannot alter the launched pulse. The ratio applies only to Hero
+recipients, after the source's outgoing healing and shared stacking contribution. Nearby
+eligible ordinary troops receive the full amount, and recovery still caps at maximum HP.
+Versions 97 and earlier retain their original 55% and their original packet shape.
+
+The inspection panel shows the source Hero HPS and percentage for the current Healer level,
+or the historical 55% while viewing an older battle. Druid inspection also uses its existing
+105–115% source Hero ratio and identifies its ground-and-air targets. This corrects Druid
+readouts without changing its combat healing rules.
+
+`tests/healer-hero-scaling.test.ts` checks every source level, caster removal, explicit summon
+levels, mixed-tier stacking, caps and historical packets. Actual Cannon wounds and subsequent
+Healer recovery reproduce through portable files and reverse seeks at levels 5 and 11.
+Desktop/phone browser checks verify the captured ratio, HP gain, reduced motion, historical
+version 97 recovery, and high-level Healer/Druid inspection values.

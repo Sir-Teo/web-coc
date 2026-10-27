@@ -46,6 +46,9 @@ export default defineConfig({
           // would pull shared modules (and a modulepreload) into every player's boot.
           if (id.includes('src/dev/')) return undefined;
           if (id.includes('src/ui/')) return 'ui';
+          // Both lazy character entries use this helper. Keep it in the cached startup
+          // UI so neither entry retains a failed static import after a URL retry.
+          if (id.endsWith('/src/game/character-graph-entry.ts')) return 'ui';
           // Startup JSON is split out of the application chunk so the multi-megabyte
           // tables download in parallel with the code and stay cached across code-only
           // deploys. JSON only needed by lazy chunks is left to them.

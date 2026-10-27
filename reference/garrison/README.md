@@ -214,7 +214,7 @@ Electro Dragon 3, Golem 8, Witch 4, Bowler 4, Lava Hound 6 (Defensive Lava Hound
 
 All mechanics below cite the pinned older engine reconstruction [bns34/Supercell.Magic-my-turn@52c5953](https://github.com/bns34/Supercell.Magic-my-turn/tree/52c5953f5e5802c64ac36e53d5599f8700976085) (client 9.256.x; Electro Dragon, Electro Titan and the Royal Ghost postdate it). No native executable parity is claimed.
 
-**Split attack timer (these families only).** [LogicAttackerItemData](https://github.com/bns34/Supercell.Magic-my-turn/blob/52c5953f5e5802c64ac36e53d5599f8700976085/Supercell.Magic.Logic/Data/LogicAttackerItemData.cs) splits `AttackSpeed` into a post-hit recovery and a hit-timer windup. The recovery is `CoolDownOverride`, else `AttackSpeed − 1500` above 1,500 ms, or `AttackSpeed − 200` for healing rows. It also turns `NewTargetAttackDelay` into an initial charge, `clamp(AttackSpeed − delay, 0, AttackSpeed)`. [LogicCombatComponent](https://github.com/bns34/Supercell.Magic-my-turn/blob/52c5953f5e5802c64ac36e53d5599f8700976085/Supercell.Magic.Logic/GameObject/Component/LogicCombatComponent.cs) freezes the hit timer during recovery and strikes when the windup is full. The period stays `AttackSpeed`. A fresh target is struck after `recovery left + windup − charge`. The first hits are Electro Dragon 2.875 s (explicit 625 ms recovery), Golem/Golemite/Lava Hound/MOMMA 1.5 s, Bowler 0.4 s (1,100 ms charge, 700 ms recovery), and Witch 0.7 s. The Royal Ghost waits 1.0 s: its 2,400 ms delay exceeds `AttackSpeed`, so the clamped charge is 0. The same component keeps character targets in range up to `AttackRange + 256` units (half a tile). [LogicMovementComponent.GetAttackDist](https://github.com/bns34/Supercell.Magic-my-turn/blob/52c5953f5e5802c64ac36e53d5599f8700976085/Supercell.Magic.Logic/GameObject/Component/LogicMovementComponent.cs) approaches to `range − 32` units. Leaving range resets the hit timer only while it is still zero, so a windup that has started completes on its target while the unit chases. **Finding:** the earlier reading used by the frozen families (`wait = AttackSpeed − NewTargetAttackDelay`, no tolerance, cancellation on leaving range) coincides with this one for Dragon 7 and Balloon 8. It does not for PEKKA 8 (1.8 s rather than 1.5 s) or Valkyrie 7 (1.2 s rather than 0.3 s). Those two remain byte-identical here, pending a versioned decision.
+**Split attack timer (these families only).** [LogicAttackerItemData](https://github.com/bns34/Supercell.Magic-my-turn/blob/52c5953f5e5802c64ac36e53d5599f8700976085/Supercell.Magic.Logic/Data/LogicAttackerItemData.cs) splits `AttackSpeed` into a post-hit recovery and a hit-timer windup. The recovery is `CoolDownOverride`, else `AttackSpeed − 1500` above 1,500 ms, or `AttackSpeed − 200` for healing rows. It also turns `NewTargetAttackDelay` into an initial charge, `clamp(AttackSpeed − delay, 0, AttackSpeed)`. [LogicCombatComponent](https://github.com/bns34/Supercell.Magic-my-turn/blob/52c5953f5e5802c64ac36e53d5599f8700976085/Supercell.Magic.Logic/GameObject/Component/LogicCombatComponent.cs) freezes the hit timer during recovery and strikes when the windup is full. The period stays `AttackSpeed`. A fresh target is struck after `recovery left + windup − charge`. The first hits are Electro Dragon 2.875 s (explicit 625 ms recovery), Golem/Golemite/Lava Hound/MOMMA 1.5 s, Bowler 0.4 s (1,100 ms charge, 700 ms recovery), and Witch 0.7 s. The Royal Ghost waits 1.0 s: its 2,400 ms delay exceeds `AttackSpeed`, so the clamped charge is 0. The same component keeps character targets in range up to `AttackRange + 256` units (half a tile). [LogicMovementComponent.GetAttackDist](https://github.com/bns34/Supercell.Magic-my-turn/blob/52c5953f5e5802c64ac36e53d5599f8700976085/Supercell.Magic.Logic/GameObject/Component/LogicMovementComponent.cs) approaches to `range − 32` units. Leaving range resets the hit timer only while it is still zero, so a windup that has started completes on its target while the unit chases. **Finding:** the earlier reading used by the frozen families (`wait = AttackSpeed − NewTargetAttackDelay`, no tolerance, cancellation on leaving range) coincides with this one for Dragon 7 and Balloon 8. It does not for PEKKA 8 (1.8 s rather than 1.5 s) or Valkyrie 7 (1.2 s rather than 0.3 s). Those two remain byte-identical in this historical boundary; recording version 152 below enables their split timing.
 
 | Family                | Pinned values used                                                                    | Special mechanics and interpretation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | --------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -316,3 +316,311 @@ Local exit choice: sample sixteen directions on each cloud boundary, choose the 
 The shared avoidance rule now also covers idle defending Heroes and Skeleton Trap defenders, both explicitly named by the pinned Poison reference. Heroes wait clear of a poisoned home point, then resume their existing return-home behavior after the native cloud deadline. Static cloud records last through `firstHit + (NumberOfHits - 1) × interval + max(BoostTimeMS, interval)`, so leaving the damage area does not make a Hero immediately return to the active cloud. Eligible attackers still take priority, and Freeze still holds movement. Native health and movement speeds are unchanged; weak Skeletons can die while escaping. Version 64 and earlier keep their previous behavior. Guardian avoidance is not inferred from the other classes.
 
 `tests/idle-defender-avoidance.test.ts` covers ground/air escape, native health, home waiting and return, combat priority, Freeze and exact portable backward seeks. `tests/browser/idle-defender-avoidance.spec.ts` checks original Hero and Skeleton bodies, expiry, seeks, old playback and cleanup at desktop and phone sizes.
+
+## Shared attacker protection (recording version 143+)
+
+Released Clan Castle troops now pass incoming damage through the same attacker protection
+rules as defenses: invulnerability, damage reduction, temporary hitpoints and actual HP damage
+accounting. Previously their direct, area, chain, death, aura and poison paths subtracted HP
+directly. A real Dragon 7 could therefore injure a Warden during Eternal Tome. Original source
+damage, target layers, event times and the garrison engine's lethal zero floor are retained.
+Poison advances its damage clock while protection is active, so blocked exposure cannot become
+overdue damage after immunity expires. Continuous poison retains the existing end-of-interval
+sampling convention rather than reconstructing sub-interval protection boundaries.
+
+Primary attacks retain their negative defender ID for [Revenge Deck](../revenge-deck/README.md).
+Splash bystanders, chains, death effects, aura pulses and poison do not count as direct hits.
+Versions 142 and earlier preserve raw garrison damage. The capability is recorded only for a
+setup containing garrisons, leaving unrelated recording state unchanged.
+
+Coverage uses native Dragon, P.E.K.K.A, Valkyrie, Balloon, Electro Dragon, Electro Titan and
+Headhunter damage, with full protection, partial shields, temporary HP and poison expiry.
+An actual Castle release and Eternal Tome input verifies protection and resumed damage after
+expiry. Portable forward/backward snapshots match in Node and desktop/phone Chromium, including
+historical playback, original Hero art and read-only reduced-motion redraws.
+
+## Original later-defender primary audio (recording version 146+)
+
+The shared [troop sound importer](../../scripts/import-native-troop-sounds.py) now captures all
+21 enabled garrison kinds at their 22 source VisualLevels. Each binding records its actual
+character and row ordinal, including Defensive Super Minion 9 at row 6 and Defensive Lava
+Hound 6. Golden Dragon, MOMMA and the trap-born Royal Ghost are included without becoming
+attacking troop roster entries. All input tables and Ogg bytes use the existing pinned
+[client manifest](../full-client/manifest.json).
+
+The 19 later kinds play their declared deploy, committed attack, successful hit and death
+samples. Projectile hits use captured `hitAt`, never the earlier launch time, and missed
+targets produce no hit cue. Electro Dragon secondary arcs additionally play their original
+chain and target-hit samples at each retained jump time. Stable attack ordinals keep cue keys
+through history pruning; cue selection is read-only and reconstructs after seeks. Multiple
+sound rows use the shared stable alternative-take convention. The existing Dragon/Balloon
+sound path is retained exactly, and versions 145 and earlier keep later defenders silent.
+
+Only three additional unchanged Ogg files are needed, totaling **41,338 bytes**:
+`groy_dep_01.ogg`, `roysword_01.ogg` and `roysword_vo_01.ogg`. The catalog now contains **371
+effects and 357 sounds (5.09 MiB)**; every other file is reused from the attacking troop pack.
+An unreleased reserve warms its own source effects plus Golem/Lava Hound children and Witch
+summons. An untriggered Ghost Trap warms Royal Ghost's samples. Existing sample decoding,
+integrity, bounded retry, pause, seek, speed and voice limits own playback; loaded files are
+shared with attacking troops. Defender-count changes also invalidate the loader's roster
+cache. Unrelated setups request no additional samples.
+
+Coverage checks all source bindings, the 19 newly sounding kinds, projectile success/misses,
+chain clocks, expiry, future-event suppression, old playback and reserve/child preloading.
+Actual Castle releases and a Ghost Trap/Lightning recording reconstruct complete portable
+snapshots with exact version-145 physical equality after removing the audio capability flag.
+Desktop/phone Chromium checks original bodies, actual Web Audio gain/pitch at replay speed,
+pause, backward seeks, historical silence and reconnect recovery without advancing playback.
+
+This version-146 boundary covers primary-event audio. Version 154 below adds Electro Dragon charge audio. Version 155 below adds Bowler's `trollAttack`. Witch summon effects, Electro Titan aura, death-spell effects and movement
+still need their own source timing adapters. No native executable sound-scheduler parity is
+claimed. The source profiles imported here all have zero `SoundDelay`; their existing combat
+event clocks remain the local presentation alignment.
+
+## Trap-born damage protection (recording version 147+)
+
+Royal Ghosts use the garrison combat engine, but Ghost Traps can exist in a layout with no
+Castle reserve. Version 143's protection gate checked only the reserve, leaving those Ghosts
+on raw HP subtraction. A real trap release dealt 720 damage to a Giant with Eternal Tome's
+100% shield active, and the same damage failed to advance a King's Snake Bracelet counter.
+
+Version 147 enables the existing shared damage handler for a layout containing `ghost-trap`.
+The same shields, invulnerability, temporary HP and actual-damage accounting now apply to a
+trap-born Ghost. The defender's source stats, attack timing, frost and primary-hit identity
+are retained. Existing Castle setups keep their version-143 boundary; trap-only recordings
+through version 146 preserve their prior damage behavior. Ordinary layouts gain no new state.
+
+Actual Warden/Tome and King/Snake Bracelet recordings cover a trap-only layout with no Castle.
+The protected Giant retains full HP, damage resumes after Tome expires, and one unshielded
+720-damage hit releases two source Snakes. Complete forward/backward portable snapshots match
+in Node and desktop/phone Chromium for both versions. Browser checks inspect original Ghost,
+Hero and Snake artwork, reduced motion and read-only redraws. Version 146's audio-only physical
+comparison remains pinned to its own version so this subsequent combat fix is tested separately.
+
+## Melee split timing (recording version 152)
+
+The pinned 18.400.21 `characters.PEKKA` row 8 and `characters.Valkyrie` row 7 both declare
+`AttackSpeed=1800` with no `CoolDownOverride`. Their VisualLevels are 8 and 7. PEKKA has no
+`NewTargetAttackDelay`; Valkyrie declares 600 ms. Their source damage is 610 DPS × 1.8 = 1098
+and 185 DPS × 1.8 = 333. The archived [PEKKA dossier](../official-wiki/troops/pekka.md),
+revision **625276**, and [Valkyrie dossier](../official-wiki/troops/valkyrie.md), revision
+**624089**, corroborate the troop stats; they do not establish executable first-hit timing.
+
+The pinned older [LogicAttackerItemData](https://github.com/bns34/Supercell.Magic-my-turn/blob/52c5953f5e5802c64ac36e53d5599f8700976085/Supercell.Magic.Logic/Data/LogicAttackerItemData.cs)
+uses `AttackSpeed - 1500` for recovery when the override is absent and the interval exceeds
+1500 ms. It turns a positive new-target delay into `clamp(interval - delay, 0, interval)`
+initial charge. Applied through the existing local split controller:
+
+| Defender | Recovery | Windup | Initial charge | Fresh first hit | Same-target period |
+| -------- | -------- | ------ | -------------- | --------------- | ------------------ |
+| PEKKA 8 | 0.3 s | 1.5 s | 0 | 1.5 s | 1.8 s |
+| Valkyrie 7 | 0.3 s | 1.5 s | 1.2 s | 0.3 s | 1.8 s |
+
+The former frozen path waited 1.8 and 1.2 seconds. Version 152 opts these two families into
+split timing with separately cached stat variants; the unversioned source-reference API
+retains its frozen values. It also uses the controller's half-tile character range tolerance
+and finishes a committed windup while chasing the same target. A Valkyrie spin can still miss
+when the target leaves her one-tile self-centered splash. Damage, area/layer rules, source
+stats, projectiles, and other garrison families retain their prior behavior.
+
+When a fresh target is acquired during recovery, the new melee path captures recovery at the
+start of the step before applying its one attack-time advance. This avoids spending the same
+tick twice. A switch immediately after a hit therefore needs 1.8 s for PEKKA or 0.6 s for
+Valkyrie, including the 0.3 s recovery and the new target's initial charge. Poison/frost and
+Freeze retain the existing action-clock rules. Other split families keep their historical
+recovery accounting. Only carried PEKKA/Valkyrie garrisons enable the adapter; versions 151
+and earlier retain their former controller. The older reconstruction corroborates the local
+interpretation; native 18.400.21 executable timing remains unavailable.
+
+`tests/garrison-melee-timing.test.ts` covers source values, first hits, same-target periods,
+exact damage, recovery on retargeting, range tolerance, committed chase, Freeze, scoped
+allocation and complete current/historical portable reverse seeks. Its portable fixtures use
+real Castle releases, troop deployments and optional Freeze casts in a valid campaign setup.
+`tests/browser/garrison-melee-timing.spec.ts` verifies full battle snapshots, original meshes,
+read-only/reduced rendering and rewind on desktop and phone, including Freeze and thaw.
+
+## Split-family recovery on retargeting (recording version 153)
+
+The same source-derived split timer used above has two phases: post-hit recovery, then the
+new target's initial windup. In the older local path, `recovery` was advanced at the start of
+the tick and the reset `cooldown` then spent the tick again. A target acquired while recovery
+was still running therefore released its next attack one 50 ms update early. Same-target
+periods and first engagements were unaffected. Version 152 already fixed this for PEKKA and
+Valkyrie; version 153 extends the single-advance accounting to the existing split families.
+
+| Family / source VisualLevel | Recovery | Fresh target windup | Total after an immediate switch |
+| --------------------------- | -------- | ------------------- | ------------------------------- |
+| Electro Dragon 3 | 0.625 s | 2.875 s | 3.5 s |
+| Golem 8 | 0.9 s | 1.5 s | 2.4 s |
+| Golemite 8 | 1.5 s | 1.5 s | 3 s |
+| Bowler 4 | 0.7 s | 0.4 s | 1.1 s |
+| Defensive Lava Hound 6 | 0.5 s | 1.5 s | 2 s |
+| MOMMA 1 | 3.5 s | 1.5 s | 5 s |
+
+Values use the pinned 18.400.21 rows and the existing `splitTiming` interpretation of the
+older engine cited above. This corrects local action-time accounting; modern native-executable
+parity is unavailable. The clock uses recovery at the start of the update before spending its
+single poison/frost-scaled attack-time increment. First-hit delays, same-target periods,
+damage, paths, projectiles and source stats retain their existing rules. At a 50% poison
+attack slow, the waits above double; there is still only one clock advance per update.
+
+Only rosters carrying a split family with positive recovery allocate the adapter. Golem
+children inherit it through their battle. Zero-recovery families, unrelated rosters and the
+already corrected version-152 melee path need no new capability. Versions 152 and earlier
+retain their historical timing for the later families.
+
+`tests/garrison-recovery.test.ts` covers all six families, source timing, historical early
+releases, ordinary periods, poison-scaled recovery, scoped allocation and complete portable
+forward/reverse snapshots. Real-recording fixtures deploy a level-1 Archer and Golem, allow
+actual defender fire to kill the Archer, and capture the defender acquiring and attacking its
+new target. No hitpoints, damage or status is injected into portable recordings. The browser
+spec `tests/browser/garrison-recovery.spec.ts` checks complete current/historical snapshots,
+original meshes, rewind and read-only/reduced rendering on desktop and phone.
+
+Actual Electro Dragon and Golem recordings restore the missing 50 ms while matching the
+first attack, target death and switch time exactly. In the Bowler fixture, the projectile
+kills after his recovery has ended, so the next release correctly stays unchanged. Controlled
+Bowler checks separately cover a fresh target acquired while recovery is still positive.
+
+## Electro Dragon charge audio (recording version 154)
+
+The pinned 18.400.21 `characters.Electro Dragon` row 3 declares
+`PreAttackEffect=Electro Dragon Pre Attack`. Its source effect names
+`sfx/electro_dragon_sfx_atk_01.ogg`, volume 0.5, pitch 1 and delay 0. The unchanged 22,389-byte
+sample is already in the shared catalog, pinned by SHA-256
+`e2944a697345e194c07cf0fa3314e6c37e03ab521457d89082a028ba397bba91`.
+The importer now records this extra binding for the defender's actual source row. No audio
+file or effect is added, and the catalog remains 371 effects / 357 samples.
+
+Version 154 captures the current charge's attack ordinal, target ID, active audio age and
+last simulated update. The clock starts after recovery; a tick crossing recovery contributes
+only its active remainder. Audio age then advances by active wall time rather than the
+poison/frost-scaled attack time, matching the existing attacking Electro Dragon convention.
+Full Freeze holds the age and suppresses the cue; resume reconstructs its original sample
+offset. Target loss, release and death retire it. Stable ordinal/target keys distinguish
+charges, and the original attack/impact/chain samples retain their own clocks.
+
+Only carried Electro Dragon garrisons enable and warm this binding. Historical recordings
+through version 153 retain their prior charge silence. Sound lookup and rendering do not
+mutate combat. Normal and Freeze portable recordings match version-153 physical battles
+exactly after removing the charge capability and per-defender audio metadata. The captured
+clock is the local presentation alignment, not a claim of native executable sound-scheduler
+parity. Original pre-attack particle coverage and Bowler's separate `trollAttack` timing
+remain outside this sound binding.
+
+`tests/garrison-pre-attack.test.ts` checks source cue gain/pitch, partial recovery crossings,
+Freeze hold/resume, release silence, reserve preloading, scoped allocation, exact physical
+parity and complete current/historical portable reverse seeks. The browser spec
+`tests/browser/garrison-pre-attack.spec.ts` checks full Node/Chromium snapshots, actual decoded
+Web Audio nodes, 0.06 mixer gain, 2× playback, sample start offsets, pause, rewind, reduced
+motion and historical silence. A blocked 503 sample recovers on reconnect while the portable
+replay stays paused, with unchanged battle state and no autoplay.
+
+## Bowler windup audio (recording version 155)
+
+The pinned 18.400.21 `characters.Bowler` row 4 declares `PreAttackEffect=trollAttack`.
+Its two original alternatives have volume 0.7, pitch 0.98–1.02 and zero delay:
+
+| Original source | Bytes | SHA-256 |
+| --------------- | ----- | ------- |
+| `sfx/rock_troll_throw_01.ogg` | 14,410 | `7d2f694ba4ecc831b1dfb8edfa2525ec0eaf9faf5b093ec85c6fd31441e5c399` |
+| `sfx/rock_troll_throw_02.ogg` | 13,716 | `89b15e79122c8c1a4d65b211b03c006444d6056c6d4d669d945c294f549621a0` |
+
+They are copied unchanged from the source manifest. The shared catalog now has 372 effects
+and 359 samples, with 28,126 new bytes. One take and its pitch are chosen by the existing
+stable key hash; both alternatives are warmed from the reserve.
+
+The older [LogicCombatComponent](https://github.com/bns34/Supercell.Magic-my-turn/blob/52c5953f5e5802c64ac36e53d5599f8700976085/Supercell.Magic.Logic/GameObject/Component/LogicCombatComponent.cs)
+checks `GetPreAttackEffect` in its concrete-target branch while the hit timer advances.
+Its separate no-target group branch has a `hitTime < 64` condition; that condition does not
+justify suppressing Bowler's fresh-target take. The listener bodies are absent from this
+reconstruction, so the exact native sample startup and offset remain unverified.
+
+The local split timer has a 1.5 s full windup but only a 0.4 s fresh-target wait because
+`NewTargetAttackDelay=1100` produces a 1.1 s initial charge. Version 155 preloads that same
+1.1 s phase into fresh-target audio age, then advances active wall time like Electro Dragon.
+This aligns the sample with the existing partial attack animation. A target acquired during
+recovery waits before audio starts; repeat same-target windups start from age zero. This is
+a deterministic local presentation alignment, not native executable scheduler parity.
+
+The takes last approximately 2.435 and 2.348 seconds. Release records the final virtual start
+in a bounded 16-entry history so the original one-shot tail can finish, rather than being cut
+when the projectile launches. Full Freeze holds the active charge's age and suspends that
+cue; already released one-shots retain their own clock. Active target loss/death cancels the
+charge. The source shot, bounce, damage, first-hit and recovery clocks are unchanged.
+
+Only Bowler garrisons enable this adapter. Per-kind warm guards keep version-154 mixed
+Electro Dragon/Bowler rosters from preloading the new Bowler takes. Versions 154 and earlier
+retain their former sound behavior. Attacking Bowler audio and original pre-attack particles
+remain outside this defender binding.
+
+`tests/garrison-bowler-audio.test.ts` checks fresh/repeat phases, stable original takes,
+Freeze, release-tail continuity, unique captured starts, mixed historical warming,
+exact version-154 physical parity and full portable reverse seeks. The browser spec
+`tests/browser/garrison-bowler-audio.spec.ts` verifies complete Node/Chromium states, decoded
+alternatives, 0.084 mixer gain, seeded pitch at replay speed, source sample offsets after
+Freeze and release, pause, rewind, reduced motion, historical silence and paused 503 recovery.
+
+
+## Bowler bounce and shatter audio (recording version 160)
+
+The enabled defending Bowler VisualLevel 4 resolves to the pinned `characters.Bowler` row 4
+and `Projectile=trollBoulder_lvl3`. That projectile declares
+`BounceEffect=trollBoulder_bounce` and `DestroyedEffect=trollBoulder_destroyed`.
+The importer follows the actual resolved character/projectile link; the character's
+`trollBoulderHit` effect itself declares no sound. The projectile effects bind:
+
+| Phase | Original sound | Volume | Pitch | Delay |
+| --- | --- | --- | --- | --- |
+| First ground contact | `sfx/rock_troll_hit_02.ogg` | 50% | 96–104% | 0 |
+| Final landing | `sfx/rock_troll_explo_01.ogg` | 40% | 98–102% | 0 |
+
+The unchanged 17,176-byte bounce sample has SHA-256
+`3b19a27dce6a965dcb7b83bea0b51917ddeeeebaea3fc423bb1beb98ae532687`;
+the 14,242-byte shatter sample has SHA-256
+`412228f1a90526911d899b4c60e5d35c366a1122c28d97b09700a24de9915bcd`.
+Both already ship for [attacking boulders](../attacking-bowler/README.md#original-boulder-impact-audio-recording-version-158).
+No new sound or effect is added: the catalog remains at 374 effects and 360 files.
+
+The adapter reads the existing attack ordinal, `hitAt` and `bounceAt`. Each leg has its own
+stable cue key, using its resolved simulation timestamp rather than its release time or the
+presentation frame. It does not add a second event journal or change shot tracking, damage,
+bounce geometry or timing. A missed primary target still leaves a ground contact and bounce;
+that cue does not require the direct-hit success bit. Recent one-shot tails reconstruct after
+seeks and continue after the shooter freezes or falls. Future/expired records remain silent.
+The existing attack history and shared ten-second cue horizon bound this work.
+
+Only carried Bowler garrisons enable this boundary, including mixed reserves. The new effects
+warm before the defender exits its Castle. Older garrison replays retain their prior impact
+silence and warm list, while original pre-attack takes remain under the version-155 binding.
+The particle presentation is separate; these checks establish source audio bindings and this
+adapter's lifecycle, without claiming native executable audio-scheduler parity.
+
+`tests/garrison-bowler-impacts.test.ts` checks source links, both phases and pitch ranges,
+readonly/unique cues, actual Freeze and lethal Lightning after release, ground contacts after
+the target falls, future/expired guards, scoped reserve warming, exact version-159 physical
+parity, and full current/historical portable snapshots in both directions. The portable fixture
+uses ordinary troop deployments and spell inputs; the fallen-primary case is an isolated model
+check. Chromium exercises actual decoded buffers, gain, replay-speed pitch, sample offsets,
+read-only/reduced rendering, reverse seeks, historical preloads and paused 503 recovery on
+phone and desktop.
+
+
+## Original Bowler final shatter (recording version 161)
+
+The defending level-4 boulder's existing `trollBoulder_destroyed` graph now plays at its
+captured `bounceAt`/`bounceX`/`bounceY`, using the stable attack ordinal. The first contact's
+`trollBoulder_bounce` source effect contains sound only and adds no visual burst. Released
+final effects continue after the defender freezes or dies and reconstruct after cold seeks.
+The shared native effect layer samples the original emitter with the established local
+16-pixel troop-body lift and depth convention. These projection choices do not establish
+native pixel parity. No graph, texture or sound file is added.
+
+The source graph warms from an enabled reserve; decoded audio is independent of art readiness.
+An unavailable final graph keeps the existing generic impact fallback and retries through the
+shared loader. Once ready, the original particles cover that fallback. Reduced motion keeps
+its existing final-impact fallback. Only version-161 attacking/defending Bowler armies enable
+the presentation; earlier recordings retain their prior visual paths. Shot damage, tracking,
+landing times and audio do not change. Existing resolved attack records supply the defender
+geometry; only attacker flights require new bounded history. See the [shared source checks and
+browser validation](../attacking-bowler/README.md#original-impact-phases-and-retained-flight-art-recording-version-161).

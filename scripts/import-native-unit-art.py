@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Retain every declared source animation state and direction root for spawned units, siege machines and super troops."""
-import argparse,importlib.util,json,re
+import argparse,importlib.util,json,re,hashlib,urllib.request
 from functools import lru_cache
-from native_art.bundle import ROOT,digest
+from native_art.bundle import ROOT,digest,BASE
 from native_art.source_csv import records,decoded_rows,inherited_levels,animation_blocks
 from native_art.scene_graph import crop_textures
 from native_art.shared_assets import redirect_shared_textures
@@ -13,7 +13,7 @@ def module(name,file):
  spec=importlib.util.spec_from_file_location(name,ROOT/'scripts'/file);m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
 art=module('art','native-full-catalog.py');data=module('data','import-native-progression.py')
 
-SECONDARY={'golemite':'Golemite','lavapup':'Lava Pup','skeleton':'Skeleton','bear':'Bear','yetimite':'Yetimite','meteormite':'Meteormite','ruinknight':'Ruin Knight','firemite':'Firemite Spawn','electromite':'Electromite','icehoundpup':'Ice Hound Pup','superhog':'Super Hog','superrider':'Super Rider','bigboy':'Big Boy','spellbat':'Spell Bat','spellskeletonshielded':'Spell Shielded Skeleton','spellskeleton':'Spell Unshielded Skeleton','totem':'Totem','snake':'BK Equipment Snake','henchman':'MP Equipment Henchman','gwlavaloon':'GW Equipment Lavaloon','gwlavaloonpup':'GW Equipment Lavaloon Pup','defendingbuilder':'Defending Builder','trapskeleton':'Trap Skeleton','trapairskeleton':'Trap Air Skeleton'}
+SECONDARY={'golemite':'Golemite','lavapup':'Lava Pup','skeleton':'Skeleton','bear':'Bear','yetimite':'Yetimite','meteormite':'Meteormite','ruinknight':'Ruin Knight','firemite':'Firemite Spawn','electromite':'Electromite','icehoundpup':'Ice Hound Pup','superhog':'Super Hog','superrider':'Super Rider','bigboy':'Big Boy','spellbat':'Spell Bat','spellskeletonshielded':'Spell Shielded Skeleton','spellskeleton':'Spell Unshielded Skeleton','totem':'Totem','snake':'BK Equipment Snake','henchman':'MP Equipment Henchman','gwlavaloon':'GW Equipment Lavaloon','gwlavaloonpup':'GW Equipment Lavaloon Pup','defendingbuilder':'Defending Builder','trapskeleton':'Trap Skeleton','trapairskeleton':'Trap Air Skeleton','frostmite':'Icemite'}
 SIEGE={'wallwrecker':'Wall Wrecker','battleblimp':'Battle Blimp','stoneslammer':'Stone Slammer','siegebarracks':'Siege Barracks','loglauncher':'Log Launcher','flameflinger':'Flame Flinger','battledrill':'Battle Drill','trooplauncher':'Troop Launcher'}
 SUPER={'superbarbarian':'Super Barbarian','superarcher':'Super Archer','supergiant':'Super Giant','sneakygoblin':'Sneaky Goblin','superwallbreaker':'Super Wall Breaker','rocketballoon':'Rocket Balloon','superwizard':'Super Wizard','superdragon':'Super Dragon','infernodragon':'Inferno Dragon','superminer':'Super Miner','superyeti':'Super Yeti','superminion':'Super Minion','superhogrider':'Super Hog Rider','supervalkyrie':'Super Valkyrie','superwitch':'Super Witch','icehound':'Ice Hound','superbowler':'Super Bowler'}
 UNITS={**SECONDARY,**SIEGE,**SUPER}
@@ -51,11 +51,27 @@ def resolve(name,chars,animations):
  return levels,groups
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--check',action='store_true');args=p.parse_args()
- raw=(art.ARCHIVE/'fingerprint.json').read_bytes();require(digest(raw)=='ecb5b05d632831cd706e4e993158b63635445257ad254bec97c371b078e3044b','Fingerprint differs');art.MEMBERS={r['file']:r['sha'] for r in json.loads(raw)['files']}
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--check',action='store_true');p.add_argument('--only',nargs='+',choices=sorted(UNITS));p.add_argument('--download-missing',action='store_true');args=p.parse_args()
+ fingerprint=art.ARCHIVE/'fingerprint.json'
+ if not fingerprint.exists():fingerprint=ROOT/'output/native-campaign-source/fingerprint.json'
+ raw=fingerprint.read_bytes();require(digest(raw)=='ecb5b05d632831cd706e4e993158b63635445257ad254bec97c371b078e3044b','Fingerprint differs');art.MEMBERS={r['file']:r['sha'] for r in json.loads(raw)['files']}
+ read_source=art.read
+ def read(path):
+  cached=ROOT/'output/native-campaign-source'/path
+  if args.download_missing and not (art.ARCHIVE/'files'/path).exists() and not cached.exists():
+   require(path in art.MEMBERS,f'Unpinned source path: {path}')
+   blob=urllib.request.urlopen(BASE+path,timeout=30).read()
+   require(hashlib.sha1(blob).hexdigest()==art.MEMBERS[path],f'Source mismatch: {path}')
+   cached.parent.mkdir(parents=True,exist_ok=True);cached.write_bytes(blob)
+  return read_source(path)
+ art.read=read
+ old=json.loads((ROOT/'reference/full-client/unit-art.json').read_text()) if args.only else None
+ if old:art.PINS.update(old['sources'])
  require(all(data.TROOPS.get(k, n) == n for k, n in UNITS.items()), 'Conflicting unit names')
- chars=records(decoded_rows(art.read('logic/characters.csv')));animations=animation_blocks(decoded_rows(art.read('csv/animations.csv')));index,skipped={},{}
- for kind,name in UNITS.items():
+ chars=records(decoded_rows(art.read('logic/characters.csv')));animations=animation_blocks(decoded_rows(art.read('csv/animations.csv')));index,skipped=(dict(old['units']),dict(old['skipped'])) if old else ({},{})
+ selected={k:UNITS[k] for k in args.only} if args.only else UNITS
+ for kind,name in selected.items():
+  index.pop(kind,None);skipped.pop(kind,None)
   resolved=resolve(name,chars,animations)
   if isinstance(resolved,str):
    skipped[kind]=dict(clientName=name,reason=resolved);print(f'{kind}: skipped, {resolved}',flush=True);continue
@@ -81,7 +97,7 @@ def main():
   states=list(dict.fromkeys(state for level in levels for state in level['states']))
   index[kind]=dict(path=f'assets/troops-native/{kind}/graph.json',sha256=digest(serialized.encode()),levels=len(levels),clientName=name,states=states)
   print(f'{kind}: {len(levels)} original animation tiers; states {", ".join(states)}',flush=True)
- result=dict(clientVersion='18.400.21',sources=dict(sorted(art.PINS.items())),units=index,skipped=skipped);target=ROOT/'reference/full-client/unit-art.json';serialized=json.dumps(result,indent=2)+'\n'
+ result=dict(clientVersion='18.400.21',sources=dict(sorted(art.PINS.items())),units={k:index[k] for k in UNITS if k in index},skipped={k:skipped[k] for k in UNITS if k in skipped});target=ROOT/'reference/full-client/unit-art.json';serialized=json.dumps(result,indent=2)+'\n'
  if args.check:require(target.read_text()==serialized,'Index differs')
  else:target.write_text(serialized)
 if __name__=='__main__':main()

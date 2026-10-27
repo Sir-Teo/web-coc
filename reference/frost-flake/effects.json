@@ -1,0 +1,34 @@
+{
+  "clientVersion": "18.400.21",
+  "generator": "scripts/import-frost-flake-art.py",
+  "sources": {
+    "csv/particle_emitters.csv": "8d80bbf714386c4f24e6aed8f2eef671a2eac5c3b3ad41e4d275b757ced64cef",
+    "logic/effects.csv": "5c6d5b67d6407345123b8d55872ed77ee6697b466d20d1fa21e25a723c511e9f",
+    "logic/projectiles.csv": "71cda0e457ad88a6772f6421a22419b24d6bcf78d0ed305f09184404889a72dc",
+    "logic/special_abilities.csv": "c978dd90ff2335e60d988f3476d78bec72672e8c074344d149096e89951181eb",
+    "sc/buildings.sc": "f73ec949fc070bc03175d6bb3af8b62d8f607094bf2b343c9846a499a35be0ed",
+    "sc/buildings_39.sctx": "dd27d9612fe135c3be364840eeabe45b53a229b24192246b56a08fa0606fdb16"
+  },
+  "ability": "FrostBlast",
+  "abilityLevelCount": 10,
+  "profile": {
+    "ActivationEffect": "rc_gear_frostblast_snowflack_active",
+    "ProjectileOnActivation": "rc_gear_frostblast_Projectile",
+    "ParticleEmitter": "rc_gear_frostblast_trail",
+    "DestroyedEffect": "ability_rc_frostflake_hit_sfx"
+  },
+  "effects": {
+    "rc_gear_frostblast_snowflack_active": "frost-flake"
+  },
+  "packs": {
+    "frost-flake": {
+      "path": "assets/frost-flake-native/activation/graph.json",
+      "sha256": "5ad180d6c464f3b4b645936eb7f6bcf53ce036a6e7982198104e51627121b74a",
+      "bytes": 65161
+    }
+  },
+  "conventions": {
+    "activation": "Independent, stationary source effect at the captured activation time and position.",
+    "projectile": "Body and trail reuse the full-client catalogs; DestroyedEffect declares sound only."
+  }
+}

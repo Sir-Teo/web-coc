@@ -176,7 +176,10 @@ window.ready = true;
 </script>`;
 
 const args = job.gpu === 'metal' ? ['--use-gl=angle', '--use-angle=metal'] : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
-const browser = await chromium.launch({ args });
+const browser = await chromium.launch({
+  args,
+  ...(process.env.NATIVE_ART_CHROMIUM_PATH ? { executablePath: process.env.NATIVE_ART_CHROMIUM_PATH } : {}),
+});
 const page = await browser.newPage();
 page.on('pageerror', (e) => { console.error('page error:', e.message); process.exitCode = 1; });
 let sink = null;

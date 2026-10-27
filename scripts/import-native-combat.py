@@ -61,7 +61,7 @@ REFERENCE_COLUMNS = {
                'RageOnHitSpell', 'HeroDeathAbilitySpell', 'DieSpellAttacker', 'Spell', 'SummonTroop',
                'HitSpellOverride', 'DieDamageSpell', 'MasterAura'],
     'abilities': ['SpecialAbilities', 'GivenAbility', 'ExtraAbilities', 'MainAbilities', 'GiveSpecialAbility'],
-    'projectiles': ['Projectile', 'AltProjectile', 'ProjectileOnActivation', 'ReflectProjectile'],
+    'projectiles': ['Projectile', 'AltProjectile', 'ProjectileOnActivation', 'ReflectProjectile', 'TargetedProjectile'],
 }
 
 
@@ -103,7 +103,7 @@ def deltas(rows, exact=frozenset()):
     inherited, result = {}, []
     for index, row in enumerate(rows):
         change = {k: v for k, v in row.items() if inherited.get(k) != v}
-        for column in exact:
+        for column in sorted(exact):
             if index and column not in row and inherited.get(column, '') != '':
                 change[column] = ''
                 inherited[column] = ''

@@ -107,16 +107,19 @@ const textField = (row: SourceRow, key: string) =>
   typeof row[key] === 'string' && row[key] ? (row[key] as string) : undefined;
 
 const statsCache = new Map<string, ReturnType<typeof resolveStats>>();
-function resolveStats(kind: GarrisonKind, level: number) {
+function resolveStats(kind: GarrisonKind, level: number, splitMelee = false) {
   const resolved = defendingCharacterLevel(GARRISON_KINDS[kind].character, level);
   if (!resolved) throw new Error(`Unsupported garrison troop: ${kind} ${level}`);
   const { character, row } = resolved;
   const interval = sourceNumber(row, 'AttackSpeed');
   const newTarget = sourceNumber(row, 'NewTargetAttackDelay');
   const ability = specialAbilityFor(row);
-  const projectile = typeof row.Projectile === 'string' && row.Projectile ? row.Projectile : undefined;
+  const projectile =
+    typeof row.Projectile === 'string' && row.Projectile ? row.Projectile : undefined;
   const heroMultiplier = sourceNumber(row, 'HeroDamageMultiplier');
-  const split = (GARRISON_KINDS[kind] as { timing?: 'split' }).timing === 'split';
+  const split =
+    (GARRISON_KINDS[kind] as { timing?: 'split' }).timing === 'split' ||
+    (splitMelee && (kind === 'pekka' || kind === 'valkyrie'));
   const timing = splitTiming(row);
   const secondary = textField(row, 'SecondaryTroop');
   const summon = textField(row, 'SummonTroop');
@@ -138,6 +141,9 @@ function resolveStats(kind: GarrisonKind, level: number) {
     groundTargets: sourceFlag(row, 'GroundTargets'),
     airTargets: sourceFlag(row, 'AirTargets'),
     flying: sourceFlag(row, 'IsFlying'),
+    preferredTarget: !!(
+      textField(row, 'PreferedTargetBuildingClass') || textField(row, 'PreferedTargetBuilding')
+    ),
     newTargetDelay: newTarget / 1000,
     /**
      * Earlier families: initial timer charge, wait is interval minus that charge. Later
@@ -212,13 +218,17 @@ function resolveStats(kind: GarrisonKind, level: number) {
       : undefined,
   };
 }
-/** Only resolved, supported source levels. Never apply home troop caps or clamp a level. */
-export function garrisonStats(kind: GarrisonKind, level: number) {
+/**
+ * Only resolved source levels; never apply home troop caps or clamp a level.
+ * Versioned battles opt PEKKA/Valkyrie into split timing with the third argument.
+ */
+export function garrisonStats(kind: GarrisonKind, level: number, splitMelee = false) {
   if (garrisonTroopVersion(kind, level) === undefined)
     throw new Error(`Unsupported garrison troop: ${kind} ${level}`);
-  const key = `${kind}:${level}`;
+  const melee = splitMelee && (kind === 'pekka' || kind === 'valkyrie');
+  const key = `${kind}:${level}${melee ? ':split' : ''}`;
   let stats = statsCache.get(key);
-  if (!stats) statsCache.set(key, (stats = resolveStats(kind, level)));
+  if (!stats) statsCache.set(key, (stats = resolveStats(kind, level, melee)));
   return stats;
 }
 export type GarrisonStats = ReturnType<typeof garrisonStats>;
@@ -228,7 +238,10 @@ export function garrisonPoisonOnHit(stats: GarrisonStats) {
   if (!stats.ability) return undefined;
   const ability = specialAbility(stats.ability.name, stats.ability.level);
   if (!ability.PoisonOnHitSpell) return undefined;
-  const spell = spellLevel(ability.PoisonOnHitSpell, sourceNumber(ability, 'PoisonOnHitSpellLevel'));
+  const spell = spellLevel(
+    ability.PoisonOnHitSpell,
+    sourceNumber(ability, 'PoisonOnHitSpellLevel'),
+  );
   const heroMultiplier = sourceNumber(spell, 'HeroDamageMultiplier');
   return {
     spell: ability.PoisonOnHitSpell,

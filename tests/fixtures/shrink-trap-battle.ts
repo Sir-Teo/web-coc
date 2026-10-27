@@ -2,6 +2,7 @@ import { emptySpells } from '../../src/game/army';
 import { GameModel } from '../../src/game/model';
 import { emptyArmy } from '../../src/game/army';
 import { freshNativeCampaign } from '../../src/game/native-campaign';
+import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
 import { developedSave } from './developed-village';
 
 /** Legal TH8 army in the original Magic Practice layout, without moved traps or units. */
@@ -35,9 +36,17 @@ export function deployShrinkTrap(model: GameModel) {
       if (!model.deploy(10, 23)) throw Error('Magic Practice deployment failed');
   }
 }
-export function shrinkTrapBattle(model = new GameModel(shrinkTrapVillage())) {
+export function shrinkTrapBattle(
+  model = new GameModel(shrinkTrapVillage()),
+  version = REPLAY_VERSION,
+) {
   model.startCampaign(54);
   if (!model.battle) throw Error('Magic Practice did not open');
+  if (version !== REPLAY_VERSION) {
+    const data = (model as unknown as { recording: ReplayData }).recording;
+    data.version = version;
+    model.battle = replayBattle(data.initial, version);
+  }
   deployShrinkTrap(model);
   return model;
 }

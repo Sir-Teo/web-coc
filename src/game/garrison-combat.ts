@@ -1,5 +1,8 @@
 import { poisonAvoidanceTarget } from './poison-avoidance';
 import { defenderPoisonScales } from './defender-poison';
+import { defenderFrostScales } from './defender-frost';
+import { hurtGarrisonUnit } from './garrison-damage';
+import { stepGarrisonPreAttack, stopGarrisonPreAttack } from './garrison-pre-attack';
 import { TROOPS } from './data';
 import { nonWallBuildings } from './building-lists';
 import { distance2D, distanceSquared2D } from './distance';
@@ -29,7 +32,7 @@ import {
   type GarrisonChainJump,
 } from './garrison-abilities';
 // Late campaign Spell Tower Rage (neutral without version 44 late state).
-import { lateDefenderStats } from './late-campaign';
+import { defenderRageStats } from './native-rage';
 import { untargetable } from './spell-effects';
 
 export interface GarrisonAttack {
@@ -175,9 +178,15 @@ function resolveHit(
         (air ? stats.airTargets : stats.groundTargets) &&
         distance2D(unit.x - center.x, unit.y - center.y) <= stats.splash
       )
-        unit.hp = Math.max(0, unit.hp - damageFor(unit, damage, stats));
+        hurtGarrisonUnit(
+          battle,
+          unit,
+          damageFor(unit, damage, stats),
+          at,
+          unit.id === target?.id ? defender.id : undefined,
+        );
   } else if (target && active(target, at))
-    target.hp = Math.max(0, target.hp - damageFor(target, damage, stats));
+    hurtGarrisonUnit(battle, target, damageFor(target, damage, stats), at, defender.id);
   const poison = garrisonPoisonOnHit(stats);
   if (poison && target && target.hp > 0 && (!air || poison.affectsAir))
     applyGarrisonPoison(battle, target, poison, defender.id, at);
@@ -231,6 +240,9 @@ function stepShots(battle: Battle, defender: GarrisonDefender, effect: (fx: FX) 
       sourceDefender: true,
       sourceId: defender.id,
       targetId: shot.targetId,
+      ...(battle.nativeBowlerImpactArt && defender.kind === 'bowler'
+        ? { projectileBounce: leg }
+        : {}),
       x: shot.fromX,
       y: shot.fromY,
       toX: shot.x,
@@ -280,7 +292,14 @@ export function stepGarrisonDefender(
     defender.kind === 'hero'
   )
     return;
-  const stats = lateDefenderStats(battle, defender, garrisonStats(defender.kind, defender.level));
+  const splitMelee =
+    !!battle.nativeGarrisonMeleeTiming &&
+    (defender.kind === 'pekka' || defender.kind === 'valkyrie');
+  const stats = defenderRageStats(
+    battle,
+    defender,
+    garrisonStats(defender.kind, defender.level, splitMelee),
+  );
   stepShots(battle, defender, effect);
   // Later families: effects already in progress resolve even if the defender dies or is stunned.
   if (stats.chain) stepChain(battle, defender, stats);
@@ -288,6 +307,7 @@ export function stepGarrisonDefender(
   if (stats.aura) stepAura(battle, defender, stats);
   defender.attacking = false;
   if (defender.hp <= 0) {
+    stopGarrisonPreAttack(battle, defender);
     delete defender.avoidingPoison;
     if (defender.defeatedAt !== undefined) {
       if (stats.secondary) spawnSecondaries(battle, defender, stats, spawnGarrisonDefender);
@@ -310,7 +330,7 @@ export function stepGarrisonDefender(
           !TROOPS[unit.kind].flying &&
           distance2D(unit.x - defender.x, unit.y - defender.y) <= stats.deathRadius
         )
-          unit.hp = Math.max(0, unit.hp - stats.deathDamage);
+          hurtGarrisonUnit(battle, unit, stats.deathDamage, defender.defeatedAt + stats.deathDelay);
       effect({
         type: 'hit',
         sourceDefender: true,
@@ -358,9 +378,12 @@ export function stepGarrisonDefender(
   const raged = !!(tantrum && defender.tantrum);
   // Attack speed boosts advance the attack timer faster, as in the older engine's hit timer.
   const poison = defenderPoisonScales(battle, defender);
-  const attackDt = (raged ? activeDt * tantrum!.attackScale : activeDt) * poison.attack;
-  const moveDt = activeDt * poison.move;
-  if (stats.split) defender.recovery = Math.max(0, (defender.recovery ?? 0) - attackDt);
+  const frost = defenderFrostScales(defender, battle.elapsed);
+  const attackDt =
+    (raged ? activeDt * tantrum!.attackScale : activeDt) * poison.attack * frost.attack;
+  const moveDt = activeDt * poison.move * frost.move;
+  const recoveryAtStart = defender.recovery ?? 0;
+  if (stats.split) defender.recovery = Math.max(0, recoveryAtStart - attackDt);
   if (stats.summon) {
     // The summon check reads the target held going into this step (a 50 ms local offset).
     stepSummons(battle, defender, stats, attackDt, defender.target !== null, spawnGarrisonDefender);
@@ -392,6 +415,7 @@ export function stepGarrisonDefender(
   // taking the first, without the O(n log n) sort per defender per tick.
   let target = pool.find((unit) => unit.id === defender.target);
   if (!target) {
+    stopGarrisonPreAttack(battle, defender);
     let best = Infinity;
     for (const unit of pool) {
       const d = distanceSquared2D(unit.x - defender.x, unit.y - defender.y);
@@ -428,6 +452,7 @@ export function stepGarrisonDefender(
     defender.pathAt = 0;
   }
   if (defender.target !== target.id) {
+    stopGarrisonPreAttack(battle, defender);
     defender.target = target.id;
     delete defender.engaged;
     if (!stats.flying) {
@@ -436,6 +461,7 @@ export function stepGarrisonDefender(
     }
   }
   const distance = distance2D(target.x - defender.x, target.y - defender.y);
+  let fresh = false;
   // Split-timing families use the older LogicCombatComponent.IsInRange tolerance for character
   // targets (AttackRange + 256 units, half a tile) and approach to GetAttackDist (range - 1/16
   // tile, at least 1/16), so a slightly drifting target does not reset a long windup.
@@ -465,20 +491,27 @@ export function stepGarrisonDefender(
       }
       followPath(defender, stats.speed, moveDt);
     }
+    stepGarrisonPreAttack(battle, defender, activeDt, attackDt, recoveryAtStart);
     if (!committed || defender.cooldown > 1e-9) return;
   } else {
     if (!defender.engaged) {
+      fresh = true;
       defender.engaged = true;
       // Split timing: any post-hit recovery still running precedes the new target's windup.
+      // Corrected clocks spend this tick once; historical split families keep their old clock.
+      const recovery =
+        splitMelee || battle.nativeGarrisonRecovery ? recoveryAtStart : (defender.recovery ?? 0);
       defender.cooldown = Math.max(
         0,
-        (stats.split ? (defender.recovery ?? 0) : 0) + stats.firstAttackDelay - attackDt,
+        (stats.split ? recovery : 0) + stats.firstAttackDelay - attackDt,
       );
     }
     defender.attacking = true;
     if (!stats.flying) defender.path = [];
+    stepGarrisonPreAttack(battle, defender, activeDt, attackDt, recoveryAtStart, fresh);
     if (defender.cooldown > 1e-9) return;
   }
+  stopGarrisonPreAttack(battle, defender);
   defender.cooldown = stats.rate;
   if (stats.split) defender.recovery = stats.recovery;
   defender.alerted = true;
@@ -502,7 +535,13 @@ export function stepGarrisonDefender(
         !!TROOPS[unit.kind].flying === !!TROOPS[target.kind].flying &&
         distance2D(unit.x - center.x, unit.y - center.y) <= stats.splash
       )
-        unit.hp = Math.max(0, unit.hp - damage);
+        hurtGarrisonUnit(
+          battle,
+          unit,
+          damage,
+          battle.elapsed,
+          unit.id === target.id ? defender.id : undefined,
+        );
   } else {
     const n = defender.attackCount ?? 0;
     defender.attackCount = n + 1;

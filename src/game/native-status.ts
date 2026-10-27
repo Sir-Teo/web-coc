@@ -1,4 +1,6 @@
 import type { Battle, Building, Unit } from './model';
+import { activeBoost, type NativeBoost } from './native-boost';
+import { healingEligible } from './friendly-unit';
 
 /**
  * Version 45+ timed effects. Every field is a battle-clock deadline so replays, seeking and
@@ -10,7 +12,7 @@ export interface UnitEffects {
   /** Partial freeze, such as the TH13 frost field, as a fraction of normal action speed lost. */
   chill?: { until: number; percent: number };
   /** Strongest active friendly boost; rage-like spells do not stack with each other. */
-  boost?: { until: number; speed: number; damage: number; attackSpeed: number };
+  boost?: NativeBoost;
   /** Dragon Duke's innate boost, separate from temporary spells and equipment. */
   rampage?: { damage: number; attackSpeed: number; trapProtection: number };
   /** Enemy poison slows and damages over time. */
@@ -34,10 +36,14 @@ export interface UnitEffects {
     sources?: Record<number, { until: number; capacity: number }>;
   };
   immortalUntil?: number;
+  /** Version 95: temporary Phoenix life cannot be healed and ends at this deadline. */
+  phoenixRevive?: { until: number; duration: number };
   /** Defensive earthquake casts already felt, for 1/(2n-1) repeated damage. */
   quakeCasts?: number[];
   /** Hero ability attack-interval override (Haste Vial, Stick Horse). */
   attackInterval?: { until: number; seconds: number };
+  /** Source ability attack lock; its fixed clock is independent of animation slowdowns. */
+  attackDisabledUntil?: number;
   /** Flat damage an equipment ability adds, optionally for a number of hits. */
   extraDamage?: {
     until: number;
@@ -45,6 +51,8 @@ export interface UnitEffects {
     hits?: number;
     range?: number;
     projectile?: string;
+    /** Version 81: charged projectile splash captured from the ability row. */
+    splash?: number;
   };
   /** Splash and wall jumping while an ability is active (Giant Gauntlet). */
   splash?: { until: number; radius: number; jumper?: boolean };
@@ -55,7 +63,7 @@ export interface BuildingEffects {
   chill?: { until: number; percent: number };
   /** Attack slow applied by frost-on-hit troops. */
   frost?: { until: number; percent: number };
-  boost?: { until: number; damage: number };
+  boost?: NativeBoost;
   invisibleUntil?: number;
   /** Earthquake strike count and the casts already counted, for diminishing repeated quakes. */
   quakes?: number;
@@ -81,6 +89,13 @@ export const buildingImmune = (
 ) => (battle.buildingEffects?.[building.id]?.overgrownUntil ?? 0) > at + 1e-9;
 
 export const unitEffects = (unit: Unit): UnitEffects => ((unit.native ??= {}).effects ??= {});
+/** Local life bar for temporary Phoenix revival; ordinary hitpoints do not measure this time. */
+export function phoenixLifeFraction(unit: Unit, at: number) {
+  const life = unit.native?.effects?.phoenixRevive;
+  return life && life.until > at + 1e-9
+    ? Math.max(0, Math.min(1, (life.until - at) / Math.max(1e-9, life.duration)))
+    : undefined;
+}
 export const buildingEffects = (battle: Battle, building: Pick<Building, 'id'>): BuildingEffects =>
   ((battle.buildingEffects ??= {})[building.id] ??= {});
 
@@ -88,6 +103,7 @@ export const buildingEffects = (battle: Battle, building: Pick<Building, 'id'>):
 export const unitHidden = (unit: Unit, at: number) =>
   !!unit.native &&
   (!!unit.native.burrowed ||
+    !!unit.native.untargetable ||
     !!unit.native.recalled ||
     (unit.native.effects?.invisibleUntil ?? 0) > at + 1e-9);
 /** Burrowed movers and units whose client row disables trap triggers pass over armed traps. */
@@ -119,30 +135,18 @@ export function unitSpeedScale(unit: Unit, at: number) {
 }
 /** Extra tiles/second from rage and haste style boosts. */
 export const unitSpeedBonus = (unit: Unit, at: number) => {
-  const boost = unit.native?.effects?.boost;
-  return boost && boost.until > at + 1e-9 ? boost.speed : 0;
+  return activeBoost(unit.native?.effects?.boost, at)?.speed ?? 0;
 };
 export const unitDamageScale = (unit: Unit, at: number) => {
-  const boost = unit.native?.effects?.boost;
-  return (
-    1 +
-    Math.max(
-      boost && boost.until > at + 1e-9 ? boost.damage : 0,
-      unit.native?.effects?.rampage?.damage ?? 0,
-    )
-  );
+  const boost = activeBoost(unit.native?.effects?.boost, at);
+  return 1 + Math.max(boost?.damage ?? 0, unit.native?.effects?.rampage?.damage ?? 0);
 };
 /** Multiplier on the time between attacks. */
 export function unitAttackIntervalScale(unit: Unit, at: number) {
   const e = unit.native?.effects;
   if (!e) return 1;
   let speed = 1;
-  speed *=
-    1 +
-    Math.max(
-      e.boost && e.boost.until > at + 1e-9 ? e.boost.attackSpeed : 0,
-      e.rampage?.attackSpeed ?? 0,
-    );
+  speed *= 1 + Math.max(activeBoost(e.boost, at)?.attackSpeed ?? 0, e.rampage?.attackSpeed ?? 0);
   if (e.poison && e.poison.until > at + 1e-9) speed *= Math.max(0.05, 1 + e.poison.attackSpeed);
   if (e.chill && e.chill.until > at + 1e-9) speed *= Math.max(0.05, 1 - e.chill.percent);
   return 1 / speed;
@@ -160,8 +164,7 @@ export function buildingAttackIntervalScale(
   return 1 / speed;
 }
 export const buildingDamageScale = (battle: Battle, building: Pick<Building, 'id'>, at: number) => {
-  const boost = battle.buildingEffects?.[building.id]?.boost;
-  return boost && boost.until > at + 1e-9 ? 1 + boost.damage : 1;
+  return 1 + (activeBoost(battle.buildingEffects?.[building.id]?.boost, at)?.damage ?? 0);
 };
 
 /**
@@ -175,11 +178,12 @@ export function hurtUnit(
   at = battle.elapsed,
   sourceId?: number,
   trap = false,
+  secondary = false,
 ) {
   if (!(amount > 0) || unit.hp <= 0) return 0;
   const state = battle.nativeRoster ? unit.native : undefined;
   // Burrowed and recalled units cannot be damaged at all.
-  if (state?.burrowed || state?.recalled) return 0;
+  if (state?.burrowed || state?.recalled || state?.untargetable) return 0;
   const e = state?.effects;
   if (e) {
     if (trap && e.rampage) amount *= Math.max(0, 1 - e.rampage.trapProtection);
@@ -195,11 +199,22 @@ export function hurtUnit(
   if (battle.nativeContentExpansion && state && sourceId !== undefined)
     state.lastDamageSource = sourceId;
   if (state) state.damageTaken = (state.damageTaken ?? 0) + Math.min(amount, unit.hp);
+  if (
+    battle.nativeRevengeDeck &&
+    unit.hero === 'duke' &&
+    state &&
+    sourceId !== undefined &&
+    !trap &&
+    !secondary
+  )
+    (state.revengeHits ??= []).push({ sourceId, at, x: unit.x, y: unit.y });
   unit.hp -= amount;
   return amount;
 }
-export function healUnit(_battle: Battle, unit: Unit, amount: number) {
+export function healUnit(battle: Battle, unit: Unit, amount: number, at = battle.elapsed) {
   if (!(amount > 0) || unit.hp <= 0) return 0;
+  if (!healingEligible(battle, unit, at)) return 0;
+  if ((unit.native?.effects?.phoenixRevive?.until ?? 0) > at + 1e-9) return 0;
   const before = unit.hp;
   unit.hp = Math.min(unit.maxHp, unit.hp + amount);
   return unit.hp - before;

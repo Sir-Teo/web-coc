@@ -11,13 +11,33 @@ Audited September 11, 2026; extended September 14 and 15, 2026. That milestone s
 
 The Healing spell carries its healing as a negative damage rate in the source, as the Healer does; it is recorded here as a positive heal.
 
+## Current area centers (version 75)
+
+Native area buffs, healing and statuses use their aimed center, or the living owner followed by an
+aura. The pinned [Rage](../reference/official-wiki/spells-siege-super/rage-spell.md) and
+[Healing](../reference/official-wiki/spells-siege-super/healing-spell.md) comparisons describe fixed
+five-tile rings; [Freeze](../reference/official-wiki/spells-siege-super/freeze-spell.md) uses its aimed
+3.5-tile snapshot. The native pulse path had treated `RandomRadius` as a gameplay-center offset for
+these fields. This could miss a unit inside the visible circle or affect one outside it.
+
+Version 75 keeps non-strike areas centered for attacking and defensive spells, including auras,
+Overgrowth, Earthquake and Spell Tower fields. Positive-damage strikes such as Electro Dragon death
+lightning keep their actual scatter. Pulse and fallback-feedback cadence remain the same. Versions
+74 and earlier retain their original offset behavior. `tests/spell-area-centers.test.ts` checks seeded
+unit/footprint boundaries, defensive fields, following auras, retained strike scatter and portable
+backward seeks. `tests/browser/spell-area-centers.spec.ts` checks a real Rage boundary on desktop
+and reduced-motion phone views.
+
 ## The Freeze Spell
 
 Added September 15, 2026, as **recording version 48**: no earlier recording may carry or cast one, and every archived battle before it stays byte-identical. The Spell Factory offers it at level 4, its own `SpellForgeLevel`, and it runs to level 8.
 
 It deals no damage. Within its 3.5-tile radius every defence stops mid-reload and picks a target again when it thaws, and every defending troop stops where it stands. Its hold comes straight from the source's `FreezeTimeMS`: 2.5 seconds at level 1, rising with research. A second cast may only extend a freeze already running, never cut it short.
 
-Two source columns are deliberately not modelled, and the gap is here rather than hidden. `FreezeOuterTimeMS` states a shorter hold for the edge of the burst, which needs an outer radius the table does not give; the whole radius takes the inner time. `RandomRadius` scatters where the burst actually lands, which this game does not reproduce — a cast lands where it is aimed.
+`FreezeOuterTimeMS` remains unmodelled: it states a shorter hold whose target class or outer radius
+needs engine confirmation, so the whole radius takes the inner time. The historical cast used the
+aimed center. Version 75 restores that fixed area after the later generic native pulse path had
+interpreted `RandomRadius` as a gameplay offset; see the current correction above.
 
 ## The Invisibility Spell
 

@@ -1,3 +1,18 @@
+import fieldSpellArt from '../../reference/field-spells/effects.json' with { type: 'json' };
+import fireballArt from '../../reference/fireball/effects.json' with { type: 'json' };
+import frostFlakeArt from '../../reference/frost-flake/effects.json' with { type: 'json' };
+import electroBootsArt from '../../reference/electro-boots/effects.json' with { type: 'json' };
+import meteorStaffArt from '../../reference/meteor-staff/effects.json' with { type: 'json' };
+import darkOrbArt from '../../reference/dark-orb/effects.json' with { type: 'json' };
+import recallUnitArt from '../../reference/recall/effects.json' with { type: 'json' };
+import reviveTargetArt from '../../reference/revive/effects.json' with { type: 'json' };
+import jumpSpellArt from '../../reference/jump-spell/effects.json' with { type: 'json' };
+import freezeSpellArt from '../../reference/freeze-spell/effects.json' with { type: 'json' };
+import overgrowthArt from '../../reference/overgrowth/effects.json' with { type: 'json' };
+import superArcherArt from '../../reference/super-archer/effects.json' with { type: 'json' };
+import superWizardArt from '../../reference/super-wizard/effects.json' with { type: 'json' };
+import electroDragonArt from '../../reference/electro-dragon/effects.json' with { type: 'json' };
+import electromiteArt from '../../reference/electromite/effects.json' with { type: 'json' };
 import type Phaser from 'phaser';
 import effectArt from '../../reference/full-client/effect-art.json' with { type: 'json' };
 import { NativeSceneView, effectSceneView } from './native-scene-view';
@@ -13,16 +28,37 @@ import {
 } from './native-effects';
 
 type Point = { x: number; y: number };
-const index = effectArt as unknown as {
+type EffectIndex = {
   effects: Record<string, string>;
   emitters: Record<string, string>;
   packs: Record<string, { path: string }>;
 };
+const index = effectArt as unknown as EffectIndex;
+const catalogs = [
+  index,
+  fireballArt,
+  frostFlakeArt,
+  electroBootsArt,
+  meteorStaffArt,
+  darkOrbArt,
+  electromiteArt,
+  electroDragonArt,
+  superWizardArt,
+  superArcherArt,
+  overgrowthArt,
+  freezeSpellArt,
+  jumpSpellArt,
+  fieldSpellArt,
+  recallUnitArt,
+  reviveTargetArt,
+] as unknown as EffectIndex[];
 /** Pack of an effects.csv record, or undefined for sound-only and unreferenced records. */
-export const nativeEffectPack = (effect: string | undefined) =>
-  effect && Object.hasOwn(index.effects, effect)
-    ? index.packs[index.effects[effect]].path
-    : undefined;
+export function nativeEffectPack(effect: string | undefined) {
+  if (!effect) return undefined;
+  for (const catalog of catalogs)
+    if (Object.hasOwn(catalog.effects, effect)) return catalog.packs[catalog.effects[effect]].path;
+  return undefined;
+}
 export const nativeEmitterPack = (emitter: string | undefined) =>
   emitter && Object.hasOwn(index.emitters, emitter)
     ? index.packs[index.emitters[emitter]].path
@@ -61,6 +97,11 @@ function shiftGroup(poses: readonly NativeScenePose[], dx: number, dy: number): 
  * trail births and particles outside the camera view (plus a margin) are neither sampled nor drawn.
  */
 export class NativeEffectLayer {
+  /** Warm a source trail's graph and texture pages before its first launch. */
+  prefetchEmitter(name: string) {
+    const path = nativeEmitterPack(name);
+    if (path) this.packs.get(path);
+  }
   private views = new Map<string, NativeSceneView>();
   private used = new Set<string>();
   /** Ground point of each trail birth, computed once per birth instead of once per frame. */
@@ -111,10 +152,10 @@ export class NativeEffectLayer {
     if (!path || this.packs.unavailable(path)) return 'none';
     return this.packs.get(path) ? 'ready' : 'loading';
   }
-  duration(effect: string) {
+  duration(effect: string, maximum = 30) {
     const path = nativeEffectPack(effect);
     const pack = path ? this.packs.get(path) : undefined;
-    return pack ? nativeEffectDuration(pack, effect) : undefined;
+    return pack ? nativeEffectDuration(pack, effect, maximum) : undefined;
   }
   play(event: NativeEffectEvent, elapsed: number, reduced: boolean) {
     const path = nativeEffectPack(event.effect);
@@ -158,11 +199,14 @@ export class NativeEffectLayer {
     reduced: boolean,
     facing?: Point,
     depth?: number,
+    sourceRows = false,
   ) {
     const path = nativeEffectPack(effect);
     const pack = path ? this.packs.get(path) : undefined;
     if (!path || !pack) return false;
-    for (const [i, row] of (pack.effects[effect] ?? []).entries())
+    const rows = pack.effects[effect] ?? [];
+    for (const [i, own] of rows.entries()) {
+      const row = sourceRows ? { ...rows[0], ...own } : own;
       if (row.ParticleEmitter)
         this.trailPoses(
           path,
@@ -175,7 +219,14 @@ export class NativeEffectLayer {
           reduced,
           facing,
           depth,
+          sourceRows
+            ? {
+                scale: Number(row.Scale || 100) / 100,
+                timeScale: Math.max(0.01, Number(row.LifeTimeScale || 100) / 100),
+              }
+            : undefined,
         );
+    }
     return true;
   }
   private trailPoses(
@@ -189,6 +240,7 @@ export class NativeEffectLayer {
     reduced: boolean,
     facing?: Point,
     depth?: number,
+    options?: { scale: number; timeScale: number },
   ) {
     const rows = pack.emitters[emitter];
     if (!rows || reduced) return;
@@ -197,7 +249,15 @@ export class NativeEffectLayer {
     this.usedTrails.add(key);
     const births: { index: number; at: number; ground: Point }[] = [];
     let oldest = Infinity;
-    for (const birth of nativeTrailBirths(rows[0], span.launched, span.end, elapsed)) {
+    const timing = options
+      ? {
+          ...rows[0],
+          EmissionTime: String(Number(rows[0].EmissionTime || 0) * options.timeScale),
+          MinLife: String(Number(rows[0].MinLife || 0) * options.timeScale),
+          MaxLife: String(Number(rows[0].MaxLife || 0) * options.timeScale),
+        }
+      : rows[0];
+    for (const birth of nativeTrailBirths(timing, span.launched, span.end, elapsed)) {
       if (birth.index < oldest) oldest = birth.index;
       let ground = points.get(birth.index);
       if (!ground) points.set(birth.index, (ground = pointAt(birth.at)));
@@ -207,7 +267,17 @@ export class NativeEffectLayer {
     // Births older than the oldest live one never come back.
     for (const index of points.keys()) if (index < oldest) points.delete(index);
     if (!births.length) return;
-    const poses = nativeTrailPoses(pack, emitter, key, births, elapsed, reduced, facing, depth);
+    const poses = nativeTrailPoses(
+      pack,
+      emitter,
+      key,
+      births,
+      elapsed,
+      reduced,
+      facing,
+      depth,
+      options,
+    );
     if (depth === undefined) this.draw(path, poses);
     else this.drawBatched(path, key, poses);
   }

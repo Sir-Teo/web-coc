@@ -1,4 +1,5 @@
 import { BUILDINGS, TROOPS } from './data';
+import { nativeMiteJump } from './native-mite-jumps';
 import type { Battle, Building } from './model';
 import { spawnGarrisonDefender } from './garrison-combat';
 import {
@@ -6,6 +7,7 @@ import {
   releaseGarrisonTroop,
   type GarrisonReserve,
   type GarrisonTroop,
+  type GarrisonTarget,
 } from './garrison-reserve';
 
 export interface GarrisonSetup {
@@ -59,7 +61,16 @@ export function stepGarrisonReleases(battle: Battle) {
   const bunkers = new Map<number, Building>();
   for (const b of battle.buildings) if (isGarrisonBunker(b)) bunkers.set(b.id, b);
   // One snapshot per tick: defender spawns below never touch battle.units.
-  const targets = battle.units.map((unit) => ({ ...unit, flying: !!TROOPS[unit.kind].flying }));
+  // Boogers and source DoesNotOpenCC mite jumps fight defenders without pulling the reserve.
+  const targets: GarrisonTarget[] = [];
+  for (const unit of battle.units)
+    if (
+      unit.kind !== 'booger' &&
+      unit.kind !== 'frostmite' &&
+      !nativeMiteJump(battle, unit.kind) &&
+      !(battle.nativeElectromites && unit.kind === 'electromite')
+    )
+      targets.push({ ...unit, flying: !!TROOPS[unit.kind].flying });
   for (const reserve of garrisons) {
     const castle = bunkers.get(reserve.castleId);
     if (!castle) continue;

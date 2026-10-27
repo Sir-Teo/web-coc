@@ -46,8 +46,9 @@ Cells shown as `wiki (client X)` differ from the pinned client.
 **Which client columns encode each mechanic**
 
 - damage bonus -> `DamageBoostPercent` (130..190)
-- speed bonus (troops) -> `SpeedBoost` (20..32, in-game speed units; x12.5 for internal units)
-- speed bonus (Heroes) -> `SpeedBoost2` (10..16) plus globals `HERO_RAGE_MULTIPLIER` = 50 / `HERO_RAGE_SPEED_MULTIPLIER` = 50
+- speed bonus (ordinary characters) -> `SpeedBoost` (20..32, in-game speed units; x12.5 for internal units)
+- speed bonus (preferred-target characters) -> `SpeedBoost2` (10..16)
+- Hero bonuses -> normal `SpeedBoost` x `HERO_RAGE_SPEED_MULTIPLIER` = 50%; damage x `HERO_RAGE_MULTIPLIER` = 50%. The secondary speed happens to equal half the normal speed for Rage, but is not another Hero reduction. This branch interpretation is supported by the older `LogicLevel.BoostGameObject` reconstruction; see [version 93 evidence](../../../docs/NATIVE-HEROES.md#version-93-rage-coverage-and-expiry).
 - pulses / interval -> `NumberOfHits` 60 x `TimeBetweenHitsMS` 300 = 18 s
 - linger -> `BoostTimeMS` = 1000
 - radius -> `Radius` 500

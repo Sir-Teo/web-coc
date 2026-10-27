@@ -1,10 +1,12 @@
+import { nativeMiteJump } from './native-mite-jumps';
+import { recordNativeProjectileAim, type NativeProjectileAim } from './native-projectile-aim';
 import { archerTowerProjectileRow } from './archer-tower-stats';
 import { cannonProjectileRow } from './cannon-stats';
 import { recordCannonFlight, recordCannonHit } from './cannon-attack';
 import { distance2D } from './distance';
 import { recordBombTowerHit } from './bomb-tower-attack';
 import { recordWizardTowerHit } from './wizard-tower-attack';
-import { BUILDINGS, TROOPS, isTrap } from './data';
+import { BUILDINGS, TROOPS, isTrap, type UnitKind } from './data';
 import type { Battle, Building, FX, Unit } from './model';
 import { healerContribution, HEALER_HERO_SCALE } from './healing';
 import { damageDefenders, hurtDefender, type Defender } from './defenders';
@@ -12,6 +14,7 @@ import { XBOW_PROJECTILES } from './xbow-stats';
 import { WIZARD_TOWER_PROJECTILES } from './wizard-tower-stats';
 import { flag, nativeRow, num } from './native-data';
 import { hurtUnit } from './native-status';
+import { healingEligible } from './friendly-unit';
 
 export type Weapon =
   | 'arrow'
@@ -41,13 +44,55 @@ export interface CombatProjectile {
   impact: number;
   damage: number;
   splash?: number;
+  /** Version 98: the casting Healer's source Hero healing ratio, captured before flight. */
+  healingHeroScale?: number;
   /** Native Cannon/Archer Tower/X-Bow level or Wizard Tower projectile tier; X-Bow ammunition sequence. */
   variant?: number;
   sequence?: number;
   /** Actual position of a tracking Cannon shot, tower arrow or X-Bow bolt at the last simulation sample. */
   flight?: { x: number; y: number; at: number };
+  /** Version 137: equipment defender-target observations, captured independently of rendering. */
+  nativeAim?: NativeProjectileAim[];
   /** Version 45+ native roster projectile: client projectile row, shooter kind/level and bounce index. */
-  native?: { name: string; kind: string; level: number; bounce?: number };
+  native?: {
+    name: string;
+    kind: string;
+    level: number;
+    bounce?: number;
+    /** Version 157: Bowler's second landing extends the original launch aim. */
+    bowlerAim?: { x: number; y: number };
+    /** Version 130: captured equipment level; Fireball resolves a fixed-position area blast. */
+    fireball?: { level: number };
+    /** Version 133: one distinct Frost Flake target, with full freeze captured at launch. */
+    frostFlake?: { castId: string; index: number; seconds: number };
+    /** Version 134: source equipment damage and distinct visited targets survive every bounce. */
+    spikyBall?: {
+      castId: string;
+      index: number;
+      left: number;
+      reach: number;
+      visited: string[];
+      continues?: true;
+    };
+    /** Version 136: four distinct Seeking Shield contacts, including a captured wasted throw. */
+    seekingShield?: {
+      castId: string;
+      index: number;
+      left: number;
+      reach: number;
+      visited: string[];
+      continues?: true;
+      wasted?: true;
+    };
+    /** Version 108: kind-changing throws keep the original actor’s sound identity. */
+    captureSource?: true;
+    /** Version 71: frost captured at launch, retained after the shooter leaves. */
+    frost?: { seconds: number; percent: number };
+    /** Version 95: a Phoenix Egg revives its own Hero at this packet's fixed-time impact. */
+    phoenixRevive?: { heroId: number; birdId: number; spellLevel: number };
+    /** Version 100: friendly recovery and per-chain visited recipients, captured at launch. */
+    healing?: { remaining: number; hit: number[] };
+  };
   /** Version 45+ defense shot rules resolved on impact (bounces, hit spells, %-hitpoint bonus). */
   defense?: NativeDefenseShot;
 }
@@ -144,6 +189,14 @@ export function launchProjectile(
             nativeCannon(shot) ||
               nativeArcherTower(shot) ||
               shot.weapon === 'healing' ||
+              !!shot.native?.healing ||
+              (battle.nativeFrostFlake && !!shot.native?.frostFlake) ||
+              (battle.nativeSpikyBall && !!shot.native?.spikyBall) ||
+              (battle.nativeSeekingShield && !!shot.native?.seekingShield) ||
+              (battle.nativeSingleUseMiteJumps &&
+                !!shot.native &&
+                nativeMiteJump(battle, shot.native.kind)) ||
+              (battle.nativeMeteorThrows && shot.native?.kind === 'meteorgolem') ||
               shot.weapon === 'towerbomb' ||
               shot.weapon === 'fireball' ||
               shot.weapon === 'arcane' ||
@@ -165,7 +218,11 @@ export function launchProjectile(
           );
   const projectile: CombatProjectile = {
     ...shot,
-    id: `${shot.sourceId}:${at}${shot.native?.bounce ? `:${shot.native.bounce}` : ''}${
+    id: `${shot.sourceId}:${at}${shot.native?.bounce ? `:${shot.native.bounce}` : ''}${shot.native?.frostFlake ? `:frost${shot.native.frostFlake.index}` : ''}${shot.native?.spikyBall ? `:spiky${shot.native.spikyBall.index}` : ''}${shot.native?.seekingShield ? `:shield${shot.native.seekingShield.index}` : ''}${
+      battle.nativeRevengeDeck && shot.native?.name === 'ddreversalcardprojectile'
+        ? `:reflect${shot.targetId}`
+        : ''
+    }${
       // Multi-target defenses release several shots in one instant.
       shot.defense ? `:d${(battle.nativeShotSequence = (battle.nativeShotSequence ?? 0) + 1)}` : ''
     }`,
@@ -181,7 +238,35 @@ export function launchProjectile(
       ? battle.buildings.find((b) => b.id === shot.targetId)
       : undefined;
   if (target) Object.assign(projectile, buildingAim(shot, target));
+  if (
+    battle.nativeEquipmentFlightHistory &&
+    projectile.targetDefender &&
+    (projectile.native?.frostFlake ||
+      projectile.native?.spikyBall ||
+      projectile.native?.seekingShield)
+  )
+    projectile.nativeAim = [{ at, x: projectile.x, y: projectile.y }];
   (battle.projectiles ??= []).push(projectile);
+  if (projectile.native?.captureSource && projectile.native.kind === 'meteorgolem')
+    (battle.nativeMeteorFlights ??= []).push({ ...projectile, native: { ...projectile.native } });
+  if (battle.nativeBowlerImpactArt && projectile.native?.kind === 'bowler')
+    (battle.nativeBowlerFlights ??= []).push({ ...projectile, native: { ...projectile.native } });
+  if (
+    battle.nativeWitchFlightArt &&
+    (projectile.native?.kind === 'witch' || projectile.native?.kind === 'superwitch')
+  )
+    (battle.nativeWitchFlights ??= []).push({ ...projectile, native: { ...projectile.native } });
+  if (
+    battle.nativeWitchSounds &&
+    (projectile.native?.kind === 'witch' || projectile.native?.kind === 'superwitch')
+  )
+    (battle.nativeWitchShots ??= []).push({
+      id: projectile.id,
+      sourceId: projectile.sourceId,
+      kind: projectile.native.kind,
+      level: projectile.native.level,
+      launched: projectile.launched,
+    });
   emit(projectileEffect(projectile, 'projectile'));
   return projectile;
 }
@@ -199,6 +284,15 @@ export function projectileEffect(p: CombatProjectile, type: 'projectile' | 'impa
     targetId: p.targetId,
     targetBuilding: p.targetBuilding,
     targetDefender: p.targetDefender,
+    ...(p.native?.healing ? { targetFriendly: true as const } : {}),
+    ...(p.native && (p.native.healing || p.native.captureSource)
+      ? {
+          sourceKind: p.native.kind as UnitKind,
+          sourceLevel: p.native.level,
+          projectileBounce: p.native.bounce ?? 0,
+        }
+      : {}),
+    ...(p.native?.captureSource ? { at: type === 'projectile' ? p.launched : p.impact } : {}),
     fromAir: p.fromAir,
     toAir: p.toAir,
     radius: p.splash,
@@ -212,6 +306,26 @@ export function stepProjectiles(
   emit: (fx: FX) => void,
   nativeImpact?: (projectile: CombatProjectile) => void,
 ) {
+  if (battle.nativeWitchShots)
+    battle.nativeWitchShots = battle.nativeWitchShots.filter(
+      (shot) => (shot.hitAt ?? shot.launched) + 10 >= battle.elapsed - 1e-9,
+    );
+  // The renderer keeps landed native flights for at most three seconds. Witch aim is fixed.
+  if (battle.nativeWitchFlights)
+    battle.nativeWitchFlights = battle.nativeWitchFlights.filter(
+      (shot) => shot.impact + 3 >= battle.elapsed - 1e-9,
+    );
+  if (battle.nativeBowlerImpacts)
+    battle.nativeBowlerImpacts = battle.nativeBowlerImpacts.filter(
+      (impact) => impact.at + 10 >= battle.elapsed - 1e-9,
+    );
+  if (battle.nativeBowlerFlights)
+    battle.nativeBowlerFlights = battle.nativeBowlerFlights.filter(
+      (shot) => shot.impact + 10 >= battle.elapsed - 1e-9,
+    );
+  const bowlerFlights = battle.nativeBowlerFlights
+    ? new Map(battle.nativeBowlerFlights.map((shot) => [shot.id, shot]))
+    : undefined;
   const pending: CombatProjectile[] = [];
   // Ricochets launched while resolving impacts join the list after this sample.
   const initial = battle.projectiles?.length ?? 0;
@@ -261,16 +375,26 @@ export function stepProjectiles(
     p.flight.at = Math.min(battle.elapsed, p.impact);
   }
   const shots = battle.projectiles ?? [];
-  // Snapshot semantics: ricochets launched mid-sample join after it, even when skipping the sort.
+  // Historical ricochets join after the sample. Source equipment legs enter the ordered queue.
   const ordered = shots.length < 2 ? shots.slice() : [...shots].sort((a, b) => a.impact - b.impact);
-  for (const p of ordered) {
+  const transferred =
+    battle.nativeSpikyBall || battle.nativeSeekingShield ? new Set<CombatProjectile>() : undefined;
+  let appendedAt = initial;
+  for (let index = 0; index < ordered.length; index++) {
+    const p = ordered[index];
     const target = p.targetDefender
       ? defenderById.get(p.targetId)
       : p.targetBuilding
         ? buildingById.get(p.targetId)
         : unitById.get(p.targetId);
     let trackable = true;
-    if (p.defense && p.native) {
+    if (
+      (p.defense ||
+        (battle.nativeWardenFireball && p.native?.fireball) ||
+        (battle.nativeWitchWindup &&
+          (p.native?.kind === 'witch' || p.native?.kind === 'superwitch'))) &&
+      p.native
+    ) {
       let cached = trackableByNative.get(p.native.name);
       if (cached === undefined) {
         cached = !flag(nativeRow('projectiles', p.native.name), 'DontTrackTarget');
@@ -278,6 +402,8 @@ export function stepProjectiles(
       }
       trackable = cached;
     }
+    if (battle.nativeBowlerBoulders && p.native?.kind === 'bowler' && (p.native.bounce ?? 0) > 0)
+      trackable = false;
     if (
       target &&
       target.hp > 0 &&
@@ -290,6 +416,48 @@ export function stepProjectiles(
       const aim = p.targetBuilding ? buildingAim(p, target as Building) : target;
       p.x = aim.x;
       p.y = aim.y;
+    }
+    const bowlerFlight = bowlerFlights?.get(p.id);
+    if (bowlerFlight) Object.assign(bowlerFlight, { x: p.x, y: p.y, impact: p.impact });
+    if (battle.nativeEquipmentFlightHistory) recordNativeProjectileAim(p, battle.elapsed);
+    if (battle.nativeFrostFlake && p.native?.frostFlake) {
+      const own = p.native.frostFlake;
+      const record = battle.nativeFrostFlakeCasts?.find((cast) => cast.id === own.castId)?.shots[
+        own.index
+      ];
+      if (record?.id === p.id)
+        Object.assign(record, {
+          x: p.x,
+          y: p.y,
+          impact: p.impact,
+          ...(p.nativeAim ? { nativeAim: p.nativeAim } : {}),
+        });
+    }
+    if (battle.nativeSpikyBall && p.native?.spikyBall) {
+      const own = p.native.spikyBall;
+      const record = battle.nativeSpikyBallCasts?.find((cast) => cast.id === own.castId)?.shots[
+        own.index
+      ];
+      if (record?.id === p.id)
+        Object.assign(record, {
+          x: p.x,
+          y: p.y,
+          impact: p.impact,
+          ...(p.nativeAim ? { nativeAim: p.nativeAim } : {}),
+        });
+    }
+    if (battle.nativeSeekingShield && p.native?.seekingShield) {
+      const own = p.native.seekingShield;
+      const record = battle.nativeSeekingShieldCasts?.find((cast) => cast.id === own.castId)?.shots[
+        own.index
+      ];
+      if (record?.id === p.id)
+        Object.assign(record, {
+          x: p.x,
+          y: p.y,
+          impact: p.impact,
+          ...(p.nativeAim ? { nativeAim: p.nativeAim } : {}),
+        });
     }
     if (p.weapon === 'cannonball') recordCannonFlight(battle, p);
     if (p.impact > battle.elapsed + 1e-9) {
@@ -305,6 +473,8 @@ export function stepProjectiles(
           unit.hp > 0 &&
           (unit.spawnedAt ?? 0) <= p.impact + 1e-9 &&
           !TROOPS[unit.kind].flying &&
+          healingEligible(battle, unit, p.impact) &&
+          !((unit.native?.effects?.phoenixRevive?.until ?? 0) > p.impact + 1e-9) &&
           distance2D(unit.x - p.x, unit.y - p.y) <= (p.splash ?? 0)
         )
           unit.hp = Math.min(
@@ -312,7 +482,7 @@ export function stepProjectiles(
             unit.hp +
               p.damage *
                 healerContribution(battle, unit, p.sourceId) *
-                (unit.hero ? HEALER_HERO_SCALE : 1),
+                (unit.hero ? (p.healingHeroScale ?? HEALER_HERO_SCALE) : 1),
           );
     } else if (p.targetDefender) {
       if (p.splash) {
@@ -352,7 +522,7 @@ export function stepProjectiles(
           distance2D(u.x - p.x, u.y - p.y) <= p.splash &&
           !u.native?.burrowed
         )
-          hurtUnit(battle, u, p.damage, p.impact, p.sourceId);
+          hurtUnit(battle, u, p.damage, p.impact, p.sourceId, false, u.id !== p.targetId);
     } else if (
       target &&
       target.hp > 0 &&
@@ -383,7 +553,29 @@ export function stepProjectiles(
         air: !!p.toAir,
       });
     }
+    if (battle.nativeBowlerImpactSounds && p.weapon === 'native' && p.native?.kind === 'bowler')
+      (battle.nativeBowlerImpacts ??= []).push({
+        id: p.id,
+        sourceId: p.sourceId,
+        level: p.native.level,
+        bounce: p.native.bounce ?? 0,
+        at: p.impact,
+      });
     emit(projectileEffect(p, 'impact'));
+    if (transferred) {
+      const appended = battle.projectiles ?? [];
+      for (; appendedAt < appended.length; appendedAt++) {
+        const next = appended[appendedAt];
+        if (!next.native?.spikyBall && !next.native?.seekingShield) continue;
+        transferred.add(next);
+        let position = index + 1;
+        while (position < ordered.length && ordered[position].impact <= next.impact) position++;
+        ordered.splice(position, 0, next);
+      }
+    }
   }
-  battle.projectiles = [...pending, ...(battle.projectiles ?? []).slice(initial)];
+  battle.projectiles = [
+    ...pending,
+    ...(battle.projectiles ?? []).slice(initial).filter((p) => !transferred?.has(p)),
+  ];
 }

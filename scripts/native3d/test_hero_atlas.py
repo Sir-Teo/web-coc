@@ -1,4 +1,5 @@
 import hashlib
+import io
 import json
 from pathlib import Path
 import tempfile
@@ -95,6 +96,41 @@ class SourceCacheTests(unittest.TestCase):
             with patch.object(baker, 'ROOT', root), patch.object(baker, 'ARCHIVE', archive), \
                     patch.object(baker, 'FINGERPRINT_SHA256', hashlib.sha256(fingerprint).hexdigest()):
                 self.assertEqual(baker.Source().read(relative), payload)
+
+    def test_opt_in_download_verifies_before_caching_and_reuses_verified_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload, relative, cache, fingerprint = self.fixture(root)
+            target = cache / relative
+            target.unlink()
+            with patch.object(baker, 'ROOT', root), patch.object(baker, 'ARCHIVE', root / 'archive'), \
+                    patch.object(baker, 'FINGERPRINT_SHA256', hashlib.sha256(fingerprint).hexdigest()), \
+                    patch.object(baker.urllib.request, 'urlopen', return_value=io.BytesIO(payload)) as fetch:
+                source = baker.Source(download_missing=True)
+                self.assertEqual(source.read(relative), payload)
+                self.assertEqual(source.read(relative), payload)
+                fetch.assert_called_once()
+                self.assertEqual(target.read_bytes(), payload)
+            target.unlink()
+            with patch.object(baker, 'ROOT', root), patch.object(baker, 'ARCHIVE', root / 'archive'), \
+                    patch.object(baker, 'FINGERPRINT_SHA256', hashlib.sha256(fingerprint).hexdigest()), \
+                    patch.object(baker.urllib.request, 'urlopen', return_value=io.BytesIO(b'corrupt')):
+                with self.assertRaisesRegex(SystemExit, 'Source mismatch'):
+                    baker.Source(download_missing=True).read(relative)
+                self.assertFalse(target.exists())
+
+    def test_opt_in_bootstrap_verifies_the_fingerprint_before_writing_it(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _, _, cache, fingerprint = self.fixture(root)
+            target = cache / 'fingerprint.json'
+            target.unlink()
+            with patch.object(baker, 'ROOT', root), patch.object(baker, 'ARCHIVE', root / 'archive'), \
+                    patch.object(baker, 'FINGERPRINT_SHA256', hashlib.sha256(fingerprint).hexdigest()), \
+                    patch.object(baker.urllib.request, 'urlopen', return_value=io.BytesIO(b'corrupt')):
+                with self.assertRaisesRegex(SystemExit, 'fingerprint differs'):
+                    baker.Source(download_missing=True)
+                self.assertFalse(target.exists())
 
 
 if __name__ == '__main__':

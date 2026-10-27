@@ -43,3 +43,134 @@ test('the Music switch plays the original Home theme and follows a battle', asyn
   await page.locator('.toggle[data-action="music"]').click();
   await expect.poll(playing).toBe(false);
 });
+
+test('Music off and screen changes cancel active stings while sound effects stay enabled', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  await page.locator('[data-action="skip-tutorial"]').click();
+  await page.locator('[data-action="settings"]').first().click();
+  await page.locator('.toggle[data-action="music"]').click();
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => window.__game.model.startBattle(0, true));
+  await page.waitForFunction(() => !!window.__game.audio.tracks.activeSting);
+  const muted = await page.evaluate(() => {
+    const { audio } = window.__game;
+    const voice = audio.tracks.activeSting;
+    audio.music(false);
+    return {
+      active: !!audio.tracks.activeSting,
+      completionCancelled: voice.source.onended === null,
+      sound: audio.enabled,
+      context: audio.context.state,
+    };
+  });
+  expect(muted).toEqual({
+    active: false,
+    completionCancelled: true,
+    sound: true,
+    context: 'running',
+  });
+  await page.evaluate(() => window.__game.audio.music(true));
+  await expect.poll(() => page.evaluate(() => window.__game.audio.tracks.playing)).toBe(true);
+  await page.evaluate(() => window.__game.model.finishBattle());
+  await page.waitForFunction(() => !!window.__game.audio.tracks.activeSting);
+  await page.evaluate(() => window.__game.model.returnHome());
+  expect(await page.evaluate(() => window.__game.audio.tracks.activeSting)).toBeNull();
+  await expect
+    .poll(() => page.evaluate(() => window.__game.audio.tracks.current))
+    .toContain('home_music_part_1');
+});
+
+for (const destination of ['home', 'combat'] as const) {
+  test(`A delayed battle intro stays silent after leaving for ${destination}`, async ({ page }) => {
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let requested = false;
+    await page.route('**/assets/audio/music/new_battle_intro_01.mp3', async (route) => {
+      requested = true;
+      await held;
+      await route.continue();
+    });
+    await page.goto('/');
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    await page.locator('[data-action="skip-tutorial"]').click();
+    await page.locator('[data-action="settings"]').first().click();
+    await page.locator('.toggle[data-action="music"]').click();
+    await page.keyboard.press('Escape');
+    await page.evaluate(() => window.__game.model.startBattle(0, true));
+    await expect.poll(() => requested).toBe(true);
+    await page.evaluate((destination) => {
+      const { model } = window.__game;
+      if (destination === 'home') model.returnHome();
+      else {
+        model.battle.started = true;
+        model.changed();
+      }
+    }, destination);
+    release();
+    await page.evaluate(async () => {
+      await Promise.all([...window.__game.audio.tracks.stings.values()]);
+    });
+    expect(await page.evaluate(() => window.__game.audio.tracks.activeSting)).toBeNull();
+    await expect
+      .poll(() => page.evaluate(() => window.__game.audio.tracks.current))
+      .toContain(destination === 'home' ? 'home_music_part_1' : 'combat_music');
+    await expect.poll(() => page.evaluate(() => window.__game.audio.tracks.playing)).toBe(true);
+  });
+}
+
+test('Sound effects off cancels interface samples and tones while music keeps playing', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  await page.locator('[data-action="skip-tutorial"]').click();
+  await page.locator('[data-action="settings"]').first().click();
+  await page.locator('.toggle[data-action="music"]').click();
+  await expect.poll(() => page.evaluate(() => window.__game.audio.tracks.playing)).toBe(true);
+  const muted = await page.evaluate(() => {
+    const { audio, model } = window.__game;
+    const ctx = audio.context;
+    // A real long Web Audio buffer keeps an interface source active during the switch.
+    audio.samples.buffers.set(
+      'mute-check',
+      ctx.createBuffer(1, ctx.sampleRate * 4, ctx.sampleRate),
+    );
+    if (!audio.samples.shot('mute-check', 1)) throw Error('Interface sample did not start');
+    const shot = [...audio.samples.shots.keys()].at(-1);
+    audio.tone('victory');
+    const tone = [...audio.tones.keys()].at(-1);
+    document.querySelector('[data-action="sound"]').click();
+    return {
+      sound: model.state.settings.sound,
+      shots: audio.samples.shots.size,
+      tones: audio.tones.size,
+      completionCancelled: shot.onended === null && tone.onended === null,
+      context: ctx.state,
+      music: audio.tracks.playing,
+    };
+  });
+  expect(muted).toEqual({
+    sound: false,
+    shots: 0,
+    tones: 0,
+    completionCancelled: true,
+    context: 'running',
+    music: true,
+  });
+  const sound = page.locator('.toggle[data-action="sound"]');
+  await expect(sound).toHaveAttribute('aria-checked', 'false');
+  await sound.click();
+  await expect(sound).toHaveAttribute('aria-checked', 'true');
+  expect(
+    await page.evaluate(() => {
+      const { audio } = window.__game;
+      audio.play('deploy');
+      return audio.tones.size;
+    }),
+  ).toBeGreaterThan(0);
+});

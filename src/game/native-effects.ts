@@ -29,8 +29,14 @@ export interface NativeEffectEvent {
   facing?: Point;
   /** Targeted and Beam rows: projected end point, already lifted. */
   target?: Point;
-  /** Looping rows keep emitting until this battle time. */
+  /** Source-spell targeted particles retain their static emitter spawn offsets. */
+  targetedOrigins?: true;
+  /** Looping rows and externally sustained effects end at this battle time. */
   until?: number;
+  /** A caller-owned lifecycle repeats a source clip/emitter until this event ends. */
+  sustain?: true;
+  /** Source spell particles may scale animated descendants of a static export. */
+  nestedTimelines?: true;
   /** Object-layer depth override, e.g. air effects above every rooftop. */
   depth?: number;
 }
@@ -139,9 +145,44 @@ const samplers = new WeakMap<
   NativeMeshGraph,
   Map<number, ReturnType<typeof nativeParticleSampler>>
 >();
-function sampler(graph: NativeMeshGraph, scale: number) {
-  let byScale = samplers.get(graph);
-  if (!byScale) samplers.set(graph, (byScale = new Map()));
+const nestedSamplers = new WeakMap<
+  NativeMeshGraph,
+  Map<number, ReturnType<typeof nativeParticleSampler>>
+>();
+const nestedDurations = new WeakMap<NativeMeshGraph, Record<string, number>>();
+/** Static outer clips can own long animated descendants (e.g. Poison's 153-frame clouds). */
+function particleTimelineDurations(graph: NativeMeshGraph) {
+  let durations = nestedDurations.get(graph);
+  if (durations) return durations;
+  durations = {};
+  for (const [name, id] of Object.entries(graph.exports)) {
+    const root = graph.clips[id];
+    if (!root || root.timeline.length !== 1) continue;
+    const pending = [id],
+      seen = new Set<number>();
+    let longest = 1 / root.fps;
+    while (pending.length) {
+      const current = pending.pop()!;
+      if (seen.has(current)) continue;
+      seen.add(current);
+      const clip = graph.clips[current];
+      if (!clip) continue;
+      longest = Math.max(longest, clip.timeline.length / clip.fps);
+      for (const child of clip.children) if (!seen.has(child)) pending.push(child);
+    }
+    if (longest > 1 / root.fps) durations[name] = longest;
+  }
+  nestedDurations.set(graph, durations);
+  return durations;
+}
+/** Source timeline scaling can span animated descendants of a static export. */
+export function nativeNestedClipDuration(graph: NativeMeshGraph, name: string) {
+  return particleTimelineDurations(graph)[name] ?? nativeClipDuration(graph, name);
+}
+function sampler(graph: NativeMeshGraph, scale: number, nested = false) {
+  const cache = nested ? nestedSamplers : samplers;
+  let byScale = cache.get(graph);
+  if (!byScale) cache.set(graph, (byScale = new Map()));
   let result = byScale.get(scale);
   if (!result)
     byScale.set(
@@ -149,6 +190,7 @@ function sampler(graph: NativeMeshGraph, scale: number) {
       (result = nativeParticleSampler(graph, scale, {
         altitudeScale: NATIVE_ALTITUDE,
         orientTravelToParent: true,
+        timelineDurations: nested ? particleTimelineDurations(graph) : undefined,
       })),
     );
   return result;
@@ -287,7 +329,7 @@ export function nativeEffectPoses(
       y:
         event.ground.y + (ox + oy) * 0.16 - (event.lift ?? 0) - n(row, 'OffsetZ') * NATIVE_ALTITUDE,
     };
-    const looping = row.Looping === 'TRUE' && event.until !== undefined;
+    const looping = (row.Looping === 'TRUE' || event.sustain === true) && event.until !== undefined;
     const delay = n(row, 'EmitterDelayMs') / 1000;
     const age = elapsed - event.at - delay;
     if (age < 0) continue;
@@ -295,7 +337,13 @@ export function nativeEffectPoses(
       const graph = pack.scenes[nativeSceneId(row.SWF)];
       if (graph?.exports[row.ExportName] !== undefined) {
         const duration = nativeClipDuration(graph, row.ExportName);
-        if (looping ? elapsed <= event.until! : age < duration) {
+        if (
+          looping
+            ? event.sustain
+              ? elapsed < event.until! - 1e-9
+              : elapsed <= event.until!
+            : age < duration
+        ) {
           result.push({
             key: `${event.key}:${index}:timeline`,
             scene: nativeSceneId(row.SWF),
@@ -335,6 +383,14 @@ export function nativeEffectPoses(
         const life = mix(n(config, 'MinLife'), n(config, 'MaxLife'), random(0)) / 1000;
         if (birth.age >= life) continue;
         const from = { x: origin.x, y: origin.y - n(config, 'StartZ') * NATIVE_ALTITUDE };
+        if (event.targetedOrigins) {
+          const radius = mix(n(config, 'StartRadiusMin'), n(config, 'StartRadiusMax'), random(6)),
+            angle = random(7) * Math.PI * 2,
+            sx = n(config, 'StartX') + Math.cos(angle) * radius,
+            sy = n(config, 'StartY') + Math.sin(angle) * radius;
+          from.x += (sx - sy) * 0.32;
+          from.y += (sx + sy) * 0.16;
+        }
         const to = {
           x: event.target!.x,
           y: event.target!.y - n(config, 'TargetedEndZ') * NATIVE_ALTITUDE,
@@ -362,7 +418,7 @@ export function nativeEffectPoses(
           });
         continue;
       }
-      const pose = sampler(graph, scale)(
+      const pose = sampler(graph, scale, event.nestedTimelines)(
         `${event.key}:${index}:${birth.index}`,
         name,
         [config],
@@ -386,12 +442,13 @@ export function nativeEffectPoses(
 
 /** Longest time an effect record can keep drawing after it starts (non-looping rows). */
 const durations = new WeakMap<NativeArtPack, Map<string, number>>();
-export function nativeEffectDuration(pack: NativeArtPack, effect: string) {
+export function nativeEffectDuration(pack: NativeArtPack, effect: string, maximum = 30) {
   let cache = durations.get(pack);
   if (!cache) durations.set(pack, (cache = new Map()));
   let duration = cache.get(effect);
   if (duration === undefined) cache.set(effect, (duration = effectDuration(pack, effect)));
-  return duration;
+  // Persistent beam emitters declare near-infinite lives; finite source fields may opt out.
+  return Math.min(duration, maximum);
 }
 function effectDuration(pack: NativeArtPack, effect: string) {
   let longest = 0;
@@ -414,8 +471,7 @@ function effectDuration(pack: NativeArtPack, effect: string) {
             1000,
       );
   }
-  // Persistent beam emitters declare near-infinite lives; their callers stop them explicitly.
-  return Math.min(longest, 30);
+  return longest;
 }
 
 /** Trail births along a flight: each birth keeps the projected point where it was emitted. */
@@ -428,6 +484,7 @@ export function nativeTrailPoses(
   reduced: boolean,
   facing: Point = { x: 1, y: 0 },
   depth?: number,
+  options?: { scale: number; timeScale: number },
 ): NativeEffectPose[] {
   const emitter = pack.emitters[emitterName];
   if (!emitter || reduced) return [];
@@ -439,11 +496,11 @@ export function nativeTrailPoses(
     const config = emitterVariant(emitter, Math.floor(random(1) * emitter.length));
     const graph = pack.scenes[nativeSceneId(config.ParticleSwf)];
     if (!graph || graph.exports[config.ParticleExportName] === undefined) continue;
-    const pose = sampler(graph, NATIVE_ART_SCALE)(
+    const pose = sampler(graph, NATIVE_ART_SCALE * (options?.scale ?? 1))(
       `${key}:${birth.index}`,
       emitterName,
       [config],
-      elapsed - birth.at,
+      (elapsed - birth.at) / (options?.timeScale ?? 1),
       birth.ground,
       random,
       config.IsoLayer ?? 'Object',

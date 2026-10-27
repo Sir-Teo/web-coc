@@ -210,6 +210,31 @@ fetching heroes the viewer does not own. Home pet prefetch follows the selected 
 lineup, leaving pets assigned to benched heroes cold. `tests/browser/battle-art-prefetch.spec.ts`
 checks first-deployment rendering and texture reuse across a Practice replay rewind.
 
+The same home/carried troop roster now warms each level's indexed native projectile flight pack.
+Shared card artwork is requested once even when several source rows use it. Importing a replay
+warms its provided troop levels before deployment; mode changes reuse completed packs. These
+requests use the existing pack loader, failure cooldown and fallback behavior and leave the combat
+clock unchanged. `tests/browser/battle-projectile-prefetch.spec.ts` holds the actual card graph
+request before any troop is deployed, then verifies native art on the first shot on desktop and phone.
+Reduced motion skips flight-pack prefetch; disabling it warms the same roster without requiring
+an army change.
+
+Hero flight packs follow both the ready home lineup and the current recording's hero setups.
+The prefetch key includes hero levels, equipped item levels and assigned pets, so changing equipment
+warms new flight art even when the character atlas stays the same. Source ability `Projectile` and
+`ReflectProjectile` rows include Frozen Arrow, every Monolith Arrow stage and Revenge Deck; assigned
+pets contribute their own native shot. `heroSetups()` supplies the same ready-home snapshot used by
+battle creation. `tests/browser/hero-projectile-prefetch.spec.ts` holds actual equipment graphs,
+changes a home loadout, and checks the first native shot in a local attack and an imported phone replay.
+
+Native battle pack loaders track ownership of the texture objects they upload or reuse. Destroying a loader
+releases its pages once the last live loader stops using them, while externally registered or
+replaced textures remain intact. A failed multi-page upload releases its partial pages and cancels
+late decode completions; obsolete requests cannot restart after destruction. A pack becomes ready
+only when every texture registration succeeds. The existing failure cooldown and reconnect retry
+still apply. `tests/native-art-pack-lifecycle.test.ts` covers ownership, cancellation and recovery;
+`tests/browser/native-pack-lifecycle.spec.ts` checks real shared GPU textures and a held second page.
+
 Village building graphs also recover from failed downloads: the pending marker clears
 after failure and retries back off from five seconds to five minutes. The fallback stays
 visible while the native graph or level pages are unavailable. Going online makes failed
@@ -318,6 +343,11 @@ and emits the underlying native import after Vite's preload instrumentation. Tem
 failures reach the art loader; a status probe keeps missing release chunks and HTML fallbacks
 on the existing reload path. `tests/browser/late-art-build.spec.ts` checks the built URLs and
 startup-cache boundary through the shipped UI in Chromium and WebKit.
+Shared character-entry helpers stay in the already-cached startup UI chunk. A retryable art
+entry must not statically import another retryable entry: that edge would retain the failed ordinary URL
+after a cache-busted retry. The build rejects those edges. The production character retry
+case scouts an armed Builder's Hut and waits for its worker texture after recovery; home
+building art alone no longer requests character graphs.
 Development JSON retries keep their cache buster in the browser URL while the server uses
 the ordinary JSON source ID for transformation. Editing an art module still reloads the
 page so `LazyGraph` and registry caches pick up the new source.
@@ -372,6 +402,10 @@ fallback page or a newer deploy's file is served but never stored). A newer depl
 beside it and waits; the page then shows "Update ready · Reload", which activates the new
 worker and reloads onto its release. Unhashed asset URLs are therefore never paired with
 another release's page.
+If another tab has already started activating the offered worker, accepting the prompt
+reloads directly. It must not wait for a controller-change event that may have already
+arrived. `tests/offline-update.test.ts` covers that race, completed activation, normal
+activation and failed messaging; the production browser suite checks both update paths.
 
 If a deployment removes an uncached lazy chunk, automatic recovery checks for an update
 and allows up to ten seconds total for discovery and installation, then activates any

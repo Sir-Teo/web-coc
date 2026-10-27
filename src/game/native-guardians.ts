@@ -1,5 +1,8 @@
 import { nonWallBuildings } from './building-lists';
+import { defenderHitPoisonScales } from './defender-hit-poison';
+import { defenderFrostScales } from './defender-frost';
 import { distance2D } from './distance';
+import { activeBoost } from './native-boost';
 import { BUILDINGS, TROOPS } from './data';
 import type { Defender, GuardianDefender } from './defenders';
 import { knockback } from './native-defenses';
@@ -261,14 +264,23 @@ export function stepGuardian(ctx: NativeTroopContext, g: GuardianDefender, dt: n
   if (activeDt <= 0) return;
   const poison = g.poison && g.poison.until > at ? g.poison : undefined;
   const scale = guardianPoisonScale();
-  const boost = g.boost && g.boost.until > at ? g.boost : undefined;
+  const hitPoison = defenderHitPoisonScales(g, at, scale);
+  const frost = defenderFrostScales(g, at);
+  const areaMove = poison ? Math.max(0, 1 + poison.speed * scale) : 1;
+  const areaTempo = poison ? Math.max(0.05, 1 + poison.attack * scale) : 1;
+  const boost = battle.nativeRageRules
+    ? activeBoost(g.boost, at)
+    : g.boost && g.boost.until > at
+      ? g.boost
+      : undefined;
   const damageScale =
     Math.max(1 + (g.enraged ? stats.homeRage!.damage : 0), 1 + (boost?.damage ?? 0)) *
     (poison ? 1 : 1);
   const speed =
     (stats.speed + Math.max(g.enraged ? stats.homeRage!.speed : 0, boost?.speed ?? 0)) *
-    (poison ? Math.max(0, 1 + poison.speed * scale) : 1);
-  const tempo = poison ? Math.max(0.05, 1 + poison.attack * scale) : 1;
+    (hitPoison ? Math.min(areaMove, hitPoison.move) : areaMove) *
+    frost.move;
+  const tempo = (hitPoison ? Math.min(areaTempo, hitPoison.attack) : areaTempo) * frost.attack;
   // Sticky target while it stays in search range; otherwise closest by distance then id.
   let sticky: Unit | undefined;
   let best: Unit | undefined;
@@ -391,7 +403,13 @@ function attack(
         live(u, at) &&
         (u.id === target.id || distance2D(u.x - target.x, u.y - target.y) <= stats.splash + EPS)
       )
-        hurtUnit(battle, u, damage, at);
+        hurtUnit(
+          battle,
+          u,
+          damage,
+          at,
+          battle.nativeRevengeDeck && u.id === target.id ? g.id : undefined,
+        );
     ctx.effect({
       type: 'hit',
       sourceDefender: true,

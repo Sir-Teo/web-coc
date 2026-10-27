@@ -16,9 +16,11 @@ it('reconstructs every Magic Practice trap and status across portable playback a
   expect(m.battle!.finished).toBe(true);
   // Version 44 native battles route P.E.K.K.As through client sub-tile building lanes and clear
   // sight lines; this fixed army reaches 23% (42% on the former whole-tile grid). The whole group
-  // now turns south, so the northern Shrink Trap stays armed while both others pulse fully.
+  // turned south under the former attack clock, leaving the northern Shrink Trap armed.
   // Version 54 caps crowd separation: 14% (23% under version 53).
-  expect(m.battle!.result!.destruction).toBe(14);
+  // Version 164 gives P.E.K.K.A its full first swing; this changes the fixed army's fight to 19%.
+  // All three Shrink Traps now pulse fully; the version-163 witness preserves the former fight.
+  expect(m.battle!.result!.destruction).toBe(19);
   expect(
     Object.entries(m.battle!.traps)
       .filter(([, s]) => s.shrink)
@@ -26,6 +28,7 @@ it('reconstructs every Magic Practice trap and status across portable playback a
   ).toEqual([
     [1318, 75],
     [1319, 75],
+    [1320, 75],
   ]);
   expect(m.battle!.units.some((u) => u.shrink && u.shrink.timeLost > 0)).toBe(true);
   const end = JSON.stringify(m.battle),
@@ -63,4 +66,37 @@ it('keeps the original prerequisite and does not allow repeat raids to refill th
   m.state.army = { ...shrinkTrapVillage().army };
   m.startCampaign(54);
   expect(m.battle!.availableLoot).toEqual(remaining);
+});
+
+it('preserves the version-163 Magic Practice outcome and complete historical replay states', () => {
+  const m = shrinkTrapBattle(undefined, 163),
+    snapshots: { at: number; battle: string }[] = [];
+  for (let i = 0; i < 4000 && !m.battle!.finished; i++) {
+    if ([0, 39, 400, 550].includes(i))
+      snapshots.push({ at: m.battle!.elapsed, battle: JSON.stringify(m.battle) });
+    m.step(0.05);
+  }
+  expect(m.battle!.finished).toBe(true);
+  expect(m.battle!.result!.destruction).toBe(14);
+  expect(
+    Object.entries(m.battle!.traps)
+      .filter(([, s]) => s.shrink)
+      .map(([id, s]) => [Number(id), s.shrink!.pulses]),
+  ).toEqual([
+    [1318, 75],
+    [1319, 75],
+  ]);
+  const end = JSON.stringify(m.battle),
+    data = m.state.raidLog[0].replay!;
+  expect(data.version).toBe(163);
+  expect(m.openReplay(parseReplayFile(JSON.stringify(makeReplayFile(data))))).toBe(true);
+  for (const snapshot of [
+    ...snapshots,
+    ...snapshots.slice().reverse(),
+    { at: 9999, battle: end },
+  ]) {
+    m.seekReplay(snapshot.at);
+    while (m.replay!.seeking) m.step(0.05);
+    expect(JSON.parse(JSON.stringify(m.battle))).toEqual(JSON.parse(snapshot.battle));
+  }
 });

@@ -3,12 +3,15 @@ import { num, text, seconds, tiles, flag } from './native-data';
 import { heroAbilities, type NativeBattleHero, type HeroAbility } from './native-heroes';
 import { castNativeSpell } from './native-spells';
 import { healUnit, unitEffects } from './native-status';
+import { mergeBoost } from './native-boost';
 import { launchProjectile } from './projectiles';
-import { damageDefenders } from './defenders';
+import { damageDefenders, hurtDefender } from './defenders';
 import { distanceTo, type Unit } from './model';
 import { distance2D } from './distance';
 import type { NativeTroopContext } from './native-troops';
 import { MAP_SIZE } from './grid';
+import { meteorStaffTarget } from './native-meteor-staff';
+import { stepRevengeDeck } from './native-revenge-deck';
 
 /** Stateful equipment effects are sampled on the deterministic battle clock. */
 export function stepEquipmentEffects(ctx: NativeTroopContext, hero: NativeBattleHero, unit: Unit) {
@@ -43,11 +46,14 @@ export function stepEquipmentEffects(ctx: NativeTroopContext, hero: NativeBattle
         (state[`cast:${ability.name}`] ??
           (unit.spawnedAt ?? 0) + seconds(row, 'ActivationCooldown'))
     ) {
-      const target = battle.buildings
-        .filter((b) => b.hp > 0 && !isTrap(b.kind) && isDefense(b.kind))
-        .sort((a, b) => distanceTo(unit, a) - distanceTo(unit, b) || a.id - b.id)[0];
+      const target =
+        battle.nativeMeteorStaffTargeting && ability.name === 'MPMeteorStaff'
+          ? meteorStaffTarget(battle, unit, at)
+          : battle.buildings
+              .filter((b) => b.hp > 0 && !isTrap(b.kind) && isDefense(b.kind))
+              .sort((a, b) => distanceTo(unit, a) - distanceTo(unit, b) || a.id - b.id)[0];
       if (target) {
-        castNativeSpell(
+        const cast = castNativeSpell(
           battle,
           spell,
           num(row, 'CastSpellLevel', 1),
@@ -56,6 +62,9 @@ export function stepEquipmentEffects(ctx: NativeTroopContext, hero: NativeBattle
           target.y + BUILDINGS[target.kind].size / 2,
           { owner: unit.id, at },
         );
+        const original = ability.name === 'MPMeteorStaff' && battle.nativeSpellArt?.includes(spell);
+        if (original)
+          cast.activationOrigin = { x: unit.x, y: unit.y, air: !!TROOPS[unit.kind].flying };
         ctx.effect({
           type: 'hit',
           x: unit.x,
@@ -63,11 +72,16 @@ export function stepEquipmentEffects(ctx: NativeTroopContext, hero: NativeBattle
           toX: target.x + BUILDINGS[target.kind].size / 2,
           toY: target.y + BUILDINGS[target.kind].size / 2,
           sourceId: unit.id,
+          ...(original ? { abilityCastId: `meteor-staff:${cast.id}` } : {}),
         });
         state[`cast:${ability.name}`] = at + seconds(row, 'ActivationCooldown');
       }
     }
     if (flag(row, 'ReflectsDamage')) {
+      if (battle.nativeRevengeDeck && ability.name === 'DragonScaleReflect') {
+        stepRevengeDeck(ctx, unit, ability, state);
+        continue;
+      }
       const taken = unit.native?.damageTaken ?? 0,
         key = `reflect:${ability.name}`;
       if (taken > (state[`${key}:damage`] ?? 0) && at >= (state[key] ?? 0)) {
@@ -127,12 +141,16 @@ export function stepEquipmentEffects(ctx: NativeTroopContext, hero: NativeBattle
       unit.hp += added;
       state['crown:hp'] = percent;
     }
-    unitEffects(unit).boost = {
+    const effects = unitEffects(unit);
+    const boost = {
       until: Infinity,
       damage: num(crown.row, 'BoostDamagePercentage') / 100,
       speed: 0,
       attackSpeed: 0,
     };
+    effects.boost = battle.nativeRageRules
+      ? mergeBoost(effects.boost, 'equipment:dark-crown', boost, at)
+      : boost;
   }
 }
 export function startEquipmentDash(ctx: NativeTroopContext, unit: Unit, ability: HeroAbility) {
@@ -178,11 +196,13 @@ export function stepEquipmentDash(ctx: NativeTroopContext, unit: Unit, dt: numbe
     for (const d of ctx.battle.defenders ?? [])
       if (
         d.hp > 0 &&
+        (!ctx.battle.nativeEquipmentDashHits || d.spawnedAt <= ctx.battle.elapsed) &&
         !dash.hit.includes(d.id) &&
         distance2D(d.x - unit.x, d.y - unit.y) <= dash.radius
       ) {
         dash.hit.push(d.id);
-        damageDefenders(ctx.battle, d, dash.damage, 0, 'both');
+        if (ctx.battle.nativeEquipmentDashHits) hurtDefender(ctx.battle, d, dash.damage);
+        else damageDefenders(ctx.battle, d, dash.damage, 0, 'both');
       }
   }
   unit.attacking = false;
@@ -201,9 +221,11 @@ export function monolithArrow(ctx: NativeTroopContext, unit: Unit) {
   if (!ctx.battle.nativeContentExpansion) return undefined;
   const hero = ctx.battle.nativeHeroes?.find((h) => h.unitId === unit.id);
   if (!hero) return undefined;
-  const housing = ctx.battle.units
-    .filter((u) => !u.summoned && !u.hero)
-    .reduce((n, u) => n + TROOPS[u.kind].space, 0);
+  const housing =
+    ctx.battle.nativeMonolithHousing ??
+    ctx.battle.units
+      .filter((u) => !u.summoned && !u.hero)
+      .reduce((n, u) => n + TROOPS[u.kind].space, 0);
   return heroAbilities(hero)
     .filter(
       (a) =>

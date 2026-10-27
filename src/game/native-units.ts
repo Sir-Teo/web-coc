@@ -11,6 +11,7 @@ import {
   type NativeTable,
 } from './native-data';
 import type { TroopDef } from './data';
+import type { NativeDamageRampStats } from './native-damage-ramp';
 
 /** Client character names for every trainable troop key. The Barbarian keeps its saved key. */
 export const TROOP_SOURCE = {
@@ -75,6 +76,8 @@ export const TROOP_SOURCE = {
 } as const;
 /** Units that never occupy army housing: created by other units, spells or equipment. */
 export const SPAWN_SOURCE = {
+  frostmite: 'Icemite',
+  booger: 'Booger',
   golemite: 'Golemite',
   lavapup: 'Lava Pup',
   skeleton: 'Skeleton',
@@ -161,6 +164,7 @@ export interface NativeUnitStats {
   /** Damage each attack resolves; negative DPS rows (healers) keep their positive heal here. */
   damage: number;
   dps: number;
+  damageRamp?: NativeDamageRampStats;
   heal: number;
   rate: number;
   range: number;
@@ -218,6 +222,8 @@ export interface NativeUnitStats {
   bounceDistance: number;
   frostTime: number;
   frostPercent: number;
+  /** Passive equipment projectile, selected by the version-71 attack path. */
+  frostProjectile?: string;
   preferHeroes: boolean;
   groups: boolean;
   groupRadius: number;
@@ -242,6 +248,8 @@ export interface NativeUnitStats {
   cooldownOverride: number;
   /** Pets: how far they may wander from their hero before returning. */
   leash: number;
+  /** Pet attacks prefer the assigned Hero's current target. */
+  preferMasterTarget: boolean;
   /** Alternate mode (Grand Warden ground/air). */
   altMode: boolean;
   altFlying: boolean;
@@ -280,6 +288,15 @@ function computeUnitStats(kind: string, level: number): NativeUnitStats {
     level: safe,
     hp: num(row, 'Hitpoints'),
     damage: Math.abs(dps) * rate,
+    ...(flag(row, 'IncreasingDamage')
+      ? {
+          damageRamp: {
+            dps: [dps, num(row, 'DPSLv2', dps), num(row, 'DPSLv3', dps)] as const,
+            switchAt: [seconds(row, 'Lv2SwitchTime'), seconds(row, 'Lv3SwitchTime')] as const,
+            killedCooldown: seconds(row, 'TargetKilledCooldownTimer'),
+          },
+        }
+      : {}),
     dps: Math.max(0, dps),
     heal: Math.max(0, -dps) * rate,
     rate,
@@ -369,6 +386,7 @@ function computeUnitStats(kind: string, level: number): NativeUnitStats {
       })),
     cooldownOverride: seconds(row, 'CoolDownOverride'),
     leash: tiles(row, 'LeashLength'),
+    preferMasterTarget: flag(row, 'PreferMasterTarget'),
     altMode: flag(row, 'HasAltMode'),
     altFlying: flag(row, 'AltModeFlying'),
     altRange: tiles(row, 'AltAttackRange'),
