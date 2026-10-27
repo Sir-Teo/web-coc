@@ -54,25 +54,30 @@ test('Music off and screen changes cancel active stings while sound effects stay
   await page.locator('.toggle[data-action="music"]').click();
   await page.keyboard.press('Escape');
   await page.evaluate(() => window.__game.model.startBattle(0, true));
-  await page.waitForFunction(() => window.__game.audio.tracks.voices.size === 1);
+  await page.waitForFunction(() => !!window.__game.audio.tracks.activeSting);
   const muted = await page.evaluate(() => {
     const { audio } = window.__game;
-    const voice = [...audio.tracks.voices][0];
+    const voice = audio.tracks.activeSting;
     audio.music(false);
     return {
-      voices: audio.tracks.voices.size,
+      active: !!audio.tracks.activeSting,
       completionCancelled: voice.source.onended === null,
       sound: audio.enabled,
       context: audio.context.state,
     };
   });
-  expect(muted).toEqual({ voices: 0, completionCancelled: true, sound: true, context: 'running' });
+  expect(muted).toEqual({
+    active: false,
+    completionCancelled: true,
+    sound: true,
+    context: 'running',
+  });
   await page.evaluate(() => window.__game.audio.music(true));
   await expect.poll(() => page.evaluate(() => window.__game.audio.tracks.playing)).toBe(true);
   await page.evaluate(() => window.__game.model.finishBattle());
-  await page.waitForFunction(() => window.__game.audio.tracks.voices.size === 1);
+  await page.waitForFunction(() => !!window.__game.audio.tracks.activeSting);
   await page.evaluate(() => window.__game.model.returnHome());
-  expect(await page.evaluate(() => window.__game.audio.tracks.voices.size)).toBe(0);
+  expect(await page.evaluate(() => window.__game.audio.tracks.activeSting)).toBeNull();
   await expect
     .poll(() => page.evaluate(() => window.__game.audio.tracks.current))
     .toContain('home_music_part_1');
@@ -110,7 +115,7 @@ for (const destination of ['home', 'combat'] as const) {
     await page.evaluate(async () => {
       await Promise.all([...window.__game.audio.tracks.stings.values()]);
     });
-    expect(await page.evaluate(() => window.__game.audio.tracks.voices.size)).toBe(0);
+    expect(await page.evaluate(() => window.__game.audio.tracks.activeSting)).toBeNull();
     await expect
       .poll(() => page.evaluate(() => window.__game.audio.tracks.current))
       .toContain(destination === 'home' ? 'home_music_part_1' : 'combat_music');
