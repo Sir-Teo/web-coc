@@ -59,6 +59,8 @@ export interface CombatProjectile {
     kind: string;
     level: number;
     bounce?: number;
+    /** Version 157: Bowler's second landing extends the original launch aim. */
+    bowlerAim?: { x: number; y: number };
     /** Version 130: captured equipment level; Fireball resolves a fixed-position area blast. */
     fireball?: { level: number };
     /** Version 133: one distinct Frost Flake target, with full freeze captured at launch. */
@@ -356,6 +358,8 @@ export function stepProjectiles(
       }
       trackable = cached;
     }
+    if (battle.nativeBowlerBoulders && p.native?.kind === 'bowler' && (p.native.bounce ?? 0) > 0)
+      trackable = false;
     if (
       target &&
       target.hp > 0 &&

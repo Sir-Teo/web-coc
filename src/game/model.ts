@@ -983,6 +983,8 @@ export interface Battle {
   nativeGarrisonBowlerPreAttack?: true;
   /** Version 156: attacking Bowler windup/recovery starts at engagement and uses active time. */
   nativeBowlerWindup?: true;
+  /** Version 157: native defender-targeted boulders and fixed source-radius bounce landings. */
+  nativeBowlerBoulders?: true;
   nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
   nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */

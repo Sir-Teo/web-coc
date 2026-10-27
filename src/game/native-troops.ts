@@ -824,7 +824,17 @@ export function stepNativeUnit(
         launchProjectile(
           battle,
           {
-            weapon: 'arrow',
+            weapon: battle.nativeBowlerBoulders ? 'native' : 'arrow',
+            ...(battle.nativeBowlerBoulders
+              ? {
+                  native: {
+                    name: s.projectile,
+                    kind: u.kind,
+                    level: s.level,
+                    bowlerAim: { x: target.defender.x, y: target.defender.y },
+                  },
+                }
+              : {}),
             sourceId: u.id,
             targetId: target.defender.id,
             targetBuilding: false,
@@ -1311,6 +1321,9 @@ function strike(
           name: s.projectile,
           kind: u.kind,
           level: s.level,
+          ...(battle.nativeBowlerBoulders && u.kind === 'bowler'
+            ? { bowlerAim: { x: center.x, y: center.y } }
+            : {}),
           ...(battle.nativeMeteorThrows && u.kind === 'meteorgolem'
             ? { captureSource: true as const }
             : {}),
@@ -1668,6 +1681,7 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
   const frostmiteSplash = !!(battle.nativeFrostmites && source.kind === 'frostmite');
   const miteSplash = nativeMiteJump(battle, source.kind);
   const meteorSplash = !!(battle.nativeMeteorThrows && source.kind === 'meteorgolem');
+  const bowlerSplash = !!(battle.nativeBowlerBoulders && source.kind === 'bowler');
   const bothLayers = miteSplash || meteorSplash;
   // Native defender-targeted shots retain their captured direct hit on either defender layer.
   if (p.targetDefender) {
@@ -1681,6 +1695,7 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
         rocketSplash ||
           phoenixSplash ||
           bothLayers ||
+          bowlerSplash ||
           (battle.nativeHeroDefenderAttacks && isHeroUnitKind(source.kind))
           ? p.impact
           : undefined,
@@ -1718,8 +1733,10 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
       p.damage,
       p.splash,
       bothLayers ? 'both' : (rocketSplash || phoenixSplash) && p.toAir ? 'air' : 'ground',
-      (rocketSplash || phoenixSplash || bothLayers) && p.targetDefender ? p.targetId : undefined,
-      rocketSplash || phoenixSplash || bothLayers ? p.impact : undefined,
+      (rocketSplash || phoenixSplash || bothLayers || bowlerSplash) && p.targetDefender
+        ? p.targetId
+        : undefined,
+      rocketSplash || phoenixSplash || bothLayers || bowlerSplash ? p.impact : undefined,
     );
   if (frostmiteSplash && p.splash)
     for (const defender of battle.defenders ?? [])
@@ -1761,20 +1778,24 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
   }
   const bounced = source.bounce ?? 0;
   if (s.bounces > 1 && bounced + 1 < s.bounces && s.bounceDistance > 0) {
-    const dx = p.x - p.fromX,
-      dy = p.y - p.fromY,
+    const fixedBowler = battle.nativeBowlerBoulders && source.kind === 'bowler';
+    const aim = fixedBowler ? (source.bowlerAim ?? p) : p;
+    const dx = aim.x - p.fromX,
+      dy = aim.y - p.fromY,
       len = distance2D(dx, dy) || 1;
-    const x = p.x + (dx / len) * s.bounceDistance,
-      y = p.y + (dy / len) * s.bounceDistance;
+    const x = aim.x + (dx / len) * s.bounceDistance,
+      y = aim.y + (dy / len) * s.bounceDistance;
     let next: Building | undefined,
       best = Infinity;
-    for (const b of battle.buildings) {
-      if (b.hp <= 0 || isTrap(b.kind) || b.id === p.targetId || !targetableBuilding(battle, b))
-        continue;
-      const d = distanceTo({ x, y }, b);
-      if (d <= Math.max(0.5, s.splash) + 1e-9 && d < best) {
-        best = d;
-        next = b;
+    if (!fixedBowler) {
+      for (const b of battle.buildings) {
+        if (b.hp <= 0 || isTrap(b.kind) || b.id === p.targetId || !targetableBuilding(battle, b))
+          continue;
+        const d = distanceTo({ x, y }, b);
+        if (d <= Math.max(0.5, s.splash) + 1e-9 && d < best) {
+          best = d;
+          next = b;
+        }
       }
     }
     launchProjectile(
@@ -1790,7 +1811,7 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
         x,
         y,
         damage: p.damage,
-        splash: Math.max(0.5, s.splash),
+        splash: fixedBowler ? s.splash : Math.max(0.5, s.splash),
       },
       ctx.effect,
       p.impact,

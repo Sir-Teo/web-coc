@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 156;
+export const REPLAY_VERSION = 157;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -184,7 +184,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 153 makes later split families spend each recovery tick once when retargeting.
  * Version 154 binds original Electro Dragon garrison charge audio to active wall time.
  * Version 155 binds original Bowler pre-attack takes to garrison windups and their natural tails.
- * Version 156 starts attacking Bowler windups at engagement and holds them through Freeze. */
+ * Version 156 starts attacking Bowler windups at engagement and holds them through Freeze.
+ * Version 157 uses native Bowler boulders against defenders and fixes second landings. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -308,6 +309,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 153 ||
   version === 154 ||
   version === 155 ||
+  version === 156 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -456,6 +458,7 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 157 && s.army.bowler > 0 ? { nativeBowlerBoulders: true as const } : {}),
     ...(version >= 156 && s.army.bowler > 0 ? { nativeBowlerWindup: true as const } : {}),
     ...(version >= 155 &&
     s.garrisons?.some((reserve) => reserve.troops.some((troop) => troop.kind === 'bowler'))

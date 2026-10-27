@@ -44,7 +44,7 @@ it('a fresh target during recovery waits 0.7s recovery plus the 0.4s initial cha
 });
 
 it('defender-targeted windup retains the established release path and hits exactly once', () => {
-  const r = attackingBowlerBattle();
+  const r = attackingBowlerBattle(1, 156);
   r.battle.buildings = r.battle.buildings.filter((b) => b.id === 1);
   const target = spawnGarrisonDefender(r.battle, 'golem', 8, 1, 13, 11.5, 0);
   target.alerted = true;
