@@ -93,6 +93,8 @@ export interface GarrisonDefender extends DefenderState {
   tantrum?: boolean;
   /** Later families (see garrison-abilities.ts): split-timer recovery still to run. */
   recovery?: number;
+  /** Version 154: active wall-time age of an Electro Dragon's current charge sample. */
+  preAttack?: { n: number; targetId: number; age: number; lastAt: number };
   /** Secondary troops and summons: push-out from their spawn point, then summon SpawnIdle. */
   push?: GarrisonPush;
   idleUntil?: number;

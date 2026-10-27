@@ -19,7 +19,9 @@ It also covers the 18 player spells and Meteor Staff’s equipment spell, from `
 
 The importer also records 21 garrison kinds at their 22 enabled VisualLevels, after resolving
 `DefensiveTroop` substitutions. These bindings include campaign-only and spawned defenders;
-they do not add NPCs to the attacking troop roster.
+they do not add NPCs to the attacking troop roster. Version 154 also binds defending
+Electro Dragon's `PreAttackEffect` to its active-time charge clock; see the
+[charge-audio reference](../reference/garrison/README.md#electro-dragon-charge-audio-recording-version-154).
 
 The importer copies 357 Ogg files (5.09 MiB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`. An already shipped sample can supply a missing local source only when its SHA-256 matches that same source pin. Edited outputs cannot supply trusted source bytes; corrupt authoritative cache entries still fail validation.
 
@@ -41,7 +43,7 @@ The take and its pitch come from a hash of the event's key: the unit's id and th
 
 ## When they play
 
-- **Deploy.** A deployed troop carries no deploy time, so the scene notes the battle time of the first frame that shows each unit. Units already on the field when the sound log starts, or after a seek, are noted silently, so seeking through a replay doesn't fire a burst of deploys. Units that another unit, a spell or an ability summons play no deploy sound.
+- **Deploy.** Units with a captured birth time use that clock; otherwise the scene notes the battle time of the first frame that shows each deployed unit. Units already on the field when the sound log starts, or after a seek, are noted silently, so seeking through a replay doesn't fire a burst of deploys. Units that another unit, a spell or an ability summons play no deploy sound.
 - **Attack and hit.** Most attacks use the scene's log of combat events against buildings or defenders, live or replayed. Captured Electromite/Electro Dragon/Super Wizard arcs and Meteor Golem packets keep their own timelines:
   - a melee blow is the attack and the hit at once;
   - a shot attacks at its launch and hits at its impact;

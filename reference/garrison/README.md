@@ -370,7 +370,7 @@ snapshots with exact version-145 physical equality after removing the audio capa
 Desktop/phone Chromium checks original bodies, actual Web Audio gain/pitch at replay speed,
 pause, backward seeks, historical silence and reconnect recovery without advancing playback.
 
-This is primary-event audio coverage. Separate pre-attack charging (including Bowler's
+This version-146 boundary covers primary-event audio. Version 154 below adds Electro Dragon charge audio. Other pre-attack charging (including Bowler's
 `trollAttack`), Witch summon effects, Electro Titan aura, death-spell effects and movement
 still need their own source timing adapters. No native executable sound-scheduler parity is
 claimed. The source profiles imported here all have zero `SoundDelay`; their existing combat
@@ -480,3 +480,37 @@ Actual Electro Dragon and Golem recordings restore the missing 50 ms while match
 first attack, target death and switch time exactly. In the Bowler fixture, the projectile
 kills after his recovery has ended, so the next release correctly stays unchanged. Controlled
 Bowler checks separately cover a fresh target acquired while recovery is still positive.
+
+## Electro Dragon charge audio (recording version 154)
+
+The pinned 18.400.21 `characters.Electro Dragon` row 3 declares
+`PreAttackEffect=Electro Dragon Pre Attack`. Its source effect names
+`sfx/electro_dragon_sfx_atk_01.ogg`, volume 0.5, pitch 1 and delay 0. The unchanged 22,389-byte
+sample is already in the shared catalog, pinned by SHA-256
+`e2944a697345e194c07cf0fa3314e6c37e03ab521457d89082a028ba397bba91`.
+The importer now records this extra binding for the defender's actual source row. No audio
+file or effect is added, and the catalog remains 371 effects / 357 samples.
+
+Version 154 captures the current charge's attack ordinal, target ID, active audio age and
+last simulated update. The clock starts after recovery; a tick crossing recovery contributes
+only its active remainder. Audio age then advances by active wall time rather than the
+poison/frost-scaled attack time, matching the existing attacking Electro Dragon convention.
+Full Freeze holds the age and suppresses the cue; resume reconstructs its original sample
+offset. Target loss, release and death retire it. Stable ordinal/target keys distinguish
+charges, and the original attack/impact/chain samples retain their own clocks.
+
+Only carried Electro Dragon garrisons enable and warm this binding. Historical recordings
+through version 153 retain their prior charge silence. Sound lookup and rendering do not
+mutate combat. Normal and Freeze portable recordings match version-153 physical battles
+exactly after removing the charge capability and per-defender audio metadata. The captured
+clock is the local presentation alignment, not a claim of native executable sound-scheduler
+parity. Original pre-attack particle coverage and Bowler's separate `trollAttack` timing
+remain outside this sound binding.
+
+`tests/garrison-pre-attack.test.ts` checks source cue gain/pitch, partial recovery crossings,
+Freeze hold/resume, release silence, reserve preloading, scoped allocation, exact physical
+parity and complete current/historical portable reverse seeks. The browser spec
+`tests/browser/garrison-pre-attack.spec.ts` checks full Node/Chromium snapshots, actual decoded
+Web Audio nodes, 0.06 mixer gain, 2× playback, sample start offsets, pause, rewind, reduced
+motion and historical silence. A blocked 503 sample recovers on reconnect while the portable
+replay stays paused, with unchanged battle state and no autoplay.

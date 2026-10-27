@@ -2,6 +2,7 @@ import { poisonAvoidanceTarget } from './poison-avoidance';
 import { defenderPoisonScales } from './defender-poison';
 import { defenderFrostScales } from './defender-frost';
 import { hurtGarrisonUnit } from './garrison-damage';
+import { stepGarrisonPreAttack, stopGarrisonPreAttack } from './garrison-pre-attack';
 import { TROOPS } from './data';
 import { nonWallBuildings } from './building-lists';
 import { distance2D, distanceSquared2D } from './distance';
@@ -303,6 +304,7 @@ export function stepGarrisonDefender(
   if (stats.aura) stepAura(battle, defender, stats);
   defender.attacking = false;
   if (defender.hp <= 0) {
+    stopGarrisonPreAttack(battle, defender);
     delete defender.avoidingPoison;
     if (defender.defeatedAt !== undefined) {
       if (stats.secondary) spawnSecondaries(battle, defender, stats, spawnGarrisonDefender);
@@ -410,6 +412,7 @@ export function stepGarrisonDefender(
   // taking the first, without the O(n log n) sort per defender per tick.
   let target = pool.find((unit) => unit.id === defender.target);
   if (!target) {
+    stopGarrisonPreAttack(battle, defender);
     let best = Infinity;
     for (const unit of pool) {
       const d = distanceSquared2D(unit.x - defender.x, unit.y - defender.y);
@@ -446,6 +449,7 @@ export function stepGarrisonDefender(
     defender.pathAt = 0;
   }
   if (defender.target !== target.id) {
+    stopGarrisonPreAttack(battle, defender);
     defender.target = target.id;
     delete defender.engaged;
     if (!stats.flying) {
@@ -483,6 +487,7 @@ export function stepGarrisonDefender(
       }
       followPath(defender, stats.speed, moveDt);
     }
+    stepGarrisonPreAttack(battle, defender, activeDt, attackDt, recoveryAtStart);
     if (!committed || defender.cooldown > 1e-9) return;
   } else {
     if (!defender.engaged) {
@@ -498,8 +503,10 @@ export function stepGarrisonDefender(
     }
     defender.attacking = true;
     if (!stats.flying) defender.path = [];
+    stepGarrisonPreAttack(battle, defender, activeDt, attackDt, recoveryAtStart);
     if (defender.cooldown > 1e-9) return;
   }
+  stopGarrisonPreAttack(battle, defender);
   defender.cooldown = stats.rate;
   if (stats.split) defender.recovery = stats.recovery;
   defender.alerted = true;

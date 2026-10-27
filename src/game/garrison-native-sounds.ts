@@ -11,10 +11,10 @@ import type { Battle } from './model';
 import { cueAudible, type SampleCue } from './sample-audio';
 import { effectCue } from './troop-sounds';
 
-type Event = 'deploy' | 'attack' | 'hit' | 'die' | 'chain';
+type Event = 'deploy' | 'preAttack' | 'attack' | 'hit' | 'die' | 'chain';
 type Binding = { name: string; row: number } & Partial<Record<Event, string>>;
 const bindings = source.garrisons as Record<string, Record<string, Binding>>;
-const EVENTS: readonly Event[] = ['deploy', 'attack', 'hit', 'die', 'chain'];
+const EVENTS: readonly Event[] = ['deploy', 'preAttack', 'attack', 'hit', 'die', 'chain'];
 const legacy = (kind: GarrisonKind) => kind === 'dragon' || kind === 'balloon';
 
 export const garrisonSoundEffect = (kind: GarrisonKind, level: number, event: Event) =>
@@ -35,6 +35,15 @@ export function nativeGarrisonSoundCues(battle: Battle, defender: GarrisonDefend
     if (cue && cue.at <= elapsed + 1e-9 && cueAudible(cue.at, elapsed)) cues.push(cue);
   };
   push('deploy', 'deploy', defender.spawnedAt);
+  const charge = defender.preAttack;
+  if (
+    battle.nativeGarrisonPreAttack &&
+    defender.hp > 0 &&
+    charge &&
+    charge.lastAt >= elapsed - 1e-9 &&
+    (defender.stunnedUntil ?? 0) <= elapsed + 1e-9
+  )
+    push('preAttack', `preAttack:${charge.n}:${charge.targetId}`, elapsed - charge.age);
   for (const [index, attack] of defender.attacks.entries()) {
     const ordinal = attack.n ?? index;
     push('attack', `attack:${ordinal}`, attack.at);
@@ -59,7 +68,9 @@ export function garrisonSoundEffects(battle: Battle): Set<string> {
     seen.add(key);
     const binding = bindings[kind]?.[level];
     if (!binding) return;
-    for (const event of EVENTS) if (binding[event]) effects.add(binding[event]!);
+    for (const event of EVENTS)
+      if (binding[event] && (event !== 'preAttack' || battle.nativeGarrisonPreAttack))
+        effects.add(binding[event]!);
     const stats = garrisonStats(kind, level);
     if (stats.secondary) {
       const child = spawnedGarrisonKind(stats.secondary.character),

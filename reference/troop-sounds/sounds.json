@@ -1101,7 +1101,8 @@
         "attack": "Electro Dragon Attack",
         "hit": "Mega Tesla Hit",
         "die": "Dragon Die",
-        "chain": "Electro Dragon Attack Chain"
+        "chain": "Electro Dragon Attack Chain",
+        "preAttack": "Electro Dragon Pre Attack"
       }
     },
     "electrotitan": {

@@ -977,6 +977,8 @@ export interface Battle {
   nativeGarrisonMeleeTiming?: true;
   /** Version 153: split-family retargeting spends each recovery tick only once. */
   nativeGarrisonRecovery?: true;
+  /** Version 154: defending Electro Dragons play the original charge sample on active time. */
+  nativeGarrisonPreAttack?: true;
   nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
   nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */
