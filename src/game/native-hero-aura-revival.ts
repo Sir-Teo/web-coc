@@ -1,6 +1,7 @@
 import type { Battle, Unit } from './model';
 import { heroAbilities } from './native-heroes';
 import { text } from './native-data';
+import { captureElectroBootsActivation } from './native-electro-boots';
 
 /** A real resurrection restarts passive auras, preserving every other equipment/ability guard. */
 export function reviveHeroAuras(battle: Battle, unit: Unit, at: number) {
@@ -8,6 +9,7 @@ export function reviveHeroAuras(battle: Battle, unit: Unit, at: number) {
   const hero = battle.nativeHeroes?.find((hero) => hero.unitId === unit.id);
   if (!hero) return;
   let resumed = false;
+  let activationId: string | undefined;
   for (const ability of heroAbilities(hero)) {
     const aura = ability.passive && text(ability.row, 'AuraSpell');
     if (!aura) continue;
@@ -17,6 +19,9 @@ export function reviveHeroAuras(battle: Battle, unit: Unit, at: number) {
     for (const cast of battle.nativeSpells ?? [])
       if (cast.follow === unit.id && cast.name === aura) cast.ended = true;
     resumed = true;
+    if (ability.name === 'Electro Boots Aura')
+      activationId = captureElectroBootsActivation(battle, unit, at);
   }
   if (resumed) hero.auraResume = { unitId: unit.id, at };
+  return activationId;
 }

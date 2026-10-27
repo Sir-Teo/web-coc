@@ -950,6 +950,9 @@ export interface Battle {
   nativeHeroAuraRevival?: true;
   /** Version 139: passive self-regeneration cannot bank ticks through death or Recall. */
   nativeHeroRegeneration?: true;
+  /** Version 140: capture Electro Boots' original passive activation at each aura origin. */
+  nativeElectroBootsPresentation?: true;
+  nativeElectroBootsActivations?: import('./native-electro-boots').ElectroBootsActivation[];
   nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
   nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */
@@ -5214,24 +5217,26 @@ export class GameModel {
       }
     }
     hero.deployed = true;
+    let passiveActivationId: string | undefined;
     if (b.nativeHeroPassives) {
       const native = this.nativeContext(b, this.sharedWalls(b));
-      refreshHeroPassives(
+      passiveActivationId = refreshHeroPassives(
         native,
         hero,
         b.units.find((u) => u.id === hero.unitId)!,
       );
     }
-    this.onEffect(
+    const feedback: FX =
       recalled !== undefined &&
-        recordRecallEvent(
-          b,
-          b.units.find((u) => u.id === hero.unitId)!,
-          'redeploy',
-        )
+      recordRecallEvent(
+        b,
+        b.units.find((u) => u.id === hero.unitId)!,
+        'redeploy',
+      )
         ? { type: 'recall-unit', sourceId: hero.unitId, text: 'redeploy', x, y }
-        : { type: 'spawn', x, y },
-    );
+        : { type: 'spawn', x, y };
+    if (passiveActivationId) feedback.abilityCastId = passiveActivationId;
+    this.onEffect(feedback);
     this.guidePlaced({ hero: kind });
     this.deployChanged(starting);
     return true;

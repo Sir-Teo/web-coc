@@ -1,0 +1,34 @@
+{
+  "clientVersion": "18.400.21",
+  "generator": "scripts/import-electro-boots-art.py",
+  "sources": {
+    "csv/particle_emitters.csv": "8d80bbf714386c4f24e6aed8f2eef671a2eac5c3b3ad41e4d275b757ced64cef",
+    "logic/effects.csv": "5c6d5b67d6407345123b8d55872ed77ee6697b466d20d1fa21e25a723c511e9f",
+    "logic/special_abilities.csv": "c978dd90ff2335e60d988f3476d78bec72672e8c074344d149096e89951181eb",
+    "sc/buildings.sc": "f73ec949fc070bc03175d6bb3af8b62d8f607094bf2b343c9846a499a35be0ed",
+    "sc/buildings_39.sctx": "dd27d9612fe135c3be364840eeabe45b53a229b24192246b56a08fa0606fdb16"
+  },
+  "ability": "Electro Boots Aura",
+  "abilityLevelCount": 10,
+  "profile": {
+    "ActivationEffect": "Ability_Electro_Boots"
+  },
+  "shake": {
+    "CameraShake": "20",
+    "CameraShakeTimeMS": "200",
+    "CameraShakeInReplay": "FALSE"
+  },
+  "effects": {
+    "Ability_Electro_Boots": "electro-boots"
+  },
+  "packs": {
+    "electro-boots": {
+      "path": "assets/electro-boots-native/activation/graph.json",
+      "sha256": "cec425339af3940308e28216cca4c7dca9231d2b6b6870e94d067cd5ded51555",
+      "bytes": 5209
+    }
+  },
+  "conventions": {
+    "activation": "Independent stationary effect at passive deployment or aura resurrection; no manual activation."
+  }
+}

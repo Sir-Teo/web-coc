@@ -761,11 +761,16 @@ function reviveHero(
   fallen.target = null;
   fallen.path = [];
   fallen.pathAt = 0;
-  reviveHeroAuras(ctx.battle, fallen, at);
+  const activationId = reviveHeroAuras(ctx.battle, fallen, at);
   resetHeroRegeneration(ctx.battle, fallen, at);
   if (ctx.battle.nativeSpellArt?.includes('Revive'))
     cast.revivePresentation = { targetId: fallen.id, x: fallen.x, y: fallen.y, at };
-  ctx.effect({ type: 'spawn', x: fallen.x, y: fallen.y });
+  ctx.effect({
+    type: 'spawn',
+    x: fallen.x,
+    y: fallen.y,
+    ...(activationId ? { abilityCastId: activationId } : {}),
+  });
 }
 
 /** Skeleton/Bat spells: a first group at the first hit, the remainder evenly over the spawn time. */

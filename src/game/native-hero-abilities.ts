@@ -5,6 +5,7 @@ import { launchFrostFlake } from './native-frost-flake';
 import { launchSpikyBall } from './native-spiky-ball';
 import { launchDarkOrb } from './native-dark-orb';
 import { launchSeekingShield } from './native-seeking-shield';
+import { captureElectroBootsActivation } from './native-electro-boots';
 import { itemName } from './native-hero-data';
 import { distance2D } from './distance';
 import { TROOPS, type UnitKind } from './data';
@@ -253,6 +254,7 @@ export function refreshHeroPassives(ctx: NativeTroopContext, hero: NativeBattleH
   if (!ctx.battle.nativeHeroPassives || unit.hp <= 0 || unit.ejected || unit.native?.recalled)
     return;
   const at = ctx.battle.elapsed;
+  let activationId: string | undefined;
   for (const ability of heroAbilities(hero)) {
     if (!ability.passive) continue;
     const row = ability.row;
@@ -281,6 +283,10 @@ export function refreshHeroPassives(ctx: NativeTroopContext, hero: NativeBattleH
       const key = `aura:${ability.name}`;
       if (state[key] !== unit.id) {
         state[key] = unit.id;
+        const auraAt =
+          ctx.battle.nativeHeroAuraRevival && hero.auraResume?.unitId === unit.id
+            ? hero.auraResume.at
+            : at;
         castNativeSpell(
           ctx.battle,
           aura,
@@ -289,15 +295,14 @@ export function refreshHeroPassives(ctx: NativeTroopContext, hero: NativeBattleH
           unit.x,
           unit.y,
           {
-            at:
-              ctx.battle.nativeHeroAuraRevival && hero.auraResume?.unitId === unit.id
-                ? hero.auraResume.at
-                : at,
+            at: auraAt,
             follow: unit.id,
             owner: unit.id,
             immediate: true,
           },
         );
+        if (ability.name === 'Electro Boots Aura')
+          activationId = captureElectroBootsActivation(ctx.battle, unit, auraAt);
       }
     }
     const radius = tiles(row, 'ActiveWhileAloneRadius');
@@ -325,6 +330,7 @@ export function refreshHeroPassives(ctx: NativeTroopContext, hero: NativeBattleH
     }
   }
   if (ctx.battle.nativeHeroAuraRevival) delete hero.auraResume;
+  return activationId;
 }
 
 function stepPassive(

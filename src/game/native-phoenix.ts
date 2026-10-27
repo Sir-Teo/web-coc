@@ -183,9 +183,15 @@ export function resolvePhoenixRevive(ctx: NativeTroopContext, projectile: Combat
   hero.pathAt = 0;
   unitEffects(hero).phoenixRevive = { until, duration };
   protection(hero, until);
-  reviveHeroAuras(ctx.battle, hero, projectile.impact);
+  const activationId = reviveHeroAuras(ctx.battle, hero, projectile.impact);
   resetHeroRegeneration(ctx.battle, hero, projectile.impact);
-  ctx.effect({ type: 'spawn', x: hero.x, y: hero.y, sourceId: hero.id });
+  ctx.effect({
+    type: 'spawn',
+    x: hero.x,
+    y: hero.y,
+    sourceId: hero.id,
+    ...(activationId ? { abilityCastId: activationId } : {}),
+  });
   return true;
 }
 

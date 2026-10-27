@@ -2,10 +2,18 @@ import type { Battle } from './model';
 import { fireballProfile } from './fireball-effects';
 import { FROST_FLAKE_PRESENTATION } from './frost-flake-effects';
 import { DARK_ORB_PRESENTATION } from './dark-orb-effects';
+import { ELECTRO_BOOTS_PRESENTATION } from './electro-boots-effects';
 
 /** Match a live ability event to the original activation already owned by battle presentation. */
 export function heroAbilityActivation(battle: Battle | null | undefined, id: string | undefined) {
   if (!battle || !id) return;
+  const boots = battle.nativeElectroBootsActivations?.find((event) => event.id === id);
+  if (battle.nativeElectroBootsPresentation && boots)
+    return {
+      effect: ELECTRO_BOOTS_PRESENTATION.ActivationEffect,
+      key: `${boots.id}:sound`,
+      at: boots.at,
+    };
   const frost = battle.nativeFrostFlakeCasts?.find((cast) => cast.id === id);
   if (battle.nativeFrostFlake && frost)
     return {

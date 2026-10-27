@@ -17,7 +17,7 @@ Attacking troops and pets play the client's own sounds when they are deployed, w
 
 It also covers the 18 spells this game casts, from `logic/spells.csv`. For each spell it records the `PreDeployEffect` (the bottle falling), the `DeployEffect` and `DeployEffect2` (it landing), the `ChargingEffect` and the `HitEffect` (each pulse). Some of these change with level; Freeze, for example, has one deploy effect per level.
 
-The importer copies 347 Ogg files (4.94 MiB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`. An already shipped sample can supply a missing local source only when its SHA-256 matches that same source pin. Edited outputs cannot supply trusted source bytes; corrupt authoritative cache entries still fail validation.
+The importer copies 348 Ogg files (4.97 MiB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`. An already shipped sample can supply a missing local source only when its SHA-256 matches that same source pin. Edited outputs cannot supply trusted source bytes; corrupt authoritative cache entries still fail validation.
 
 | Troop     | Deploy                                                     | Attack                                                                                          | Death                                           |
 | --------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------- |
@@ -239,3 +239,12 @@ Version 136 adds Seeking Shield's declared `trollBoulder_destroyed` root and the
 separate bounce effect: only its final or early-ended leg plays the destroyed cue. Ordinary
 Champion hit audio does not double these equipment contacts. The catalog now contains 364 effects
 and 347 sound files. See [Seeking Shield source details](../reference/seeking-shield/README.md).
+
+## Electro Boots passive activation
+
+Version 140 plays `Ability_Electro_Boots` at each captured passive deployment or aura restoration,
+using the unmodified `ability_electro_boots.ogg` at source volume 100%, pitch 1 and zero delay.
+A decoded cue replaces the generated deployment tone while preserving vibration. Art readiness
+is independent of audio readiness. Pause, seek, muted playback and missing-file retries use the
+shared sample lifecycle. The catalog contains 365 effects and 348 sound files. See [Electro Boots
+source details](../reference/electro-boots/README.md).

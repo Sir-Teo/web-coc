@@ -1,6 +1,7 @@
 import { fieldSpellDeploy2Delay, fieldSpellUsesResolvedRevive } from './field-spell-effects';
 import { fireballProfile } from './fireball-effects';
 import { frostFlakeSoundEvents } from './frost-flake-effects';
+import { electroBootsSoundEvents } from './electro-boots-effects';
 import { spikyBallSoundEvents } from './spiky-ball-effects';
 import { DARK_ORB_PRESENTATION } from './dark-orb-effects';
 import { seekingShieldSoundEvents } from './seeking-shield-effects';
@@ -320,6 +321,7 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
   }
   for (const event of [
     ...frostFlakeSoundEvents(battle),
+    ...electroBootsSoundEvents(battle),
     ...spikyBallSoundEvents(battle),
     ...seekingShieldSoundEvents(battle),
   ]) {

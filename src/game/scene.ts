@@ -38,6 +38,11 @@ import { nativeUnitStats } from './native-units';
 import { heroProjectileNames } from './hero-projectile-prefetch';
 import { fireballEffects } from './fireball-effects';
 import { fireballShake } from './fireball-shake';
+import {
+  electroBootsCarried,
+  electroBootsShake,
+  ELECTRO_BOOTS_PRESENTATION,
+} from './electro-boots-effects';
 import { heroAbilityActivation } from './hero-ability-feedback';
 import { SPIKY_BALL_PRESENTATION, spikyBallCarried } from './spiky-ball-effects';
 import { DARK_ORB_PRESENTATION, darkOrbCarried } from './dark-orb-effects';
@@ -1040,6 +1045,7 @@ export class VillageScene extends Phaser.Scene {
             infernoShake(battle, reduced, replay),
             infernoDragonShake(battle, reduced, replay),
             fireballShake(battle, reduced, replay, elapsed),
+            electroBootsShake(battle, reduced, replay, elapsed),
           ],
           shakeMemo.offset,
         );
@@ -2743,12 +2749,13 @@ export class VillageScene extends Phaser.Scene {
     const fireball = !this.model.battle || !!this.model.battle.nativeWardenFireball;
     const giantArrow = !this.model.battle || !!this.model.battle.nativeGiantArrow;
     const frostFlake = !this.model.battle || !!this.model.battle.nativeFrostFlake;
+    const electroBoots = !this.model.battle || !!this.model.battle.nativeElectroBootsPresentation;
     const spikyBall = !this.model.battle || !!this.model.battle.nativeSpikyBall;
     const darkOrb = !this.model.battle || !!this.model.battle.nativeDarkOrb;
     const seekingShield = !this.model.battle || !!this.model.battle.nativeSeekingShield;
     const projectiles = this.model.reducedMotion
       ? ''
-      : `${signature}|${setupSignature}|phoenix:${!!this.model.battle?.nativePhoenixResurrection}|fireball:${fireball}|giant-arrow:${giantArrow}|frost-flake:${frostFlake}|spiky-ball:${spikyBall}|dark-orb:${darkOrb}|seeking-shield:${seekingShield}`;
+      : `${signature}|${setupSignature}|phoenix:${!!this.model.battle?.nativePhoenixResurrection}|fireball:${fireball}|giant-arrow:${giantArrow}|frost-flake:${frostFlake}|electro-boots:${electroBoots}|spiky-ball:${spikyBall}|dark-orb:${darkOrb}|seeking-shield:${seekingShield}`;
     if (projectiles !== this.projectilePrefetchSignature) {
       this.projectilePrefetchSignature = projectiles;
       this.nativeProjectiles?.prefetch(
@@ -2781,6 +2788,8 @@ export class VillageScene extends Phaser.Scene {
         this.nativeProjectiles?.prefetchEffects([FROST_FLAKE_PRESENTATION.ActivationEffect]);
         this.nativeProjectiles?.prefetchEmitters([FROST_FLAKE_PRESENTATION.ParticleEmitter]);
       }
+      if (electroBoots && !this.model.reducedMotion && electroBootsCarried(setups))
+        this.nativeProjectiles?.prefetchEffects([ELECTRO_BOOTS_PRESENTATION.ActivationEffect]);
       if (spikyBall && !this.model.reducedMotion && spikyBallCarried(setups)) {
         this.nativeProjectiles?.prefetchEffects([SPIKY_BALL_PRESENTATION.impact]);
         this.nativeProjectiles?.prefetchEmitters([SPIKY_BALL_PRESENTATION.trail]);
@@ -4365,6 +4374,9 @@ export class VillageScene extends Phaser.Scene {
       ...(needsRecallPresentation(battle) ? ['RecallRedeployAuraTop'] : []),
       ...(battle.nativeWardenFireball ? ['FireballActivationEffect'] : []),
       ...(battle.nativeFrostFlake ? frostFlakeSoundEffects : []),
+      ...(battle.nativeElectroBootsPresentation
+        ? [ELECTRO_BOOTS_PRESENTATION.ActivationEffect]
+        : []),
       ...(battle.nativeSpikyBall ? [SPIKY_BALL_PRESENTATION.impact] : []),
       ...(battle.nativeDarkOrb ? [DARK_ORB_PRESENTATION.ActivationEffect] : []),
       ...(battle.nativeSeekingShield ? [SEEKING_SHIELD_PRESENTATION.destroyed] : []),
@@ -4389,8 +4401,17 @@ export class VillageScene extends Phaser.Scene {
   /** A troop's deploy sound plays through the battle cues once decoded; the tone stands in. */
   private deployFeedback() {
     const battle = this.model.battle,
-      u = battle?.units.at(-1);
-    if (battle && u && this.cueReady(troopCue(battle, u, 'deploy', `troop:${u.id}:deploy`, 0)))
+      u = battle?.units.at(-1),
+      // Input feedback runs before the next frame drains queued battle effects.
+      deployment = this.pendingFx.at(-1),
+      activation =
+        deployment && (deployment.type === 'spawn' || deployment.type === 'recall-unit')
+          ? heroAbilityActivation(battle, deployment.abilityCastId)
+          : undefined;
+    if (
+      (activation && this.cueReady(effectCue(activation.effect, activation.key, activation.at))) ||
+      (battle && u && this.cueReady(troopCue(battle, u, 'deploy', `troop:${u.id}:deploy`, 0)))
+    )
       this.audio.feedback('deploy');
     else this.audio.play('deploy');
   }
@@ -6142,7 +6163,15 @@ export class VillageScene extends Phaser.Scene {
         onComplete: () => smoke.destroy(),
       });
       this.ruinsDirty = true;
-    } else this.sparks(p.x, p.y - 8, fx.type === 'spawn' ? 0xefffc5 : 0xffe1a0, 5);
+    } else if (
+      fx.type !== 'spawn' ||
+      !this.nativeProjectiles.coversAbilityActivation(
+        this.model.battle,
+        fx.abilityCastId,
+        this.model.reducedMotion,
+      )
+    )
+      this.sparks(p.x, p.y - 8, fx.type === 'spawn' ? 0xefffc5 : 0xffe1a0, 5);
   }
   /**
    * Feedback shake. `intensity` keeps Phaser's `camera.shake` meaning on a 1x display at the

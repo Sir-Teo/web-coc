@@ -31,6 +31,8 @@ for (const def of REGENERATING_ITEMS) {
       for (let step = 0; step < 48; step++) old.model.step(0.05);
       const comparable = JSON.parse(JSON.stringify(dense.battle));
       delete comparable.nativeHeroRegeneration;
+      delete comparable.nativeElectroBootsPresentation;
+      delete comparable.nativeElectroBootsActivations;
       expect(comparable).toEqual(old.battle);
     });
   it(`${def.slug} cannot bank regeneration while held in Recall`, () => {

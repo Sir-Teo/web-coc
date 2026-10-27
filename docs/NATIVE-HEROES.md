@@ -2267,3 +2267,17 @@ Electro Boots and Fire Heart, with equivalent dense/coarse steps. Real Monolith/
 verify no stored healing, the first new tick, complete portable snapshots and historical behavior.
 Browser checks cover live-looking original Hero bodies, phone/desktop HP, backward seeks, reduced
 motion and existing aura resurrection. See [the regeneration reference](../reference/hero-regeneration/README.md).
+
+## Version 140 Electro Boots passive activation
+
+The Champion's passive aura now retains its source activation, independent of manual ability
+input. All 27 item levels share the same original effect across ten mapped ability tiers. Initial
+deployment and Recall capture the new body's position. Revive and Phoenix capture the canonical
+restoration point before movement; subsequent aura upkeep deduplicates that event. The original
+stationary 300 ms burst persists through its owner's movement or removal.
+
+The pinned 100% sound and 200 ms camera impulse use existing playback, pause, replay and reduced
+motion rules. The source disables camera shake in replays. Original art and decoded sound each
+replace their deployment fallback when ready; missing assets recover during paused playback.
+The presentation-only capability preserves version 139 combat and RNG at every item level, with
+older replay behavior retained. See [source evidence, interpretation limits and validation](../reference/electro-boots/README.md).

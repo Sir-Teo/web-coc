@@ -66,6 +66,7 @@
     "sfx/Troop_Thrower_Attack_03.ogg": "04351be7b2f44af6207540927b1f3033ea6a4b2dafdac7a73891d1c6e9899c40",
     "sfx/Troop_Thrower_Deploy.ogg": "357f0008938495737a0018d0bc5549df8e1de79cd4e93fa0e55acf9e932a73da",
     "sfx/Troop_Thrower_Die.ogg": "0897badb119a121bf0b9b5d5baa84022faed2e0ebef1c5be9474729d9214734d",
+    "sfx/ability_electro_boots.ogg": "959f39ae37db09b0086e113d8a3c347d50c1a537b1b6b199ab2015a922eaf4b6",
     "sfx/ability_rc_frostflake_hit_01.ogg": "6414ae1c837b965d97f875c7075275dbc5ccb415a14a31549435a9e6577793e8",
     "sfx/ability_rc_frostflake_hit_02.ogg": "a9e41fbddf59a0b94bb4d927ccd3cb7da8a717bcd7e13f620d0917aaef48a4c4",
     "sfx/ability_rc_frostflake_hit_03.ogg": "37a9b2a493134f3fb5dcd30106d8955b9b359131a492703a6242dfeb37d8b90c",
@@ -1191,6 +1192,15 @@
   },
   "destroyed": "Building Destroyed",
   "effects": {
+    "Ability_Electro_Boots": [
+      {
+        "sound": "sfx/ability_electro_boots.ogg",
+        "volume": 1.0,
+        "minPitch": 1.0,
+        "maxPitch": 1.0,
+        "delay": 0.0
+      }
+    ],
     "Air Defense Barrel Hit": [
       {
         "sound": "sfx/cannon_fire3.ogg",
@@ -5481,6 +5491,11 @@
       "path": "assets/audio/troops-native/Troop_Thrower_Die.ogg",
       "bytes": 8370,
       "sha256": "0897badb119a121bf0b9b5d5baa84022faed2e0ebef1c5be9474729d9214734d"
+    },
+    "sfx/ability_electro_boots.ogg": {
+      "path": "assets/audio/troops-native/ability_electro_boots.ogg",
+      "bytes": 22259,
+      "sha256": "959f39ae37db09b0086e113d8a3c347d50c1a537b1b6b199ab2015a922eaf4b6"
     },
     "sfx/ability_rc_frostflake_hit_01.ogg": {
       "path": "assets/audio/troops-native/ability_rc_frostflake_hit_01.ogg",

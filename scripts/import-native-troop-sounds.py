@@ -49,6 +49,7 @@ SPELL_EVENTS = {
 }
 DESTROYED = 'Building Destroyed'
 EXTRA_EFFECTS = ['RecallRedeployAuraTop', 'FireballActivationEffect',
+                 'Ability_Electro_Boots',
                  'rc_gear_frostblast_snowflack_active', 'ability_rc_frostflake_hit_sfx',
                  'Air Defense Barrel Hit', 'ps_chr_DarkOrb_ProjectileSfx', 'trollBoulder_destroyed']
 

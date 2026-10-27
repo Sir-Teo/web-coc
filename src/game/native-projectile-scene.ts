@@ -1,6 +1,7 @@
 import { superArcherEffectEvents } from './super-archer-effects';
 import { fireballEffectEvents, fireballProfile } from './fireball-effects';
 import { frostFlakeEffectEvents } from './frost-flake-effects';
+import { electroBootsEffectEvents } from './electro-boots-effects';
 import { darkOrbEffectEvents } from './dark-orb-effects';
 import { heroAbilityActivation } from './hero-ability-feedback';
 import { superWizardEffectEvents } from './super-wizard-effects';
@@ -222,6 +223,10 @@ export class NativeProjectilePresentation {
     ))
       this.layer.play(event, elapsed, reduced);
     for (const event of frostFlakeEffectEvents(battle, iso, (name) =>
+      this.layer.duration(name, Infinity),
+    ))
+      this.layer.play(event, elapsed, reduced);
+    for (const event of electroBootsEffectEvents(battle, iso, (name) =>
       this.layer.duration(name, Infinity),
     ))
       this.layer.play(event, elapsed, reduced);
