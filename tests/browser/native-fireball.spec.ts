@@ -177,6 +177,95 @@ test('Fireball plays its original activation sample with source gain and pitch',
   expect(result.battle).toBe(before);
 });
 
+test('live Fireball activation replaces generic feedback and keeps missing-art/audio fallbacks', async ({
+  page,
+}) => {
+  test.setTimeout(120000);
+  await boot(page);
+  await seek(page, 0.05);
+  await page.evaluate(async () => {
+    const { model, scene, audio } = window.__game;
+    model.replay = undefined;
+    audio.enabled = true;
+    audio.unlock();
+    await audio.context.resume();
+    scene.sync();
+  });
+  await expect
+    .poll(
+      () =>
+        page.evaluate(async () => {
+          const { scene, audio } = window.__game;
+          const { effectSoundFiles, troopSample } = await import('/src/game/troop-sounds.ts');
+          scene.drawOverlay(0);
+          return (
+            scene.nativeProjectiles.layer.status('FireballActivationEffect') === 'ready' &&
+            effectSoundFiles('FireballActivationEffect').every((name) =>
+              audio.samples.has(troopSample(name)),
+            )
+          );
+        }),
+      { timeout: 30000 },
+    )
+    .toBe(true);
+  const result = await page.evaluate(() => {
+    const { model, scene, audio } = window.__game;
+    const events = [],
+      tones = [],
+      sparks = [];
+    const onEffect = model.onEffect,
+      play = audio.play,
+      makeSparks = scene.sparks,
+      has = audio.samples.has,
+      status = scene.nativeProjectiles.layer.status;
+    model.onEffect = (fx) => events.push(fx);
+    audio.play = (name) => tones.push(name);
+    scene.sparks = (...args) => sparks.push(args[3]);
+    try {
+      if (!model.activateNativeHeroAbility('warden')) throw Error('Live ability did not activate');
+      const fx = events.find((event) => event.type === 'trap');
+      const shot = model.battle.nativeFireballs[0];
+      const before = JSON.stringify(model.battle);
+      const sample = () => {
+        tones.length = sparks.length = 0;
+        scene.renderEffect(fx);
+        return { tones: [...tones], sparks: [...sparks] };
+      };
+      const ready = sample();
+      audio.samples.has = () => false;
+      const missingAudio = sample();
+      audio.samples.has = has;
+      scene.nativeProjectiles.layer.status = () => 'missing';
+      const missingArt = sample();
+      scene.nativeProjectiles.layer.status = status;
+      tones.length = sparks.length = 0;
+      scene.renderEffect({ ...fx, abilityCastId: undefined });
+      return {
+        tagged: fx.abilityCastId === shot.id && fx.at === shot.launched,
+        ready,
+        missingAudio,
+        missingArt,
+        ordinaryTrap: { tones: [...tones], sparks: [...sparks] },
+        unchanged: before === JSON.stringify(model.battle),
+      };
+    } finally {
+      model.onEffect = onEffect;
+      audio.play = play;
+      scene.sparks = makeSparks;
+      audio.samples.has = has;
+      scene.nativeProjectiles.layer.status = status;
+    }
+  });
+  expect(result).toEqual({
+    tagged: true,
+    ready: { tones: [], sparks: [] },
+    missingAudio: { tones: ['hit'], sparks: [] },
+    missingArt: { tones: [], sparks: [8] },
+    ordinaryTrap: { tones: ['hit'], sparks: [8] },
+    unchanged: true,
+  });
+});
+
 test('a delayed original Fireball explosion recovers while its replay stays paused', async ({
   page,
 }) => {

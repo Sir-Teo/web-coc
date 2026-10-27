@@ -46,9 +46,13 @@ export function activateHero(
   if (heal > 0 && (unit.native?.effects?.phoenixRevive?.until ?? 0) <= at + 1e-9)
     unit.hp = Math.min(unit.maxHp, unit.hp + heal);
   for (const ability of activeAbilities(hero)) applyAbility(ctx, hero, unit, ability, at);
-  const cast = ctx.battle.nativeFrostFlakeCasts?.find(
-    (entry) => entry.sourceId === unit.id && entry.at === at,
-  );
+  const cast =
+    ctx.battle.nativeFrostFlakeCasts?.find(
+      (entry) => entry.sourceId === unit.id && entry.at === at,
+    ) ??
+    ctx.battle.nativeFireballs?.find(
+      (entry) => entry.sourceId === unit.id && entry.launched === at,
+    );
   ctx.effect({
     type: 'trap',
     x: unit.x,

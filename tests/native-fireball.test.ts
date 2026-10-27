@@ -5,7 +5,8 @@ import { dirname, join } from 'node:path';
 import { createHash } from 'node:crypto';
 import art from '../reference/fireball/effects.json';
 import manifest from '../reference/full-client/manifest.json';
-import { GameModel, makeBuilding, type Battle } from '../src/game/model';
+import { GameModel, makeBuilding, type Battle, type FX } from '../src/game/model';
+import { heroAbilityActivation } from '../src/game/hero-ability-feedback';
 import { heroAbilities } from '../src/game/native-heroes';
 import { spawnSkeleton } from '../src/game/defenders';
 import { BattleSoundLog, troopSoundCues } from '../src/game/troop-sounds';
@@ -46,6 +47,29 @@ describe('Warden Fireball', () => {
     setup.heroes![0].items = [];
     expect(replayBattle(setup).nativeWardenFireball).toBeUndefined();
     expect(replayBattle(data.initial, 129).nativeWardenFireball).toBeUndefined();
+  });
+
+  it('hands its real activation event to the original effect and sound without changing battle state', () => {
+    const { model, battle, until } = fireballBattle();
+    until(0.1);
+    const events: FX[] = [];
+    model.onEffect = (event) => events.push(event);
+    expect(model.activateNativeHeroAbility('warden')).toBe(true);
+    const shot = battle.nativeFireballs![0];
+    const activation = events.find((event) => event.type === 'trap')!;
+    expect(activation).toMatchObject({ abilityCastId: shot.id, at: shot.launched });
+    const before = JSON.stringify(battle);
+    const source = heroAbilityActivation(battle, activation.abilityCastId);
+    const cue = troopSoundCues(battle, new BattleSoundLog()).find((cue) => cue.key === source?.key);
+    expect(source).toEqual({
+      effect: 'FireballActivationEffect',
+      key: `${shot.id}:fireball:sound`,
+      at: shot.launched,
+    });
+    expect(cue).toMatchObject({ key: source!.key, at: source!.at, volume: 1.2 });
+    expect(heroAbilityActivation(battle, 'unrelated-trap')).toBeUndefined();
+    expect(heroAbilityActivation(battle, undefined)).toBeUndefined();
+    expect(JSON.stringify(battle)).toBe(before);
   });
 
   it('automatically launches once on a lethal Cannon hit and retains posthumous damage', () => {
@@ -317,7 +341,10 @@ describe('Warden Fireball', () => {
     const { model, battle, until } = fireballBattle(27, 129);
     const cannon = battle.buildings.find((b) => b.id === 2)!,
       hp = cannon.hp;
+    const events: FX[] = [];
+    model.onEffect = (event) => events.push(event);
     model.activateNativeHeroAbility('warden');
+    expect(events.find((event) => event.type === 'trap')?.abilityCastId).toBeUndefined();
     until(1.5);
     expect(battle.nativeWardenFireball).toBeUndefined();
     expect(battle.nativeFireballs).toBeUndefined();

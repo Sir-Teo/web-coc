@@ -447,53 +447,48 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
  */
 export class TroopSoundLoader {
   private requested = new Set<string>();
-  private kinds = new Set<string>();
+  private wanted = new Set<string>();
+  private failed = new Map<string, { attempts: number; retryAt: number }>();
   constructor(private register: (name: string, data: ArrayBuffer) => void) {}
   /**
-   * Starts loading what these troop kinds, these spells (client names) and the
-   * destroyed-building effect need.
+   * Replaces the current battle's wanted files and starts any missing requests.
+   * Successful and pending files are shared between battles.
    */
   need(kinds: Iterable<string>, spells: Iterable<string> = [], effects: Iterable<string> = []) {
-    for (const kind of kinds) {
-      if (this.kinds.has(kind)) continue;
-      this.kinds.add(kind);
-      for (const path of troopSoundFiles(kind)) this.fetch(path);
-    }
-    for (const name of spells) {
-      if (this.kinds.has(`spell:${name}`)) continue;
-      this.kinds.add(`spell:${name}`);
-      for (const path of spellSoundFiles(name)) this.fetch(path);
-    }
-    for (const name of effects) {
-      if (this.kinds.has(`effect:${name}`)) continue;
-      this.kinds.add(`effect:${name}`);
-      for (const path of effectSoundFiles(name)) this.fetch(path);
-    }
-    for (const take of EFFECTS[DESTROYED_EFFECT]) this.fetch(take.sound);
+    const wanted = new Set<string>();
+    for (const kind of kinds) for (const path of troopSoundFiles(kind)) wanted.add(path);
+    for (const name of spells) for (const path of spellSoundFiles(name)) wanted.add(path);
+    for (const name of effects) for (const path of effectSoundFiles(name)) wanted.add(path);
+    for (const take of EFFECTS[DESTROYED_EFFECT]) wanted.add(take.sound);
+    this.wanted = wanted;
+    for (const path of wanted) void this.fetch(path);
   }
-  private fetch(path: string) {
+  /** Called by presentation, including paused frames; reconnect bypasses the cooldown once. */
+  retry(immediate = false) {
+    for (const [path, failure] of this.failed) {
+      if (!this.wanted.has(path)) continue;
+      if (immediate) failure.retryAt = 0;
+      void this.fetch(path);
+    }
+  }
+  private async fetch(path: string) {
     if (this.requested.has(path) || typeof fetch === 'undefined') return;
+    const failure = this.failed.get(path);
+    if (failure && performance.now() < failure.retryAt) return;
     this.requested.add(path);
     const sound = TROOP_SOUNDS[path as keyof typeof TROOP_SOUNDS];
-    void fetch('/' + sound.path)
-      .then((response) => {
-        if (!response.ok) throw Error(`${sound.path}: ${response.status}`);
-        return response.arrayBuffer();
-      })
-      .then(
-        (data) => this.register(troopSample(path), data),
-        // A failed download is asked for again the next time a battle needs it.
-        () => {
-          this.requested.delete(path);
-          for (const kind of this.kinds) {
-            const paths = kind.startsWith('spell:')
-              ? spellSoundFiles(kind.slice(6))
-              : kind.startsWith('effect:')
-                ? effectSoundFiles(kind.slice(7))
-                : troopSoundFiles(kind);
-            if (paths.includes(path)) this.kinds.delete(kind);
-          }
-        },
-      );
+    try {
+      const response = await fetch('/' + sound.path);
+      if (!response.ok) throw Error(`${sound.path}: ${response.status}`);
+      this.register(troopSample(path), await response.arrayBuffer());
+      this.failed.delete(path);
+    } catch {
+      this.requested.delete(path);
+      const attempts = (failure?.attempts ?? 0) + 1;
+      this.failed.set(path, {
+        attempts,
+        retryAt: performance.now() + Math.min(300_000, 5000 * 2 ** (attempts - 1)),
+      });
+    }
   }
 }

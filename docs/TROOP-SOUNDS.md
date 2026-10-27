@@ -17,7 +17,7 @@ Attacking troops and pets play the client's own sounds when they are deployed, w
 
 It also covers the 18 spells this game casts, from `logic/spells.csv`. For each spell it records the `PreDeployEffect` (the bottle falling), the `DeployEffect` and `DeployEffect2` (it landing), the `ChargingEffect` and the `HitEffect` (each pulse). Some of these change with level; Freeze, for example, has one deploy effect per level.
 
-The importer copies 341 Ogg files (4.87 MiB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`. An already shipped sample can supply a missing local source only when its SHA-256 matches that same source pin. Edited outputs cannot supply trusted source bytes; corrupt authoritative cache entries still fail validation.
+The importer copies 345 Ogg files (4.91 MiB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`. An already shipped sample can supply a missing local source only when its SHA-256 matches that same source pin. Edited outputs cannot supply trusted source bytes; corrupt authoritative cache entries still fail validation.
 
 | Troop     | Deploy                                                     | Attack                                                                                          | Death                                           |
 | --------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------- |
@@ -55,7 +55,13 @@ The cues join the defenses' cues in the shared battle-clock player (`SampleAudio
 
 ## Loading
 
-Nothing is fetched at boot. When a battle opens with sound on, the scene fetches the sounds of the army's troops, its carried Heroes/pets, spells and the destroyed-building effect. It then fetches each new unit kind's or spell's sounds the first time one appears. A troop's sounds are about 30–60 KB (the Barbarian's eight files are 58 KB). A failed download is requested again the next time a battle needs it.
+Nothing is fetched at boot. When a battle opens with sound on, the scene fetches the sounds of the army's troops, its carried Heroes/pets, spells and the destroyed-building effect. It then fetches each new unit kind's or spell's sounds the first time one appears. A troop's sounds are about 30–60 KB (the Barbarian's eight files are 58 KB).
+
+Failed downloads retry after five seconds, doubling to a five-minute maximum; the browser's
+`online` event makes them eligible immediately. Presentation checks these retries even when
+the same battle or replay is paused. Pending and successful requests stay deduplicated.
+Only the current battle's wanted files retry, including its undeployed army, Heroes/pets and
+uncast spells after roster changes. Recovery does not advance the battle or play paused cues.
 
 ## Pet and friendly healing cues
 
@@ -149,7 +155,12 @@ silent. Browser checks exercise actual retraction nodes at the expiry tick.
 
 `tests/browser/troop-sounds.spec.ts` runs at phone size. It checks that boot fetches no troop sound and that a Barbarian-only battle fetches only the Barbarian's sounds. It then checks that the deploy, hit and death sounds and a Rage Spell's falling bottle actually start playing.
 
-Not included: the heroes' other sounds (the client's hero rows name only hits, so the rest presumably play from their animations), Siege Machine special effects, movement sounds and ability-specific effects beyond the imported ordinary event rows.
+`tests/troop-sound-loader.test.ts` checks failed HTTP, network and response-body requests,
+bounded backoff, reconnects, deduplication and changing battle rosters.
+`tests/browser/troop-sound-recovery.spec.ts` returns a real 503 for Frost Flake's activation
+sample, then verifies automatic and online recovery with unchanged paused replay state.
+
+Not included: the heroes' other sounds (the client's hero rows name only hits, so the rest presumably play from their animations), Siege Machine special effects and movement sounds. Fireball and Frost Flake additionally import their declared equipment cues; other ability-specific effects still need their own source mapping.
 
 Version 114 retains Overgrowth's cast timeline after its one-pulse live record disappears.
 The original vial and level-specific field cues now reconstruct on a fresh seek beyond

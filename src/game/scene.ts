@@ -37,6 +37,7 @@ import { NativeProjectilePresentation } from './native-projectile-scene';
 import { nativeUnitStats } from './native-units';
 import { heroProjectileNames } from './hero-projectile-prefetch';
 import { fireballEffects } from './fireball-effects';
+import { heroAbilityActivation } from './hero-ability-feedback';
 import {
   FROST_FLAKE_PRESENTATION,
   frostFlakeCarried,
@@ -1699,6 +1700,10 @@ export class VillageScene extends Phaser.Scene {
     if (this.heavyArtRetryAt !== undefined) this.heavyArtRetryAt = 0;
     if (this.lateArtFailure) this.lateArtFailure.retryAt = 0;
     this.retryFailedArt(performance.now(), true);
+    if (this.model.battle && this.audible()) {
+      this.needTroopSounds(this.model.battle);
+      this.troopSoundLoader.retry(true);
+    }
   };
   /** Any art the current battle waits for: late campaign families or deferred defenses. */
   private battleArtPending() {
@@ -4309,22 +4314,20 @@ export class VillageScene extends Phaser.Scene {
     if (roots || overgrowthCasts) spells.add('Overgrowth');
     if (freezeCasts) spells.add('Freeze');
     for (const cast of battle.nativeSpellCastHistory ?? []) spells.add(cast.name);
-    if (battle !== this.troopSoundBattle) {
-      for (const hero of battle.nativeHeroes ?? []) {
-        kinds.add(heroUnitKind(hero.kind));
-        if (hero.pet) {
-          kinds.add(petUnitKind(hero.pet.kind));
-          if (battle.nativePhoenixResurrection && hero.pet.kind === 'phoenix')
-            kinds.add('phoenixegg');
-          if (battle.nativeSneezyController && hero.pet.kind === 'sneezy') kinds.add('booger');
-          if (battle.nativeFrostmites && hero.pet.kind === 'frosty') kinds.add('frostmite');
-        }
+    for (const hero of battle.nativeHeroes ?? []) {
+      kinds.add(heroUnitKind(hero.kind));
+      if (hero.pet) {
+        kinds.add(petUnitKind(hero.pet.kind));
+        if (battle.nativePhoenixResurrection && hero.pet.kind === 'phoenix')
+          kinds.add('phoenixegg');
+        if (battle.nativeSneezyController && hero.pet.kind === 'sneezy') kinds.add('booger');
+        if (battle.nativeFrostmites && hero.pet.kind === 'frosty') kinds.add('frostmite');
       }
-      for (const [kind, count] of Object.entries(battle.remaining)) if (count) kinds.add(kind);
-      for (const child of carriedMiteArt(battle)) kinds.add(child);
-      for (const [kind, count] of Object.entries(battle.spells))
-        if (count) spells.add(SPELL_SOURCE[kind as SpellKind]);
     }
+    for (const [kind, count] of Object.entries(battle.remaining)) if (count) kinds.add(kind);
+    for (const child of carriedMiteArt(battle)) kinds.add(child);
+    for (const [kind, count] of Object.entries(battle.spells))
+      if (count) spells.add(SPELL_SOURCE[kind as SpellKind]);
     this.troopSoundBattle = battle;
     this.troopSoundUnits = battle.units.length;
     this.troopSoundCasts = casts;
@@ -4369,14 +4372,10 @@ export class VillageScene extends Phaser.Scene {
     this.fxSounded = false;
     const battle = this.model.battle;
     if (!battle || !this.audible()) return;
-    if (fx.abilityCastId) {
-      const cast = battle.nativeFrostFlakeCasts?.find((entry) => entry.id === fx.abilityCastId);
-      if (cast) {
-        this.fxSounded = this.cueReady(
-          effectCue(FROST_FLAKE_PRESENTATION.ActivationEffect, `${cast.id}:sound`, cast.at),
-        );
-        return;
-      }
+    const activation = heroAbilityActivation(battle, fx.abilityCastId);
+    if (activation) {
+      this.fxSounded = this.cueReady(effectCue(activation.effect, activation.key, activation.at));
+      return;
     }
     if (
       (fx.type === 'projectile' || fx.type === 'impact') &&
@@ -4441,6 +4440,10 @@ export class VillageScene extends Phaser.Scene {
     return this.audio.enabled && this.audio.context?.state === 'running';
   }
   private renderSanta(cues: SampleCue[]) {
+    if (this.model.battle && this.audible()) {
+      this.needTroopSounds(this.model.battle);
+      this.troopSoundLoader.retry();
+    }
     this.santaPresentation.render(
       this.model.battle,
       this.model.reducedMotion,
@@ -4596,7 +4599,6 @@ export class VillageScene extends Phaser.Scene {
       airLift: AIR_LIFT,
     });
     const shrinkCues = this.shrinkTrapPresentation.render(visible, battle, reduced, iso);
-    if (battle && this.audible()) this.needTroopSounds(battle);
     // Presentations still produce their cues; only the merge is skipped while silent.
     const cues = this.audible()
       ? [
@@ -5810,10 +5812,11 @@ export class VillageScene extends Phaser.Scene {
     if (fx.type === 'gust') return;
     if (fx.type === 'trap' || fx.type === 'spring') {
       const reduced = this.model.reducedMotion;
-      const original =
-        !!fx.abilityCastId &&
-        !!this.model.battle?.nativeFrostFlakeCasts?.some((cast) => cast.id === fx.abilityCastId) &&
-        this.nativeProjectiles.coversFrostActivation(reduced);
+      const original = this.nativeProjectiles.coversAbilityActivation(
+        this.model.battle,
+        fx.abilityCastId,
+        reduced,
+      );
       const label = this.add
         .text(p.x, p.y - 38, fx.text ?? 'SPRUNG!', {
           fontFamily: 'Trebuchet MS',

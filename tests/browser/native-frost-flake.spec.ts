@@ -50,7 +50,7 @@ async function ready(page: Page) {
     const cast = model.battle.nativeFrostFlakeCasts?.[0];
     return (
       !!cast &&
-      scene.nativeProjectiles.coversFrostActivation(false) &&
+      scene.nativeProjectiles.coversAbilityActivation(model.battle, cast.id, false) &&
       cast.shots.every((shot) =>
         scene.nativeProjectiles.views
           .get(shot.id)

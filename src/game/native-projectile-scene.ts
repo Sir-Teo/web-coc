@@ -1,6 +1,7 @@
 import { superArcherEffectEvents } from './super-archer-effects';
 import { fireballEffectEvents, fireballProfile } from './fireball-effects';
-import { frostFlakeEffectEvents, FROST_FLAKE_PRESENTATION } from './frost-flake-effects';
+import { frostFlakeEffectEvents } from './frost-flake-effects';
+import { heroAbilityActivation } from './hero-ability-feedback';
 import { superWizardEffectEvents } from './super-wizard-effects';
 import { electroDragonEffectEvents } from './electro-dragon-effects';
 import { electromiteEffectEvents } from './electromite-effects';
@@ -98,8 +99,13 @@ export class NativeProjectilePresentation {
   prefetchEmitters(names: Iterable<string>) {
     for (const name of names) this.layer.prefetchEmitter(name);
   }
-  coversFrostActivation(reduced: boolean) {
-    return !reduced && this.layer.status(FROST_FLAKE_PRESENTATION.ActivationEffect) === 'ready';
+  coversAbilityActivation(
+    battle: Battle | null | undefined,
+    id: string | undefined,
+    reduced: boolean,
+  ) {
+    const activation = heroAbilityActivation(battle, id);
+    return !reduced && !!activation && this.layer.status(activation.effect) === 'ready';
   }
   /** True when the native presentation already shows this shot's flight. */
   covers(id: string | undefined) {

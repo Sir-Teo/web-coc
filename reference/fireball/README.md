@@ -27,6 +27,9 @@ same art. Reduced motion keeps stationary fallback feedback and unchanged combat
 The original `FireballActivationEffect` uses `mage_attack_02.ogg` at volume 120% and pitch 70–80%.
 It reuses the already shipped file. The explosion and projectile source/destroyed rows declare
 no sound; the new path does not substitute the Warden's ordinary hit sound.
+Live activation events share the captured launch identity with this original presentation.
+Ready source art and audio replace the generic ability sparks and tone independently; either
+fallback remains available while its original asset is missing. The readable ability label stays.
 
 Rebuild and verify with the existing native-art Python environment:
 
@@ -39,4 +42,5 @@ Omit `--check` to regenerate. The art importer verifies the original fingerprint
 decoded pixels, complete owned file set, graph checksum and byte count. The sound importer checks
 its manifest pins and unchanged Ogg bytes. Unit tests cover all levels, targeting, area boundaries,
 immunity, Recall, source audio and portable seeks. Browser tests cover all three tiers on desktop
-and phone, reduced motion, delayed-pack recovery while paused and version-129 playback.
+and phone, reduced motion, delayed-pack recovery while paused, live activation feedback with
+missing-art/audio fallbacks, and version-129 playback.

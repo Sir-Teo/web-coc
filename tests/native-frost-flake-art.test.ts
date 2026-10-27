@@ -16,6 +16,7 @@ import { nativeScenePoses, type NativeScenePose } from '../src/game/native-mesh'
 import { FROST_FLAKE_PRESENTATION, frostFlakeEffectEvents } from '../src/game/frost-flake-effects';
 import { BattleSoundLog, troopSoundCues } from '../src/game/troop-sounds';
 import { heroProjectileNames } from '../src/game/hero-projectile-prefetch';
+import { heroAbilityActivation } from '../src/game/hero-ability-feedback';
 import { frostFlakeBattle } from './fixtures/native-frost-flake';
 
 const read = <T>(path: string): T => JSON.parse(readFileSync('public/' + path, 'utf8'));
@@ -59,6 +60,11 @@ it('retains a wasted activation with original stationary art, source cue and rea
   expect(cast.shots).toEqual([]);
   expect(fx.find((event) => event.abilityCastId === cast.id)).toMatchObject({
     text: 'FROST FLAKE',
+    at: cast.at,
+  });
+  expect(heroAbilityActivation(battle, cast.id)).toEqual({
+    effect: FROST_FLAKE_PRESENTATION.ActivationEffect,
+    key: `${cast.id}:sound`,
     at: cast.at,
   });
   until(0.15);
