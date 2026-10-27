@@ -40,7 +40,7 @@ import { validSkeletonMode } from './skeleton-stats';
 import { validXbowMode } from './xbow-stats';
 import { initializeGarrison, isGarrisonBunker, type GarrisonSetup } from './garrison-release';
 import { createGarrisonReserve, MAX_GARRISON_TROOPS } from './garrison-reserve';
-import { garrisonTroopVersion } from './garrison-kinds';
+import { garrisonStats, garrisonTroopVersion } from './garrison-kinds';
 import { gridSize, footprintSize, type GridVersion } from './grid';
 import {
   BUILDINGS,
@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 152;
+export const REPLAY_VERSION = 153;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -180,7 +180,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 149 starts deployed bunker decay and Druid evolution at the body's actual birth.
  * Version 150 lets live life-aura health extend Furnace's fixed-rate degeneration lifetime.
  * Version 151 pins Furnace release geometry to remove host sine/cosine rounding differences.
- * Version 152 corrects defending PEKKA/Valkyrie split windup and recovery timing. */
+ * Version 152 corrects defending PEKKA/Valkyrie split windup and recovery timing.
+ * Version 153 makes later split families spend each recovery tick once when retargeting. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -300,6 +301,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 149 ||
   version === 150 ||
   version === 151 ||
+  version === 152 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -448,6 +450,15 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 153 &&
+    s.garrisons?.some((reserve) =>
+      reserve.troops.some((troop) => {
+        const stats = garrisonStats(troop.kind, troop.level);
+        return stats.split && stats.recovery > 0;
+      }),
+    )
+      ? { nativeGarrisonRecovery: true as const }
+      : {}),
     ...(version >= 152 &&
     s.garrisons?.some((reserve) =>
       reserve.troops.some((troop) => troop.kind === 'pekka' || troop.kind === 'valkyrie'),

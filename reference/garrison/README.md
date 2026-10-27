@@ -437,3 +437,46 @@ allocation and complete current/historical portable reverse seeks. Its portable 
 real Castle releases, troop deployments and optional Freeze casts in a valid campaign setup.
 `tests/browser/garrison-melee-timing.spec.ts` verifies full battle snapshots, original meshes,
 read-only/reduced rendering and rewind on desktop and phone, including Freeze and thaw.
+
+## Split-family recovery on retargeting (recording version 153)
+
+The same source-derived split timer used above has two phases: post-hit recovery, then the
+new target's initial windup. In the older local path, `recovery` was advanced at the start of
+the tick and the reset `cooldown` then spent the tick again. A target acquired while recovery
+was still running therefore released its next attack one 50 ms update early. Same-target
+periods and first engagements were unaffected. Version 152 already fixed this for PEKKA and
+Valkyrie; version 153 extends the single-advance accounting to the existing split families.
+
+| Family / source VisualLevel | Recovery | Fresh target windup | Total after an immediate switch |
+| --------------------------- | -------- | ------------------- | ------------------------------- |
+| Electro Dragon 3 | 0.625 s | 2.875 s | 3.5 s |
+| Golem 8 | 0.9 s | 1.5 s | 2.4 s |
+| Golemite 8 | 1.5 s | 1.5 s | 3 s |
+| Bowler 4 | 0.7 s | 0.4 s | 1.1 s |
+| Defensive Lava Hound 6 | 0.5 s | 1.5 s | 2 s |
+| MOMMA 1 | 3.5 s | 1.5 s | 5 s |
+
+Values use the pinned 18.400.21 rows and the existing `splitTiming` interpretation of the
+older engine cited above. This corrects local action-time accounting; modern native-executable
+parity is unavailable. The clock uses recovery at the start of the update before spending its
+single poison/frost-scaled attack-time increment. First-hit delays, same-target periods,
+damage, paths, projectiles and source stats retain their existing rules. At a 50% poison
+attack slow, the waits above double; there is still only one clock advance per update.
+
+Only rosters carrying a split family with positive recovery allocate the adapter. Golem
+children inherit it through their battle. Zero-recovery families, unrelated rosters and the
+already corrected version-152 melee path need no new capability. Versions 152 and earlier
+retain their historical timing for the later families.
+
+`tests/garrison-recovery.test.ts` covers all six families, source timing, historical early
+releases, ordinary periods, poison-scaled recovery, scoped allocation and complete portable
+forward/reverse snapshots. Real-recording fixtures deploy a level-1 Archer and Golem, allow
+actual defender fire to kill the Archer, and capture the defender acquiring and attacking its
+new target. No hitpoints, damage or status is injected into portable recordings. The browser
+spec `tests/browser/garrison-recovery.spec.ts` checks complete current/historical snapshots,
+original meshes, rewind and read-only/reduced rendering on desktop and phone.
+
+Actual Electro Dragon and Golem recordings restore the missing 50 ms while matching the
+first attack, target death and switch time exactly. In the Bowler fixture, the projectile
+kills after his recovery has ended, so the next release correctly stays unchanged. Controlled
+Bowler checks separately cover a fresh target acquired while recovery is still positive.

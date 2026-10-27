@@ -975,6 +975,8 @@ export interface Battle {
   nativeFurnaceSpawnGeometry?: true;
   /** Version 152: defending PEKKA/Valkyrie use split windup and recovery timing. */
   nativeGarrisonMeleeTiming?: true;
+  /** Version 153: split-family retargeting spends each recovery tick only once. */
+  nativeGarrisonRecovery?: true;
   nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
   nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */

@@ -488,8 +488,9 @@ export function stepGarrisonDefender(
     if (!defender.engaged) {
       defender.engaged = true;
       // Split timing: any post-hit recovery still running precedes the new target's windup.
-      // New melee timing spends this tick once; older split families retain their old clock.
-      const recovery = splitMelee ? recoveryAtStart : (defender.recovery ?? 0);
+      // Corrected clocks spend this tick once; historical split families keep their old clock.
+      const recovery =
+        splitMelee || battle.nativeGarrisonRecovery ? recoveryAtStart : (defender.recovery ?? 0);
       defender.cooldown = Math.max(
         0,
         (stats.split ? recovery : 0) + stats.firstAttackDelay - attackDt,
