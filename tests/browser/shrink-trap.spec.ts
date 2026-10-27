@@ -107,14 +107,29 @@ for (const viewport of [
       m.state.settings.reducedMotion = true;
       scene.drawOverlay(0);
       const keys = [...scene.shrinkTrapPresentation.effects.keys()];
-      // The moving army reaches a second source trap; include its refreshed status linger.
+      // Source P.E.K.K.A. windups route this army through three traps. At 36.05 s,
+      // two survivors still carry the third field's refresh; two have already recovered.
       for (let i = 0; i < 640; i++) m.step(0.05);
+      scene.sync();
+      scene.drawOverlay(0);
+      const refreshed = m.battle.units
+        .filter((u) => u.hp > 0)
+        .sort((a, b) => a.id - b.id)
+        .map((u) => scene.unitSprites.get(u.id).getData('shrinkScale'));
+      const until = Math.max(...m.battle.units.map((u) => u.shrink?.until ?? 0));
+      while (!m.battle.finished && m.battle.elapsed <= until) m.step(0.05);
       scene.sync();
       scene.drawOverlay(0);
       const scales = m.battle.units
         .filter((u) => u.hp > 0)
         .map((u) => scene.unitSprites.get(u.id).getData('shrinkScale'));
-      const result = { keys, scales, remaining: scene.shrinkTrapPresentation.effects.size };
+      const result = {
+        keys,
+        refreshed,
+        scales,
+        expired: m.battle.elapsed > until,
+        remaining: scene.shrinkTrapPresentation.effects.size,
+      };
       m.finishBattle();
       scene.sync();
       scene.drawOverlay(0);
@@ -130,9 +145,10 @@ for (const viewport of [
     });
     expect(reduced.keys).toHaveLength(1);
     expect(reduced.keys[0]).toContain(':deploy:2:');
+    expect(reduced.refreshed).toEqual([0.5, 0.5, 1, 1]);
     expect(reduced.scales.length).toBeGreaterThan(0);
     expect(reduced.scales.every((s) => s === 1)).toBe(true);
-    expect(reduced).toMatchObject({ remaining: 0, cleared: true });
+    expect(reduced).toMatchObject({ expired: true, remaining: 0, cleared: true });
     expect(errors).toEqual([]);
   });
 
