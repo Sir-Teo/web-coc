@@ -6080,6 +6080,11 @@ export class GameModel {
   /** Recall Spell: the unit leaves the field and its card returns with the same health. */
   private recallUnit(b: Battle, u: Unit, at = b.elapsed) {
     const original = recordRecallEvent(b, u, 'disappear', at);
+    for (const cast of b.nativeSpellCastHistory ?? [])
+      if (cast.owner === u.id && cast.activationOrigin) {
+        cast.activationOrigin.x = u.x;
+        cast.activationOrigin.y = u.y;
+      }
     (u.native ??= {}).recalled = true;
     u.attacking = false;
     const roster = b.nativeHeroes?.find((hero) => hero.unitId === u.id);

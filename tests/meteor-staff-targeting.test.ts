@@ -90,7 +90,7 @@ it('counts an awakened Town Hall as a defense and preserves ordinary visible-def
   r.until(10.05);
   expect(meteors(r.battle)[0]).toMatchObject({ x: 38, y: 38 });
   for (const level of [1, 27]) {
-    const current = hold(meteorStaffBattle(level)),
+    const current = hold(meteorStaffBattle(level, 141)),
       old = hold(meteorStaffBattle(level, 140));
     current.until(11.2);
     old.until(11.2);

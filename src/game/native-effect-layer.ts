@@ -2,6 +2,7 @@ import fieldSpellArt from '../../reference/field-spells/effects.json' with { typ
 import fireballArt from '../../reference/fireball/effects.json' with { type: 'json' };
 import frostFlakeArt from '../../reference/frost-flake/effects.json' with { type: 'json' };
 import electroBootsArt from '../../reference/electro-boots/effects.json' with { type: 'json' };
+import meteorStaffArt from '../../reference/meteor-staff/effects.json' with { type: 'json' };
 import darkOrbArt from '../../reference/dark-orb/effects.json' with { type: 'json' };
 import recallUnitArt from '../../reference/recall/effects.json' with { type: 'json' };
 import reviveTargetArt from '../../reference/revive/effects.json' with { type: 'json' };
@@ -38,6 +39,7 @@ const catalogs = [
   fireballArt,
   frostFlakeArt,
   electroBootsArt,
+  meteorStaffArt,
   darkOrbArt,
   electromiteArt,
   electroDragonArt,

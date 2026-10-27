@@ -146,7 +146,11 @@ describe('troop sounds', () => {
 
 describe('spell sounds', () => {
   it('reads every spell’s cast and pulse effects, per level where they change', () => {
-    expect(Object.keys(source.spells)).toHaveLength(18);
+    expect(Object.keys(source.spells)).toHaveLength(19);
+    expect(source.spells.MPMeteorStaffSpell).toMatchObject({
+      preDeploy: 'ps_chr_mp_MeteorStrike_Projectile',
+      deploy: 'ps_chr_mp_MeteorStrike_Impact',
+    });
     expect(source.spells.Lightning).toEqual({
       key: 'lightning',
       preDeploy: 'Lightning predeploy',

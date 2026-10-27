@@ -12,6 +12,10 @@ import { unitLevel } from './native-troops';
 import { spellRow } from './native-spells';
 import { seconds } from './native-data';
 
+/** Equipment spell samples are introduced with their source-presentation replay boundary. */
+export const spellSoundEnabled = (battle: Battle, name: string) =>
+  name !== 'MPMeteorStaffSpell' || !!battle.nativeSpellArt?.includes(name);
+
 /**
  * The attacking troops' and pets' own deploy, attack and death sounds, the spells' cast and pulse sounds
  * and the client's Building Destroyed sound (reference/troop-sounds, imported by
@@ -237,6 +241,7 @@ export class BattleSoundLog {
   private noteCasts(battle: Battle) {
     const live = new Set<number>();
     for (const cast of battle.nativeSpells ?? []) {
+      if (!spellSoundEnabled(battle, cast.name)) continue;
       if (
         (battle.nativeOvergrowthCastPresentation && cast.name === 'Overgrowth') ||
         (battle.nativeFreezeCastPresentation && cast.name === 'Freeze') ||

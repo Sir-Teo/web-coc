@@ -52,7 +52,7 @@ export function stepEquipmentEffects(ctx: NativeTroopContext, hero: NativeBattle
               .filter((b) => b.hp > 0 && !isTrap(b.kind) && isDefense(b.kind))
               .sort((a, b) => distanceTo(unit, a) - distanceTo(unit, b) || a.id - b.id)[0];
       if (target) {
-        castNativeSpell(
+        const cast = castNativeSpell(
           battle,
           spell,
           num(row, 'CastSpellLevel', 1),
@@ -61,6 +61,9 @@ export function stepEquipmentEffects(ctx: NativeTroopContext, hero: NativeBattle
           target.y + BUILDINGS[target.kind].size / 2,
           { owner: unit.id, at },
         );
+        const original = ability.name === 'MPMeteorStaff' && battle.nativeSpellArt?.includes(spell);
+        if (original)
+          cast.activationOrigin = { x: unit.x, y: unit.y, air: !!TROOPS[unit.kind].flying };
         ctx.effect({
           type: 'hit',
           x: unit.x,
@@ -68,6 +71,7 @@ export function stepEquipmentEffects(ctx: NativeTroopContext, hero: NativeBattle
           toX: target.x + BUILDINGS[target.kind].size / 2,
           toY: target.y + BUILDINGS[target.kind].size / 2,
           sourceId: unit.id,
+          ...(original ? { abilityCastId: `meteor-staff:${cast.id}` } : {}),
         });
         state[`cast:${ability.name}`] = at + seconds(row, 'ActivationCooldown');
       }

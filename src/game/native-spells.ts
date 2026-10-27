@@ -70,6 +70,8 @@ export interface NativeSpellCast {
   reviveTargetId?: number;
   /** Source success effects stay at the body and time that actually received Revive. */
   revivePresentation?: { targetId: number; x: number; y: number; at: number };
+  /** Version 142: the attached Meteor Staff aura retains its final owner point after Recall. */
+  activationOrigin?: { x: number; y: number; air: boolean };
 }
 export interface NativeSpellContext {
   battle: Battle;

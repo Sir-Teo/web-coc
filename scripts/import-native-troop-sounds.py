@@ -122,6 +122,8 @@ def spell_names():
     body = re.search(r'const NATIVE_SPELL_NAMES = \{(.*?)\} as const;', text, re.S)
     require(body, 'Missing NATIVE_SPELL_NAMES')
     names.update(re.findall(r"^\s+(\w+): '([^']+)',", body.group(1), re.M))
+    # Equipment casts use the same source spell phases without adding a player spell card.
+    names['meteorstaff'] = 'MPMeteorStaffSpell'
     require(len(names) > 15, 'Too few spells read')
     return names
 

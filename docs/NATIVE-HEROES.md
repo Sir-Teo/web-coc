@@ -2308,3 +2308,21 @@ deployment, charging or hit effects. A live battle's two-second grace ends with 
 frame before frame skipping resumes; otherwise a stale final effect could remain on screen.
 Cold finished imports stay settled. No combat, replay schema, art or sound changes are required.
 See [the field lifecycle and validation reference](../reference/field-spells/README.md).
+
+## Version 142 Meteor Staff source art and audio
+
+Each actual periodic cast captures the Prince's source aura origin. The attached startup effect
+follows his displayed position, including unit interpolation; Recall retains his final attached
+point so the finite aura can finish after he leaves. The original falling meteor, impact, crater
+and residue remain at the spell's captured target. Animated descendants of static source exports
+retain their own source timeline scaling. The impact root's original spawned child is sampled
+as an explicit finite phase, preserving its 2.5-second crater and residue.
+
+The source fall begins on cast, while impact art and audio begin at 800 ms. Damage still resolves
+at 1.1 seconds. Source sound takes use 70% fall / 100% impact volume and 95–105% pitch. The live-only
+camera impulse uses source strength 70 for one second, respects reduced motion and remains off in
+replays. Ready art and decoded audio independently replace generated cast feedback; missing files
+retain existing fallback/retry behavior. The carried item warms its complete pack and six samples
+before the first periodic cast. Source histories preserve version 141 combat and RNG across all
+27 item levels; older recordings retain their former feedback and request no new optional assets.
+See [source rows, origin conventions, asset sizes and validation](../reference/meteor-staff/README.md#version-142-original-presentation).

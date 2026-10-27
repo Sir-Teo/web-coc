@@ -2,7 +2,12 @@ import { defaultSpellLevels, emptyArmy, emptySpells } from '../../src/game/army'
 import { GameModel, makeBuilding } from '../../src/game/model';
 import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
 
-export function meteorStaffBattle(level = 1, version = REPLAY_VERSION, ordinary = false) {
+export function meteorStaffBattle(
+  level = 1,
+  version = REPLAY_VERSION,
+  ordinary = false,
+  recall = false,
+) {
   const model = new GameModel();
   model.state.obstacles = [];
   model.state.buildings = [
@@ -11,7 +16,7 @@ export function meteorStaffBattle(level = 1, version = REPLAY_VERSION, ordinary 
   ];
   model.state.nextId = 100;
   model.state.army = { ...emptyArmy(), giant: 1 };
-  model.state.spells = { ...emptySpells(), invisibility: 1 };
+  model.state.spells = { ...emptySpells(), invisibility: 1, ...(recall ? { recall: 1 } : {}) };
   model.state.spellLevels = defaultSpellLevels();
   model.state.king = undefined;
   model.startBattle(0, true);

@@ -39,6 +39,12 @@ import { heroProjectileNames } from './hero-projectile-prefetch';
 import { fireballEffects } from './fireball-effects';
 import { fireballShake } from './fireball-shake';
 import {
+  METEOR_STAFF_SPELL,
+  METEOR_STAFF_PROFILES,
+  METEOR_STAFF_CARRIED,
+  meteorStaffShake,
+} from './meteor-staff-effects';
+import {
   electroBootsCarried,
   electroBootsShake,
   ELECTRO_BOOTS_PRESENTATION,
@@ -87,6 +93,7 @@ import {
   DESTROYED_EFFECT,
   effectCue,
   spellSoundEffect,
+  spellSoundEnabled,
   TroopSoundLoader,
   troopCue,
   troopSoundCues,
@@ -994,6 +1001,17 @@ export class VillageScene extends Phaser.Scene {
         ),
       );
     this.jumpSpellPresentation = new JumpSpellPresentation(this, this.nativeEffectPacks);
+    this.fieldSpellPresentations.set(
+      METEOR_STAFF_SPELL,
+      new NativeSpellCastPresentation(
+        this,
+        this.nativeEffectPacks,
+        METEOR_STAFF_SPELL,
+        undefined,
+        METEOR_STAFF_PROFILES,
+        METEOR_STAFF_CARRIED,
+      ),
+    );
     this.freezeSpellPresentation = new FreezeSpellPresentation(this, this.nativeEffectPacks);
     this.overgrowthPresentation = new OvergrowthPresentation(this, this.nativeEffectPacks);
     this.nativeProjectiles = new NativeProjectilePresentation(this, this.nativeEffectPacks);
@@ -1046,6 +1064,7 @@ export class VillageScene extends Phaser.Scene {
             infernoDragonShake(battle, reduced, replay),
             fireballShake(battle, reduced, replay, elapsed),
             electroBootsShake(battle, reduced, replay, elapsed),
+            meteorStaffShake(battle, reduced, replay, elapsed),
           ],
           shakeMemo.offset,
         );
@@ -4349,10 +4368,16 @@ export class VillageScene extends Phaser.Scene {
     )
       return;
     const kinds = new Set<string>(battle.units.map((u) => u.kind));
-    const spells = new Set<string>(battle.nativeSpells?.map((cast) => cast.name));
+    const spells = new Set<string>(
+      battle.nativeSpells
+        ?.filter((cast) => spellSoundEnabled(battle, cast.name))
+        .map((cast) => cast.name),
+    );
+    if (battle.nativeSpellArt?.includes(METEOR_STAFF_SPELL)) spells.add(METEOR_STAFF_SPELL);
     if (roots || overgrowthCasts) spells.add('Overgrowth');
     if (freezeCasts) spells.add('Freeze');
-    for (const cast of battle.nativeSpellCastHistory ?? []) spells.add(cast.name);
+    for (const cast of battle.nativeSpellCastHistory ?? [])
+      if (spellSoundEnabled(battle, cast.name)) spells.add(cast.name);
     for (const hero of battle.nativeHeroes ?? []) {
       kinds.add(heroUnitKind(hero.kind));
       if (hero.pet) {
@@ -4569,7 +4594,7 @@ export class VillageScene extends Phaser.Scene {
     this.freezeSpellPresentation.render(battle ?? null, reduced, iso);
     this.jumpSpellPresentation.render(battle ?? null, reduced, iso);
     for (const view of this.fieldSpellPresentations.values())
-      view.render(battle ?? null, reduced, iso);
+      view.render(battle ?? null, reduced, iso, AIR_LIFT, this.project);
     this.recallPresentation.render(battle ?? null, reduced, iso);
     this.reviveTargets.render(battle ?? null, reduced, iso);
     for (const [ring, name] of this.spellFallbacks) {
@@ -6116,6 +6141,18 @@ export class VillageScene extends Phaser.Scene {
       // first); only the muzzle flash comes from the event, positioned from the event.
       if (!this.model.reducedMotion)
         this.combatEffects.muzzle(fx.weapon!, this.projectileAnchors(fx).from);
+      return;
+    }
+    if (
+      fx.type === 'hit' &&
+      fx.abilityCastId &&
+      this.nativeProjectiles.coversAbilityActivation(
+        this.model.battle,
+        fx.abilityCastId,
+        this.model.reducedMotion,
+      )
+    ) {
+      if (!this.fxSounded) this.audio.play('hit');
       return;
     }
     if (

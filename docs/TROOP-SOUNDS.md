@@ -15,9 +15,9 @@ Attacking troops and pets play the client's own sounds when they are deployed, w
 
 `python3 scripts/import-native-troop-sounds.py` reads the pinned client's `logic/characters.csv`, `logic/heroes.csv`, `logic/pets.csv`, `logic/projectiles.csv` and `logic/effects.csv`. It covers the 80 trainable/spawned units, heroes and thirteen pet actors (including Phoenix Egg) in `src/game/native-units.ts` (`TROOP_SOURCE`, `SPAWN_SOURCE`, `HERO_UNIT_SOURCE`, `PET_UNIT_SOURCE`). For each one it records the `DeployEffect`, the `AttackEffect`, the `HitEffect` (the impact on its target) and the `DieEffect`, and for each effect the rows that name a `Sound`, with their volume, pitch range and delay. The heroes' rows name only a hit, and only four of the six name one with a sound: the Barbarian King, Archer Queen, Grand Warden and Royal Champion. That makes 97 unit actors with sounds.
 
-It also covers the 18 spells this game casts, from `logic/spells.csv`. For each spell it records the `PreDeployEffect` (the bottle falling), the `DeployEffect` and `DeployEffect2` (it landing), the `ChargingEffect` and the `HitEffect` (each pulse). Some of these change with level; Freeze, for example, has one deploy effect per level.
+It also covers the 18 player spells and Meteor Staff’s equipment spell, from `logic/spells.csv`. For each spell it records the `PreDeployEffect` (the bottle falling), the `DeployEffect` and `DeployEffect2` (it landing), the `ChargingEffect` and the `HitEffect` (each pulse). Some of these change with level; Freeze, for example, has one deploy effect per level.
 
-The importer copies 348 Ogg files (4.97 MiB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`. An already shipped sample can supply a missing local source only when its SHA-256 matches that same source pin. Edited outputs cannot supply trusted source bytes; corrupt authoritative cache entries still fail validation.
+The importer copies 354 Ogg files (5.05 MiB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`. An already shipped sample can supply a missing local source only when its SHA-256 matches that same source pin. Edited outputs cannot supply trusted source bytes; corrupt authoritative cache entries still fail validation.
 
 | Troop     | Deploy                                                     | Attack                                                                                          | Death                                           |
 | --------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------- |
@@ -248,3 +248,14 @@ A decoded cue replaces the generated deployment tone while preserving vibration.
 is independent of audio readiness. Pause, seek, muted playback and missing-file retries use the
 shared sample lifecycle. The catalog contains 365 effects and 348 sound files. See [Electro Boots
 source details](../reference/electro-boots/README.md).
+
+## Meteor Staff source phases
+
+Version 142 adds the equipment-only `MPMeteorStaffSpell` source entry alongside the 18 player
+spells. Three unchanged fall takes play at cast time at 70% volume; three impact takes play at
+the source visual deployment, 800 ms later, at 100% volume. Both use 95–105% pitch and the shared
+deterministic take selector. The physical damage remains at 1.1 seconds. An enabled carried
+Meteor Staff warms all six samples before the Prince's first periodic cast. Decoded fall audio
+replaces generated cast tones independently of art readiness. Version 141 and earlier neither
+play nor preload these new samples. The catalog contains 367 effects and 354 sound files.
+See [source phases and lifecycle details](../reference/meteor-staff/README.md#version-142-original-presentation).

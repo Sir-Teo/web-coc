@@ -3,10 +3,23 @@ import { fireballProfile } from './fireball-effects';
 import { FROST_FLAKE_PRESENTATION } from './frost-flake-effects';
 import { DARK_ORB_PRESENTATION } from './dark-orb-effects';
 import { ELECTRO_BOOTS_PRESENTATION } from './electro-boots-effects';
+import { meteorStaffActivation } from './meteor-staff-effects';
 
 /** Match a live ability event to the original activation already owned by battle presentation. */
-export function heroAbilityActivation(battle: Battle | null | undefined, id: string | undefined) {
+export function heroAbilityActivation(
+  battle: Battle | null | undefined,
+  id: string | undefined,
+):
+  | {
+      effect: string;
+      visualEffect?: string;
+      key: string;
+      at: number;
+    }
+  | undefined {
   if (!battle || !id) return;
+  const meteor = meteorStaffActivation(battle, id);
+  if (meteor) return meteor;
   const boots = battle.nativeElectroBootsActivations?.find((event) => event.id === id);
   if (battle.nativeElectroBootsPresentation && boots)
     return {

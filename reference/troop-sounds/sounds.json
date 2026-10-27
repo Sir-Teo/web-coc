@@ -10,6 +10,12 @@
     "logic/effects.csv": "5c6d5b67d6407345123b8d55872ed77ee6697b466d20d1fa21e25a723c511e9f",
     "logic/projectiles.csv": "71cda0e457ad88a6772f6421a22419b24d6bcf78d0ed305f09184404889a72dc",
     "sfx/Ability_DarkOrb_Attack.ogg": "b4442a86b2d829063934145510aa6707ca2a2bb1bb56158705c492747caff390",
+    "sfx/Ability_MP_MeteorStaff_Fall_01.ogg": "5dbb77b13bf63389af1134b29f6a4024a97b9c146949d2ba5e2ca4df1f88a4df",
+    "sfx/Ability_MP_MeteorStaff_Fall_02.ogg": "538aff780370a1e1365d6225cd07535a5e139f4ff09626189be4e830fbb4a7dc",
+    "sfx/Ability_MP_MeteorStaff_Fall_03.ogg": "75f0c1075faa79abdd1ac2cf75a51bfabd947248c0bfc594c787486e47d30d90",
+    "sfx/Ability_MP_MeteorStaff_Impact_01.ogg": "73175b4f3faf547e8868f776d06d3a9ee7cac6d19a94d6eadd1ebc3183a3a146",
+    "sfx/Ability_MP_MeteorStaff_Impact_02.ogg": "8d538a82100939e586076500dad74cc127543e78c6a30e27ac139ac20588bf56",
+    "sfx/Ability_MP_MeteorStaff_Impact_03.ogg": "55352ef9166d6e7ec266746ea1b2bb916a18be54390ee94ae6da6fd8222b4506",
     "sfx/Clash_Pet_Angry_Jelly_Attack.ogg": "727f059efc92f42369cb561d3094051826d40172e489db8cddabe0e1a7bc86b4",
     "sfx/Clash_Pet_Angry_Jelly_Deploy.ogg": "285a9bece753000048ed4283cea253b35ecb198f2ecd81d7133ddb606beae11b",
     "sfx/Clash_Pet_Angry_Jelly_Die.ogg": "ea50f01b02047f6b48e843b02d8195f3eacddc89c89af11458c3e0e1432906df",
@@ -1135,6 +1141,11 @@
       "deploy": "Lightning area small",
       "charging": "Lightning Spell",
       "hit": "Lightning Spell Hit"
+    },
+    "MPMeteorStaffSpell": {
+      "key": "meteorstaff",
+      "preDeploy": "ps_chr_mp_MeteorStrike_Projectile",
+      "deploy": "ps_chr_mp_MeteorStrike_Impact"
     },
     "Overgrowth": {
       "key": "overgrowth",
@@ -5051,6 +5062,52 @@
         "delay": 0.0
       }
     ],
+    "ps_chr_mp_MeteorStrike_Impact": [
+      {
+        "sound": "sfx/Ability_MP_MeteorStaff_Impact_01.ogg",
+        "volume": 1.0,
+        "minPitch": 0.95,
+        "maxPitch": 1.05,
+        "delay": 0.0
+      },
+      {
+        "sound": "sfx/Ability_MP_MeteorStaff_Impact_02.ogg",
+        "volume": 1.0,
+        "minPitch": 0.95,
+        "maxPitch": 1.05,
+        "delay": 0.0
+      },
+      {
+        "sound": "sfx/Ability_MP_MeteorStaff_Impact_03.ogg",
+        "volume": 1.0,
+        "minPitch": 0.95,
+        "maxPitch": 1.05,
+        "delay": 0.0
+      }
+    ],
+    "ps_chr_mp_MeteorStrike_Projectile": [
+      {
+        "sound": "sfx/Ability_MP_MeteorStaff_Fall_01.ogg",
+        "volume": 0.7,
+        "minPitch": 0.95,
+        "maxPitch": 1.05,
+        "delay": 0.0
+      },
+      {
+        "sound": "sfx/Ability_MP_MeteorStaff_Fall_02.ogg",
+        "volume": 0.7,
+        "minPitch": 0.95,
+        "maxPitch": 1.05,
+        "delay": 0.0
+      },
+      {
+        "sound": "sfx/Ability_MP_MeteorStaff_Fall_03.ogg",
+        "volume": 0.7,
+        "minPitch": 0.95,
+        "maxPitch": 1.05,
+        "delay": 0.0
+      }
+    ],
     "ps_chr_rubbleknight_deploy": [
       {
         "sound": "sfx/sfx_tro_ruinknight_deploy_01.ogg",
@@ -5211,6 +5268,36 @@
       "path": "assets/audio/troops-native/Ability_DarkOrb_Attack.ogg",
       "bytes": 20978,
       "sha256": "b4442a86b2d829063934145510aa6707ca2a2bb1bb56158705c492747caff390"
+    },
+    "sfx/Ability_MP_MeteorStaff_Fall_01.ogg": {
+      "path": "assets/audio/troops-native/Ability_MP_MeteorStaff_Fall_01.ogg",
+      "bytes": 15810,
+      "sha256": "5dbb77b13bf63389af1134b29f6a4024a97b9c146949d2ba5e2ca4df1f88a4df"
+    },
+    "sfx/Ability_MP_MeteorStaff_Fall_02.ogg": {
+      "path": "assets/audio/troops-native/Ability_MP_MeteorStaff_Fall_02.ogg",
+      "bytes": 15019,
+      "sha256": "538aff780370a1e1365d6225cd07535a5e139f4ff09626189be4e830fbb4a7dc"
+    },
+    "sfx/Ability_MP_MeteorStaff_Fall_03.ogg": {
+      "path": "assets/audio/troops-native/Ability_MP_MeteorStaff_Fall_03.ogg",
+      "bytes": 13845,
+      "sha256": "75f0c1075faa79abdd1ac2cf75a51bfabd947248c0bfc594c787486e47d30d90"
+    },
+    "sfx/Ability_MP_MeteorStaff_Impact_01.ogg": {
+      "path": "assets/audio/troops-native/Ability_MP_MeteorStaff_Impact_01.ogg",
+      "bytes": 13011,
+      "sha256": "73175b4f3faf547e8868f776d06d3a9ee7cac6d19a94d6eadd1ebc3183a3a146"
+    },
+    "sfx/Ability_MP_MeteorStaff_Impact_02.ogg": {
+      "path": "assets/audio/troops-native/Ability_MP_MeteorStaff_Impact_02.ogg",
+      "bytes": 13503,
+      "sha256": "8d538a82100939e586076500dad74cc127543e78c6a30e27ac139ac20588bf56"
+    },
+    "sfx/Ability_MP_MeteorStaff_Impact_03.ogg": {
+      "path": "assets/audio/troops-native/Ability_MP_MeteorStaff_Impact_03.ogg",
+      "bytes": 13322,
+      "sha256": "55352ef9166d6e7ec266746ea1b2bb916a18be54390ee94ae6da6fd8222b4506"
     },
     "sfx/Clash_Pet_Angry_Jelly_Attack.ogg": {
       "path": "assets/audio/troops-native/Clash_Pet_Angry_Jelly_Attack.ogg",

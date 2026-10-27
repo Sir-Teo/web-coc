@@ -15,6 +15,10 @@ export interface SpellEffectProfile {
   EndEffect?: string;
   hitRadiusTiles?: number;
   graphicsOnlyRadius?: boolean;
+  ActivationEffect?: string;
+  /** The deployment root's original spawned child, retained as its own finite phase. */
+  SpawnEffect?: string;
+  spawnDelaySeconds?: number;
 }
 /** Source deployment art is independent of the later combat pulse; sampling never changes a cast. */
 export function spellCastEffectEvents(
@@ -27,6 +31,9 @@ export function spellCastEffectEvents(
   pulsePresentation = false,
   /** A finishing presentation clock can advance, but cannot start unresolved cast phases. */
   startedThrough = elapsed,
+  ownerOrigin?: (
+    cast: NativeSpellCast,
+  ) => { ground: { x: number; y: number }; lift: number } | undefined,
 ): (NativeEffectEvent & { sampleAt: number })[] {
   const events: (NativeEffectEvent & { sampleAt: number })[] = [];
   for (const cast of casts) {
@@ -37,8 +44,14 @@ export function spellCastEffectEvents(
       deployAt = row.resolvedRevive ? revival?.at : cast.castAt + row.deploySeconds,
       deployGround = revival ? iso(revival.x, revival.y) : castGround;
     for (const [phase, effect, at] of [
+      ['activation', row.ActivationEffect, cast.activationOrigin ? cast.castAt : undefined],
       ['preDeploy', row.PreDeployEffect, cast.castAt],
       ['deploy', row.DeployEffect, deployAt],
+      [
+        'spawn',
+        row.SpawnEffect,
+        deployAt === undefined ? undefined : deployAt + (row.spawnDelaySeconds ?? 0),
+      ],
       [
         'deploy2',
         row.DeployEffect2,
@@ -55,12 +68,24 @@ export function spellCastEffectEvents(
         elapsed - at > (duration(effect) ?? 30)
       )
         continue;
-      const ground = phase === 'deploy' || phase === 'deploy2' ? deployGround : castGround;
+      const activation =
+        phase === 'activation' && cast.activationOrigin
+          ? (ownerOrigin?.(cast) ?? {
+              ground: iso(cast.activationOrigin.x, cast.activationOrigin.y),
+              lift: 0,
+            })
+          : undefined;
+      const ground =
+        activation?.ground ??
+        (phase === 'deploy' || phase === 'deploy2' || phase === 'spawn'
+          ? deployGround
+          : castGround);
       events.push({
         key: `spell:${cast.id}:${phase}`,
         effect,
         at,
         ground,
+        ...(activation?.lift ? { lift: activation.lift } : {}),
         ...(phase === 'charging' && row.chargingTargeted
           ? { target: ground, targetedOrigins: true as const }
           : {}),
@@ -104,6 +129,8 @@ export function capturedSpellEffectEvents(
   reduced: boolean,
   duration: (name: string) => number | undefined,
   elapsed = battle?.elapsed ?? 0,
+  airLift = 0,
+  ownerIso = iso,
 ) {
   if (!battle?.nativeSpellArt?.includes(name) || reduced) return [];
   return spellCastEffectEvents(
@@ -115,5 +142,14 @@ export function capturedSpellEffectEvents(
     battle.nativeSpellEffectTimelines,
     battle.nativeSpellPulsePresentation,
     battle.elapsed,
+    (cast) => {
+      if (!cast.activationOrigin) return;
+      const owner = battle.units.find((unit) => unit.id === cast.owner && !unit.native?.recalled);
+      const point = owner ?? cast.activationOrigin;
+      return {
+        ground: (owner ? ownerIso : iso)(point.x, point.y),
+        lift: cast.activationOrigin.air ? airLift : 0,
+      };
+    },
   );
 }

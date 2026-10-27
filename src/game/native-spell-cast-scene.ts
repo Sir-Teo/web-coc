@@ -13,16 +13,19 @@ export class NativeSpellCastPresentation {
     scene: Phaser.Scene,
     packs: NativeArtPacks<NativeArtPack>,
     private name: string,
-    private kind: SpellKind,
+    private kind: SpellKind | undefined,
     private profiles: readonly SpellEffectProfile[],
+    private carried?: { hero: string; slug: string },
   ) {
-    this.layer = new NativeEffectLayer(scene, packs, `${kind}-spell`);
+    this.layer = new NativeEffectLayer(scene, packs, `${kind ?? name}-spell`);
     // Several phases and levels share one pack. Reused phases may live in a separate existing pack.
     this.warmEffects = [
       ...new Map(
         profiles
           .flatMap((row) => [
             row.PreDeployEffect,
+            row.ActivationEffect,
+            row.SpawnEffect,
             row.DeployEffect,
             row.DeployEffect2,
             row.ChargingEffect,
@@ -35,9 +38,15 @@ export class NativeSpellCastPresentation {
     ];
   }
   prefetch(battle: Battle | null | undefined) {
+    const carried = this.carried;
     if (
       battle?.nativeSpellArt?.includes(this.name) &&
-      (battle.spells[this.kind] > 0 ||
+      ((this.kind !== undefined && battle.spells[this.kind] > 0) ||
+        (carried &&
+          battle.nativeHeroes?.some(
+            (hero) =>
+              hero.kind === carried.hero && hero.items.some((item) => item.slug === carried.slug),
+          )) ||
         battle.nativeSpellCastHistory?.some((cast) => cast.name === this.name))
     )
       for (const effect of this.warmEffects) this.layer.duration(effect, Infinity);
@@ -54,6 +63,8 @@ export class NativeSpellCastPresentation {
     battle: Battle | null,
     reduced: boolean,
     iso: (x: number, y: number) => { x: number; y: number },
+    airLift = 0,
+    ownerIso = iso,
   ) {
     this.layer.begin();
     this.prefetch(battle);
@@ -72,6 +83,8 @@ export class NativeSpellCastPresentation {
         false,
         (name) => this.layer.duration(name, Infinity),
         elapsed,
+        airLift,
+        ownerIso,
       ))
         this.layer.play(event, event.sampleAt, false);
     this.layer.end();
