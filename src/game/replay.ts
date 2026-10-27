@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 138;
+export const REPLAY_VERSION = 139;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -166,7 +166,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 135 launches the Prince's bounded Dark Orb corridor with captured frost.
  * Version 136 launches the Champion's Seeking Shield after its source wind-up.
  * Version 137 retains moving equipment target aims for cadence-independent original trails.
- * Version 138 resumes passive Hero auras after Revive or Phoenix resurrection. */
+ * Version 138 resumes passive Hero auras after Revive or Phoenix resurrection.
+ * Version 139 prevents self-regeneration debt across death and Recall. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -272,6 +273,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 135 ||
   version === 136 ||
   version === 137 ||
+  version === 138 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -420,6 +422,19 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 139 &&
+    s.heroes?.some((hero) =>
+      hero.items.some(
+        (item) =>
+          (hero.kind === 'king' && item.slug === 'giant-gauntlet') ||
+          (hero.kind === 'queen' &&
+            (item.slug === 'healer-puppet' || item.slug === 'action-figure')) ||
+          (hero.kind === 'champion' && item.slug === 'electro-boots') ||
+          (hero.kind === 'duke' && item.slug === 'fire-heart'),
+      ),
+    )
+      ? { nativeHeroRegeneration: true as const }
+      : {}),
     ...(version >= 138 &&
     s.heroes?.some((hero) =>
       hero.items.some(

@@ -948,6 +948,8 @@ export interface Battle {
   nativeEquipmentFlightHistory?: true;
   /** Version 138: Revive and Phoenix restart passive equipment auras on the same body. */
   nativeHeroAuraRevival?: true;
+  /** Version 139: passive self-regeneration cannot bank ticks through death or Recall. */
+  nativeHeroRegeneration?: true;
   nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
   nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */

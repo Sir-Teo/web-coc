@@ -1,5 +1,6 @@
 import type { Battle, Unit } from './model';
 import { reviveHeroAuras } from './native-hero-aura-revival';
+import { resetHeroRegeneration } from './native-hero-regeneration';
 import type { NativeBattleHero } from './native-heroes';
 import type { NativeTroopContext } from './native-troops';
 import type { CombatProjectile } from './projectiles';
@@ -183,6 +184,7 @@ export function resolvePhoenixRevive(ctx: NativeTroopContext, projectile: Combat
   unitEffects(hero).phoenixRevive = { until, duration };
   protection(hero, until);
   reviveHeroAuras(ctx.battle, hero, projectile.impact);
+  resetHeroRegeneration(ctx.battle, hero, projectile.impact);
   ctx.effect({ type: 'spawn', x: hero.x, y: hero.y, sourceId: hero.id });
   return true;
 }

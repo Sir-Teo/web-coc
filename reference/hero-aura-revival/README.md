@@ -38,3 +38,6 @@ state. A composed input recording also resolves Revive and Recall together befor
 Browser checks cover original Hero bodies, phone and desktop views, rendering without simulation
 writes, reduced motion and historical playback. Separate regressions retain Phoenix Recall and
 Revive touch targeting.
+
+Version 139 separately fixes [self-regeneration timing](../hero-regeneration/README.md) across
+resurrection and Recall; the version-138 aura lifecycle remains in use.

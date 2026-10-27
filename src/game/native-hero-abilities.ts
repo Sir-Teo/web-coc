@@ -341,10 +341,21 @@ function stepPassive(
     const interval = seconds(row, 'RegenerationTimeBetweenHitsMS') || 1;
     const state = (hero.charges ??= {});
     const key = `regen:${ability.name}`;
-    const next = state[key] ?? (unit.spawnedAt ?? 0) + interval;
+    const nativeClock = ctx.battle.nativeHeroRegeneration;
+    const first =
+      (nativeClock ? (unit.native?.regenerationAt ?? unit.spawnedAt ?? 0) : (unit.spawnedAt ?? 0)) +
+      interval;
+    const next = nativeClock ? Math.max(state[key] ?? first, first) : (state[key] ?? first);
     if (at + EPS >= next) {
-      healUnit(ctx.battle, unit, regeneration);
-      state[key] = next + interval;
+      if (nativeClock) {
+        const count = 1 + Math.floor(Math.max(0, at - next + EPS) / interval);
+        for (let pulse = 0; pulse < count; pulse++)
+          healUnit(ctx.battle, unit, regeneration, next + pulse * interval);
+        state[key] = next + count * interval;
+      } else {
+        healUnit(ctx.battle, unit, regeneration);
+        state[key] = next + interval;
+      }
     }
   }
   // Items that boost on deployment (Stick Horse) apply once, for their own duration.

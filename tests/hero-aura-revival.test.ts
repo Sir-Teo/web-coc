@@ -49,6 +49,7 @@ for (const equipment of ['electro-boots', 'rage-gem', 'life-gem'] as AuraEquipme
       for (const time of [r.deployed, r.dead]) {
         const before = JSON.parse(JSON.stringify(at(time)));
         delete before.nativeHeroAuraRevival;
+        delete before.nativeHeroRegeneration;
         expect(before).toEqual(old.snapshots.find((s) => s.at === time)!.battle);
       }
       const model = new GameModel();

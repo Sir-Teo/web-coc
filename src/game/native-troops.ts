@@ -84,6 +84,8 @@ import { breachTarget, distanceTo, findPath, type Battle, type Building, type Un
 
 /** Version 45+ native roster behavior state, created lazily on the unit. */
 export interface NativeUnitState {
+  /** Version 139: canonical Hero resurrection time for the next self-regeneration interval. */
+  regenerationAt?: number;
   /** Version 109: action-clock charge and recovery, independent of the retained chain packets. */
   electroDragon?: ElectroDragonState;
   /** Version 95: the source waiting bird and its separately drawn Egg. */

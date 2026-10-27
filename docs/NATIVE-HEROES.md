@@ -2247,3 +2247,23 @@ introduced Giant, forward/backward snapshots and historical version 137 behavior
 coverage checks simultaneous Revive/Recall pulses, body replacement, charged equipment and stale
 fields. Browser checks retain original living Hero art, phone/desktop playback, reduced motion,
 Revive touch controls and Recall during Phoenix revival. See [source notes and phase conventions](../reference/hero-aura-revival/README.md).
+
+## Version 139 self-regeneration after Revive and Recall
+
+A real Monolith/Revive case exposed 12 HP of immediate Electro Boots healing inside 100 ms,
+despite its level-1 source rate of 6 HP per second. The passive's next-tick guard still pointed
+into the knockout. A similar debt accumulated while the Hero waited in Recall, and large living
+steps resolved only one overdue pulse before catching up on later frames.
+
+The five regeneration items now use a body-scoped start boundary. Recall redeployment uses the
+new body's spawn time; successful Revive and Phoenix restoration retain their canonical time on
+that body. Its first regeneration pulse follows one full source interval. While continuously
+alive, every due pulse resolves at its own scheduled time. Existing healing eligibility, Phoenix
+protection and maximum health apply to each pulse. Suppressed or full-health checks still advance
+the clock. Active abilities, equipment damage and other passive state remain unchanged.
+
+Source-rate checks cover the first and last level of Giant Gauntlet, Healer Puppet, Action Figure,
+Electro Boots and Fire Heart, with equivalent dense/coarse steps. Real Monolith/Recall recordings
+verify no stored healing, the first new tick, complete portable snapshots and historical behavior.
+Browser checks cover live-looking original Hero bodies, phone/desktop HP, backward seeks, reduced
+motion and existing aura resurrection. See [the regeneration reference](../reference/hero-regeneration/README.md).
