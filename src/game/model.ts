@@ -1007,6 +1007,16 @@ export interface Battle {
   /** Version 167: bounded Witch flight snapshots reconstruct original trail tails after seeks. */
   nativeWitchFlightArt?: true;
   nativeWitchFlights?: CombatProjectile[];
+  /** Version 168: original Witch launch/impact cues survive seeks, independently of view history. */
+  nativeWitchSounds?: true;
+  nativeWitchShots?: {
+    id: string;
+    sourceId: number;
+    kind: 'witch' | 'superwitch';
+    level: number;
+    launched: number;
+    hitAt?: number;
+  }[];
   nativeBowlerFlights?: CombatProjectile[];
   nativeBowlerImpacts?: {
     id: string;

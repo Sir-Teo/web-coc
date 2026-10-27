@@ -226,6 +226,12 @@ export class BattleSoundLog {
     this.sync(battle);
     // Version 94's beam owns a sustained loop; do not restart the same clip every damage tick.
     if (battle.nativeTroopDamageRamp && u.kind === 'infernodragon' && event === 'attack') return;
+    if (
+      battle.nativeWitchSounds &&
+      (u.kind === 'witch' || u.kind === 'superwitch') &&
+      (event === 'attack' || event === 'hit')
+    )
+      return;
     // Captured throw packets reconstruct these cues after seeks, including after the actor changes kind.
     if (
       battle.nativeMeteorThrows &&
@@ -321,11 +327,30 @@ export class BattleSoundLog {
   }
 }
 
+/** Physical launch/landing events own one source sample each, including after caster defeat. */
+export function witchFlightSoundCues(battle: Battle): SampleCue[] {
+  if (!battle.nativeWitchSounds) return [];
+  const cues: SampleCue[] = [];
+  for (const shot of battle.nativeWitchShots ?? []) {
+    const unit = { id: shot.sourceId, kind: shot.kind, level: shot.level };
+    for (const [event, at] of [
+      ['attack', shot.launched],
+      ['hit', shot.hitAt],
+    ] as const) {
+      if (at === undefined || at > battle.elapsed + 1e-9 || !cueAudible(at, battle.elapsed))
+        continue;
+      const cue = troopCue(battle, unit, event, `troop:${shot.sourceId}:${event}:${at}`, at);
+      if (cue) cues.push(cue);
+    }
+  }
+  return cues;
+}
+
 /** Deploys and deaths, read from the units themselves, plus the logged attacks and ruins. */
 export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): SampleCue[] {
   const logged = log.cues(battle);
   if (!battle) return logged;
-  const cues: SampleCue[] = [];
+  const cues: SampleCue[] = witchFlightSoundCues(battle);
   const elapsed = battle.elapsed;
   for (const orb of battle.nativeDarkOrbs ?? []) {
     if (orb.launched > elapsed + 1e-9 || !cueAudible(orb.launched, elapsed)) continue;

@@ -24,7 +24,7 @@ for (const superTroop of [false, true]) {
     });
   it(`${kind} flight art metadata leaves every physical version-166 state exact`, () => {
     const old = attackingWitchBattle(8, 166, 17.6, superTroop),
-      current = attackingWitchBattle(8, undefined, 17.6, superTroop);
+      current = attackingWitchBattle(8, 167, 17.6, superTroop);
     for (const at of [0.05, 0.7, 0.95, 1.4, 2.1, 4.6]) {
       old.until(at);
       current.until(at);

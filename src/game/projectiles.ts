@@ -256,6 +256,17 @@ export function launchProjectile(
     (projectile.native?.kind === 'witch' || projectile.native?.kind === 'superwitch')
   )
     (battle.nativeWitchFlights ??= []).push({ ...projectile, native: { ...projectile.native } });
+  if (
+    battle.nativeWitchSounds &&
+    (projectile.native?.kind === 'witch' || projectile.native?.kind === 'superwitch')
+  )
+    (battle.nativeWitchShots ??= []).push({
+      id: projectile.id,
+      sourceId: projectile.sourceId,
+      kind: projectile.native.kind,
+      level: projectile.native.level,
+      launched: projectile.launched,
+    });
   emit(projectileEffect(projectile, 'projectile'));
   return projectile;
 }
@@ -295,6 +306,10 @@ export function stepProjectiles(
   emit: (fx: FX) => void,
   nativeImpact?: (projectile: CombatProjectile) => void,
 ) {
+  if (battle.nativeWitchShots)
+    battle.nativeWitchShots = battle.nativeWitchShots.filter(
+      (shot) => (shot.hitAt ?? shot.launched) + 10 >= battle.elapsed - 1e-9,
+    );
   // The renderer keeps landed native flights for at most three seconds. Witch aim is fixed.
   if (battle.nativeWitchFlights)
     battle.nativeWitchFlights = battle.nativeWitchFlights.filter(

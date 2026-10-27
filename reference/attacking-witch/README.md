@@ -86,3 +86,44 @@ reduced-motion/read-only rendering and WebGL health. A real emitter-graph 503 re
 while the replay stays paused and its complete battle state stays unchanged. No source art,
 audio file or particle parameters change; modern native-engine particle parity remains
 unverified.
+
+
+## Original launch and impact audio after seeks (recording version 168)
+
+Live Witch shots already bind the pinned character `AttackEffect` / `HitEffect` records.
+The missing case was a replay seek: transient scene events were suppressed while rebuilding
+battle state, so an unseen recent shot had no original launch/impact cue to resume.
+Version 168 keeps a bounded physical-event journal, capturing the launch immediately and
+adding the exact impact time only when the fixed-point blast actually resolves. An ended
+battle never invents an impact for a cancelled flight. Records expire ten seconds after
+their latest event; the sample player independently stops each original clip at its decoded
+end. The journal does not depend on the caster remaining alive or visible.
+
+| Source effect | Original sample | Volume | Pitch | Delay | Decoded duration |
+| --- | --- | --- | --- | --- | --- |
+| `Warlock Attack` | `slimeball_fire_05.ogg` | 0.5 / 0.4 / 0.4 alternative rows | 0.95–1.05 | 0 | 0.817052 s |
+| `SW Attack` | `super_witch_deploy_01.ogg` | 0.5 | 0.95–1.05 | 0 | 1.505782 s |
+| `Warlock Hit` | `wizard_hit_01.ogg` | 0.4 | 0.8–1 | 0 | 0.690068 s |
+
+The Super Witch attack deliberately uses the source-bound file whose name contains
+`deploy`; the binding is `SW Attack`. All three Ogg files already ship unchanged:
+
+- `slimeball_fire_05.ogg`: 8,903 bytes, SHA-256 `4e922606665365afa9e52f045485bb86da7dcf47e0bd5cd64fa7ca38175e83bf`.
+- `super_witch_deploy_01.ogg`: 12,052 bytes, SHA-256 `459ecb7fed5baf8b84bbcceb4cef039d2daef4601ed18c3093aedb3c87188a70`.
+- `wizard_hit_01.ogg`: 8,139 bytes, SHA-256 `c0ed0e6d5b0781f70d5962034493b23e9ce17d45939e52f873df9566cda28cdf`.
+
+Stable event keys choose the source alternative row and pitch. Impact cues use the actual
+projectile impact timestamp rather than the end of its 50 ms update; that precise time
+can change the deterministic take/offset from the older live transient path. Released
+one-shots retain their natural tails through caster Freeze or defeat. Earlier versions
+keep their original live-only event path. No combat rule, trail geometry or audio asset
+changes, and only carried Witch/Super Witch armies enable the journal. Exact modern
+native-engine sample startup parity remains unverified.
+
+Model coverage checks all eight levels of both casters, source cue identity, actual event
+times, read-only generation, duplicate suppression, caster removal/Freeze, cancelled
+landings, bounded expiry, complete physical version-167 parity and portable forward/reverse
+states. Desktop/phone browser recordings decode the original samples and check actual
+gain, playback rate and seek offset; spent clips stay silent even while their journal entry
+remains inside the ten-second horizon. Original impact-sample HTTP 503 recovery happens
+while playback stays paused and complete battle state remains unchanged.

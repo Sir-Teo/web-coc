@@ -47,6 +47,10 @@ export function resolveWitchImpact(ctx: NativeTroopContext, shot: CombatProjecti
     (shot.native?.kind !== 'witch' && shot.native?.kind !== 'superwitch')
   )
     return false;
+  if (ctx.battle.nativeWitchSounds) {
+    const event = ctx.battle.nativeWitchShots?.find((event) => event.id === shot.id);
+    if (event) event.hitAt = shot.impact;
+  }
   const radius = shot.splash ?? 0;
   if (!shot.toAir)
     for (const building of ctx.battle.buildings)
