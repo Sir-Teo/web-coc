@@ -953,6 +953,8 @@ export interface Battle {
   /** Version 140: capture Electro Boots' original passive activation at each aura origin. */
   nativeElectroBootsPresentation?: true;
   nativeElectroBootsActivations?: import('./native-electro-boots').ElectroBootsActivation[];
+  /** Version 141: Meteor Staff selects visible defenses, with ordinary-building fallback. */
+  nativeMeteorStaffTargeting?: true;
   nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
   nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */

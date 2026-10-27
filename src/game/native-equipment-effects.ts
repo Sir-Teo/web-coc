@@ -10,6 +10,7 @@ import { distanceTo, type Unit } from './model';
 import { distance2D } from './distance';
 import type { NativeTroopContext } from './native-troops';
 import { MAP_SIZE } from './grid';
+import { meteorStaffTarget } from './native-meteor-staff';
 
 /** Stateful equipment effects are sampled on the deterministic battle clock. */
 export function stepEquipmentEffects(ctx: NativeTroopContext, hero: NativeBattleHero, unit: Unit) {
@@ -44,9 +45,12 @@ export function stepEquipmentEffects(ctx: NativeTroopContext, hero: NativeBattle
         (state[`cast:${ability.name}`] ??
           (unit.spawnedAt ?? 0) + seconds(row, 'ActivationCooldown'))
     ) {
-      const target = battle.buildings
-        .filter((b) => b.hp > 0 && !isTrap(b.kind) && isDefense(b.kind))
-        .sort((a, b) => distanceTo(unit, a) - distanceTo(unit, b) || a.id - b.id)[0];
+      const target =
+        battle.nativeMeteorStaffTargeting && ability.name === 'MPMeteorStaff'
+          ? meteorStaffTarget(battle, unit, at)
+          : battle.buildings
+              .filter((b) => b.hp > 0 && !isTrap(b.kind) && isDefense(b.kind))
+              .sort((a, b) => distanceTo(unit, a) - distanceTo(unit, b) || a.id - b.id)[0];
       if (target) {
         castNativeSpell(
           battle,

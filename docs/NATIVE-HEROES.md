@@ -2281,3 +2281,19 @@ motion rules. The source disables camera shake in replays. Original art and deco
 replace their deployment fallback when ready; missing assets recover during paused playback.
 The presentation-only capability preserves version 139 combat and RNG at every item level, with
 older replay behavior retained. See [source evidence, interpretation limits and validation](../reference/electro-boots/README.md).
+
+## Version 141 Meteor Staff visibility and fallback
+
+The old periodic selector considered every living static defense, even while hidden, and stopped
+casting when only ordinary buildings remained. Meteor Staff now uses the shared targetability
+and activated-defense classification, prefers defenses at any distance, and then chooses an
+ordinary building. Walls, traps, concealed Teslas, Invisibility and Overgrowth are excluded.
+Nearest-target distance uses the established building-footprint adapter and equal distances use
+stable identifiers. A single scan avoids sorting the entire layout for this one-target selection.
+
+All 27 equipment levels retain their source cooldowns and spell tiers, 250–850 damage, two-tile
+radius and 1.1-second cast-to-damage delay. A cast keeps its original target position; no eligible
+building leaves the existing ready cooldown available for a later target. Version 140 playback
+keeps the former selector. Real Prince/Invisibility and ordinary-building recordings verify exact
+portable seeks, original Hero art, health changes, reduced motion and desktop/phone playback.
+See [the source and validation reference](../reference/meteor-staff/README.md).
