@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import { dirname, join } from 'node:path';
 import { createHash } from 'node:crypto';
 import projectileArt from '../reference/full-client/projectile-art.json';
+import darkOrbArt from '../reference/dark-orb/effects.json';
 import effectArt from '../reference/full-client/effect-art.json';
 import defenseArt from '../reference/full-client/defense-art.json';
 import villageArt from '../reference/full-client/village-art.json';
@@ -97,10 +98,21 @@ describe('native battle art packs', () => {
   it('resolves every referenced projectile row to a loadable flight pack', () => {
     for (const [name, id] of Object.entries(projectileArt.projectiles)) {
       const path = nativeProjectilePack(name);
-      expect(path, name).toBe(projectileArt.packs[id as keyof typeof projectileArt.packs].path);
+      const fallback = projectileArt.packs[id as keyof typeof projectileArt.packs].path;
+      const overrides = darkOrbArt.projectiles as Record<string, keyof typeof darkOrbArt.packs>;
+      const override = Object.hasOwn(overrides, name)
+        ? darkOrbArt.packs[overrides[name]]
+        : undefined;
+      expect(path, name).toBe(override?.path ?? fallback);
       const pack = read(path!);
       const row = pack.projectiles[name] as NativeProjectileRow;
       expect(row.exports.length, name).toBeGreaterThan(0);
+      if (override) {
+        // Specialized geometry must preserve every original projectile presentation column.
+        expect(row, name).toMatchObject(read(fallback).projectiles[name]);
+        expect(sha(path!), name).toBe(override.sha256);
+        expect(Object.keys(pack.scenes).length, name).toBeGreaterThan(0);
+      }
       for (const scene of Object.values(pack.scenes as Record<string, NativeMeshGraph>))
         for (const texture of Object.values(scene.textures))
           expect(fs.existsSync('public/' + texture.path), texture.path).toBe(true);

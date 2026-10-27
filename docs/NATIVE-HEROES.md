@@ -2177,3 +2177,11 @@ contacts dealing 1,000–3,250 damage each. The initial leg copies a valid build
 legs prefer unvisited buildings and fall back to ground defenders. Damage and later ricochets
 survive Recall or defeat. The original ball, shadow, trail, contact bursts and audio reuse existing
 assets. See [the Spiky Ball reference](../reference/spiky-ball/README.md).
+
+## Version 135 Minion Prince Dark Orb
+
+All 18 Dark Orb levels capture 45–200 damage and 20–50% frost for 8–18 seconds in the source
+five-tile corridor. Its 12.5-tile/second path is bounded by the source 1.25-second maximum. Real
+air-defense fire slows without stopping completely, and the path survives Recall or defeat. The
+original crystal now retains its opaque source mask through verified mesh clipping. Portal,
+contact and impact particles and original activation audio follow battle time. See [the Dark Orb reference](../reference/dark-orb/README.md).

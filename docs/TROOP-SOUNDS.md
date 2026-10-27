@@ -17,7 +17,7 @@ Attacking troops and pets play the client's own sounds when they are deployed, w
 
 It also covers the 18 spells this game casts, from `logic/spells.csv`. For each spell it records the `PreDeployEffect` (the bottle falling), the `DeployEffect` and `DeployEffect2` (it landing), the `ChargingEffect` and the `HitEffect` (each pulse). Some of these change with level; Freeze, for example, has one deploy effect per level.
 
-The importer copies 345 Ogg files (4.91 MiB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`. An already shipped sample can supply a missing local source only when its SHA-256 matches that same source pin. Edited outputs cannot supply trusted source bytes; corrupt authoritative cache entries still fail validation.
+The importer copies 346 Ogg files (4.93 MiB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`. An already shipped sample can supply a missing local source only when its SHA-256 matches that same source pin. Edited outputs cannot supply trusted source bytes; corrupt authoritative cache entries still fail validation.
 
 | Troop     | Deploy                                                     | Attack                                                                                          | Death                                           |
 | --------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------- |
@@ -160,7 +160,7 @@ bounded backoff, reconnects, deduplication and changing battle rosters.
 `tests/browser/troop-sound-recovery.spec.ts` returns a real 503 for Frost Flake's activation
 sample, then verifies automatic and online recovery with unchanged paused replay state.
 
-Not included: the heroes' other sounds (the client's hero rows name only hits, so the rest presumably play from their animations), Siege Machine special effects and movement sounds. Fireball, Frost Flake and Spiky Ball additionally import their declared equipment cues; other ability-specific effects still need their own source mapping.
+Not included: the heroes' other sounds (the client's hero rows name only hits, so the rest presumably play from their animations), Siege Machine special effects and movement sounds. Fireball, Frost Flake, Spiky Ball and Dark Orb additionally import their declared equipment cues; other ability-specific effects still need their own source mapping.
 
 Version 114 retains Overgrowth's cast timeline after its one-pulse live record disappears.
 The original vial and level-specific field cues now reconstruct on a fresh seek beyond

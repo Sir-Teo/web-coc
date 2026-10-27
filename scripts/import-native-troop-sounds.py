@@ -50,7 +50,7 @@ SPELL_EVENTS = {
 DESTROYED = 'Building Destroyed'
 EXTRA_EFFECTS = ['RecallRedeployAuraTop', 'FireballActivationEffect',
                  'rc_gear_frostblast_snowflack_active', 'ability_rc_frostflake_hit_sfx',
-                 'Air Defense Barrel Hit']
+                 'Air Defense Barrel Hit', 'ps_chr_DarkOrb_ProjectileSfx']
 
 
 def require(condition, message):

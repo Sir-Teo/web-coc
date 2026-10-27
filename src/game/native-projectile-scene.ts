@@ -1,6 +1,7 @@
 import { superArcherEffectEvents } from './super-archer-effects';
 import { fireballEffectEvents, fireballProfile } from './fireball-effects';
 import { frostFlakeEffectEvents } from './frost-flake-effects';
+import { darkOrbEffectEvents } from './dark-orb-effects';
 import { heroAbilityActivation } from './hero-ability-feedback';
 import { superWizardEffectEvents } from './super-wizard-effects';
 import { electroDragonEffectEvents } from './electro-dragon-effects';
@@ -37,6 +38,7 @@ interface Snapshot {
   giantArrow?: true;
   frostFlake?: true;
   spikyContinues?: true;
+  darkOrb?: true;
   fromX: number;
   fromY: number;
   x: number;
@@ -106,7 +108,11 @@ export class NativeProjectilePresentation {
     reduced: boolean,
   ) {
     const activation = heroAbilityActivation(battle, id);
-    return !reduced && !!activation && this.layer.status(activation.effect) === 'ready';
+    return (
+      !reduced &&
+      !!activation &&
+      this.layer.status(activation.visualEffect ?? activation.effect) === 'ready'
+    );
   }
   /** True when the native presentation already shows this shot's flight. */
   covers(id: string | undefined) {
@@ -211,6 +217,10 @@ export class NativeProjectilePresentation {
       this.layer.duration(name, Infinity),
     ))
       this.layer.play(event, elapsed, reduced);
+    for (const event of darkOrbEffectEvents(battle, iso, airLift, (name) =>
+      this.layer.duration(name, Infinity),
+    ))
+      this.layer.play(event, elapsed, reduced);
     for (const p of [
       ...(battle.nativeSpikyBallCasts ?? [])
         .flatMap((cast) => cast.shots)
@@ -238,7 +248,11 @@ export class NativeProjectilePresentation {
       if (!packPath) continue;
       this.history.set(p.id, snapshot(p, packPath));
     }
-    for (const shot of [...(battle.nativeArcherShots ?? []), ...(battle.nativeGiantArrows ?? [])]) {
+    for (const shot of [
+      ...(battle.nativeArcherShots ?? []),
+      ...(battle.nativeGiantArrows ?? []),
+      ...(battle.nativeDarkOrbs ?? []),
+    ]) {
       const end = shot.launched + shot.length / shot.speed;
       if (elapsed > end + AFTERLIFE || this.history.has(shot.id)) continue;
       const packPath = nativeProjectilePack(shot.projectile);
@@ -251,6 +265,9 @@ export class NativeProjectilePresentation {
         bounce: 0,
         ...(shot.projectile === 'QueenPierceProjectile' && battle.nativeGiantArrow
           ? { giantArrow: true as const }
+          : {}),
+        ...(shot.projectile === 'vfx_projectile_DarkOrb' && battle.nativeDarkOrb
+          ? { darkOrb: true as const, fromAir: true }
           : {}),
         fromX: shot.fromX,
         fromY: shot.fromY,
@@ -295,7 +312,7 @@ export class NativeProjectilePresentation {
       const options = { iso, airLift };
       const flightAt = (time: number) =>
         line
-          ? nativePiercingFlight(row, line, time, iso)
+          ? nativePiercingFlight(row, line, time, iso, snap.darkOrb ? airLift : 0)
           : nativeProjectileFlight(row, snap, time, options);
       const flight = flightAt(elapsed);
       covered.add(id);
@@ -385,6 +402,7 @@ export class NativeProjectilePresentation {
             at: snap.launched,
             ground: launchPoint,
             facing,
+            ...(snap.darkOrb ? { nestedTimelines: true as const } : {}),
           },
           elapsed,
           reduced,
@@ -418,6 +436,7 @@ export class NativeProjectilePresentation {
             at: flight.end,
             ground: landing,
             facing,
+            ...(snap.darkOrb ? { nestedTimelines: true as const } : {}),
             depth: snap.toAir ? 7600 : undefined,
           },
           elapsed,

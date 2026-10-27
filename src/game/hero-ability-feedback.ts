@@ -1,6 +1,7 @@
 import type { Battle } from './model';
 import { fireballProfile } from './fireball-effects';
 import { FROST_FLAKE_PRESENTATION } from './frost-flake-effects';
+import { DARK_ORB_PRESENTATION } from './dark-orb-effects';
 
 /** Match a live ability event to the original activation already owned by battle presentation. */
 export function heroAbilityActivation(battle: Battle | null | undefined, id: string | undefined) {
@@ -20,5 +21,13 @@ export function heroAbilityActivation(battle: Battle | null | undefined, id: str
       effect: profile.ActivationEffect,
       key: `${fireball.id}:fireball:sound`,
       at: fireball.launched,
+    };
+  const orb = battle.nativeDarkOrbs?.find((shot) => shot.id === id);
+  if (battle.nativeDarkOrb && orb)
+    return {
+      effect: DARK_ORB_PRESENTATION.ActivationEffect,
+      visualEffect: DARK_ORB_PRESENTATION.SpawnEffect,
+      key: `${orb.id}:sound`,
+      at: orb.launched,
     };
 }

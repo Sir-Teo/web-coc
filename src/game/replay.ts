@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 134;
+export const REPLAY_VERSION = 135;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -162,7 +162,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 131 launches the Queen's source Giant Arrow through both enemy layers.
  * Version 132 preserves Giant Arrow constructs in Invisibility Spell Tower triggers.
  * Version 133 launches distinct-target Frost Flakes with captured full freezes.
- * Version 134 launches the King's distinct-target Spiky Ball ricochets. */
+ * Version 134 launches the King's distinct-target Spiky Ball ricochets.
+ * Version 135 launches the Prince's bounded Dark Orb corridor with captured frost. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -264,6 +265,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 131 ||
   version === 132 ||
   version === 133 ||
+  version === 134 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -412,6 +414,12 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 135 &&
+    s.heroes?.some(
+      (hero) => hero.kind === 'prince' && hero.items.some((item) => item.slug === 'dark-orb'),
+    )
+      ? { nativeDarkOrb: true as const }
+      : {}),
     ...(version >= 134 &&
     s.heroes?.some(
       (hero) => hero.kind === 'king' && hero.items.some((item) => item.slug === 'spiky-ball'),

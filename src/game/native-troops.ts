@@ -1,6 +1,6 @@
 import { launchArcherPiercing, stepArcherPiercing } from './native-super-archer';
 import { resolveWardenFireball } from './native-fireball';
-import { stepGiantArrows } from './native-giant-arrow';
+import { stepHeroPiercing } from './native-hero-piercing';
 import { resolveFrostFlake } from './native-frost-flake';
 import { resolveSpikyBall } from './native-spiky-ball';
 import { attackSuperWizard, stepSuperWizardBranches } from './native-super-wizard';
@@ -2344,7 +2344,7 @@ export function stepNativeBattle(ctx: NativeTroopContext) {
   stepElectromiteArcs(ctx);
   stepElectroDragonArcs(ctx);
   stepSuperWizardBranches(ctx);
-  if (ctx.battle.nativeGiantArrow) stepGiantArrows(ctx);
+  if (ctx.battle.nativeGiantArrow || ctx.battle.nativeDarkOrb) stepHeroPiercing(ctx);
   else stepArcherPiercing(ctx);
   stepPendingSpawns(ctx);
 }

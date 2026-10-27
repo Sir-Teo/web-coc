@@ -9,6 +9,7 @@
     "logic/spells.csv": "385159e00327e6a1567cd91f1585b4ed0717d3f4475f0823398243482598289d",
     "logic/effects.csv": "5c6d5b67d6407345123b8d55872ed77ee6697b466d20d1fa21e25a723c511e9f",
     "logic/projectiles.csv": "71cda0e457ad88a6772f6421a22419b24d6bcf78d0ed305f09184404889a72dc",
+    "sfx/Ability_DarkOrb_Attack.ogg": "b4442a86b2d829063934145510aa6707ca2a2bb1bb56158705c492747caff390",
     "sfx/Clash_Pet_Angry_Jelly_Attack.ogg": "727f059efc92f42369cb561d3094051826d40172e489db8cddabe0e1a7bc86b4",
     "sfx/Clash_Pet_Angry_Jelly_Deploy.ogg": "285a9bece753000048ed4283cea253b35ecb198f2ecd81d7133ddb606beae11b",
     "sfx/Clash_Pet_Angry_Jelly_Die.ogg": "ea50f01b02047f6b48e843b02d8195f3eacddc89c89af11458c3e0e1432906df",
@@ -4866,6 +4867,15 @@
         "delay": 0.0
       }
     ],
+    "ps_chr_DarkOrb_ProjectileSfx": [
+      {
+        "sound": "sfx/Ability_DarkOrb_Attack.ogg",
+        "volume": 0.8,
+        "minPitch": 0.9,
+        "maxPitch": 1.0,
+        "delay": 0.0
+      }
+    ],
     "ps_chr_WizardAttack_01": [
       {
         "sound": "sfx/mage_attack_02.ogg",
@@ -5177,6 +5187,11 @@
     ]
   },
   "sounds": {
+    "sfx/Ability_DarkOrb_Attack.ogg": {
+      "path": "assets/audio/troops-native/Ability_DarkOrb_Attack.ogg",
+      "bytes": 20978,
+      "sha256": "b4442a86b2d829063934145510aa6707ca2a2bb1bb56158705c492747caff390"
+    },
     "sfx/Clash_Pet_Angry_Jelly_Attack.ogg": {
       "path": "assets/audio/troops-native/Clash_Pet_Angry_Jelly_Attack.ogg",
       "bytes": 8670,

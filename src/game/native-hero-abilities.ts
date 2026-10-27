@@ -3,6 +3,7 @@ import { launchWardenFireball } from './native-fireball';
 import { launchGiantArrow } from './native-giant-arrow';
 import { launchFrostFlake } from './native-frost-flake';
 import { launchSpikyBall } from './native-spiky-ball';
+import { launchDarkOrb } from './native-dark-orb';
 import { itemName } from './native-hero-data';
 import { distance2D } from './distance';
 import { TROOPS, type UnitKind } from './data';
@@ -53,7 +54,8 @@ export function activateHero(
     ) ??
     ctx.battle.nativeFireballs?.find(
       (entry) => entry.sourceId === unit.id && entry.launched === at,
-    );
+    ) ??
+    ctx.battle.nativeDarkOrbs?.find((entry) => entry.sourceId === unit.id && entry.launched === at);
   ctx.effect({
     type: 'trap',
     x: unit.x,
@@ -77,6 +79,7 @@ function applyAbility(
   launchGiantArrow(ctx, unit, ability, at);
   launchFrostFlake(ctx, unit, ability, at);
   launchSpikyBall(ctx, unit, ability, at);
+  launchDarkOrb(ctx, unit, ability, at);
   startEquipmentDash(ctx, unit, ability);
   const row = ability.row;
   const battle = ctx.battle;

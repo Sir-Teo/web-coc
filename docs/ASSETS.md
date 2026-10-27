@@ -81,3 +81,11 @@ Supercell owns the native Clash of Clans artwork and trademarks. Retaining a sou
 or checksum does not grant redistribution rights. Lucide and Fontsource packages
 carry their own licenses. The repository does not currently grant a project-wide
 open-source license.
+
+## Dark Orb opaque source mask
+
+Dark Orb uses a dedicated source pack because its crystal export contains a mask that the
+general graph capture rejects. The scoped importer verifies an opaque constant-texel convex
+mask and compatible source loops, then clips original mesh triangles while retaining UVs,
+matrices, colors and blend groups. All 30 frames match independently masked source pixels
+exactly. Other masks retain the strict guard. See [the source and verification commands](../reference/dark-orb/README.md).

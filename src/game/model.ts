@@ -939,6 +939,8 @@ export interface Battle {
   nativeFrostFlakeCasts?: import('./native-frost-flake').FrostFlakeCast[];
   nativeSpikyBall?: true;
   nativeSpikyBallCasts?: import('./native-spiky-ball').SpikyBallCast[];
+  nativeDarkOrb?: true;
+  nativeDarkOrbs?: import('./native-dark-orb').DarkOrbShot[];
   nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
   nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */
@@ -6884,6 +6886,7 @@ export class GameModel {
         !b.nativeSuperWizardBranches?.length &&
         !b.nativeArcherShots?.some((s) => s.travelled < s.length - 1e-9) &&
         !b.nativeGiantArrows?.some((s) => s.travelled < s.length - 1e-9) &&
+        !b.nativeDarkOrbs?.some((s) => s.travelled < s.length - 1e-9) &&
         !b.nativePendingSpawns?.length &&
         !b.nativeSpells?.some((cast) => nativeSpellCanStillFight(cast)) &&
         !TROOP_KEYS.some(

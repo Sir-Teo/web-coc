@@ -39,6 +39,7 @@ import { heroProjectileNames } from './hero-projectile-prefetch';
 import { fireballEffects } from './fireball-effects';
 import { heroAbilityActivation } from './hero-ability-feedback';
 import { SPIKY_BALL_PRESENTATION, spikyBallCarried } from './spiky-ball-effects';
+import { DARK_ORB_PRESENTATION, darkOrbCarried } from './dark-orb-effects';
 import {
   FROST_FLAKE_PRESENTATION,
   frostFlakeCarried,
@@ -2739,9 +2740,10 @@ export class VillageScene extends Phaser.Scene {
     const giantArrow = !this.model.battle || !!this.model.battle.nativeGiantArrow;
     const frostFlake = !this.model.battle || !!this.model.battle.nativeFrostFlake;
     const spikyBall = !this.model.battle || !!this.model.battle.nativeSpikyBall;
+    const darkOrb = !this.model.battle || !!this.model.battle.nativeDarkOrb;
     const projectiles = this.model.reducedMotion
       ? ''
-      : `${signature}|${setupSignature}|phoenix:${!!this.model.battle?.nativePhoenixResurrection}|fireball:${fireball}|giant-arrow:${giantArrow}|frost-flake:${frostFlake}|spiky-ball:${spikyBall}`;
+      : `${signature}|${setupSignature}|phoenix:${!!this.model.battle?.nativePhoenixResurrection}|fireball:${fireball}|giant-arrow:${giantArrow}|frost-flake:${frostFlake}|spiky-ball:${spikyBall}|dark-orb:${darkOrb}`;
     if (projectiles !== this.projectilePrefetchSignature) {
       this.projectilePrefetchSignature = projectiles;
       this.nativeProjectiles?.prefetch(
@@ -2777,6 +2779,12 @@ export class VillageScene extends Phaser.Scene {
         this.nativeProjectiles?.prefetchEffects([SPIKY_BALL_PRESENTATION.impact]);
         this.nativeProjectiles?.prefetchEmitters([SPIKY_BALL_PRESENTATION.trail]);
       }
+      if (darkOrb && !this.model.reducedMotion && darkOrbCarried(setups))
+        this.nativeProjectiles?.prefetchEffects([
+          DARK_ORB_PRESENTATION.SpawnEffect,
+          DARK_ORB_PRESENTATION.DestroyedEffect,
+          DARK_ORB_PRESENTATION.HitEffect,
+        ]);
     }
     const heroes = this.wantedHeroArt();
     const heroSignature = [...heroes].sort().join(',');
@@ -4348,6 +4356,7 @@ export class VillageScene extends Phaser.Scene {
       ...(battle.nativeWardenFireball ? ['FireballActivationEffect'] : []),
       ...(battle.nativeFrostFlake ? frostFlakeSoundEffects : []),
       ...(battle.nativeSpikyBall ? [SPIKY_BALL_PRESENTATION.impact] : []),
+      ...(battle.nativeDarkOrb ? [DARK_ORB_PRESENTATION.ActivationEffect] : []),
     ]);
   }
   /** Whether a spell's falling bottle is decoded, so it replaces the generated tones. */
@@ -4389,6 +4398,7 @@ export class VillageScene extends Phaser.Scene {
       (fx.type === 'projectile' || fx.type === 'impact') &&
       (battle.nativeFireballs?.some((shot) => shot.id === fx.projectileId) ||
         battle.nativeGiantArrows?.some((shot) => shot.id === fx.projectileId) ||
+        battle.nativeDarkOrbs?.some((shot) => shot.id === fx.projectileId) ||
         battle.nativeSpikyBallCasts?.some((cast) =>
           cast.shots.some((shot) => shot.id === fx.projectileId),
         ) ||

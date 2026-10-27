@@ -1,4 +1,5 @@
 import projectileArt from '../../reference/full-client/projectile-art.json' with { type: 'json' };
+import darkOrbArt from '../../reference/dark-orb/effects.json' with { type: 'json' };
 import { nativeScenePoses, type NativeMatrix, type NativeScenePose } from './native-mesh';
 import { nativeSceneId, type NativeArtPack } from './native-art-pack';
 import {
@@ -44,10 +45,14 @@ const index = projectileArt as unknown as {
   packs: Record<string, { path: string }>;
 };
 /** Flight pack of a client projectile row, when the row has retained original art. */
-export const nativeProjectilePack = (name: string | undefined) =>
-  name && Object.hasOwn(index.projectiles, name)
+export const nativeProjectilePack = (name: string | undefined) => {
+  if (!name) return undefined;
+  const own = darkOrbArt as unknown as typeof index;
+  if (Object.hasOwn(own.projectiles, name)) return own.packs[own.projectiles[name]].path;
+  return Object.hasOwn(index.projectiles, name)
     ? index.packs[index.projectiles[name]].path
     : undefined;
+};
 
 const num = (value: string | undefined, fallback = 0) => {
   const parsed = Number(value);
@@ -183,7 +188,7 @@ export function nativeProjectilePoses(
   return { scene, poses, shadow };
 }
 
-/** Firespitter balls: straight flight at the launch height, from the muzzle offset along the line. */
+/** Straight piercing flight at launch height, with opt-in airborne equipment lift. */
 export function nativePiercingFlight(
   row: NativeProjectileRow,
   shot: {
@@ -194,15 +199,17 @@ export function nativePiercingFlight(
     length: number;
     speed: number;
     launched: number;
+    fromAir?: boolean;
   },
   elapsed: number,
   iso: (x: number, y: number) => Point,
+  airLift = 0,
 ) {
   const travelled = Math.min(shot.length, Math.max(0, elapsed - shot.launched) * shot.speed);
   const along = Math.max(travelled, Math.min(num(row.StartOffset) / 100, shot.length));
   const ground = iso(shot.fromX + shot.dirX * along, shot.fromY + shot.dirY * along);
   const ahead = iso(shot.fromX + shot.dirX * (along + 1), shot.fromY + shot.dirY * (along + 1));
-  const height = num(row.StartHeight) * NATIVE_ALTITUDE;
+  const height = num(row.StartHeight) * NATIVE_ALTITUDE + (shot.fromAir ? airLift : 0);
   return {
     t: shot.length > 0 ? travelled / shot.length : 1,
     end: shot.launched + shot.length / Math.max(1e-6, shot.speed),

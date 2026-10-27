@@ -1,0 +1,43 @@
+{
+  "clientVersion": "18.400.21",
+  "generator": "scripts/import-dark-orb-art.py",
+  "sources": {
+    "csv/particle_emitters.csv": "8d80bbf714386c4f24e6aed8f2eef671a2eac5c3b3ad41e4d275b757ced64cef",
+    "logic/effects.csv": "5c6d5b67d6407345123b8d55872ed77ee6697b466d20d1fa21e25a723c511e9f",
+    "logic/projectiles.csv": "71cda0e457ad88a6772f6421a22419b24d6bcf78d0ed305f09184404889a72dc",
+    "logic/special_abilities.csv": "c978dd90ff2335e60d988f3476d78bec72672e8c074344d149096e89951181eb",
+    "sc/characters.sc": "0e23bd3745176fe7db3d61e490d9da07c63a42e95462f514d6eac696314c3798",
+    "sc/characters_5.sctx": "181d13e2dbd4504b3c51fdbfd7a905a29fa1c1604b68727b96b8b6d23ae7d976"
+  },
+  "ability": "MinionAttackAbility",
+  "abilityLevelCount": 7,
+  "profile": {
+    "ActivationEffect": "ps_chr_DarkOrb_ProjectileSfx",
+    "HitEffect": "ps_chr_DarkOrb_BuildingHit",
+    "ProjectileOnActivation": "vfx_projectile_DarkOrb",
+    "SpawnEffect": "ps_chr_DarkOrb_ProjectileSpawn",
+    "DestroyedEffect": "ps_chr_DarkOrb_Impact"
+  },
+  "effects": {
+    "ps_chr_DarkOrb_BuildingHit": "dark-orb"
+  },
+  "projectiles": {
+    "vfx_projectile_DarkOrb": "dark-orb-flight"
+  },
+  "packs": {
+    "dark-orb": {
+      "path": "assets/dark-orb-native/contact/graph.json",
+      "sha256": "78892c44f91faa11de238f2317b524a38aee291927ef25e6b2a92cc69113f454",
+      "bytes": 23858
+    },
+    "dark-orb-flight": {
+      "path": "assets/dark-orb-native/projectile/graph.json",
+      "sha256": "0a3cd6bf504ea82d52b830b9fde093fb2a9e53761ab8f3640c47e717f57c8079",
+      "bytes": 255494
+    }
+  },
+  "conventions": {
+    "contact": "Independent source effect at the captured building or defender contact.",
+    "projectile": "Opaque convex source mask compiled to clipped native meshes; original portal and final impact reuse the full-client catalogs."
+  }
+}
