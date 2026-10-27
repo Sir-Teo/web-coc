@@ -343,6 +343,11 @@ and emits the underlying native import after Vite's preload instrumentation. Tem
 failures reach the art loader; a status probe keeps missing release chunks and HTML fallbacks
 on the existing reload path. `tests/browser/late-art-build.spec.ts` checks the built URLs and
 startup-cache boundary through the shipped UI in Chromium and WebKit.
+Shared character-entry helpers stay in the already-cached startup UI chunk. A retryable art
+entry must not statically import another retryable entry: that edge would retain the failed ordinary URL
+after a cache-busted retry. The build rejects those edges. The production character retry
+case scouts an armed Builder's Hut and waits for its worker texture after recovery; home
+building art alone no longer requests character graphs.
 Development JSON retries keep their cache buster in the browser URL while the server uses
 the ordinary JSON source ID for transformation. Editing an art module still reloads the
 page so `LazyGraph` and registry caches pick up the new source.

@@ -112,7 +112,7 @@ export function importRetry() {
       expected.clear();
       nativeWrapped = false;
     },
-    generateBundle() {
+    generateBundle(_options, bundle) {
       const core = REQUIRED_TARGETS.every((name) =>
         [...expected].some((id) => id.split('?')[0].endsWith(`/src/game/${name}.ts`)),
       );
@@ -121,6 +121,16 @@ export function importRetry() {
         (!core || !nativeWrapped || [...expected].some((id) => !wrapped.has(id)))
       )
         this.error('Every lazy art import must retain its retry wrapper.');
+      for (const chunk of Object.values(bundle)) {
+        if (chunk.type !== 'chunk' || !coreModule(chunk.facadeModuleId)) continue;
+        for (const file of chunk.imports) {
+          const dependency = bundle[file];
+          if (dependency?.type === 'chunk' && coreModule(dependency.facadeModuleId))
+            this.error(
+              `Retryable art entry ${chunk.fileName} statically imports ${file}; keep shared helpers outside retryable entries.`,
+            );
+        }
+      }
     },
     async transform(code, id, options) {
       if (

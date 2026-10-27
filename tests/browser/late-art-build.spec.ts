@@ -7,18 +7,25 @@ import { freshNativeCampaign } from '../../src/game/native-campaign';
 import { ART_GRAPH_CASES, artGraphSave } from './art-graph-fixture';
 import villageSounds from '../../reference/village-sounds/sounds.json' with { type: 'json' };
 
-function fixtureSave() {
+function fixtureSave(withWorker = false) {
   const state = initialSave();
   state.obstacles = [];
   state.buildings = [
     makeBuilding(1000, 'townhall', 20, 20, 14),
     makeBuilding(1001, 'eagleartillery', 15, 15, 1),
     makeBuilding(1002, 'scattershot', 25, 15, 1),
-    makeBuilding(1003, 'builder', 30, 30, 1),
+    makeBuilding(1003, 'builder', 30, 30, withWorker ? 2 : 1),
   ];
   state.nextId = 1004;
   state.tutorial = true;
   state.army = emptyArmy();
+  if (withWorker) {
+    state.buildings.push(
+      makeBuilding(state.nextId++, 'camp', 10, 30, 1),
+      makeBuilding(state.nextId++, 'barracks', 17, 30, 1),
+    );
+    state.army.swordsman = 1;
+  }
   state.spells = emptySpells();
   const fixture = new GameModel(state).state;
   expect(validateSave(fixture)).toBe(true);
@@ -43,11 +50,18 @@ for (const moduleName of ['late-campaign-scene', 'character-graphs']) {
     expect(await readFile('dist/sw.js', 'utf8')).not.toContain(modulePath);
     await page.addInitScript(
       (save) => localStorage.setItem('crown-clan-save-v1', save),
-      fixtureSave(),
+      fixtureSave(moduleName === 'character-graphs'),
     );
     const errors: string[] = [];
     const requests: string[] = [];
-    const body = JSON.parse(await readFile('reference/eagle-artillery/runtime.json', 'utf8'));
+    const body = JSON.parse(
+      await readFile(
+        moduleName === 'character-graphs'
+          ? 'reference/characters/worker/defending-builder.json'
+          : 'reference/eagle-artillery/runtime.json',
+        'utf8',
+      ),
+    );
     const expectedTextures = new Set(
       Object.values(body.textures).map((texture) => '/' + texture.path.replace(/\.png$/, '.webp')),
     );
@@ -66,8 +80,16 @@ for (const moduleName of ['late-campaign-scene', 'character-graphs']) {
       route.fulfill({ status: 503, body: 'Temporary chunk outage' }),
     );
     await page.goto('/');
+    if (moduleName === 'character-graphs') {
+      // Home loads building art only. Scouting an armed Hut creates genuine worker demand.
+      await expect(page.locator('#loading')).toBeHidden();
+      await page.locator('.attack-btn').click();
+      await page.locator('[data-action="practice"]').click();
+      await expect(page.locator('.battle-enemy')).toBeVisible();
+    }
     await expect(page.locator('#toast')).toContainText('retry automatically', { timeout: 30000 });
     expect(requests).toHaveLength(1);
+    if (moduleName === 'character-graphs') expect(loadedTextures.size).toBe(0);
     await page.unroute(pattern);
     const recovered = page.waitForResponse(
       (response) =>
@@ -85,6 +107,9 @@ for (const moduleName of ['late-campaign-scene', 'character-graphs']) {
       .toEqual([...expectedTextures].sort());
     await expect(page.locator('#loading')).toBeHidden();
     await page.waitForLoadState('networkidle');
+    if (moduleName === 'character-graphs') {
+      await page.locator('[data-action="home"]').click();
+    }
     await page.locator('.shop-btn').click();
     await expect(page.locator('.shop-tile').first()).toBeVisible();
     await page.locator('[data-action="close-drawer"]').click();
