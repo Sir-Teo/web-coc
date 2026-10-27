@@ -10,6 +10,10 @@ plays one of them per event. A troop whose effect changes with level (the Wizard
 the Valkyrie's) keeps one effect per level. Destroyed buildings play the client's
 `Building Destroyed` effect; every Home Village destroy effect uses the same sound.
 
+Enabled garrison VisualLevels come from garrison-kinds.ts. Their actual character rows
+are resolved after DefensiveTroop substitution, including campaign-only and spawned
+defenders; source row ordinals and their primary/chain sound bindings are retained separately.
+
 Each spell row of `logic/spells.csv` names its `PreDeployEffect` (the bottle falling),
 `DeployEffect` and `DeployEffect2` (it landing), `ChargingEffect` and `HitEffect` (each pulse);
 those that vary by level keep one effect per level, as troops do.
@@ -128,6 +132,19 @@ def spell_names():
     return names
 
 
+def garrison_roster():
+    """Enabled campaign VisualLevels, including spawned-only defenders."""
+    text = (ROOT / 'src/game/garrison-kinds.ts').read_text()
+    body = re.search(r'export const GARRISON_KINDS = \{(.*?)\n\} as const', text, re.S)
+    require(body, 'Missing garrison roster')
+    roster = {}
+    for key, character, levels in re.findall(
+            r"^\s+(\w+): \{ character: '([^']+)', levels: \{([^}]+)\}", body.group(1), re.M):
+        roster[key] = (character, [int(level) for level in re.findall(r'(\d+):', levels)])
+    require(len(roster) == 21, 'Garrison roster changed; review sound coverage')
+    return roster
+
+
 def build():
     manifest = json.loads((ROOT / 'reference/full-client/manifest.json').read_text())
     pins = {f['path']: f['sha256'] for f in manifest['files']}
@@ -186,6 +203,29 @@ def build():
             entry.update(entries(impacts, {'projectileHit': 'HitEffect'}))
         if entry:
             troops[key] = dict(name=name, **entry)
+    garrisons = {}
+
+    def inherited(rows):
+        merged = {}
+        for row in rows:
+            merged = {**merged, **row}
+            yield merged
+
+    def defending_row(name, visual_level):
+        rows = list(inherited(characters.get(name, [])))
+        matches = [(i + 1, row) for i, row in enumerate(rows)
+                   if int(row.get('VisualLevel', 0)) == visual_level]
+        require(len(matches) == 1, f'Unresolved defender {name} {visual_level}')
+        ordinal, row = matches[0]
+        defensive = row.get('DefensiveTroop')
+        return defending_row(defensive, visual_level) if defensive else (name, ordinal, row)
+
+    for key, (name, levels) in sorted(garrison_roster().items()):
+        garrisons[key] = {}
+        for level in levels:
+            actual, ordinal, row = defending_row(name, level)
+            events = {**EVENTS, **({'chain': 'ChainAttackEffect'} if key == 'electrodragon' else {})}
+            garrisons[key][str(level)] = dict(name=actual, row=ordinal, **entries([row], events))
     spells = {}
     for key, name in sorted(spell_names().items()):
         rows = spells_table.get(name)
@@ -214,7 +254,7 @@ def build():
     sources = {p: pins[p] for p in ['logic/characters.csv', 'logic/heroes.csv', 'logic/pets.csv', 'logic/spells.csv',
                                     'logic/effects.csv', 'logic/projectiles.csv', *sounds]}
     catalog = dict(clientVersion='18.400.21', bundle=BUNDLE, baseUrl=BASE, sources=sources,
-                   troops=troops, spells=spells, destroyed=DESTROYED,
+                   troops=troops, garrisons=garrisons, spells=spells, destroyed=DESTROYED,
                    effects=dict(sorted(used.items())), sounds=sounds)
     files[TARGET] = (json.dumps(catalog, indent=2) + '\n').encode()
     return files, catalog
@@ -232,7 +272,7 @@ def main():
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
     total = sum(s['bytes'] for s in catalog['sounds'].values())
-    print(f'{len(catalog["troops"])} troops, {len(catalog["spells"])} spells, '
+    print(f'{len(catalog["troops"])} troops, {len(catalog["garrisons"])} garrison kinds, {len(catalog["spells"])} spells, '
           f'{len(catalog["effects"])} effects, '
           f'{len(catalog["sounds"])} sounds ({total / 1048576:.2f} MB)'
           + (' reproduce the client.' if args.check else f'; wrote {TARGET.relative_to(ROOT)}'))

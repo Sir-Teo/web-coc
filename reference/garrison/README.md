@@ -336,3 +336,42 @@ Headhunter damage, with full protection, partial shields, temporary HP and poiso
 An actual Castle release and Eternal Tome input verifies protection and resumed damage after
 expiry. Portable forward/backward snapshots match in Node and desktop/phone Chromium, including
 historical playback, original Hero art and read-only reduced-motion redraws.
+
+## Original later-defender primary audio (recording version 146+)
+
+The shared [troop sound importer](../../scripts/import-native-troop-sounds.py) now captures all
+21 enabled garrison kinds at their 22 source VisualLevels. Each binding records its actual
+character and row ordinal, including Defensive Super Minion 9 at row 6 and Defensive Lava
+Hound 6. Golden Dragon, MOMMA and the trap-born Royal Ghost are included without becoming
+attacking troop roster entries. All input tables and Ogg bytes use the existing pinned
+[client manifest](../full-client/manifest.json).
+
+The 19 later kinds play their declared deploy, committed attack, successful hit and death
+samples. Projectile hits use captured `hitAt`, never the earlier launch time, and missed
+targets produce no hit cue. Electro Dragon secondary arcs additionally play their original
+chain and target-hit samples at each retained jump time. Stable attack ordinals keep cue keys
+through history pruning; cue selection is read-only and reconstructs after seeks. Multiple
+sound rows use the shared stable alternative-take convention. The existing Dragon/Balloon
+sound path is retained exactly, and versions 145 and earlier keep later defenders silent.
+
+Only three additional unchanged Ogg files are needed, totaling **41,338 bytes**:
+`groy_dep_01.ogg`, `roysword_01.ogg` and `roysword_vo_01.ogg`. The catalog now contains **371
+effects and 357 sounds (5.09 MiB)**; every other file is reused from the attacking troop pack.
+An unreleased reserve warms its own source effects plus Golem/Lava Hound children and Witch
+summons. An untriggered Ghost Trap warms Royal Ghost's samples. Existing sample decoding,
+integrity, bounded retry, pause, seek, speed and voice limits own playback; loaded files are
+shared with attacking troops. Defender-count changes also invalidate the loader's roster
+cache. Unrelated setups request no additional samples.
+
+Coverage checks all source bindings, the 19 newly sounding kinds, projectile success/misses,
+chain clocks, expiry, future-event suppression, old playback and reserve/child preloading.
+Actual Castle releases and a Ghost Trap/Lightning recording reconstruct complete portable
+snapshots with exact version-145 physical equality after removing the audio capability flag.
+Desktop/phone Chromium checks original bodies, actual Web Audio gain/pitch at replay speed,
+pause, backward seeks, historical silence and reconnect recovery without advancing playback.
+
+This is primary-event audio coverage. Separate pre-attack charging (including Bowler's
+`trollAttack`), Witch summon effects, Electro Titan aura, death-spell effects and movement
+still need their own source timing adapters. No native executable sound-scheduler parity is
+claimed. The source profiles imported here all have zero `SoundDelay`; their existing combat
+event clocks remain the local presentation alignment.

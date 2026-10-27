@@ -200,6 +200,7 @@
     "sfx/goblin_deploy_14.ogg": "19fbbee48c6fe5f69d5bf09adb8e45e826e7d86482a5e84cb0467b7ce8933e53",
     "sfx/goblin_deploy_14v2.ogg": "9d453541b06214f6cce7e2a321537e19af86d04db77f90a66dc8919e1d5ff606",
     "sfx/goblin_deploy_14v3.ogg": "6051269bd0d25977b3381c19fa7c00b3c1570a9d86615bcdb0fe000d03d9ff87",
+    "sfx/groy_dep_01.ogg": "3fc668c8c0e807f950d462b0f90a52a0b373ee2d2eb7cd4205bd686c855913ce",
     "sfx/hasty_balloon_dep_01.ogg": "a621dd1ea2d2664f74b1ed6c8910a5a92f40e779d2fb215aefe5e0c6fd46e6d1",
     "sfx/headhunter_atk_01.ogg": "dee6542158c2ee3029a17dcceb4ec5f4541a7e3768ea500bc27d5434d71f1ac4",
     "sfx/headhunter_atk_02.ogg": "a0b4654926983450acbc0c3c81a903d595eb91ea94f9101ac16578c9c11520bd",
@@ -267,6 +268,8 @@
     "sfx/root_rider_dep_02.ogg": "3aa27ebc301a072d31811e4f519e51a8ae47f2f63c2fd97ee1579244f3fbc62a",
     "sfx/root_rider_die_01.ogg": "196950e0da87f6c40c6ffd7d63115de79d8d27b858eac79b220e8480e8e117f3",
     "sfx/root_rider_die_02.ogg": "03804d84e1fecf036f32b6cb8ef8ec5a5b89d5047869ad3a5ab485d8205c1d04",
+    "sfx/roysword_01.ogg": "ddb85d3a41d08cd97622320b8323137a27139f424be3b7c677c5eb224b9c3fef",
+    "sfx/roysword_vo_01.ogg": "8513e164a04c4e2af0fdf6af2e909ab0cd579fa40df02fc787a02b3e6eba5e29",
     "sfx/sb_deploy_01.ogg": "064078606be5c13a98f628e1b9a90e1923ca83fe2b9da43f323b4a171635df4c",
     "sfx/sfx_spell_def_brainwash_01.ogg": "051753a3839823c65bd3bea1ae8eb144a3c419664cf96585525a12ff6be875a3",
     "sfx/sfx_spell_def_brainwash_02.ogg": "bb359fc0049fef4251142e3433a75eabe1c0ef2db0feeaed1332215f0172bde5",
@@ -1034,6 +1037,218 @@
       "name": "Yetimite",
       "hit": "Yeti Hit",
       "die": "Yetimite Die"
+    }
+  },
+  "garrisons": {
+    "archer": {
+      "9": {
+        "name": "Archer",
+        "row": 9,
+        "deploy": "Archer Deploy",
+        "attack": "Archer Attack",
+        "hit": "Archer Hit",
+        "die": "Archer Die"
+      }
+    },
+    "babydragon": {
+      "6": {
+        "name": "Baby Dragon",
+        "row": 6,
+        "deploy": "Bdragon Deploy",
+        "attack": "Bdragon Attack",
+        "die": "Bdragon Die"
+      }
+    },
+    "balloon": {
+      "8": {
+        "name": "Balloon",
+        "row": 8,
+        "deploy": "Balloon Goblin Deploy",
+        "attack": "Balloon Goblin Attack",
+        "hit": "Balloon Goblin Hit",
+        "die": "Balloon Goblin Die"
+      }
+    },
+    "bowler": {
+      "4": {
+        "name": "Bowler",
+        "row": 4,
+        "deploy": "Troll Deploy",
+        "die": "Wizard Die"
+      }
+    },
+    "dragon": {
+      "5": {
+        "name": "Dragon",
+        "row": 5,
+        "deploy": "Dragon Deploy",
+        "attack": "Dragon Attack",
+        "die": "Dragon Die"
+      },
+      "7": {
+        "name": "Dragon",
+        "row": 7,
+        "deploy": "Dragon Deploy",
+        "attack": "Dragon Attack",
+        "die": "Dragon Die"
+      }
+    },
+    "electrodragon": {
+      "3": {
+        "name": "Electro Dragon",
+        "row": 3,
+        "deploy": "Electro Dragon Deploy",
+        "attack": "Electro Dragon Attack",
+        "hit": "Mega Tesla Hit",
+        "die": "Dragon Die",
+        "chain": "Electro Dragon Attack Chain"
+      }
+    },
+    "electrotitan": {
+      "2": {
+        "name": "Electro Titan",
+        "row": 2,
+        "deploy": "Elektro Titan Deploy",
+        "attack": "Electro_Titan Attack_lvl1",
+        "hit": "Golem Hit",
+        "die": "ElektroTitanDie"
+      }
+    },
+    "goblin": {
+      "7": {
+        "name": "Goblin",
+        "row": 7,
+        "deploy": "Goblin Deploy",
+        "attack": "Goblin Attack",
+        "die": "Goblin Die"
+      }
+    },
+    "goldendragon": {
+      "1": {
+        "name": "Golden Dragon",
+        "row": 1,
+        "deploy": "Dragon Deploy",
+        "attack": "MegaDragon Attack",
+        "die": "Dragon Die"
+      }
+    },
+    "golem": {
+      "8": {
+        "name": "Golem",
+        "row": 8,
+        "deploy": "Golem Deploy",
+        "attack": "Golem Attack",
+        "hit": "Golem Hit",
+        "die": "Golem_split"
+      }
+    },
+    "golemite": {
+      "8": {
+        "name": "Golemite",
+        "row": 8,
+        "attack": "Small Golem Attack",
+        "hit": "Golem Hit",
+        "die": "Golem_die"
+      }
+    },
+    "headhunter": {
+      "3": {
+        "name": "Headhunter",
+        "row": 3,
+        "deploy": "Headhunter Deploy",
+        "attack": "Headhunter_attack",
+        "hit": "Headhunter Hit",
+        "die": "Headhunter Die"
+      }
+    },
+    "lavahound": {
+      "6": {
+        "name": "Defensive Lava Hound",
+        "row": 6,
+        "deploy": "Tiny Deploy",
+        "attack": "Tiny Attack",
+        "hit": "Tiny Hit",
+        "die": "Tiny Die"
+      }
+    },
+    "lavapup": {
+      "1": {
+        "name": "Lava Pup",
+        "row": 1,
+        "attack": "Tinymite Attack",
+        "hit": "Tinymite Hit",
+        "die": "Tinymite Die"
+      }
+    },
+    "momma": {
+      "1": {
+        "name": "MOMMA",
+        "row": 1,
+        "deploy": "Pekka Deploy",
+        "attack": "Pekka Attack",
+        "hit": "Pekka Hit",
+        "die": "Pekka Die"
+      }
+    },
+    "pekka": {
+      "8": {
+        "name": "PEKKA",
+        "row": 8,
+        "deploy": "Pekka Deploy",
+        "attack": "Pekka Attack",
+        "hit": "Pekka Hit",
+        "die": "Pekka Die"
+      }
+    },
+    "royalghost": {
+      "7": {
+        "name": "Royal Ghost",
+        "row": 7,
+        "deploy": "Ghost_deploy",
+        "attack": "Ghost_sword",
+        "hit": "IceWizard Hit1",
+        "die": "Ghost_sword_vo"
+      }
+    },
+    "summonedskeleton": {
+      "1": {
+        "name": "Skeleton",
+        "row": 1,
+        "deploy": "Skeleton Deploy",
+        "attack": "Skeleton Attack",
+        "hit": "Skeleton Hit",
+        "die": "Skeleton Die"
+      }
+    },
+    "superminion": {
+      "9": {
+        "name": "Defensive Super Minion",
+        "row": 6,
+        "deploy": "Super_Gargoyle Deploy",
+        "attack": "Super_Gargoyle Attack",
+        "hit": "Moving Cannon Hit",
+        "die": "Gargoyle Die"
+      }
+    },
+    "valkyrie": {
+      "7": {
+        "name": "Valkyrie",
+        "row": 7,
+        "deploy": "WarriorGirl Deploy",
+        "attack": "WarriorGirl Attack2",
+        "hit": "WarriorGirl Hit",
+        "die": "WarriorGirl Die"
+      }
+    },
+    "witch": {
+      "4": {
+        "name": "Witch",
+        "row": 4,
+        "deploy": "Warlock Deploy",
+        "attack": "Warlock Attack",
+        "hit": "Warlock Hit",
+        "die": "Warlock Die"
+      }
     }
   },
   "spells": {
@@ -2413,6 +2628,33 @@
         "delay": 0.0
       }
     ],
+    "Ghost_deploy": [
+      {
+        "sound": "sfx/groy_dep_01.ogg",
+        "volume": 0.85,
+        "minPitch": 0.98,
+        "maxPitch": 1.02,
+        "delay": 0.0
+      }
+    ],
+    "Ghost_sword": [
+      {
+        "sound": "sfx/roysword_01.ogg",
+        "volume": 0.75,
+        "minPitch": 0.96,
+        "maxPitch": 1.04,
+        "delay": 0.0
+      }
+    ],
+    "Ghost_sword_vo": [
+      {
+        "sound": "sfx/roysword_vo_01.ogg",
+        "volume": 0.8,
+        "minPitch": 0.96,
+        "maxPitch": 1.04,
+        "delay": 0.0
+      }
+    ],
     "Giant Attack": [
       {
         "sound": "sfx/giant_attack_06.ogg",
@@ -3054,6 +3296,15 @@
         "volume": 0.2,
         "minPitch": 0.5,
         "maxPitch": 0.7,
+        "delay": 0.0
+      }
+    ],
+    "MegaDragon Attack": [
+      {
+        "sound": "sfx/dragon_attack_01.ogg",
+        "volume": 0.7,
+        "minPitch": 0.95,
+        "maxPitch": 1.05,
         "delay": 0.0
       }
     ],
@@ -6219,6 +6470,11 @@
       "bytes": 8383,
       "sha256": "6051269bd0d25977b3381c19fa7c00b3c1570a9d86615bcdb0fe000d03d9ff87"
     },
+    "sfx/groy_dep_01.ogg": {
+      "path": "assets/audio/troops-native/groy_dep_01.ogg",
+      "bytes": 16955,
+      "sha256": "3fc668c8c0e807f950d462b0f90a52a0b373ee2d2eb7cd4205bd686c855913ce"
+    },
     "sfx/hasty_balloon_dep_01.ogg": {
       "path": "assets/audio/troops-native/hasty_balloon_dep_01.ogg",
       "bytes": 19313,
@@ -6553,6 +6809,16 @@
       "path": "assets/audio/troops-native/root_rider_die_02.ogg",
       "bytes": 14387,
       "sha256": "03804d84e1fecf036f32b6cb8ef8ec5a5b89d5047869ad3a5ab485d8205c1d04"
+    },
+    "sfx/roysword_01.ogg": {
+      "path": "assets/audio/troops-native/roysword_01.ogg",
+      "bytes": 7101,
+      "sha256": "ddb85d3a41d08cd97622320b8323137a27139f424be3b7c677c5eb224b9c3fef"
+    },
+    "sfx/roysword_vo_01.ogg": {
+      "path": "assets/audio/troops-native/roysword_vo_01.ogg",
+      "bytes": 17282,
+      "sha256": "8513e164a04c4e2af0fdf6af2e909ab0cd579fa40df02fc787a02b3e6eba5e29"
     },
     "sfx/sb_deploy_01.ogg": {
       "path": "assets/audio/troops-native/sb_deploy_01.ogg",

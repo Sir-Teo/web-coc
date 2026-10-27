@@ -963,6 +963,8 @@ export interface Battle {
   nativeSnakeBraceletRecall?: true;
   /** Version 145: recalled normal/Super Yetis retain damage progress and remaining mite stock. */
   nativeYetiRecall?: true;
+  /** Version 146: later garrison defenders play source-bound primary and chain samples. */
+  nativeGarrisonSounds?: true;
   nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
   nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */

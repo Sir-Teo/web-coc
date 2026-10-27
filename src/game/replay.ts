@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 145;
+export const REPLAY_VERSION = 146;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -173,7 +173,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 142 retains original Meteor Staff cast origins, art and source audio.
  * Version 143 shares garrison damage protections and records direct Revenge Deck hit sources.
  * Version 144 preserves Snake Bracelet damage and the per-battle summon cap through Recall.
- * Version 145 preserves normal/Super Yeti damage progress and mite stock through Recall. */
+ * Version 145 preserves normal/Super Yeti damage progress and mite stock through Recall.
+ * Version 146 enables original primary and chain samples for later garrison defenders. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -286,6 +287,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 142 ||
   version === 143 ||
   version === 144 ||
+  version === 145 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -434,6 +436,13 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 146 &&
+    (s.garrisons?.some((reserve) =>
+      reserve.troops.some((troop) => troop.kind !== 'dragon' && troop.kind !== 'balloon'),
+    ) ||
+      s.buildings.some((building) => building.npc === 'ghost-trap'))
+      ? { nativeGarrisonSounds: true as const }
+      : {}),
     ...(version >= 145 && (s.army.yeti > 0 || s.army.superyeti > 0)
       ? { nativeYetiRecall: true as const }
       : {}),

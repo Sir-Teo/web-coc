@@ -88,6 +88,7 @@ import {
   GarrisonPresentation,
 } from './garrison-scene';
 import { garrisonSoundCues } from './garrison-sounds';
+import { garrisonSoundEffects } from './garrison-native-sounds';
 import {
   BattleSoundLog,
   DESTROYED_EFFECT,
@@ -4339,6 +4340,7 @@ export class VillageScene extends Phaser.Scene {
   );
   private troopSoundBattle: Battle | null = null;
   private troopSoundUnits = -1;
+  private troopSoundDefenders = -1;
   private troopSoundCasts = -1;
   private troopSoundRoots = -1;
   private troopSoundOvergrowthCasts = -1;
@@ -4359,6 +4361,8 @@ export class VillageScene extends Phaser.Scene {
     if (
       battle === this.troopSoundBattle &&
       battle.units.length === this.troopSoundUnits &&
+      (battle.nativeGarrisonSounds ? (battle.defenders?.length ?? 0) : 0) ===
+        this.troopSoundDefenders &&
       casts === this.troopSoundCasts &&
       roots === this.troopSoundRoots &&
       overgrowthCasts === this.troopSoundOvergrowthCasts &&
@@ -4394,6 +4398,7 @@ export class VillageScene extends Phaser.Scene {
       if (count) spells.add(SPELL_SOURCE[kind as SpellKind]);
     this.troopSoundBattle = battle;
     this.troopSoundUnits = battle.units.length;
+    this.troopSoundDefenders = battle.nativeGarrisonSounds ? (battle.defenders?.length ?? 0) : 0;
     this.troopSoundCasts = casts;
     this.troopSoundRoots = roots;
     this.troopSoundOvergrowthCasts = overgrowthCasts;
@@ -4401,6 +4406,7 @@ export class VillageScene extends Phaser.Scene {
     this.troopSoundSpellHistory = history;
     this.troopSoundRecallHistory = recallHistory;
     this.troopSoundLoader.need(kinds, spells, [
+      ...garrisonSoundEffects(battle),
       ...(needsRecallPresentation(battle) ? ['RecallRedeployAuraTop'] : []),
       ...(battle.nativeWardenFireball ? ['FireballActivationEffect'] : []),
       ...(battle.nativeFrostFlake ? frostFlakeSoundEffects : []),

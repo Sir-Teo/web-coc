@@ -17,7 +17,11 @@ Attacking troops and pets play the client's own sounds when they are deployed, w
 
 It also covers the 18 player spells and Meteor Staff’s equipment spell, from `logic/spells.csv`. For each spell it records the `PreDeployEffect` (the bottle falling), the `DeployEffect` and `DeployEffect2` (it landing), the `ChargingEffect` and the `HitEffect` (each pulse). Some of these change with level; Freeze, for example, has one deploy effect per level.
 
-The importer copies 354 Ogg files (5.05 MiB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`. An already shipped sample can supply a missing local source only when its SHA-256 matches that same source pin. Edited outputs cannot supply trusted source bytes; corrupt authoritative cache entries still fail validation.
+The importer also records 21 garrison kinds at their 22 enabled VisualLevels, after resolving
+`DefensiveTroop` substitutions. These bindings include campaign-only and spawned defenders;
+they do not add NPCs to the attacking troop roster.
+
+The importer copies 357 Ogg files (5.09 MiB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`. An already shipped sample can supply a missing local source only when its SHA-256 matches that same source pin. Edited outputs cannot supply trusted source bytes; corrupt authoritative cache entries still fail validation.
 
 | Troop     | Deploy                                                     | Attack                                                                                          | Death                                           |
 | --------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------- |
@@ -31,7 +35,7 @@ All of the client's Home Village destroy effects (Building Destroyed, Town Hall 
 
 ## Takes
 
-An effect's rows that name a sound are read as alternative takes, and one plays per event. They are numbered takes of one line, such as `barb_deploy_11`, `barb_deploy_11v2` and `barb_deploy_11v3`; playing all three together would be a chorus. This is an interpretation, because no column of `effects.csv` says how the rows combine. The Clan Castle garrison's sounds, imported earlier, still play every row.
+An effect's rows that name a sound are read as alternative takes, and one plays per event. They are numbered takes of one line, such as `barb_deploy_11`, `barb_deploy_11v2` and `barb_deploy_11v3`; playing all three together would be a chorus. This is an interpretation, because no column of `effects.csv` says how the rows combine. The earlier Dragon/Balloon garrison path retains its every-row interpretation; version 146's later defenders use the shared stable-take adapter.
 
 The take and its pitch come from a hash of the event's key: the unit's id and the event, plus the battle time for attacks. So a replay chooses the same take as the battle it records.
 
