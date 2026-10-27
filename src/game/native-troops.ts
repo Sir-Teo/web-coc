@@ -20,6 +20,11 @@ import { sneezyCombatStats, sneezySpawner, sneezySummon } from './native-sneezy'
 import { distance2D } from './distance';
 import { furnaceReleasePoint } from './native-furnace-geometry';
 import {
+  stepBowlerWindup,
+  beginBowlerWindup,
+  type BowlerWindupState,
+} from './native-bowler-windup';
+import {
   BUILDINGS,
   TROOPS,
   isResourceBuilding,
@@ -89,6 +94,7 @@ export interface NativeUnitState {
   regenerationAt?: number;
   /** Version 109: action-clock charge and recovery, independent of the retained chain packets. */
   electroDragon?: ElectroDragonState;
+  bowler?: BowlerWindupState;
   /** Version 95: the source waiting bird and its separately drawn Egg. */
   phoenixWaiting?: true;
   phoenixEgg?: true;
@@ -808,6 +814,38 @@ export function stepNativeUnit(
   }
   const electroDragon = !!(battle.nativeElectroDragon && u.kind === 'electrodragon');
   if (electroDragon && stepElectroDragonCharge(ctx, u, s, damage, speed, dt, actionDt)) return;
+  const bowler = !!(battle.nativeBowlerWindup && u.kind === 'bowler');
+  if (
+    bowler &&
+    stepBowlerWindup(ctx, u, s, dt, actionDt, (target) => {
+      if ('building' in target) strike(ctx, u, s, target.building, damage);
+      else {
+        // Retain the existing defender-targeted release path at this timing boundary.
+        launchProjectile(
+          battle,
+          {
+            weapon: 'arrow',
+            sourceId: u.id,
+            targetId: target.defender.id,
+            targetBuilding: false,
+            targetDefender: true,
+            fromX: u.x,
+            fromY: u.y,
+            x: target.defender.x,
+            y: target.defender.y,
+            fromAir: false,
+            toAir: false,
+            damage,
+            splash: s.splash,
+          },
+          ctx.effect,
+        );
+        state.lastAttackAt = at;
+        state.attacks = (state.attacks ?? 0) + 1;
+      }
+    })
+  )
+    return;
   const miteJump = nativeMiteJump(battle, u.kind);
   const electromite = battle.nativeElectromites && u.kind === 'electromite';
   const meteorThrow = battle.nativeMeteorThrows && u.kind === 'meteorgolem';
@@ -941,6 +979,15 @@ export function stepNativeUnit(
               },
             }
           : {}),
+        ...(bowler
+          ? {
+              enterRange: () => {
+                const target = battle.defenders?.find((d) => d.id === u.defenderTarget);
+                if (target) beginBowlerWindup(u, s, { defender: target });
+              },
+              attackReady: () => false,
+            }
+          : {}),
         ...(attackDisabled ? { attackReady: () => false } : {}),
         wallTile: ctx.wallTile,
         passableWalls: ctx.passableWalls,
@@ -1030,7 +1077,11 @@ export function stepNativeUnit(
     u.attacking = true;
     if (damageRamp) recordInfernoDragonTransition(battle, u, damageRamp, target.id, false);
     if (s.underground) surfaceUndergroundUnit(ctx, u, at, target);
-    if (at + 1e-9 < (state.targetAt ?? 0) + s.newTargetDelay) return;
+    if (!bowler && at + 1e-9 < (state.targetAt ?? 0) + s.newTargetDelay) return;
+    if (bowler) {
+      beginBowlerWindup(u, s, { building: target });
+      return;
+    }
     if (u.cooldown > 0) return;
     if (electroDragon) {
       beginElectroDragonCharge(ctx, u, s, { building: target });
@@ -1121,6 +1172,10 @@ export function stepNativeUnit(
       }
       u.attacking = true;
       if (battle.nativeDiggyMasterTarget && isHeroUnitKind(u.kind)) state.wallTarget = wall.id;
+      if (bowler) {
+        beginBowlerWindup(u, s, { building: wall });
+        return;
+      }
       if (u.cooldown <= 0) {
         u.cooldown = s.rate * unitAttackIntervalScale(u, at);
         strike(ctx, u, s, wall, damage);

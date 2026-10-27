@@ -374,10 +374,14 @@ export class TroopNativePresentation {
         dragon.clock < dragon.animAt + TROOPS.electrodragon.rate - 1e-9
           ? Math.max(0, dragon.clock - dragon.animAt)
           : undefined;
+      const bowlerOffset =
+        battle?.nativeBowlerWindup && u.kind === 'bowler'
+          ? u.native?.bowler?.animationOffset
+          : undefined;
       const requested =
         u.hp <= 0
           ? 'die'
-          : dragonPhase !== undefined || u.attacking
+          : dragonPhase !== undefined || bowlerOffset !== undefined || u.attacking
             ? 'attack'
             : moving
               ? 'walk'
@@ -412,6 +416,8 @@ export class TroopNativePresentation {
       if (reduced) seconds = 0;
       else if (u.hp <= 0) seconds = deathAge;
       else if (dragonPhase !== undefined) seconds = dragonPhase;
+      else if (bowlerOffset !== undefined)
+        seconds = Math.max(0, Math.max(0, state.actionFrame - 1) / (clip?.fps ?? 1) + bowlerOffset);
       else if (u.attacking) {
         // Cooldowns reset to the scaled attack interval (boosts, poison, chill), as for heroes.
         const interval = Math.max(
