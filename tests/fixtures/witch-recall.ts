@@ -18,7 +18,7 @@ export function witchRecallBattle(
   model.state.nextId = 100;
   model.state.buildings = [makeBuilding(1, 'townhall', 36, 36, 18)];
   model.state.army = { ...emptyArmy(), [kind]: count, giant: 1 };
-  model.state.troopLevels = { ...model.state.troopLevels, [kind]: level };
+  model.state.troopLevels = { ...model.state.troopLevels, witch: level, [kind]: level };
   model.state.spells = { ...emptySpells(), recall: 2 };
   model.state.spellLevels = defaultSpellLevels();
   model.startBattle(0, true);

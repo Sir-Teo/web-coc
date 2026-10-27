@@ -42,10 +42,16 @@ const state = (unit: Unit): NativeAttackWindupState =>
     lastAt: 0,
   });
 
-function resolve(ctx: NativeTroopContext, ref: ChainRef): ChainTarget | undefined {
+function resolve(
+  ctx: NativeTroopContext,
+  ref: ChainRef,
+  airTargets: boolean,
+): ChainTarget | undefined {
   if (!ref.building) {
     const target = resolveChainTarget(ctx, ref, ctx.battle.elapsed);
-    return target && 'defender' in target && target.defender.mode === 'ground' ? target : undefined;
+    return target && 'defender' in target && (target.defender.mode === 'ground' || airTargets)
+      ? target
+      : undefined;
   }
   const building = ctx.buildingsById.get(ref.id);
   const eligible = ctx.isTargetable ?? ((b) => targetableBuilding(ctx.battle, b));
@@ -127,10 +133,15 @@ export function stepNativeAttackWindup(
   if (st.engaged) st.remaining -= st.actionDt;
   st.lastAt = at;
   unit.cooldown = Math.max(0, st.engaged ? st.remaining : st.recovery);
-  const target = st.target && resolve(ctx, st.target);
+  const airTargets = !!(
+    ctx.battle.nativeWitchWindup &&
+    (unit.kind === 'witch' || unit.kind === 'superwitch') &&
+    stats.airTargets
+  );
+  const target = st.target && resolve(ctx, st.target, airTargets);
   const traits = {
     ...TROOPS[unit.kind],
-    airTargets: false,
+    airTargets,
     ...(unit.kind !== 'bowler'
       ? {
           prefersDefenses:

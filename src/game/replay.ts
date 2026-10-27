@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 165;
+export const REPLAY_VERSION = 166;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -193,7 +193,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 162 gives attacking Golem/Golemite source split windup/recovery.
  * Version 163 routes Bowler pursuit-wall attacks through native timing and boulders.
  * Version 164 gives legacy-path PEKKA source split attack phases.
- * Version 165 gives Valkyrie/Super Valkyrie split clocks and defender sweeps. */
+ * Version 165 gives Valkyrie/Super Valkyrie split clocks and defender sweeps.
+ * Version 166 gives Witch/Super Witch a source first-projectile windup. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -326,6 +327,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 162 ||
   version === 163 ||
   version === 164 ||
+  version === 165 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -474,6 +476,9 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 166 && (s.army.witch > 0 || s.army.superwitch > 0)
+      ? { nativeWitchWindup: true as const }
+      : {}),
     ...(version >= 165 && (s.army.valkyrie > 0 || s.army.supervalkyrie > 0)
       ? { nativeValkyrieWindup: true as const }
       : {}),

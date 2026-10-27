@@ -1002,6 +1002,8 @@ export interface Battle {
   nativePekkaWindup?: true;
   /** Version 165: Valkyrie family split clocks and self-centered defender sweeps. */
   nativeValkyrieWindup?: true;
+  /** Version 166: Witch family source windup on both ground and air targets. */
+  nativeWitchWindup?: true;
   nativeBowlerFlights?: CombatProjectile[];
   nativeBowlerImpacts?: {
     id: string;

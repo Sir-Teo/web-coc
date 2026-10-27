@@ -363,7 +363,13 @@ export function stepProjectiles(
         ? buildingById.get(p.targetId)
         : unitById.get(p.targetId);
     let trackable = true;
-    if ((p.defense || (battle.nativeWardenFireball && p.native?.fireball)) && p.native) {
+    if (
+      (p.defense ||
+        (battle.nativeWardenFireball && p.native?.fireball) ||
+        (battle.nativeWitchWindup &&
+          (p.native?.kind === 'witch' || p.native?.kind === 'superwitch'))) &&
+      p.native
+    ) {
       let cached = trackableByNative.get(p.native.name);
       if (cached === undefined) {
         cached = !flag(nativeRow('projectiles', p.native.name), 'DontTrackTarget');

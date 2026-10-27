@@ -1,12 +1,12 @@
 import { expect, it } from 'vitest';
 import { GameModel, type Battle } from '../src/game/model';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
-import { replayBattle } from '../src/game/replay';
+import { replayBattle, REPLAY_VERSION } from '../src/game/replay';
 import { emptyArmy } from '../src/game/army';
 import { witchRecallBattle, witchRecallRecording } from './fixtures/witch-recall';
 
 for (const kind of ['witch', 'superwitch'] as const) {
-  for (const version of [147, 148])
+  for (const version of [147, 148, REPLAY_VERSION])
     it(`real ${kind} Recall inputs reconstruct full version-${version} portable snapshots`, () => {
       const r = witchRecallRecording(kind, version),
         model = new GameModel(),
@@ -14,12 +14,12 @@ for (const kind of ['witch', 'superwitch'] as const) {
         children = (b: Battle) =>
           b.units.filter((u) => u.kind === (kind === 'witch' ? 'skeleton' : 'bigboy') && u.hp > 0);
       expect(children(at(r.settled))).toHaveLength(
-        kind === 'witch' ? (version === 148 ? 4 : 8) : version === 148 ? 1 : 2,
+        kind === 'witch' ? (version >= 148 ? 4 : 8) : version >= 148 ? 1 : 2,
       );
       expect(children(at(r.next))).toHaveLength(
-        kind === 'witch' ? (version === 148 ? 6 : 8) : version === 148 ? 1 : 2,
+        kind === 'witch' ? (version >= 148 ? 6 : 8) : version >= 148 ? 1 : 2,
       );
-      if (version === 148) {
+      if (version >= 148) {
         expect(children(at(r.next)).every((u) => u.native!.owner === r.oldId)).toBe(true);
         const unit = at(r.returned).units.find((u) => u.id === r.newId)!;
         expect(unit.native!.summonerId).toBe(r.oldId);
@@ -34,7 +34,7 @@ for (const kind of ['witch', 'superwitch'] as const) {
     });
   for (const level of [1, 8])
     it(`${kind} ${level} retains exact version-147 combat before Recall`, () => {
-      const r = witchRecallBattle(kind, level),
+      const r = witchRecallBattle(kind, level, 148),
         old = witchRecallBattle(kind, level, 147);
       r.until(3);
       old.until(3);

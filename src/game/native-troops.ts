@@ -1,3 +1,4 @@
+import { releaseWitchAtDefender, resolveWitchImpact } from './native-witch-attack';
 import { sweepValkyrie } from './native-valkyrie-sweep';
 import { launchArcherPiercing, stepArcherPiercing } from './native-super-archer';
 import { resolveWardenFireball } from './native-fireball';
@@ -822,12 +823,14 @@ export function stepNativeUnit(
     battle.nativeValkyrieWindup &&
     (u.kind === 'valkyrie' || u.kind === 'supervalkyrie')
   );
-  const splitAttack = bowler || golem || valkyrie;
+  const witch = !!(battle.nativeWitchWindup && (u.kind === 'witch' || u.kind === 'superwitch'));
+  const splitAttack = bowler || golem || valkyrie || witch;
   if (
     splitAttack &&
     stepNativeAttackWindup(ctx, u, s, dt, actionDt, (target) => {
       if (valkyrie) sweepValkyrie(ctx, u, s, damage);
       else if ('building' in target) strike(ctx, u, s, target.building, damage);
+      else if (witch) releaseWitchAtDefender(ctx, u, s, target.defender, damage);
       else if (golem) {
         hurtDefender(battle, target.defender, damage, at);
         ctx.effect({
@@ -964,7 +967,7 @@ export function stepNativeUnit(
           : {}),
         wallBreaker: s.preferredClass === 'Wall' || undefined,
         healer: s.heal > 0 && s.dps <= 0,
-        ...(golem || valkyrie || (bowler && battle.nativeBowlerWallWindup)
+        ...(golem || valkyrie || witch || (bowler && battle.nativeBowlerWallWindup)
           ? {
               nativeBuildingAttack: (target: Building) =>
                 beginNativeAttackWindup(u, s, { building: target }, battle),
@@ -1694,6 +1697,7 @@ export function stepNativeChains(ctx: NativeTroopContext) {
 
 /** Native projectile arrival: damage, splash, bounces and on-hit spells. */
 export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile) {
+  if (resolveWitchImpact(ctx, p)) return;
   if (resolveSeekingShield(ctx, p)) return;
   if (resolveSpikyBall(ctx, p)) return;
   if (resolveFrostFlake(ctx, p)) return;
