@@ -233,7 +233,14 @@ def build():
             events = {**EVENTS, **({'chain': 'ChainAttackEffect'} if key == 'electrodragon' else {})}
             if key in ('electrodragon', 'bowler'):
                 events['preAttack'] = 'PreAttackEffect'
-            garrisons[key][str(level)] = dict(name=actual, row=ordinal, **entries([row], events))
+            binding = entries([row], events)
+            if key == 'bowler':
+                projectile = row.get('Projectile')
+                require(projectile in projectiles, f'Missing defending Bowler projectile: {projectile}')
+                binding.update(entries([projectiles[projectile][0]], {
+                    'bounce': 'BounceEffect', 'projectileHit': 'DestroyedEffect',
+                }))
+            garrisons[key][str(level)] = dict(name=actual, row=ordinal, **binding)
     spells = {}
     for key, name in sorted(spell_names().items()):
         rows = spells_table.get(name)

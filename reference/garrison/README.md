@@ -558,3 +558,47 @@ exact version-154 physical parity and full portable reverse seeks. The browser s
 `tests/browser/garrison-bowler-audio.spec.ts` verifies complete Node/Chromium states, decoded
 alternatives, 0.084 mixer gain, seeded pitch at replay speed, source sample offsets after
 Freeze and release, pause, rewind, reduced motion, historical silence and paused 503 recovery.
+
+
+## Bowler bounce and shatter audio (recording version 160)
+
+The enabled defending Bowler VisualLevel 4 resolves to the pinned `characters.Bowler` row 4
+and `Projectile=trollBoulder_lvl3`. That projectile declares
+`BounceEffect=trollBoulder_bounce` and `DestroyedEffect=trollBoulder_destroyed`.
+The importer follows the actual resolved character/projectile link; the character's
+`trollBoulderHit` effect itself declares no sound. The projectile effects bind:
+
+| Phase | Original sound | Volume | Pitch | Delay |
+| --- | --- | --- | --- | --- |
+| First ground contact | `sfx/rock_troll_hit_02.ogg` | 50% | 96–104% | 0 |
+| Final landing | `sfx/rock_troll_explo_01.ogg` | 40% | 98–102% | 0 |
+
+The unchanged 17,176-byte bounce sample has SHA-256
+`3b19a27dce6a965dcb7b83bea0b51917ddeeeebaea3fc423bb1beb98ae532687`;
+the 14,242-byte shatter sample has SHA-256
+`412228f1a90526911d899b4c60e5d35c366a1122c28d97b09700a24de9915bcd`.
+Both already ship for [attacking boulders](../attacking-bowler/README.md#original-boulder-impact-audio-recording-version-158).
+No new sound or effect is added: the catalog remains at 374 effects and 360 files.
+
+The adapter reads the existing attack ordinal, `hitAt` and `bounceAt`. Each leg has its own
+stable cue key, using its resolved simulation timestamp rather than its release time or the
+presentation frame. It does not add a second event journal or change shot tracking, damage,
+bounce geometry or timing. A missed primary target still leaves a ground contact and bounce;
+that cue does not require the direct-hit success bit. Recent one-shot tails reconstruct after
+seeks and continue after the shooter freezes or falls. Future/expired records remain silent.
+The existing attack history and shared ten-second cue horizon bound this work.
+
+Only carried Bowler garrisons enable this boundary, including mixed reserves. The new effects
+warm before the defender exits its Castle. Older garrison replays retain their prior impact
+silence and warm list, while original pre-attack takes remain under the version-155 binding.
+The particle presentation is separate; these checks establish source audio bindings and this
+adapter's lifecycle, without claiming native executable audio-scheduler parity.
+
+`tests/garrison-bowler-impacts.test.ts` checks source links, both phases and pitch ranges,
+readonly/unique cues, actual Freeze and lethal Lightning after release, ground contacts after
+the target falls, future/expired guards, scoped reserve warming, exact version-159 physical
+parity, and full current/historical portable snapshots in both directions. The portable fixture
+uses ordinary troop deployments and spell inputs; the fallen-primary case is an isolated model
+check. Chromium exercises actual decoded buffers, gain, replay-speed pitch, sample offsets,
+read-only/reduced rendering, reverse seeks, historical preloads and paused 503 recovery on
+phone and desktop.

@@ -289,3 +289,13 @@ completed releases retain natural one-shot tails. Fresh targets preload the exis
 initial charge, while repeat windups begin after recovery. Older player battles keep their
 previous throw silence and preload list; defending bindings remain independent. No new asset
 or effect is added. See [the alignment convention and limits](../reference/attacking-bowler/README.md#original-attacking-throw-audio-recording-version-159).
+
+
+## Defending Bowler impact phases
+
+Version 160 follows the defending character's actual projectile links for the first bounce
+and final shatter. It reuses the source samples and settings introduced for attacking boulders
+in version 158, reading existing resolved impact times and stable attack ordinals. Released
+cues survive Freeze/death and reconstruct after seeks. Enabled Bowler reserves warm both
+samples before deployment; older garrison replays preserve their previous impact silence and
+preloads. The catalog remains at 374 effects and 360 files. See [source links and validation](../reference/garrison/README.md#bowler-bounce-and-shatter-audio-recording-version-160).

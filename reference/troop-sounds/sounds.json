@@ -1092,7 +1092,9 @@
         "row": 4,
         "deploy": "Troll Deploy",
         "die": "Wizard Die",
-        "preAttack": "trollAttack"
+        "preAttack": "trollAttack",
+        "bounce": "trollBoulder_bounce",
+        "projectileHit": "trollBoulder_destroyed"
       }
     },
     "dragon": {

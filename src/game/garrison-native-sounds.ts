@@ -12,10 +12,22 @@ import { cueAudible, type SampleCue } from './sample-audio';
 import { effectCue } from './troop-sounds';
 import { garrisonPreAttackEnabled } from './garrison-pre-attack';
 
-type Event = 'deploy' | 'preAttack' | 'attack' | 'hit' | 'die' | 'chain';
+type Event =
+  'deploy' | 'preAttack' | 'attack' | 'hit' | 'die' | 'chain' | 'bounce' | 'projectileHit';
 type Binding = { name: string; row: number } & Partial<Record<Event, string>>;
 const bindings = source.garrisons as Record<string, Record<string, Binding>>;
-const EVENTS: readonly Event[] = ['deploy', 'preAttack', 'attack', 'hit', 'die', 'chain'];
+const EVENTS: readonly Event[] = [
+  'deploy',
+  'preAttack',
+  'attack',
+  'hit',
+  'die',
+  'chain',
+  'bounce',
+  'projectileHit',
+];
+const bowlerImpactsEnabled = (battle: Battle, kind: GarrisonKind) =>
+  kind === 'bowler' && !!battle.nativeGarrisonBowlerImpacts;
 const legacy = (kind: GarrisonKind) => kind === 'dragon' || kind === 'balloon';
 
 export const garrisonSoundEffect = (kind: GarrisonKind, level: number, event: Event) =>
@@ -53,6 +65,11 @@ export function nativeGarrisonSoundCues(battle: Battle, defender: GarrisonDefend
     const ordinal = attack.n ?? index;
     push('attack', `attack:${ordinal}`, attack.at);
     if (attack.hitAt !== undefined && attack.hit) push('hit', `hit:${ordinal}`, attack.hitAt);
+    if (bowlerImpactsEnabled(battle, defender.kind)) {
+      if (attack.hitAt !== undefined) push('bounce', `bounce:${ordinal}`, attack.hitAt);
+      if (attack.bounceAt !== undefined)
+        push('projectileHit', `projectile-hit:${ordinal}`, attack.bounceAt);
+    }
     for (const [jumpIndex, jump] of (attack.chain ?? []).entries()) {
       push('chain', `chain:${ordinal}:${jumpIndex}`, jump.at);
       push('hit', `chain-hit:${ordinal}:${jumpIndex}`, jump.at);
@@ -74,7 +91,11 @@ export function garrisonSoundEffects(battle: Battle): Set<string> {
     const binding = bindings[kind]?.[level];
     if (!binding) return;
     for (const event of EVENTS)
-      if (binding[event] && (event !== 'preAttack' || garrisonPreAttackEnabled(battle, kind)))
+      if (
+        binding[event] &&
+        (event !== 'preAttack' || garrisonPreAttackEnabled(battle, kind)) &&
+        ((event !== 'bounce' && event !== 'projectileHit') || bowlerImpactsEnabled(battle, kind))
+      )
         effects.add(binding[event]!);
     const stats = garrisonStats(kind, level);
     if (stats.secondary) {
