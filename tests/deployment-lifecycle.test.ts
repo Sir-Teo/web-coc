@@ -64,7 +64,7 @@ for (const kind of ['furnace', 'siegebarracks', 'druid'] as const) {
     }
   });
   it(`${kind} deployed at zero keeps exact version-148 physics`, () => {
-    const r = deploymentLifecycleBattle(kind, 1, undefined, 0),
+    const r = deploymentLifecycleBattle(kind, 1, 149, 0),
       old = deploymentLifecycleBattle(kind, 1, 148, 0);
     r.until(35);
     old.until(35);

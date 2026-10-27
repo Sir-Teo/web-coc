@@ -971,6 +971,8 @@ export interface Battle {
   nativeLifecycleBirth?: true;
   /** Version 150: Furnace's fixed degeneration consumes live life-aura health first. */
   nativeFurnaceAuraDecay?: true;
+  /** Version 151: Furnace's finite release directions do not depend on host trig rounding. */
+  nativeFurnaceSpawnGeometry?: true;
   nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
   nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */

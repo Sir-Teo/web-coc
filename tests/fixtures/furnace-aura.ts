@@ -10,6 +10,7 @@ export function furnaceAuraBattle(
   gemLevel = 1,
   version = REPLAY_VERSION,
   apprenticeLevel = 0,
+  position: { x: number; y: number; allyOffset?: number } = { x: 6.9, y: 20 },
 ) {
   const model = new GameModel();
   model.state.king = undefined;
@@ -47,15 +48,19 @@ export function furnaceAuraBattle(
   model.activeHero = false;
   model.activeHeroKind = null;
   model.activeTroop = 'furnace';
-  if (!model.deploy(6.9, 20)) throw Error('Aura Furnace deployment failed');
+  if (!model.deploy(position.x, position.y)) throw Error('Aura Furnace deployment failed');
   const unit = battle.units[0];
-  if (gemLevel && !model.deployNativeHero('warden', 6.9, 21.5))
+  if (
+    gemLevel &&
+    !model.deployNativeHero('warden', position.x, position.y + (position.allyOffset ?? 1.5))
+  )
     throw Error('Life Gem deployment failed');
   if (apprenticeLevel) {
     model.activeHero = false;
     model.activeHeroKind = null;
     model.activeTroop = 'apprenticewarden';
-    if (!model.deploy(6.9, 21.5)) throw Error('Apprentice deployment failed');
+    if (!model.deploy(position.x, position.y + (position.allyOffset ?? 1.5)))
+      throw Error('Apprentice deployment failed');
   }
   const step = () => {
     if (battle.finished || battle.elapsed > 115) throw Error('Furnace aura checkpoint missing');

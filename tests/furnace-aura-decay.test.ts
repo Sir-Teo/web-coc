@@ -71,7 +71,7 @@ for (const version of [149, 150])
     }
   });
 it('plain Furnace retains exact version-149 physical state without aura capability metadata', () => {
-  const r = furnaceAuraBattle(1, 0),
+  const r = furnaceAuraBattle(1, 0, 150),
     old = furnaceAuraBattle(1, 0, 149);
   r.until(35);
   old.until(35);

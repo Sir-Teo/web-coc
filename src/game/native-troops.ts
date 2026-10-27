@@ -18,6 +18,7 @@ import { isSiege } from './special-troops';
 import { nativeMiteJump } from './native-mite-jumps';
 import { sneezyCombatStats, sneezySpawner, sneezySummon } from './native-sneezy';
 import { distance2D } from './distance';
+import { furnaceReleasePoint } from './native-furnace-geometry';
 import {
   BUILDINGS,
   TROOPS,
@@ -1921,7 +1922,10 @@ function stepBunker(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: nu
     const index = state.released ?? 0;
     const due = start + (index + 1) * interval;
     if (due > at + 1e-9) break;
-    const p = ringPoint(ctx.battle, u, index, 6, s.bunkerDistance || 1, false);
+    const p =
+      ctx.battle.nativeFurnaceSpawnGeometry && u.kind === 'furnace'
+        ? furnaceReleasePoint(u, index, s.bunkerDistance || 1)
+        : ringPoint(ctx.battle, u, index, 6, s.bunkerDistance || 1, false);
     spawnNativeUnit(ctx, kind, s.level, p.x, p.y, due, u.id);
     state.released = index + 1;
   }
