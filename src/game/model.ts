@@ -969,6 +969,8 @@ export interface Battle {
   nativeWitchRecall?: true;
   /** Version 149: deployed Furnace, Siege Barracks and Druid age from their actual birth. */
   nativeLifecycleBirth?: true;
+  /** Version 150: Furnace's fixed degeneration consumes live life-aura health first. */
+  nativeFurnaceAuraDecay?: true;
   nativeGiantArrows?: import('./native-giant-arrow').GiantArrowShot[];
   nativeFireballs?: CombatProjectile[];
   /** Version 119: source graphics-only pulse scatter reconstructs from resolved cast hits. */

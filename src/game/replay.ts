@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 149;
+export const REPLAY_VERSION = 150;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -177,7 +177,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 146 enables original primary and chain samples for later garrison defenders.
  * Version 147 extends shared incoming-damage protections to trap-only Royal Ghost layouts.
  * Version 148 retains Witch/Super Witch summon ownership and cooldown through Recall.
- * Version 149 starts deployed bunker decay and Druid evolution at the body's actual birth. */
+ * Version 149 starts deployed bunker decay and Druid evolution at the body's actual birth.
+ * Version 150 lets live life-aura health extend Furnace's fixed-rate degeneration lifetime. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -294,6 +295,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 146 ||
   version === 147 ||
   version === 148 ||
+  version === 149 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -442,6 +444,14 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 150 &&
+    s.army.furnace > 0 &&
+    (s.army.apprenticewarden > 0 ||
+      s.heroes?.some(
+        (hero) => hero.kind === 'warden' && hero.items.some((item) => item.slug === 'life-gem'),
+      ))
+      ? { nativeFurnaceAuraDecay: true as const }
+      : {}),
     ...(version >= 149 && (s.army.furnace > 0 || s.army.siegebarracks > 0 || s.army.druid > 0)
       ? { nativeLifecycleBirth: true as const }
       : {}),

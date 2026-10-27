@@ -1927,7 +1927,21 @@ function stepBunker(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: nu
   }
   const from = Math.max(start, state.drainAt ?? start);
   if (at > from) {
-    u.hp -= (u.maxHp * (at - from)) / s.bunkerDecay;
+    let decay = (u.maxHp * (at - from)) / s.bunkerDecay;
+    const extra = state.effects?.extraHp;
+    if (
+      ctx.battle.nativeFurnaceAuraDecay &&
+      u.kind === 'furnace' &&
+      extra &&
+      extra.until > at + 1e-9 &&
+      extra.amount > 0
+    ) {
+      // Degeneration spends bonus health at the fixed base rate; it is not an enemy hit.
+      const absorbed = Math.min(decay, extra.amount);
+      extra.amount -= absorbed;
+      decay -= absorbed;
+    }
+    u.hp -= decay;
     state.drainAt = at;
   }
   if (u.hp <= 0) u.defeatedAt ??= at;
