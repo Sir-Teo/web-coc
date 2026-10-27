@@ -3,19 +3,7 @@ import type { AudioManager } from './audio';
 import type { Battle, Building } from './model';
 import type { SampleCue } from './sample-audio';
 import { presentationTime } from './presentation-clock';
-import { BuilderHutPresentation, preloadBuilderHut } from './builder-hut-scene';
-import { DefendingBuilderPresentation } from './defending-builder-scene';
-import { EagleArtilleryPresentation, preloadEagleArtillery } from './eagle-artillery-scene';
-import { FreezeTrapPresentation, preloadFreezeTrap } from './freeze-trap-scene';
-import { GhostTrapPresentation, preloadGhostTrap } from './ghost-trap-scene';
-import {
-  LateGoblinBuildingsPresentation,
-  preloadLateGoblinBuildings,
-} from './late-goblin-buildings-scene';
-import { MonolithPresentation, preloadMonolith } from './monolith-scene';
-import { ScattershotPresentation, preloadScattershot } from './scattershot-scene';
-import { SpellTowerPresentation, preloadSpellTower } from './spell-tower-scene';
-import { TornadoTrapPresentation, preloadTornadoTrap } from './tornado-trap-scene';
+import { ALL_LATE_BUILDING_ART, LATE_BUILDING_ART } from './late-building-demand';
 
 export interface LateRenderContext {
   /** Buildings currently visible to the player (concealed traps are excluded). */
@@ -41,34 +29,162 @@ export interface LatePresentation {
   destroy(): void;
 }
 
-export function preloadLateCampaign(scene: Phaser.Scene) {
-  preloadSpellTower(scene);
-  preloadTornadoTrap(scene);
-  preloadFreezeTrap(scene);
-  preloadGhostTrap(scene);
-  preloadEagleArtillery(scene);
-  preloadScattershot(scene);
-  preloadMonolith(scene);
-  preloadLateGoblinBuildings(scene);
-  preloadBuilderHut(scene);
+type Preloader = (scene: Phaser.Scene, fetching?: (key: string) => boolean) => void;
+interface PreparedFamily {
+  preload: Preloader;
+  create: (scene: Phaser.Scene, audio: AudioManager) => LatePresentation;
+}
+const WORKER_FAMILY = 1 << 9;
+const FAMILIES: readonly [number, () => Promise<PreparedFamily>][] = [
+  [
+    LATE_BUILDING_ART.spellTower,
+    () =>
+      import('./spell-tower-scene').then((module) => ({
+        preload: module.preloadSpellTower,
+        create: (scene: Phaser.Scene, audio: AudioManager) =>
+          new module.SpellTowerPresentation(scene, audio),
+      })),
+  ],
+  [
+    LATE_BUILDING_ART.tornadoTrap,
+    () =>
+      import('./tornado-trap-scene').then((module) => ({
+        preload: module.preloadTornadoTrap,
+        create: (scene: Phaser.Scene, audio: AudioManager) =>
+          new module.TornadoTrapPresentation(scene, audio),
+      })),
+  ],
+  [
+    LATE_BUILDING_ART.freezeTrap,
+    () =>
+      import('./freeze-trap-scene').then((module) => ({
+        preload: module.preloadFreezeTrap,
+        create: (scene: Phaser.Scene, audio: AudioManager) =>
+          new module.FreezeTrapPresentation(scene, audio),
+      })),
+  ],
+  [
+    LATE_BUILDING_ART.ghostTrap,
+    () =>
+      import('./ghost-trap-scene').then((module) => ({
+        preload: module.preloadGhostTrap,
+        create: (scene: Phaser.Scene, audio: AudioManager) =>
+          new module.GhostTrapPresentation(scene, audio),
+      })),
+  ],
+  [
+    LATE_BUILDING_ART.eagleArtillery,
+    () =>
+      import('./eagle-artillery-scene').then((module) => ({
+        preload: module.preloadEagleArtillery,
+        create: (scene: Phaser.Scene, audio: AudioManager) =>
+          new module.EagleArtilleryPresentation(scene, audio),
+      })),
+  ],
+  [
+    LATE_BUILDING_ART.scattershot,
+    () =>
+      import('./scattershot-scene').then((module) => ({
+        preload: module.preloadScattershot,
+        create: (scene: Phaser.Scene, audio: AudioManager) =>
+          new module.ScattershotPresentation(scene, audio),
+      })),
+  ],
+  [
+    LATE_BUILDING_ART.monolith,
+    () =>
+      import('./monolith-scene').then((module) => ({
+        preload: module.preloadMonolith,
+        create: (scene: Phaser.Scene, audio: AudioManager) =>
+          new module.MonolithPresentation(scene, audio),
+      })),
+  ],
+  [
+    LATE_BUILDING_ART.goblinBuildings,
+    () =>
+      import('./late-goblin-buildings-scene').then((module) => ({
+        preload: module.preloadLateGoblinBuildings,
+        create: (scene: Phaser.Scene, audio: AudioManager) =>
+          new module.LateGoblinBuildingsPresentation(scene, audio),
+      })),
+  ],
+  [
+    LATE_BUILDING_ART.builderHut,
+    () =>
+      import('./builder-hut-scene').then((module) => ({
+        preload: module.preloadBuilderHut,
+        create: (scene: Phaser.Scene, audio: AudioManager) =>
+          new module.BuilderHutPresentation(scene, audio),
+      })),
+  ],
+  [
+    WORKER_FAMILY,
+    () =>
+      import('./defending-builder-scene').then((module) => ({
+        preload: () => {},
+        create: (scene: Phaser.Scene, audio: AudioManager) =>
+          new module.DefendingBuilderPresentation(scene, audio),
+      })),
+  ],
+];
+const prepared = new Map<number, PreparedFamily>();
+const loading = new Map<number, Promise<void>>();
+/** Fetch only the presentation graphs the scene can draw; retry failed modules on demand. */
+export async function prepareLateCampaign(mask = ALL_LATE_BUILDING_ART, workers = true) {
+  const requested = mask | (workers ? WORKER_FAMILY : 0);
+  await Promise.all(
+    FAMILIES.filter(([family]) => requested & family).map(([family, load]) => {
+      let pending = loading.get(family);
+      if (!pending) {
+        pending = load().then(
+          (module) => {
+            prepared.set(family, module);
+          },
+          (error) => {
+            loading.delete(family);
+            throw error;
+          },
+        );
+        loading.set(family, pending);
+      }
+      return pending;
+    }),
+  );
+}
+
+/** Explicit callers keep the full preload; the scene can request individual families. */
+export function preloadLateCampaign(
+  scene: Phaser.Scene,
+  mask = ALL_LATE_BUILDING_ART,
+  onTextures?: (family: number, keys: string[]) => void,
+  fetching?: (key: string) => boolean,
+) {
+  for (const [family] of FAMILIES) {
+    if (!(mask & family)) continue;
+    const queued = onTextures ? new Set(scene.load.list) : undefined;
+    const module = prepared.get(family);
+    if (!module) throw new Error(`Late presentation ${family} has not been prepared`);
+    module.preload(scene, fetching);
+    if (onTextures)
+      onTextures(
+        family,
+        [...scene.load.list]
+          .filter(
+            (file) => !queued!.has(file) && (file.type === 'image' || file.type === 'spritesheet'),
+          )
+          .map((file) => file.key),
+      );
+  }
 }
 
 /** One scene entry point for every late single-player campaign family. */
 export class LateCampaignPresentation {
   private families: LatePresentation[];
   constructor(scene: Phaser.Scene, audio: AudioManager) {
-    this.families = [
-      new SpellTowerPresentation(scene, audio),
-      new TornadoTrapPresentation(scene, audio),
-      new FreezeTrapPresentation(scene, audio),
-      new GhostTrapPresentation(scene, audio),
-      new EagleArtilleryPresentation(scene, audio),
-      new ScattershotPresentation(scene, audio),
-      new MonolithPresentation(scene, audio),
-      new LateGoblinBuildingsPresentation(scene, audio),
-      new BuilderHutPresentation(scene, audio),
-      new DefendingBuilderPresentation(scene, audio),
-    ].filter((family: LatePresentation) => {
+    this.families = FAMILIES.flatMap(([family]) => {
+      const module = prepared.get(family);
+      return module ? [module.create(scene, audio)] : [];
+    }).filter((family) => {
       if (family.artReady !== false) return true;
       family.destroy();
       return false;

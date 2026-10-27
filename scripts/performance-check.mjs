@@ -37,24 +37,30 @@ async function measure() {
   return page.evaluate(
     () =>
       new Promise((resolve) => {
-        const deltas = [];
-        let last = performance.now();
-        const start = last;
-        function frame(now) {
-          deltas.push(now - last);
-          last = now;
-          if (now - start < 4000) {
-            requestAnimationFrame(frame);
-            return;
-          }
-          const sorted = deltas.slice(1).sort((a, b) => a - b);
+        const times = [];
+        const loop = window.__game.game.loop;
+        const callback = loop.callback;
+        const start = performance.now();
+        loop.callback = (time, delta) => {
+          times.push(performance.now());
+          callback(time, delta);
+        };
+        setTimeout(() => {
+          loop.callback = callback;
+          const elapsed = performance.now() - start;
+          // Browser rAF still fires when Phaser skips a render under its idle/saver cap.
+          const sorted = times
+            .slice(1)
+            .map((t, i) => t - times[i])
+            .sort((a, b) => a - b);
           resolve({
-            frames: sorted.length,
-            meanFps: Math.round(1000 / (sorted.reduce((a, b) => a + b, 0) / sorted.length)),
-            p95FrameMs: Math.round(sorted[Math.floor(sorted.length * 0.95)] * 10) / 10,
+            frames: times.length,
+            canvas: [window.__game.game.canvas.width, window.__game.game.canvas.height],
+            fpsLimit: loop.fpsLimit,
+            meanFps: +((times.length * 1000) / elapsed).toFixed(1),
+            p95FrameMs: +(sorted[Math.floor(sorted.length * 0.95)] ?? 0).toFixed(1),
           });
-        }
-        requestAnimationFrame(frame);
+        }, 4000);
       }),
   );
 }
@@ -114,24 +120,52 @@ if (
   }
   if (process.argv.includes('--compare-field-mask')) {
     await page.evaluate(() => {
-      const s = window.__game.scene;
-      const [stencil, turf, release] = s.ground.list;
+      const { scene: s, game } = window.__game;
+      const field = s.children.list.find(
+        (child) => child.type === 'Container' && child.depth === -900,
+      );
+      const turf = field.list[0];
+      const cx = turf.x,
+        cy = turf.y,
+        hx = turf.width / 2,
+        hy = turf.height / 2;
+      const outline = s.add.graphics().fillStyle(0xffffff);
+      outline.fillTriangle(cx - hx, cy - hy, cx, cy - hy, cx - hx, cy);
+      outline.fillTriangle(cx, cy - hy, cx + hx, cy - hy, cx + hx, cy);
+      outline.fillTriangle(cx - hx, cy, cx - hx, cy + hy, cx, cy + hy);
+      outline.fillTriangle(cx + hx, cy, cx + hx, cy + hy, cx, cy + hy);
+      const commands = outline.commandBuffer.slice();
+      const stencil = s.add.stencil(0, 0, [outline], {
+        stencilInvert: false,
+        stencilLayerMode: 'addLayer',
+        stencilCompositeCheck: false,
+      });
+      const tiles = s.add
+        .tileSprite(cx, cy, turf.width, turf.height, 'field-checks')
+        .setTint(0x23491d)
+        .setAlpha(0.065);
+      const release = s.add.stencilreference(stencil, {
+        stencilInvert: false,
+        stencilLayerMode: 'subtractLayer',
+        stencilCompositeCheck: false,
+      });
+      const reference = s.add
+        .container(0, 0, [stencil, tiles, release])
+        .setDepth(-900)
+        .setVisible(false);
       window.__fieldMaskBenchmark = {
         paused: s.paused,
-        commands: stencil.list[0].commandBuffer.slice(),
-        invert: stencil.stencilInvert,
-        releaseInvert: release.stencilInvert,
+        limit: game.loop.fpsLimit,
+        field,
+        reference,
+        visible: field.visible,
       };
       s.paused = true;
-      // Both alternatives render the same frozen village and the same turf.
-      // Only the shape and inversion of the clipping stencil differ.
-      window.__fieldMaskBenchmark.apply = (reference) => {
-        const outline = stencil.list[0];
-        if (reference) {
-          const cx = turf.x,
-            cy = turf.y,
-            hx = turf.width / 2,
-            hy = turf.height / 2;
+      game.loop.setFPSLimit(0);
+      window.__fieldMaskBenchmark.apply = (mode) => {
+        field.setVisible(mode === 'diamond');
+        reference.setVisible(mode !== 'diamond');
+        if (mode === 'inverted')
           outline
             .clear()
             .fillStyle(0xffffff)
@@ -144,29 +178,24 @@ if (
               ],
               true,
             );
-        } else outline.commandBuffer = window.__fieldMaskBenchmark.commands.slice();
-        stencil.stencilInvert = reference;
-        release.stencilInvert = reference;
+        else outline.commandBuffer = commands.slice();
+        stencil.stencilInvert = release.stencilInvert = mode === 'inverted';
       };
     });
     fieldComparison = [];
     try {
-      for (const reference of [true, false, true, false]) {
-        await page.evaluate((reference) => window.__fieldMaskBenchmark.apply(reference), reference);
-        fieldComparison.push({
-          mask: reference ? 'inverted diamond' : 'corner triangles',
-          ...(await measure()),
-        });
+      for (const mode of ['inverted', 'corners', 'diamond', 'corners', 'diamond']) {
+        await page.evaluate((mode) => window.__fieldMaskBenchmark.apply(mode), mode);
+        fieldComparison.push({ mask: mode, ...(await measure()) });
       }
     } finally {
       await page.evaluate(() => {
-        const s = window.__game.scene,
+        const { scene: s, game } = window.__game,
           saved = window.__fieldMaskBenchmark;
-        const [stencil, , release] = s.ground.list;
-        stencil.list[0].commandBuffer = saved.commands;
-        stencil.stencilInvert = saved.invert;
-        release.stencilInvert = saved.releaseInvert;
+        saved.field.setVisible(saved.visible);
+        saved.reference.destroy();
         s.paused = saved.paused;
+        game.loop.setFPSLimit(saved.limit);
         delete window.__fieldMaskBenchmark;
       });
     }

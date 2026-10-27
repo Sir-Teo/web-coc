@@ -561,6 +561,8 @@ interface GroupWeights {
   space: Float64Array;
   /** Cell → indices into the snapshot arrays. */
   grid: Map<number, number[]>;
+  /** Empty cell lists kept for the next snapshot. */
+  buckets: number[][];
   /** Snapshot index per living unit id. */
   index: Map<number, number>;
   /** Cluster weight per unit id, measured on demand from the snapshot. */
@@ -570,7 +572,7 @@ interface GroupWeights {
 const groupWeightCache = new WeakMap<Battle, GroupWeights>();
 /** Numeric cell keys; units stay within a few tiles of the 48-tile map. */
 const groupCell = (cx: number, cy: number) => (cx + 1024) * 4096 + (cy + 1024);
-function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats) {
+function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats, following: boolean) {
   // Snapshot the living units once per tick; weigh an anchor only when a follower in range
   // asks for it. Weights read the snapshot, so they equal what a full pass at that moment
   // would have measured no matter how many units have moved since.
@@ -585,18 +587,38 @@ function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats) {
         (!battle.nativeFriendlyEligibility || friendlyCombatant(other, battle.elapsed))
       )
         living++;
-    cached = {
-      tick: battle.elapsed,
-      radius: s.groupRadius,
-      x: new Float64Array(living),
-      y: new Float64Array(living),
-      space: new Float64Array(living),
-      grid: new Map(),
-      index: new Map(),
-      weights: new Map(),
-      anchors: [],
-    };
-    groupWeightCache.set(battle, cached);
+    if (!cached) {
+      cached = {
+        tick: battle.elapsed,
+        radius: s.groupRadius,
+        x: new Float64Array(living),
+        y: new Float64Array(living),
+        space: new Float64Array(living),
+        grid: new Map(),
+        buckets: [],
+        index: new Map(),
+        weights: new Map(),
+        anchors: [],
+      };
+      groupWeightCache.set(battle, cached);
+    } else {
+      cached.tick = battle.elapsed;
+      cached.radius = s.groupRadius;
+      if (cached.x.length < living) {
+        const capacity = living * 2;
+        cached.x = new Float64Array(capacity);
+        cached.y = new Float64Array(capacity);
+        cached.space = new Float64Array(capacity);
+      }
+      for (const list of cached.grid.values()) {
+        list.length = 0;
+        cached.buckets.push(list);
+      }
+      cached.grid.clear();
+      cached.index.clear();
+      cached.weights.clear();
+      cached.anchors.length = 0;
+    }
     const cell = Math.max(1, s.groupRadius);
     let i = 0;
     for (const other of battle.units) {
@@ -611,7 +633,7 @@ function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats) {
       cached.index.set(other.id, i);
       const key = groupCell(Math.floor(other.x / cell), Math.floor(other.y / cell));
       let list = cached.grid.get(key);
-      if (!list) cached.grid.set(key, (list = []));
+      if (!list) cached.grid.set(key, (list = cached.buckets.pop() ?? []));
       list.push(i);
       // Anchor candidates in unit order: units that do not follow a group themselves. Units
       // missing from the snapshot (spawned later this tick) could never win a weight of 0.
@@ -619,6 +641,9 @@ function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats) {
       i++;
     }
   }
+  // Capture at the same first follower as before, even if it can already attack. Later
+  // followers must read those positions; only the unused anchor selection can be skipped.
+  if (!following) return undefined;
   const snapshot = cached;
   const cell = Math.max(1, snapshot.radius);
   const weightOf = (ally: Unit) => {
@@ -1083,9 +1108,10 @@ export function stepNativeUnit(
       state.burrowed = true;
     }
   }
+  const distance = distanceTo(u, target);
   if (s.groups) {
-    const anchor = groupAnchor(battle, u, s);
-    if (anchor && distanceTo(u, target) > s.range + 1e-9) {
+    const anchor = groupAnchor(battle, u, s, distance > s.range + 1e-9);
+    if (anchor) {
       moveToward(
         u,
         anchor,
@@ -1094,7 +1120,6 @@ export function stepNativeUnit(
       return;
     }
   }
-  const distance = distanceTo(u, target);
   if (
     (u.kind === 'battleblimp' || u.kind === 'loglauncher') &&
     distance > s.range &&

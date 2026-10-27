@@ -5,6 +5,7 @@ import { NativeSceneView } from './native-scene-view';
 import { preloadNativeMeshes } from './native-mesh-scene';
 import {
   characterArtLoaded,
+  characterArt,
   characterArts,
   commonDeathArt,
   projectileArts,
@@ -35,7 +36,8 @@ function tag(objects: readonly Phaser.GameObjects.GameObject[], name: string, va
 export const GARRISON_CONCEALED_ALPHA = 0.55;
 
 /** No Flight Zone's Dragon 7 and Balloon 8 use the smaller garrison character batch. */
-const BOOT_CHARACTERS = new Set(['Dragon7', 'Balloon Goblin8']);
+export const BOOT_GARRISON_CHARACTERS = ['Dragon7', 'Balloon Goblin8'] as const;
+const BOOT_CHARACTERS = new Set<string>(BOOT_GARRISON_CHARACTERS);
 
 /** Portable garrisons can need later characters without owning a late campaign building. */
 export const garrisonNeedsLateArt = (garrisons: Battle['garrisons']) =>
@@ -51,23 +53,34 @@ export function preloadGarrisonTroops(scene: Phaser.Scene) {
   for (const [path, sound] of Object.entries(GARRISON_SOUNDS))
     scene.load.binary(garrisonSample(path), '/' + sound.path);
 }
-/**
- * The No Flight Zone troops, loaded as an art family when a battle with a garrison opens: the
- * home village never draws them.
- */
-export function preloadGarrisonCharacters(scene: Phaser.Scene) {
+/** Shared by foundation and later defenders, whichever batch reaches it first. */
+export function preloadGarrisonDeath(scene: Phaser.Scene) {
   const death = commonDeathArt();
   preloadNativeMeshes(scene, death.graph, death.prefix);
-  for (const name of BOOT_CHARACTERS)
-    preloadNativeMeshes(scene, characterArts()[name].graph, characterArts()[name].prefix);
 }
-/** Every later defending character and projectile file, loaded with the late campaign art. */
-export function preloadLateGarrisonTroops(scene: Phaser.Scene) {
+export function preloadGarrisonCharacter(
+  scene: Phaser.Scene,
+  name: (typeof BOOT_GARRISON_CHARACTERS)[number],
+) {
+  const art = characterArt(name);
+  preloadNativeMeshes(scene, art.graph, art.prefix);
+}
+/** Explicit callers retain the complete foundation character preload. */
+export function preloadGarrisonCharacters(scene: Phaser.Scene) {
+  preloadGarrisonDeath(scene);
+  for (const name of BOOT_GARRISON_CHARACTERS) preloadGarrisonCharacter(scene, name);
+}
+/** Selected defender bodies and shared projectiles; explicit callers can still preload all. */
+export function preloadLateGarrisonTroops(scene: Phaser.Scene, animations?: ReadonlySet<string>) {
+  if (animations?.size === 0) return;
+  const bodies = animations
+    ? [...animations].filter((name) => !BOOT_CHARACTERS.has(name)).map(characterArt)
+    : Object.entries(characterArts()).flatMap(([name, art]) =>
+        BOOT_CHARACTERS.has(name) ? [] : [art],
+      );
   for (const art of [
     commonDeathArt(),
-    ...Object.entries(characterArts()).flatMap(([name, art]) =>
-      BOOT_CHARACTERS.has(name) ? [] : [art],
-    ),
+    ...bodies,
     ...Object.values(projectileArts()),
     ...Object.values(projectileGroupArts()),
   ])

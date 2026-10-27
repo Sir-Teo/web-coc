@@ -4,7 +4,7 @@ test('screen groups preserve alpha and apply clamped colors after child composit
   page,
   browserName,
 }) => {
-  await page.goto('/');
+  await page.goto('/?lazyart');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));

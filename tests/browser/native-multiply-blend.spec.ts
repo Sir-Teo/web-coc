@@ -4,7 +4,7 @@ test('multiply groups preserve source-over alpha on transparent and colored back
   page,
   browserName,
 }) => {
-  await page.goto('/');
+  await page.goto('/?lazyart');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));

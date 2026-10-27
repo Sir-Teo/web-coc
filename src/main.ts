@@ -5,6 +5,7 @@ import './game/import-retry';
 import { GameModel } from './game/model';
 import { VillageScene, prepareHomeArt } from './game/scene';
 import { AudioManager } from './game/audio';
+import { MUSIC_VOLUME } from './game/music';
 import {
   loadSave,
   parseSaveFile,
@@ -23,6 +24,7 @@ import { decodeLoadedImages } from './game/image-decode';
 import { watchSystemMotion } from './ui/motion';
 import { ScreenAwake } from './ui/screen-awake';
 import { Haptics } from './ui/haptics';
+import { onFirstAudioGesture } from './ui/first-audio-gesture';
 recordBootResources();
 decodeLoadedImages();
 /** A 1×1 fully transparent PNG. */
@@ -30,6 +32,7 @@ const TRANSPARENT_PIXEL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADUlEQVQImWNgYGBgAAAABQABh6FO1AAAAABJRU5ErkJggg==';
 async function boot() {
   const releaseSession = await acquireVillage();
+  let cancelAudioGesture = () => {};
   try {
     let saved;
     try {
@@ -40,6 +43,8 @@ async function boot() {
     }
     const model = new GameModel(saved);
     const audio = new AudioManager();
+    audio.effectsVolume = model.state.settings.effectsVolume ?? 1;
+    audio.musicVolume = model.state.settings.musicVolume ?? MUSIC_VOLUME;
     audio.enabled = model.state.settings.sound;
     // Vibration for the player's own raid: replays (the first-run Goblin raid among them) stay
     // still, and victory buzzes only when the raid earned a star.
@@ -50,14 +55,10 @@ async function boot() {
       else if (cue === 'victory' && (model.battle?.stars ?? 0) > 0) haptics.pulse(cue);
     };
     watchSystemMotion(model);
-    document.addEventListener(
-      'pointerdown',
-      () => {
-        audio.unlock();
-        if (model.state.settings.music) audio.music(true);
-      },
-      { once: true },
-    );
+    cancelAudioGesture = onFirstAudioGesture(() => {
+      audio.unlock();
+      if (model.state.settings.music) audio.music(true);
+    });
     // Graphs kept out of the startup bundle, for the families this village already owns.
     await prepareHomeArt(model.buildings);
     const scene = new VillageScene(model, audio);
@@ -84,7 +85,9 @@ async function boot() {
         ...displaySize(window.innerWidth, window.innerHeight, 1),
       },
       callbacks: { postBoot: configureDisplay },
-      render: { pixelArt: false, antialias: true },
+      // The artwork already carries smooth alpha edges. Multisampling the entire canvas adds
+      // a large resolve/bandwidth cost, especially on mobile GPUs; retain linear texture filtering.
+      render: { pixelArt: false, antialias: true, antialiasGL: false },
       input: { activePointers: 3 },
       // A long press on a phone (streaming troops, holding a building) fires contextmenu;
       // the canvas has no menu of its own to offer.
@@ -180,7 +183,8 @@ async function boot() {
       );
     }, 1000);
     window.addEventListener('pagehide', () => {
-      audio.samples.stop();
+      cancelAudioGesture();
+      audio.samples.stopAll();
       clearInterval(economyTimer);
       model.tick(Date.now());
       // A raid in progress has already spent its troops; settle it before the state is stored.
@@ -199,7 +203,7 @@ async function boot() {
     document.addEventListener('visibilitychange', () => {
       if (!ownsSession) return;
       if (document.hidden) {
-        audio.samples.stop();
+        audio.samples.stopAll();
         void persist(true);
         audio.music(false);
       } else {
@@ -341,6 +345,7 @@ async function boot() {
       installDeveloperTools(model, scene);
     }
   } catch (error) {
+    cancelAudioGesture();
     releaseSession();
     throw error;
   }

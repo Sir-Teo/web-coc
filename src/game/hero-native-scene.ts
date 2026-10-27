@@ -1,4 +1,5 @@
 import type Phaser from 'phaser';
+import { cancelImageDecodes } from './cancel-image-decodes';
 import { BUILDINGS, TROOPS } from './data';
 import { HERO_UNIT, PET_UNIT } from './native-hero-data';
 import { heroStatsFor } from './native-heroes';
@@ -54,6 +55,11 @@ interface Atlas {
   scale?: number;
   normalizedAttack?: boolean;
 }
+interface BakedRequest {
+  textures: Set<string>;
+  images: Set<HTMLImageElement>;
+  abort: AbortController;
+}
 /** Hero keys remain stable for prefetch/replays; only their presentation pack changes. */
 export const heroArtDirectory = (key: string) => {
   const hero = key.startsWith('heroes-native/') ? key.slice('heroes-native/'.length) : '';
@@ -83,7 +89,7 @@ export function bakedFrame(state: BakedState, direction: number, seconds: number
 export class HeroNativePresentation {
   private packs = new Map<string, Atlas>();
   /** In-flight atlases own partial texture uploads until their pack is ready. */
-  private pending = new Map<string, Set<string>>();
+  private pending = new Map<string, BakedRequest>();
   private retryAt = new Map<string, number>();
   private sprites = new Map<number, Phaser.GameObjects.Image>();
   /** Per actor (keyed by `Actor.track`): baked direction, drawn state and its start clock. */
@@ -102,12 +108,16 @@ export class HeroNativePresentation {
   private async load(key: string) {
     if (!this.alive || this.pending.has(key) || this.packs.has(key)) return;
     if ((this.retryAt.get(key) ?? 0) > performance.now()) return;
-    const request = new Set<string>();
+    const request: BakedRequest = {
+      textures: new Set(),
+      images: new Set(),
+      abort: new AbortController(),
+    };
     this.pending.set(key, request);
     const current = () => this.alive && this.pending.get(key) === request;
     try {
       const directory = heroArtDirectory(key);
-      const response = await fetch(`${directory}/atlas.json`);
+      const response = await fetch(`${directory}/atlas.json`, { signal: request.abort.signal });
       if (!current()) return;
       if (!response.ok) throw Error(`HTTP ${response.status}`);
       const pack = (await response.json()) as Atlas;
@@ -120,21 +130,26 @@ export class HeroNativePresentation {
           const texture = `baked:${key}/${file}`;
           if (this.scene.textures.exists(texture)) return;
           const image = new Image();
-          image.src = `${directory}/${file}`;
-          await image.decode();
-          if (!current()) return;
-          const existed = this.scene.textures.exists(texture);
-          const loaded = existed
-            ? this.scene.textures.get(texture)
-            : this.scene.textures.addImage(texture, image);
-          if (!loaded) throw Error(`Could not load ${texture}`);
-          if (!existed) request.add(texture);
-          for (const state of Object.values(pack.states))
-            for (const frame of state.frames.flat()) {
-              const name = `${frame.x}:${frame.y}:${frame.w}:${frame.h}`;
-              if (frame.image === file && !loaded.has(name))
-                loaded.add(name, 0, frame.x, frame.y, frame.w, frame.h);
-            }
+          request.images.add(image);
+          try {
+            image.src = `${directory}/${file}`;
+            await image.decode();
+            if (!current()) return;
+            const existed = this.scene.textures.exists(texture);
+            const loaded = existed
+              ? this.scene.textures.get(texture)
+              : this.scene.textures.addImage(texture, image);
+            if (!loaded) throw Error(`Could not load ${texture}`);
+            if (!existed) request.textures.add(texture);
+            for (const state of Object.values(pack.states))
+              for (const frame of state.frames.flat()) {
+                const name = `${frame.x}:${frame.y}:${frame.w}:${frame.h}`;
+                if (frame.image === file && !loaded.has(name))
+                  loaded.add(name, 0, frame.x, frame.y, frame.w, frame.h);
+              }
+          } finally {
+            request.images.delete(image);
+          }
         }),
       );
       if (current()) {
@@ -143,14 +158,22 @@ export class HeroNativePresentation {
       }
     } catch (error) {
       if (current()) {
-        for (const texture of request)
-          if (this.scene.textures.exists(texture)) this.scene.textures.remove(texture);
+        this.cancelRequest(key, request);
         this.retryAt.set(key, performance.now() + 5000);
         console.error('Baked character animation', key, error);
       }
     } finally {
       if (this.pending.get(key) === request) this.pending.delete(key);
+      cancelImageDecodes(request.images);
     }
+  }
+  private cancelRequest(key: string, request: BakedRequest) {
+    if (this.pending.get(key) === request) this.pending.delete(key);
+    request.abort.abort();
+    cancelImageDecodes(request.images);
+    for (const texture of request.textures)
+      if (this.scene.textures.exists(texture)) this.scene.textures.remove(texture);
+    request.textures.clear();
   }
   clear() {
     for (const sprite of this.sprites.values()) sprite.destroy();
@@ -165,9 +188,7 @@ export class HeroNativePresentation {
   releaseExcept(keep?: ReadonlySet<string>) {
     for (const [key, request] of this.pending) {
       if (keep?.has(key)) continue;
-      this.pending.delete(key);
-      for (const texture of request)
-        if (this.scene.textures.exists(texture)) this.scene.textures.remove(texture);
+      this.cancelRequest(key, request);
     }
     for (const [key, pack] of this.packs) {
       if (keep?.has(key)) continue;
@@ -184,6 +205,7 @@ export class HeroNativePresentation {
   destroy() {
     this.alive = false;
     this.clear();
+    for (const [key, request] of this.pending) this.cancelRequest(key, request);
   }
   /** Whether this hero/pet sprite drew this frame (scene.ts skips its fallback marker). */
   drewUnit(id: number) {

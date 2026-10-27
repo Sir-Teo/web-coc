@@ -2,26 +2,42 @@ import { chromium, webkit, expect } from '@playwright/test';
 import { preview } from 'vite';
 import fs from 'node:fs/promises';
 import { createHash } from 'node:crypto';
+import sharp from 'sharp';
 
 // Source-asset delivery, separate from live garrison combat integration.
 const native = JSON.parse(await fs.readFile('reference/garrison/art.json', 'utf8'));
+const characters = JSON.parse(await fs.readFile('reference/characters/art.json', 'utf8'));
 const assets = [
-  ...Object.values(native.worlds).flatMap((w) => Object.values(w.textures)),
+  ...Object.values(native.worlds).flatMap((w) =>
+    Object.values(w.textures).flatMap((texture) => [
+      texture,
+      ...(texture.legacy ? [texture.legacy] : []),
+    ]),
+  ),
+  ...Object.values(characters.worlds['dragon/dragon5'].textures).flatMap((texture) => [
+    texture,
+    texture.legacy,
+  ]),
   ...Object.values(native.previews),
   ...Object.values(native.icons),
 ];
 const expected = new Map(
   await Promise.all(
-    assets.map(async (asset) => [
-      '/' + asset.path,
-      {
-        width: asset.width,
-        height: asset.height,
-        sha256: createHash('sha256')
-          .update(await fs.readFile(`public/${asset.path}`))
-          .digest('hex'),
-      },
-    ]),
+    assets.map(async (asset) => {
+      const path = asset.path.replace(/\.png$/, '.webp');
+      const bytes = await fs.readFile(`dist/${path}`);
+      const source = await sharp(`public/${asset.path}`).ensureAlpha().raw().toBuffer();
+      const decoded = await sharp(bytes).ensureAlpha().raw().toBuffer();
+      expect(decoded.equals(source), path).toBe(true);
+      return [
+        '/' + path,
+        {
+          width: asset.width,
+          height: asset.height,
+          sha256: createHash('sha256').update(bytes).digest('hex'),
+        },
+      ];
+    }),
   ),
 );
 await fs.mkdir('output/playtest', { recursive: true });
@@ -84,7 +100,7 @@ try {
           [...expected.keys()],
         );
       const online = await decode();
-      expect(online).toHaveLength(44);
+      expect(online).toHaveLength(expected.size);
       for (const asset of online) expect(asset).toMatchObject(expected.get(asset.path));
       let offline = false;
       if (name === 'chromium') {

@@ -45,7 +45,10 @@ export class SampleAudio {
   /** Interface one-shots, outside the simulation clock (see `shot`). */
   private shots = new Map<AudioBufferSourceNode, GainNode>();
   private last?: { elapsed: number; wall: number; speed: number };
-  constructor(private context: () => AudioContext | null) {}
+  constructor(
+    private context: () => AudioContext | null,
+    private output: (context: AudioContext) => AudioNode = (context) => context.destination,
+  ) {}
   /**
    * Registers an encoded sample. Anything but an ArrayBuffer (a missing loader entry after a
    * failed download) is ignored: a throw here would escape into the loader's completion
@@ -111,10 +114,10 @@ export class SampleAudio {
     source.playbackRate.value = pitch;
     gain.gain.value = volume * 0.12;
     source.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(this.output(ctx));
     this.shots.set(source, gain);
     source.onended = () => {
-      this.shots.delete(source);
+      if (!this.shots.delete(source)) return;
       source.disconnect();
       gain.disconnect();
     };
@@ -128,17 +131,7 @@ export class SampleAudio {
       // Already stopped/ended — disconnect below still applies.
     }
   }
-  stop() {
-    for (const { source, gain } of this.active.values()) {
-      SampleAudio.safeStop(source);
-      source.disconnect();
-      gain.disconnect();
-    }
-    this.active.clear();
-    this.ended.clear();
-    this.last = undefined;
-  }
-  /** Sound off cancels interface one-shots too; replay pause only calls `stop`. */
+  /** An explicit mute or teardown also stops interface feedback. */
   stopAll() {
     this.stop();
     for (const [source, gain] of this.shots) {
@@ -148,6 +141,18 @@ export class SampleAudio {
       gain.disconnect();
     }
     this.shots.clear();
+  }
+  /** Replay pauses and seeks only reset voices following the simulation clock. */
+  stop() {
+    for (const { source, gain } of this.active.values()) {
+      source.onended = null;
+      SampleAudio.safeStop(source);
+      source.disconnect();
+      gain.disconnect();
+    }
+    this.active.clear();
+    this.ended.clear();
+    this.last = undefined;
   }
   sync(cues: SampleCue[], elapsed: number, speed: number, playing: boolean) {
     const ctx = this.context();
@@ -187,16 +192,15 @@ export class SampleAudio {
         source.buffer = buffer;
         if (cue.loop) source.loop = true;
         source.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(this.output(ctx));
         gain.gain.value = cue.volume * 0.12;
         source.playbackRate.value = cue.pitch * speed;
         node = { source, gain, sample: cue.sample };
         this.active.set(cue.key, node);
         source.onended = () => {
-          if (this.active.get(cue.key)?.source === source) {
-            this.active.delete(cue.key);
-            this.ended.add(cue.key);
-          }
+          if (this.active.get(cue.key)?.source !== source) return;
+          this.active.delete(cue.key);
+          this.ended.add(cue.key);
           source.disconnect();
           gain.disconnect();
         };
@@ -208,6 +212,7 @@ export class SampleAudio {
     }
     for (const [key, node] of this.active)
       if (!wanted.has(key)) {
+        node.source.onended = null;
         SampleAudio.safeStop(node.source);
         node.source.disconnect();
         node.gain.disconnect();

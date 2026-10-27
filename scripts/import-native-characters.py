@@ -407,7 +407,9 @@ def build():
                 decoded[path] = decode_sctx(source(path, PINS))
                 require(decoded[path].size == (sc.textures[t]['width'], sc.textures[t]['height']), 'Texture dimensions differ')
         images = {t: decoded['sc/' + sc.textures[t]['external']] for t in used}
-        assets, textures, runtime = crop_textures(graph, images, f'{PREFIX}/{key}/texture')
+        assets, textures, runtime = crop_textures(
+            graph, images, f'{PREFIX}/{key}/texture',
+            compact=key in ('dragon/dragon5', 'dragon/golden-dragon'))
         outputs.update(assets)
         arrays = {t: np.array(image) for t, image in images.items()}
         shadows = shadow_shapes(graph, arrays, names) if animation else {}

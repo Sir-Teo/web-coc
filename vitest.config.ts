@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import { availableParallelism } from 'node:os';
 export default defineConfig({
   test: {
     include: ['tests/*.test.ts'],
@@ -7,8 +8,8 @@ export default defineConfig({
     // long before anything is actually stuck.
     testTimeout: 180_000,
     hookTimeout: 180_000,
-    // The run is bound by its longest files, not by worker count: six workers finish in the
-    // same wall time as one per core (measured 2026-09-20), so eight leave the machine usable.
-    maxWorkers: 8,
+    // Large simulation files contend on smaller runners. Retain the eight-worker ceiling,
+    // while respecting the CPU parallelism reported by the runtime (including container quotas).
+    maxWorkers: Math.min(8, availableParallelism()),
   },
 });

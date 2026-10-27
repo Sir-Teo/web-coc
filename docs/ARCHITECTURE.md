@@ -30,6 +30,27 @@ between steps, but must not change simulation results. Replay seeking reconstruc
 state from recorded inputs, so a mechanic's timing and random choices must be
 reproducible. See [replays](REPLAYS.md) and [effect timing](EFFECT-TIMING.md).
 
+Native group followers share a position/housing snapshot captured by the first follower
+each tick. Its buffers, maps and empty cell lists are reused per battle, with capacity
+growing for new waves. Refresh clears cell contents, unit indices, weights and anchor
+references before rebuilding in unit order; new arrivals still wait until the next snapshot.
+The group witness in `tests/fixtures/native-group-snapshot.ts` checks exact movement across
+snapshot capture, arrivals, deaths and moved cells in Node and both browser engines.
+
+Trap trigger searches likewise keep their cell map, bucket arrays and nearby-query storage
+in the per-battle trap index. Active counts preserve array capacity while rebuilds clear old
+unit references; nearby-query references clear at phase end. Pushback/native trap events
+still invalidate the position grid before a later trigger search. More than 512 cached cells
+forces a fresh map on its next rebuild. `tests/trap-grid-reuse.test.ts` covers old bucket slots,
+ties, in-phase invalidation, alternating battles, replacement layouts and wide snapshots.
+
+The classic troop phase reuses its all-building ID map per battle. Each tick verifies array
+identity, object order and IDs before reuse; replacing or editing the layout creates a fresh
+map. Building state such as HP remains live through its object references, and duplicate IDs
+retain last-entry precedence. Native phases build their separate filtered maps directly,
+without temporary entry-pair arrays.
+`tests/building-id-cache.test.ts` checks deaths, object/ID edits, reordering and replacement.
+
 Keep gameplay values separate from art graphs. A model import should not load
 Phaser, a scene class or multi-megabyte render data. `*-graph.ts` and `*-poses.ts`
 modules own render data; stats and rule modules expose the values simulation needs.
@@ -63,8 +84,10 @@ pages load in one batch once the village appears. Each defense family the villag
 does not own (`ART_FAMILIES` in `scene.ts`, the X-Bow and Santa among them) loads the first time
 the home village, a battle or a placement draws it; a battle that needs one holds
 its clock and input until it lands, as it does for late campaign art. The dev
-server loads every family right after boot instead (the browser specs rely on it);
-`?lazyart` gives a dev page the production behavior. Families the home village
+server loads every family right after boot on desktop instead (visual browser specs rely
+on it). A coarse-pointer phone preview uses production's demand loading by default;
+`?eagerart` explicitly preloads the gallery on a phone, while `?lazyart` forces demand
+loading on any device and takes precedence if both are present. Families the home village
 does not draw, and the late campaign art, are released again after the player has
 been home for a while. A family can also be needed by something other than a
 building (`needed`): the Clan Castle garrison defenders load when a battle or replay with
@@ -78,10 +101,47 @@ placeholder.
 
 Art batches remove their temporary scene-shutdown listeners when they settle, so
 releasing and reloading a family does not accumulate callbacks across attacks.
+Queued families recheck current building, placement and extra `needed` demand before graph
+preparation, after it completes and when the Phaser loader becomes available. A family no
+longer needed drops its pending request without starting images or creating a retry failure;
+a later village or battle can request it normally. Still-needed families and the eager
+development gallery keep loading. `tests/browser/obsolete-family.spec.ts` covers cancellation,
+retained home/new-battle demand and both graph and image-loader queue boundaries.
 The Cannon and Tesla batches leave fallback sprites already being fetched by
 `LazyTextures` to that request, avoiding duplicate texture registration.
+The Mortar batch loads portraits for the current village's levels plus Level 1 for placement;
+the eager development gallery still loads all eighteen. Once the family is resident, a later
+level loads its own fallback portrait through `LazyTextures`. The family owns those possible
+portrait keys too and skips idle release while any of its portraits is still decoding, so a
+late upload cannot outlive its release. `tests/browser/mortar-portrait-loading.spec.ts` covers
+owned boot levels, scouting, a moving preview and delayed-decode cleanup/reload.
+X-Bow and Wizard Tower batches likewise limit their per-level portraits to current levels
+and placement Level 1; X-Bow retains both modes at those levels. Later portraits join the
+same family ownership and decode-aware release policy. X-Bow lazy URLs follow the requested
+portrait's mode. Their existing base-sprite loading remains separate, and eager galleries
+still preload every level. `tests/browser/defense-portrait-loading.spec.ts` covers both
+families' owned boot, later move previews and pending-decode release/reload.
 
-Imported replay rosters also determine whether later garrison art is needed. A supported troop such as Dragon 5 loads the late character bundle even when its village contains only ordinary buildings. The original No Flight Zone Dragon 7 and Balloon 8 retain their smaller character batch. The existing battle wait, retry and home-time release rules own these pages; backward seeks reuse them. `tests/browser/garrison-late-replay-art.spec.ts` checks actual uploaded textures and native bodies on desktop and phone.
+Imported replay rosters also determine which garrison art is needed. Character body graphs
+load independently through the small catalog in `character-graphs.ts`; shared death and
+projectile graphs load through `character-shared-graphs.ts`. `loadCharacterArt(animations)`
+fetches only those bodies and their later projectile groups. An empty set fetches common
+death and original projectile data alone; an omitted set retains the explicit full preload.
+Bowler, Witch and Lava Hound projectile graphs import independently when catalog rows for a
+requested animation use them. Aliases keep their original graph, texture prefix and shadow set.
+The registry preserves catalog order and reuses concurrent requests and successful entries.
+
+`characterArtLoaded(name)` checks that body, common data and its later projectile groups;
+without a name it checks common data alone. Poses, bar heights and workers guard their own
+body readiness while other graphs are already resident. The battle still waits for its
+complete roster, including future
+summons, Ghost Traps and workers. Body and shared module failures use the existing retry
+wrapper and scene backoff. Existing release rules own GPU pages; backward seeks reuse them,
+and JavaScript modules stay warm. `tests/browser/character-graph-loading.spec.ts` checks held
+bodies, held projectile groups, recorded shots and reconnect recovery. Pending projectile
+groups leave recorded shots guarded until the complete roster is ready.
+`tests/browser/garrison-late-replay-art.spec.ts` checks actual uploaded textures and native
+bodies on desktop and phone.
 
 Boot files also record their owning art family. Successful boot families join the same
 release-and-reload cycle, so importing a different village can free the original village's
@@ -93,6 +153,22 @@ only to the real atlas. `tests/browser/boot-family-recovery.spec.ts` covers both
 Trap modes and a home X-Bow, including reconnects and successful boot-image ownership.
 `tests/browser/boot-family-release.spec.ts` covers replacement and undo of a village whose
 X-Bow art loaded successfully at boot.
+
+The base wall and level-one fallback use the same `wall` texture key. The per-level wall
+preload always owns that image, so the generic building-base preload skips walls instead of
+uploading the identical 192×256 image twice. Wall levels 2–8 keep their distinct keys; normal
+wall drawing and new-wall previews share the canonical level-one source.
+`tests/browser/wall-art.spec.ts` covers materials, placement and context restoration, and
+`tests/browser/deferred-sprites.spec.ts` checks level-one fallback during higher-level loading.
+
+Native pose samples are read-only and share a bounded 512-entry cache per graph. Its frame
+keys can repeat only after the complete nested animation repeats: `native-loop-period.ts`
+includes continuously present children's independent FPS and loop lengths, and preserves the
+first loop's placement-age clamp. Analysis starts after that first source loop; clamped
+non-looping clips need none. Unsupported clocks and metadata beyond its budget keep raw
+frame keys. Period metadata uses weak graph ownership, while actual sampling always receives
+the caller's original clock. `tests/browser/native-loop-cache.spec.ts` checks a real Archer
+loop against independent pixels and WebGL restoration.
 
 Failed native troop graphs and hero/pet atlases wait five seconds before retrying,
 per asset key, as troop texture pages already do. Rendering keeps requesting missing
@@ -171,8 +247,13 @@ place, and reconnect retries for metadata and level pages at home and while scou
 
 Changing villages releases native building GPU pages that neither home nor the current
 village uses. Shared pages stay uploaded while any retained level needs them, and mode
-variants stay warm while their building family is present. Decoded images remain cached
-for a later visit, so re-uploading a released page does not download it again. Pending
+variants stay warm while their building family is present. Recent decoded images share a
+64 MiB warm cache, estimated as width × height × four bytes per image. Requests refresh
+recency; pending decodes stay shared, and completed pages leave the cache in request order
+when it exceeds the budget. Eviction drops only the cache reference: active Phaser textures
+retain their images for rendering, tint generation and graphics-context restoration. Recent
+visits reuse decoded images; older evicted pages decode again through the browser/SW cache.
+The budget bounds warm image references, not total process or GPU memory. Pending
 uploads own request tokens: leaving a village cancels obsolete uploads, and a late decode
 cannot recreate released textures or clear a newer visit's request.
 `tests/browser/village-art-release.spec.ts` checks release and reuse across village visits.
@@ -184,13 +265,70 @@ and bump the art revision, replacing the fallback even during scouting or a paus
 `tests/browser/native-page-recovery.spec.ts` covers Cannon pages and both Archer Tower
 body and resident pages with temporary failures and reconnects.
 
-The late campaign bundle also retries failed files and lazy-module downloads with bounded
-backoff, or immediately on reconnect. Its families check their body textures before replacing
+Automatic late-art requests prepare only the building presentation families on the map and
+the character bodies a battle can use. Ordinary garrisons skip building presentation code;
+explicit full preloads remain available. Late campaign art retries failed files and family
+module downloads with bounded backoff, or immediately on reconnect. Its families check their body textures before replacing
 fallback sprites, so a failed Eagle Artillery does not hide the loaded Scattershot beside it.
 Retries rebuild presentation views against the completed textures and retain ownership of
 pages from every attempt; returning home can still release the whole unused bundle. An
 in-flight retry cannot race that idle release. `tests/browser/late-art-recovery.spec.ts`
 checks fallback visibility, independent families, recovery and GPU-page release after retry.
+
+Dragon 7 and Golden Dragon retain separate animation graphs, presenter prefixes and shadow
+sets, while `nativeMeshTexture` resolves their identical atlas page to one Phaser texture key.
+The Dragon foundation family stays needed for either character and claims the resident page
+from both late-batch ownership lists if the late loader uploaded it first. This keeps late-art
+cleanup from deleting the shared page; an unused late-only preload still releases normally.
+The importer and atlas tests verify identical page dimensions, UVs and pixels before sharing.
+`tests/browser/shared-dragon-atlas.spec.ts` checks a single GPU allocation, separate shadows,
+both load orders, home release/reload, retained home buildings, reconnect and context restoration.
+
+The five siege packs for Battle Drill, Flame Flinger, Log Launcher, Troop Launcher and Wall
+Wrecker also resolve their identical `characters` page 8 to one GPU texture key. Their body
+atlases keep separate keys. Before releasing troop packs, `releaseExcept` gathers the texture
+keys referenced by retained packs, preserving shared pages while another kind needs them.
+The existing request identities still prevent cancelled decodes from recreating released pages.
+`tests/native-siege-atlas.test.ts` pins the shared page's metadata and RGBA bytes;
+`tests/browser/shared-siege-atlas.spec.ts` covers allocation, retained-kind transitions,
+context restoration, release/reload and cancellation.
+
+Troop `characters` texture 2 also has one canonical key: all 59 declaring packs reference
+the identical 128×43 skull/ghost page. The same retained-key scan protects it while another
+pack needs it, including pending loads. Other scene namespaces and the garrison death family
+retain their own keys. `tests/native-troop-death-page.test.ts` pins every pack's metadata and
+the shared pixels; `tests/browser/shared-troop-death-page.spec.ts` covers ownership,
+context restoration and cancellation.
+
+Changing the home army also releases obsolete troop packs before prefetching the new kinds.
+Previously this cleanup ran only when the mode or battle changed, so repeated recipe edits
+could retain every army's GPU pages while the player stayed at home. The home-only path
+clears troop views and uses the same release/request-identity rules; late decodes cannot
+repopulate dropped packs. Battle updates retain their existing presentation lifecycle.
+`tests/browser/home-army-art-release.spec.ts` covers recipe changes, empty armies,
+cancelled metadata/textures and preserving an active battle's native view.
+
+Troop requests also cancel their pending work when released or shut down. Metadata uses an
+`AbortController`; each level request owns only its not-yet-uploaded image elements, whose
+sources switch to a local transparent pixel on cancellation. Registered textures keep their
+decoded source for rendering and graphics-context recovery. Cancelled requests cannot retire
+a newer request or start a retry backoff. WebKit can continue the previous image's network
+transfer for its cache, while its decode promise rejects immediately; metadata cancellation
+stops the transfer in both engines. Shared siege pages remain available to retained pending packs.
+
+Home hero-lineup and pet-assignment changes follow the same policy for baked atlases.
+They clear obsolete hero sprites and release packs outside the new required hero/pet set,
+including partially uploaded requests, before prefetching replacements. Battle updates keep
+their existing views and all required battle actors. `tests/browser/home-hero-art-release.spec.ts`
+checks lineup rotation, pet replacement/removal, cancelled metadata and partial King pages,
+and preservation of an active hero sprite and its battle pet.
+
+Each baked hero/pet request also owns its abort controller, pending image decodes and newly
+uploaded texture keys. Release and shutdown cancel its fetch/decodes and remove only those
+partial uploads. Genuine failures keep the existing retry backoff and cancel the remaining
+pending pages in their batch. Completed textures retain their source images. Troops and
+baked actors share `cancel-image-decodes.ts`, including the browser-specific promise behavior
+described above; WebKit may still finish a cancelled image transfer for its cache.
 
 Ghost Trap coffins belong to the shared Skeleton Trap art family, including a cold visit to
 Go to Bat, which has Ghost Traps and no ordinary Skeleton Traps. The presenter waits for both
@@ -198,7 +336,7 @@ the armed and triggered atlases before hiding its fallback. The family retains a
 textures the home village needs after the late bundle is released.
 `tests/browser/ghost-trap-art-recovery.spec.ts` checks cold loading, reconnect recovery and reuse.
 
-Browsers cache failed module imports, so the late presentation, character graphs and optional
+Browsers cache failed module imports, so late presentation families, character graphs and optional
 art JSON modules use a shared retry cache: a failed attempt gets a fresh URL, and successful
 modules stay cached across visits. `vite-import-retry.mjs` preserves the original lazy chunk boundaries
 and emits the underlying native import after Vite's preload instrumentation. Temporary

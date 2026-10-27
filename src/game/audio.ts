@@ -1,5 +1,6 @@
 import { SampleAudio } from './sample-audio';
 import { MusicPlayer, type MusicScene } from './music';
+import { audioVolume, setAudioGain } from './audio-volume';
 import villageSounds from '../../reference/village-sounds/sounds.json' with { type: 'json' };
 export type Tone = 'click' | 'collect' | 'build' | 'hit' | 'destroy' | 'deploy' | 'victory';
 /** The client's village feedback effects (logic/effects.csv), by its own names. */
@@ -14,18 +15,24 @@ const TONE_EFFECT: Partial<Record<Tone, VillageEffect>> = {
 export class AudioManager {
   context: AudioContext | null = null;
   /**
-   * Native samples only see the context while sound is on: with sound off, the first gesture
+   * Native samples only see the context while effects are audible: with sound off or at zero, the first gesture
    * neither decodes the ~115 samples nor plays them. Decoding starts when sound is enabled.
    */
-  samples = new SampleAudio(() => (this.soundOn ? this.context : null));
+  samples = new SampleAudio(
+    () => (this.effectsAudible ? this.context : null),
+    (ctx) => this.effectsOutput(ctx),
+  );
   private soundOn = true;
   /** Set by the first user gesture; a context is only created after one. */
   private unlocked = false;
+  private resuming: Promise<void> | null = null;
   private musicOn = false;
+  private tones = new Map<OscillatorNode, GainNode>();
+  private effectsLevel = 1;
+  private effectsGain: GainNode | null = null;
   /** The original client's Home and battle music; plays only while music is on. */
   readonly tracks = new MusicPlayer(() => (this.musicOn ? this.context : null));
   private lastPlay: Partial<Record<string, number>> = {};
-  private tones = new Map<OscillatorNode, GainNode>();
   /** The village sounds load once, after the first gesture with sound on (about 200 KB). */
   private villageLoad?: Promise<void>;
   constructor() {
@@ -40,32 +47,75 @@ export class AudioManager {
     this.soundOn = on;
     if (!on) {
       this.samples.stopAll();
-      for (const [osc, gain] of this.tones) {
-        osc.onended = null;
-        try {
-          osc.stop();
-        } catch {
-          // It may have finished before its ended event is delivered.
-        }
-        osc.disconnect();
-        gain.disconnect();
-      }
-      this.tones.clear();
+      this.stopTones();
     }
     this.updateContext();
   }
+  get effectsVolume() {
+    return this.effectsLevel;
+  }
+  set effectsVolume(value: number) {
+    this.effectsLevel = audioVolume(value, 1);
+    if (this.effectsGain) setAudioGain(this.effectsGain, this.effectsLevel, this.context);
+    if (!this.effectsLevel) {
+      this.samples.stopAll();
+      this.stopTones();
+    }
+    this.updateContext();
+    if (this.unlocked) this.loadVillageSounds();
+  }
+  get musicVolume() {
+    return this.tracks.volume;
+  }
+  set musicVolume(value: number) {
+    this.tracks.setVolume(value);
+  }
+  private effectsOutput(ctx: AudioContext) {
+    if (!this.effectsGain) {
+      this.effectsGain = ctx.createGain();
+      this.effectsGain.gain.value = this.effectsLevel;
+      this.effectsGain.connect(ctx.destination);
+    }
+    return this.effectsGain;
+  }
   /** True while anything may be heard: sound effects or music, on a visible page. */
   private get audible() {
-    return (this.soundOn || this.musicOn) && !(typeof document !== 'undefined' && document.hidden);
+    return (
+      (this.effectsAudible || this.musicOn) && !(typeof document !== 'undefined' && document.hidden)
+    );
+  }
+  private get effectsAudible() {
+    return this.soundOn && this.effectsLevel > 0;
   }
   /** Creates the context lazily and suspends it while nothing can be heard. */
   private updateContext() {
     if (!this.unlocked) return;
     if (this.audible) {
-      if (!this.context) this.context = new AudioContext();
-      if (this.context.state === 'suspended') void this.context.resume();
+      const ctx = (this.context ??= new AudioContext());
+      // Safari can leave a foreground page interrupted after a call or tab switch.
+      if ((ctx.state === 'suspended' || ctx.state === 'interrupted') && !this.resuming) {
+        const attempt: Promise<void> = ctx
+          .resume()
+          // The device may still own the audio hardware; another gesture can retry.
+          .catch(() => {})
+          .finally(() => {
+            if (this.resuming === attempt) this.resuming = null;
+            if (!this.audible) this.suspendContext();
+          });
+        this.resuming = attempt;
+      }
       this.samples.decode();
-    } else if (this.context?.state === 'running') void this.context.suspend();
+    } else {
+      this.stopTones();
+      this.suspendContext();
+    }
+  }
+  private suspendContext() {
+    // A foreground return must not wait for a resume the suspension superseded.
+    this.resuming = null;
+    const ctx = this.context;
+    if (ctx && (ctx.state === 'running' || ctx.state === 'interrupted'))
+      void ctx.suspend().catch(() => {});
   }
   unlock() {
     this.unlocked = true;
@@ -73,7 +123,7 @@ export class AudioManager {
     this.loadVillageSounds();
   }
   private loadVillageSounds() {
-    if (this.villageLoad || !this.soundOn || typeof fetch === 'undefined') return;
+    if (this.villageLoad || !this.effectsAudible || typeof fetch === 'undefined') return;
     this.villageLoad = Promise.all(
       Object.entries(villageSounds.sounds).map(async ([path, sound]) => {
         const response = await fetch('/' + sound.path);
@@ -100,7 +150,11 @@ export class AudioManager {
    */
   effect(effect: VillageEffect, tone: Tone) {
     this.feedback(tone);
-    if (!this.enabled || this.throttled(effect, 50)) return;
+    if (!this.effectsAudible) {
+      if (this.musicOn) this.unlock();
+      return;
+    }
+    if (this.throttled(effect, 50)) return;
     this.unlock();
     if (!this.playEffect(effect)) this.tone(tone);
   }
@@ -114,7 +168,10 @@ export class AudioManager {
   feedback: (kind: Tone) => void = () => {};
   play(kind: Tone) {
     this.feedback(kind);
-    if (!this.enabled) return;
+    if (!this.effectsAudible) {
+      if (this.musicOn) this.unlock();
+      return;
+    }
     // Battles can emit dozens of blips per second; throttle per kind
     // so overlapping volleys don't thrash the mixer.
     const throttleMs =
@@ -128,7 +185,7 @@ export class AudioManager {
   /** The generated stand-in for a cue. */
   private tone(kind: Tone) {
     const ctx = this.context;
-    if (!ctx) return;
+    if (!ctx || !this.audible || ctx.state !== 'running') return;
     const settings = {
       click: [600, 0.04, 'sine'],
       collect: [1100, 0.18, 'sine'],
@@ -150,15 +207,28 @@ export class AudioManager {
     gain.gain.setValueAtTime(kind === 'destroy' ? 0.045 : 0.025, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(this.effectsOutput(ctx));
+    this.tones.set(osc, gain);
     osc.start();
     osc.stop(ctx.currentTime + duration);
-    this.tones.set(osc, gain);
     osc.onended = () => {
-      this.tones.delete(osc);
+      if (!this.tones.delete(osc)) return;
       osc.disconnect();
       gain.disconnect();
     };
+  }
+  private stopTones() {
+    for (const [osc, gain] of this.tones) {
+      osc.onended = null;
+      try {
+        osc.stop();
+      } catch {
+        // An already-ended oscillator still needs its connections released.
+      }
+      osc.disconnect();
+      gain.disconnect();
+    }
+    this.tones.clear();
   }
   music(on: boolean) {
     this.musicOn = on;

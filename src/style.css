@@ -1359,6 +1359,40 @@ h3 {
   color: #9c8968;
   margin-top: 5px;
 }
+.audio-setting {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  row-gap: 0;
+  align-items: start;
+}
+.audio-setting .setting-copy {
+  min-width: 0;
+}
+.audio-volume {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: 12px;
+  max-width: 360px;
+  margin-top: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #76613f;
+}
+.audio-volume output {
+  min-width: 4ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.audio-volume input {
+  grid-column: 1 / -1;
+  width: 100%;
+  height: 44px;
+  margin: 0;
+  accent-color: #5d8e36;
+  cursor: pointer;
+}
 .toggle {
   width: 49px;
   height: 27px;
@@ -6064,10 +6098,34 @@ h3 {
   gap: 4px;
 }
 @media (max-width: 700px) {
+  /* Let wrapped deployment hints size their row below the battle actions. */
+  .battle-bottom {
+    height: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: end;
+    gap: 8px;
+  }
+  .battle-bottom > .end-battle {
+    position: static;
+    margin: 0;
+    grid-row: 1;
+    grid-column: 1;
+    justify-self: start;
+  }
   .battle-bottom > .battle-speed {
-    bottom: 112px;
-    min-height: 40px;
+    position: static;
+    grid-row: 1;
+    grid-column: 2;
+    justify-self: end;
+    min-height: 44px;
     padding: 6px 10px;
+  }
+  .battle-bottom > .deploy-tray {
+    position: static;
+    transform: none;
+    grid-row: 2;
+    grid-column: 1 / -1;
   }
 }
 
@@ -6820,6 +6878,15 @@ h3 {
 }
 
 /* Magic items: the Town Hall inventory. */
+.trader-footer {
+  flex-wrap: wrap;
+}
+.trader-wallet {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
 .magic-item-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));

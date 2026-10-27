@@ -10,10 +10,10 @@ export class RenderQuality {
   private fastFor = 0;
   private settleUntil = 0;
 
-  reset(now: number) {
+  reset(now: number, settleMs = 5000) {
     this.previous = now;
     this.elapsed = this.frames = this.slow = this.fastFor = 0;
-    this.settleUntil = now + 5000;
+    this.settleUntil = now + settleMs;
   }
 
   /**
@@ -29,7 +29,9 @@ export class RenderQuality {
     }
     const delta = now - this.previous;
     this.previous = now;
-    if (!enabled || delta <= 0 || delta > 250) {
+    // Even a renderer below 1 FPS still needs help. Loading/hidden frames are excluded by
+    // the caller; reserve the gap reset for a genuine stall or return from a background tab.
+    if (!enabled || delta <= 0 || delta > 3000) {
       this.reset(now);
       return false;
     }
@@ -39,13 +41,19 @@ export class RenderQuality {
     this.elapsed += delta;
     this.frames++;
     if (delta > 24 * pace) this.slow++;
-    if (this.elapsed < 2000) return false;
+    // One long stall is not sustained pressure: wait for a second observed frame.
+    if (this.elapsed < 2000 || this.frames < 2) return false;
     const average = this.elapsed / this.frames;
     const pressured = this.slow / this.frames > 0.6;
     this.fastFor = average < 18 * pace ? this.fastFor + this.elapsed : 0;
-    const minimum = Math.min(1, 1 / Math.max(1, density));
+    // Weak GPUs can be overloaded even at 1×. Keep DOM text at native resolution while the
+    // canvas alone can fall to half a pixel per CSS pixel under sustained pressure.
+    const minimum = Math.min(1, 0.5 / Math.max(0.5, density));
+    // Severe overload needs a useful first reduction on dense phones: halving density
+    // removes three quarters of the pixels. Moderate pressure retains the smaller step.
+    const reduced = average > this.interval * 3 ? this.scale / 2 : this.scale - 0.25;
     const next = pressured
-      ? Math.max(minimum, this.scale - 0.25)
+      ? Math.max(minimum, reduced)
       : this.fastFor >= 15000
         ? Math.min(1, this.scale + 0.25)
         : this.scale;

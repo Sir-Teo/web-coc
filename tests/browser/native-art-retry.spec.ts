@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 
 for (const actor of [
   { name: 'troop', stage: 90, url: '**/assets/troops-native/giant/graph.json', hero: false },
+  { name: 'troop image', stage: 90, url: '', hero: false },
   { name: 'hero', stage: 93, url: '**/assets/characters/king-v1/atlas.json', hero: true },
   {
     name: 'hero image',
@@ -13,10 +14,19 @@ for (const actor of [
   test(`failed native ${actor.name} art backs off and recovers without restarting the battle`, async ({
     page,
   }) => {
+    let url = actor.url;
+    if (!url) {
+      const pack = await (await page.request.get('/assets/troops-native/giant/graph.json')).json();
+      const textures = Object.values(pack.scenes).flatMap((scene) => Object.values(scene.textures));
+      const pageTexture = textures
+        .filter((texture) => !texture.levels || texture.levels.includes(2))
+        .sort((a, b) => b.width * b.height - a.width * a.height)[0];
+      url = `**/${pageTexture.path}`;
+    }
     const attempts: number[] = [];
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
-    await page.route(actor.url, async (route) => {
+    await page.route(url, async (route) => {
       attempts.push(Date.now());
       await route.fulfill({ status: 503, body: 'Temporarily unavailable' });
     });
@@ -67,7 +77,7 @@ for (const actor of [
       ).toEqual([]);
     }
 
-    await page.unroute(actor.url);
+    await page.unroute(url);
     await expect
       .poll(
         () =>

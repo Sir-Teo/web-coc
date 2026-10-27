@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-// Production loads a defense family's art only when something draws it; the dev server loads
-// every family after boot unless `?lazyart` asks for the production behavior.
+// Production and phone previews load a defense family only when something draws it. Desktop
+// development preloads every family unless `?lazyart` asks for the production behavior.
 test.describe.configure({ timeout: 120_000 });
 
 const loaded = (prefix: string) =>

@@ -4,6 +4,7 @@ import { BUILDINGS, TROOPS } from './data';
 import { MAP_SIZE } from './grid';
 import { SWEEPER, sweeperStats } from './air-control-stats';
 import type { Battle, Building, FX, Unit } from './model';
+import { buildingsOfKind } from './building-lists';
 
 export interface AirPush {
   x: number;
@@ -109,8 +110,7 @@ export function stepSweepers(b: Battle, dt: number, effect: (fx: FX) => void) {
     }
   }
   b.gusts = gusts.filter((g) => g.radius < SWEEPER.range);
-  for (const tower of b.buildings) {
-    if (tower.kind !== 'airsweeper') continue;
+  for (const tower of buildingsOfKind(b, 'airsweeper')) {
     const states = (b.sweepers ??= {});
     if (tower.hp <= 0 || tower.constructing || tower.upgradeEnd) {
       delete states[tower.id];

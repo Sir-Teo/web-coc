@@ -7,7 +7,7 @@ import {
   characterPose,
   rowExport,
 } from './character-poses';
-import { characterArts, commonDeathArt } from './character-art';
+import { characterArt, characterArts, commonDeathArt } from './character-art';
 import type { GarrisonDefender } from './defenders';
 import type { Battle } from './model';
 
@@ -19,13 +19,13 @@ export const garrisonGraphs = () => ({
 });
 /** The last frame of the shared death clip. */
 export const dragonDeathLastTime = () => {
-  const graph = garrisonGraphs().dragonDeath;
+  const graph = commonDeathArt().graph;
   const clip = graph.clips[graph.exports.barbarian_death_1];
   return (clip.timeline.length - 1) / clip.fps;
 };
 /** Local one-based interpretation of source ActionFrame 34 in this 34-frame clip. */
 export const balloonActionTime = () => {
-  const graph = garrisonGraphs().balloon;
+  const graph = characterArt('Balloon Goblin8').graph;
   const clip = graph.clips[graph.exports.balloon_lvl8_attack1];
   return (clip.timeline.length - 1) / clip.fps;
 };

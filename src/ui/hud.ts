@@ -234,7 +234,7 @@ import { icon, resource, coin, elixir, gem } from './icons';
 import { applyMotionPreference } from './motion';
 import { offlineStatus, retryOfflineWarm, watchOfflineStatus } from '../offline';
 import { ACHIEVEMENTS, UNAVAILABLE_ACHIEVEMENTS } from '../game/achievements';
-import { musicScene } from '../game/music';
+import { musicScene, MUSIC_VOLUME } from '../game/music';
 import { decodeLayout, layoutFromLink, layoutLink } from '../game/layout-share';
 import {
   STARTER_END_TEXT,
@@ -246,6 +246,7 @@ import {
 type Panel =
   | 'magic-items'
   | 'trader'
+  | 'trader-equipment'
   | 'shortfall'
   | 'treasure'
   | 'builders'
@@ -832,7 +833,11 @@ export class HUD {
       'pointerdown',
       (e) => {
         const target = e.target as HTMLElement;
-        if (target.closest('[data-action], [data-add]')) this.pressedActions.add(e.pointerId);
+        if (
+          target.closest('[data-action], [data-add]') ||
+          target.matches('#effects-volume, #music-volume')
+        )
+          this.pressedActions.add(e.pointerId);
         const repeat = target.closest<HTMLButtonElement>('[data-repeat]');
         if (repeat && !repeat.disabled && e.isPrimary) this.startRepeat(repeat);
         if (target.id === 'replay-progress' && this.model.replay) {
@@ -893,6 +898,7 @@ export class HUD {
         if (t.id === 'import-file' && t.files?.[0]) void this.import(t.files[0]);
         if (t.id === 'import-replay-file' && t.files?.[0]) void this.importReplay(t.files[0]);
         if (t.id === 'replay-progress') this.model.seekReplay(Number(t.value));
+        if (t.id === 'effects-volume' || t.id === 'music-volume') this.model.changed();
       },
       { signal },
     );
@@ -900,6 +906,19 @@ export class HUD {
       'input',
       (e) => {
         const t = e.target as HTMLInputElement;
+        if (t.id === 'effects-volume' || t.id === 'music-volume') {
+          const key = t.id === 'effects-volume' ? 'effectsVolume' : 'musicVolume';
+          const percent = Math.max(0, Math.min(100, Number(t.value)));
+          this.model.state.settings[key] = percent / 100;
+          this.audio[key] = percent / 100;
+          setText(this.root.querySelector(`#${t.id}-value`), `${percent}%`);
+          const on =
+            key === 'effectsVolume'
+              ? this.model.state.settings.sound
+              : this.model.state.settings.music;
+          t.setAttribute('aria-valuetext', `${percent} percent${on ? '' : ', muted'}`);
+          this.model.changed(true);
+        }
         if (t.id === 'alchemy-amount') {
           this.alchemyAmount = Number(t.value);
           const { take, out, lost } = this.alchemyPreview();
@@ -1291,6 +1310,12 @@ export class HUD {
           : 'king';
         this.show('blacksmith');
         break;
+      case 'trader-equipment-hero':
+        if (HERO_KINDS.includes(arg as HeroKind) && m.heroProgress(arg as HeroKind)) {
+          this.inspectedSmithHero = arg as HeroKind;
+          this.show('trader-equipment');
+        }
+        break;
       case 'native-item':
       case 'native-slot':
         this.nativeOrePurchase = null;
@@ -1484,6 +1509,9 @@ export class HUD {
         break;
       case 'trader':
         this.show('trader');
+        break;
+      case 'trader-equipment':
+        this.show('trader-equipment');
         break;
       case 'trader-buy':
         m.buyDeal(arg);
@@ -2314,6 +2342,8 @@ export class HUD {
     this.model.endEdit();
     this.model.tick(Date.now());
     applyMotionPreference(this.model);
+    this.audio.effectsVolume = data.settings.effectsVolume ?? 1;
+    this.audio.musicVolume = data.settings.musicVolume ?? MUSIC_VOLUME;
     this.audio.enabled = data.settings.sound;
     this.audio.music(data.settings.music);
     let saved = false;
@@ -2503,13 +2533,13 @@ export class HUD {
     }
     if (this.model.battle && !this.model.replay) {
       if (e.key.toLowerCase() === 'h') {
-        this.action('hero-select');
+        if (!e.repeat) this.action('hero-select');
         return;
       }
       const troopIndex = TROOP_HOTKEYS.indexOf(e.key.toLowerCase());
       if (troopIndex >= 0) this.action(`troop:${TROOP_ORDER[troopIndex]}`);
-      const spellIndex = SPELL_HOTKEYS.indexOf(e.key);
-      if (spellIndex >= 0) this.action(`spell:${SPELL_ORDER[spellIndex]}`);
+      const spellIndex = SPELL_HOTKEYS.indexOf(e.key.toLowerCase());
+      if (spellIndex >= 0 && !e.repeat) this.action(`spell:${SPELL_ORDER[spellIndex]}`);
     }
     if (e.key === '+' || e.key === '=') this.scene.zoomBy(1.15);
     if (e.key === '-') this.scene.zoomBy(1 / 1.15);
@@ -2850,9 +2880,17 @@ export class HUD {
    ${button('edit-done', `${icon('Check', 20)}<span>Done</span>`, 'game-btn green edit-tool')}
  </div>`;
   }
+  private siegeUnavailable(kind: TroopKind) {
+    return !!this.model.battle?.siegeDeployed && isSiege(kind);
+  }
+  private troopCardLabel(kind: TroopKind, count: number, siegeBlocked: boolean) {
+    return `${TROOPS[kind].name}, ${siegeBlocked && count > 0 ? `${count} in reserve, siege machine already deployed` : `${count} available`}`;
+  }
   private troopCard(k: TroopKind, count: number, action: string, selected = false) {
     const flying = TROOPS[k].flying ? '<span class="air-tag">AIR</span>' : '';
-    return `<button class="troop-card ${selected ? 'selected' : ''} ${count === 0 ? 'empty' : ''}" data-action="${action}" aria-label="${TROOPS[k].name}, ${count} available" ${action.startsWith('troop') && count === 0 ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('troop:') && TROOP_HOTKEYS[TROOP_ORDER.indexOf(k)] ? `<kbd class="troop-key">${TROOP_HOTKEYS[TROOP_ORDER.indexOf(k)].toUpperCase()}</kbd>` : ''}<img src="${hudAsset(k)}" alt="" draggable="false">${flying}<span class="troop-level">★ ${this.model.troopDisplayLevel(k)}</span><span class="troop-name">${TROOPS[k].name}</span></button>`;
+    const siegeBlocked = action.startsWith('troop:') && this.siegeUnavailable(k);
+    const unavailable = count === 0 || siegeBlocked;
+    return `<button class="troop-card ${selected ? 'selected' : ''} ${unavailable ? 'empty' : ''}" data-action="${action}" aria-label="${this.troopCardLabel(k, count, siegeBlocked)}" ${action.startsWith('troop') && unavailable ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('troop:') && TROOP_HOTKEYS[TROOP_ORDER.indexOf(k)] ? `<kbd class="troop-key">${TROOP_HOTKEYS[TROOP_ORDER.indexOf(k)].toUpperCase()}</kbd>` : ''}<img src="${hudAsset(k)}" alt="" draggable="false">${flying}<span class="troop-level">★ ${this.model.troopDisplayLevel(k)}</span><span class="troop-name">${TROOPS[k].name}</span></button>`;
   }
   private spellCard(k: SpellKind, count: number, action: string, selected = false) {
     return `<button class="troop-card spell-card ${selected ? 'selected' : ''} ${count === 0 ? 'empty' : ''}" data-action="${action}" aria-label="${SPELLS[k].name}, ${count} available" ${action.startsWith('spell') && count === 0 ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('spell:') && SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)] ? `<kbd class="troop-key">${SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)]}</kbd>` : ''}<img src="${hudAsset(k)}" alt="" draggable="false"><span class="troop-level">★ ${this.model.spellLevel(k)}</span><span class="troop-name">${SPELLS[k].name.replace(' Spell', '')}</span></button>`;
@@ -3417,7 +3455,7 @@ export class HUD {
                 .map((k) => this.spellCard(k, b.spells[k], `spell:${k}`, m.activeSpell === k))
                 .join('')}`
             : ''
-        }</div></div><div class="battle-tip">${icon('MousePointer2', 19)}<span>Troops <b>1–7, Q, W, E</b> · Spells <b>8, 9, 0</b> · Heroes <b>H</b><br>Drag the base to move the camera</span></div></div>`
+        }</div></div><div class="battle-tip">${icon('MousePointer2', 19)}<span>Troops <b>1–7, Q, E, Z</b> · Spells <b>8, 9, 0</b> · Heroes <b>H</b><br>Drag the base to move the camera</span></div></div>`
   }`;
   }
 
@@ -3437,10 +3475,17 @@ export class HUD {
     </section>`;
   }
   private deployHint() {
-    const m = this.model;
+    const m = this.model,
+      b = m.battle!;
     if (m.activeHeroKind) return this.nativeDeploymentHint(m.activeHeroKind);
     if (m.activeHero) return this.kingDeploymentHint();
     if (m.activeSpell) return `Tap anywhere to cast ${SPELLS[m.activeSpell].name}`;
+    if (this.siegeUnavailable(m.activeTroop))
+      return `${TROOPS[m.activeTroop].name} · Only one siege machine per attack`;
+    if (b.remaining[m.activeTroop] <= 0)
+      return b.carriedArmy[m.activeTroop] > 0
+        ? `${TROOPS[m.activeTroop].name} · All deployed`
+        : 'Select a troop, hero or spell';
     return `${TROOPS[m.activeTroop].name} · ${TROOPS[m.activeTroop].prefersResources ? 'Resources ×2' : TROOPS[m.activeTroop].wallBreaker ? 'Walls ×40' : TROOPS[m.activeTroop].prefersDefenses ? 'Targets defenses' : TROOPS[m.activeTroop].role.toLowerCase()} · Tap, hold or drag to deploy`;
   }
   private nativeDeploymentHint(kind: HeroKind) {
@@ -3644,6 +3689,7 @@ export class HUD {
     return `<div class="modal-body treasury-body">${rows}<p class="treasury-note">The Star Bonus is banked here. Collecting moves everything at once; whatever your storages cannot hold stays in the Treasury. Without a clan, its size follows your Town Hall.</p></div><footer class="modal-footer">${button('treasury-collect', `${icon('Download', 16)} Collect`, 'game-btn green', any ? '' : 'disabled')}<span>Town Hall ${m.townhall?.level ?? 1} Treasury</span></footer>`;
   }
   private trader() {
+    if (this.panel === 'trader-equipment') return this.traderEquipment();
     const m = this.model;
     const art = (deal: TraderOffer) =>
       'item' in deal.good
@@ -3659,7 +3705,32 @@ export class HUD {
       })
       .join(
         '',
-      )}</div></div><footer class="modal-footer">${gem} ${n(m.state.gems)} gems ${button('magic-items', `${icon('Sparkles', 16)} Magic items`, 'game-btn stone')}<span>Raid Medal deals need the Clan Capital</span></footer>`;
+      )}</div></div><footer class="modal-footer trader-footer"><div class="trader-wallet">${gem} ${n(m.state.gems)} gems</div>${button('trader-equipment', `${icon('Anvil', 16)} Epic Equipment`, 'game-btn orange')}${button('magic-items', `${icon('Sparkles', 16)} Magic items`, 'game-btn stone')}<span>Raid Medal deals need the Clan Capital</span></footer>`;
+  }
+  /** Permanent Epic purchases share the Blacksmith command and do not consume weekly deals. */
+  private traderEquipment() {
+    const m = this.model,
+      gear = m.gear,
+      heroes = HERO_KINDS.filter((hero) => m.heroProgress(hero));
+    if (heroes.length && !heroes.includes(this.inspectedSmithHero))
+      this.inspectedSmithHero = heroes[0];
+    const hero = this.inspectedSmithHero,
+      catalog = heroes.length ? heroItems(hero).filter((slug) => itemRarity(slug) === 'EPIC') : [];
+    const cards = catalog.map((slug) => {
+      const level = gear.levels[slug],
+        owned = level !== undefined,
+        issue = owned
+          ? 'Owned'
+          : !m.blacksmith
+            ? 'Build a Blacksmith'
+            : m.battle
+              ? 'Finish your battle first'
+              : m.state.gems < EPIC_ITEM_GEMS
+                ? 'Not enough gems'
+                : null;
+      return `<article class="magic-item trader-epic" data-epic="${slug}">${nativeItemImage(slug)}<div><h3>${nativeItemName(slug)} <b>${owned ? `Level ${level}` : 'Epic'}</b></h3><p>For ${HERO_SOURCE[hero]} · ${owned ? 'Available at your Blacksmith' : 'Permanent level 1 unlock'}</p><div class="magic-item-actions">${button(`epic-buy:${slug}`, owned ? 'Owned' : `${gem} ${n(EPIC_ITEM_GEMS)}`, `game-btn ${issue ? 'stone' : 'green'}`, issue ? 'disabled' : '')}${button(`native-item:${slug}`, 'Details', 'game-btn stone')}${issue && !owned ? `<small class="item-note">${issue}</small>` : ''}</div></div></article>`;
+    });
+    return `${heroes.length ? this.smithTabs('trader-equipment-hero') : ''}<div class="modal-body trader-equipment-body">${cards.length ? `<div class="magic-item-grid">${cards.join('')}</div>` : `<p class="army-empty">${heroes.length ? 'This hero has no Epic equipment.' : 'Recruit a hero at the Hero Hall to see its Epic equipment.'}</p>`}</div><footer class="modal-footer trader-footer"><div class="trader-wallet">${gem} ${n(m.state.gems)} gems</div>${button('trader', `${icon('ShoppingBasket', 16)} Weekly Deals`, 'game-btn stone')}<span>Buy once. Equip at the Blacksmith.</span></footer>`;
   }
   /** The Town Hall's magic items: what each does, how many are held, and its use or sale. */
   private magicItems() {
@@ -3874,11 +3945,11 @@ export class HUD {
     </div>`;
   }
   /** Hero tabs above the forge: one loadout per hero the village has. */
-  private smithTabs() {
+  private smithTabs(action = 'blacksmith-hero') {
     const m = this.model;
     const tab = (value: HeroKind, label: string) =>
       button(
-        `blacksmith-hero:${value}`,
+        `${action}:${value}`,
         label,
         `tab ${this.inspectedSmithHero === value ? 'active' : ''}`,
         `role="tab" aria-selected="${this.inspectedSmithHero === value}"`,
@@ -4227,6 +4298,7 @@ export class HUD {
       heroes: 'Hero Hall',
       'magic-items': 'Magic items',
       trader: 'Weekly Deals',
+      'trader-equipment': 'Epic Equipment',
       shortfall: this.shortfallTitle(),
       treasure: this.treasureTitle(),
       builders: 'Builders',
@@ -4255,11 +4327,12 @@ export class HUD {
       'army-presets': 'Save a composition. Be ready in one tap.',
       cookbook: ARMY_RECIPE_TEXTS.info,
       'battle-log': 'Your last twenty attacks, kept with your village.',
-      blacksmith: 'Forge your King’s abilities.',
+      blacksmith: 'Equip your heroes and upgrade their abilities.',
       heroes: 'A champion for every attack.',
       journey: 'Every hero level moves you along the track.',
       'magic-items': 'Kept in your Town Hall. Use them, or cash them in for gems.',
       trader: `New deals in ${time((traderWeekEnds(this.model.clock) - this.model.clock) / 1000)}!`,
+      'trader-equipment': `Permanent level 1 unlocks · ${n(EPIC_ITEM_GEMS)} gems each`,
       treasury: 'Star Bonus loot, kept safe in your Clan Castle.',
       shortfall: 'Gems complete the price, then it goes ahead.',
       treasure: 'Straight into your storages.',
@@ -4292,7 +4365,7 @@ export class HUD {
             ? this.treasureBody()
             : this.panel === 'builders'
               ? this.builderMenu()
-              : this.panel === 'trader'
+              : this.panel === 'trader' || this.panel === 'trader-equipment'
                 ? this.trader()
                 : this.panel === 'treasury'
                   ? this.treasury()
@@ -4891,6 +4964,14 @@ export class HUD {
 
   private settings() {
     const s = this.model.state.settings;
+    const volume = (kind: 'sound' | 'music', on: boolean) => {
+      const id = kind === 'sound' ? 'effects-volume' : 'music-volume';
+      const value = Math.round(
+        (kind === 'sound' ? (s.effectsVolume ?? 1) : (s.musicVolume ?? MUSIC_VOLUME)) * 100,
+      );
+      const name = kind === 'sound' ? 'Sound effects volume' : 'Music volume';
+      return `<label class="audio-volume" for="${id}"><span>Volume${on ? '' : ' · Muted'}</span><output id="${id}-value" for="${id}">${value}%</output><input id="${id}" type="range" min="0" max="100" step="1" value="${value}" aria-label="${name}" aria-valuetext="${value} percent${on ? '' : ', muted'}"></label>`;
+    };
     return `<div class="modal-body settings-body">${(
       [
         ['sound', 'Sound effects', 'Little sounds for big moments.', s.sound],
@@ -4934,7 +5015,7 @@ export class HUD {
     )
       .map(
         ([k, title, desc, on]) =>
-          `<div class="setting-row"><div><h3>${title}</h3><p>${desc}</p></div><button class="toggle ${on ? 'on' : ''}" data-action="${k}" role="switch" aria-checked="${on}" aria-label="${title}"><span></span></button></div>`,
+          `<div class="setting-row${k === 'sound' || k === 'music' ? ' audio-setting' : ''}"><div class="setting-copy"><h3>${title}</h3><p>${desc}</p></div><button class="toggle ${on ? 'on' : ''}" data-action="${k}" role="switch" aria-checked="${on}" aria-label="${title}"><span></span></button>${k === 'sound' || k === 'music' ? volume(k, on) : ''}</div>`,
       )
       .join('')}${
       // iPhone Safari has no full screen for pages; an installed copy runs without its bars.
@@ -5294,14 +5375,18 @@ export class HUD {
         const spell = troop ? null : (action.slice('spell:'.length) as SpellKind);
         const count = troop ? (b.remaining[troop] ?? 0) : (b.spells[spell!] ?? 0);
         const name = troop ? TROOPS[troop].name : SPELLS[spell!].name;
+        const siegeBlocked = !!troop && this.siegeUnavailable(troop);
+        const unavailable = count === 0 || siegeBlocked;
         const selected = troop
           ? !m.activeHero && !m.activeHeroKind && !m.activeSpell && m.activeTroop === troop
           : m.activeSpell === spell;
         setText(el.querySelector('.troop-count'), `x${count}`);
-        if (el.classList.contains('empty') !== (count === 0)) el.classList.toggle('empty');
+        if (el.classList.contains('empty') !== unavailable) el.classList.toggle('empty');
         if (el.classList.contains('selected') !== selected) el.classList.toggle('selected');
-        if (el.disabled !== (count === 0)) el.disabled = count === 0;
-        const label = `${name}, ${count} available`;
+        if (el.disabled !== unavailable) el.disabled = unavailable;
+        const label = troop
+          ? this.troopCardLabel(troop, count, siegeBlocked)
+          : `${name}, ${count} available`;
         if (el.getAttribute('aria-label') !== label) el.setAttribute('aria-label', label);
       }
       setText(refs.deployLabel, this.deployHint());

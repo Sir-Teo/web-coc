@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?lazyart');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   await expect(page.locator('#loading')).toBeHidden();
@@ -35,7 +35,7 @@ test('all eight levels render distinct materials, matching links and stable feet
           ids.every(
             (id, i) =>
               window.__game.scene.sprites.get(id)?.texture.key ===
-              `wall-level-${Math.floor(i / 3) + 1}`,
+              (i < 3 ? 'wall' : `wall-level-${Math.floor(i / 3) + 1}`),
           ),
         ids,
       ),
@@ -209,5 +209,71 @@ test('moving one high-level wall retains its artwork while new wall placement us
             ?.texture.key,
       ),
     )
-    .toBe('wall-level-1');
+    .toBe('wall');
+});
+
+test('level-one walls share the base upload and restore it after context loss on a phone', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.evaluate(() => {
+    const { model, scene } = window.__game;
+    const wall = model.state.buildings.find((building) => building.kind === 'wall');
+    wall.level = 1;
+    model.changed();
+    scene.sync();
+  });
+  const resident = () =>
+    page.evaluate(() => {
+      const { scene, game, model } = window.__game;
+      const sources = Object.values(scene.textures.list)
+        .flatMap((texture) => texture.source ?? [])
+        .filter((source) =>
+          (source.image?.currentSrc || source.image?.src || '').includes('/walls-v1/level-1.'),
+        );
+      const wrappers = new Set(sources.map((source) => source.glTexture));
+      const walls = model.state.buildings.filter(
+        (building) => building.kind === 'wall' && building.level === 1,
+      );
+      return {
+        sources: sources.length,
+        wrappers: wrappers.size,
+        bytes: [...wrappers].reduce((sum, texture) => sum + texture.width * texture.height * 4, 0),
+        oldKey: scene.textures.exists('wall-level-1'),
+        walls:
+          walls.length > 0 &&
+          walls.every((wall) => scene.sprites.get(wall.id)?.texture.key === 'wall'),
+        error: game.renderer.gl.getError(),
+      };
+    });
+  const expected = {
+    sources: 1,
+    wrappers: 1,
+    bytes: 196_608,
+    oldKey: false,
+    walls: true,
+    error: 0,
+  };
+  await expect.poll(resident).toEqual(expected);
+  await page.evaluate(async () => {
+    const { game } = window.__game;
+    const extension = game.renderer.gl.getExtension('WEBGL_lose_context');
+    await new Promise<void>((resolve) => {
+      game.canvas.addEventListener(
+        'webglcontextlost',
+        () => setTimeout(() => extension.restoreContext(), 50),
+        { once: true },
+      );
+      game.canvas.addEventListener(
+        'webglcontextrestored',
+        () => game.events.once('postrender', resolve),
+        { once: true },
+      );
+      extension.loseContext();
+    });
+  });
+  await expect.poll(resident).toEqual(expected);
+  expect(errors).toEqual([]);
 });

@@ -174,6 +174,7 @@ export function characterPose(
   if (battle.elapsed < defender.spawnedAt) return null;
   const stats = garrisonStats(defender.kind, defender.level);
   const animation = stats.animation;
+  if (!characterArtLoaded(animation)) return null;
   const art = characterArt(animation);
   const states = statesFor(animation);
   if (defender.hp <= 0) {
@@ -254,7 +255,7 @@ export function characterBarHeight(animation: string) {
   if (animation === 'Dragon7') return 94;
   if (animation === 'Balloon Goblin8') return 115;
   // Before the graphs arrive, a typical troop's height.
-  if (!characterArtLoaded()) return 60;
+  if (!characterArtLoaded(animation)) return 60;
   let height = barHeights.get(animation);
   if (height !== undefined) return height;
   const row = statesFor(animation).idle[0];

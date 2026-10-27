@@ -3,6 +3,7 @@ import { nativeBlendMode } from './native-blend';
 import { PART_DEPTH_STEP } from './unit-depth';
 import {
   configureNativeTriangleRendering,
+  nativeQuadTriangleBatcher,
   NATIVE_ADDITIVE_TINT_MODE,
   NATIVE_COLOR_TINT_MODE,
 } from './quad-renderer';
@@ -443,6 +444,7 @@ export class NativeMeshView {
    * alpha the real additive mode must keep, so they keep it.
    */
   private additiveTint: boolean;
+  private readonly triangleBatcher: Phaser.Renderer.WebGL.RenderNodes.BatchHandlerTri | undefined;
   /**
    * Apply saturating leaf colors as a GPU tint (clamped after filtering) instead of baking the
    * sampled texels: a per-color-step canvas bake and texture upload otherwise stalls the frame
@@ -465,6 +467,7 @@ export class NativeMeshView {
   ) {
     this.renderer = scene.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer;
     this.additiveTint = configureNativeTriangleRendering(this.renderer) && !detached;
+    this.triangleBatcher = nativeQuadTriangleBatcher(this.renderer);
   }
   private baseTexture(id: number) {
     return (this.textureKeys[id] ??= nativeMeshTexture(this.prefix, id));
@@ -703,6 +706,8 @@ export class NativeMeshView {
           true,
         ) as NativeMesh;
         mesh.setOrigin(0, 0).setRenderAsTriangles(true);
+        if (this.triangleBatcher)
+          Object.assign(mesh.customRenderNodes, { BatchHandlerTriangles: this.triangleBatcher });
         if (!this.detached) this.scene.add.existing(mesh);
         this.meshes.set(first.key, mesh);
         runMeshes[order] = mesh;

@@ -54,6 +54,22 @@ export const CHARACTER_GRAPHS = catalog.graphs;
 export const CHARACTER_GRAPH_ALIASES = catalog.graphAliases;
 /** Later projectile rows grouped into their own graphs (`projectiles/<group>`). */
 export const PROJECTILE_GROUPS = catalog.projectileGroups;
+const animationProjectileGroups = new Map<string, ReadonlySet<string>>();
+/** Captured later projectile groups used by any row of this animation block. */
+export function characterProjectileGroups(animation: string): ReadonlySet<string> {
+  const key = animation.replaceAll(' ', '');
+  const known = animationProjectileGroups.get(key);
+  if (known) return known;
+  const groups = new Set<string>();
+  for (const rows of Object.values(catalog.characters))
+    for (const row of rows) {
+      if (String(row.Animation).replaceAll(' ', '') !== key) continue;
+      for (const [group, names] of Object.entries(PROJECTILE_GROUPS))
+        if (typeof row.Projectile === 'string' && names.includes(row.Projectile)) groups.add(group);
+    }
+  animationProjectileGroups.set(key, groups);
+  return groups;
+}
 /** Globals read by the pinned older engine that this client no longer contains. */
 export const ABSENT_GLOBALS = catalog.absentGlobals;
 /** Pinned globals read by Defending Builder repairs (healer slot percentages, post-damage delay). */

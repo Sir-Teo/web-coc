@@ -26,6 +26,8 @@ Every view named by a block's rows is captured: `_1`, `_2` and `_3` for directio
 
 Each character file contains exactly one black-RGB shape with nonzero alpha among the shapes reachable from its animation exports (shape 0; shape 3 for Super Minion). Projectile shadows are excluded. That shape is recorded as the original ground shadow and rendered on its own layer. Dragon 7 reproduces the previously verified shape 0 with maximum alpha 188.
 
+Dragon 5 and Golden Dragon use `texture-0-compact-v1.png`: overlapping sampling regions are clustered with a bounded area allowance, then packed without resampling. Golden Dragon and garrison Dragon 7 share the same verified page. The pages require 13,329,792 and 15,955,328 decoded RGBA bytes respectively, down from 21,404,320 and 22,313,760. Every original sampling footprint retains its RGBA hash, including colors under transparency. Geometry and animation data stay exact. The evidence records the original pages under `legacy`; those files remain byte-identical at their original URLs for cached modules using the previous UVs. `tests/native-character-atlas.test.ts` checks both layouts against the source regions, normalized UV translation, graph invariants and the shared Dragon page. Rebuild and check both the character and garrison importers when changing this packing.
+
 ## Level resolution
 
 `AllianceUnitLevel` selects the unique row whose `VisualLevel` equals it. A `DefensiveTroop` column then substitutes that character at the same VisualLevel. Evidence from the pinned `logic/npcs.csv`, recorded in `catalog.levelResolution.evidence`:

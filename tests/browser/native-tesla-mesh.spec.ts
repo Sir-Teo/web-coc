@@ -153,6 +153,7 @@ test('native Tesla reveals and isolated electricity groups match source pixels a
 test('isolated alpha composes once and Tesla buffers are released across idle, zoom and destruction', async ({
   page,
 }) => {
+  await page.addInitScript(() => performance.setResourceTimingBufferSize(4000));
   await page.goto('/');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   const report = await page.evaluate(async () => {
@@ -163,9 +164,17 @@ test('isolated alpha composes once and Tesla buffers are released across idle, z
     scene.cameras.main.setScroll(0, 0).setZoom(1).setBackgroundColor('#304135');
     const { default: graph } = await import('/reference/tesla/runtime.json');
     const { nativeScenePoses } = await import('/src/game/native-mesh.ts');
-    const { NativeSceneView } = await import('/src/game/native-scene-view.ts');
+    // Vite can timestamp the pool import after an edit. Flush the same module instance the
+    // live view uses, rather than creating another pool by importing its untimestamped URL.
+    const resource = (path: string) =>
+      performance.getEntriesByType('resource').find((entry) => entry.name.includes(path))!.name;
+    const { NativeSceneView } = await import(
+      /* @vite-ignore */ resource('/src/game/native-scene-view.ts')
+    );
     const { preloadNativeMeshes } = await import('/src/game/native-mesh-scene.ts');
-    const { flushGroupBuffers } = await import('/src/game/native-group-buffer.ts');
+    const { flushGroupBuffers } = await import(
+      /* @vite-ignore */ resource('/src/game/native-group-buffer.ts')
+    );
     flushGroupBuffers(scene);
     preloadNativeMeshes(scene, graph, 'tesla-lifecycle');
     await new Promise<void>((resolve) => {

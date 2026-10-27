@@ -655,9 +655,14 @@ export class NativeDefensePresentation {
   }
   /** Firespitter balls report their hits through the shot record; each new one plays the hit effect. */
   private renderPiercingHits(battle: Battle, iso: (x: number, y: number) => Point) {
+    const shots = battle.nativePiercing;
+    if (!shots?.length) {
+      this.pierced.clear();
+      return;
+    }
     const live = new Set<string>();
     const buildings = buildingIndex(battle);
-    for (const shot of battle.nativePiercing ?? []) {
+    for (const shot of shots) {
       live.add(shot.id);
       const seen = this.pierced.get(shot.id) ?? 0;
       if (shot.hit.length <= seen) continue;

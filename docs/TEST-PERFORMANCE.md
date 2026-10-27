@@ -1,6 +1,7 @@
 # Test performance
 
-Vitest isolates test files and runs up to eight workers. The simulation and replay
+Vitest isolates test files and runs up to eight workers, capped by the runtime's
+available CPU parallelism (including container quotas). The simulation and replay
 sweeps do substantially more work than ordinary unit tests; the configuration gives
 them a three-minute timeout. Prefer a focused run during development and one full
 run before review.

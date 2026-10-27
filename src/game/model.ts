@@ -713,6 +713,10 @@ export interface Save {
     sound: boolean;
     music: boolean;
     reducedMotion: boolean;
+    /** Effects channel volume, 0–1; absent keeps the original full effects mix. */
+    effectsVolume?: number;
+    /** Music channel volume, 0–1; absent keeps the original half-volume mix. */
+    musicVolume?: number;
     /** Live attack speed (1×, 2× or 4×); absent means 1×. Replays keep their own speed. */
     battleSpeed?: BattleSpeed;
     /** Full motion although the operating system asks to reduce it (an explicit override). */
@@ -6155,6 +6159,40 @@ export class GameModel {
       !(b.nativeUnicornController && kind === 'unicorn')
     );
   }
+  private readonly buildingIdCache = new WeakMap<
+    Battle,
+    {
+      buildings: Building[];
+      refs: Building[];
+      ids: number[];
+      map: Map<number, Building>;
+    }
+  >();
+  /** All-building lookup: membership stays fixed through this phase; object state stays live. */
+  private buildingIds(b: Battle): Map<number, Building> {
+    const hit = this.buildingIdCache.get(b);
+    if (hit && hit.buildings === b.buildings && hit.refs.length === b.buildings.length) {
+      let same = true;
+      for (let i = 0; i < hit.refs.length; i++) {
+        if (hit.refs[i] !== b.buildings[i] || hit.ids[i] !== b.buildings[i].id) {
+          same = false;
+          break;
+        }
+      }
+      if (same) return hit.map;
+    }
+    // A new map preserves earlier phase snapshots if a layout changes. Last id wins,
+    // exactly as in the previous Map constructed from an array of entry pairs.
+    const map = new Map<number, Building>();
+    for (const building of b.buildings) map.set(building.id, building);
+    this.buildingIdCache.set(b, {
+      buildings: b.buildings,
+      refs: b.buildings.slice(),
+      ids: b.buildings.map((building) => building.id),
+      map,
+    });
+    return map;
+  }
   /** Walls by tile for per-waypoint lookups; callers verify hp live at each hit. */
   private sharedWalls(b: Battle) {
     const wallTile = new Map<number, Building>();
@@ -6168,10 +6206,12 @@ export class GameModel {
     shared: { wallTile: Map<number, Building> },
   ): NativeTroopContext {
     const buildings = b.buildings.filter((v) => !concealedTesla(b, v));
+    const buildingsById = new Map<number, Building>();
+    for (const building of buildings) buildingsById.set(building.id, building);
     return {
       battle: b,
       buildings,
-      buildingsById: new Map(buildings.map((v) => [v.id, v])),
+      buildingsById,
       wallTile: shared.wallTile,
       damageBuilding: (target, amount, at, spell) => this.damage(target, amount, at, spell),
       effect: (fx) => this.onEffect(fx),
@@ -6379,7 +6419,9 @@ export class GameModel {
     const breaches = openBreaches(b);
     if (native) {
       native.buildings = knownBuildings;
-      native.buildingsById = new Map(knownBuildings.map((v) => [v.id, v]));
+      const buildingsById = new Map<number, Building>();
+      for (const building of knownBuildings) buildingsById.set(building.id, building);
+      native.buildingsById = buildingsById;
       native.wallTile = shared.wallTile;
       native.breaches = breaches;
     }
@@ -6421,7 +6463,7 @@ export class GameModel {
     // The legacy loop spends from the shared budget the native phase used first.
     const repathState = pathBudget ?? { count: 0, limit: Number.POSITIVE_INFINITY };
     // All-buildings scope (concealed included): distinct from the native maps above.
-    const buildingById = new Map(b.buildings.map((v) => [v.id, v]));
+    const buildingById = this.buildingIds(b);
     // Per-tick targetability for the non-hp reasons (trap, concealment, hiding).
     // hp is checked live at each use so mid-tick kills keep exact semantics.
     const untargetableStatus = new Set<number>();
@@ -6841,6 +6883,9 @@ export class GameModel {
       }
       if (tower.kind === 'inferno') continue;
       const d = BUILDINGS[tower.kind];
+      // Walls, storage and other unarmed buildings need no attack/status calculations.
+      // Native weapons (including armed Huts and Town Halls) were handled above.
+      if (!d.damage) continue;
       const canAct = b.nativeRoster
         ? tower.hp > 0 && !concealedTesla(b, tower) && !buildingImmune(b, tower)
         : targetableBuilding(b, tower);
@@ -6866,14 +6911,7 @@ export class GameModel {
         );
         continue;
       }
-      if (
-        !d.damage ||
-        !canAct ||
-        !presentBuilding(b, tower) ||
-        tower.constructing ||
-        tower.upgradeEnd
-      )
-        continue;
+      if (!canAct || !presentBuilding(b, tower) || tower.constructing || tower.upgradeEnd) continue;
       const activeDt =
         Math.min(dt, Math.max(0, b.elapsed - (b.defenseStuns[tower.id] ?? 0))) * tempo;
       if (activeDt <= 0) continue;

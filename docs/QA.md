@@ -40,9 +40,10 @@ device scale. Traces and failure screenshots go under `output/`.
 
 Specs wait for `window.__game.scene.artSettled` rather than `scene.ready`: `ready`
 turns true once the home village can draw, before the post-boot art batch has
-loaded. On the dev server every defense family loads right after boot; add
-`?lazyart` to a spec's URL to test production's load-on-first-use behavior (see
-[the architecture guide](ARCHITECTURE.md)). Wait on `ready` only to test that
+loaded. Desktop development preloads every defense family after boot; coarse-pointer
+phone previews use production's load-on-first-use behavior. Add `?eagerart` for a phone
+art gallery, or `?lazyart` to force demand loading on any device (it wins if both are
+present; see [the architecture guide](ARCHITECTURE.md)). Wait on `ready` only to test that
 window itself.
 
 `artSettled` only says nothing is still loading; it does not prove anything drew.

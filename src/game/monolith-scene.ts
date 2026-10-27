@@ -40,10 +40,12 @@ const player = sourceEffectPlayer({
   prefix: 'monolith',
 });
 
-export function preloadMonolith(scene: Phaser.Scene) {
+export function preloadMonolith(scene: Phaser.Scene, fetching?: (key: string) => boolean) {
   preloadNativeMeshes(scene, MONOLITH_GRAPH, PREFIX);
-  for (const level of MONOLITH_ART_LEVELS)
-    scene.load.image(monolithTexture(level), monolithAsset(level));
+  for (const level of MONOLITH_ART_LEVELS) {
+    const key = monolithTexture(level);
+    if (!fetching?.(key)) scene.load.image(key, monolithAsset(level));
+  }
   for (const [path, sound] of Object.entries(MONOLITH_SOUNDS))
     scene.load.binary(sample(path), '/' + sound.path);
 }

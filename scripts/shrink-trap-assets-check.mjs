@@ -9,7 +9,7 @@ const assets = [
   ...Object.values(native.world.textures),
   ...Object.values(native.previews),
   ...Object.values(native.sounds),
-].map((value) => '/' + value.path);
+].map((value) => '/' + value.path.replace(/\.png$/, '.webp'));
 const live = process.argv.includes('--live');
 let fixture;
 if (live) {
@@ -75,6 +75,9 @@ try {
       const context = await browser.newContext({
         viewport: { width: 390, height: 844 },
         deviceScaleFactor: 2,
+        // Chromium below verifies offline workers; keep the WebKit replay controls free of
+        // worker update banners during its dedicated online playback check.
+        ...(name === 'webkit' ? { serviceWorkers: 'block' } : {}),
       });
       const page = await context.newPage(),
         errors = [];
@@ -130,7 +133,7 @@ try {
           expect(value.height).toBeGreaterThan(0);
         }
       }
-      expect(online.find((v) => v.path.endsWith('/armed.png'))).toMatchObject({
+      expect(online.find((v) => v.path.endsWith('/armed.webp'))).toMatchObject({
         width: 226,
         height: 340,
       });
@@ -168,6 +171,9 @@ try {
           animations: 'disabled',
         });
         await page.getByRole('slider', { name: 'Replay position' }).press('End');
+        await expect
+          .poll(async () => (await read()).replay.seeking, { timeout: 30000 })
+          .toBe(false);
         await expect(page.locator('.replay-status')).toContainText('Replay complete');
         expect((await read()).battle.result).toEqual(fixture.result);
         const download = page.waitForEvent('download');

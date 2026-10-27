@@ -54,10 +54,12 @@ function presentedRock(p: ScattershotProjectile, overrun: number) {
   return { ...p, x: p.x + (dx / remaining) * step, y: p.y + (dy / remaining) * step };
 }
 
-export function preloadScattershot(scene: Phaser.Scene) {
+export function preloadScattershot(scene: Phaser.Scene, fetching?: (key: string) => boolean) {
   preloadNativeMeshes(scene, SCATTERSHOT_GRAPH, PREFIX);
-  for (const level of SCATTERSHOT_ART_LEVELS)
-    scene.load.image(scattershotTexture(level), scattershotAsset(level));
+  for (const level of SCATTERSHOT_ART_LEVELS) {
+    const key = scattershotTexture(level);
+    if (!fetching?.(key)) scene.load.image(key, scattershotAsset(level));
+  }
   for (const [path, sound] of Object.entries(SCATTERSHOT_SOUNDS))
     scene.load.binary(scattershotSample(path), '/' + sound.path);
 }

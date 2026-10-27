@@ -11,6 +11,7 @@ import {
 } from './native-mesh';
 import { hasNativeDefenseBody, nativeDefenseBody } from './native-defense-poses';
 import { nativeTrapValues } from './native-traps';
+import { DecodedImageCache } from './decoded-image-cache';
 import progressionSource from '../../reference/full-client/progression.json' with { type: 'json' };
 const progression = progressionSource as unknown as {
   buildings: Record<string, (typeof progressionSource.buildings)['townhall']>;
@@ -52,8 +53,8 @@ function fetchPack(key: string, path: string) {
   fetched.set(key, pending);
   return pending;
 }
-/** Decoded texture images by texture key, shared by every presentation. */
-const decoded = new Map<string, Promise<HTMLImageElement>>();
+/** Recent decoded pages; active Phaser textures independently retain their own images. */
+const decoded = new DecodedImageCache<HTMLImageElement>(64 * 1024 * 1024);
 /**
  * The textures one level of a pack draws, decoded and ready to upload. A paged pack (see
  * scripts/native-pages.mjs) tags each page with the levels that draw it, so a village fetches
@@ -67,17 +68,12 @@ function fetchLevel(key: string, pack: Pack, level: number) {
         .filter(([, texture]) => !texture.levels || texture.levels.includes(level))
         .map(async ([id, texture]) => {
           const textureKey = nativeMeshTexture(`village:${key}:${name}`, id);
-          let image = decoded.get(textureKey);
-          if (!image) {
-            image = (async () => {
-              const element = new Image();
-              element.src = '/' + texture.path;
-              await element.decode();
-              return element;
-            })();
-            image.catch(() => decoded.delete(textureKey));
-            decoded.set(textureKey, image);
-          }
+          const image = decoded.get(textureKey, async () => {
+            const element = new Image();
+            element.src = '/' + texture.path;
+            await element.decode();
+            return element;
+          });
           images.set(textureKey, await image);
         }),
     ),
@@ -241,7 +237,18 @@ export class VillageNativePresentation {
    * defense body, no resource fill): while they hold, nothing in its views can change, so the
    * per-field signature strings are not even built. Walls are most of a large layout.
    */
-  private still = new Map<number, { fields: readonly string[]; level: number; density: number }>();
+  private still = new Map<
+    number,
+    {
+      fields: readonly string[];
+      kind: BuildingKind;
+      level: number;
+      density: number;
+      x: number;
+      y: number;
+      constructing: boolean;
+    }
+  >();
   /** Buildings whose views are currently hidden by the viewport cull. */
   private hidden = new Set<number>();
   private aims = new Map<number, Point>();
@@ -253,6 +260,8 @@ export class VillageNativePresentation {
   private placement?: { building: Building; valid: boolean };
   private seen = new Set<number>();
   private used = new Set<string>();
+  /** Identical building samples share poses only for this pass; never retain a timeline cache. */
+  private frameSamples = new Map<string, readonly NativeScenePose[]>();
   preview(building?: Building, valid = true) {
     this.placement =
       building && hasVillageNativeArt(building.kind)
@@ -354,13 +363,14 @@ export class VillageNativePresentation {
   }
   clear() {
     for (const id of [...this.views.keys()]) this.drop(id);
+    this.frameSamples.clear();
     this.aims.clear();
     this.wantedPacks.clear();
     this.wantedLevels.clear();
   }
   /**
-   * Keep GPU pages for home and the current village when changing modes. Decoded images stay
-   * warm for a later visit, but obsolete uploads (including ones still decoding) are released.
+   * Keep GPU pages for home and the current village when changing modes. Recent decoded images
+   * stay warm within the cache budget; obsolete uploads (including pending ones) are released.
    * Clear the old views first so no mesh references a removed texture.
    */
   releaseExcept(buildings: Iterable<Pick<Building, 'kind' | 'level'>>) {
@@ -422,6 +432,7 @@ export class VillageNativePresentation {
     iso: (x: number, y: number) => { x: number; y: number },
     sprites: Map<number, Phaser.GameObjects.Image>,
   ) {
+    this.frameSamples.clear();
     this.wantedPacks.clear();
     this.wantedLevels.clear();
     const seen = this.seen;
@@ -516,8 +527,12 @@ export class VillageNativePresentation {
         if (
           last &&
           last.fields === fields &&
+          last.kind === b.kind &&
           last.level === b.level &&
           last.density === density &&
+          last.x === earlyPoint.x &&
+          last.y === earlyPoint.y &&
+          last.constructing === !!b.constructing &&
           this.views.has(b.id)
         ) {
           seen.add(b.id);
@@ -525,7 +540,15 @@ export class VillageNativePresentation {
           if (fallback?.visible) fallback.setVisible(false);
           continue;
         }
-        this.still.set(b.id, { fields, level: b.level, density });
+        this.still.set(b.id, {
+          fields,
+          kind: b.kind,
+          level: b.level,
+          density,
+          x: earlyPoint.x,
+          y: earlyPoint.y,
+          constructing: !!b.constructing,
+        });
       }
       // Battle bodies (turret aim, attack, activation and mode) of the Town Hall 11-18 defenses.
       const source = (field: string, variant?: string) => {
@@ -557,7 +580,6 @@ export class VillageNativePresentation {
             )
           : undefined;
       if (body?.aim && b.id !== -1) this.aims.set(b.id, body.aim);
-      const root: NativeMatrix = [1.2, 0, 0, 0, 1.2, -32 * size];
       const tintedPreview = b.id === -1 && !this.placement?.valid;
       // Resolve fields to scene groups and their render signatures before sampling any pose.
       const groups = new Map<
@@ -648,15 +670,29 @@ export class VillageNativePresentation {
         // resample, retessellation and object updates entirely. The placement preview (tinted
         // per validity) always renders.
         if (b.id !== -1 && entry.signature === signature) continue;
-        const poses: NativeScenePose[] = [];
-        for (const part of group.parts) {
-          const sampled = nativeScenePoses(part.graph, part.name, part.clock, part.controls, root);
-          if (tintedPreview)
-            for (const pose of sampled)
-              pose.multiply = pose.multiply.map((v, channel) =>
-                channel === 1 || channel === 2 ? v * 0.45 : v,
-              );
-          for (const pose of sampled) poses.push(pose);
+        const sampleKey = `${group.prefix}|${group.signature}|${size}`;
+        let poses = tintedPreview ? undefined : this.frameSamples.get(sampleKey);
+        if (!poses) {
+          const root: NativeMatrix = [1.2, 0, 0, 0, 1.2, -32 * size];
+          const sampledPoses: NativeScenePose[] = [];
+          for (const part of group.parts) {
+            const sampled = nativeScenePoses(
+              part.graph,
+              part.name,
+              part.clock,
+              part.controls,
+              root,
+            );
+            if (tintedPreview)
+              for (const pose of sampled)
+                pose.multiply = pose.multiply.map((v, channel) =>
+                  channel === 1 || channel === 2 ? v * 0.45 : v,
+                );
+            for (const pose of sampled) sampledPoses.push(pose);
+          }
+          poses = sampledPoses;
+          // Invalid previews mutate their tint. Shared building samples stay read-only.
+          if (!tintedPreview) this.frameSamples.set(sampleKey, poses);
         }
         entry.view.render(poses, point.x, point.y, depth, alpha);
         entry.signature = b.id === -1 ? undefined : signature;

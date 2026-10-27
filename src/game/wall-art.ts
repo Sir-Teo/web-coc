@@ -94,7 +94,10 @@ const WALL_ART: WallArt[] = [
 /** The playable catalog supports levels 1–8; imported higher levels use the last available artwork. */
 export const wallArt = (level: number): WallArt =>
   WALL_ART[Math.min(8, Math.max(1, Math.floor(level) || 1)) - 1];
-export const wallTexture = (level: number) => `wall-level-${wallArt(level).level}`;
+export const wallTexture = (level: number) => {
+  const art = wallArt(level);
+  return art.level === 1 ? 'wall' : `wall-level-${art.level}`;
+};
 export const wallAsset = (level: number) =>
   `/assets/environment/walls-v1/level-${wallArt(level).level}.webp`;
 export const WALL_ART_LEVELS = WALL_ART.map((a) => a.level);

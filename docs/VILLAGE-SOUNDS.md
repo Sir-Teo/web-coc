@@ -23,6 +23,35 @@ Generic Pick Up and Boost Start are imported too, for moments this game does not
 
 They are fetched after the first gesture with sound on, never at boot, and decoded like the other native samples. Until a sound is decoded, or where a browser cannot decode Ogg, the generated tone it replaces plays instead. Vibration follows the same moments either way. A sample plays at the client's volume scaled as every native sample is (`volume × 0.12`), and at most eight interface sounds overlap.
 
-Turning Sound effects off immediately stops battle cues, interface samples and generated fallback tones, including when Music keeps the shared audio context running. Replay pause and seeking stop battle cues separately, so they do not cut off interface feedback. Turning effects back on allows new cues and retains decoded samples. `tests/sample-audio.test.ts` checks voice cleanup and the separate pause behavior; `tests/browser/music.spec.ts` checks the actual Sound effects switch with an active sample and tone while music continues.
+The Sound effects volume slider applies a shared output gain to native samples and generated
+tones. Its default is 100%, preserving that mix. Changes affect existing voices as well as the
+next cue; the switch can still mute the channel separately. See [volume controls](MUSIC.md#volume-controls)
+for persistence, keyboard and compact-layout behavior.
+
+Setting effects volume to zero stops existing voices and skips new sample decodes, village
+sound downloads and playback nodes. Raising it restores effects; the sound preference and
+haptic feedback stay independent. With music off too, the audio context can suspend.
+
+Turning Sound effects off or hiding the page stops active native interface sounds, generated
+fallback tones and battle samples, and releases their voices. Seeking or pausing a replay only resets its battle
+timeline, so interface feedback can finish independently. Stale completion callbacks cannot
+release a newer voice or disconnect the same nodes twice.
+New fallback tones stay silent while the page is hidden or its audio context is suspended;
+they are not queued to play on return.
+
+On return or the next unlocking gesture, audio resumes from both `suspended` and `interrupted`.
+The latter is the state iOS Safari can report after a tab switch or system audio interruption;
+see [MDN's interruption guidance](https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/state#resuming_interrupted_play_states_in_ios_safari).
+Repeated foreground requests share a pending resume attempt. A rejected attempt can retry on the next gesture,
+and an attempt that completes after the page hides suspends again. Hidden pages also suspend
+interrupted contexts. Returning can retry while an older attempt is still pending; its eventual
+completion cannot clear the newer attempt. `tests/audio-interrupted.test.ts` simulates these
+state transitions, rejected and pending resumes, and the existing gesture and closed-context
+guards. `tests/browser/audio-interrupted.spec.ts` reports a simulated interruption over a real
+suspended context, then checks Settings retry and foreground recovery with native `resume()`.
 
 `tests/village-sounds.test.ts` checks the pinned rows and files and the one-shot player; `tests/browser/village-sounds.spec.ts` checks that nothing is fetched before the first gesture and that collecting Gold plays the client's coin sound.
+`tests/audio-lifecycle.test.ts` checks cleanup and replay isolation; `tests/audio-mute.test.ts`
+checks fallback tones on mute and page hiding. The matching browser test uses the Sound effects
+switch while Music keeps the audio context running. `tests/browser/audio-hidden.spec.ts`
+checks hidden feedback and music recovery after a visibility transition.

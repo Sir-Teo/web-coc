@@ -218,11 +218,23 @@ for (const [name, engine] of Object.entries(engines)) {
     () => document.querySelector('#loading') === null && document.querySelector('.shop-btn'),
   );
   await page.waitForTimeout(1500);
-  expect(
-    await page
-      .locator('#game canvas')
-      .evaluate((canvas) => [canvas.width, canvas.height, canvas.clientWidth, canvas.clientHeight]),
-  ).toEqual([2880, 1920, 1440, 960]);
+  const bootCanvas = await page.locator('#game canvas').evaluate((canvas) => ({
+    pixels: [canvas.width, canvas.height],
+    css: [canvas.clientWidth, canvas.clientHeight],
+    density: window.devicePixelRatio,
+    antialias: canvas.getContext('webgl').getContextAttributes().antialias,
+  }));
+  expect(bootCanvas.css).toEqual([1440, 960]);
+  // Native allocation is covered by display-density.spec.ts. A slow production boot can
+  // already have adapted by the time deferred art settles; preserve its supported budget.
+  expect(bootCanvas.pixels[0]).toBeGreaterThanOrEqual(1440 * 0.5);
+  expect(bootCanvas.pixels[0]).toBeLessThanOrEqual(1440 * bootCanvas.density);
+  expect(bootCanvas.pixels[1]).toBeGreaterThanOrEqual(960 * 0.5);
+  expect(bootCanvas.pixels[1]).toBeLessThanOrEqual(960 * bootCanvas.density);
+  expect(Math.abs(bootCanvas.pixels[0] / 1440 - bootCanvas.pixels[1] / 960)).toBeLessThanOrEqual(
+    1 / 960,
+  );
+  expect(bootCanvas.antialias).toBe(false);
   await expect(page.locator('#modal-title')).toHaveText('Saved layouts');
   await expect(page.locator('.layout-import-summary')).toHaveText('This layout link is damaged.');
   expect(new URL(page.url()).hash).toBe('');
@@ -301,16 +313,16 @@ for (const [name, engine] of Object.entries(engines)) {
     return { resources: s.resources, army: s.army };
   });
   await page.setViewportSize({ width: 844, height: 390 });
-  // Sustained rendering pressure can lower density after the native-density boot check.
-  // A resize must preserve CSS size, uniform pixels and the 1x-to-device-density budget.
+  // Sustained rendering pressure can lower density during boot or play.
+  // A resize must preserve CSS size, uniform pixels and the adaptive-to-native density budget.
   await expect
     .poll(() =>
       page.locator('#game canvas').evaluate((canvas) => ({
         css: [canvas.clientWidth, canvas.clientHeight],
         inBudget:
-          canvas.width >= 844 &&
+          canvas.width >= 844 * 0.5 &&
           canvas.width <= 844 * window.devicePixelRatio &&
-          canvas.height >= 390 &&
+          canvas.height >= 390 * 0.5 &&
           canvas.height <= 390 * window.devicePixelRatio,
         proportional: Math.abs(canvas.width / 844 - canvas.height / 390) <= 1 / 390,
       })),

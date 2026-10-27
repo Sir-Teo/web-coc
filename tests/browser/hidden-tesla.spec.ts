@@ -6,7 +6,8 @@ const paint = (page: Page) =>
   );
 test.use({ hasTouch: true });
 test.beforeEach(async ({ page }) => {
-  await page.goto('/');
+  // This pose gallery checks every level before placement, including on touch viewports.
+  await page.goto('/?eagerart');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   await page.locator('[data-action="skip-tutorial"]').click();
@@ -396,15 +397,18 @@ for (const level of [7, 17])
       const view = () => {
         const tower = scene.teslaPresentation.towers.get(3);
         const snapshot = (v) => ({
-          meshes: [...v.meshes].map(([key, mesh]) => [
-            key,
-            mesh.texture.key,
-            mesh.x,
-            mesh.y,
-            mesh.depth,
-            mesh.alpha,
-            [...mesh.vertices],
-          ]),
+          // Mesh maps retain insertion history when a view reuses an earlier leaf.
+          meshes: [...v.meshes]
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([key, mesh]) => [
+              key,
+              mesh.texture.key,
+              mesh.x,
+              mesh.y,
+              mesh.depth,
+              mesh.alpha,
+              [...mesh.vertices],
+            ]),
           groups: [...v.groups].map(([key, g]) => [
             key,
             g.image.width,
@@ -570,10 +574,13 @@ test('native Tesla effects retain death positions, expire and release scene list
     const { TROOPS } = await import('/src/game/data.ts');
     const { troopArt } = await import('/src/game/troop-art.ts');
     const { model: m, scene, game } = window.__game;
-    const listeners = game.renderer.listenerCount('losewebgl');
     scene.paused = true;
     m.startBattle(0, true);
     const b = m.battle;
+    // Complete the home-to-battle view cleanup before measuring the Tesla lifetime.
+    b.buildings = [];
+    scene.sync();
+    const listeners = game.renderer.listenerCount('losewebgl');
     const tower = makeBuilding(9000, 'tesla', 10, 10, 17);
     b.buildings = [tower, makeBuilding(9001, 'townhall', 30, 30)];
     b.started = true;

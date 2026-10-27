@@ -25,8 +25,9 @@ const tints = {
 
 /**
  * Status tint of an attacking unit, in the fallback sprite's priority order (scene.ts): late
- * campaign freeze, native freeze, poison, Rage Spell, then hero/summon rage and native ability
- * boosts. `rampage` also reads as a boost (the Dragon Duke's innate boost on the hero layer).
+ * campaign freeze, native freeze, poison, partial frost, Rage Spell, then hero/summon rage and
+ * native ability boosts. `rampage` also reads as a boost (the Dragon Duke's innate boost on the
+ * hero layer).
  */
 export function unitStatusTint(
   u: Unit,
@@ -37,7 +38,21 @@ export function unitStatusTint(
   const e = u.native?.effects;
   if (lateUnitFrozen(u, at)) return tints.lateFrozen;
   if (e && (e.frozenUntil ?? 0) > at) return tints.frozen;
-  if (e?.poison && e.poison.until > at) return tints.poison;
+  const legacyPoison = u.late?.spellTower;
+  if (
+    (e?.poison?.until ?? 0) > at ||
+    (u.late?.garrison?.poison?.until ?? 0) > at ||
+    (legacyPoison &&
+      (legacyPoison.poisonTime > 0 || legacyPoison.poisonHold > 0 || legacyPoison.slowUntil > at))
+  )
+    return tints.poison;
+  const chill = e?.chill;
+  const frost = u.late?.garrison?.frost;
+  if (
+    (chill && chill.until > at && chill.percent > 0) ||
+    (frost && frost.until > at && frost.scale < 1)
+  )
+    return tints.frozen;
   if ((u.spellRageUntil ?? 0) > at) return tints.spellRage;
   if (
     (u.hero && (battle.hero?.rageUntil ?? 0) > at) ||

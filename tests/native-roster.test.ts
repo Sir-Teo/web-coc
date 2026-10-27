@@ -5,6 +5,10 @@ import { TROOP_KEYS, maxTroopLevel, type BuildingKind, type TroopKind } from '..
 import { GameModel, makeBuilding, type Building } from '../src/game/model';
 import { emptyArmy, emptySpells } from '../src/game/army';
 import { nativeUnitStats } from '../src/game/native-units';
+import {
+  nativeGroupLifecycleWitness,
+  nativeGroupSnapshotWitness,
+} from './fixtures/native-group-snapshot';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import { EXTRA_TROOP_KINDS } from '../src/game/extra-troops';
 
@@ -32,6 +36,24 @@ const run = (m: GameModel, seconds: number, step = 0.05) => {
 const building = (m: GameModel, id: number) => m.battle!.buildings.find((b) => b.id === id)!;
 
 describe('version 45 native roster battles', () => {
+  it('captures group positions from an attacking follower and refreshes them next tick', () => {
+    expect(nativeGroupSnapshotWitness()).toEqual({
+      attack: { attacking: true, x: 16, y: 21 },
+      current: { x: 8.11180339887499, y: 20.944098300562505 },
+      next: { x: 8.046423834544264, y: 21.116059586360656 },
+    });
+  });
+
+  it('refreshes group snapshots across arrivals, deaths and moved anchor cells', () => {
+    expect(nativeGroupLifecycleWitness()).toEqual({
+      initial: { x: 8.11180339887499, y: 20.944098300562505 },
+      sameTick: { x: 8.11180339887499, y: 20.944098300562505 },
+      grown: { x: 8.046423834544264, y: 21.116059586360656 },
+      shrunk: { x: 8.121267812518166, y: 21.030316953129542 },
+      moved: { x: 8.08838834764832, y: 20.91161165235168 },
+    });
+  });
+
   it('deploys every roster troop at its maximum level without stalling the simulation', () => {
     const layout: Placement[] = [
       ['cannon', 10, 10, 10],

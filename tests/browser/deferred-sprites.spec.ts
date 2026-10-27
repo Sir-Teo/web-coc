@@ -42,7 +42,7 @@ test('per-level fallback sprites load when a level first draws, not at boot', as
     await scene.prefetchDeferredArt([wall, mine]);
     return { first, ids: [wall.id, mine.id] };
   });
-  expect(keys.first).toEqual(['wall-level-1', 'goldmine']);
+  expect(keys.first).toEqual(['wall', 'goldmine']);
   await expect
     .poll(() =>
       page.evaluate(
@@ -67,7 +67,7 @@ test('a kind the village lacks loads its base sprite when one first draws', asyn
   expect(kinds).toBeGreaterThan(5);
   // No Blacksmith, Laboratory, Air Defense or Crafting Station art for a starter village.
   const lacking = (path: string) =>
-    /\/assets\/buildings\/(blacksmith|laboratory|airdefense-v2)\.|\/assets\/crafted\/|crafting-station/.test(
+    /\/assets\/buildings\/(blacksmith|laboratory|airdefense-v2)\.|\/assets\/crafted(?:-native)?\/|crafting-station/.test(
       path,
     );
   expect(requested.filter(lacking)).toEqual([]);
@@ -94,7 +94,7 @@ test('a kind the village lacks loads its base sprite when one first draws', asyn
   const keys = () =>
     page.evaluate((ids) => ids.map((id) => window.__game.scene.sprites.get(id)!.texture.key), ids);
   expect((await keys()).every((key) => key !== '__MISSING')).toBe(true);
-  await expect.poll(keys).toEqual(['blacksmith', 'crafted-cake']);
+  await expect.poll(keys).toEqual(['blacksmith', 'crafted-cake-tier-1']);
   expect(requested.filter(lacking).length).toBe(2);
 });
 
@@ -132,7 +132,7 @@ test('walk sheets load for the troops a village holds, others when first shown',
   page.on('request', (r) => requested.push(new URL(r.url()).pathname));
   page.on('pageerror', (e) => errors.push(e.message));
   await page.setViewportSize({ width: 390, height: 844 });
-  // `?lazyart` gives the production loading; the dev server otherwise loads every sheet.
+  // `?lazyart` gives production loading, including in desktop development.
   await page.goto('/?lazyart');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   const walks = () =>

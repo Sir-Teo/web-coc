@@ -60,6 +60,11 @@ for (const viewport of [
     await expect(page.locator('.battle-enemy h2')).toHaveText('Payback');
     await expect(page.locator('[data-loot="gold"]')).toHaveText('500');
     await expect(page.locator('#battle-timer')).toHaveText('∞');
+    // The DOM updates on model change; canvas objects arrive on the next scene frame.
+    await page.waitForFunction(() => {
+      const { model, scene } = window.__game;
+      return model.battle?.buildings.every((building) => scene.sprites.has(building.id));
+    });
     const native = await page.evaluate(() => {
       const { model: m, scene } = window.__game;
       return {

@@ -58,11 +58,13 @@ function landingEffects(weapon: SpellTowerWeapon) {
   return result;
 }
 
-export function preloadSpellTower(scene: Phaser.Scene) {
+export function preloadSpellTower(scene: Phaser.Scene, fetching?: (key: string) => boolean) {
   preloadNativeMeshes(scene, SPELL_TOWER_GRAPH, PREFIX);
   for (const level of SPELL_TOWER_ART_LEVELS)
-    for (const weapon of spellTowerArtWeapons(level))
-      scene.load.image(spellTowerTexture(level, weapon), spellTowerAsset(level, weapon));
+    for (const weapon of spellTowerArtWeapons(level)) {
+      const key = spellTowerTexture(level, weapon);
+      if (!fetching?.(key)) scene.load.image(key, spellTowerAsset(level, weapon));
+    }
   for (const [path, sound] of Object.entries(SPELL_TOWER_SOUNDS))
     scene.load.binary(sample(path), '/' + sound.path);
 }

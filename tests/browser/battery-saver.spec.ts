@@ -20,7 +20,7 @@ const loop = (page: Page) =>
 test('battery saver caps play at 30 FPS and 2× density, and turning it off restores both', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/?lazyart');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   await page.locator('#loading').waitFor({ state: 'detached' });
@@ -28,12 +28,12 @@ test('battery saver caps play at 30 FPS and 2× density, and turning it off rest
   await page.locator('[data-action="settings"]').first().tap();
   const toggle = page.locator('[data-action="battery"]');
   await expect(toggle).toHaveAttribute('aria-checked', 'false');
-  // The open dialog counts as activity, so this is the play rate: uncapped by default.
-  await expect.poll(async () => (await loop(page)).fpsLimit).toBe(0);
+  // The DOM dialog stays responsive while the dimmed village renders less often.
+  await expect.poll(async () => (await loop(page)).fpsLimit).toBe(15);
 
   await toggle.tap();
   await expect(toggle).toHaveAttribute('aria-checked', 'true');
-  await expect.poll(() => loop(page)).toEqual({ fpsLimit: 30, width: 2 * 390, saver: true });
+  await expect.poll(() => loop(page)).toEqual({ fpsLimit: 15, width: 2 * 390, saver: true });
 
   // A raid under the saver keeps the cap; adaptive density may only go lower.
   await page.locator('[data-action="close"]').first().tap();
@@ -56,5 +56,7 @@ test('battery saver caps play at 30 FPS and 2× density, and turning it off rest
   // Off: native 3× density at full scale and no cap in play.
   await page.locator('[data-action="settings"]').first().tap();
   await page.locator('[data-action="battery"]').tap();
-  await expect.poll(() => loop(page)).toEqual({ fpsLimit: 0, width: 3 * 390, saver: false });
+  await expect.poll(() => loop(page)).toEqual({ fpsLimit: 15, width: 3 * 390, saver: false });
+  await page.locator('[data-action="close"]').first().tap();
+  await expect.poll(async () => (await loop(page)).fpsLimit).toBe(0);
 });

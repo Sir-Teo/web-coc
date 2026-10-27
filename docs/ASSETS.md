@@ -62,6 +62,14 @@ RGB values under transparent pixels; a different crop cannot overwrite another f
 Shared outputs are verified alongside owned assets, while directory membership checks
 still reject unexpected files in the importing family's own folder.
 
+The Dragon 5 and Golden Dragon/garrison Dragon 7 atlases opt into lossless region
+clustering in the shared scene-graph importer. Their moved UVs use versioned
+`texture-0-compact-v1.png` URLs. Keep the original pages recorded in `legacy` evidence
+at their original URLs so cached modules still find matching pixels. Both importers
+reconstruct and verify these compatibility files as well as the compact pages.
+If the compact layout changes again, give it a new URL version and retain the prior
+layout's page too; cached JavaScript can still contain its UV coordinates.
+
 ## Changing or removing assets
 
 1. Identify the owning generator/importer and read its reference notes.

@@ -1,3 +1,5 @@
+import { nativeSharedFrame } from './native-loop-period';
+
 /** Retained native scene data. Source UVs are normalized after lossless packing. */
 export interface NativeMeshGraph {
   exports: Record<string, number>;
@@ -46,7 +48,27 @@ export interface NativeGroupPose {
 export type NativeScenePose = NativeMeshPose | NativeGroupPose;
 export const NATIVE_IDENTITY: NativeMatrix = [1, 0, 0, 0, 1, 0];
 /** Texture key of one retained source texture page inside a renderer namespace. */
-export const nativeMeshTexture = (prefix: string, id: string | number) => `${prefix}:mesh:${id}`;
+export const nativeMeshTexture = (prefix: string, id: string | number) => {
+  // Every troop characters scene uses the same small skull/ghost page at texture 2.
+  // Keep one upload; pack ownership and pending loads use this canonical key too.
+  if ((id === 2 || id === '2') && prefix.startsWith('troop:') && prefix.endsWith(':characters'))
+    return 'troop:shared:characters:mesh:2';
+  // Golden Dragon and Dragon 7 have separately posed graphs but exactly the same
+  // imported page and UVs. One Phaser key keeps them on a single GPU allocation.
+  if (prefix === 'character-golden-dragon' && (id === 0 || id === '0'))
+    return 'garrison-dragon:mesh:0';
+  // The pinned siege packs share this complete characters page. Other scenes
+  // and pages retain their own keys, including each machine's body atlas.
+  if (id === 8 || id === '8')
+    switch (prefix) {
+      case 'troop:flameflinger:characters':
+      case 'troop:loglauncher:characters':
+      case 'troop:trooplauncher:characters':
+      case 'troop:wallwrecker:characters':
+        return 'troop:battledrill:characters:mesh:8';
+    }
+  return `${prefix}:mesh:${id}`;
+};
 
 export function nativeMatrix(a: readonly number[], b: readonly number[]): NativeMatrix {
   return [
@@ -70,12 +92,19 @@ function placementAges(graph: NativeMeshGraph, id: number, slot: number) {
   if (result) return result;
   const clip = graph.clips[id];
   const present = clip.timeline.map((i) => clip.frames[i].some((p) => p[0] === slot));
-  result = present.map((exists, f) => {
-    if (!exists) return 0;
-    let age = 0;
-    while (age < present.length && present[(f - age - 1 + present.length) % present.length]) age++;
-    return age === present.length ? -1 : age;
-  });
+  const absent = present.indexOf(false);
+  result = new Array<number>(present.length);
+  if (absent < 0) result.fill(-1);
+  else {
+    // Start after an absence so a run spanning the loop boundary has its full age.
+    // One circular pass avoids scanning backwards from every visible source frame.
+    let frame = absent,
+      age = 0;
+    for (let count = 0; count < present.length; count++) {
+      if (++frame === present.length) frame = 0;
+      result[frame] = present[frame] ? age++ : (age = 0);
+    }
+  }
   bySlot.set(slot, result);
   return result;
 }
@@ -194,7 +223,7 @@ function sharedPoses(
     (isolate ? 's|' : 'm|') +
     name +
     '|' +
-    sourceFrame(graph, id, seconds) +
+    nativeSharedFrame(graph, id, sourceFrame(graph, id, seconds)) +
     '|' +
     controlsKey(controls) +
     '|' +

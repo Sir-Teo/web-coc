@@ -1,10 +1,26 @@
 import { test, expect, type Page } from '@playwright/test';
 
-async function boot(page: Page) {
-  await page.goto('/');
+async function boot(page: Page, maxDensity?: number) {
+  await page.goto('/?lazyart');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   await expect(page.locator('#loading')).toBeHidden();
+  // These cases exercise fixed buffer sizes. The pressure governor is tested separately;
+  // a software GPU may already have reduced density while the eager art batch was loading.
+  await page.evaluate(async (density) => {
+    const resource = (path: string) =>
+      performance.getEntriesByType('resource').find((entry) => entry.name.includes(path))!.name;
+    const { RenderQuality } = await import(
+      /* @vite-ignore */ resource('/src/game/render-quality.ts')
+    );
+    RenderQuality.prototype.sample = () => false;
+    const { setMaxDensity } = await import(/* @vite-ignore */ resource('/src/game/display.ts'));
+    setMaxDensity(window.__game.game, 0.5);
+    setMaxDensity(window.__game.game, density ?? Infinity);
+    // getWorldPoint reads the camera's last rendered matrix. A changed density updates
+    // its physical viewport first; wait for that matrix before placing pixel witnesses.
+    await new Promise<void>((resolve) => window.__game.game.events.once('postrender', resolve));
+  }, maxDensity);
 }
 const view = (page: Page) =>
   page.evaluate(() => {
@@ -25,7 +41,9 @@ for (const profile of [
   { name: 'Retina desktop', width: 1440, height: 960, density: 2 },
   { name: '3x phone', width: 390, height: 844, density: 3 },
   { name: 'fractional display', width: 801, height: 601, density: 1.25 },
+  { name: 'adaptive half-density canvas', width: 800, height: 600, density: 1, maxDensity: 0.5 },
 ]) {
+  const renderDensity = profile.maxDensity ?? profile.density;
   test.describe(profile.name, () => {
     test.use({
       viewport: { width: profile.width, height: profile.height },
@@ -35,12 +53,14 @@ for (const profile of [
     test('native buffer, taps, drag thresholds, placement and rotation share CSS coordinates', async ({
       page,
     }) => {
+      // This fixed-density input sequence took 80 seconds at 2× on SwiftShader.
+      if (renderDensity >= 2) test.setTimeout(180000);
       const errors: string[] = [];
       page.on('pageerror', (e) => errors.push(e.message));
-      await boot(page);
+      await boot(page, profile.maxDensity);
       const initial = await view(page);
-      expect(initial.width).toBe(Math.floor(profile.width * profile.density));
-      expect(initial.height).toBe(Math.floor(profile.height * profile.density));
+      expect(initial.width).toBe(Math.round(profile.width * renderDensity));
+      expect(initial.height).toBe(Math.round(profile.height * renderDensity));
       expect(initial.cssWidth).toBe(profile.width);
       expect(initial.cssHeight).toBe(profile.height);
       const point = await page.evaluate(async () => {
@@ -114,9 +134,9 @@ for (const profile of [
       await page.setViewportSize({ width: profile.height, height: profile.width });
       await expect
         .poll(async () => (await view(page)).width)
-        .toBe(Math.floor(profile.height * profile.density));
+        .toBe(Math.round(profile.height * renderDensity));
       const rotated = await view(page);
-      expect(rotated.height).toBe(Math.floor(profile.width * profile.density));
+      expect(rotated.height).toBe(Math.round(profile.width * renderDensity));
       expect(rotated.x).toBeCloseTo(beforeRotation.x, 6);
       expect(rotated.y).toBeCloseTo(beforeRotation.y, 6);
       expect(rotated.zoom).toBeCloseTo(beforeRotation.zoom, 6);
@@ -129,7 +149,7 @@ for (const profile of [
     test('resolves individual native pixels and restores the high-density framebuffer', async ({
       page,
     }) => {
-      await boot(page);
+      await boot(page, profile.maxDensity);
       const result = await page.evaluate(async () => {
         const { scene: s, game } = window.__game;
         s.paused = true;
@@ -205,8 +225,8 @@ for (const profile of [
         };
       });
       expect(result.dimensions).toEqual([
-        Math.floor(profile.width * profile.density),
-        Math.floor(profile.height * profile.density),
+        Math.round(profile.width * renderDensity),
+        Math.round(profile.height * renderDensity),
       ]);
       result.columns.forEach((value, i) =>
         i % 2 ? expect(value).toBeGreaterThan(240) : expect(value).toBeLessThan(15),
@@ -297,4 +317,78 @@ test.describe('3x touch gestures', () => {
     expect(after.y + mid.y / after.zoom).toBeCloseTo(before.y + mid.y / before.zoom, 3);
     expect(await page.evaluate(() => window.__game.model.selected)).toBeNull();
   });
+});
+
+test.describe('phone adaptive gesture pressure', () => {
+  test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3 });
+  for (const requestedScale of [0.75, 0.5])
+    test(`measures a held drag and applies pending density after release without moving the camera (${requestedScale})`, async ({
+      page,
+    }) => {
+      test.setTimeout(120000);
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      await boot(page);
+      await page.evaluate(async (requestedScale) => {
+        const resource = performance
+          .getEntriesByType('resource')
+          .find((entry) => entry.name.includes('/src/game/render-quality.ts'))!.name;
+        const { RenderQuality } = await import(/* @vite-ignore */ resource);
+        const probe = { request: false, measured: 0 };
+        (window as unknown as { __phonePressure: typeof probe }).__phonePressure = probe;
+        RenderQuality.prototype.sample = function (_now: number, enabled: boolean) {
+          if (probe.request && enabled) {
+            probe.request = false;
+            probe.measured++;
+            this.scale = requestedScale;
+            return true;
+          }
+          return false;
+        };
+        const { model, scene } = window.__game;
+        model.state.settings.reducedMotion = true;
+        scene.setZoom(0.95);
+        scene.cameras.main.centerOn(1000, 600);
+        scene.clampCamera();
+      }, requestedScale);
+      const initial = await view(page);
+      await page.mouse.move(170, 400);
+      await page.mouse.down();
+      await page.mouse.move(210, 425, { steps: 4 });
+      await page.waitForFunction(
+        () =>
+          window.__game.scene.gesture === 'pan' &&
+          window.__game.game.input.pointers.some((p) => p.isDown),
+      );
+      await page.evaluate(() => {
+        (window as unknown as { __phonePressure: { request: boolean } }).__phonePressure.request =
+          true;
+      });
+      await page.waitForFunction(
+        () =>
+          (window as unknown as { __phonePressure: { measured: number } }).__phonePressure
+            .measured === 1,
+      );
+      const held = await view(page);
+      expect(held.width).toBe(initial.width);
+      expect(held.height).toBe(initial.height);
+      expect(
+        await page.evaluate(
+          () => window.__game.scene.down !== undefined && window.__game.scene.gesture === 'pan',
+        ),
+      ).toBe(true);
+      await page.mouse.up();
+      await expect
+        .poll(async () => (await view(page)).width)
+        .toBe(Math.round(390 * 3 * requestedScale));
+      const released = await view(page);
+      expect(released.height).toBe(Math.round(844 * 3 * requestedScale));
+      expect(released.x).toBeCloseTo(held.x, 6);
+      expect(released.y).toBeCloseTo(held.y, 6);
+      expect(released.zoom).toBeCloseTo(held.zoom, 6);
+      const point = await page.evaluate(() => window.__game.scene.screenFor(12.5, 11.5));
+      await page.mouse.click(point.x, point.y);
+      await expect(page.locator('.building-context h2')).toHaveText('Town Hall');
+      expect(errors).toEqual([]);
+    });
 });

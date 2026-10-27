@@ -58,6 +58,14 @@ for (const witness of witnesses)
       const { compareSourcePixels } = await import('/tests/fixtures/source-pixel-comparison.ts');
       document.querySelector<HTMLElement>('#ui')!.style.display = 'none';
       scene.paused = true;
+      // Keep the independent pixel witness at source resolution even if loading
+      // pressure made the runtime governor lower the framebuffer density.
+      const displayUrl = performance
+        .getEntriesByType('resource')
+        .find((entry) => entry.name.includes('/src/game/display.ts'))!.name;
+      const { setMaxDensity } = await import(displayUrl);
+      setMaxDensity(game, 1);
+      setMaxDensity(game, 2);
       scene.tweens.pauseAll();
       for (const child of scene.children.list) child.setVisible(false);
       scene.cameras.main.setScroll(0, 0).setZoom(1).setBackgroundColor(reference.background);

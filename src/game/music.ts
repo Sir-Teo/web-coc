@@ -1,4 +1,5 @@
 import catalog from '../../reference/music/catalog.json' with { type: 'json' };
+import { audioVolume, setAudioGain } from './audio-volume';
 
 /**
  * Original client music (see reference/music): the classic Home theme in three parts, the
@@ -67,8 +68,8 @@ const browserHost: MusicHost = {
 /**
  * Loops stream through one media element, so a three-minute track never sits decoded in
  * memory; Home plays its three parts in order and starts over. Stings are seconds long and
- * play through Web Audio. Turning music off pauses loops in place and cancels stings, so a
- * hidden page or the setting resumes the loop where it stopped.
+ * play through Web Audio. Turning music off pauses in place, so a hidden page or the setting
+ * resumes where it stopped.
  */
 export class MusicPlayer {
   private el: MusicElement | null = null;
@@ -78,7 +79,10 @@ export class MusicPlayer {
   private enabled = false;
   private urls = new Map<string, Promise<string | null>>();
   private stings = new Map<string, Promise<AudioBuffer | null>>();
-  private voices = new Set<{ source: AudioBufferSourceNode; gain: GainNode }>();
+  private activeSting: { source: AudioBufferSourceNode; gain: GainNode } | null = null;
+  private level = MUSIC_VOLUME;
+  private gain: GainNode | null = null;
+  private stream: MediaElementAudioSourceNode | null = null;
   /** Increments on every change, so a slow download cannot start a track no longer wanted. */
   private generation = 0;
   private host: MusicHost;
@@ -91,6 +95,22 @@ export class MusicPlayer {
   get current() {
     return this.loop ? LOOPS[this.loop][this.part] : null;
   }
+  get volume() {
+    return this.level;
+  }
+  setVolume(value: number) {
+    this.level = audioVolume(value, MUSIC_VOLUME);
+    if (this.gain) setAudioGain(this.gain, this.level, this.host.context());
+    if (this.el) this.el.volume = this.stream ? 1 : this.level;
+  }
+  private output(ctx: AudioContext) {
+    if (!this.gain) {
+      this.gain = ctx.createGain();
+      this.gain.gain.value = this.level;
+      this.gain.connect(ctx.destination);
+    }
+    return this.gain;
+  }
   setEnabled(on: boolean) {
     if (this.enabled === on) return;
     this.enabled = on;
@@ -98,7 +118,7 @@ export class MusicPlayer {
     if (on) this.resume();
     else {
       this.el?.pause();
-      this.stopStings();
+      this.stopSting();
     }
   }
   setScene(scene: MusicScene) {
@@ -106,7 +126,7 @@ export class MusicPlayer {
     const previous = this.scene;
     this.scene = scene;
     this.generation++;
-    this.stopStings();
+    this.stopSting();
     const loop = scene === 'victory' || scene === 'defeat' ? null : scene;
     if (loop !== this.loop) {
       this.el?.pause();
@@ -144,12 +164,23 @@ export class MusicPlayer {
       const el = (this.el ??= this.createElement());
       if (el.src !== url) el.src = url;
       el.loop = LOOPS[loop].length === 1;
-      el.volume = MUSIC_VOLUME;
+      el.volume = this.stream ? 1 : this.level;
       void el.play().catch(() => {});
     });
   }
   private createElement() {
     const el = this.host.element();
+    const ctx = this.host.context();
+    // A media source keeps long tracks streamed while Web Audio controls volume on iOS too.
+    if (ctx && typeof ctx.createMediaElementSource === 'function') {
+      try {
+        this.stream = ctx.createMediaElementSource(el as HTMLMediaElement);
+        this.stream.connect(this.output(ctx));
+      } catch {
+        this.stream?.disconnect();
+        this.stream = null;
+      }
+    }
     el.addEventListener('ended', () => {
       if (!this.loop) return;
       this.part = (this.part + 1) % LOOPS[this.loop].length;
@@ -160,8 +191,8 @@ export class MusicPlayer {
   }
   private sting(kind: Sting, then?: () => void) {
     const ctx = this.host.context();
-    const path = STINGS[kind];
-    const generation = this.generation;
+    const path = STINGS[kind],
+      generation = this.generation;
     if (!ctx) return then?.();
     let buffer = this.stings.get(path);
     if (!buffer) {
@@ -175,39 +206,36 @@ export class MusicPlayer {
       this.stings.set(path, buffer);
     }
     void buffer.then((decoded) => {
-      // A download or decode can finish after leaving this screen, or after off/on.
-      if (generation !== this.generation) return;
-      if (!decoded || !this.enabled) return then?.();
+      if (!this.enabled || generation !== this.generation) return;
+      if (!decoded) return then?.();
       const source = ctx.createBufferSource(),
         gain = ctx.createGain();
-      gain.gain.value = MUSIC_VOLUME;
+      this.activeSting = { source, gain };
+      gain.gain.value = 1;
       source.buffer = decoded;
       source.connect(gain);
-      gain.connect(ctx.destination);
-      const voice = { source, gain };
-      this.voices.add(voice);
+      gain.connect(this.output(ctx));
       source.onended = () => {
-        this.voices.delete(voice);
+        if (this.activeSting?.source !== source) return;
+        this.activeSting = null;
         source.disconnect();
         gain.disconnect();
-        if (generation === this.generation && this.enabled) then?.();
+        if (this.enabled && generation === this.generation) then?.();
       };
       source.start();
     });
   }
-  /** Stops only music stings; sound effects keep their own sources and context. */
-  private stopStings() {
-    for (const { source, gain } of this.voices) {
-      // Cancellation must not run the intro's completion callback and start planning music.
-      source.onended = null;
-      try {
-        source.stop();
-      } catch {
-        // The source may have ended before its queued ended event is delivered.
-      }
-      source.disconnect();
-      gain.disconnect();
+  private stopSting() {
+    const node = this.activeSting;
+    if (!node) return;
+    this.activeSting = null;
+    node.source.onended = null;
+    try {
+      node.source.stop();
+    } catch {
+      // An already-ended source still needs its connections released.
     }
-    this.voices.clear();
+    node.source.disconnect();
+    node.gain.disconnect();
   }
 }

@@ -29,8 +29,28 @@ The client receives the deals from its server: its tables hold the Trader's text
 - **Limits.** A deal can be bought its weekly quantity, then reads "Out of stock" until the next week. A magic item that would exceed its limit, or ore beyond the Blacksmith's storage, reads "Storage Full", as in the client.
 - **Saves.** `trader` keeps the week and the purchases made in it; counts above a deal's quantity or unknown deals are rejected.
 
-Not included: Clan House parts, Epic Hero Equipment offers, the Builder Base items and special event weeks.
+## Epic equipment
+
+The **Epic Equipment** button opens a separate catalog for heroes in the village. Its hero
+tabs show the playable Epic items already offered by the Blacksmith, with their native art,
+ownership level, price and a Details link to the existing equipment screen. Purchases use the
+existing `buyEpicItem` command: 1,500 gems, a completed Blacksmith, a level 1 unlock, no duplicate
+purchases and no purchase during a battle. Buying an item leaves the current loadout intact.
+
+This catalog is separate from weekly quantities and rotation. Opening it or buying equipment
+does not change this week's deals or purchase record; ownership is saved in the existing hero
+gear record. The pinned [Spiky Ball](../reference/official-wiki/heroes-pets/spiky-ball.md) and
+[Magic Mirror](../reference/official-wiki/heroes-pets/magic-mirror.md) references document the
+1,500-gem Trader price. This exposes the game's existing permanent equipment catalog rather
+than reproducing the live server's changing equipment offers.
+
+Not included: Clan House parts, the Builder Base items and special event weeks.
 
 ## Tests
+
+`tests/browser/trader-equipment.spec.ts` buys King and Queen equipment through the Trader,
+checks exact gem charges, duplicate protection, unchanged weekly purchases and loadouts,
+and saved ownership after reconstruction. It also checks missing Blacksmiths, insufficient
+gems, hero availability, item details, native icons and footer bounds at compact breakpoints.
 
 `tests/trader.test.ts` checks the Tuesday 08:00 UTC week boundary, that a week's deals are fixed and the free one comes first, that every deal appears within half a year, the Town Hall 6 and 8 gates, weekly quantities, "Storage Full", gem shortage, the weekly restock and save validation. `tests/browser/magic-items.spec.ts` opens the Weekly Deals from the Town Hall at phone size and claims the free Glowy Ore. `tests/browser/village-objects.spec.ts` opens them from the tent.

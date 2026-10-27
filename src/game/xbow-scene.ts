@@ -16,9 +16,12 @@ import { XBOW, XBOW_LEVELS, XBOW_PROJECTILES } from './xbow-stats';
 type Point = { x: number; y: number };
 const sample = (path: string) => `xbow-${path.split('/').at(-1)!.replace('.ogg', '')}`;
 
-export function preloadXbows(scene: Phaser.Scene) {
+export function preloadXbows(
+  scene: Phaser.Scene,
+  levels: readonly number[] = XBOW_LEVELS.map(({ level }) => level),
+) {
   preloadNativeMeshes(scene, xbowGraph(), 'xbow');
-  for (const { level } of XBOW_LEVELS)
+  for (const level of new Set(levels))
     for (const mode of ['ground', 'both'] as const)
       scene.load.image(xbowTexture(level, mode), xbowAsset(level, mode));
   for (const [path, sound] of Object.entries(xbowSounds()))

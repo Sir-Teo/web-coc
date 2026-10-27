@@ -1,5 +1,6 @@
 import { BUILDINGS, isTrap } from './data';
 import { distance2D } from './distance';
+import { GoalDistanceAxes } from './goal-distance-axes';
 import { MAP_SIZE } from './grid';
 import type { Building } from './model';
 
@@ -93,7 +94,7 @@ interface SubtileGrid {
   blocked: Uint8Array;
   wall: Uint8Array;
   /** Exact search results by (start cell, goal, range): A* is a pure function of these. */
-  paths: Map<string, readonly { x: number; y: number }[]>;
+  paths: Map<string, readonly number[]>;
 }
 /**
  * Routes, crowd separation and movement effects alternate between a few lists every tick
@@ -103,9 +104,12 @@ interface SubtileGrid {
  */
 const GRID_SLOTS = 6;
 const grids: SubtileGrid[] = [];
+/** 64 pairs of 96 doubles: at most 96 KiB, shared across this battle's collision grids. */
+const goalAxes = new GoalDistanceAxes(SIZE, SUBTILES);
 /** Drop every cached grid and route (new battle or replay runner). Never needed for results. */
 export function resetSubtileGrids() {
   grids.length = 0;
+  goalAxes.clear();
 }
 /** Collision for the living, non-trap buildings the caller knows about. */
 function gridFor(buildings: readonly Building[]): SubtileGrid {
@@ -159,13 +163,13 @@ export function subtileSolid(buildings: readonly Building[]) {
 }
 
 // Reused search buffers: pathfinding is synchronous and each call resets what it reads.
-// Search state uses a generation stamp: one counter bump replaces five full-array fills.
+// Search state uses a generation stamp instead of clearing every array for each search.
 const cost = new Float64Array(CELLS),
   prev = new Int32Array(CELLS),
-  closed = new Uint8Array(CELLS),
   priority = new Float64Array(CELLS),
   heuristic = new Float64Array(CELLS),
   order = new Uint32Array(CELLS),
+  // Heap slot when queued; -1 before insertion, -2 after the node is closed.
   position = new Int32Array(CELLS),
   stamp = new Uint32Array(CELLS);
 let epoch = 0;
@@ -233,16 +237,29 @@ export function findSubtilePath(
   const far = distanceTo(start, target) > range;
   const key = `${first},${target.x},${target.y},${goalSize},${range},${far ? 1 : 0}`;
   const known = grid.paths.get(key);
-  if (known) return copyPath(known);
+  if (known) return unpackPath(known);
   const path = searchSubtilePath(first, sx, sy, target, goalSize, range, far);
   if (grid.paths.size >= PATH_MEMO_LIMIT) grid.paths.clear();
-  grid.paths.set(key, copyPath(path));
+  grid.paths.set(key, packPath(path));
   return path;
 }
+const EMPTY_PACKED_PATH: readonly number[] = [];
+/** Memo coordinates retain double precision without retaining waypoint objects. */
+function packPath(path: readonly { x: number; y: number }[]) {
+  if (!path.length) return EMPTY_PACKED_PATH;
+  if (path.length === 1) return [path[0].x, path[0].y];
+  const packed = new Array<number>(path.length * 2);
+  for (let i = 0; i < path.length; i++) {
+    packed[i * 2] = path[i].x;
+    packed[i * 2 + 1] = path[i].y;
+  }
+  return packed;
+}
 /** Waypoints are fresh objects per caller: units shift and compare them by identity. */
-function copyPath(path: readonly { x: number; y: number }[]) {
-  const copy = new Array<{ x: number; y: number }>(path.length);
-  for (let i = 0; i < path.length; i++) copy[i] = { x: path[i].x, y: path[i].y };
+function unpackPath(path: readonly number[]) {
+  if (path.length === 2) return [{ x: path[0], y: path[1] }];
+  const copy = new Array<{ x: number; y: number }>(path.length / 2);
+  for (let i = 0; i < copy.length; i++) copy[i] = { x: path[i * 2], y: path[i * 2 + 1] };
   return copy;
 }
 function searchSubtilePath(
@@ -266,9 +283,14 @@ function searchSubtilePath(
   let sequence = 0;
   const targetX = target.x,
     targetY = target.y;
+  // Moving point targets retain the direct calculation; static building goals reuse axes.
+  const axes = goalSize ? goalAxes.get(targetX, targetY, goalSize) : undefined;
   const step = 1 / SUBTILES;
+  // An approach point inside this cell is less than one step from its center and at
+  // most max(0, range) from the goal. Farther centers cannot contain that endpoint.
+  // Use a whole step rather than the half-diagonal to leave room at cell boundaries.
+  const approachLimit = Math.max(0, range) + step;
   stamp[first] = generation;
-  closed[first] = 0;
   prev[first] = -1;
   cost[first] = 0;
   {
@@ -289,7 +311,7 @@ function searchSubtilePath(
     // take(): pop the root, sift the last entry down.
     const current = heap[0];
     const last = heap[--size];
-    position[current] = -1;
+    position[current] = -2;
     if (size) {
       const lastPriority = priority[last],
         lastOrder = order[last];
@@ -318,7 +340,6 @@ function searchSubtilePath(
       heap[at] = last;
       position[last] = at;
     }
-    closed[current] = 1;
     const x = current % SIZE,
       y = Math.floor(current / SIZE),
       hx = (x + 0.5) / SUBTILES,
@@ -329,7 +350,7 @@ function searchSubtilePath(
       goal = current;
       break;
     }
-    if (range < 0.5 && !blocked[current]) {
+    if (range < 0.5 && heuristic[current] <= approachLimit && !blocked[current]) {
       const s = goalSize;
       const tx = Math.max(targetX, Math.min(hx, targetX + s));
       const ty = Math.max(targetY, Math.min(hy, targetY + s));
@@ -364,22 +385,24 @@ function searchSubtilePath(
         stamp[n] = generation;
         cost[n] = Infinity;
         prev[n] = -1;
-        closed[n] = 0;
         heuristic[n] = NaN;
         position[n] = -1;
-      } else if (closed[n]) continue;
+      } else if (position[n] === -2) continue;
       const next = base + step + (wall[n] ? 6 * step : 0);
       if (next < cost[n]) {
         cost[n] = next;
         prev[n] = current;
         // queue(n): score, then insert or decrease-key with a sift up.
         if (Number.isNaN(heuristic[n])) {
-          const cx = (nx + 0.5) / SUBTILES,
-            cy = (ny + 0.5) / SUBTILES;
-          heuristic[n] = distance2D(
-            Math.max(targetX - cx, 0, cx - targetX - goalSize),
-            Math.max(targetY - cy, 0, cy - targetY - goalSize),
-          );
+          if (axes) heuristic[n] = Math.sqrt(axes.x[nx] + axes.y[ny]);
+          else {
+            const cx = (nx + 0.5) / SUBTILES,
+              cy = (ny + 0.5) / SUBTILES;
+            heuristic[n] = distance2D(
+              Math.max(targetX - cx, 0, cx - targetX - goalSize),
+              Math.max(targetY - cy, 0, cy - targetY - goalSize),
+            );
+          }
         }
         const score = next + heuristic[n];
         priority[n] = score;

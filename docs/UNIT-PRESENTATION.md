@@ -22,6 +22,26 @@ Living defending Heroes, Guardians, garrison troops and Skeleton Trap defenders 
 
 From recording version 68, those same defender bodies show the attacker’s icy blue tint during a full native Freeze. A separate visual deadline distinguishes Freeze from Lightning and Totem stuns; it does not change damage, movement or attack timing. Freeze takes priority over Poison, and thaw restores the underlying Poison cue or original artwork. Death removes both cues. `tests/defender-freeze-tint.test.ts` checks exact portable seeks, overlap, expiry and unchanged version-67 combat state; `tests/browser/defender-freeze-tint.spec.ts` checks all four renderers on desktop and reduced-motion phone views.
 
+Headhunter hits also give attacking troops and heroes the green Poison cue for their timed
+on-hit status. Freeze keeps its higher visual priority, and either active cloud or on-hit
+Poison takes priority over Rage. The shared tint follows fallback sprites into native bodies
+and restores their original colors on expiry or defeat. `tests/browser/attacker-poison-tint.spec.ts`
+checks real recorded Headhunter hits, art handoff and repeated replay seeks on desktop and phone.
+
+Version-44 Spell Tower recordings use their original fixed-point Poison state for the same
+green cue, including lingering damage after a troop leaves the cloud. Colors restore after
+both damage and slow expire. `tests/legacy-poison-tint.test.ts` covers a real legacy cast on
+ground troops, flying troops and the King, plus lingering damage and expiry; the live legacy
+Spell Tower browser check verifies the cue on actual attackers.
+
+Royal Ghost on-hit frost and the Town Hall 13 frost field share the blue cold-status cue
+while their partial slow is active. Poison takes visual priority over partial frost, and
+neither can be hidden by Rage. A zero-strength slow leaves the original colors intact.
+This cue does not stop animation or alter the effect's action-speed scale.
+`tests/attacker-frost-tint.test.ts` covers a real Royal Ghost hit, the native Town Hall spell,
+overlap and exact deadlines. `tests/browser/attacker-frost-tint.spec.ts` checks fallback and
+native troop/hero bodies, reduced motion, expiry, reapplication and defeat on desktop and phone.
+
 ## Earlier sprite artwork and feedback
 
 The starter melee troop now uses the [Barbarian name, portrait and four-frame atlas](BARBARIAN-ART.md), with a fixed idle frame and no procedural walk bob. Its internal save/replay key remains `swordsman`.

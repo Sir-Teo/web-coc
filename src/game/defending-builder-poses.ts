@@ -1,5 +1,5 @@
 import { BUILDINGS } from './data';
-import { characterArt } from './character-art';
+import { characterArt, characterArtLoaded } from './character-art';
 import {
   animationStates,
   characterFacing,
@@ -20,6 +20,7 @@ export function defendingBuilderPose(
 ): CharacterPose | null {
   if (battle.elapsed < builder.spawnedAt || builder.hiddenAt !== undefined) return null;
   const stats = defendingBuilderStats(builder.level);
+  if (!characterArtLoaded(stats.animation)) return null;
   const states = animationStates(stats.animation);
   const art = characterArt(stats.animation);
   const target = battleBuilding(battle, builder.target);

@@ -83,13 +83,102 @@ function nativeColorTint(node: Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQua
   return true;
 }
 
-/**
- * Phaser 4.2.1's triangle batcher writes only the tint mode into the second tint attribute. This
- * copy also writes the object's `tint2` color there (as its quad batcher does), which the native
- * color mode reads as the additive term. Everything else matches BatchHandlerTri.batchTriangles.
- */
-function batchTrianglesWithTint2(node: Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQuad) {
+type NativeIndexedQuad = Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQuad & {
+  /** Kept on the node so timestamped development imports cannot wrap its hooks twice. */
+  nativeTriangleIndexFlags?: Uint8Array;
+};
+
+/** Share four vertices without changing either native triangle's vertex order. */
+function nativeTriangleIndices(node: Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQuad) {
+  const indexed = node as NativeIndexedQuad;
+  const cached = indexed.nativeTriangleIndexFlags;
+  if (cached) return cached;
+  const flags = new Uint8Array(node.instancesPerBatch);
+  const previous = new Uint8Array(flags.length);
+  const indices = new Uint16Array(node.indexBuffer.dataBuffer);
+  const renderer = node.manager.renderer;
+  // This element buffer now changes between batches. Keep the managed wrapper's hint in
+  // sync too, so context restoration recreates the same dynamic allocation.
+  node.indexBuffer.bufferUsage = renderer.gl.DYNAMIC_DRAW;
+  renderer.glWrapper.update(
+    {
+      vao: null as unknown as Phaser.Renderer.WebGL.Wrappers.WebGLVAOWrapper,
+      bindings: { elementArrayBuffer: node.indexBuffer },
+    },
+    true,
+  );
+  renderer.gl.bufferData(
+    renderer.gl.ELEMENT_ARRAY_BUFFER,
+    node.indexBuffer.dataBuffer,
+    renderer.gl.DYNAMIC_DRAW,
+  );
+  const originalRun = node.run;
+  const originalSetup = node.setupUniforms;
+  let uploaded = false;
+  const setup: typeof node.setupUniforms = function (this: typeof node, drawingContext) {
+    originalSetup.call(this, drawingContext);
+    if (uploaded) return;
+    uploaded = true;
+    let first = this.instanceCount,
+      last = -1;
+    for (let slot = 0; slot < this.instanceCount; slot++) {
+      const native = flags[slot];
+      if (previous[slot] === native) continue;
+      previous[slot] = native;
+      first = Math.min(first, slot);
+      last = slot;
+      const at = slot * 6,
+        vertex = slot * 4;
+      if (native) {
+        indices[at] = vertex;
+        indices[at + 1] = vertex + 1;
+        indices[at + 2] = vertex + 2;
+        indices[at + 3] = vertex + 2;
+        indices[at + 4] = vertex + 1;
+      } else {
+        indices[at] = vertex + 1;
+        indices[at + 1] = vertex;
+        indices[at + 2] = vertex + 2;
+        indices[at + 3] = vertex + 1;
+        indices[at + 4] = vertex + 2;
+      }
+      indices[at + 5] = vertex + 3;
+    }
+    if (last >= first) {
+      // Element bindings belong to the VAO: bind this batch's VAO before updating its EBO.
+      const renderer = this.manager.renderer;
+      const suite = this.programManager.getCurrentProgramSuite() as {
+        vao: Phaser.Renderer.WebGL.Wrappers.WebGLVAOWrapper;
+      };
+      renderer.glWrapper.update({
+        vao: suite.vao,
+        bindings: { elementArrayBuffer: this.indexBuffer },
+      });
+      this.indexBuffer.update((last - first + 1) * 12, first * 12);
+    }
+  };
+  const run: typeof node.run = function (this: typeof node, drawingContext) {
+    const count = this.instanceCount;
+    try {
+      return originalRun.call(this, drawingContext);
+    } finally {
+      flags.fill(0, 0, count);
+      uploaded = false;
+    }
+  };
+  node.setupUniforms = setup;
+  node.run = run;
+  indexed.nativeTriangleIndexFlags = flags;
+  return flags;
+}
+
+/** Carry native tint2 and combine adjacent strip triangles without changing vertex order. */
+function batchTrianglesWithTint2(
+  node: Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQuad,
+  asQuads = false,
+) {
   const getTint = Phaser.Renderer.WebGL.Utils.getTintAppendFloatAlpha;
+  const indexFlags = asQuads ? nativeTriangleIndices(node) : undefined;
   type Batcher = {
     instanceCount: number;
     manager: { setCurrentBatchNode(node: unknown, context: unknown): void };
@@ -169,9 +258,19 @@ function batchTrianglesWithTint2(node: Phaser.Renderer.WebGL.RenderNodes.BatchHa
         textureDatum = this.batchTextures(sources[source].glTexture, renderOptions);
         lastSource = source;
       }
-      let offset = this.instanceCount * floatsPerInstance;
-      for (let corner = 0; corner < 3; corner++) {
-        const v = indices[i4 + corner] * 4;
+      const baseOffset = this.instanceCount * floatsPerInstance;
+      const paired =
+        !!indexFlags &&
+        i + 1 < triangles &&
+        indices[i4 + 7] === source &&
+        indices[i4 + 4] === indices[i4 + 2] &&
+        indices[i4 + 5] === indices[i4 + 1];
+      if (paired) indexFlags[this.instanceCount] = 1;
+      for (let corner = 0; corner < (paired ? 4 : 3); corner++) {
+        // Sprite vertex order is BL, TL, BR, TR: b, a, c, c draws the original a, b, c.
+        const target = !paired && asQuads && corner < 2 ? 1 - corner : corner;
+        let offset = baseOffset + target * 7;
+        const v = indices[paired && corner === 3 ? i4 + 6 : i4 + corner] * 4;
         const vx = vertices[v],
           vy = vertices[v + 1];
         let x: number, y: number;
@@ -195,6 +294,10 @@ function batchTrianglesWithTint2(node: Phaser.Renderer.WebGL.RenderNodes.BatchHa
         viewU32[offset++] = tint2;
         viewU32[offset++] = tint;
       }
+      if (asQuads && !paired)
+        // Copy all seven attribute words exactly; transform each source vertex only once.
+        viewU32.copyWithin(baseOffset + 21, baseOffset + 14, baseOffset + 21);
+      if (paired) i++;
       this.instanceCount++;
       this.currentBatchEntry.count++;
       if (this.instanceCount === instancesPerBatch) {
@@ -311,6 +414,35 @@ export function configureNativeQuadColor(renderer: Phaser.Renderer.WebGL.WebGLRe
   }
   configuredQuadColor.set(renderer, supported);
   return supported;
+}
+
+const sharedTriangleNodes = new WeakMap<
+  Phaser.Renderer.WebGL.WebGLRenderer,
+  Phaser.Renderer.WebGL.RenderNodes.BatchHandlerTri | undefined
+>();
+/**
+ * Native strips share the sprite batch. Adjacent a,b,c / c,b,d triangles use four vertices
+ * with their original index order; a lone triangle uses b,a,c,c with a degenerate second.
+ * Source UVs, color words and sprite indices stay intact across shared-batch flushes.
+ */
+export function nativeQuadTriangleBatcher(renderer: Phaser.Renderer.WebGL.WebGLRenderer) {
+  if (sharedTriangleNodes.has(renderer)) return sharedTriangleNodes.get(renderer);
+  const quad = renderer.renderNodes?.getNode('BatchHandlerQuad') as
+    Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQuad | undefined;
+  // Presentation doubles without real buffers retain the ordinary triangle path.
+  if (
+    !quad?.indexBuffer?.dataBuffer ||
+    !quad.vertexBufferLayout?.buffer ||
+    !configureNativeQuadColor(renderer)
+  ) {
+    sharedTriangleNodes.set(renderer, undefined);
+    return undefined;
+  }
+  configureQuadRendering(renderer);
+  batchTrianglesWithTint2(quad, true);
+  const node = quad as Phaser.Renderer.WebGL.RenderNodes.BatchHandlerTri;
+  sharedTriangleNodes.set(renderer, node);
+  return node;
 }
 
 /** Keep Phaser's sprite batching, but avoid degenerate triangles between sprites. */
