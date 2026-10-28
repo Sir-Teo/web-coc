@@ -17,8 +17,9 @@ for (const def of REGENERATING_ITEMS) {
     [def.max, def.last],
   ])
     it(`${def.slug} ${level} keeps its source ${healing} HP/s through dense and coarse active steps`, () => {
-      const dense = heroRegenerationBattle(def.slug, level),
-        coarse = heroRegenerationBattle(def.slug, level);
+      // Compare regeneration at its own version-139 boundary.
+      const dense = heroRegenerationBattle(def.slug, level, 139),
+        coarse = heroRegenerationBattle(def.slug, level, 139);
       for (const r of [dense, coarse])
         hurtUnit(r.battle, r.unit, Math.min(r.unit.maxHp / 2, healing * 4));
       const initial = dense.unit.hp;

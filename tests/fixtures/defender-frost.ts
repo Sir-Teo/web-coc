@@ -1,10 +1,10 @@
 import { defaultSpellLevels, emptyArmy, emptySpells } from '../../src/game/army';
 import { GameModel, makeBuilding } from '../../src/game/model';
-import { replayBattle, type ReplayData } from '../../src/game/replay';
+import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
 import type { CombatProjectile } from '../../src/game/projectiles';
 
 /** Real Queen hits with the final arrow still in flight when Recall removes her. */
-export function defenderFrostRecording(air = false, level = 1) {
+export function defenderFrostRecording(air = false, level = 1, version = REPLAY_VERSION) {
   const model = new GameModel();
   model.state.obstacles = [];
   model.state.buildings = [makeBuilding(1, 'townhall', 36, 36, 18)];
@@ -15,13 +15,14 @@ export function defenderFrostRecording(air = false, level = 1) {
   model.state.king = undefined;
   model.startBattle(0, true);
   const recording = (model as unknown as { recording: ReplayData }).recording;
+  recording.version = version;
   recording.initial.defendingHeroes = [
     { kind: air ? 'prince' : 'king', level: air ? 95 : 110, x: 10, y: 5 },
   ];
   recording.initial.heroes = [
     { kind: 'queen', level: 100, items: [{ slug: 'frozen-arrow', level }] },
   ];
-  model.battle = replayBattle(recording.initial);
+  model.battle = replayBattle(recording.initial, version);
   const battle = model.battle;
   if (!model.deployNativeHero('queen', 5, 5)) throw Error('Frost Queen deployment failed');
   const queenId = battle.nativeHeroes![0].unitId!;

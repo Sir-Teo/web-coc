@@ -1,8 +1,8 @@
 import { GameModel, makeBuilding } from '../../src/game/model';
 import { emptyArmy, emptySpells } from '../../src/game/army';
-import type { ReplayData } from '../../src/game/replay';
+import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
 /** Four real casts damage a mine and break a wall; no health or combat state is injected. */
-export function nativeEarthquakeRecording(level = 1) {
+export function nativeEarthquakeRecording(level = 1, version = REPLAY_VERSION) {
   const model = new GameModel();
   model.state.king = undefined;
   model.state.obstacles = [];
@@ -16,7 +16,9 @@ export function nativeEarthquakeRecording(level = 1) {
   model.state.spells = { ...emptySpells(), earthquake: 4 };
   model.state.spellLevels = { ...model.state.spellLevels, earthquake: level };
   model.startBattle(0, true);
-  const battle = model.battle!,
+  const recording = (model as unknown as { recording: ReplayData }).recording;
+  recording.version = version;
+  const battle = (model.battle = replayBattle(recording.initial, version)),
     snapshots: { at: number; battle: unknown }[] = [],
     until = (at: number) => {
       while (battle.elapsed < at - 1e-9) model.step(0.05);

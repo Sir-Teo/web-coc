@@ -106,7 +106,7 @@ it('version 114 keeps the former live-only cast audio and omits new capture fiel
   ).toEqual([]);
 });
 it('cast capture leaves physical spell behavior and frozen status deadlines unchanged', () => {
-  const a = arena(),
+  const a = arena(115),
     b = arena(114);
   a.cast();
   b.cast();

@@ -1,6 +1,6 @@
 import { GameModel, makeBuilding } from '../../src/game/model';
 import { emptyArmy, emptySpells } from '../../src/game/army';
-import { replayBattle, type ReplayData } from '../../src/game/replay';
+import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
 import { seconds } from '../../src/game/native-data';
 import { spellEndTime, spellRow } from '../../src/game/native-spells';
 export function nativeFieldSpellRecording(
@@ -21,6 +21,7 @@ export function nativeFieldSpellRecording(
     | 'Ice Block'
     | 'Revive',
   level = 1,
+  version = REPLAY_VERSION,
 ) {
   const key = (
       {
@@ -56,8 +57,9 @@ export function nativeFieldSpellRecording(
   model.state.spellLevels = { ...model.state.spellLevels, [key]: level };
   model.startBattle(0, true);
   const data = (model as unknown as { recording: ReplayData }).recording;
+  data.version = version;
   data.initial.heroes = [];
-  const battle = (model.battle = replayBattle(data.initial)),
+  const battle = (model.battle = replayBattle(data.initial, version)),
     snapshots: { at: number; battle: unknown }[] = [];
   model.activeSpell = key;
   if (!model.castSpell(11.5, 11.5)) throw Error(`${name} cast failed`);

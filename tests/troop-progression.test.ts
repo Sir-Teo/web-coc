@@ -223,6 +223,10 @@ describe('native specialist combat', () => {
     u.x = 15.1;
     u.cooldown = 0;
     m.step(0.05);
+    expect(cannon.hp).toBe(cannon.maxHp);
+    advance(m, 1.4);
+    expect(cannon.hp).toBe(cannon.maxHp);
+    m.step(0.05);
     expect(cannon.maxHp - cannon.hp).toBe(24);
     advance(m, 1.95);
     expect(cannon.maxHp - cannon.hp).toBe(24);

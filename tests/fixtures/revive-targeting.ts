@@ -1,8 +1,13 @@
 import { GameModel, makeBuilding } from '../../src/game/model';
 import { emptyArmy, emptySpells } from '../../src/game/army';
-import { replayBattle, type ReplayData } from '../../src/game/replay';
+import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
 /** Real Cannon knockout and Freeze inputs prepare a living game's direct Revive controls. */
-export function prepareReviveTargeting(model = new GameModel(), reviveLevel = 1, reviveCount = 2) {
+export function prepareReviveTargeting(
+  model = new GameModel(),
+  reviveLevel = 1,
+  reviveCount = 2,
+  version = REPLAY_VERSION,
+) {
   model.state.king = undefined;
   model.state.obstacles = [];
   model.state.nextId = 1000;
@@ -15,8 +20,9 @@ export function prepareReviveTargeting(model = new GameModel(), reviveLevel = 1,
   model.state.spellLevels = { ...model.state.spellLevels, revive: reviveLevel, freeze: 8 };
   model.startBattle(0, true);
   const data = (model as unknown as { recording: ReplayData }).recording;
+  data.version = version;
   data.initial.heroes = [{ kind: 'queen', level: 1, items: [] }];
-  const battle = (model.battle = replayBattle(data.initial)),
+  const battle = (model.battle = replayBattle(data.initial, version)),
     step = () => {
       if (battle.finished || battle.elapsed > 50)
         throw Error('Revive targeting checkpoint missing');

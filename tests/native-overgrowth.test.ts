@@ -79,7 +79,7 @@ it('expired roots keep their retract history and a later cast starts a new cycle
   expect(a.model.battle!.nativeOvergrowthRoots).toHaveLength(3);
 });
 it('presentation capture preserves physical spell behavior and version 112 omits new records', () => {
-  const current = arena(),
+  const current = arena(113),
     old = arena(112);
   current.cast();
   old.cast();

@@ -171,7 +171,7 @@ for (const kind of ['yeti', 'superyeti'] as const) {
         }
       });
     it(`${kind} level ${level} retains exact version-144 combat without Recall`, () => {
-      const current = yetiRecallBattle(level, undefined, false, 1, kind),
+      const current = yetiRecallBattle(level, 145, false, 1, kind),
         old = yetiRecallBattle(level, 144, false, 1, kind);
       for (let n = 0; n < 3; n++)
         for (const r of [current, old]) {

@@ -1,9 +1,9 @@
 import { GameModel, makeBuilding } from '../../src/game/model';
 import { emptyArmy, emptySpells } from '../../src/game/army';
-import { replayBattle, type ReplayData } from '../../src/game/replay';
+import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
 import { spellEndTime } from '../../src/game/native-spells';
 /** Real Giant deployment and Clone input; copies keep their source housing and deadlines. */
-export function nativeCloneSpellRecording(level = 1) {
+export function nativeCloneSpellRecording(level = 1, version = REPLAY_VERSION) {
   const model = new GameModel();
   model.state.king = undefined;
   model.state.obstacles = [];
@@ -17,8 +17,9 @@ export function nativeCloneSpellRecording(level = 1) {
   model.state.spellLevels = { ...model.state.spellLevels, clone: level };
   model.startBattle(0, true);
   const data = (model as unknown as { recording: ReplayData }).recording;
+  data.version = version;
   data.initial.heroes = [];
-  const battle = (model.battle = replayBattle(data.initial)),
+  const battle = (model.battle = replayBattle(data.initial, version)),
     snapshots: { at: number; battle: unknown }[] = [];
   const step = () => {
     if (battle.finished || battle.elapsed > 40) throw Error('Clone checkpoint missing');

@@ -131,7 +131,7 @@ it('Ice Block end effects require a resolved last pulse and preserve source emit
 it.each([1, 6])(
   'Ice Block level %s preserves real Cannon damage reduction, stationary protection and expiry against version 127',
   (level) => {
-    const r = nativeIceBlockRecording(level),
+    const r = nativeIceBlockRecording(level, 128),
       at = (t: number) => r.snapshots.find((s) => s.at === t)!.battle as Battle,
       protectedUnit = at(r.protectedAt).units.find((u) => u.id === r.unitId)!,
       later = at(r.takingFire).units.find((u) => u.id === r.unitId)!;

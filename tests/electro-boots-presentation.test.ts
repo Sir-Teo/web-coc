@@ -73,7 +73,7 @@ it('retains pinned original deployment art and the exact 300 ms emitter, cue and
 
 it('all 27 item levels activate passively once and preserve version 139 combat and random state', () => {
   for (let level = 1; level <= 27; level++) {
-    const r = heroRegenerationBattle('electro-boots', level),
+    const r = heroRegenerationBattle('electro-boots', level, 140),
       old = heroRegenerationBattle('electro-boots', level, 139);
     const ability = heroAbilities(r.hero).find((a) => a.name === source.ability)!;
     expect(ability.passive).toBe(true);

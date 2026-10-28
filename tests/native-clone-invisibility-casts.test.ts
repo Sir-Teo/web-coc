@@ -32,7 +32,7 @@ function verify(r: Pick<ReturnType<typeof nativeCloneSpellRecording>, 'data' | '
 it.each([1, 9])(
   'Clone level %s preserves actual copies, housing and expiration against version 119',
   (level) => {
-    const r = nativeCloneSpellRecording(level),
+    const r = nativeCloneSpellRecording(level, 120),
       copied = r.snapshots.find((s) => s.at === r.later)!.battle as Battle;
     expect(copied.nativeSpellCastHistory?.[0]).toMatchObject({ name: 'Clone', level });
     const copies = copied.units.filter((u) => r.copyIds.includes(u.id));
@@ -62,7 +62,7 @@ it.each(['building', 'defender', 'tower'] as const)(
 it.each(['Clone', 'Invisibility'] as const)(
   '%s retains ended source field history for portable reverse seeks',
   (name) => {
-    const r = nativeFieldSpellRecording(name, name === 'Clone' ? 9 : 4),
+    const r = nativeFieldSpellRecording(name, name === 'Clone' ? 9 : 4, 120),
       battle = r.snapshots.find((s) => s.at === r.afterLive)!.battle as Battle;
     expect(battle.nativeSpells).toEqual([]);
     expect(battle.nativeSpellCastHistory).toHaveLength(1);

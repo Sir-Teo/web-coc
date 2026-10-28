@@ -52,7 +52,7 @@ it.each(['Rage', 'Haste'] as const)(
 it.each(['Rage', 'Haste'] as const)(
   '%s retains identical physical boosts and movement against version 116',
   (name) => {
-    const a = arena(name, REPLAY_VERSION, true),
+    const a = arena(name, 117, true),
       b = arena(name, 116, true);
     a.cast();
     b.cast();

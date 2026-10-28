@@ -125,7 +125,7 @@ it.each([1, 2, 3, 4, 5])(
 it.each([false, true])(
   'Revive direct=%s reconstructs actual Queen restoration and source metadata with version-128 physical equivalence',
   (direct) => {
-    const r = nativeReviveCastRecording(5, direct),
+    const r = nativeReviveCastRecording(5, direct, 129),
       model = new GameModel();
     for (const version of [r.data.version, 128]) {
       const data = structuredClone(r.data);

@@ -1,8 +1,8 @@
 import { GameModel, makeBuilding } from '../../src/game/model';
 import { emptyArmy, emptySpells } from '../../src/game/army';
-import { replayBattle, type ReplayData } from '../../src/game/replay';
+import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
 /** Recorded Cannon wounds, a Freeze to hold incoming damage, then actual Healing pulses. */
-export function nativeHealingSpellRecording(level = 1) {
+export function nativeHealingSpellRecording(level = 1, version = REPLAY_VERSION) {
   const model = new GameModel();
   model.state.king = undefined;
   model.state.obstacles = [];
@@ -16,8 +16,9 @@ export function nativeHealingSpellRecording(level = 1) {
   model.state.spellLevels = { ...model.state.spellLevels, heal: level, freeze: 8 };
   model.startBattle(0, true);
   const recording = (model as unknown as { recording: ReplayData }).recording;
+  recording.version = version;
   recording.initial.heroes = [];
-  const battle = (model.battle = replayBattle(recording.initial)),
+  const battle = (model.battle = replayBattle(recording.initial, version)),
     snapshots: { at: number; battle: unknown }[] = [];
   const snapshot = () =>
     snapshots.push({ at: battle.elapsed, battle: JSON.parse(JSON.stringify(battle)) });

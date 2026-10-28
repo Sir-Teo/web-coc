@@ -83,7 +83,7 @@ it('pins every original Meteor Staff graph, texture and spell phase without omit
 
 it('all 27 item levels preserve version 141 combat, cooldown and RNG while adding only captured presentation', () => {
   for (let level = 1; level <= 27; level++) {
-    const current = meteorStaffBattle(level),
+    const current = meteorStaffBattle(level, 142),
       old = meteorStaffBattle(level, 141),
       fx: FX[] = [];
     current.model.onEffect = (event) => fx.push(event);

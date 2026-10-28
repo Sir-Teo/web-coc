@@ -36,6 +36,12 @@ Do not turn off isolation globally: suites with `vi.mock` need independent modul
 state. Increasing worker count can increase memory and contention without improving
 wall time. Investigate a slow or stuck test before raising its timeout.
 
+Keep historical parity comparisons at the version that introduced the feature they
+verify. Comparing an old engine to `REPLAY_VERSION` also compares every later combat
+change and capability flag. Fixture version parameters select both the recording's
+version and its initial battle rules. Current spell and Giant interactions retain
+separate complete-state forward/backward checks in `tests/giant-spell-replays.test.ts`.
+
 ## Source pixel comparisons
 
 The on-demand [browser regression workflow](../.github/workflows/browser-regression.yml)

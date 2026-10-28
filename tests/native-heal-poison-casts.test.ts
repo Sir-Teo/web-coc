@@ -52,7 +52,7 @@ function comparePhysical(
 it.each([1, 12])(
   'level %s Healing restores actual Cannon wounds without changing version-117 physics',
   (level) => {
-    const r = nativeHealingSpellRecording(level),
+    const r = nativeHealingSpellRecording(level, 118),
       healed = r.snapshots.find((s) => s.at === r.healed)!.battle as Battle;
     expect(healed.units.find((u) => u.id === r.unitId)!.hp).toBeGreaterThan(r.beforeHp);
     expect(healed.nativeSpellCastHistory?.some((c) => c.name === 'Healing')).toBe(true);

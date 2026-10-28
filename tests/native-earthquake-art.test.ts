@@ -130,7 +130,7 @@ it('Earthquake keeps one original fall and landing cue, with no replay of sounds
 it.each([1, 8])(
   'four level-%s Earthquakes retain diminishing damage and fourth-cast wall destruction through version-124 portable seeks',
   (level) => {
-    const r = nativeEarthquakeRecording(level),
+    const r = nativeEarthquakeRecording(level, 125),
       model = new GameModel(),
       at = (t: number) => r.snapshots.find((s) => s.at === t)!.battle as Battle,
       first = at(r.impacts[0]).buildings.find((b) => b.id === 2)!,

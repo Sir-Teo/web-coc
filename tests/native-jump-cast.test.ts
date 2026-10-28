@@ -48,7 +48,7 @@ it.each([1, 5])(
   },
 );
 it('casts and wall crossing retain the previous physical pulse and expiry deadlines', () => {
-  const a = arena(),
+  const a = arena(116),
     b = arena(115);
   a.cast();
   b.cast();

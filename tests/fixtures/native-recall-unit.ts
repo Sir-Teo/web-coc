@@ -1,8 +1,8 @@
 import { GameModel, makeBuilding } from '../../src/game/model';
 import { emptyArmy, emptySpells } from '../../src/game/army';
-import { replayBattle, type ReplayData } from '../../src/game/replay';
+import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
 /** Cannon wounds, Freeze, Recall and redeployment are all actual inputs. */
-export function nativeRecallUnitRecording(redeployDelay = 0) {
+export function nativeRecallUnitRecording(redeployDelay = 0, version = REPLAY_VERSION) {
   const model = new GameModel();
   model.state.king = undefined;
   model.state.obstacles = [];
@@ -16,8 +16,9 @@ export function nativeRecallUnitRecording(redeployDelay = 0) {
   model.state.spellLevels = { ...model.state.spellLevels, freeze: 8, recall: 7 };
   model.startBattle(0, true);
   const data = (model as unknown as { recording: ReplayData }).recording;
+  data.version = version;
   data.initial.heroes = [];
-  const battle = (model.battle = replayBattle(data.initial)),
+  const battle = (model.battle = replayBattle(data.initial, version)),
     snapshots: { at: number; battle: unknown }[] = [];
   const step = () => {
     if (battle.finished || battle.elapsed > 50) throw Error('Recall unit checkpoint missing');

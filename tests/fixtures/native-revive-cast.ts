@@ -1,8 +1,8 @@
 import { prepareReviveTargeting } from './revive-targeting';
-import type { ReplayData } from '../../src/game/replay';
+import { REPLAY_VERSION, type ReplayData } from '../../src/game/replay';
 /** An actual Queen knockout is revived from a different tile, retaining both source origins. */
-export function nativeReviveCastRecording(level = 1, direct = false) {
-  const { model, battle, queenId } = prepareReviveTargeting(undefined, level, 1),
+export function nativeReviveCastRecording(level = 1, direct = false, version = REPLAY_VERSION) {
+  const { model, battle, queenId } = prepareReviveTargeting(undefined, level, 1, version),
     queen = battle.units.find((u) => u.id === queenId)!,
     anchor = { x: queen.x, y: queen.y },
     caster = { x: queen.x + 3, y: queen.y };

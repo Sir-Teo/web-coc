@@ -6,7 +6,7 @@ import { nativeRecallUnitRecording } from './fixtures/native-recall-unit';
 it.each([1, 10])(
   'Recall level-%s pet owner records primary disappearance and redeployment without changing version-121 physics',
   (level) => {
-    const r = petSummonRecallRecording(level),
+    const r = petSummonRecallRecording(level, 122),
       recalled = r.snapshots.find((s) => s.at === r.recalled)!.battle as Battle,
       blocked = r.snapshots.find((s) => s.at === r.blocked)!.battle as Battle;
     expect(recalled.nativeRecallEvents).toHaveLength(1);
@@ -41,7 +41,7 @@ it.each([1, 10])(
 it.each([0, 11])(
   'wounded ordinary troops preserve health with a %s-second Recall wait',
   (delay) => {
-    const r = nativeRecallUnitRecording(delay),
+    const r = nativeRecallUnitRecording(delay, 122),
       at = (time: number) => r.snapshots.find((s) => s.at === time)!.battle as Battle;
     expect(at(r.before).units.find((u) => u.id === r.oldId)!.hp).toBeLessThan(
       at(r.before).units.find((u) => u.id === r.oldId)!.maxHp,

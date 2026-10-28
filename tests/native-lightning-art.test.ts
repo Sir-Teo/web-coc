@@ -159,9 +159,9 @@ it('live and retained Lightning phases share exactly four original sound keys', 
 });
 it('portable forward and reverse seeks preserve version-123 damage, stun and Builder repair retargeting', () => {
   for (const r of [
-    nativeFieldSpellRecording('Lightning', 1),
-    nativeFieldSpellRecording('Lightning', 13),
-    defendingBuilderLightningRecording(),
+    nativeFieldSpellRecording('Lightning', 1, 124),
+    nativeFieldSpellRecording('Lightning', 13, 124),
+    defendingBuilderLightningRecording(124),
   ]) {
     const model = new GameModel();
     for (const version of [r.data.version, 123]) {

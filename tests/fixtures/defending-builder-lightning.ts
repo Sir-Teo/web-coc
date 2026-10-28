@@ -1,8 +1,9 @@
 import { GameModel, makeBuilding } from '../../src/game/model';
 import { defaultSpellLevels, emptyArmy, emptySpells } from '../../src/game/army';
+import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
 
 /** Only recorded spell inputs damage the two candidates and reset the worker's commitment. */
-export function defendingBuilderLightningRecording() {
+export function defendingBuilderLightningRecording(version = REPLAY_VERSION) {
   const model = new GameModel();
   model.state.obstacles = [];
   model.state.buildings = [
@@ -16,7 +17,9 @@ export function defendingBuilderLightningRecording() {
   model.state.spellLevels = { ...defaultSpellLevels(), earthquake: 1, lightning: 1 };
   model.state.king = undefined;
   model.startBattle(0, true);
-  const battle = model.battle!;
+  const recording = (model as unknown as { recording: ReplayData }).recording;
+  recording.version = version;
+  const battle = (model.battle = replayBattle(recording.initial, version));
   const until = (ready: () => boolean) => {
     for (let remaining = 400; !ready(); remaining--) {
       if (!remaining || battle.finished) throw Error('Builder Lightning checkpoint not reached');

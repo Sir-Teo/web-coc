@@ -14,7 +14,7 @@ import { replayBattle } from '../src/game/replay';
 for (const equipment of ['electro-boots', 'rage-gem', 'life-gem'] as AuraEquipment[])
   for (const revival of ['revive', 'phoenix'] as AuraRevival[])
     it(`${equipment} resumes exactly one aura after real ${revival} resurrection on the same unit`, () => {
-      const r = heroAuraRevivalRecording(equipment, revival);
+      const r = heroAuraRevivalRecording(equipment, revival, 138);
       const at = (time: number) => r.snapshots.find((s) => s.at === time)!.battle as Battle;
       const name = {
         'electro-boots': 'Electro Boots Aura',

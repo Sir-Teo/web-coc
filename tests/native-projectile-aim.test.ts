@@ -117,7 +117,7 @@ function movingBattle(kind: 'frost' | 'ball' | 'shield', version?: number) {
 it.each(['frost', 'ball', 'shield'] as const)(
   '%s retains every moving aim through JSON restoration and canonical landing',
   (kind) => {
-    const r = movingBattle(kind);
+    const r = movingBattle(kind, 137);
     for (let n = 0; !shots(r.model.battle!).length && n < 30; n++) r.model.step(0.05);
     const launched = shots(r.model.battle!)[0];
     r.model.step(0.05);

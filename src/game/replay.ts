@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 170;
+export const REPLAY_VERSION = 171;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -198,7 +198,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 167 retains Witch flights for original trail tails after replay seeks.
  * Version 168 reconstructs original Witch launch/impact audio from physical events.
  * Version 169 gives Hound parents source phases and Lava Hound flight.
- * Version 170 makes seeded Hound death-spawn geometry independent of host trigonometry. */
+ * Version 170 makes seeded Hound death-spawn geometry independent of host trigonometry.
+ * Version 171 gives Giant/Super Giant source split attack phases. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -336,6 +337,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 167 ||
   version === 168 ||
   version === 169 ||
+  version === 170 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -484,6 +486,9 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 171 && (s.army.giant > 0 || s.army.supergiant > 0)
+      ? { nativeGiantWindup: true as const }
+      : {}),
     ...(version >= 170 && (s.army.lavahound > 0 || s.army.icehound > 0)
       ? { nativeHoundSpawnGeometry: true as const }
       : {}),

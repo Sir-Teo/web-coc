@@ -1,9 +1,9 @@
 import { GameModel, makeBuilding } from '../../src/game/model';
 import { emptyArmy, emptySpells } from '../../src/game/army';
-import { replayBattle, type ReplayData } from '../../src/game/replay';
+import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
 
 /** Recall preserves two independently living Boogers when the carried pet gets a new body. */
-export function petSummonRecallRecording(level = 1) {
+export function petSummonRecallRecording(level = 1, version = REPLAY_VERSION) {
   const model = new GameModel();
   model.state.king = undefined;
   model.state.obstacles = [];
@@ -13,8 +13,9 @@ export function petSummonRecallRecording(level = 1) {
   model.state.spells = { ...emptySpells(), recall: 1 };
   model.startBattle(0, true);
   const data = (model as unknown as { recording: ReplayData }).recording;
+  data.version = version;
   data.initial.heroes = [{ kind: 'king', level: 1, items: [], pet: { kind: 'sneezy', level } }];
-  const battle = (model.battle = replayBattle(data.initial));
+  const battle = (model.battle = replayBattle(data.initial, version));
   if (!model.deployNativeHero('king', 5, 6.5)) throw Error('Summon Recall Hero deployment failed');
   const owner = battle.nativeHeroes![0],
     oldPetId = owner.petId!,

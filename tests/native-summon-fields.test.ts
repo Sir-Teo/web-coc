@@ -134,7 +134,7 @@ for (const { name, bottle, edge, glow } of configs) {
   it.each([1, 8])(
     `${name} level %s preserves version-125 spawn times, bodies, shields and combat through portable reverse seeks`,
     (level) => {
-      const r = nativeFieldSpellRecording(name, level),
+      const r = nativeFieldSpellRecording(name, level, 126),
         model = new GameModel();
       for (const version of [r.data.version, 125]) {
         const data = structuredClone(r.data);

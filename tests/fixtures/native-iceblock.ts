@@ -1,8 +1,8 @@
 import { GameModel, makeBuilding } from '../../src/game/model';
 import { emptyArmy, emptySpells } from '../../src/game/army';
-import type { ReplayData } from '../../src/game/replay';
+import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
 /** A Cannon outside the spell area keeps firing at a real Giant protected inside it. */
-export function nativeIceBlockRecording(level = 1) {
+export function nativeIceBlockRecording(level = 1, version = REPLAY_VERSION) {
   const model = new GameModel();
   model.state.king = undefined;
   model.state.obstacles = [];
@@ -16,7 +16,9 @@ export function nativeIceBlockRecording(level = 1) {
   model.state.spells = { ...emptySpells(), iceblock: 1 };
   model.state.spellLevels = { ...model.state.spellLevels, iceblock: level };
   model.startBattle(0, true);
-  const battle = model.battle!,
+  const recording = (model as unknown as { recording: ReplayData }).recording;
+  recording.version = version;
+  const battle = (model.battle = replayBattle(recording.initial, version)),
     snapshots: { at: number; battle: unknown }[] = [],
     until = (time: number) => {
       while (battle.elapsed < time - 1e-9) {

@@ -1144,3 +1144,14 @@ Only carried Hound parents enable the new calculation; older versions keep their
 host-math path. Real Monolith wave recordings compare complete Node/Chromium states in
 current playback; historical browser checks remain within one engine. No stats, attack
 rule or asset changes. See the [randomized-rule evidence and portability checks](../reference/attacking-hound/README.md#seeded-death-position-portability-recording-version-170).
+
+## Version 171: Giant family attack phases
+
+Giant and Super Giant start a 1.5 s windup after reaching their target and retain
+0.5 s recovery within their source two-second period. Freeze/stun hold both phases,
+attack-speed modifiers scale both, and retargeting spends remaining recovery once.
+Building, wall and ground-defender attacks share the timer; original poses follow
+its action-frame offset. Defense preference and Super Giant's Wall multiplier stay
+in place. Only carried Giant family armies enable the change. Versions 170 and
+earlier retain their immediate first hits, with no save or asset changes. See the
+[source distinctions and actual deployment recordings](../reference/attacking-giant/README.md).

@@ -106,7 +106,7 @@ it('version 113 keeps the former live-only cast audio and omits new capture fiel
   ).toEqual([]);
 });
 it('cast capture leaves physical spell behavior and root lifetimes unchanged', () => {
-  const a = arena(),
+  const a = arena(114),
     b = arena(113);
   a.cast();
   b.cast();

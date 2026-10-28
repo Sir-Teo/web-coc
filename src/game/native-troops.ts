@@ -851,13 +851,14 @@ export function stepNativeUnit(
   if (electroDragon && stepElectroDragonCharge(ctx, u, s, damage, speed, dt, actionDt)) return;
   const bowler = !!(battle.nativeBowlerWindup && u.kind === 'bowler');
   const golem = !!(battle.nativeGolemWindup && (u.kind === 'golem' || u.kind === 'golemite'));
+  const giant = !!(battle.nativeGiantWindup && u.kind === 'supergiant');
   const valkyrie = !!(
     battle.nativeValkyrieWindup &&
     (u.kind === 'valkyrie' || u.kind === 'supervalkyrie')
   );
   const witch = !!(battle.nativeWitchWindup && (u.kind === 'witch' || u.kind === 'superwitch'));
   const hound = !!(battle.nativeHoundWindup && (u.kind === 'lavahound' || u.kind === 'icehound'));
-  const splitAttack = bowler || golem || valkyrie || witch || hound;
+  const splitAttack = bowler || golem || giant || valkyrie || witch || hound;
   if (
     splitAttack &&
     stepNativeAttackWindup(ctx, u, s, dt, actionDt, (target) => {
@@ -865,7 +866,7 @@ export function stepNativeUnit(
       else if ('building' in target) strike(ctx, u, s, target.building, damage);
       else if (witch) releaseWitchAtDefender(ctx, u, s, target.defender, damage);
       else if (hound) releaseHoundAtDefender(ctx, u, s, target.defender, damage);
-      else if (golem) {
+      else if (golem || giant) {
         hurtDefender(battle, target.defender, damage, at);
         ctx.effect({
           type: 'hit',
@@ -1001,7 +1002,12 @@ export function stepNativeUnit(
           : {}),
         wallBreaker: s.preferredClass === 'Wall' || undefined,
         healer: s.heal > 0 && s.dps <= 0,
-        ...(golem || valkyrie || witch || hound || (bowler && battle.nativeBowlerWallWindup)
+        ...(golem ||
+        giant ||
+        valkyrie ||
+        witch ||
+        hound ||
+        (bowler && battle.nativeBowlerWallWindup)
           ? {
               nativeBuildingAttack: (target: Building) =>
                 beginNativeAttackWindup(u, s, { building: target }, battle),

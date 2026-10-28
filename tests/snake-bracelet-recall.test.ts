@@ -159,7 +159,7 @@ for (const level of [1, 27])
     });
 
 it.each([1, 27])('level %s retains exact version-143 normal combat without Recall', (level) => {
-  const current = snakeBraceletBattle(level),
+  const current = snakeBraceletBattle(level, 144),
     old = snakeBraceletBattle(level, 143);
   for (let n = 0; n < 5; n++) {
     for (const r of [current, old]) {

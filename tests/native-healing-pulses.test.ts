@@ -96,7 +96,7 @@ it('Healing bounds pulse reconstruction to source tails and keeps version-118 fi
 it.each([1, 12])(
   'Healing level %s pulse presentation preserves version-118 wounded-unit physics and portable seeks',
   (level) => {
-    const r = nativeHealingSpellRecording(level),
+    const r = nativeHealingSpellRecording(level, 119),
       model = new GameModel();
     for (const version of [r.data.version, 118]) {
       const data = structuredClone(r.data);

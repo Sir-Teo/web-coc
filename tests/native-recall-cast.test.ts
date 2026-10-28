@@ -40,7 +40,7 @@ function verify(r: Pick<ReturnType<typeof petSummonRecallRecording>, 'data' | 's
 it.each([1, 7])(
   'Recall level %s reconstructs completed casts through portable reverse seeks',
   (level) => {
-    const r = nativeFieldSpellRecording('Recall', level),
+    const r = nativeFieldSpellRecording('Recall', level, 121),
       battle = r.snapshots.find((s) => s.at === r.afterLive)!.battle as Battle;
     expect(battle.nativeSpells).toEqual([]);
     expect(battle.nativeSpellCastHistory).toHaveLength(1);
@@ -56,7 +56,7 @@ it.each([1, 7])(
 it.each([1, 10])(
   'actual Recall and redeployment preserve level-%s pet summon ownership and version-120 physics',
   (level) => {
-    const r = petSummonRecallRecording(level),
+    const r = petSummonRecallRecording(level, 121),
       battle = r.snapshots.find((s) => s.at === r.recalled)!.battle as Battle;
     expect(battle.nativeSpellCastHistory?.some((c) => c.name === 'Recall' && c.ended)).toBe(true);
     expect(r.petId).not.toBe(r.oldPetId);
@@ -66,7 +66,7 @@ it.each([1, 10])(
 it.each([false, true])(
   'Recall preserves committed Queen arrows against air=%s defenders and version-120 physics',
   (air) => {
-    const r = defenderFrostRecording(air),
+    const r = defenderFrostRecording(air, 1, 121),
       battle = r.snapshots.find((s) => s.at === r.recalled)!.battle as Battle;
     expect(battle.nativeSpellCastHistory?.some((c) => c.name === 'Recall' && c.ended)).toBe(true);
     expect(r.finalHit).toBeGreaterThan(r.recalled);
