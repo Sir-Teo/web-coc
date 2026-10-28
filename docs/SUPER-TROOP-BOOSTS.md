@@ -38,6 +38,14 @@ boost requirement and describes activation instead of naming a misleading
 production-facility level. Rejected activation names the original troop and
 exact required level, and spends neither currency nor an item.
 
+Locked Army Add buttons identify the first missing requirement: Town Hall 11,
+the original troop's research level, an active boost, or the actual production
+facility. Their tooltips, direct Add/Fill messages and saved-army preparation
+errors use the same check. A missing or expired Super Minion boost now says
+**Boost to train** instead of asking for a Dark Barracks that already exists.
+Clock expiry refreshes the controls while retaining prepared troops. Ordinary
+facility requirements continue to name their correct Barracks or Dark Barracks.
+
 Saved boost deadlines and prepared troops remain intact. New training requires
 the corrected research level, including when an older boost was activated one
 level early. Already prepared troops can still deploy. Combat research levels,
@@ -51,3 +59,10 @@ state after rejection, and deployment of an older prepared troop.
 buttons, accurate Info requirements, currency and potion activation, and
 training on phone and desktop. Existing magic-item and troop-guide browser
 checks retain their coverage.
+
+`tests/army-training-issues.test.ts` checks the shared missing-requirement
+messages, unchanged state after rejected Add/Fill/composition changes, valid
+training, retained prepared compositions and clock expiry.
+`tests/browser/army-training-issues.spec.ts` follows Town Hall, research,
+activation and expiry through the real Army controls on phone and desktop,
+then verifies an ordinary Wizard's Barracks gate.

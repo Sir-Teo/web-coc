@@ -3723,15 +3723,34 @@ export class GameModel {
     this.countAchievements('activate_super_licence');
     this.changed();
   }
+  /** The first missing training requirement, shared by controls and preparation commands. */
+  troopTrainingIssue(kind: TroopKind): { label: string; message: string } | null {
+    const original = superOriginal(kind),
+      name = TROOPS[kind].name;
+    if (original) {
+      if (this.townhallLevel < 11)
+        return { label: 'TH11 required', message: `${name} requires Town Hall 11.` };
+      const minimum = superMinimum(kind),
+        baseName = TROOPS[original].name;
+      if (this.troopLevel(original) < minimum)
+        return {
+          label: `${baseName} level ${minimum}`,
+          message: `${name} requires ${baseName} level ${minimum}.`,
+        };
+      if ((this.state.superBoosts?.[kind] ?? 0) <= this.clock)
+        return { label: 'Boost to train', message: `Activate the ${name} boost before training.` };
+    }
+    const facility = troopFacility(kind),
+      level = TROOP_UNLOCK[kind];
+    if (facilityLevel(this.state.buildings, facility) < level)
+      return {
+        label: `${BUILDINGS[facility].name} ${level}`,
+        message: `${name} requires a completed level ${level} ${BUILDINGS[facility].name}.`,
+      };
+    return null;
+  }
   troopUnlocked(kind: TroopKind) {
-    if (
-      superOriginal(kind) &&
-      (this.townhallLevel < 11 ||
-        this.troopLevel(superOriginal(kind)!) < superMinimum(kind) ||
-        (this.state.superBoosts?.[kind] ?? 0) <= this.clock)
-    )
-      return false;
-    return facilityLevel(this.state.buildings, troopFacility(kind)) >= TROOP_UNLOCK[kind];
+    return this.troopTrainingIssue(kind) === null;
   }
   spellUnlocked(kind: SpellKind) {
     return facilityLevel(this.state.buildings, spellFactory(kind)) >= SPELL_UNLOCK[kind];
@@ -3752,10 +3771,8 @@ export class GameModel {
       count > 5
     )
       return;
-    if (!this.troopUnlocked(kind))
-      return this.notify(
-        `${TROOPS[kind].name} requires a completed level ${TROOP_UNLOCK[kind]} ${BUILDINGS[troopFacility(kind)].name}.`,
-      );
+    const issue = this.troopTrainingIssue(kind);
+    if (issue) return this.notify(issue.message);
     if (
       isSiege(kind) &&
       TROOP_KEYS.filter(isSiege).reduce((n, k) => n + (this.state.army[k] ?? 0), count) > 3
@@ -3876,8 +3893,7 @@ export class GameModel {
     if (armySpace(army) > this.capacity || spellSpace(spells) > this.spellCapacity)
       return 'This army needs more troop or spell housing.';
     const troop = TROOP_KEYS.find((k) => army[k] > this.state.army[k] && !this.troopUnlocked(k));
-    if (troop)
-      return `${TROOPS[troop].name} requires a completed level ${TROOP_UNLOCK[troop]} Barracks.`;
+    if (troop) return this.troopTrainingIssue(troop)!.message;
     const spell = SPELL_KEYS.find(
       (k) => spells[k] > this.state.spells[k] && !this.spellUnlocked(k),
     );
