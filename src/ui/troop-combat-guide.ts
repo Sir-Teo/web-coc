@@ -17,7 +17,18 @@ export function troopFavoriteTarget(stats: NativeUnitStats) {
 export function troopCombatGuide(kind: TroopKind, stats: NativeUnitStats) {
   const facts: [string, string][] = [];
   let tactic: string | undefined;
-  if (kind === 'superbowler') {
+  if (kind === 'superwallbreaker') {
+    const number = (value: number) => value.toLocaleString('en-US', { maximumFractionDigits: 2 });
+    facts.push(
+      [
+        'Contact damage vs walls',
+        number((stats.damage + stats.deathDamage) * stats.preferredMultiplier),
+      ],
+      ['Death damage vs walls', number(stats.deathDamage * stats.preferredMultiplier)],
+    );
+    tactic =
+      'Let a frontline draw fire while it opens walls. Its bomb explodes when it attacks or is defeated; both attack and death damage receive the Wall bonus.';
+  } else if (kind === 'superbowler') {
     facts.push(
       ['Boulder landings', `${stats.bounces}`],
       ['Bounce distance', `${stats.bounceDistance} tiles`],

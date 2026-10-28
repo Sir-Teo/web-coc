@@ -2,6 +2,17 @@ import { expect, test } from '@playwright/test';
 
 const cases = [
   {
+    name: 'Super Wall Breaker',
+    target: 'Walls (40× damage)',
+    tactic: 'both attack and death damage receive the Wall bonus',
+    facts: {
+      'Contact damage vs walls': '5,560',
+      'Death damage vs walls': '4,200',
+      'Attack splash': '0.8 tiles',
+      'Death blast radius': '1.6 tiles',
+    },
+  },
+  {
     name: 'Super Bowler',
     target: 'Any building',
     tactic: 'boulders bounce through clustered buildings and ground troops',
@@ -130,6 +141,7 @@ for (const viewport of [
           'Super Archer',
           'Super Wizard',
           'Super Bowler',
+          'Super Wall Breaker',
         ].includes(c.name)
       )
         await page.screenshot({
@@ -148,6 +160,30 @@ for (const viewport of [
         page.getByRole('button', { name: `About ${c.name}`, exact: true }),
       ).toBeVisible();
     }
+    await page.evaluate(() => {
+      const m = window.__game.model;
+      m.state.troopLevels = { ...m.state.troopLevels, wallbreaker: 14 };
+      m.changed();
+    });
+    await page.getByRole('button', { name: 'About Super Wall Breaker', exact: true }).click();
+    await expect(page.locator('.troop-info-hero .eyebrow')).toContainText('LEVEL 14');
+    for (const [label, value] of [
+      ['Contact damage vs walls', '23,320'],
+      ['Death damage vs walls', '16,520'],
+    ])
+      await expect(
+        page
+          .locator('.troop-stats > div')
+          .filter({ has: page.getByText(label, { exact: true }) })
+          .locator('dd'),
+      ).toHaveText(value);
+    await page.screenshot({
+      path: `output/playtest/troop-guide-super-wall-breaker-14-${viewport.width}.png`,
+    });
+    await page
+      .locator('.troop-info-body')
+      .getByRole('button', { name: 'Train troops', exact: true })
+      .click();
     await page.getByRole('button', { name: 'About Minion', exact: true }).click();
     await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
     await expect(page.locator('.troop-info-body')).toHaveCount(0);
