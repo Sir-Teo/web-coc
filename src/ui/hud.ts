@@ -61,6 +61,7 @@ import { BUILDER_MENU_TEXTS, builderMenu, type BuilderOption } from '../game/bui
 import Phaser from 'phaser';
 import { pendingHeroRevive } from '../game/revive-targets';
 import { TROOP_ORDER, SPELL_ORDER, spellUnlockLabel } from './army-roster';
+import { troopCombatGuide, troopFavoriteTarget } from './troop-combat-guide';
 import {
   TROOP_UNLOCK,
   SPELL_UNLOCK,
@@ -4577,8 +4578,10 @@ export class HUD {
   }
   private troopInfo() {
     const kind = this.inspectedTroop,
-      d = this.model.troopStats(kind);
-    const healingStats = d.healer ? nativeUnitStats(kind, this.model.troopLevel(kind)) : undefined;
+      d = this.model.troopStats(kind),
+      native = nativeUnitStats(kind, this.model.troopLevel(kind)),
+      guide = troopCombatGuide(kind, native);
+    const healingStats = d.healer ? native : undefined;
     const heroHealingScale =
       kind === 'healer' && this.model.battle && !this.model.battle.nativeHealerHeroScaling
         ? 0.55
@@ -4587,30 +4590,28 @@ export class HUD {
       ? healingStats?.airTargets
         ? 'Friendly ground and air troops'
         : 'Friendly ground troops'
-      : d.wallBreaker
-        ? 'Walls (40× damage)'
-        : d.prefersResources
-          ? 'Resources (2× damage)'
-          : d.prefersDefenses
-            ? 'Defenses'
-            : 'Any building';
-    const tactic = d.healer
-      ? kind === 'druid'
-        ? `Heals friendly ground and air troops with bouncing pulses, then transforms into a Bear. Heroes receive ${Math.round(heroHealingScale * 100)}% healing.`
-        : `Deploy behind a ground army. Healing pulses land where the ally was when cast, restoring nearby ground troops. Heroes receive ${Math.round(heroHealingScale * 100)}% healing. Additional Healers have diminishing effectiveness; eight or more add no further healing to the same group.`
-      : kind === 'dragon'
-        ? 'Fly over walls and burn clustered buildings. Dragons have no favorite target, so clear outer buildings to guide them toward Air Defenses.'
-        : kind === 'pekka'
-          ? 'Open the walls and funnel this heavy attacker into the base. Support with Healers or spells; P.E.K.K.A has no preferred target or bonus against walls.'
-          : d.wallBreaker
-            ? 'Let Giants draw defensive fire first. Reaching a wall deals both attack and death damage; being defeated on the way deals only death damage. Both deal 40× damage to walls.'
-            : d.prefersResources
-              ? 'Clear a route through the walls, then send Goblins toward storages. Loot is released with each hit, so a quick raid can pay even without a star.'
-              : d.flying
-                ? 'Bombs damage nearby buildings when they land. Remove Air Defenses before sending Balloons over the walls.'
-                : d.prefersDefenses
-                  ? 'Deploy first to draw defensive fire, then send your more fragile troops behind.'
-                  : 'Spread your deployment to avoid mortar splash. Support your frontline with ranged damage and spells.';
+      : troopFavoriteTarget(native);
+    const tactic =
+      guide.tactic ??
+      (d.healer
+        ? kind === 'druid'
+          ? `Heals friendly ground and air troops with bouncing pulses, then transforms into a Bear. Heroes receive ${Math.round(heroHealingScale * 100)}% healing.`
+          : `Deploy behind a ground army. Healing pulses land where the ally was when cast, restoring nearby ground troops. Heroes receive ${Math.round(heroHealingScale * 100)}% healing. Additional Healers have diminishing effectiveness; eight or more add no further healing to the same group.`
+        : kind === 'dragon'
+          ? 'Fly over walls and burn clustered buildings. Dragons have no favorite target, so clear outer buildings to guide them toward Air Defenses.'
+          : kind === 'pekka'
+            ? 'Open the walls and funnel this heavy attacker into the base. Support with Healers or spells; P.E.K.K.A has no preferred target or bonus against walls.'
+            : d.wallBreaker
+              ? 'Let Giants draw defensive fire first. Reaching a wall deals both attack and death damage; being defeated on the way deals only death damage. Both deal 40× damage to walls.'
+              : d.prefersResources
+                ? 'Clear a route through the walls, then send Goblins toward storages. Loot is released with each hit, so a quick raid can pay even without a star.'
+                : kind === 'balloon'
+                  ? 'Bombs damage nearby buildings when they land. Remove Air Defenses before sending Balloons over the walls.'
+                  : d.flying
+                    ? 'Fly over Walls to reach exposed buildings. Support against air defenses and spread out to avoid area damage.'
+                    : d.prefersDefenses || native.preferredClass === 'Defense'
+                      ? 'Deploy first to draw defensive fire, then send your more fragile troops behind.'
+                      : 'Spread your deployment to avoid mortar splash. Support your frontline with ranged damage and spells.');
     const rows: [string, string][] = [
       ['Unlock requirement', `${BUILDINGS[troopFacility(kind)].name} ${TROOP_UNLOCK[kind]}`],
       ['Favorite target', target],
@@ -4626,6 +4627,7 @@ export class HUD {
       [d.healer ? 'Healing range' : 'Attack range', `${d.range} tile${d.range === 1 ? '' : 's'}`],
       [d.healer ? 'Healing interval' : 'Attack interval', `${d.rate}s`],
     ];
+    rows.splice(2, 0, ...guide.facts);
     if (d.splash) rows.push([d.healer ? 'Healing radius' : 'Attack splash', `${d.splash} tiles`]);
     if (d.healer)
       rows.push(['Hero healing per second', damageNumber((d.heal! / d.rate) * heroHealingScale)]);

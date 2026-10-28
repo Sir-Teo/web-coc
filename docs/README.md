@@ -23,6 +23,7 @@ notes in those references are not current release guarantees.
 - [Helper Hut](HELPERS.md)
 - [Town Hall tiers](TOWNHALL-TIERS.md)
 - [Army unlock progression](ARMY-UNLOCKS.md)
+- [Troop combat guide](TROOP-COMBAT-GUIDE.md)
 - [Ten-troop progression milestone (historical)](TROOP-PROGRESSION.md)
 - [Starter troop progression](STARTER-TROOP-PROGRESSION.md)
 - [Air Defense and Wizard Tower progression](AIR-WIZARD-PROGRESSION.md)

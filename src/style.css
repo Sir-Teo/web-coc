@@ -4191,6 +4191,10 @@ h3 {
 .troop-info-body > .game-btn {
   min-height: 44px;
 }
+.modal:has(> .troop-info-body) .close-btn {
+  min-width: 44px;
+  min-height: 44px;
+}
 .troop-stats {
   display: grid;
   grid-template-columns: 1fr 1fr;
