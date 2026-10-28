@@ -6,7 +6,7 @@ export function nativeTargetingSpellRecording(
   name: 'Totem Spell' | 'AngrySpell',
   level = 1,
   version = REPLAY_VERSION,
-  kind: 'swordsman' | 'goblin' | 'wizard' | 'superbarbarian' = 'swordsman',
+  kind: 'swordsman' | 'goblin' | 'wizard' | 'superbarbarian' | 'sneakygoblin' = 'swordsman',
 ) {
   const model = new GameModel(),
     key = name === 'Totem Spell' ? 'totem' : 'angry';
@@ -28,7 +28,11 @@ export function nativeTargetingSpellRecording(
   model.state.troopLevels = {
     ...model.state.troopLevels,
     [kind]: 1,
-    ...(kind === 'superbarbarian' ? { swordsman: 5 } : {}),
+    ...(kind === 'superbarbarian'
+      ? { swordsman: 5 }
+      : kind === 'sneakygoblin'
+        ? { goblin: 5 }
+        : {}),
   };
   model.state.spells = { ...emptySpells(), [key]: 1 };
   model.state.spellLevels = { ...model.state.spellLevels, [key]: level };

@@ -880,6 +880,7 @@ export function stepNativeUnit(
   const minion = !!(battle.nativeMinionWindup && u.kind === 'minion');
   const archer = !!(battle.nativeArcherWindup && u.kind === 'archer');
   const superBarbarian = !!(battle.nativeSuperBarbarianWindup && u.kind === 'superbarbarian');
+  const sneakyGoblin = !!(battle.nativeSneakyGoblinWindup && u.kind === 'sneakygoblin');
   const valkyrie = !!(
     battle.nativeValkyrieWindup &&
     (u.kind === 'valkyrie' || u.kind === 'supervalkyrie')
@@ -907,6 +908,7 @@ export function stepNativeUnit(
     minion ||
     archer ||
     superBarbarian ||
+    sneakyGoblin ||
     valkyrie ||
     witch ||
     hound;
@@ -954,7 +956,8 @@ export function stepNativeUnit(
         yeti ||
         hog ||
         miner ||
-        superBarbarian
+        superBarbarian ||
+        sneakyGoblin
       ) {
         hurtDefender(battle, target.defender, damage, at);
         if (iceGolem)
@@ -1118,6 +1121,7 @@ export function stepNativeUnit(
         minion ||
         archer ||
         superBarbarian ||
+        sneakyGoblin ||
         valkyrie ||
         witch ||
         hound ||

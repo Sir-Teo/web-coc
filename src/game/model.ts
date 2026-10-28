@@ -1081,6 +1081,8 @@ export interface Battle {
   nativeWizardWindup?: true;
   /** Version 195: Super Barbarian charges after engagement while its deployment Rage keeps its own clock. */
   nativeSuperBarbarianWindup?: true;
+  /** Version 196: Sneaky Goblin charges independently of deployment invisibility. */
+  nativeSneakyGoblinWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;
