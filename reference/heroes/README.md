@@ -32,4 +32,23 @@ This re-downloads the pinned tables, verifies their SHA-256 values and requires 
 
 ## Scope
 
+### Puppet presentation preloading
+
+The equipped active abilities also determine the troop art and sounds warmed
+before deployment. Barbarian and Archer Puppets copy the recorded Laboratory
+tier; Healer, Hog Rider, Lavaloon and Henchmen Puppets use their fixed source
+`TroopLevel`. The scene retains every required body tier when a carried troop
+and its Puppet summon differ, and warms each tier's direct projectile alongside
+the attack samples. Home loadout changes and recorded battle setups both drive
+the art demand. Passive damage-triggered summons retain their separate adapters.
+
+`tests/hero-summon-prefetch.test.ts` compares the first and last equipment tiers
+against real manual activation, checks duplicate setups and excludes passive
+summoners. `tests/browser/hero-puppet-preload.spec.ts` checks all six Puppets on
+phone or desktop before activation, including simultaneous level 1 and level 8
+Healer pages. It verifies immediate native bodies, loaded shots and samples,
+read-only rendering and no new body graph/image request at activation. The
+renderer may separately read original pixels for saturating source tints. This
+is presentation-only; replay combat rules and version 179 are unchanged.
+
 All six home-village heroes are recorded: Barbarian King, Archer Queen, Grand Warden, Royal Champion, Minion Prince and Dragon Duke. The two Builder Base heroes in the same table — Battle Machine and Battle Copter — are deliberately absent, as the Builder Base is not modelled. Which of the recorded heroes the village actually offers is a separate decision recorded in [HERO-PROGRESSION.md](../../docs/HERO-PROGRESSION.md).
