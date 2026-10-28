@@ -5239,6 +5239,59 @@ h3 {
   }
 }
 
+/* Keep every replay action visible on compact screens, with full touch targets. */
+@media (max-width: 600px), (max-height: 550px) {
+  .replay-transport .replay-control-label {
+    display: none;
+  }
+  .replay-transport .replay-buttons,
+  .replay-transport .replay-speeds {
+    gap: 3px;
+    flex-wrap: nowrap;
+  }
+  .replay-transport .replay-buttons {
+    justify-content: center;
+  }
+  .replay-transport .replay-buttons .game-btn {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+  }
+  .replay-transport .replay-shortcuts {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(44px, 1fr));
+    gap: 3px;
+  }
+}
+@media (max-width: 600px) {
+  .replay-controls.replay-transport {
+    width: calc(100% - 12px);
+    padding: 8px;
+  }
+  .replay-transport .replay-status {
+    margin-bottom: 0;
+  }
+  .replay-transport .replay-shortcuts {
+    margin-bottom: 4px;
+  }
+}
+@media (max-height: 550px) and (min-width: 601px) {
+  .replay-controls.replay-transport {
+    width: min(780px, calc(100% - 28px));
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 8px;
+  }
+  .replay-transport .replay-status,
+  .replay-transport input[type='range'] {
+    grid-column: 1 / -1;
+  }
+  .replay-transport .replay-shortcuts {
+    margin: 0;
+  }
+}
+
 /* Collection feedback stays aligned to the HUD while the village camera moves. */
 .resource-flight {
   position: fixed;

@@ -40,6 +40,8 @@ test('playback targets stay reachable at narrow portrait and landscape sizes', a
       width,
     );
     const controls = page.getByRole('region', { name: 'Replay playback' });
+    for (const name of ['Play', 'Restart', 'First deployment', 'Export replay', 'Back to log'])
+      await expect(controls.getByRole('button', { name, exact: true })).toBeVisible();
     for (const control of await controls.locator('button, input').all()) {
       await expect(control).toBeInViewport({ ratio: 1 });
       await expect
@@ -52,6 +54,7 @@ test('playback targets stay reachable at narrow portrait and landscape sizes', a
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
     const box = (await controls.boundingBox())!;
     expect(box.y).toBeGreaterThan(120);
+    expect(box.height).toBeLessThanOrEqual(height <= 550 ? 136 : 190);
     await page.screenshot({
       path: `output/playtest/replay-controls-${width}-${test.info().project.name}.png`,
     });
@@ -82,10 +85,11 @@ for (const mobile of [false, true])
     const camera = await page.evaluate(() => {
       const { scene } = window.__game;
       scene.zoomBy(1.1);
+      const c = scene.cameras.main;
       return {
-        x: scene.cameras.main.scrollX,
-        y: scene.cameras.main.scrollY,
-        zoom: scene.cameras.main.zoom,
+        centerX: c.scrollX + c.width / 2,
+        centerY: c.scrollY + c.height / 2,
+        zoom: scene.viewZoom,
       };
     });
     await range.focus();
@@ -106,8 +110,14 @@ for (const mobile of [false, true])
       .toBe(true);
     expect(
       await page.evaluate(() => {
-        const c = window.__game.scene.cameras.main;
-        return { x: c.scrollX, y: c.scrollY, zoom: c.zoom };
+        const scene = window.__game.scene,
+          c = scene.cameras.main;
+        // Adaptive render density may change raw scroll/zoom while preserving the view.
+        return {
+          centerX: c.scrollX + c.width / 2,
+          centerY: c.scrollY + c.height / 2,
+          zoom: scene.viewZoom,
+        };
       }),
     ).toEqual(camera);
     await page.locator('[data-action="replay-jump:10"]').click();
