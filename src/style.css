@@ -1962,6 +1962,12 @@ h3 {
 .deploy-tray .troop-card img {
   height: 100px;
 }
+.deploy-tray .troop-card.recalled-card img {
+  width: 100%;
+  height: calc(100% - 18px);
+  max-width: none;
+  bottom: 13px;
+}
 .battle-tip {
   display: flex;
   align-items: center;

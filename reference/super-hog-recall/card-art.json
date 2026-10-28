@@ -1,0 +1,63 @@
+{
+  "client": "18.400.21",
+  "bundle": "7f04bdfdc4124b1f49308423bb8f4aa8b137aae3",
+  "renderer": "Phaser 4.2.1 native scene renderer, straight-alpha PNG",
+  "inputs": {
+    "public/assets/troops-native/superhog/chr_super_hog_rider/texture-0.png": "5293d693c6185be2329e3234d9efcce262c5fbb6e71884cb0f3ad807ab0b2fa3",
+    "public/assets/troops-native/superhog/graph.json": "26c5d1c1cb46d79199dcb40e857c91903c37cf7ce50aa8a6f9a3e44b6314c92a",
+    "public/assets/troops-native/superrider/chr_super_hog_rider/texture-0.png": "68cacce714c60db63dae5967610dffc505e2c2c7ddf4493965f86a0fab824c74",
+    "public/assets/troops-native/superrider/graph.json": "0551041f523b5d0a8830ab8ecb2eb0342d5e075592e8ed0c5dcac2166f49c1fc"
+  },
+  "records": [
+    {
+      "kind": "superhog",
+      "scene": "chr_super_hog_rider",
+      "export": "super_h_rider_b_idle1_3",
+      "path": "assets/recall-cards/superhog.png",
+      "level": 1,
+      "seconds": 0,
+      "size": 128,
+      "padding": 8,
+      "bounds": [
+        -35.875585943460464,
+        -32,
+        35.023828119039536,
+        29.762499999254942
+      ],
+      "matrix": [
+        1.5797027589151664,
+        0,
+        64.67276209258266,
+        0,
+        1.5797027589151664,
+        65.76729246212483
+      ],
+      "sha256": "273622d1785e41479839596292b97759bc903782bd0ac1726fb74e4d15f5f54e"
+    },
+    {
+      "kind": "superrider",
+      "scene": "chr_super_hog_rider",
+      "export": "super_h_rider_a_idle1_3",
+      "path": "assets/recall-cards/superrider.png",
+      "level": 1,
+      "seconds": 0,
+      "size": 128,
+      "padding": 8,
+      "bounds": [
+        -22.399999618530273,
+        -48.400001525878906,
+        21.600000381469727,
+        14
+      ],
+      "matrix": [
+        1.7948717509814591,
+        0,
+        64.71794801570334,
+        0,
+        1.7948717509814591,
+        94.87179548625957
+      ],
+      "sha256": "521045d8abfdd25e177c259c1e29da629edb2930f48796916b2611ee5745e406"
+    }
+  ]
+}

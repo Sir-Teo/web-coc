@@ -125,10 +125,19 @@ for (const c of [
       riderCard = page.locator('[data-action="troop:superrider"]');
     for (const card of [hogCard, riderCard]) {
       await expect(card).toBeEnabled();
+      await expect
+        .poll(() =>
+          card
+            .locator('img')
+            .evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 128),
+        )
+        .toBe(true);
       await expect(card.locator('.troop-count')).toHaveText('x1');
       await expect(card.locator('.troop-level')).toHaveText(`★ ${c.level + 3}`);
       await expect(card).toHaveAttribute('aria-label', /recalled for this attack/);
     }
+    await expect(hogCard.locator('img')).toHaveAttribute('src', /recall-cards\/superhog\.png$/);
+    await expect(riderCard.locator('img')).toHaveAttribute('src', /recall-cards\/superrider\.png$/);
     await page.screenshot({
       path: `output/playtest/super-hog-recall-stock-${c.level}-${c.width}.png`,
     });

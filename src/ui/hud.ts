@@ -713,7 +713,12 @@ function campaignMapSource(index: number) {
   campaignMapCache[index] = url;
   return url;
 }
+const RECALL_CARD_ART = {
+  superhog: 'assets/recall-cards/superhog.png',
+  superrider: 'assets/recall-cards/superrider.png',
+} as const;
 export class HUD {
+  private recallCardImages = new Map<string, HTMLImageElement>();
   private root: HTMLElement;
   private panel: Panel = null;
   private drawerPanel: Drawer = null;
@@ -2894,7 +2899,8 @@ export class HUD {
     const siegeBlocked = action.startsWith('troop:') && this.siegeUnavailable(k);
     const unavailable = count === 0 || siegeBlocked;
     const hotkey = isSplitHog(k) ? undefined : TROOP_HOTKEYS[TROOP_ORDER.indexOf(k)];
-    return `<button class="troop-card ${selected ? 'selected' : ''} ${unavailable ? 'empty' : ''}" data-action="${action}" aria-label="${this.troopCardLabel(k, count, siegeBlocked)}" ${isSplitHog(k) ? 'title="Recalled unit · this attack"' : ''} ${action.startsWith('troop') && unavailable ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('troop:') && hotkey ? `<kbd class="troop-key">${hotkey.toUpperCase()}</kbd>` : ''}<img src="${hudAsset(isSplitHog(k) ? 'superhogrider' : k)}" alt="" draggable="false">${flying}<span class="troop-level">★ ${this.model.troopDisplayLevel(k)}</span><span class="troop-name">${TROOPS[k].name}</span></button>`;
+    const image = isSplitHog(k) ? RECALL_CARD_ART[k] : hudAsset(k);
+    return `<button class="troop-card ${isSplitHog(k) ? 'recalled-card' : ''} ${selected ? 'selected' : ''} ${unavailable ? 'empty' : ''}" data-action="${action}" aria-label="${this.troopCardLabel(k, count, siegeBlocked)}" ${isSplitHog(k) ? 'title="Recalled unit · this attack"' : ''} ${action.startsWith('troop') && unavailable ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('troop:') && hotkey ? `<kbd class="troop-key">${hotkey.toUpperCase()}</kbd>` : ''}<img src="${image}" alt="" draggable="false">${flying}<span class="troop-level">★ ${this.model.troopDisplayLevel(k)}</span><span class="troop-name">${TROOPS[k].name}</span></button>`;
   }
   private spellCard(k: SpellKind, count: number, action: string, selected = false) {
     return `<button class="troop-card spell-card ${selected ? 'selected' : ''} ${count === 0 ? 'empty' : ''}" data-action="${action}" aria-label="${SPELLS[k].name}, ${count} available" ${action.startsWith('spell') && count === 0 ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('spell:') && SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)] ? `<kbd class="troop-key">${SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)]}</kbd>` : ''}<img src="${hudAsset(k)}" alt="" draggable="false"><span class="troop-level">★ ${this.model.spellLevel(k)}</span><span class="troop-name">${SPELLS[k].name.replace(' Spell', '')}</span></button>`;
@@ -3427,6 +3433,15 @@ export class HUD {
           }
         : { ...campaignStage(b.index, b.catalog), ...b.availableLoot };
     const lootKeys = campaignResourceKeys(v);
+    if (b.nativeSplitRecall && typeof Image !== 'undefined')
+      for (const asset of Object.values(RECALL_CARD_ART)) {
+        if (this.recallCardImages.has(asset)) continue;
+        const image = new Image();
+        this.recallCardImages.set(asset, image);
+        image.onerror = () => this.recallCardImages.delete(asset);
+        image.decoding = 'async';
+        image.src = asset;
+      }
     const lootLeft = (k: CampaignResource) =>
       Math.max(0, campaignAmount(v, k) - (b.lootTaken?.[k] ?? 0));
     const limitedStorage =

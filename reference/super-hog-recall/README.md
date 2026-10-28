@@ -17,8 +17,8 @@ and origin. A cloned body remains ineligible. The existing priority order still
 applies: heroes first, then housing, birth time and identifier.
 
 The battle tray adds a distinct card for each returned kind, with its name,
-count and displayed parent level (4–15). Both use the existing Super Hog Rider
-family portrait. The tray inserts the cards without replacing its existing
+count and displayed parent level (4–15). Each has a separate icon rendered from
+its original idle body. The tray inserts the cards without replacing its existing
 buttons, then patches counts and selection live. Pointer and keyboard selection,
 legal placement, and the normal hold/drag deployment path use the same reserve
 count. Empty cards remain disabled after their stock is spent.
@@ -56,3 +56,23 @@ casts, returned-card pointer/keyboard selection, illegal and legal drops, live
 counts, unchanged tray button identity and read-only replay reconstruction on
 phone and desktop. It checks the first and last source tiers, the older-version
 control, WebGL health and page errors. Screenshots go to ignored `output/playtest/`.
+
+## Card artwork
+
+`card-art.json` pins the shipped body graphs, source textures, chosen front-facing
+idle exports, frame zero, fit matrix, transparent 128×128 canvas and output PNG
+hashes. The existing native scene renderer preserves the source geometry, texture
+colors, transparency and blend groups. Both images warm while scouting; their
+full-body layout leaves room for counts, names and levels.
+
+With the development server running, rebuild or verify the artifacts:
+
+```sh
+node scripts/native-recall-card-art.mjs
+node scripts/native-recall-card-art.mjs --check
+```
+
+Set `PLAYWRIGHT_CHROMIUM` to a system Chromium executable when needed and `GAME_URL`
+for another local development-server address. Verification checks source/output
+fingerprints and re-renders pixels with a maximum 1/255 channel tolerance for GPU
+rounding; it ignores PNG compression differences. No combat or save data changes.
