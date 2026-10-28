@@ -6,6 +6,7 @@ export function nativeTargetingSpellRecording(
   name: 'Totem Spell' | 'AngrySpell',
   level = 1,
   version = REPLAY_VERSION,
+  kind: 'swordsman' | 'goblin' = 'swordsman',
 ) {
   const model = new GameModel(),
     key = name === 'Totem Spell' ? 'totem' : 'angry';
@@ -23,8 +24,8 @@ export function nativeTargetingSpellRecording(
       name === 'Totem Spell' ? 5 : 1,
     ),
   ];
-  model.state.army = { ...emptyArmy(), swordsman: 2 };
-  model.state.troopLevels = { ...model.state.troopLevels, swordsman: 1 };
+  model.state.army = { ...emptyArmy(), [kind]: 2 };
+  model.state.troopLevels = { ...model.state.troopLevels, [kind]: 1 };
   model.state.spells = { ...emptySpells(), [key]: 1 };
   model.state.spellLevels = { ...model.state.spellLevels, [key]: level };
   model.startBattle(0, true);
@@ -40,9 +41,9 @@ export function nativeTargetingSpellRecording(
     },
     snapshot = () =>
       snapshots.push({ at: battle.elapsed, battle: JSON.parse(JSON.stringify(battle)) });
-  model.activeTroop = 'swordsman';
-  if (!model.deploy(3, 13)) throw Error('Swordsman deployment failed');
-  until(0.3);
+  model.activeTroop = kind;
+  if (!model.deploy(3, 13)) throw Error('Targeting troop deployment failed');
+  until(kind === 'goblin' ? 0.05 : 0.3);
   snapshot();
   const before = battle.elapsed,
     unitId = battle.units[0].id;

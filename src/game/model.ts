@@ -1075,6 +1075,8 @@ export interface Battle {
   nativeArcherWindup?: true;
   /** Version 192: ordinary and King Puppet Barbarians share the source melee charge. */
   nativeBarbarianWindup?: true;
+  /** Version 193: ordinary Goblin source melee charge, preserving resource preference and bonus. */
+  nativeGoblinWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;
@@ -6723,7 +6725,8 @@ export class GameModel {
         ((b.nativePekkaWindup && u.kind === 'pekka') ||
           (b.nativeGiantWindup && u.kind === 'giant') ||
           (b.nativeDragonWindup && u.kind === 'dragon') ||
-          (b.nativeBarbarianWindup && u.kind === 'swordsman' && !u.hero))
+          (b.nativeBarbarianWindup && u.kind === 'swordsman' && !u.hero) ||
+          (b.nativeGoblinWindup && u.kind === 'goblin'))
       );
       if (
         legacyAttack &&

@@ -1,4 +1,4 @@
-import { BUILDINGS, type TroopKind } from './data';
+import { BUILDINGS, isResourceBuilding, type TroopKind } from './data';
 import { hurtDefender } from './defenders';
 import { nativeUnitStats } from './native-units';
 import { releaseDragonFlame } from './native-dragon-flame';
@@ -17,14 +17,21 @@ export function stepLegacyAttackWindup(
   actionDt: number,
   damage: number,
 ) {
-  return stepNativeAttackWindup(ctx, unit, stats(ctx, unit), dt, actionDt, (target) => {
+  const source = stats(ctx, unit);
+  return stepNativeAttackWindup(ctx, unit, source, dt, actionDt, (target) => {
     if (ctx.battle.nativeDragonWindup && unit.kind === 'dragon') {
-      releaseDragonFlame(ctx, unit, stats(ctx, unit), target, damage);
+      releaseDragonFlame(ctx, unit, source, target, damage);
       return;
     }
     let x: number, y: number;
     if ('building' in target) {
-      ctx.damageBuilding(target.building, damage, ctx.battle.elapsed);
+      const multiplier =
+        ctx.battle.nativeGoblinWindup &&
+        unit.kind === 'goblin' &&
+        isResourceBuilding(target.building.kind)
+          ? source.preferredMultiplier
+          : 1;
+      ctx.damageBuilding(target.building, damage * multiplier, ctx.battle.elapsed);
       const half = BUILDINGS[target.building.kind].size / 2;
       x = target.building.x + half;
       y = target.building.y + half;
