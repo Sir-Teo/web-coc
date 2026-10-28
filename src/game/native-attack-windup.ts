@@ -158,6 +158,7 @@ export function stepNativeAttackWindup(
       (ctx.battle.nativeMinionWindup && unit.kind === 'minion') ||
       (ctx.battle.nativeDragonWindup && unit.kind === 'dragon') ||
       (ctx.battle.nativeArcherWindup && unit.kind === 'archer') ||
+      (ctx.battle.nativeSuperArcherWindup && unit.kind === 'superarcher') ||
       (ctx.battle.nativeWizardWindup && unit.kind === 'wizard')
     );
   const target = st.target && resolve(ctx, st.target, airTargets);

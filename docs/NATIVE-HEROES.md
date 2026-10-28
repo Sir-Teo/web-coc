@@ -1351,7 +1351,9 @@ The pinned character specifies radius 0.3 tiles and four tiles of extra travel b
 the captured aim point. Its target-acquisition range is six tiles, measured at building
 edges by the existing selector; the aim point is the building center. This differs from
 the pinned wiki's stated 12-tile projectile range, so the implementation does not claim
-to reconstruct that reach. Attack-start timing remains the existing adapter. The source
+to reconstruct that reach. Versions 111–197 retain the existing attack-start adapter;
+version 198 gives carried Super Archers a 1.5-second fresh/repeat charge, as documented
+in the [source timing reference](../reference/attacking-super-archer/README.md). The source
 `DontTrackTarget` flag fixes the direction at launch: a moving primary can leave the line
 while an enemy farther along still receives the arrow.
 

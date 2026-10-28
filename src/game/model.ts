@@ -1085,6 +1085,8 @@ export interface Battle {
   nativeSneakyGoblinWindup?: true;
   /** Version 197: carried Angry Spell discards pending troop charges when forcing defense selection. */
   nativeAngryChargeReset?: true;
+  /** Version 198: Super Archer charges before releasing its existing piercing arrow. */
+  nativeSuperArcherWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;

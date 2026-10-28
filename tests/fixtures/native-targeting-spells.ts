@@ -12,6 +12,7 @@ export function nativeTargetingSpellRecording(
     | 'wizard'
     | 'superbarbarian'
     | 'sneakygoblin'
+    | 'superarcher'
     | 'archer'
     | 'dragon'
     | 'minion'
@@ -20,6 +21,7 @@ export function nativeTargetingSpellRecording(
     | 'electrodragon' = 'swordsman',
   deployX?: number,
   castAt?: number,
+  deployY = 13,
 ) {
   const model = new GameModel(),
     key = name === 'Totem Spell' ? 'totem' : 'angry';
@@ -45,7 +47,9 @@ export function nativeTargetingSpellRecording(
       ? { swordsman: 5 }
       : kind === 'sneakygoblin'
         ? { goblin: 5 }
-        : {}),
+        : kind === 'superarcher'
+          ? { archer: 5 }
+          : {}),
   };
   model.state.spells = { ...emptySpells(), [key]: 1 };
   model.state.spellLevels = { ...model.state.spellLevels, [key]: level };
@@ -63,7 +67,7 @@ export function nativeTargetingSpellRecording(
     snapshot = () =>
       snapshots.push({ at: battle.elapsed, battle: JSON.parse(JSON.stringify(battle)) });
   model.activeTroop = kind;
-  if (!model.deploy(deployX ?? (kind === 'wizard' ? 2.5 : 3), 13))
+  if (!model.deploy(deployX ?? (kind === 'wizard' ? 2.5 : 3), deployY))
     throw Error('Targeting troop deployment failed');
   until(
     castAt !== undefined

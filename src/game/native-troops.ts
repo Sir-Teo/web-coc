@@ -881,6 +881,7 @@ export function stepNativeUnit(
   const archer = !!(battle.nativeArcherWindup && u.kind === 'archer');
   const superBarbarian = !!(battle.nativeSuperBarbarianWindup && u.kind === 'superbarbarian');
   const sneakyGoblin = !!(battle.nativeSneakyGoblinWindup && u.kind === 'sneakygoblin');
+  const superArcher = !!(battle.nativeSuperArcherWindup && u.kind === 'superarcher');
   const valkyrie = !!(
     battle.nativeValkyrieWindup &&
     (u.kind === 'valkyrie' || u.kind === 'supervalkyrie')
@@ -909,6 +910,7 @@ export function stepNativeUnit(
     archer ||
     superBarbarian ||
     sneakyGoblin ||
+    superArcher ||
     valkyrie ||
     witch ||
     hound;
@@ -922,7 +924,8 @@ export function stepNativeUnit(
   if (
     splitAttack &&
     stepNativeAttackWindup(ctx, u, s, dt, phaseDt, (target) => {
-      if (valkyrie) sweepValkyrie(ctx, u, s, damage);
+      if (superArcher) launchArcherPiercing(ctx, u, damage, target);
+      else if (valkyrie) sweepValkyrie(ctx, u, s, damage);
       else if ('building' in target) strike(ctx, u, s, target.building, damage);
       else if (rocketBalloon || balloon) {
         selfAreaHit(ctx, u, s, damage);
@@ -1122,6 +1125,7 @@ export function stepNativeUnit(
         archer ||
         superBarbarian ||
         sneakyGoblin ||
+        superArcher ||
         valkyrie ||
         witch ||
         hound ||
