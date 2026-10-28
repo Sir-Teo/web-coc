@@ -20,6 +20,7 @@ export type NativeDirectKind =
   | 'dragonrider'
   | 'rocketballoon'
   | 'babydragon'
+  | 'superminion'
   | 'miner';
 export type NativeDirectTarget =
   'storage' | 'cannon' | 'airdefense' | 'garrison' | 'air-garrison' | 'monolith';

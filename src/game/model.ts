@@ -1057,6 +1057,8 @@ export interface Battle {
   nativeRocketBalloonWindup?: true;
   /** Version 186: Baby Dragon phases, Tantrum rate and native same-layer defender splash. */
   nativeBabyDragonWindup?: true;
+  /** Version 187: Super Minion's eight offensive Long Shots and shared source charges. */
+  nativeSuperMinionLongShots?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;

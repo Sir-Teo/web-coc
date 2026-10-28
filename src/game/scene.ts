@@ -45,6 +45,7 @@ import {
 import { NativeArtPacks, type NativeArtPack } from './native-art-pack';
 import { NativeProjectilePresentation } from './native-projectile-scene';
 import { nativeUnitStats } from './native-units';
+import { superMinionLongShot } from './native-super-minion';
 import { heroProjectileNames } from './hero-projectile-prefetch';
 import { SUPER_HOG_LANDING_EFFECT, superHogSplitStats } from './native-super-hog';
 import { heroSummonLevels } from './hero-summon-prefetch';
@@ -3170,20 +3171,25 @@ export class VillageScene extends Phaser.Scene {
     const darkOrb = !this.model.battle || !!this.model.battle.nativeDarkOrb;
     const seekingShield = !this.model.battle || !!this.model.battle.nativeSeekingShield;
     const superHog = !this.model.battle || !!this.model.battle.nativeSuperHogSplit;
+    const superMinion = !this.model.battle || !!this.model.battle.nativeSuperMinionLongShots;
     const split =
       superHog && kinds.includes('superhogrider')
         ? superHogSplitStats(level('superhogrider'))
         : undefined;
     const projectiles = this.model.reducedMotion
       ? ''
-      : `${signature}|${setupSignature}|phoenix:${!!this.model.battle?.nativePhoenixResurrection}|fireball:${fireball}|giant-arrow:${giantArrow}|frost-flake:${frostFlake}|electro-boots:${electroBoots}|spiky-ball:${spikyBall}|dark-orb:${darkOrb}|seeking-shield:${seekingShield}|super-hog:${superHog}`;
+      : `${signature}|${setupSignature}|phoenix:${!!this.model.battle?.nativePhoenixResurrection}|fireball:${fireball}|giant-arrow:${giantArrow}|frost-flake:${frostFlake}|electro-boots:${electroBoots}|spiky-ball:${spikyBall}|dark-orb:${darkOrb}|seeking-shield:${seekingShield}|super-hog:${superHog}|super-minion:${superMinion}`;
     if (projectiles !== this.projectilePrefetchSignature) {
       this.projectilePrefetchSignature = projectiles;
       this.nativeProjectiles?.prefetch(
         projectiles
           ? [
               ...kinds.flatMap((kind) =>
-                levels(kind).map((tier) => nativeUnitStats(kind, tier).projectile),
+                levels(kind).flatMap((tier) => {
+                  const stats = nativeUnitStats(kind, tier),
+                    opening = superMinion ? superMinionLongShot(stats) : undefined;
+                  return opening ? [stats.projectile, opening.projectile] : [stats.projectile];
+                }),
               ),
               ...(split ? [split.projectile] : []),
               ...heroProjectileNames(setups, {

@@ -2,6 +2,7 @@ import { houndUnitDirection } from './native-hound-geometry';
 import { releaseHoundAtDefender } from './native-hound-attack';
 import { resolveWitchImpact } from './native-witch-attack';
 import { releaseRangedAtDefender } from './native-ranged-release';
+import { superMinionAttackStats, finishSuperMinionOpening } from './native-super-minion';
 import { sweepValkyrie } from './native-valkyrie-sweep';
 import { launchArcherPiercing, stepArcherPiercing } from './native-super-archer';
 import { resolveWardenFireball } from './native-fireball';
@@ -726,6 +727,8 @@ export function stepNativeUnit(
   let s = statsFor(battle, u);
   const state = (u.native ??= {});
   const at = battle.elapsed;
+  const superMinion = !!(battle.nativeSuperMinionLongShots && u.kind === 'superminion');
+  if (superMinion) s = superMinionAttackStats(s, state.attacks ?? 0);
   const damageRamp = battle.nativeTroopDamageRamp ? s.damageRamp : undefined;
   if (damageRamp && state.damageRamp) {
     const previous = state.damageRamp.defender
@@ -892,6 +895,7 @@ export function stepNativeUnit(
     dragonRider ||
     rocketBalloon ||
     babyDragon ||
+    superMinion ||
     valkyrie ||
     witch ||
     hound;
@@ -911,7 +915,15 @@ export function stepNativeUnit(
         selfAreaHit(ctx, u, s, damage);
         state.lastAttackAt = at;
         state.attacks = (state.attacks ?? 0) + 1;
-      } else if (witch || apprentice || headhunter || thrower || dragonRider || babyDragon)
+      } else if (
+        witch ||
+        apprentice ||
+        headhunter ||
+        thrower ||
+        dragonRider ||
+        babyDragon ||
+        superMinion
+      )
         releaseRangedAtDefender(
           ctx,
           u,
@@ -975,6 +987,7 @@ export function stepNativeUnit(
         state.lastAttackAt = at;
         state.attacks = (state.attacks ?? 0) + 1;
       }
+      if (superMinion) finishSuperMinionOpening(u, s);
     })
   )
     return;
@@ -1077,6 +1090,7 @@ export function stepNativeUnit(
         dragonRider ||
         rocketBalloon ||
         babyDragon ||
+        superMinion ||
         valkyrie ||
         witch ||
         hound ||
