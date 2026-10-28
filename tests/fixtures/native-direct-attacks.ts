@@ -1,7 +1,7 @@
 import { emptyArmy, emptySpells } from '../../src/game/army';
 import { campaignStage } from '../../src/game/campaign-catalog';
 import { campaignResources } from '../../src/game/campaign-loot';
-import { GameModel, makeBuilding, type Battle } from '../../src/game/model';
+import { GameModel, makeBuilding, type Battle, type Building } from '../../src/game/model';
 import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
 import { isGarrisonDefender } from '../../src/game/defenders';
 import { superOriginal, superLevelOffset } from '../../src/game/special-troops';
@@ -17,8 +17,10 @@ export type NativeDirectKind =
   | 'apprenticewarden'
   | 'headhunter'
   | 'thrower'
+  | 'dragonrider'
   | 'miner';
-export type NativeDirectTarget = 'storage' | 'cannon' | 'garrison' | 'air-garrison' | 'monolith';
+export type NativeDirectTarget =
+  'storage' | 'cannon' | 'airdefense' | 'garrison' | 'air-garrison' | 'monolith';
 
 export function nativeDirectBattle(
   kind: NativeDirectKind,
@@ -27,6 +29,7 @@ export function nativeDirectBattle(
   x = 11.4,
   target: NativeDirectTarget = 'storage',
   spells: Partial<ReplayData['initial']['spells']> = {},
+  extraBuildings: Building[] = [],
 ) {
   const garrison = target === 'garrison' || target === 'air-garrison';
   const yeti = kind === 'yeti' || kind === 'superyeti';
@@ -43,21 +46,26 @@ export function nativeDirectBattle(
         ? 'clancastle'
         : target === 'cannon'
           ? 'cannon'
-          : target === 'monolith'
-            ? 'monolith'
-            : 'goldstorage',
+          : target === 'airdefense'
+            ? 'airdefense'
+            : target === 'monolith'
+              ? 'monolith'
+              : 'goldstorage',
       13,
       10,
       garrison
         ? 9
         : target === 'monolith'
           ? 1
-          : target === 'cannon'
-            ? kind === 'electrotitan' || yeti
-              ? 21
-              : 6
-            : 18,
+          : target === 'airdefense'
+            ? 13
+            : target === 'cannon'
+              ? kind === 'electrotitan' || yeti
+                ? 21
+                : 6
+              : 18,
     ),
+    ...extraBuildings,
   ];
   model.state.army = { ...emptyArmy(), [kind]: 1, archer: kind === 'superhogrider' ? 0 : 2 };
   model.state.troopLevels = {
@@ -115,7 +123,7 @@ export function nativeDirectBattle(
   return { model, battle, unit, data, step, until, untilAttacks };
 }
 
-/** Actual Cannon fire or an Archer-lured Castle reserve; no injected damage or status state. */
+/** Actual defense fire or an Archer-lured Castle reserve; no injected damage or status state. */
 export function nativeDirectRecording(
   kind: NativeDirectKind,
   timingVersion: number,
@@ -123,13 +131,14 @@ export function nativeDirectRecording(
   level = 1,
   garrison: boolean | 'air' = false,
   chargeCheckpointSeconds = 0.7,
+  buildingTarget: 'cannon' | 'airdefense' = 'cannon',
 ) {
   const r = nativeDirectBattle(
       kind,
       level,
       version,
       garrison ? 6.9 : 11.4,
-      garrison === 'air' ? 'air-garrison' : garrison ? 'garrison' : 'cannon',
+      garrison === 'air' ? 'air-garrison' : garrison ? 'garrison' : buildingTarget,
     ),
     snapshots: { at: number; battle: Battle }[] = [];
   const snapshot = () => {

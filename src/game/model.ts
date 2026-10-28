@@ -1051,6 +1051,8 @@ export interface Battle {
   nativeSiegeBarracksTroops?: true;
   /** Version 183: Thrower honors its explicit source windup/recovery and defender projectile. */
   nativeThrowerWindup?: true;
+  /** Version 184: Dragon Rider source charges with native flying defender projectiles. */
+  nativeDragonRiderWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;

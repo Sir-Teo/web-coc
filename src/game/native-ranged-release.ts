@@ -4,7 +4,7 @@ import type { Unit } from './model';
 import type { NativeUnitStats } from './native-units';
 import type { NativeTroopContext } from './native-troops';
 
-/** Source projectile, splash and target layer captured at a ground attacker's release. */
+/** Source projectile, splash and source/target layers captured at physical release. */
 export function releaseRangedAtDefender(
   ctx: NativeTroopContext,
   unit: Unit,
@@ -25,7 +25,7 @@ export function releaseRangedAtDefender(
       fromY: unit.y,
       x: target.x,
       y: target.y,
-      fromAir: false,
+      fromAir: stats.flying,
       toAir: target.mode === 'air',
       damage,
       splash: stats.splash || undefined,

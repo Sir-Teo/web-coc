@@ -867,6 +867,7 @@ export function stepNativeUnit(
   const apprentice = !!(battle.nativeApprenticeWindup && u.kind === 'apprenticewarden');
   const headhunter = !!(battle.nativeHeadhunterWindup && u.kind === 'headhunter');
   const thrower = !!(battle.nativeThrowerWindup && u.kind === 'thrower');
+  const dragonRider = !!(battle.nativeDragonRiderWindup && u.kind === 'dragonrider');
   const valkyrie = !!(
     battle.nativeValkyrieWindup &&
     (u.kind === 'valkyrie' || u.kind === 'supervalkyrie')
@@ -886,6 +887,7 @@ export function stepNativeUnit(
     apprentice ||
     headhunter ||
     thrower ||
+    dragonRider ||
     valkyrie ||
     witch ||
     hound;
@@ -894,7 +896,7 @@ export function stepNativeUnit(
     stepNativeAttackWindup(ctx, u, s, dt, actionDt, (target) => {
       if (valkyrie) sweepValkyrie(ctx, u, s, damage);
       else if ('building' in target) strike(ctx, u, s, target.building, damage);
-      else if (witch || apprentice || headhunter || thrower)
+      else if (witch || apprentice || headhunter || thrower || dragonRider)
         releaseRangedAtDefender(
           ctx,
           u,
@@ -1057,6 +1059,7 @@ export function stepNativeUnit(
         apprentice ||
         headhunter ||
         thrower ||
+        dragonRider ||
         valkyrie ||
         witch ||
         hound ||

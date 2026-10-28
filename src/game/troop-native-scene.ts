@@ -440,6 +440,7 @@ export class TroopNativePresentation {
               (battle?.nativeApprenticeWindup && u.kind === 'apprenticewarden') ||
               (battle?.nativeHeadhunterWindup && u.kind === 'headhunter') ||
               (battle?.nativeThrowerWindup && u.kind === 'thrower') ||
+              (battle?.nativeDragonRiderWindup && u.kind === 'dragonrider') ||
               (battle?.nativeHoundWindup && (u.kind === 'lavahound' || u.kind === 'icehound')) ||
               (battle?.nativeWitchWindup && (u.kind === 'witch' || u.kind === 'superwitch')) ||
               (battle?.nativeValkyrieWindup &&
