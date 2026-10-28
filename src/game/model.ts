@@ -1053,6 +1053,8 @@ export interface Battle {
   nativeThrowerWindup?: true;
   /** Version 184: Dragon Rider source charges with native flying defender projectiles. */
   nativeDragonRiderWindup?: true;
+  /** Version 185: Rocket Balloon source phases and self-centered ground defender blasts. */
+  nativeRocketBalloonWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;

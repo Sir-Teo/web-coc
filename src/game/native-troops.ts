@@ -868,6 +868,7 @@ export function stepNativeUnit(
   const headhunter = !!(battle.nativeHeadhunterWindup && u.kind === 'headhunter');
   const thrower = !!(battle.nativeThrowerWindup && u.kind === 'thrower');
   const dragonRider = !!(battle.nativeDragonRiderWindup && u.kind === 'dragonrider');
+  const rocketBalloon = !!(battle.nativeRocketBalloonWindup && u.kind === 'rocketballoon');
   const valkyrie = !!(
     battle.nativeValkyrieWindup &&
     (u.kind === 'valkyrie' || u.kind === 'supervalkyrie')
@@ -888,6 +889,7 @@ export function stepNativeUnit(
     headhunter ||
     thrower ||
     dragonRider ||
+    rocketBalloon ||
     valkyrie ||
     witch ||
     hound;
@@ -896,7 +898,11 @@ export function stepNativeUnit(
     stepNativeAttackWindup(ctx, u, s, dt, actionDt, (target) => {
       if (valkyrie) sweepValkyrie(ctx, u, s, damage);
       else if ('building' in target) strike(ctx, u, s, target.building, damage);
-      else if (witch || apprentice || headhunter || thrower || dragonRider)
+      else if (rocketBalloon) {
+        selfAreaHit(ctx, u, s, damage);
+        state.lastAttackAt = at;
+        state.attacks = (state.attacks ?? 0) + 1;
+      } else if (witch || apprentice || headhunter || thrower || dragonRider)
         releaseRangedAtDefender(
           ctx,
           u,
@@ -1060,6 +1066,7 @@ export function stepNativeUnit(
         headhunter ||
         thrower ||
         dragonRider ||
+        rocketBalloon ||
         valkyrie ||
         witch ||
         hound ||
@@ -1397,6 +1404,22 @@ function damageMultiplier(battle: Battle, s: NativeUnitStats, b: Building, at = 
   return scale;
 }
 
+/** Source self-centered area attacks include ground defenders and eligible footprints. */
+function selfAreaHit(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, damage: number) {
+  const battle = ctx.battle,
+    radius = Math.max(s.splash, s.range);
+  for (const b of battle.buildings)
+    if (
+      b.hp > 0 &&
+      !isTrap(b.kind) &&
+      targetableBuilding(battle, b) &&
+      distanceTo(u, b) <= radius + 1e-9
+    )
+      ctx.damageBuilding(b, damage * damageMultiplier(battle, s, b), battle.elapsed);
+  damageDefenders(battle, u, damage, radius, 'ground');
+  ctx.effect({ type: 'blast', x: u.x, y: u.y, radius, sourceId: u.id });
+}
+
 /** Resolve one attack against a building according to the unit's native attack shape. */
 function strike(
   ctx: NativeTroopContext,
@@ -1432,17 +1455,7 @@ function strike(
   };
   let shot: CombatProjectile | undefined;
   if (s.selfAreaCenter || s.multipleBuildings) {
-    const radius = Math.max(s.splash, s.range);
-    for (const b of battle.buildings)
-      if (
-        b.hp > 0 &&
-        !isTrap(b.kind) &&
-        targetableBuilding(battle, b) &&
-        distanceTo(u, b) <= radius + 1e-9
-      )
-        ctx.damageBuilding(b, damage * damageMultiplier(battle, s, b), battle.elapsed);
-    damageDefenders(battle, u, damage, radius, 'ground');
-    ctx.effect({ type: 'blast', x: u.x, y: u.y, radius, sourceId: u.id });
+    selfAreaHit(ctx, u, s, damage);
   } else if (
     s.projectile &&
     (s.range >= 1 || (battle.nativeHoundWindup && u.kind === 'lavahound'))
