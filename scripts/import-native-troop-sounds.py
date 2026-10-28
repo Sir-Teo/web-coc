@@ -189,7 +189,7 @@ def build():
         require(rows, f'Absent character {name}')
         entry = entries(rows, EVENTS)
         if key == 'superwizard':
-            entry.update(entries(rows, {'chain': 'ChainAttackEffect'}))
+            entry.update(entries(rows, {'chain': 'ChainAttackEffect', 'preAttack': 'PreAttackEffect'}))
         if key == 'bowler':
             entry.update(entries(rows, {'preAttack': 'PreAttackEffect'}))
         if key == 'electrodragon':

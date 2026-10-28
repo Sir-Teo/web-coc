@@ -9,7 +9,7 @@ import { unitAttackIntervalScale } from './native-status';
 import type { Battle, Unit } from './model';
 import type { NativeTroopContext } from './native-troops';
 
-interface BowlerAudioCharge {
+interface NativePreAttackCharge {
   key: string;
   age: number;
   lastAt: number;
@@ -25,11 +25,11 @@ export interface NativeAttackWindupState {
   target?: ChainRef;
   /** Seconds relative to the original ActionFrame: windup before it, follow-through after. */
   animationOffset?: number;
-  /** Version 159: presentation only; active wall time is independent of attack-speed scaling. */
+  /** Versions 159/200: Bowler/Super Wizard audio uses wall time independently of attack-speed scaling. */
   audio?: {
     dt: number;
     sequence: number;
-    charge?: BowlerAudioCharge;
+    charge?: NativePreAttackCharge;
     history?: { key: string; at: number }[];
   };
 }
@@ -41,6 +41,14 @@ const state = (unit: Unit): NativeAttackWindupState =>
     actionDt: 0,
     lastAt: 0,
   });
+
+/** Families with a recorded active-wall-time source pre-attack sample. */
+export function nativePreAttackAudioEnabled(battle: Battle | undefined, unit: Pick<Unit, 'kind'>) {
+  return !!(
+    (battle?.nativeBowlerPreAttack && unit.kind === 'bowler') ||
+    (battle?.nativeSuperWizardPreAttack && unit.kind === 'superwizard')
+  );
+}
 
 /** Forced selection discards a pending target and cue, retaining clock and recovery metadata. */
 export function cancelNativeAttackWindup(unit: Unit) {
@@ -95,7 +103,7 @@ function advanceAudio(unit: Unit, st: NativeAttackWindupState, at: number, initi
     delete audio.charge;
     return;
   }
-  const start = (age: number): BowlerAudioCharge => ({
+  const start = (age: number): NativePreAttackCharge => ({
     key: `troop:${unit.id}:preAttack:${++audio.sequence}`,
     age,
     lastAt: at,
@@ -136,7 +144,7 @@ export function stepNativeAttackWindup(
     at = ctx.battle.elapsed,
     hold = Math.max(unit.native?.effects?.frozenUntil ?? 0, unit.native?.effects?.stunUntil ?? 0),
     active = dt > 0 ? Math.min(1, Math.max(0, at - hold) / dt) : 1;
-  if (unit.kind === 'bowler' && ctx.battle.nativeBowlerPreAttack)
+  if (nativePreAttackAudioEnabled(ctx.battle, unit))
     (st.audio ??= { dt: 0, sequence: 0 }).dt = dt * active;
   st.actionDt = (actionDt * active) / unitAttackIntervalScale(unit, at);
   st.recoveryAtStart = st.recovery;
@@ -268,7 +276,7 @@ export function beginNativeAttackWindup(
     st.remaining = st.recoveryAtStart + timing.firstHit - st.actionDt;
     unit.cooldown = Math.max(0, st.remaining);
     pose(unit, st, stats);
-    if (unit.kind === 'bowler' && battle?.nativeBowlerPreAttack)
+    if (battle && nativePreAttackAudioEnabled(battle, unit))
       advanceAudio(unit, st, battle.elapsed, timing.charge);
   }
 }

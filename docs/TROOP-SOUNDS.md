@@ -299,3 +299,19 @@ in version 158, reading existing resolved impact times and stable attack ordinal
 cues survive Freeze/death and reconstruct after seeks. Enabled Bowler reserves warm both
 samples before deployment; older garrison replays preserve their previous impact silence and
 preloads. The catalog remains at 374 effects and 360 files. See [source links and validation](../reference/garrison/README.md#bowler-bounce-and-shatter-audio-recording-version-160).
+
+
+## Super Wizard preparation sample (version 200)
+
+Super Wizard's source character names `Electro Dragon Pre Attack`. The
+regenerated sound catalog now includes that binding, allowing the ordinary
+home/battle roster prewarm to decode its already shipped original sample.
+No new audio file or effect definition is added. Its source volume is 0.5,
+pitch is 1 and delay is zero.
+
+The shared attack-phase journal records independent fresh/repeat takes with
+active wall-time age. Freeze/stun hold and suppress an active take; recovery
+waits before the next take; forced retargeting discards an unfinished take.
+Completed takes retain their natural tails. Bowler keeps its existing journal,
+keys and source samples. Versions 199 and earlier retain the previous Super
+Wizard sound path without a journal. See [source evidence and actual portable/Web Audio checks](../reference/attacking-super-wizard/README.md#recording-version-200-source-preparation-sound).

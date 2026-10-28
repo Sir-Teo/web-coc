@@ -65,3 +65,47 @@ asset requests and WebGL health at phone and desktop viewport widths. Four
 actual Angry Spell cases cover pending cancellation and retained branches.
 The existing original-lightning browser suite checks current branches, original
 samples and historical version 109. Screenshots go to ignored `output/playtest/`.
+
+
+## Recording version 200: source preparation sound
+
+The character's `PreAttackEffect` names `Electro Dragon Pre Attack`, a
+sound-only source effect with no art pack. The sound importer previously
+retained only Super Wizard's release, chain and hit effects. It now also
+retains the declared preparation binding, regenerated from the pinned original
+character/effect tables. The sample `electro_dragon_sfx_atk_01.ogg` already
+ships for Electro Dragon: volume 0.5, pitch 1, zero delay. All 360 original
+sample files and 374 effect records remain unchanged; only the troop binding
+is added. The importer reproduces every output from verified cached tables
+and original shipped audio.
+
+The existing Bowler audio journal now serves Super Wizard's shared phase
+controller too. Each fresh or repeat charge has its own key and active
+wall-time age, independent of action-speed scaling. Recovery waits before
+starting a take. Freeze/stun hold its age and suppress playback until thaw;
+a canceled target, Angry Spell or caster defeat suppresses an unfinished
+take. Released takes keep natural one-shot tails and their bounded history.
+The original sample is 2.908 seconds long, so its natural tail can overlap
+recovery and the following charge. No loop, time stretch or extra particle
+art is introduced.
+
+Only carried Super Wizards enable the version-200 capability. Version 199
+retains its full source phases and previous sound behavior without the new
+journal. Complete old/current states match after removing only the new audio
+flag and journal, including real Storage/Cannon and frozen ground/air Castle
+fights. Combat values and attack timing do not change.
+
+`tests/attacking-super-wizard-audio.test.ts` covers all ten tiers, fresh and
+repeat cues, recovery, Freeze and partial thaw, action-rate independence,
+replacement targets, canceled charges, caster defeat, portable forward/reverse
+states and cues, actual Angry Spell cancellation/retained tails, and eight
+complete physical-state comparisons. Existing Bowler audio tests retain their
+original keys, state shape and samples.
+
+`tests/browser/attacking-super-wizard-audio.spec.ts` checks source decoding,
+same-roster home/battle prewarming, exact Node/Chromium states and cues, actual
+Web Audio gain, playback rate and start offset, natural tails, reverse seeks,
+read-only rendering, reduced motion and old version-199 behavior at phone
+and desktop viewport sizes. A failed-sample case retries while paused without
+advancing the recording. The existing Bowler and Super Wizard effect/audio
+browser suites remain regression checks.

@@ -59,6 +59,10 @@ export function superWizardRecording(
   const branched = snapshot();
   r.until(first + 0.2);
   const recovery = snapshot();
+  r.until(first + 0.55);
+  const repeat = snapshot();
+  r.until(first + 0.9);
+  const nextCharge = snapshot();
   r.untilAttacks(2);
   const second = snapshot();
   r.until(second + 0.15);
@@ -75,6 +79,8 @@ export function superWizardRecording(
     visible,
     branched,
     recovery,
+    repeat,
+    nextCharge,
     second,
     secondBranched,
     primary,
@@ -84,11 +90,11 @@ export function superWizardRecording(
 }
 
 /** The real spell arrives between the primary at 1.5 and the committed branches at 1.628. */
-export function angrySuperWizardBranchesRecording(level = 1) {
+export function angrySuperWizardBranchesRecording(level = 1, version = 199) {
   const r = nativeDirectBattle(
       'superwizard',
       1,
-      199,
+      version,
       11.4,
       'storage',
       { angry: 1 },

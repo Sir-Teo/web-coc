@@ -1305,7 +1305,9 @@ secondary targets. Both defender layers are eligible.
 Versions 110–198 retain the existing attack-start adapter. Version 199 gives carried
 Super Wizards a 1.5-second charge and 0.5-second recovery within the two-second period,
 with shared body phase offsets; see the [source timing reference](../reference/attacking-super-wizard/README.md).
-It does not add a new `PreAttackEffect` implementation.
+Version 199 does not add a new `PreAttackEffect` implementation. Version 200
+adds its original preparation sample through the shared charge audio journal;
+the named source effect is sound-only. See [the audio boundary](../reference/attacking-super-wizard/README.md#recording-version-200-source-preparation-sound).
 Branches resolve together at one source delay, selecting the nearest unvisited eligible
 targets from the primary's current position if it survives, otherwise its captured point.
 Building-edge/defender-point distances, stable building/id tie ordering and selection at

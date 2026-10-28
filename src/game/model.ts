@@ -1089,6 +1089,8 @@ export interface Battle {
   nativeSuperArcherWindup?: true;
   /** Version 199: Super Wizard charges and recovers around its existing Chain Magic cast. */
   nativeSuperWizardWindup?: true;
+  /** Version 200: source Super Wizard pre-attack audio follows its shared charge clock. */
+  nativeSuperWizardPreAttack?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;

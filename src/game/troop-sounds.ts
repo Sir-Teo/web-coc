@@ -1,3 +1,4 @@
+import { nativePreAttackAudioEnabled } from './native-attack-windup';
 import { fieldSpellDeploy2Delay, fieldSpellUsesResolvedRevive } from './field-spell-effects';
 import { fireballProfile } from './fireball-effects';
 import { frostFlakeSoundEvents } from './frost-flake-effects';
@@ -407,10 +408,11 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
       if (cue) cues.push(cue);
     }
   }
-  if (battle.nativeBowlerPreAttack)
+  if (battle.nativeBowlerPreAttack || battle.nativeSuperWizardPreAttack)
     for (const unit of battle.units) {
-      if (unit.kind !== 'bowler') continue;
-      const audio = unit.native?.bowler?.audio,
+      if (!nativePreAttackAudioEnabled(battle, unit)) continue;
+      const audio = (unit.kind === 'bowler' ? unit.native?.bowler : unit.native?.attackWindup)
+          ?.audio,
         charge = audio?.charge;
       const add = (key: string, at: number) => {
         if (at > elapsed + 1e-9 || !cueAudible(at, elapsed)) return;

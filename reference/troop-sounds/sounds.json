@@ -921,7 +921,8 @@
       "attack": "Super Wizard Attack",
       "hit": "Super Wizard Hit",
       "die": "Wizard Die",
-      "chain": "Super Wizard Attack Chain"
+      "chain": "Super Wizard Attack Chain",
+      "preAttack": "Electro Dragon Pre Attack"
     },
     "superyeti": {
       "name": "Super Yeti",
