@@ -13,6 +13,7 @@ async function seek(page: Page, at: number) {
     const { iso } = await import('/src/game/scene.ts');
     const point = iso(hero.x, hero.y);
     scene.cameras.main.setZoom(innerWidth === 390 ? 1.2 : 1.7).centerOn(point.x, point.y - 60);
+    scene.cameras.main.preRender();
     const before = JSON.stringify(battle);
     scene.drawOverlay(0);
     return {
@@ -42,7 +43,7 @@ for (const { level, width, ratio, gain, oldGain, hps } of [
     const r = await page.evaluate(async (level) => {
       const { healerHeroScalingRecording } = await import('/tests/fixtures/healer-hero-scaling.ts');
       const { makeReplayFile, parseReplayFile } = await import('/src/game/replay-file.ts');
-      const r = healerHeroScalingRecording(level);
+      const r = healerHeroScalingRecording(level, 98);
       window.__healerScaling = r;
       const { model, scene } = window.__game;
       scene.paused = true;

@@ -1644,3 +1644,16 @@ thaw samples; action modifiers and Shrink retain their scaling. Heat,
 beam stages, original loop sounds and transition presentation keep their
 existing clocks. Versions 208 and earlier retain the former cooldown
 reset and Freeze behavior. See [source values and portable fight checks](../reference/attacking-inferno-dragon/README.md).
+
+
+## Version 210: Healer friendly cast and recovery
+
+Carried Healers and Queen Healer Puppet summons spend the source
+0.2-second cast before launching a healing flight. Repeats retain the
+0.5-second recovery within the 0.7-second period. Friendly target IDs and
+body offsets use a separate cast state; Freeze, stun, modifiers, Shrink,
+recipient loss and replacement preserve the clock. The original body
+faces its friendly recipient. Group targeting, projectile travel, area
+healing, stacking and captured Hero ratios retain their behavior.
+Versions 209 and earlier keep immediate arrival launches and their former
+state shape. See [source clocks and portable fight checks](../reference/attacking-healer/README.md).

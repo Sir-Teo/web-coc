@@ -464,7 +464,9 @@ export class TroopNativePresentation {
               (battle?.nativeValkyrieWindup &&
                 (u.kind === 'valkyrie' || u.kind === 'supervalkyrie'))
             ? u.native?.attackWindup?.animationOffset
-            : undefined;
+            : battle?.nativeHealerWindup && u.kind === 'healer'
+              ? u.native?.healerWindup?.animationOffset
+              : undefined;
       const requested =
         u.hp <= 0
           ? 'die'

@@ -5,6 +5,12 @@ import { launchProjectile } from './projectiles';
 import type { FX } from './model';
 import { friendlyCombatant, healingEligible } from './friendly-unit';
 import { nativeUnitStats } from './native-units';
+import {
+  advanceHealerWindup,
+  beginHealerWindup,
+  cancelHealerWindup,
+  releaseHealerWindup,
+} from './healer-windup';
 
 /** Supercell's HEAL_STACK_PERCENT and Healer records; see docs/LATE-TROOPS.md. */
 export const HEALER_STACK = [1, 1, 0.9, 0.9, 0.7, 0.4, 0.1, 0] as const;
@@ -91,19 +97,35 @@ export function stepHealer(
   stats: { speed: number; range: number; rate: number; heal?: number },
   dt: number,
   emit: (fx: FX) => void,
+  actionDt = dt,
 ) {
+  const phased = !!(battle.nativeHealerWindup && healer.kind === 'healer');
+  const windup = phased ? advanceHealerWindup(battle, healer, dt, actionDt) : undefined;
   const target = battle.units.find((u) => u.id === healer.healTarget && groundAlly(battle, u));
-  if (!target) return;
+  if (!target) {
+    if (phased) cancelHealerWindup(healer);
+    return;
+  }
+  if (windup?.engaged && windup.targetId !== target.id) cancelHealerWindup(healer);
   const range = distance(healer, target);
-  if (range > stats.range + 1e-9) {
+  if (windup?.engaged && windup.recovery > 1e-9 && range > stats.range + 1e-9)
+    cancelHealerWindup(healer);
+  const ready = windup?.engaged && windup.remaining <= 1e-9;
+  if (range > stats.range + 1e-9 && !ready) {
     const move = Math.min(stats.speed * dt, range - stats.range);
     healer.x += ((target.x - healer.x) / range) * move;
     healer.y += ((target.y - healer.y) / range) * move;
     return;
   }
   healer.attacking = true;
-  if (healer.cooldown > 0) return;
-  healer.cooldown = stats.rate;
+  if (windup) {
+    beginHealerWindup(battle, healer, target.id);
+    if (windup.remaining > 1e-9) return;
+    releaseHealerWindup(battle, healer);
+  } else {
+    if (healer.cooldown > 0) return;
+    healer.cooldown = stats.rate;
+  }
   launchProjectile(
     battle,
     {

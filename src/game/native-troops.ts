@@ -63,6 +63,7 @@ import {
 import { recordInfernoDragonTransition } from './inferno-dragon-transitions';
 import { friendlyCombatant, healingEligible } from './friendly-unit';
 import { healerContribution } from './healing';
+import type { HealerWindupState } from './healer-windup';
 import { launchNativeHealing, resolveNativeHealing } from './native-healing';
 import {
   applyDefenderHitPoison,
@@ -111,6 +112,8 @@ export interface NativeUnitState {
   electroDragon?: ElectroDragonState;
   bowler?: NativeAttackWindupState;
   attackWindup?: NativeAttackWindupState;
+  /** Version 210: committed friendly-unit cast, separate from enemy target namespaces. */
+  healerWindup?: HealerWindupState;
   /** Version 95: the source waiting bird and its separately drawn Egg. */
   phoenixWaiting?: true;
   phoenixEgg?: true;

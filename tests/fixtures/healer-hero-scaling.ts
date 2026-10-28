@@ -1,10 +1,10 @@
 import { GameModel, makeBuilding } from '../../src/game/model';
 import { emptyArmy, emptySpells } from '../../src/game/army';
-import { replayBattle, type ReplayData } from '../../src/game/replay';
+import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
 import { nativeUnitStats } from '../../src/game/native-units';
 
 /** A real Cannon wounds the Hero, then the carried Healer's level-scaled pulse restores HP. */
-export function healerHeroScalingRecording(level = 11) {
+export function healerHeroScalingRecording(level = 11, version = REPLAY_VERSION) {
   const model = new GameModel();
   model.state.obstacles = [];
   model.state.king = undefined;
@@ -18,8 +18,9 @@ export function healerHeroScalingRecording(level = 11) {
   model.state.spells = emptySpells();
   model.startBattle(0, true);
   const data = (model as unknown as { recording: ReplayData }).recording;
+  data.version = version;
   data.initial.heroes = [{ kind: 'king', level: 1, items: [] }];
-  const battle = (model.battle = replayBattle(data.initial));
+  const battle = (model.battle = replayBattle(data.initial, version));
   if (!model.deployNativeHero('king', 6, 6.5) || !model.activateNativeHeroAbility('king'))
     throw Error('Healer Hero inputs failed');
   const hero = battle.units.find((u) => u.id === battle.nativeHeroes![0].unitId)!;

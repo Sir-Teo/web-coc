@@ -10,6 +10,13 @@ export function nativeTroopFacingTarget(
   unit: Unit,
   buildings: ReadonlyMap<number, Building> = buildingIndex(battle),
 ) {
+  if (battle.nativeHealerWindup && unit.kind === 'healer') {
+    const ally = battle.units.find(
+      (u) => u.id === (unit.native?.healerWindup?.targetId ?? unit.healTarget),
+    );
+    if (ally && ally.hp > 0 && !ally.ejected && !ally.native?.recalled)
+      return { x: ally.x, y: ally.y };
+  }
   const wall = buildings.get(unit.native?.wallTarget ?? NaN);
   if (wall && wall.hp > 0) return { x: wall.x + 0.5, y: wall.y + 0.5 };
   const windup =

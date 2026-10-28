@@ -1099,6 +1099,8 @@ export interface Battle {
   nativeSuperMinerWindup?: true;
   /** Version 209: preserve source beam cadence remainders across active samples. */
   nativeInfernoDragonCadence?: true;
+  /** Version 210: friendly healing casts spend their source charge and recovery. */
+  nativeHealerWindup?: true;
   /** Version 207: source demolition contact cues reconstruct and cover the death tone. */
   nativeWallBreakerSounds?: true;
   /** Version 206: both Wall Breaker contact splashes include ground defenders. */
@@ -6795,7 +6797,7 @@ export class GameModel {
         continue;
       const d = { ...base, heal, damage, speed };
       if (troop.healer) {
-        stepHealer(b, u, d, unitDt, this.onEffect);
+        stepHealer(b, u, d, unitDt, this.onEffect, actionDt * poison.attack);
         continue;
       }
       if (
