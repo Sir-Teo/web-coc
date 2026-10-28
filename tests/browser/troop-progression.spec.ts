@@ -143,8 +143,8 @@ for (const viewport of [
             'Damage per hit': '216',
             'Damage on destruction': '72',
             'Death blast radius': '1.2 tiles',
-            'Movement speed': '1.25 tiles/s',
-            'Attack range': '0.5 tiles',
+            'Movement speed': '1.3 tiles/s',
+            'Attack range': '0 tiles',
           },
         ],
         [

@@ -1095,6 +1095,8 @@ export interface Battle {
   nativeSuperBowlerWindup?: true;
   /** Version 202: source Super Bowler preparation samples share active charge audio. */
   nativeSuperBowlerPreAttack?: true;
+  /** Version 204: Super Wall Breaker death blasts resolve after attacks with Wall preference. */
+  nativeSuperWallBreakerDeath?: true;
   /** Version 203: source sounds for the two bounces and final Super Bowler landing. */
   nativeSuperBowlerImpactSounds?: true;
   nativeSuperBowlerImpacts?: {

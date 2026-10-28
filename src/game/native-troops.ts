@@ -205,6 +205,8 @@ export interface NativeDeathBlast {
   damage: number;
   radius: number;
   air: boolean;
+  /** Version 204: captured Super Wall Breaker preference applies only to Walls. */
+  wallMultiplier?: number;
   resolved?: boolean;
 }
 export interface NativeChainHop {
@@ -1614,7 +1616,8 @@ function strike(
   }
   if (s.attackCount > 0 && state.attacks >= s.attackCount) {
     u.hp = 0;
-    u.spent = true;
+    // The shared casualty pass resolves the source death effect exactly once.
+    if (!(battle.nativeSuperWallBreakerDeath && u.kind === 'superwallbreaker')) u.spent = true;
     u.defeatedAt = battle.elapsed;
   }
 }
@@ -2537,6 +2540,9 @@ export function resolveNativeDeath(ctx: NativeTroopContext, u: Unit) {
       damage: s.deathDamage,
       radius: s.deathRadius,
       air: s.deathHitsAir,
+      ...(battle.nativeSuperWallBreakerDeath && u.kind === 'superwallbreaker'
+        ? { wallMultiplier: s.preferredMultiplier }
+        : {}),
     });
   if (s.secondary && !s.secondaryOnAttack && !(u.ejected && s.noSecondaryWhenEjected) && !u.ejected)
     spawnSecondaries(ctx, u, s, at);
@@ -2563,7 +2569,11 @@ export function stepNativeDeaths(ctx: NativeTroopContext) {
     blast.resolved = true;
     for (const b of battle.buildings)
       if (b.hp > 0 && !isTrap(b.kind) && distanceTo(blast, b) <= blast.radius + 1e-9)
-        ctx.damageBuilding(b, blast.damage, blast.at);
+        ctx.damageBuilding(
+          b,
+          blast.damage * (b.kind === 'wall' ? (blast.wallMultiplier ?? 1) : 1),
+          blast.at,
+        );
     damageDefenders(battle, blast, blast.damage, blast.radius, blast.air ? 'both' : 'ground');
     ctx.effect({
       type: 'blast',

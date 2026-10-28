@@ -33,6 +33,7 @@ export type NativeDirectKind =
   | 'superarcher'
   | 'superwizard'
   | 'superbowler'
+  | 'superwallbreaker'
   | 'miner';
 export type NativeDirectTarget =
   'storage' | 'cannon' | 'airdefense' | 'garrison' | 'air-garrison' | 'monolith';
