@@ -1101,6 +1101,8 @@ export interface Battle {
   nativeInfernoDragonCadence?: true;
   /** Version 210: friendly healing casts spend their source charge and recovery. */
   nativeHealerWindup?: true;
+  /** Version 211: Druid friendly casts spend their source charge and recovery. */
+  nativeDruidWindup?: true;
   /** Version 207: source demolition contact cues reconstruct and cover the death tone. */
   nativeWallBreakerSounds?: true;
   /** Version 206: both Wall Breaker contact splashes include ground defenders. */

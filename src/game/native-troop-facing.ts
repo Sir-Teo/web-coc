@@ -10,7 +10,10 @@ export function nativeTroopFacingTarget(
   unit: Unit,
   buildings: ReadonlyMap<number, Building> = buildingIndex(battle),
 ) {
-  if (battle.nativeHealerWindup && unit.kind === 'healer') {
+  if (
+    (battle.nativeHealerWindup && unit.kind === 'healer') ||
+    (battle.nativeDruidWindup && unit.kind === 'druid')
+  ) {
     const ally = battle.units.find(
       (u) => u.id === (unit.native?.healerWindup?.targetId ?? unit.healTarget),
     );

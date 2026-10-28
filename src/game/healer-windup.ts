@@ -1,4 +1,5 @@
 import type { Battle, Unit } from './model';
+import type { TroopKind } from './data';
 import { splitTiming } from './garrison-kinds';
 import { nativeUnitRow } from './native-units';
 import { unitAttackIntervalScale } from './native-status';
@@ -14,7 +15,9 @@ export interface HealerWindupState {
   animationOffset?: number;
 }
 const timing = (battle: Battle, unit: Unit) =>
-  splitTiming(nativeUnitRow('healer', unit.level ?? battle.troopLevels?.healer ?? 1));
+  splitTiming(
+    nativeUnitRow(unit.kind, unit.level ?? battle.troopLevels?.[unit.kind as TroopKind] ?? 1),
+  );
 function pose(battle: Battle, unit: Unit) {
   const st = unit.native!.healerWindup!;
   st.animationOffset = st.engaged

@@ -63,7 +63,13 @@ import {
 import { recordInfernoDragonTransition } from './inferno-dragon-transitions';
 import { friendlyCombatant, healingEligible } from './friendly-unit';
 import { healerContribution } from './healing';
-import type { HealerWindupState } from './healer-windup';
+import {
+  advanceHealerWindup,
+  beginHealerWindup,
+  cancelHealerWindup,
+  releaseHealerWindup,
+  type HealerWindupState,
+} from './healer-windup';
 import { launchNativeHealing, resolveNativeHealing } from './native-healing';
 import {
   applyDefenderHitPoison,
@@ -809,7 +815,13 @@ export function stepNativeUnit(
         splash: override.splash ?? s.splash,
       };
   }
+  const evolvingDruid = !!(battle.nativeDruidWindup && u.kind === 'druid');
   stepLifecycle(ctx, u, s, at);
+  if (evolvingDruid && u.kind !== 'druid') {
+    delete state.healerWindup;
+    delete u.healTarget;
+    return;
+  }
   if (u.hp <= 0) return;
   if (state.phoenixWaiting || state.phoenixEgg) {
     u.attacking = false;
@@ -838,7 +850,7 @@ export function stepNativeUnit(
       : 0);
   if (s.speed <= 0 && !s.summon && !s.bunker && s.range < 0.05) return;
   if (s.heal > 0 && s.dps <= 0 && !isSiege(u.kind)) {
-    stepNativeHealer(ctx, u, s, boosted.heal ?? s.heal, speed, dt);
+    stepNativeHealer(ctx, u, s, boosted.heal ?? s.heal, speed, dt, actionDt);
     return;
   }
   // Stationary spawners (Furnace) never attack; their timers already ran above.
@@ -2639,8 +2651,11 @@ function stepNativeHealer(
   heal: number,
   speed: number,
   dt: number,
+  actionDt = dt,
 ) {
   const battle = ctx.battle;
+  const phased = !!(battle.nativeDruidWindup && u.kind === 'druid');
+  const windup = phased ? advanceHealerWindup(battle, u, dt, actionDt) : undefined;
   const units = battle.units;
   const previousTarget = u.healTarget;
   const ally = (a: Unit) =>
@@ -2686,11 +2701,15 @@ function stepNativeHealer(
     u.pathAt = 0;
   }
   if (!target) {
+    if (phased) cancelHealerWindup(u);
     u.attacking = false;
     return;
   }
+  if (windup?.engaged && windup.targetId !== target.id) cancelHealerWindup(u);
   const distance = distance2D(target.x - u.x, target.y - u.y);
-  if (distance > s.range + 1e-9) {
+  if (windup?.engaged && windup.recovery > 1e-9 && distance > s.range + 1e-9) cancelHealerWindup(u);
+  const ready = windup?.engaged && windup.remaining <= 1e-9;
+  if (distance > s.range + 1e-9 && !ready) {
     u.attacking = false;
     if (battle.nativeHealerRoutes && !s.flying) {
       if (!u.path.length || u.pathAt <= 0) {
@@ -2728,8 +2747,14 @@ function stepNativeHealer(
   }
   if (battle.nativeHealerRoutes) u.path = [];
   u.attacking = true;
-  if (u.cooldown > 0) return;
-  u.cooldown = s.rate * unitAttackIntervalScale(u, battle.elapsed);
+  if (windup) {
+    beginHealerWindup(battle, u, target.id);
+    if (windup.remaining > 1e-9) return;
+    releaseHealerWindup(battle, u);
+  } else {
+    if (u.cooldown > 0) return;
+    u.cooldown = s.rate * unitAttackIntervalScale(u, battle.elapsed);
+  }
   if (battle.nativeHealingProjectiles && s.projectile) {
     launchNativeHealing(ctx, u, s, target, heal);
     return;

@@ -1657,3 +1657,17 @@ faces its friendly recipient. Group targeting, projectile travel, area
 healing, stacking and captured Hero ratios retain their behavior.
 Versions 209 and earlier keep immediate arrival launches and their former
 state shape. See [source clocks and portable fight checks](../reference/attacking-healer/README.md).
+
+## Version 211: Druid friendly cast and transformation boundary
+
+Carried Druids spend the source 0.55-second cast before launching a healing
+flight, with 0.45-second recovery inside the one-second period. The shared
+friendly controller reads the caster's source row, records the body offset
+and faces the recipient. Freeze, modifiers, Shrink, recipient loss and
+replacement preserve active timing. Existing routes, healing flights,
+bounces, amounts and Hero multipliers remain in use. Transformation into
+Bear clears the old friendly cast and ends the Druid step, avoiding a
+healing launch from stale Druid stats after the body changes. Flights
+already released retain their Druid tier and land normally. Versions 210
+and earlier retain immediate launches and the old transformation-frame
+packet. See [source clocks and portable checks](../reference/attacking-druid/README.md).
