@@ -22,6 +22,20 @@ Playback runs a separate GameModel and exposes only its battlefield to the scene
 
 ## Persistence and limits
 
+New recordings stay inline in the synchronous local backup until IndexedDB
+confirms their separate payloads. An immediate reload or an interrupted database
+write can therefore recover the recording as well as its result summary. Once
+confirmed, the backup drops its inline payloads and routine village saves remain
+small. Completion of an older transaction leaves a newer backup intact. If a
+fresh recording exceeds local-storage quota, the smaller village backup still
+saves while IndexedDB stores the payload. The existing village and replay file
+formats are unchanged.
+
+`tests/save.test.ts` covers the pre-commit backup, cleanup, concurrent writes,
+database failure and quota fallback. The desktop and phone recording workflows
+in `tests/browser/replay.spec.ts` exercise immediate reload and playback from
+the recovered log.
+
 The [army facility progression pass](FACILITY-PROGRESSION.md) retained combat version 16 before the spell rules changed. Barracks, Laboratory and Spell Factory health is captured in each battle snapshot, so the new home-village values do not reinterpret old recordings. A replay regression checks exact playback of the former Barracks health after the viewing village has adopted the new table.
 
 Recordings travel with normal IndexedDB/localStorage saves and JSON export/import. Import validation bounds step/action counts, timestamps, coordinates, types, research, hero values, and initial building data. Existing saves and result records without a replay remain valid. Only the latest five result entries retain recording payloads; all twenty retain their summaries.

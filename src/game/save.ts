@@ -730,14 +730,36 @@ export async function saveGame(state: Save): Promise<boolean> {
   );
   const added = [...listed.keys()].filter((id) => !storedReplays.has(id));
   const dropped = [...storedReplays].filter((id) => !listed.has(id));
+  // A reload may abort the asynchronous database write. Keep only not-yet-durable
+  // recordings inline until the same transaction commits their separate payloads.
+  const pending = new Set(added);
+  const backup = pending.size
+    ? {
+        ...village,
+        raidLog: village.raidLog!.map((record) => {
+          const key = REPLAY_KEY(record);
+          return pending.has(key) ? { ...record, replay: listed.get(key)! } : record;
+        }),
+      }
+    : village;
+  let villageText: string | undefined, backupText: string | undefined;
   // No defensive structuredClone: both writes capture the state synchronously,
   // before the first await (JSON.stringify here, and IndexedDB's put() clones its
   // value when called inside the promise executor below).
   try {
-    localStorage.setItem(KEY, JSON.stringify(village));
+    villageText = JSON.stringify(village);
+    backupText = backup === village ? villageText : JSON.stringify(backup);
+    localStorage.setItem(KEY, backupText);
     stored = true;
   } catch {
-    /* IndexedDB may still be available. */
+    // A large fresh recording must not prevent the smaller village from saving.
+    if (villageText !== undefined && backupText !== villageText)
+      try {
+        localStorage.setItem(KEY, villageText);
+        stored = true;
+      } catch {
+        /* IndexedDB may still be available. */
+      }
   }
   if (db)
     try {
@@ -750,6 +772,14 @@ export async function saveGame(state: Save): Promise<boolean> {
         tx.oncomplete = () => {
           for (const key of added) storedReplays.add(key);
           for (const key of dropped) storedReplays.delete(key);
+          // Use the text captured before yielding, and never overwrite a newer
+          // save's backup when an older transaction finishes afterwards.
+          if (villageText !== undefined && backupText !== undefined && backupText !== villageText)
+            try {
+              if (localStorage.getItem(KEY) === backupText) localStorage.setItem(KEY, villageText);
+            } catch {
+              /* The larger, valid backup remains usable. */
+            }
           resolve();
         };
         tx.onerror = () => reject(tx.error);
