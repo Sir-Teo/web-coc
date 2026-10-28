@@ -1631,3 +1631,16 @@ follow the shared native controller. Angry Spell cancels a pending repeat.
 The original body uses the captured action offset, and the delayed death
 bomb retains its source behavior. Versions 207 and earlier retain their
 immediate first hit, older repeat clock and state shape. See [source clocks, ramp values and portable fight checks](../reference/attacking-super-miner/README.md).
+
+
+## Version 209: Inferno Dragon beam cadence
+
+Carried Inferno Dragons retain fractional cooldown time between repeated
+hits on the same target, preserving the source 0.128-second period in the
+20-Hz simulation. Beam startup remains immediate. Approaches and target
+changes discard unused repeat time, and a kill retains the source
+0.6-second recovery. Freeze and stun hold the cooldown, including partial
+thaw samples; action modifiers and Shrink retain their scaling. Heat,
+beam stages, original loop sounds and transition presentation keep their
+existing clocks. Versions 208 and earlier retain the former cooldown
+reset and Freeze behavior. See [source values and portable fight checks](../reference/attacking-inferno-dragon/README.md).

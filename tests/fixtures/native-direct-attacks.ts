@@ -35,6 +35,7 @@ export type NativeDirectKind =
   | 'superbowler'
   | 'superwallbreaker'
   | 'wallbreaker'
+  | 'infernodragon'
   | 'superminer'
   | 'miner';
 export type NativeDirectTarget =

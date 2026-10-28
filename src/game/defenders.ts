@@ -28,7 +28,12 @@ import { lateActivatedDefense } from './late-campaign';
 import { defenderHidden } from './defender-visibility';
 import { defenderRageStats } from './native-rage';
 import type { NativeBoost } from './native-boost';
-import { rampedDamage, finishRampingHit, type NativeDamageRampStats } from './native-damage-ramp';
+import {
+  rampedDamage,
+  finishRampingHit,
+  nextRampingCooldown,
+  type NativeDamageRampStats,
+} from './native-damage-ramp';
 import { recordInfernoDragonTransition } from './inferno-dragon-transitions';
 import { untargetable } from './spell-effects';
 import {
@@ -405,6 +410,8 @@ export type DefenderFightTraits = Pick<
   nativeTargetHpBonus?: number;
   /** Source IncreasingDamage stages, keyed to the actual defender being hit. */
   nativeDamageRamp?: NativeDamageRampStats;
+  /** Version 209: retain the fractional Inferno Dragon beam interval. */
+  nativeRampingCadence?: boolean;
 };
 const canFight = (unit: Unit, enemy: Defender, troop: DefenderFightTraits) =>
   !troop.healer &&
@@ -656,8 +663,13 @@ export function stepAttackerVsDefenders(
     if (troop.nativeDamageRamp)
       recordInfernoDragonTransition(battle, unit, troop.nativeDamageRamp, target.id, true);
     route?.enterRange?.();
-    if (unit.cooldown <= 0 && (route?.attackReady?.() ?? true)) {
-      unit.cooldown = stats.rate;
+    if (
+      unit.cooldown <= (troop.nativeRampingCadence ? 1e-9 : 0) &&
+      (route?.attackReady?.() ?? true)
+    ) {
+      unit.cooldown = troop.nativeRampingCadence
+        ? nextRampingCooldown(unit, stats.rate, target.id, true)
+        : stats.rate;
       const hitDamage = troop.nativeDamageRamp
         ? rampedDamage(unit, troop.nativeDamageRamp, stats.damage, target.id, true, battle.elapsed)
         : stats.damage;

@@ -1097,6 +1097,8 @@ export interface Battle {
   nativeSuperBowlerPreAttack?: true;
   /** Version 208: Super Miner uses its source quarter-second charge and repeat clock. */
   nativeSuperMinerWindup?: true;
+  /** Version 209: preserve source beam cadence remainders across active samples. */
+  nativeInfernoDragonCadence?: true;
   /** Version 207: source demolition contact cues reconstruct and cover the death tone. */
   nativeWallBreakerSounds?: true;
   /** Version 206: both Wall Breaker contact splashes include ground defenders. */
@@ -6703,7 +6705,16 @@ export class GameModel {
         (u.rageUntil ?? 0) > b.elapsed || !!(u.hero && b.hero && b.hero.rageUntil > b.elapsed);
       const spellRage = (u.spellRageUntil ?? 0) > b.elapsed ? rageSpellStats : null;
       const heroScale = u.hero ? RAGE_HERO_MULTIPLIER : 1;
-      u.cooldown -= poison.attack === 1 ? actionDt : actionDt * poison.attack;
+      // Retained overshoot must never turn frozen native time into attack debt.
+      let cooldownDt = actionDt;
+      if (b.nativeInfernoDragonCadence && u.kind === 'infernodragon') {
+        const heldUntil = Math.max(
+          u.native?.effects?.frozenUntil ?? 0,
+          u.native?.effects?.stunUntil ?? 0,
+        );
+        cooldownDt *= Math.min(1, Math.max(0, b.elapsed - heldUntil) / unitDt);
+      }
+      u.cooldown -= poison.attack === 1 ? cooldownDt : cooldownDt * poison.attack;
       u.pathAt -= unitDt;
       u.attacking = false;
       // Memoize stats by kind+level for the tick instead of recomputing per unit.

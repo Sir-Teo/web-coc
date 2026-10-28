@@ -54,7 +54,12 @@ import {
 import { applyDefenderFrost } from './defender-frost';
 import { activeAsDefense } from './native-defenses';
 import { mergeBoost } from './native-boost';
-import { rampedDamage, finishRampingHit, type NativeDamageRamp } from './native-damage-ramp';
+import {
+  rampedDamage,
+  finishRampingHit,
+  nextRampingCooldown,
+  type NativeDamageRamp,
+} from './native-damage-ramp';
 import { recordInfernoDragonTransition } from './inferno-dragon-transitions';
 import { friendlyCombatant, healingEligible } from './friendly-unit';
 import { healerContribution } from './healing';
@@ -736,6 +741,7 @@ export function stepNativeUnit(
   const superMinion = !!(battle.nativeSuperMinionLongShots && u.kind === 'superminion');
   if (superMinion) s = superMinionAttackStats(s, state.attacks ?? 0);
   const damageRamp = battle.nativeTroopDamageRamp ? s.damageRamp : undefined;
+  const infernoCadence = !!(battle.nativeInfernoDragonCadence && u.kind === 'infernodragon');
   if (damageRamp && state.damageRamp) {
     const previous = state.damageRamp.defender
       ? battle.defenders?.find((d) => d.id === state.damageRamp!.targetId)
@@ -1179,6 +1185,7 @@ export function stepNativeUnit(
         ...(undergroundChase ? { underground: true } : {}),
         ...(nativeHeroAttack && !s.projectile ? { nativeDirectHit: true } : {}),
         ...(damageRamp ? { nativeDamageRamp: damageRamp, nativeDirectHit: !s.projectile } : {}),
+        ...(infernoCadence ? { nativeRampingCadence: true } : {}),
         ...(battle.nativeMonolithDefenderDamage && frostArrow
           ? { nativeTargetHpBonus: num(frostArrow, 'DamagePermilHp') / 1000 }
           : {}),
@@ -1323,12 +1330,13 @@ export function stepNativeUnit(
       beginNativeAttackWindup(u, s, { building: target }, battle);
       return;
     }
-    if (u.cooldown > 0) return;
+    if (u.cooldown > (infernoCadence ? 1e-9 : 0)) return;
     if (electroDragon) {
       beginElectroDragonCharge(ctx, u, s, { building: target });
       return;
     }
-    u.cooldown = s.rate * unitAttackIntervalScale(u, at);
+    const interval = s.rate * unitAttackIntervalScale(u, at);
+    u.cooldown = infernoCadence ? nextRampingCooldown(u, interval, target.id, false) : interval;
     if (damageRamp) {
       strike(ctx, u, s, target, rampedDamage(u, damageRamp, damage, target.id, false, at));
       finishRampingHit(u, target, damageRamp);

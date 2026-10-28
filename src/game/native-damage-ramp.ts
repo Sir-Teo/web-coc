@@ -33,6 +33,20 @@ export function rampedDamage(
   return stats.dps[0] > 0 ? (damage * stats.dps[stage]) / stats.dps[0] : damage;
 }
 
+/** Keep sub-sample beam time only while repeatedly hitting the same target. */
+export function nextRampingCooldown(
+  unit: Unit,
+  interval: number,
+  targetId: number,
+  defender: boolean,
+) {
+  const ramp = unit.native?.damageRamp;
+  return (
+    interval +
+    (ramp?.targetId === targetId && ramp.defender === defender ? Math.min(0, unit.cooldown) : 0)
+  );
+}
+
 /** A direct killing hit starts recovery at the hit sample, rather than one tick later. */
 export function finishRampingHit(unit: Unit, target: { hp: number }, stats: NativeDamageRampStats) {
   if (target.hp > 0) return;

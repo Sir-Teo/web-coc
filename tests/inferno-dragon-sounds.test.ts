@@ -126,7 +126,7 @@ it('holds one audio node, changes stage pitch, and resumes pause/seek offsets th
   player.sync([cue], maximum.elapsed, 1, true);
   const last = nodes.at(-1);
   expect(last.playbackRate.value).toBe(1.4);
-  expect(last.start).toHaveBeenCalledWith(0, ((maximum.elapsed - cue.at) * 1.4) % 2);
+  expect(last.start).toHaveBeenCalledWith(0, (Math.max(0, maximum.elapsed - cue.at) * 1.4) % 2);
   player.sync([cue], maximum.elapsed, 1, false);
   expect(last.stop).toHaveBeenCalledOnce();
   player.sync([cue], maximum.elapsed, 1, true);
