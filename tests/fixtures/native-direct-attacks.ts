@@ -24,6 +24,7 @@ export type NativeDirectKind =
   | 'minion'
   | 'dragon'
   | 'balloon'
+  | 'archer'
   | 'miner';
 export type NativeDirectTarget =
   'storage' | 'cannon' | 'airdefense' | 'garrison' | 'air-garrison' | 'monolith';
@@ -83,7 +84,11 @@ export function nativeDirectBattle(
     ),
     ...(options.extraBuildings ?? []),
   ];
-  model.state.army = { ...emptyArmy(), [kind]: 1, archer: kind === 'superhogrider' ? 0 : 2 };
+  model.state.army = {
+    ...emptyArmy(),
+    [kind]: 1,
+    archer: kind === 'archer' ? 3 : kind === 'superhogrider' ? 0 : 2,
+  };
   model.state.troopLevels = {
     ...model.state.troopLevels,
     ...(original ? { [original]: level + superLevelOffset(kind) } : {}),
@@ -136,7 +141,7 @@ export function nativeDirectBattle(
   options.beforeDeploy?.({ model, battle, step });
   model.activeTroop = kind;
   if (!model.deploy(x, 11.5)) throw Error('Native direct attack deployment failed');
-  const unit = battle.units.find((u) => u.kind === kind)!;
+  const unit = battle.units.filter((u) => u.kind === kind).at(-1)!;
   const until = (at: number) => {
     while (battle.elapsed < at - 1e-9) step();
   };

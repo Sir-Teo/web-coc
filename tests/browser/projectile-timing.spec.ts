@@ -9,14 +9,17 @@ test.beforeEach(async ({ page }) => {
 });
 
 for (const reduced of [false, true])
-  test(`arrow damage and feedback share battle time${reduced ? ' with reduced motion' : ''}`, async ({
+  test(`version 190 arrow damage and feedback share battle time${reduced ? ' with reduced motion' : ''}`, async ({
     page,
   }) => {
-    const start = await page.evaluate((reduced) => {
+    const start = await page.evaluate(async (reduced) => {
+      const { replayBattle } = await import('/src/game/replay.ts');
       const { model: m, scene } = window.__game;
       scene.paused = true;
       m.state.settings.reducedMotion = reduced;
       m.startBattle(0, true);
+      m.recording.version = 190;
+      m.battle = replayBattle(m.recording.initial, 190);
       const hall = m.battle.buildings.find((b) => b.kind === 'townhall');
       m.battle.buildings = [hall];
       m.activeTroop = 'archer';

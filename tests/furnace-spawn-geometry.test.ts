@@ -23,7 +23,7 @@ it('pins release five without consulting the host sine or cosine', () => {
 });
 for (const level of [1, 2, 3, 4])
   it(`Furnace ${level} keeps exact version-150 Node combat through its complete stock`, () => {
-    const r = furnaceAuraBattle(level, 18, undefined, 0, { x: 6.9, y: 11.5, allyOffset: 1 }),
+    const r = furnaceAuraBattle(level, 18, 151, 0, { x: 6.9, y: 11.5, allyOffset: 1 }),
       old = furnaceAuraBattle(level, 18, 150, 0, { x: 6.9, y: 11.5, allyOffset: 1 });
     r.until(65);
     old.until(65);

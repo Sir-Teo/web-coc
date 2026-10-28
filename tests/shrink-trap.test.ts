@@ -246,9 +246,30 @@ describe('campaign Shrink Trap', () => {
       const a = setup(normal, false),
         b = setup(slowed, true);
       expect(Math.hypot(b.x - 15, b.y - 30)).toBeCloseTo(Math.hypot(a.x - 15, a.y - 30) / 2, 10);
-      expect([a.cooldown, b.cooldown]).toEqual([0.95, 0.975]);
+      if (kind === 'archer') {
+        // Travelling does not spend a source charge; the active-time budget is still halved.
+        expect([a.cooldown, b.cooldown]).toEqual([0, 0]);
+        expect([a.native!.attackWindup!.actionDt, b.native!.attackWindup!.actionDt]).toEqual([
+          0.05, 0.025,
+        ]);
+      } else expect([a.cooldown, b.cooldown]).toEqual([0.95, 0.975]);
       expect([a.hp, b.hp, a.maxHp, b.maxHp]).toEqual([900, 900, 1000, 1000]);
     });
+
+  it('halves an engaged Archer source charge while preserving its hit damage', () => {
+    for (const shrink of [false, true]) {
+      const r = arena();
+      r.b.buildings = [makeBuilding(9001, 'townhall', 30, 30)];
+      const u = r.unit(28, 'archer');
+      u.y = 30;
+      if (shrink) applyShrink(u, 0);
+      r.m.step(0.05);
+      expect(u.native!.attackWindup!.remaining).toBeCloseTo(shrink ? 0.975 : 0.95, 8);
+      for (let i = 0; i < 50 && !u.native!.attacks; i++) r.m.step(0.05);
+      expect(r.b.elapsed).toBeCloseTo(shrink ? 2 : 1, 8);
+      expect(r.b.projectiles!.find((p) => p.sourceId === u.id)!.damage).toBe(8);
+    }
+  });
 
   it('rejects campaign trap identity in home saves, practice and older or mismatched replay entities', () => {
     const m = new GameModel();

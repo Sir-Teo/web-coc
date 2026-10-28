@@ -259,6 +259,7 @@ const NATIVE_TROOPS = new Set<string>(EXTRA_TROOP_KINDS);
 export const nativeBehavior = (battle: Battle, kind: UnitKind) =>
   !!battle.nativeRoster &&
   ((battle.nativeBalloonWindup && kind === 'balloon') ||
+    (battle.nativeArcherWindup && kind === 'archer') ||
     NATIVE_TROOPS.has(kind) ||
     isSpawnKind(kind) ||
     ((isHeroUnitKind(kind) || isPetUnitKind(kind)) && !!battle.nativeHeroRoster));
@@ -876,6 +877,7 @@ export function stepNativeUnit(
   const balloon = !!(battle.nativeBalloonWindup && u.kind === 'balloon');
   const babyDragon = !!(battle.nativeBabyDragonWindup && u.kind === 'babydragon');
   const minion = !!(battle.nativeMinionWindup && u.kind === 'minion');
+  const archer = !!(battle.nativeArcherWindup && u.kind === 'archer');
   const valkyrie = !!(
     battle.nativeValkyrieWindup &&
     (u.kind === 'valkyrie' || u.kind === 'supervalkyrie')
@@ -901,6 +903,7 @@ export function stepNativeUnit(
     babyDragon ||
     superMinion ||
     minion ||
+    archer ||
     valkyrie ||
     witch ||
     hound;
@@ -928,7 +931,8 @@ export function stepNativeUnit(
         dragonRider ||
         babyDragon ||
         superMinion ||
-        minion
+        minion ||
+        archer
       )
         releaseRangedAtDefender(
           ctx,
@@ -1099,6 +1103,7 @@ export function stepNativeUnit(
         babyDragon ||
         superMinion ||
         minion ||
+        archer ||
         valkyrie ||
         witch ||
         hound ||

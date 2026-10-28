@@ -1071,6 +1071,8 @@ export interface Battle {
   nativeDragonWindup?: true;
   /** Version 190: Balloon source phases, self-centered bombing and delayed crash damage. */
   nativeBalloonWindup?: true;
+  /** Version 191: ordinary and Puppet Archers share source charges and native arrows. */
+  nativeArcherWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;

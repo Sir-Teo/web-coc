@@ -207,6 +207,11 @@ describe('native short melee reach', () => {
     u.x = 6.5;
     u.path = [];
     m.step(0.05);
+    expect(m.battle!.projectiles).toHaveLength(0);
+    expect(u.attacking).toBe(true);
+    for (let i = 0; i < 18; i++) m.step(0.05);
+    expect(m.battle!.projectiles).toHaveLength(0);
+    m.step(0.05);
     expect(m.battle!.projectiles[0].damage).toBe(8);
     expect(u.attacking).toBe(true);
   });

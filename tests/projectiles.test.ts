@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { GameModel, makeBuilding, type Unit, type FX } from '../src/game/model';
 import { emptyArmy, emptySpells } from '../src/game/army';
+import { replayBattle, type ReplayData } from '../src/game/replay';
 
 function arena(kind: import('../src/game/data').TroopKind = 'archer') {
   const m = new GameModel();
   m.startBattle(0, true);
+  // Keep the released generic-projectile contract; source Archer packets have separate coverage.
+  const data = (m as unknown as { recording: ReplayData }).recording;
+  data.version = 190;
+  m.battle = replayBattle(data.initial, 190);
   const b = m.battle!;
   const hall = makeBuilding(9000, 'townhall', 10, 10);
   b.buildings = [hall];
@@ -34,7 +39,7 @@ function land(m: GameModel) {
   while (m.battle!.elapsed < impact - 1e-8) m.step(Math.min(0.05, impact - m.battle!.elapsed));
 }
 
-describe('physical projectile damage', () => {
+describe('version-190 physical projectile damage', () => {
   it('an archer held at a blocking wall launches an arrow instead of damaging it early', () => {
     const { m, b, hall, u } = arena();
     const wall = makeBuilding(9002, 'wall', 6, 11);

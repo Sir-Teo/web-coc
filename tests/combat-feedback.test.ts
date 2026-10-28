@@ -24,7 +24,7 @@ function addUnit(m: GameModel, kind: TroopKind, x: number, y: number) {
 describe('combat feedback comes from actual attacks', () => {
   it.each([
     ['swordsman', undefined],
-    ['archer', 'arrow'],
+    ['archer', 'native'],
     ['wizard', 'fireball'],
     ['balloon', 'bomb'],
   ] as const)('%s identifies its weapon, target and one attack per cooldown', (kind, weapon) => {
@@ -37,6 +37,11 @@ describe('combat feedback comes from actual attacks', () => {
     const effects: FX[] = [];
     m.onEffect = (effect) => effects.push(effect);
     m.step(0.05);
+    if (kind === 'archer') {
+      expect(effects.some((e) => e.sourceId === attacker.id)).toBe(false);
+      for (let i = 0; i < 20 && !effects.some((e) => e.sourceId === attacker.id); i++) m.step(0.05);
+      expect(m.battle!.elapsed).toBeCloseTo(1, 8);
+    }
     expect(target.maxHp - target.hp).toBe(weapon ? 0 : m.troopStats(kind).damage);
     const attack = effects.find((e) => e.sourceId === attacker.id);
     expect(attack?.weapon).toBe(weapon);

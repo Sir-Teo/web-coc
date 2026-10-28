@@ -9,6 +9,7 @@ export function heroPuppetBattle(
   hero: HeroSetup,
   research: Partial<Record<TroopKind, number>> = {},
   carried?: TroopKind,
+  version = REPLAY_VERSION,
 ) {
   const model = new GameModel();
   model.state.king = undefined;
@@ -23,7 +24,8 @@ export function heroPuppetBattle(
   model.state.troopLevels = { ...model.state.troopLevels, ...research };
   model.startBattle(0, true);
   const data = (model as unknown as { recording: ReplayData }).recording;
+  data.version = version;
   data.initial.heroes = [hero];
-  const battle = (model.battle = replayBattle(data.initial, REPLAY_VERSION));
+  const battle = (model.battle = replayBattle(data.initial, version));
   return { model, battle, data };
 }
