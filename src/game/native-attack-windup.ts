@@ -42,6 +42,17 @@ const state = (unit: Unit): NativeAttackWindupState =>
     lastAt: 0,
   });
 
+/** Forced selection discards a pending target and cue, retaining clock and recovery metadata. */
+export function cancelNativeAttackWindup(unit: Unit) {
+  const st = unit.kind === 'bowler' ? unit.native?.bowler : unit.native?.attackWindup;
+  if (!st) return;
+  delete st.engaged;
+  delete st.target;
+  delete st.animationOffset;
+  if (st.audio) delete st.audio.charge;
+  unit.attacking = false;
+}
+
 function resolve(
   ctx: NativeTroopContext,
   ref: ChainRef,

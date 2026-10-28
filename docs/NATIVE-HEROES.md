@@ -2033,8 +2033,11 @@ captured spell has zero declared upper-phase delay, preserving its timing. Totem
 its 100% volume and 0.9–1.1 landing pitch; Angry's landing and upper sounds use 80%
 volume and 1.0 pitch. Late cold views reconstruct art without replaying expired cues.
 
-Angry continues to give friendly troops their existing defense-target preference. Its
-fifty 100-ms pulses still run from 1.5 to 6.4 seconds; field lifetime does not extend
+Angry continues to give friendly troops their existing defense-target preference.
+From recording version 197, a carried Angry Spell also discards pending shared/Bowler
+and Electro Dragon charges when forcing that selection. Recovery and attacks already
+released continue; see the [charge-reset reference](../reference/angry-charge-reset/README.md).
+Its fifty 100-ms pulses still run from 1.5 to 6.4 seconds; field lifetime does not extend
 those pulses or the granted ability. Rendering remains read-only, consumes no combat
 RNG, and omits moving source fields under reduced motion.
 

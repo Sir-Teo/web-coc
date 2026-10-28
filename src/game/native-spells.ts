@@ -1,4 +1,6 @@
 import { fieldSpellHistoryUntil } from './field-spell-effects';
+import { cancelNativeAttackWindup } from './native-attack-windup';
+import { cancelElectroDragonCharge } from './native-electro-dragon';
 import { reviveHeroAuras } from './native-hero-aura-revival';
 import { resetHeroRegeneration } from './native-hero-regeneration';
 import {
@@ -630,18 +632,15 @@ function supportAttackers(
       const state = (u.native ??= {});
       state.angryUntil = at + seconds(ability, 'DeactivateAfterTime');
       if (
-        ((battle.nativeBarbarianWindup && u.kind === 'swordsman' && !u.hero) ||
-          (battle.nativeGoblinWindup && u.kind === 'goblin') ||
-          (battle.nativeWizardWindup && u.kind === 'wizard') ||
-          (battle.nativeSuperBarbarianWindup && u.kind === 'superbarbarian') ||
-          (battle.nativeSneakyGoblinWindup && u.kind === 'sneakygoblin')) &&
-        state.attackWindup
+        battle.nativeAngryChargeReset ||
+        (battle.nativeBarbarianWindup && u.kind === 'swordsman' && !u.hero) ||
+        (battle.nativeGoblinWindup && u.kind === 'goblin') ||
+        (battle.nativeWizardWindup && u.kind === 'wizard') ||
+        (battle.nativeSuperBarbarianWindup && u.kind === 'superbarbarian') ||
+        (battle.nativeSneakyGoblinWindup && u.kind === 'sneakygoblin')
       ) {
-        // Forced selection must also discard the source charge's committed target.
-        delete state.attackWindup.engaged;
-        delete state.attackWindup.target;
-        delete state.attackWindup.animationOffset;
-        u.attacking = false;
+        cancelNativeAttackWindup(u);
+        if (battle.nativeAngryChargeReset) cancelElectroDragonCharge(u);
       }
       u.target = null;
       u.path = [];

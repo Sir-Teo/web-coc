@@ -6,7 +6,20 @@ export function nativeTargetingSpellRecording(
   name: 'Totem Spell' | 'AngrySpell',
   level = 1,
   version = REPLAY_VERSION,
-  kind: 'swordsman' | 'goblin' | 'wizard' | 'superbarbarian' | 'sneakygoblin' = 'swordsman',
+  kind:
+    | 'swordsman'
+    | 'goblin'
+    | 'wizard'
+    | 'superbarbarian'
+    | 'sneakygoblin'
+    | 'archer'
+    | 'dragon'
+    | 'minion'
+    | 'babydragon'
+    | 'bowler'
+    | 'electrodragon' = 'swordsman',
+  deployX?: number,
+  castAt?: number,
 ) {
   const model = new GameModel(),
     key = name === 'Totem Spell' ? 'totem' : 'angry';
@@ -50,9 +63,15 @@ export function nativeTargetingSpellRecording(
     snapshot = () =>
       snapshots.push({ at: battle.elapsed, battle: JSON.parse(JSON.stringify(battle)) });
   model.activeTroop = kind;
-  if (!model.deploy(kind === 'wizard' ? 2.5 : 3, 13))
+  if (!model.deploy(deployX ?? (kind === 'wizard' ? 2.5 : 3), 13))
     throw Error('Targeting troop deployment failed');
-  until(kind === 'swordsman' || kind === 'superbarbarian' ? 0.3 : 0.05);
+  until(
+    castAt !== undefined
+      ? castAt - 0.05
+      : kind === 'swordsman' || kind === 'superbarbarian'
+        ? 0.3
+        : 0.05,
+  );
   snapshot();
   const before = battle.elapsed,
     unitId = battle.units[0].id;

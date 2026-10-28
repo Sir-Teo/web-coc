@@ -1083,6 +1083,8 @@ export interface Battle {
   nativeSuperBarbarianWindup?: true;
   /** Version 196: Sneaky Goblin charges independently of deployment invisibility. */
   nativeSneakyGoblinWindup?: true;
+  /** Version 197: carried Angry Spell discards pending troop charges when forcing defense selection. */
+  nativeAngryChargeReset?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;

@@ -40,6 +40,14 @@ const state = (u: Unit, at: number): ElectroDragonState =>
     sequence: 0,
     recoveryUntil: 0,
   });
+/** Forced selection stops only the pending charge; released arcs and recovery keep running. */
+export function cancelElectroDragonCharge(unit: Unit) {
+  const st = unit.native?.electroDragon;
+  if (!st?.charge) return;
+  delete st.charge;
+  delete st.animAt;
+  unit.attacking = false;
+}
 export function beginElectroDragonCharge(
   ctx: NativeTroopContext,
   u: Unit,
