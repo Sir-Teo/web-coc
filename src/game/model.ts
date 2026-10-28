@@ -1027,6 +1027,9 @@ export interface Battle {
   nativeElectroTitanWindup?: true;
   /** Version 175: Yeti/Super Yeti use source claw windups without changing mite stocks. */
   nativeYetiWindup?: true;
+  /** Version 176: Super Hog Rider defeats release the Hog and a source-timed flying Rider. */
+  nativeSuperHogSplit?: true;
+  nativeSuperHogFlights?: CombatProjectile[];
   nativeWitchShots?: {
     id: string;
     sourceId: number;

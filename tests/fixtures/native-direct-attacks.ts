@@ -6,8 +6,9 @@ import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/re
 import { isGarrisonDefender } from '../../src/game/defenders';
 import { superOriginal, superLevelOffset } from '../../src/game/special-troops';
 
-export type NativeDirectKind = 'icegolem' | 'rootrider' | 'electrotitan' | 'yeti' | 'superyeti';
-export type NativeDirectTarget = 'storage' | 'cannon' | 'garrison' | 'air-garrison';
+export type NativeDirectKind =
+  'icegolem' | 'rootrider' | 'electrotitan' | 'yeti' | 'superyeti' | 'superhogrider';
+export type NativeDirectTarget = 'storage' | 'cannon' | 'garrison' | 'air-garrison' | 'monolith';
 
 export function nativeDirectBattle(
   kind: NativeDirectKind,
@@ -27,13 +28,27 @@ export function nativeDirectBattle(
     makeBuilding(1, 'townhall', 36, 36, 1),
     makeBuilding(
       2,
-      garrison ? 'clancastle' : target === 'cannon' ? 'cannon' : 'goldstorage',
+      garrison
+        ? 'clancastle'
+        : target === 'cannon'
+          ? 'cannon'
+          : target === 'monolith'
+            ? 'monolith'
+            : 'goldstorage',
       13,
       10,
-      garrison ? 9 : target === 'cannon' ? (kind === 'electrotitan' || yeti ? 21 : 6) : 18,
+      garrison
+        ? 9
+        : target === 'monolith'
+          ? 1
+          : target === 'cannon'
+            ? kind === 'electrotitan' || yeti
+              ? 21
+              : 6
+            : 18,
     ),
   ];
-  model.state.army = { ...emptyArmy(), [kind]: 1, archer: 2 };
+  model.state.army = { ...emptyArmy(), [kind]: 1, archer: kind === 'superhogrider' ? 0 : 2 };
   model.state.troopLevels = {
     ...model.state.troopLevels,
     ...(original ? { [original]: level + superLevelOffset(kind) } : {}),

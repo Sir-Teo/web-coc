@@ -1200,3 +1200,14 @@ queues. Death still releases the finite remainder. Only carried Yeti family
 armies enable the change; versions 174 and earlier retain their immediate first
 hits. No source stats, assets, save format or mite rules change. See
 [source distinctions and actual fight/Recall recordings](../reference/attacking-yeti/README.md).
+
+## Version 176: Super Hog Rider defeat split
+
+A defeated Super Hog Rider now releases its source-level Hog immediately and
+throws the Rider in the original 1.3 s flight before landing a second body.
+The linked arrival happens once and keeps combat open if the Hog dies with no
+reserve army. Cloned children retain the parent's expiry; Spring ejection
+suppresses both halves. Only carried Super Hog Rider armies enable the split.
+Versions 175 and earlier retain their previous absence of both children. No
+source stats, assets, save format or attack clocks change. See the
+[source evidence, geometry limits and Monolith recordings](../reference/attacking-super-hog/README.md).

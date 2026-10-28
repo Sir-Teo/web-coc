@@ -20,6 +20,7 @@ import { preferredDefense } from './native-defense-preference';
 import { monolithArrow, stepEquipmentDash } from './native-equipment-effects';
 import { isSiege } from './special-troops';
 import { nativeMiteJump } from './native-mite-jumps';
+import { superHogLanding, superHogSplitStats } from './native-super-hog';
 import { sneezyCombatStats, sneezySpawner, sneezySummon } from './native-sneezy';
 import { distance2D } from './distance';
 import { furnaceReleasePoint } from './native-furnace-geometry';
@@ -160,6 +161,8 @@ export interface NativeUnitState {
   angryUntil?: number;
   /** Clone Spell copies vanish at this time without death effects. */
   cloneUntil?: number;
+  /** Version 176: a Super Hog Rider body releases its two death abilities once. */
+  superHogSplit?: true;
   /** Siege machines are immune to troop spells. */
   siege?: boolean;
   /** Units the client marks immune to healing (Totem). */
@@ -1765,6 +1768,10 @@ export function stepNativeChains(ctx: NativeTroopContext) {
 
 /** Native projectile arrival: damage, splash, bounces and on-hit spells. */
 export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile) {
+  if (ctx.battle.nativeSuperHogSplit && p.native?.superHogSplit) {
+    releaseProjectileLanding(ctx, p.id);
+    return;
+  }
   if (resolveWitchImpact(ctx, p)) return;
   if (resolveSeekingShield(ctx, p)) return;
   if (resolveSpikyBall(ctx, p)) return;
@@ -1843,7 +1850,7 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
     for (const defender of battle.defenders ?? [])
       if (distance2D(defender.x - p.x, defender.y - p.y) <= p.splash)
         applyDefenderFrost(defender, { seconds: s.frostTime, percent: s.frostPercent }, p.impact);
-  if (meteorSplash) releaseMeteorLanding(ctx, p.id);
+  if (meteorSplash) releaseProjectileLanding(ctx, p.id);
   const projectile = nativeRow('projectiles', source.name);
   const hitSpell = text(projectile, 'HitSpell');
   if (hitSpell)
@@ -2251,7 +2258,7 @@ function materializePending(ctx: NativeTroopContext, spawn: NativePendingSpawn) 
   }
 }
 /** A thrown half cannot act before the packet's direct hit and splash resolve. */
-function releaseMeteorLanding(ctx: NativeTroopContext, projectileId: string) {
+function releaseProjectileLanding(ctx: NativeTroopContext, projectileId: string) {
   const due =
     ctx.battle.nativePendingSpawns?.filter((spawn) => spawn.projectileId === projectileId) ?? [];
   if (!due.length) return;
@@ -2344,6 +2351,49 @@ export function resolveNativeDeath(ctx: NativeTroopContext, u: Unit) {
   if (u.native?.merged) return;
   const s = statsFor(battle, u);
   const at = u.defeatedAt ?? battle.elapsed;
+  if (battle.nativeSuperHogSplit && u.kind === 'superhogrider' && !u.ejected) {
+    if (u.native?.superHogSplit) return;
+    const cloneUntil = u.native?.cloneUntil;
+    if (cloneUntil !== undefined && cloneUntil <= at + 1e-9) return;
+    const split = superHogSplitStats(s.level),
+      landing = superHogLanding(battle, u, ctx.buildingsById, split.range);
+    (u.native ??= {}).superHogSplit = true;
+    const shot = launchProjectile(
+      battle,
+      {
+        weapon: 'native',
+        native: {
+          name: split.projectile,
+          kind: u.kind,
+          level: s.level,
+          captureSource: true,
+          superHogSplit: true,
+        },
+        sourceId: u.id,
+        targetId: u.id,
+        targetBuilding: false,
+        fromX: u.x,
+        fromY: u.y,
+        x: landing.x,
+        y: landing.y,
+        damage: 0,
+      },
+      ctx.effect,
+      at,
+    );
+    (battle.nativeSuperHogFlights ??= []).push({ ...shot, native: { ...shot.native! } });
+    (battle.nativePendingSpawns ??= []).push({
+      ...landing,
+      at: shot.impact,
+      ...split.rider,
+      owner: u.id,
+      projectileId: shot.id,
+      ...(cloneUntil !== undefined ? { cloneUntil } : {}),
+    });
+    const hog = spawnNativeUnit(ctx, split.hog.kind, split.hog.level, u.x, u.y, at, u.id);
+    if (cloneUntil !== undefined) hog.summoned = true;
+    return;
+  }
   if (s.deathDamage > 0 && !u.ejected)
     (battle.nativeDeaths ??= []).push({
       sourceId: u.id,

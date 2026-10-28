@@ -46,6 +46,7 @@ import { NativeArtPacks, type NativeArtPack } from './native-art-pack';
 import { NativeProjectilePresentation } from './native-projectile-scene';
 import { nativeUnitStats } from './native-units';
 import { heroProjectileNames } from './hero-projectile-prefetch';
+import { superHogSplitStats } from './native-super-hog';
 import { fireballEffects } from './fireball-effects';
 import { fireballShake } from './fireball-shake';
 import {
@@ -3038,6 +3039,13 @@ export class VillageScene extends Phaser.Scene {
     )
       wanted.add('frostmite');
     for (const child of carriedMiteArt(this.model.battle)) wanted.add(child);
+    if (
+      (!this.model.battle || this.model.battle.nativeSuperHogSplit) &&
+      wanted.has('superhogrider')
+    ) {
+      wanted.add('superhog');
+      wanted.add('superrider');
+    }
     return [...wanted].sort();
   }
   /** Baked character atlases the home lineup or current battle needs. */
@@ -3072,9 +3080,11 @@ export class VillageScene extends Phaser.Scene {
     const kinds = this.wantedTroopArt();
     const level = (kind: string) =>
       this.model.troopLevel(
-        (Object.hasOwn(MITE_SPAWN_PARENTS, kind)
-          ? MITE_SPAWN_PARENTS[kind as keyof typeof MITE_SPAWN_PARENTS]
-          : kind) as TroopKind,
+        (kind === 'superhog' || kind === 'superrider'
+          ? 'superhogrider'
+          : Object.hasOwn(MITE_SPAWN_PARENTS, kind)
+            ? MITE_SPAWN_PARENTS[kind as keyof typeof MITE_SPAWN_PARENTS]
+            : kind) as TroopKind,
       );
     const signature = kinds.map((kind) => `${kind}:${level(kind)}`).join(',');
     if (signature !== this.armyPrefetchSignature) {
@@ -3128,15 +3138,19 @@ export class VillageScene extends Phaser.Scene {
     const spikyBall = !this.model.battle || !!this.model.battle.nativeSpikyBall;
     const darkOrb = !this.model.battle || !!this.model.battle.nativeDarkOrb;
     const seekingShield = !this.model.battle || !!this.model.battle.nativeSeekingShield;
+    const superHog = !this.model.battle || !!this.model.battle.nativeSuperHogSplit;
     const projectiles = this.model.reducedMotion
       ? ''
-      : `${signature}|${setupSignature}|phoenix:${!!this.model.battle?.nativePhoenixResurrection}|fireball:${fireball}|giant-arrow:${giantArrow}|frost-flake:${frostFlake}|electro-boots:${electroBoots}|spiky-ball:${spikyBall}|dark-orb:${darkOrb}|seeking-shield:${seekingShield}`;
+      : `${signature}|${setupSignature}|phoenix:${!!this.model.battle?.nativePhoenixResurrection}|fireball:${fireball}|giant-arrow:${giantArrow}|frost-flake:${frostFlake}|electro-boots:${electroBoots}|spiky-ball:${spikyBall}|dark-orb:${darkOrb}|seeking-shield:${seekingShield}|super-hog:${superHog}`;
     if (projectiles !== this.projectilePrefetchSignature) {
       this.projectilePrefetchSignature = projectiles;
       this.nativeProjectiles?.prefetch(
         projectiles
           ? [
               ...kinds.map((kind) => nativeUnitStats(kind, level(kind)).projectile),
+              ...(superHog && kinds.includes('superhogrider')
+                ? [superHogSplitStats(level('superhogrider')).projectile]
+                : []),
               ...heroProjectileNames(setups, {
                 phoenixResurrection: !!this.model.battle?.nativePhoenixResurrection,
                 wardenFireball: fireball,

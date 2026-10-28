@@ -86,6 +86,8 @@ export interface CombatProjectile {
     };
     /** Version 108: kind-changing throws keep the original actor’s sound identity. */
     captureSource?: true;
+    /** Version 176: a thrown Super Rider materializes from its linked pending spawn on landing. */
+    superHogSplit?: true;
     /** Version 71: frost captured at launch, retained after the shooter leaves. */
     frost?: { seconds: number; percent: number };
     /** Version 95: a Phoenix Egg revives its own Hero at this packet's fixed-time impact. */
