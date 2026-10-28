@@ -1166,3 +1166,14 @@ building frost and death spells retain their existing rules. Only carried Ice
 Golem armies enable this change; versions 171 and earlier preserve their immediate
 first hits and previous absence of melee defender frost. No save or asset changes.
 See [source evidence and actual Cannon/Clan Castle recordings](../reference/attacking-ice-golem/README.md).
+
+## Version 173: Root Rider attack phases
+
+Root Rider starts a 1.5 s windup on engagement and retains 0.7 s recovery within
+her source 2.2 s period. Direct building and ground-defender attacks share the
+clock; Freeze/stun, attack-speed changes and retarget recovery use the established
+split controller. Original poses follow the captured action-frame offset. Her
+independent wall aura retains its existing 4,000-damage, 400 ms pulses and wall
+crossing rules. Only carried Root Rider armies enable the new attack clock;
+versions 172 and earlier retain their immediate first hits. No source stats,
+assets or save format change. See [source distinctions and actual recordings](../reference/attacking-root-rider/README.md).

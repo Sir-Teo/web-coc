@@ -853,13 +853,15 @@ export function stepNativeUnit(
   const golem = !!(battle.nativeGolemWindup && (u.kind === 'golem' || u.kind === 'golemite'));
   const giant = !!(battle.nativeGiantWindup && u.kind === 'supergiant');
   const iceGolem = !!(battle.nativeIceGolemWindup && u.kind === 'icegolem');
+  const rootRider = !!(battle.nativeRootRiderWindup && u.kind === 'rootrider');
   const valkyrie = !!(
     battle.nativeValkyrieWindup &&
     (u.kind === 'valkyrie' || u.kind === 'supervalkyrie')
   );
   const witch = !!(battle.nativeWitchWindup && (u.kind === 'witch' || u.kind === 'superwitch'));
   const hound = !!(battle.nativeHoundWindup && (u.kind === 'lavahound' || u.kind === 'icehound'));
-  const splitAttack = bowler || golem || giant || iceGolem || valkyrie || witch || hound;
+  const splitAttack =
+    bowler || golem || giant || iceGolem || rootRider || valkyrie || witch || hound;
   if (
     splitAttack &&
     stepNativeAttackWindup(ctx, u, s, dt, actionDt, (target) => {
@@ -867,7 +869,7 @@ export function stepNativeUnit(
       else if ('building' in target) strike(ctx, u, s, target.building, damage);
       else if (witch) releaseWitchAtDefender(ctx, u, s, target.defender, damage);
       else if (hound) releaseHoundAtDefender(ctx, u, s, target.defender, damage);
-      else if (golem || giant || iceGolem) {
+      else if (golem || giant || iceGolem || rootRider) {
         hurtDefender(battle, target.defender, damage, at);
         if (iceGolem)
           applyDefenderFrost(
@@ -1012,6 +1014,7 @@ export function stepNativeUnit(
         ...(golem ||
         giant ||
         iceGolem ||
+        rootRider ||
         valkyrie ||
         witch ||
         hound ||

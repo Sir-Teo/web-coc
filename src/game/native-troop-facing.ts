@@ -16,6 +16,7 @@ export function nativeTroopFacingTarget(
     (battle.nativePekkaWindup && unit.kind === 'pekka') ||
     (battle.nativeGiantWindup && (unit.kind === 'giant' || unit.kind === 'supergiant')) ||
     (battle.nativeIceGolemWindup && unit.kind === 'icegolem') ||
+    (battle.nativeRootRiderWindup && unit.kind === 'rootrider') ||
     (battle.nativeHoundWindup && (unit.kind === 'lavahound' || unit.kind === 'icehound')) ||
     (battle.nativeWitchWindup && (unit.kind === 'witch' || unit.kind === 'superwitch')) ||
     (battle.nativeValkyrieWindup && (unit.kind === 'valkyrie' || unit.kind === 'supervalkyrie'))

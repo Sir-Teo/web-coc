@@ -1021,6 +1021,8 @@ export interface Battle {
   nativeGiantWindup?: true;
   /** Version 172: Ice Golem source attack phases and defender frost on direct contact. */
   nativeIceGolemWindup?: true;
+  /** Version 173: Root Rider source split attack phases, independent of her wall aura. */
+  nativeRootRiderWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;
