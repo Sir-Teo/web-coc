@@ -205,7 +205,7 @@ export interface NativeDeathBlast {
   damage: number;
   radius: number;
   air: boolean;
-  /** Version 204: captured Super Wall Breaker preference applies only to Walls. */
+  /** Captured Wall preference: Super Wall Breaker from 204, ordinary Wall Breaker from 206. */
   wallMultiplier?: number;
   resolved?: boolean;
 }
@@ -261,7 +261,8 @@ const NATIVE_TROOPS = new Set<string>(EXTRA_TROOP_KINDS);
 /** Extra roster and spawned units use native rules; versioned classic families opt in. */
 export const nativeBehavior = (battle: Battle, kind: UnitKind) =>
   !!battle.nativeRoster &&
-  ((battle.nativeBalloonWindup && kind === 'balloon') ||
+  ((battle.nativeWallBreakerWindup && kind === 'wallbreaker') ||
+    (battle.nativeBalloonWindup && kind === 'balloon') ||
     (battle.nativeArcherWindup && kind === 'archer') ||
     NATIVE_TROOPS.has(kind) ||
     isSpawnKind(kind) ||
@@ -887,6 +888,7 @@ export function stepNativeUnit(
   const superWizard = !!(battle.nativeSuperWizardWindup && u.kind === 'superwizard');
   const superBowler = !!(battle.nativeSuperBowlerWindup && u.kind === 'superbowler');
   const superWallBreaker = !!(battle.nativeSuperWallBreakerWindup && u.kind === 'superwallbreaker');
+  const wallBreaker = !!(battle.nativeWallBreakerWindup && u.kind === 'wallbreaker');
   const valkyrie = !!(
     battle.nativeValkyrieWindup &&
     (u.kind === 'valkyrie' || u.kind === 'supervalkyrie')
@@ -919,6 +921,7 @@ export function stepNativeUnit(
     superWizard ||
     superBowler ||
     superWallBreaker ||
+    wallBreaker ||
     valkyrie ||
     witch ||
     hound;
@@ -1139,6 +1142,7 @@ export function stepNativeUnit(
         superWizard ||
         superBowler ||
         superWallBreaker ||
+        wallBreaker ||
         valkyrie ||
         witch ||
         hound ||
@@ -1586,6 +1590,11 @@ function strike(
           distanceTo(center, b) <= s.splash
         )
           ctx.damageBuilding(b, damage * damageMultiplier(battle, s, b), battle.elapsed);
+    if (
+      battle.nativeWallBreakerSplash &&
+      (u.kind === 'wallbreaker' || u.kind === 'superwallbreaker')
+    )
+      damageDefenders(battle, center, damage, s.splash, 'ground', undefined, battle.elapsed);
     if (gauntlet) {
       damageDefenders(battle, center, damage, s.splash, 'ground', undefined, battle.elapsed);
       ctx.effect({ type: 'blast', x: center.x, y: center.y, radius: s.splash, sourceId: u.id });
@@ -1620,7 +1629,11 @@ function strike(
   if (s.attackCount > 0 && state.attacks >= s.attackCount) {
     u.hp = 0;
     // The shared casualty pass resolves the source death effect exactly once.
-    if (!(battle.nativeSuperWallBreakerDeath && u.kind === 'superwallbreaker')) u.spent = true;
+    if (!(
+      (battle.nativeSuperWallBreakerDeath && u.kind === 'superwallbreaker') ||
+      (battle.nativeWallBreakerWindup && u.kind === 'wallbreaker')
+    ))
+      u.spent = true;
     u.defeatedAt = battle.elapsed;
   }
 }
@@ -2543,7 +2556,8 @@ export function resolveNativeDeath(ctx: NativeTroopContext, u: Unit) {
       damage: s.deathDamage,
       radius: s.deathRadius,
       air: s.deathHitsAir,
-      ...(battle.nativeSuperWallBreakerDeath && u.kind === 'superwallbreaker'
+      ...((battle.nativeSuperWallBreakerDeath && u.kind === 'superwallbreaker') ||
+      (battle.nativeWallBreakerWindup && u.kind === 'wallbreaker')
         ? { wallMultiplier: s.preferredMultiplier }
         : {}),
     });

@@ -77,3 +77,13 @@ The campaign audit now retains the previous level-three 160-space army as a mid-
 This completes the core stat tables for the supported seven-troop, five-level subset. The full native roster, higher Town Halls, spells and hero balancing, native enemy layouts, detailed target selection/hitboxes, attack windups, directional art and level-specific artwork remain unfinished. Cross-browser and desktop Retina checks do not establish physical-phone performance or complete native combat parity.
 
 The repeatable mixed-roster benchmark is `node scripts/performance-check.mjs --metal --density=2 --army=mixed` on macOS (`--metal` is optional elsewhere). It deploys the capacity-valid 200-space, 84-unit TH8 army used by the veteran campaign case and reports composition, levels and surviving units alongside frame times. The default `--army=starter` remains available. Neither sample is a physical-phone benchmark.
+
+
+## Source Wall Breaker attacks (version 206)
+
+Current ordinary Wall Breakers now use a one-second in-range charge,
+half-tile reach, 0.8-tile contact splash and a separate 1.5-tile death
+blast. Contact and casualty damage retain the 40-fold Wall bonus. Earlier
+recordings keep the original one-tile reach and combined two-tile blast
+described by the historical combat witnesses. Current source and portable
+coverage are documented in [the Wall Breaker reference](../reference/attacking-wall-breaker/README.md).

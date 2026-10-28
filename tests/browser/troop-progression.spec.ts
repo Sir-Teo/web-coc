@@ -163,10 +163,11 @@ for (const viewport of [
             Hitpoints: '35',
             'Damage per hit': '30',
             'Damage on destruction': '16',
-            'Death blast radius': '2 tiles',
+            'Death blast radius': '1.5 tiles',
             'Contact damage vs walls': '1,840',
             'Movement speed': '3 tiles/s',
-            'Attack range': '1 tile',
+            'Attack range': '0.5 tiles',
+            'Attack splash': '0.8 tiles',
           },
         ],
       ] as const) {

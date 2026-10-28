@@ -1095,6 +1095,10 @@ export interface Battle {
   nativeSuperBowlerWindup?: true;
   /** Version 202: source Super Bowler preparation samples share active charge audio. */
   nativeSuperBowlerPreAttack?: true;
+  /** Version 206: both Wall Breaker contact splashes include ground defenders. */
+  nativeWallBreakerSplash?: true;
+  /** Version 206: ordinary Wall Breaker uses source charge, reach and separate blast geometry. */
+  nativeWallBreakerWindup?: true;
   /** Version 205: Super Wall Breaker spends its fresh source charge after reaching range. */
   nativeSuperWallBreakerWindup?: true;
   /** Version 204: Super Wall Breaker death blasts resolve after attacks with Wall preference. */
@@ -2099,6 +2103,15 @@ export class GameModel {
     return this.troopLevel(kind) + (superOriginal(kind) ? superLevelOffset(kind) : 0);
   }
   troopStats(kind: DeployTroopKind, level = this.troopLevel(kind)) {
+    if (kind === 'wallbreaker' && (!this.battle || this.battle.nativeWallBreakerWindup)) {
+      const source = nativeUnitStats(kind, level);
+      return {
+        ...troopStatsAt(kind, level),
+        range: source.range,
+        splash: source.splash,
+        deathRadius: source.deathRadius,
+      };
+    }
     if (kind === 'balloon' && (!this.battle || this.battle.nativeBalloonWindup)) {
       const source = nativeUnitStats(kind, level);
       return { ...troopStatsAt(kind, level), speed: source.speed, range: source.range };

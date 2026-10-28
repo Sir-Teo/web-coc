@@ -109,3 +109,15 @@ historical fights, original living bodies, source charge offsets, full
 Node/Chromium states, reverse seeks, read-only drawing, reduced motion,
 asset requests and WebGL health at phone/desktop widths. Screenshots go to
 ignored `output/playtest/`.
+
+
+## Recording version 206: ground contact collateral
+
+The source `DamageRadius=80` contact attack now includes ground defenders
+inside its 0.8-tile target-centered splash. Earlier native melee resolution
+applied this splash to neighboring buildings but omitted defending troops.
+A carried ordinary or Super Wall Breaker enables the family capability;
+airborne defenders remain excluded. Tiers 1/10 compare the exact 0.79/0.81-tile
+boundary under versions 205/206. The one-second Super Wall Breaker charge,
+separate death blast and Wall bonus retain their prior rules. See the
+[ordinary Wall Breaker and family splash reference](../attacking-wall-breaker/README.md).

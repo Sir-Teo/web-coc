@@ -9,7 +9,7 @@ import {
 } from '../src/game/data';
 import { stepProjectiles } from '../src/game/projectiles';
 import { validateSave } from '../src/game/save';
-import { REPLAY_VERSION, validateReplay } from '../src/game/replay';
+import { REPLAY_VERSION, validateReplay, replayBattle, type ReplayData } from '../src/game/replay';
 import { developedSave } from './fixtures/developed-village';
 
 // Independently transcribed Home Village reference values; see docs/TROOP-PROGRESSION.md.
@@ -70,7 +70,7 @@ const reference = {
     hours: [3, 4, 12, 16],
     lab: [2, 4, 5, 6],
     speed: 3,
-    range: 1,
+    range: 0.5,
     rate: 1,
     space: 2,
   },
@@ -85,6 +85,13 @@ function arena(kind: TroopKind, level = 1, x = 9.5, y = 11) {
   const m = new GameModel(developedSave());
   m.state.troopLevels = levels(level);
   m.startBattle(0, true);
+  // These contact/death witnesses retain the original combined-blast adapter.
+  // Separate source charges and radii have current-version coverage of their own.
+  if (kind === 'wallbreaker') {
+    const recording = (m as unknown as { recording: ReplayData }).recording;
+    recording.version = 205;
+    m.battle = replayBattle(recording.initial, 205);
+  }
   const b = m.battle!;
   b.started = true;
   const target = makeBuilding(9000, 'townhall', 10, 10);
