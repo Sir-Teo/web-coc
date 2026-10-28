@@ -869,6 +869,7 @@ export function stepNativeUnit(
   const thrower = !!(battle.nativeThrowerWindup && u.kind === 'thrower');
   const dragonRider = !!(battle.nativeDragonRiderWindup && u.kind === 'dragonrider');
   const rocketBalloon = !!(battle.nativeRocketBalloonWindup && u.kind === 'rocketballoon');
+  const babyDragon = !!(battle.nativeBabyDragonWindup && u.kind === 'babydragon');
   const valkyrie = !!(
     battle.nativeValkyrieWindup &&
     (u.kind === 'valkyrie' || u.kind === 'supervalkyrie')
@@ -890,19 +891,27 @@ export function stepNativeUnit(
     thrower ||
     dragonRider ||
     rocketBalloon ||
+    babyDragon ||
     valkyrie ||
     witch ||
     hound;
+  const phaseDt =
+    babyDragon && state.alone
+      ? actionDt *
+        (1 +
+          num(nativeRow('abilities', s.ability, s.abilityLevel), 'BoostAttackSpeedPercentage') /
+            100)
+      : actionDt;
   if (
     splitAttack &&
-    stepNativeAttackWindup(ctx, u, s, dt, actionDt, (target) => {
+    stepNativeAttackWindup(ctx, u, s, dt, phaseDt, (target) => {
       if (valkyrie) sweepValkyrie(ctx, u, s, damage);
       else if ('building' in target) strike(ctx, u, s, target.building, damage);
       else if (rocketBalloon) {
         selfAreaHit(ctx, u, s, damage);
         state.lastAttackAt = at;
         state.attacks = (state.attacks ?? 0) + 1;
-      } else if (witch || apprentice || headhunter || thrower || dragonRider)
+      } else if (witch || apprentice || headhunter || thrower || dragonRider || babyDragon)
         releaseRangedAtDefender(
           ctx,
           u,
@@ -1067,6 +1076,7 @@ export function stepNativeUnit(
         thrower ||
         dragonRider ||
         rocketBalloon ||
+        babyDragon ||
         valkyrie ||
         witch ||
         hound ||
@@ -1391,7 +1401,11 @@ function aloneScale(battle: Battle, u: Unit, s: NativeUnitStats, state: NativeUn
   const row = nativeRow('abilities', s.ability, s.abilityLevel);
   const attackBoost = num(row, 'BoostAttackSpeedPercentage') / 100;
   // Attack speed shortens the interval; damage per hit rises separately.
-  if (attackBoost && u.cooldown > s.rate / (1 + attackBoost))
+  if (
+    !(battle.nativeBabyDragonWindup && u.kind === 'babydragon') &&
+    attackBoost &&
+    u.cooldown > s.rate / (1 + attackBoost)
+  )
     u.cooldown = s.rate / (1 + attackBoost);
   return 1 + num(row, 'BoostDamagePercentage') / 100;
 }
@@ -1834,6 +1848,7 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
   const miteSplash = nativeMiteJump(battle, source.kind);
   const meteorSplash = !!(battle.nativeMeteorThrows && source.kind === 'meteorgolem');
   const bowlerSplash = !!(battle.nativeBowlerBoulders && source.kind === 'bowler');
+  const babySplash = !!(battle.nativeBabyDragonWindup && source.kind === 'babydragon');
   const bothLayers = miteSplash || meteorSplash;
   // Native defender-targeted shots retain their captured direct hit on either defender layer.
   if (p.targetDefender) {
@@ -1848,6 +1863,7 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
           phoenixSplash ||
           bothLayers ||
           bowlerSplash ||
+          babySplash ||
           (battle.nativeHeroDefenderAttacks && isHeroUnitKind(source.kind))
           ? p.impact
           : undefined,
@@ -1872,7 +1888,7 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
       );
     else applyFrost(battle, s, target);
   }
-  if (p.splash && !(phoenixSplash && p.toAir))
+  if (p.splash && !((phoenixSplash || babySplash) && p.toAir))
     for (const b of battle.buildings)
       if (b.id !== p.targetId && b.hp > 0 && !isTrap(b.kind) && distanceTo(p, b) <= p.splash) {
         ctx.damageBuilding(b, p.damage * damageMultiplier(battle, s, b, p.impact), p.impact);
@@ -1884,11 +1900,18 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
       p,
       p.damage,
       p.splash,
-      bothLayers ? 'both' : (rocketSplash || phoenixSplash) && p.toAir ? 'air' : 'ground',
-      (rocketSplash || phoenixSplash || bothLayers || bowlerSplash) && p.targetDefender
+      bothLayers
+        ? 'both'
+        : (rocketSplash || phoenixSplash || babySplash) && p.toAir
+          ? 'air'
+          : 'ground',
+      (rocketSplash || phoenixSplash || bothLayers || bowlerSplash || babySplash) &&
+        p.targetDefender
         ? p.targetId
         : undefined,
-      rocketSplash || phoenixSplash || bothLayers || bowlerSplash ? p.impact : undefined,
+      rocketSplash || phoenixSplash || bothLayers || bowlerSplash || babySplash
+        ? p.impact
+        : undefined,
     );
   if (frostmiteSplash && p.splash)
     for (const defender of battle.defenders ?? [])

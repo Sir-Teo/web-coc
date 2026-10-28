@@ -65,7 +65,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 185;
+export const REPLAY_VERSION = 186;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -215,7 +215,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 182 decodes Siege Barracks' fixed two-troop bunker roster independently of level.
  * Version 183 gives Thrower its explicit source windup/recovery and native defender throws.
  * Version 184 gives Dragon Rider source charges and native flying defender shots.
- * Version 185 gives Rocket Balloon source phases and self-centered defender blasts. */
+ * Version 185 gives Rocket Balloon source phases and self-centered defender blasts.
+ * Version 186 gives Baby Dragon source phases, Tantrum rate and native defender splash. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -368,6 +369,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 182 ||
   version === 183 ||
   version === 184 ||
+  version === 185 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -517,6 +519,7 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 186 && s.army.babydragon > 0 ? { nativeBabyDragonWindup: true as const } : {}),
     ...(version >= 185 && s.army.rocketballoon > 0
       ? { nativeRocketBalloonWindup: true as const }
       : {}),

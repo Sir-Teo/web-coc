@@ -1055,6 +1055,8 @@ export interface Battle {
   nativeDragonRiderWindup?: true;
   /** Version 185: Rocket Balloon source phases and self-centered ground defender blasts. */
   nativeRocketBalloonWindup?: true;
+  /** Version 186: Baby Dragon phases, Tantrum rate and native same-layer defender splash. */
+  nativeBabyDragonWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;
