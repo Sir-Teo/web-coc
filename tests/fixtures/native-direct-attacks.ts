@@ -31,11 +31,13 @@ export type NativeDirectKind =
   | 'superbarbarian'
   | 'sneakygoblin'
   | 'superarcher'
+  | 'superwizard'
   | 'miner';
 export type NativeDirectTarget =
   'storage' | 'cannon' | 'airdefense' | 'garrison' | 'air-garrison' | 'monolith';
 
 interface NativeDirectOptions {
+  buildingLevel?: number;
   extraBuildings?: Building[];
   spellLevels?: Partial<ReplayData['initial']['spells']>;
   beforeDeploy?: (ctx: { model: GameModel; battle: Battle; step: () => void }) => void;
@@ -72,21 +74,22 @@ export function nativeDirectBattle(
               : 'goldstorage',
       13,
       10,
-      garrison
-        ? 9
-        : target === 'monolith'
-          ? 1
-          : target === 'airdefense'
-            ? 13
-            : target === 'cannon'
-              ? kind === 'electrotitan' ||
-                kind === 'rocketballoon' ||
-                kind === 'balloon' ||
-                kind === 'babydragon' ||
-                yeti
-                ? 21
-                : 6
-              : 18,
+      options.buildingLevel ??
+        (garrison
+          ? 9
+          : target === 'monolith'
+            ? 1
+            : target === 'airdefense'
+              ? 13
+              : target === 'cannon'
+                ? kind === 'electrotitan' ||
+                  kind === 'rocketballoon' ||
+                  kind === 'balloon' ||
+                  kind === 'babydragon' ||
+                  yeti
+                  ? 21
+                  : 6
+                : 18),
     ),
     ...(options.extraBuildings ?? []),
   ];

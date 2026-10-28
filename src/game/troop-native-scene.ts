@@ -450,6 +450,7 @@ export class TroopNativePresentation {
               (battle?.nativeSuperBarbarianWindup && u.kind === 'superbarbarian') ||
               (battle?.nativeSneakyGoblinWindup && u.kind === 'sneakygoblin') ||
               (battle?.nativeSuperArcherWindup && u.kind === 'superarcher') ||
+              (battle?.nativeSuperWizardWindup && u.kind === 'superwizard') ||
               (battle?.nativeBabyDragonWindup && u.kind === 'babydragon') ||
               (battle?.nativeSuperMinionLongShots && u.kind === 'superminion') ||
               (battle?.nativeMinionWindup && u.kind === 'minion') ||

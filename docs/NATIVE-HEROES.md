@@ -1302,8 +1302,10 @@ Building and defender primaries use this same direct native attack instead of a 
 arrow against defenders. A blocking Wall may be primary, but Walls and traps cannot be
 secondary targets. Both defender layers are eligible.
 
-The existing attack-start timing and two-second period remain adapters. This correction
-does not yet drive the attacker from the source clip's action frame or `PreAttackEffect`.
+Versions 110–198 retain the existing attack-start adapter. Version 199 gives carried
+Super Wizards a 1.5-second charge and 0.5-second recovery within the two-second period,
+with shared body phase offsets; see the [source timing reference](../reference/attacking-super-wizard/README.md).
+It does not add a new `PreAttackEffect` implementation.
 Branches resolve together at one source delay, selecting the nearest unvisited eligible
 targets from the primary's current position if it survives, otherwise its captured point.
 Building-edge/defender-point distances, stable building/id tie ordering and selection at

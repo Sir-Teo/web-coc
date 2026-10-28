@@ -13,6 +13,7 @@ export function nativeTargetingSpellRecording(
     | 'superbarbarian'
     | 'sneakygoblin'
     | 'superarcher'
+    | 'superwizard'
     | 'archer'
     | 'dragon'
     | 'minion'
@@ -49,7 +50,9 @@ export function nativeTargetingSpellRecording(
         ? { goblin: 5 }
         : kind === 'superarcher'
           ? { archer: 5 }
-          : {}),
+          : kind === 'superwizard'
+            ? { wizard: 5 }
+            : {}),
   };
   model.state.spells = { ...emptySpells(), [key]: 1 };
   model.state.spellLevels = { ...model.state.spellLevels, [key]: level };

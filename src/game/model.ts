@@ -1087,6 +1087,8 @@ export interface Battle {
   nativeAngryChargeReset?: true;
   /** Version 198: Super Archer charges before releasing its existing piercing arrow. */
   nativeSuperArcherWindup?: true;
+  /** Version 199: Super Wizard charges and recovers around its existing Chain Magic cast. */
+  nativeSuperWizardWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;
