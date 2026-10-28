@@ -11,7 +11,7 @@ Resource and Wall preferences retain their source multipliers.
 Flying troops no longer share Balloon-specific bombing advice. Minion,
 Super Minion, Baby Dragon, Rocket Balloon and Dragon Rider each have a concise
 tip for their behavior. Other flyers receive general flight and air-defense
-advice; ordinary Balloon retains its bombing explanation.
+advice; ordinary Balloon explains its overhead ground blast.
 
 The following ability facts appear near the top of the stat grid. Values come
 from the combat source and shared ability adapters, rather than separate UI
@@ -21,13 +21,15 @@ constants:
 | --- | --- | --- |
 | Super Minion | Eight Long Shot attacks; 9.75-tile opening range | [Offensive Long Shot](../reference/attacking-super-minion/README.md) |
 | Baby Dragon | +100% damage, +50% attack rate and 4.5-tile ally radius | [Tantrum and phases](../reference/attacking-baby-dragon/README.md) |
+| Balloon | 0.416-second death-blast delay | [Source attacks and crash](../reference/attacking-balloon/README.md) |
 | Rocket Balloon | Four-second deployment boosters | [Rocket Balloon phases](../reference/attacking-rocket-balloon/README.md) |
 | Dragon Rider | 0.6-second death-blast delay | [Dragon Rider phases](../reference/attacking-dragon-rider/README.md) |
 
 The modal body scrolls when its additional facts exceed the available height.
 Close and **Train troops** retain targets of at least 44×44 pixels, and the
-latter returns to the Army catalog. There is no combat,
-save-format or replay-version change.
+latter returns to the Army catalog. Balloon's source movement, reach and
+crash labels accompany its version-190 combat boundary; see the linked
+reference for historical playback behavior.
 
 `tests/browser/troop-combat-guide.spec.ts` opens real catalog Info buttons for
 nine troop families at 390×844, 844×390 and 1440×960. It verifies source facts,

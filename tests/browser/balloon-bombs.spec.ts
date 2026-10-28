@@ -9,13 +9,18 @@ test.beforeEach(async ({ page }) => {
   await page.locator('[data-action="skip-tutorial"]').click();
 });
 
-test('bombs fall toward the approached edge from every side of a Town Hall', async ({ page }) => {
-  const shots = await page.evaluate(() => {
+test('version 189 bombs fall toward the approached edge from every side of a Town Hall', async ({
+  page,
+}) => {
+  const shots = await page.evaluate(async () => {
+    const { replayBattle } = await import('/src/game/replay.ts');
     const { model: m, scene } = window.__game;
     scene.paused = true;
     m.state.army.balloon = 4;
     m.state.army.swordsman = 0;
     m.startBattle(0, true);
+    m.recording.version = 189;
+    m.battle = replayBattle(m.recording.initial, 189);
     const hall = m.battle.buildings.find((b) => b.kind === 'townhall');
     hall.x = 10;
     hall.y = 10;
@@ -62,13 +67,16 @@ test('bombs fall toward the approached edge from every side of a Town Hall', asy
   for (const shot of shots) expect(shot.anchors.to.y).toBeGreaterThan(shot.anchors.from.y);
 });
 
-test('a real bomb draws its ground blast below the Balloon and damages nearby building edges', async ({
+test('a version 189 bomb draws its ground blast below the Balloon and damages nearby building edges', async ({
   page,
 }) => {
-  const result = await page.evaluate(() => {
+  const result = await page.evaluate(async () => {
+    const { replayBattle } = await import('/src/game/replay.ts');
     const { model: m, scene } = window.__game;
     scene.paused = true;
     m.startBattle(0, true);
+    m.recording.version = 189;
+    m.battle = replayBattle(m.recording.initial, 189);
     const hall = m.battle.buildings.find((b) => b.kind === 'townhall');
     const hut = m.battle.buildings.find((b) => b.kind === 'builder');
     hall.x = 10;

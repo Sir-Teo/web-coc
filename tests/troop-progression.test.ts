@@ -45,8 +45,8 @@ const reference = {
     cost: [100000, 400000, 720000, 1300000],
     hours: [4, 6, 18, 24],
     lab: [2, 4, 5, 6],
-    speed: 1.25,
-    range: 0.5,
+    speed: 1.3,
+    range: 0,
     rate: 3,
     space: 5,
   },
@@ -184,7 +184,7 @@ describe('native progression for the remaining five troops', () => {
       const { m, target, u } = arena(kind, 1, 5.5, 11.5);
       target.x = 30;
       m.step(0.05);
-      expect(u.x - 5.5).toBeCloseTo(r.speed * 0.05);
+      expect(u.x - 5.5).toBeCloseTo(r.speed * 0.05, 8);
     });
   }
   it('keeps paid legacy specialist research and old replay summaries without applying new rules to old playback', () => {
@@ -317,6 +317,13 @@ describe('native specialist combat', () => {
       b.buildings.push(far);
       b.auras.push({ kind: 'rage', x: u.x, y: u.y, start: 0, end: 18, pulses: 0 });
       u.hp = 0;
+      m.step(0.05);
+      expect(target.hp).toBe(target.maxHp);
+      expect(
+        b.nativeDeaths!.find((blast) => blast.sourceId === u.id)!.at - u.defeatedAt!,
+      ).toBeCloseTo(0.416, 8);
+      advance(m, 0.4);
+      expect(target.hp).toBe(target.maxHp);
       m.step(0.05);
       expect(target.maxHp - target.hp).toBe([25, 32, 48, 72, 108][level - 1]);
       expect(far.hp).toBe(far.maxHp);

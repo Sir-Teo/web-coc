@@ -33,6 +33,10 @@ export function troopCombatGuide(kind: TroopKind, stats: NativeUnitStats) {
       ['Tantrum ally radius', `${radius} tiles`],
     );
     tactic = `Keep flying allies more than ${radius} tiles away to activate Tantrum. Ground allies do not suppress it.`;
+  } else if (kind === 'balloon') {
+    facts.push(['Death blast delay', `${stats.deathDelay} s`]);
+    tactic =
+      'Bombs damage nearby buildings and ground troops directly beneath the Balloon. Remove Air Defenses before sending Balloons over the walls.';
   } else if (kind === 'rocketballoon') {
     const ability = nativeRow('abilities', stats.ability, stats.abilityLevel);
     facts.push(['Boosters duration', `${seconds(ability, 'DeactivateAfterTime')} s`]);

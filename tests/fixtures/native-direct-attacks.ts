@@ -23,6 +23,7 @@ export type NativeDirectKind =
   | 'superminion'
   | 'minion'
   | 'dragon'
+  | 'balloon'
   | 'miner';
 export type NativeDirectTarget =
   'storage' | 'cannon' | 'airdefense' | 'garrison' | 'air-garrison' | 'monolith';
@@ -71,7 +72,11 @@ export function nativeDirectBattle(
           : target === 'airdefense'
             ? 13
             : target === 'cannon'
-              ? kind === 'electrotitan' || kind === 'rocketballoon' || kind === 'babydragon' || yeti
+              ? kind === 'electrotitan' ||
+                kind === 'rocketballoon' ||
+                kind === 'balloon' ||
+                kind === 'babydragon' ||
+                yeti
                 ? 21
                 : 6
               : 18,

@@ -65,7 +65,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 189;
+export const REPLAY_VERSION = 190;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -219,7 +219,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 186 gives Baby Dragon source phases, Tantrum rate and native defender splash.
  * Version 187 restores Super Minion's eight offensive Long Shots and source charges.
  * Version 188 gives ordinary Minion source charges and native flying defender shots.
- * Version 189 gives ordinary Dragon source charges and immediate same-layer flame splash. */
+ * Version 189 gives ordinary Dragon source charges and immediate same-layer flame splash.
+ * Version 190 gives Balloon source phases, self-centered bombs and delayed crash damage. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -376,6 +377,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 186 ||
   version === 187 ||
   version === 188 ||
+  version === 189 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -525,6 +527,7 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 190 && s.army.balloon > 0 ? { nativeBalloonWindup: true as const } : {}),
     ...(version >= 189 && s.army.dragon > 0 ? { nativeDragonWindup: true as const } : {}),
     ...(version >= 188 && s.army.minion > 0 ? { nativeMinionWindup: true as const } : {}),
     ...(version >= 187 && s.army.superminion > 0

@@ -504,7 +504,13 @@ import {
 /** Spells that can still destroy buildings or create attackers keep a version 45 battle open. */
 const FIGHTING_SPELLS: readonly SpellKind[] = ['earthquake', 'skeleton', 'bat'];
 import { SPELL_SOURCE } from './spell-progression';
-import { isHeroUnitKind, isPetUnitKind, isSpawnKind, spawnStatsAt } from './native-units';
+import {
+  isHeroUnitKind,
+  isPetUnitKind,
+  isSpawnKind,
+  nativeUnitStats,
+  spawnStatsAt,
+} from './native-units';
 import { spawnNativeUnit } from './native-troops';
 import {
   isSplitHog,
@@ -1063,6 +1069,8 @@ export interface Battle {
   nativeMinionWindup?: true;
   /** Version 189: ordinary Dragon source charges and immediate same-layer flame splash. */
   nativeDragonWindup?: true;
+  /** Version 190: Balloon source phases, self-centered bombing and delayed crash damage. */
+  nativeBalloonWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;
@@ -2054,6 +2062,10 @@ export class GameModel {
     return this.troopLevel(kind) + (superOriginal(kind) ? superLevelOffset(kind) : 0);
   }
   troopStats(kind: DeployTroopKind, level = this.troopLevel(kind)) {
+    if (kind === 'balloon' && (!this.battle || this.battle.nativeBalloonWindup)) {
+      const source = nativeUnitStats(kind, level);
+      return { ...troopStatsAt(kind, level), speed: source.speed, range: source.range };
+    }
     return isSplitHog(kind) ? spawnStatsAt(kind, level) : troopStatsAt(kind, level);
   }
   troopRemaining(kind: DeployTroopKind) {

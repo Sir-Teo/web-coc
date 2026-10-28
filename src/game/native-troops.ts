@@ -255,10 +255,11 @@ export interface NativeTroopContext extends NativeSpellContext {
 }
 
 const NATIVE_TROOPS = new Set<string>(EXTRA_TROOP_KINDS);
-/** Extra roster troops and every spawned unit follow the native rules from version 45. */
+/** Extra roster and spawned units use native rules; versioned classic families opt in. */
 export const nativeBehavior = (battle: Battle, kind: UnitKind) =>
   !!battle.nativeRoster &&
-  (NATIVE_TROOPS.has(kind) ||
+  ((battle.nativeBalloonWindup && kind === 'balloon') ||
+    NATIVE_TROOPS.has(kind) ||
     isSpawnKind(kind) ||
     ((isHeroUnitKind(kind) || isPetUnitKind(kind)) && !!battle.nativeHeroRoster));
 export const unitLevel = (battle: Battle, u: Pick<Unit, 'kind' | 'level'>) =>
@@ -872,6 +873,7 @@ export function stepNativeUnit(
   const thrower = !!(battle.nativeThrowerWindup && u.kind === 'thrower');
   const dragonRider = !!(battle.nativeDragonRiderWindup && u.kind === 'dragonrider');
   const rocketBalloon = !!(battle.nativeRocketBalloonWindup && u.kind === 'rocketballoon');
+  const balloon = !!(battle.nativeBalloonWindup && u.kind === 'balloon');
   const babyDragon = !!(battle.nativeBabyDragonWindup && u.kind === 'babydragon');
   const minion = !!(battle.nativeMinionWindup && u.kind === 'minion');
   const valkyrie = !!(
@@ -895,6 +897,7 @@ export function stepNativeUnit(
     thrower ||
     dragonRider ||
     rocketBalloon ||
+    balloon ||
     babyDragon ||
     superMinion ||
     minion ||
@@ -913,7 +916,7 @@ export function stepNativeUnit(
     stepNativeAttackWindup(ctx, u, s, dt, phaseDt, (target) => {
       if (valkyrie) sweepValkyrie(ctx, u, s, damage);
       else if ('building' in target) strike(ctx, u, s, target.building, damage);
-      else if (rocketBalloon) {
+      else if (rocketBalloon || balloon) {
         selfAreaHit(ctx, u, s, damage);
         state.lastAttackAt = at;
         state.attacks = (state.attacks ?? 0) + 1;
@@ -1092,6 +1095,7 @@ export function stepNativeUnit(
         thrower ||
         dragonRider ||
         rocketBalloon ||
+        balloon ||
         babyDragon ||
         superMinion ||
         minion ||
