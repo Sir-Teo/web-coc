@@ -1049,6 +1049,8 @@ export interface Battle {
   nativeHeadhunterWindup?: true;
   /** Version 182: Siege Barracks uses the fixed source P.E.K.K.A/Wizard roster at every tier. */
   nativeSiegeBarracksTroops?: true;
+  /** Version 183: Thrower honors its explicit source windup/recovery and defender projectile. */
+  nativeThrowerWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;

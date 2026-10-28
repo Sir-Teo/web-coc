@@ -139,7 +139,8 @@ export function stepNativeAttackWindup(
       (ctx.battle.nativeWitchWindup && (unit.kind === 'witch' || unit.kind === 'superwitch')) ||
       (ctx.battle.nativeElectroTitanWindup && unit.kind === 'electrotitan') ||
       (ctx.battle.nativeApprenticeWindup && unit.kind === 'apprenticewarden') ||
-      (ctx.battle.nativeHeadhunterWindup && unit.kind === 'headhunter')
+      (ctx.battle.nativeHeadhunterWindup && unit.kind === 'headhunter') ||
+      (ctx.battle.nativeThrowerWindup && unit.kind === 'thrower')
     );
   const target = st.target && resolve(ctx, st.target, airTargets);
   const traits = {
