@@ -225,6 +225,12 @@ export class BattleSoundLog {
     at = battle.elapsed,
   ) {
     this.sync(battle);
+    if (
+      battle.nativeWallBreakerSounds &&
+      (u.kind === 'wallbreaker' || u.kind === 'superwallbreaker') &&
+      (event === 'attack' || event === 'hit')
+    )
+      return;
     // Version 94's beam owns a sustained loop; do not restart the same clip every damage tick.
     if (battle.nativeTroopDamageRamp && u.kind === 'infernodragon' && event === 'attack') return;
     if (
@@ -384,6 +390,19 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
     }
   for (const u of battle.units) {
     if (u.native?.phoenixWaiting) continue;
+    const contact = u.native?.lastAttackAt;
+    if (
+      battle.nativeWallBreakerSounds &&
+      (u.kind === 'wallbreaker' || u.kind === 'superwallbreaker') &&
+      (u.native?.attacks ?? 0) > 0 &&
+      contact !== undefined &&
+      contact <= elapsed + 1e-9 &&
+      cueAudible(contact, elapsed)
+    )
+      for (const event of ['attack', 'hit'] as const) {
+        const cue = troopCue(battle, u, event, `troop:${u.id}:${event}:${contact}`, contact);
+        if (cue) cues.push(cue);
+      }
     // Units another unit, spell or ability summons arrive without a deploy call.
     const arrived = u.summoned ? -Infinity : log.arrived(battle, u);
     if (cueAudible(arrived, elapsed)) {

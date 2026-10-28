@@ -71,3 +71,37 @@ Node/Chromium state equality, reverse seeks, read-only drawing, reduced
 motion, asset requests and WebGL health at phone/desktop viewport widths.
 Screenshots go to ignored `output/playtest/`. These viewport checks do not
 measure physical phone performance.
+
+
+## Recording version 207: contact audio
+
+Both Wall Breaker families already carry original attack, impact and death
+bindings in [the sound catalog](../troop-sounds/sounds.json). The existing
+`native.lastAttackAt` and single-attack count now reconstruct the attack and
+impact cues directly. Keys match their former live event identities, so
+selection and pitch remain deterministic. The live log ignores these same
+contacts under the new capability, preventing duplicate entries. No extra
+journal or sound files are introduced. Early defeat and an Angry Spell
+canceling a pending charge produce no contact cue.
+
+The existing death clock continues to supply the original casualty sample.
+A decoded original covers the generated explosion tone and retains its
+feedback. A missing clip keeps the generated tone until loading recovers.
+The standard ten-second cue horizon retires old contacts, while the sample
+player retains its normal clip duration, effects gain, source pitch and
+playback-speed offset behavior. Versions 206 and earlier retain their live
+log and generated-tone path. Physical state, damage, routing, clocks and
+all imported assets remain unchanged.
+
+`tests/wall-breaker-audio.test.ts` checks all fourteen ordinary and ten Super
+tiers, exact source samples/volume/pitch, no cues during pending charges,
+duplicate-free live logs, natural contact retention and expiry, real Cannon
+casualties, carried-roster gating and actual Angry Spell cancellation.
+Portable Storage, Cannon and Wall-barrier fights reconstruct full states and
+cues in both directions under versions 206/207. Six comparisons remove only
+the new capability to verify complete physical-state equality.
+
+`tests/browser/wall-breaker-audio.spec.ts` checks same-roster home/battle
+prewarming, decoded originals, complete Node/Chromium states and cues, actual
+Web Audio gain/rate/start offset, duplicate prevention, death-tone coverage,
+reverse seeks, reduced motion, WebGL health and paused 503 recovery.

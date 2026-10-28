@@ -1095,6 +1095,8 @@ export interface Battle {
   nativeSuperBowlerWindup?: true;
   /** Version 202: source Super Bowler preparation samples share active charge audio. */
   nativeSuperBowlerPreAttack?: true;
+  /** Version 207: source demolition contact cues reconstruct and cover the death tone. */
+  nativeWallBreakerSounds?: true;
   /** Version 206: both Wall Breaker contact splashes include ground defenders. */
   nativeWallBreakerSplash?: true;
   /** Version 206: ordinary Wall Breaker uses source charge, reach and separate blast geometry. */

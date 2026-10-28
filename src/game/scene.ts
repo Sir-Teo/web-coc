@@ -4947,6 +4947,17 @@ export class VillageScene extends Phaser.Scene {
     this.fxSounded = false;
     const battle = this.model.battle;
     if (!battle || !this.audible()) return;
+    if (battle.nativeWallBreakerSounds && fx.type === 'blast' && fx.sourceId !== undefined) {
+      const unit = battle.units.find((u) => u.id === fx.sourceId);
+      if (
+        unit &&
+        (unit.kind === 'wallbreaker' || unit.kind === 'superwallbreaker') &&
+        unit.defeatedAt !== undefined
+      ) {
+        this.fxSounded = this.cueReady(troopCue(battle, unit, 'die', 'ready', unit.defeatedAt));
+        return;
+      }
+    }
     if (battle.nativeBowlerImpactSounds && fx.type === 'impact') {
       const impact = battle.nativeBowlerImpacts?.find((event) => event.id === fx.projectileId);
       if (impact) {
@@ -6646,7 +6657,18 @@ export class VillageScene extends Phaser.Scene {
         onComplete: () => ring.destroy(),
       });
       this.sparks(p.x, p.y - 26 - lift, color, 14);
-      this.audio.play('destroy');
+      const battle = this.model.battle,
+        source =
+          battle?.nativeWallBreakerSounds && fx.sourceId !== undefined
+            ? battle.units.find((unit) => unit.id === fx.sourceId)
+            : undefined;
+      if (
+        this.fxSounded &&
+        source &&
+        (source.kind === 'wallbreaker' || source.kind === 'superwallbreaker')
+      )
+        this.audio.feedback('destroy');
+      else this.audio.play('destroy');
       if (!this.model.reducedMotion) this.shakeCamera(80, 0.0016);
       return;
     }

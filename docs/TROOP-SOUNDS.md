@@ -347,3 +347,18 @@ originals cover the generated contact tone without duplicate presentation
 log entries. Ordinary Bowler impacts, Super Bowler preparation takes and all
 physical combat remain unchanged. Versions 202 and earlier retain their
 previous sound path. See [source evidence and Web Audio checks](../reference/attacking-super-bowler/README.md#recording-version-203-bounce-and-final-contact-audio).
+
+
+## Wall Breaker family contacts (version 207)
+
+Ordinary and Super Wall Breaker contacts use the existing original
+`wall_breaker_attack_01.ogg` at volume 0.7/pitch 0.95–1.05 and
+`cannon_fire3.ogg` at volume 0.6/pitch 0.9–1.1. The existing single-attack
+clock reconstructs both cues after forward/backward seeking. The live log
+skips duplicate entries. Death samples remain `wall_breaker_die_01.ogg`
+(volume 0.7/pitch 0.95–1.1) and Super Wall Breaker's `mortar_hit_01.ogg`
+(volume 0.8/pitch 0.6–0.8). When decoded, these original death samples cover
+the generated explosion tone and retain its feedback. Failed clips keep
+the tone until retry succeeds, including while playback stays paused.
+The imported catalog and every sample file remain unchanged. See
+[source keys, physical-state comparisons and Web Audio checks](../reference/attacking-wall-breaker/README.md#recording-version-207-contact-audio).

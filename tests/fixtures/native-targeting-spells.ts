@@ -16,6 +16,7 @@ export function nativeTargetingSpellRecording(
     | 'superwizard'
     | 'superbowler'
     | 'superwallbreaker'
+    | 'wallbreaker'
     | 'archer'
     | 'dragon'
     | 'minion'
