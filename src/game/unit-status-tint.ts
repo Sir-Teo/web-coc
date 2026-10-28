@@ -64,7 +64,7 @@ export function unitStatusTint(
   return undefined;
 }
 
-/** Living defenders show full Freeze or ranged frost before Poison. */
+/** Living defenders show full Freeze or frost before Poison. */
 export function defenderStatusTint(defender: Defender, at: number): UnitStatusTint | undefined {
   if (defender.hp <= 0) return undefined;
   if ((defender.frozenUntil ?? 0) > at) return tints.frozen;

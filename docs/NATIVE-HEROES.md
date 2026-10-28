@@ -269,7 +269,8 @@ the latest hit replaces the frost deadline and strength. No Poison-specific Hero
 resistance is applied to frost. Impact uses its scheduled time and captured values after Recall;
 dead or unborn targets cannot receive or transfer the effect. Versions 76 and earlier keep their
 generic defender shots and direct-only damage. Melee frost and slowed death animation remain
-outside this ranged-hit correction.
+outside this ranged-hit correction. [Version 172](../reference/attacking-ice-golem/README.md)
+subsequently adds Ice Golem's source melee frost with its split attack clock.
 
 `tests/defender-frost.test.ts` checks equipment levels, source projectiles, Monolith pairing,
 Frosty, Ice Hound Pups, all four defender action paths with Poison overlap, expiry, missing owners and real ground/air Queen shots

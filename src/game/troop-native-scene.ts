@@ -424,6 +424,7 @@ export class TroopNativePresentation {
           : (battle?.nativeGolemWindup && (u.kind === 'golem' || u.kind === 'golemite')) ||
               (battle?.nativePekkaWindup && u.kind === 'pekka') ||
               (battle?.nativeGiantWindup && (u.kind === 'giant' || u.kind === 'supergiant')) ||
+              (battle?.nativeIceGolemWindup && u.kind === 'icegolem') ||
               (battle?.nativeHoundWindup && (u.kind === 'lavahound' || u.kind === 'icehound')) ||
               (battle?.nativeWitchWindup && (u.kind === 'witch' || u.kind === 'superwitch')) ||
               (battle?.nativeValkyrieWindup &&

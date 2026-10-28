@@ -1155,3 +1155,14 @@ its action-frame offset. Defense preference and Super Giant's Wall multiplier st
 in place. Only carried Giant family armies enable the change. Versions 170 and
 earlier retain their immediate first hits, with no save or asset changes. See the
 [source distinctions and actual deployment recordings](../reference/attacking-giant/README.md).
+
+## Version 172: Ice Golem melee phases and frost
+
+Ice Golem starts a 1.5 s windup after engagement and retains 0.5 s recovery within
+its two-second source period. Building, wall and ground-defender hits share the
+clock. Actual defender contacts now apply the source two-second, 50% frost through
+the existing partial-frost status system and original blue tint. Source damage,
+building frost and death spells retain their existing rules. Only carried Ice
+Golem armies enable this change; versions 171 and earlier preserve their immediate
+first hits and previous absence of melee defender frost. No save or asset changes.
+See [source evidence and actual Cannon/Clan Castle recordings](../reference/attacking-ice-golem/README.md).

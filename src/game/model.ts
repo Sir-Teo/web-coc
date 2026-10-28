@@ -1019,6 +1019,8 @@ export interface Battle {
   nativeHoundSpawnGeometry?: true;
   /** Version 171: Giant/Super Giant use source split windup and recovery. */
   nativeGiantWindup?: true;
+  /** Version 172: Ice Golem source attack phases and defender frost on direct contact. */
+  nativeIceGolemWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;
