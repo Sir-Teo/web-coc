@@ -1023,6 +1023,8 @@ export interface Battle {
   nativeIceGolemWindup?: true;
   /** Version 173: Root Rider source split attack phases, independent of her wall aura. */
   nativeRootRiderWindup?: true;
+  /** Version 174: Electro Titan uses source whip phases against ground and air targets. */
+  nativeElectroTitanWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;

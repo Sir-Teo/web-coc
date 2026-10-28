@@ -1177,3 +1177,14 @@ independent wall aura retains its existing 4,000-damage, 400 ms pulses and wall
 crossing rules. Only carried Root Rider armies enable the new attack clock;
 versions 172 and earlier retain their immediate first hits. No source stats,
 assets or save format change. See [source distinctions and actual recordings](../reference/attacking-root-rider/README.md).
+
+## Version 174: Electro Titan direct attack phases
+
+Electro Titan starts a full 1.5 s whip windup after engagement and repeats at the
+same source period. Buildings, blocking walls and ground/air defenders share the
+direct release clock; Freeze/stun and attack-speed changes use the established
+split controller. Her electric aura keeps its independent 400 ms pulses, source
+damage and Wall immunity while a whip charges or Freeze holds it. Original poses
+follow the captured action offset. Only carried Electro Titan armies enable the
+change; versions 173 and earlier retain their immediate first hits. No source
+stat, asset or save changes. See [source distinctions and actual Cannon/Golem/Dragon recordings](../reference/attacking-electro-titan/README.md).

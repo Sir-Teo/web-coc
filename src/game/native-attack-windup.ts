@@ -133,11 +133,12 @@ export function stepNativeAttackWindup(
   if (st.engaged) st.remaining -= st.actionDt;
   st.lastAt = at;
   unit.cooldown = Math.max(0, st.engaged ? st.remaining : st.recovery);
-  const airTargets = !!(
-    ctx.battle.nativeWitchWindup &&
-    (unit.kind === 'witch' || unit.kind === 'superwitch') &&
-    stats.airTargets
-  );
+  const airTargets =
+    stats.airTargets &&
+    !!(
+      (ctx.battle.nativeWitchWindup && (unit.kind === 'witch' || unit.kind === 'superwitch')) ||
+      (ctx.battle.nativeElectroTitanWindup && unit.kind === 'electrotitan')
+    );
   const target = st.target && resolve(ctx, st.target, airTargets);
   const traits = {
     ...TROOPS[unit.kind],

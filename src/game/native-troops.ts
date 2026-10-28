@@ -854,6 +854,7 @@ export function stepNativeUnit(
   const giant = !!(battle.nativeGiantWindup && u.kind === 'supergiant');
   const iceGolem = !!(battle.nativeIceGolemWindup && u.kind === 'icegolem');
   const rootRider = !!(battle.nativeRootRiderWindup && u.kind === 'rootrider');
+  const electroTitan = !!(battle.nativeElectroTitanWindup && u.kind === 'electrotitan');
   const valkyrie = !!(
     battle.nativeValkyrieWindup &&
     (u.kind === 'valkyrie' || u.kind === 'supervalkyrie')
@@ -861,7 +862,7 @@ export function stepNativeUnit(
   const witch = !!(battle.nativeWitchWindup && (u.kind === 'witch' || u.kind === 'superwitch'));
   const hound = !!(battle.nativeHoundWindup && (u.kind === 'lavahound' || u.kind === 'icehound'));
   const splitAttack =
-    bowler || golem || giant || iceGolem || rootRider || valkyrie || witch || hound;
+    bowler || golem || giant || iceGolem || rootRider || electroTitan || valkyrie || witch || hound;
   if (
     splitAttack &&
     stepNativeAttackWindup(ctx, u, s, dt, actionDt, (target) => {
@@ -869,7 +870,7 @@ export function stepNativeUnit(
       else if ('building' in target) strike(ctx, u, s, target.building, damage);
       else if (witch) releaseWitchAtDefender(ctx, u, s, target.defender, damage);
       else if (hound) releaseHoundAtDefender(ctx, u, s, target.defender, damage);
-      else if (golem || giant || iceGolem || rootRider) {
+      else if (golem || giant || iceGolem || rootRider || electroTitan) {
         hurtDefender(battle, target.defender, damage, at);
         if (iceGolem)
           applyDefenderFrost(
@@ -882,6 +883,7 @@ export function stepNativeUnit(
           sourceId: u.id,
           targetId: target.defender.id,
           targetDefender: true,
+          ...(electroTitan ? { toAir: target.defender.mode === 'air' } : {}),
           x: u.x,
           y: u.y,
           toX: target.defender.x,
@@ -1015,6 +1017,7 @@ export function stepNativeUnit(
         giant ||
         iceGolem ||
         rootRider ||
+        electroTitan ||
         valkyrie ||
         witch ||
         hound ||
