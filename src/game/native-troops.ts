@@ -873,6 +873,7 @@ export function stepNativeUnit(
   const yeti = !!(battle.nativeYetiWindup && (u.kind === 'yeti' || u.kind === 'superyeti'));
   const hog = !!(battle.nativeHogWindup && hogAttackKind(u.kind));
   const miner = !!(battle.nativeMinerWindup && u.kind === 'miner');
+  const superMiner = !!(battle.nativeSuperMinerWindup && u.kind === 'superminer');
   const apprentice = !!(battle.nativeApprenticeWindup && u.kind === 'apprenticewarden');
   const headhunter = !!(battle.nativeHeadhunterWindup && u.kind === 'headhunter');
   const thrower = !!(battle.nativeThrowerWindup && u.kind === 'thrower');
@@ -905,6 +906,7 @@ export function stepNativeUnit(
     yeti ||
     hog ||
     miner ||
+    superMiner ||
     apprentice ||
     headhunter ||
     thrower ||
@@ -935,10 +937,21 @@ export function stepNativeUnit(
   if (
     splitAttack &&
     stepNativeAttackWindup(ctx, u, s, dt, phaseDt, (target) => {
+      const power =
+        superMiner && damageRamp
+          ? rampedDamage(
+              u,
+              damageRamp,
+              damage,
+              'building' in target ? target.building.id : target.defender.id,
+              'defender' in target,
+              at,
+            )
+          : damage;
       if (superArcher) launchArcherPiercing(ctx, u, damage, target);
       else if (superWizard) attackSuperWizard(ctx, u, damage, target);
       else if (valkyrie) sweepValkyrie(ctx, u, s, damage);
-      else if ('building' in target) strike(ctx, u, s, target.building, damage);
+      else if ('building' in target) strike(ctx, u, s, target.building, power);
       else if (rocketBalloon || balloon) {
         selfAreaHit(ctx, u, s, damage);
         state.lastAttackAt = at;
@@ -972,10 +985,11 @@ export function stepNativeUnit(
         yeti ||
         hog ||
         miner ||
+        superMiner ||
         superBarbarian ||
         sneakyGoblin
       ) {
-        hurtDefender(battle, target.defender, damage, at);
+        hurtDefender(battle, target.defender, power, at);
         if (iceGolem)
           applyDefenderFrost(
             target.defender,
@@ -1029,6 +1043,8 @@ export function stepNativeUnit(
         state.lastAttackAt = at;
         state.attacks = (state.attacks ?? 0) + 1;
       }
+      if (superMiner && damageRamp)
+        finishRampingHit(u, 'building' in target ? target.building : target.defender, damageRamp);
       if (superMinion) finishSuperMinionOpening(u, s);
     })
   )
@@ -1126,6 +1142,7 @@ export function stepNativeUnit(
         yeti ||
         hog ||
         miner ||
+        superMiner ||
         apprentice ||
         headhunter ||
         thrower ||
