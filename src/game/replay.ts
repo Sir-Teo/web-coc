@@ -64,7 +64,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 177;
+export const REPLAY_VERSION = 178;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -206,7 +206,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 174 gives Electro Titan ground/air whip phases independently of her electric aura.
  * Version 175 gives Yeti/Super Yeti source claws while retaining mite/Recall state.
  * Version 176 gives Super Hog Rider both source defeat abilities and a timed Rider landing.
- * Version 177 gives the Hog family source melee phases, including Hog Rider Puppet summons. */
+ * Version 177 gives the Hog family source melee phases, including Hog Rider Puppet summons.
+ * Version 178 gives ordinary Miners surfaced source windup/recovery phases. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -351,6 +352,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 174 ||
   version === 175 ||
   version === 176 ||
+  version === 177 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -499,6 +501,7 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 178 && s.army.miner > 0 ? { nativeMinerWindup: true as const } : {}),
     ...(version >= 177 &&
     (s.army.hogrider > 0 || s.army.superhogrider > 0 || hogPuppetLevel(s.heroes ?? []) > 0)
       ? { nativeHogWindup: true as const }

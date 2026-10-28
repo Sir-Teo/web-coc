@@ -1032,6 +1032,8 @@ export interface Battle {
   nativeSuperHogFlights?: CombatProjectile[];
   /** Version 177: Hog family and Puppet summons use source melee windups. */
   nativeHogWindup?: true;
+  /** Version 178: ordinary Miners surface for source windup/recovery before direct hits. */
+  nativeMinerWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;

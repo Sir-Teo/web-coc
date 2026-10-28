@@ -17,7 +17,9 @@ export function undergroundChaseRecording(kind: 'miner' | 'diggy') {
     ...(kind === 'miner' ? { miner: 1 } : {}),
   };
   model.state.spells = { ...emptySpells(), freeze: 1 };
-  model.state.spellLevels = defaultSpellLevels();
+  // The Miner now exposes a full 1.5 s windup: keep the maximum King frozen long
+  // enough for the level-one subject to land a hit before the recorded retaliation.
+  model.state.spellLevels = { ...defaultSpellLevels(), ...(kind === 'miner' ? { freeze: 7 } : {}) };
   model.state.king = undefined;
   model.startBattle(0, true);
   const recording = (model as unknown as { recording: ReplayData }).recording;

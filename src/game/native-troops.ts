@@ -861,6 +861,7 @@ export function stepNativeUnit(
   const electroTitan = !!(battle.nativeElectroTitanWindup && u.kind === 'electrotitan');
   const yeti = !!(battle.nativeYetiWindup && (u.kind === 'yeti' || u.kind === 'superyeti'));
   const hog = !!(battle.nativeHogWindup && hogAttackKind(u.kind));
+  const miner = !!(battle.nativeMinerWindup && u.kind === 'miner');
   const valkyrie = !!(
     battle.nativeValkyrieWindup &&
     (u.kind === 'valkyrie' || u.kind === 'supervalkyrie')
@@ -876,6 +877,7 @@ export function stepNativeUnit(
     electroTitan ||
     yeti ||
     hog ||
+    miner ||
     valkyrie ||
     witch ||
     hound;
@@ -886,7 +888,7 @@ export function stepNativeUnit(
       else if ('building' in target) strike(ctx, u, s, target.building, damage);
       else if (witch) releaseWitchAtDefender(ctx, u, s, target.defender, damage);
       else if (hound) releaseHoundAtDefender(ctx, u, s, target.defender, damage);
-      else if (golem || giant || iceGolem || rootRider || electroTitan || yeti || hog) {
+      else if (golem || giant || iceGolem || rootRider || electroTitan || yeti || hog || miner) {
         hurtDefender(battle, target.defender, damage, at);
         if (iceGolem)
           applyDefenderFrost(
@@ -1036,6 +1038,7 @@ export function stepNativeUnit(
         electroTitan ||
         yeti ||
         hog ||
+        miner ||
         valkyrie ||
         witch ||
         hound ||
@@ -1097,7 +1100,10 @@ export function stepNativeUnit(
           ? {
               enterRange: () => {
                 const target = battle.defenders?.find((d) => d.id === u.defenderTarget);
-                if (target) beginNativeAttackWindup(u, s, { defender: target }, battle);
+                if (target) {
+                  if (undergroundChase) surfaceUndergroundUnit(ctx, u, at);
+                  beginNativeAttackWindup(u, s, { defender: target }, battle);
+                }
               },
               attackReady: () => false,
             }

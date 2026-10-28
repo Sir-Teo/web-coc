@@ -7,7 +7,14 @@ import { isGarrisonDefender } from '../../src/game/defenders';
 import { superOriginal, superLevelOffset } from '../../src/game/special-troops';
 
 export type NativeDirectKind =
-  'icegolem' | 'rootrider' | 'electrotitan' | 'yeti' | 'superyeti' | 'superhogrider' | 'hogrider';
+  | 'icegolem'
+  | 'rootrider'
+  | 'electrotitan'
+  | 'yeti'
+  | 'superyeti'
+  | 'superhogrider'
+  | 'hogrider'
+  | 'miner';
 export type NativeDirectTarget = 'storage' | 'cannon' | 'garrison' | 'air-garrison' | 'monolith';
 
 export function nativeDirectBattle(

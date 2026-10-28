@@ -1224,3 +1224,16 @@ including armies with no Hogs. Puppet summons retain their fixed equipment tier
 and 250 ms wave spacing; their body art warms before activation. Versions 176 and
 earlier retain immediate first hits. No source stats, assets, audio or save format
 change. See [source distinctions and actual Cannon/Monolith/Puppet recordings](../reference/attacking-hog/README.md).
+
+## Version 178: surfaced Miner melee phases
+
+Ordinary Miners surface for a 1.5 s windup and retain 0.2 s recovery within their
+source 1.7 s period. Buildings and ground defenders share the timer. Exposed
+Miners can take damage and trigger traps during a charge; underground travel
+retains its existing protections and Wall crossing. A fleeing defender cancels
+the old charge before reburrowing, and the next emergence starts a fresh one.
+Freeze/stun, attack-speed changes and original poses follow the shared phase
+controller. Only carried ordinary Miners enable this change; versions 177 and
+earlier retain immediate first hits. Super Miner's damage-ramp ticks, Diggy and
+Battle Drill remain unchanged. No source stats, assets, audio or save format
+change. See [source distinctions and actual Cannon/Castle recordings](../reference/attacking-miner/README.md).
