@@ -25,10 +25,11 @@ describe('combat feedback comes from actual attacks', () => {
   it.each([
     ['swordsman', undefined],
     ['archer', 'native'],
-    ['wizard', 'fireball'],
+    ['wizard', 'native'],
     ['balloon', 'bomb'],
   ] as const)('%s identifies its weapon, target and one attack per cooldown', (kind, weapon) => {
     const m = new GameModel();
+    if (kind === 'wizard') m.state.army.wizard = 1;
     m.startBattle(0);
     const target = makeBuilding(9000, 'townhall', 10, 10);
     m.battle!.buildings = [target];
@@ -37,10 +38,10 @@ describe('combat feedback comes from actual attacks', () => {
     const effects: FX[] = [];
     m.onEffect = (effect) => effects.push(effect);
     m.step(0.05);
-    if (kind === 'archer' || kind === 'swordsman') {
+    if (kind === 'archer' || kind === 'swordsman' || kind === 'wizard') {
       expect(effects.some((e) => e.sourceId === attacker.id)).toBe(false);
-      for (let i = 0; i < 20 && !effects.some((e) => e.sourceId === attacker.id); i++) m.step(0.05);
-      expect(m.battle!.elapsed).toBeCloseTo(1, 8);
+      for (let i = 0; i < 32 && !effects.some((e) => e.sourceId === attacker.id); i++) m.step(0.05);
+      expect(m.battle!.elapsed).toBeCloseTo(kind === 'wizard' ? 1.5 : 1, 8);
     }
     expect(target.maxHp - target.hp).toBe(weapon ? 0 : m.troopStats(kind).damage);
     const attack = effects.find((e) => e.sourceId === attacker.id);

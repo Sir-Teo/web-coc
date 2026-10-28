@@ -2,6 +2,7 @@ import { BUILDINGS, isResourceBuilding, type TroopKind } from './data';
 import { hurtDefender } from './defenders';
 import { nativeUnitStats } from './native-units';
 import { releaseDragonFlame } from './native-dragon-flame';
+import { releaseWizardShot } from './native-wizard-attack';
 import { beginNativeAttackWindup, stepNativeAttackWindup } from './native-attack-windup';
 import type { ChainTarget } from './chain-targets';
 import type { Unit } from './model';
@@ -21,6 +22,10 @@ export function stepLegacyAttackWindup(
   return stepNativeAttackWindup(ctx, unit, source, dt, actionDt, (target) => {
     if (ctx.battle.nativeDragonWindup && unit.kind === 'dragon') {
       releaseDragonFlame(ctx, unit, source, target, damage);
+      return;
+    }
+    if (ctx.battle.nativeWizardWindup && unit.kind === 'wizard') {
+      releaseWizardShot(ctx, unit, source, target, damage);
       return;
     }
     let x: number, y: number;

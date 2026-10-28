@@ -27,6 +27,7 @@ export type NativeDirectKind =
   | 'archer'
   | 'swordsman'
   | 'goblin'
+  | 'wizard'
   | 'miner';
 export type NativeDirectTarget =
   'storage' | 'cannon' | 'airdefense' | 'garrison' | 'air-garrison' | 'monolith';

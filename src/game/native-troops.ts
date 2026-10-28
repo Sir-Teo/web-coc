@@ -1,6 +1,7 @@
 import { houndUnitDirection } from './native-hound-geometry';
 import { releaseHoundAtDefender } from './native-hound-attack';
 import { resolveWitchImpact } from './native-witch-attack';
+import { resolveRangedAreaImpact } from './native-ranged-area-impact';
 import { releaseRangedAtDefender } from './native-ranged-release';
 import { superMinionAttackStats, finishSuperMinionOpening } from './native-super-minion';
 import { sweepValkyrie } from './native-valkyrie-sweep';
@@ -1858,6 +1859,10 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
     return;
   }
   if (resolveWitchImpact(ctx, p)) return;
+  if (ctx.battle.nativeWizardWindup && p.native?.kind === 'wizard') {
+    resolveRangedAreaImpact(ctx, p);
+    return;
+  }
   if (resolveSeekingShield(ctx, p)) return;
   if (resolveSpikyBall(ctx, p)) return;
   if (resolveFrostFlake(ctx, p)) return;

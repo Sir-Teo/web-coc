@@ -266,10 +266,24 @@ describe('native specialist combat', () => {
     m.step(0.05);
     expect(b.projectiles).toHaveLength(0);
     m.step(0.05);
+    const engaged = b.elapsed;
+    expect(b.projectiles).toHaveLength(0);
+    while (!u.native?.attacks) {
+      expect(b.elapsed).toBeLessThan(2);
+      m.step(0.05);
+    }
+    expect(b.elapsed - engaged + 0.05).toBeCloseTo(1.5, 8);
     const shot = b.projectiles![0];
-    expect(shot).toMatchObject({ damage: 187.5, splash: 0.3 });
+    expect(shot).toMatchObject({
+      damage: 187.5,
+      splash: 0.3,
+      native: { kind: 'wizard', level: 4, name: 'ps_chr_WizardAttack_Projectile_lvl2' },
+    });
+    expect(shot.impact - shot.launched).toBeCloseTo(
+      Math.hypot(shot.x - shot.fromX, shot.y - shot.fromY) / 9,
+      8,
+    );
     expect(target.hp).toBe(target.maxHp);
-    u.cooldown = 100;
     advance(m, shot.impact - b.elapsed + 0.05);
     expect(target.maxHp - target.hp).toBe(187.5);
   });

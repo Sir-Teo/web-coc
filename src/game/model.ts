@@ -1077,6 +1077,8 @@ export interface Battle {
   nativeBarbarianWindup?: true;
   /** Version 193: ordinary Goblin source melee charge, preserving resource preference and bonus. */
   nativeGoblinWindup?: true;
+  /** Version 194: ordinary and Siege Barracks Wizards use source charges and fixed-aim fireballs. */
+  nativeWizardWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;
@@ -6726,7 +6728,8 @@ export class GameModel {
           (b.nativeGiantWindup && u.kind === 'giant') ||
           (b.nativeDragonWindup && u.kind === 'dragon') ||
           (b.nativeBarbarianWindup && u.kind === 'swordsman' && !u.hero) ||
-          (b.nativeGoblinWindup && u.kind === 'goblin'))
+          (b.nativeGoblinWindup && u.kind === 'goblin') ||
+          (b.nativeWizardWindup && u.kind === 'wizard'))
       );
       if (
         legacyAttack &&
@@ -6750,7 +6753,10 @@ export class GameModel {
           legacyAttack
             ? {
                 ...troop,
-                airTargets: !!(b.nativeDragonWindup && u.kind === 'dragon'),
+                airTargets: !!(
+                  (b.nativeDragonWindup && u.kind === 'dragon') ||
+                  (b.nativeWizardWindup && u.kind === 'wizard')
+                ),
                 nativeBuildingAttack: (target: Building) =>
                   beginLegacyAttackWindup(native!, u, { building: target }),
               }

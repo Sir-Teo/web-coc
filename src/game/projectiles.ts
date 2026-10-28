@@ -125,8 +125,8 @@ export interface NativeDefenseShot {
   bomb?: { damage: number; radius: number; delay: number };
 }
 
-// Tiles/second. Wizard fireballs and Bomb Tower bombs use client values;
-// other weapons retain local tuning. Flight follows battle time, including replays.
+// Tiles/second. Historical fireballs keep the five-tile/s default; native shots read
+// their own source row below. Other weapons retain local tuning. Flight uses battle time.
 const SPEED: Record<Weapon, number> = {
   arrow: 18,
   cannonball: 16,
@@ -394,7 +394,8 @@ export function stepProjectiles(
       (p.defense ||
         (battle.nativeWardenFireball && p.native?.fireball) ||
         (battle.nativeWitchWindup &&
-          (p.native?.kind === 'witch' || p.native?.kind === 'superwitch'))) &&
+          (p.native?.kind === 'witch' || p.native?.kind === 'superwitch')) ||
+        (battle.nativeWizardWindup && p.native?.kind === 'wizard')) &&
       p.native
     ) {
       let cached = trackableByNative.get(p.native.name);

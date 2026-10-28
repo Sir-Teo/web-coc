@@ -631,7 +631,8 @@ function supportAttackers(
       state.angryUntil = at + seconds(ability, 'DeactivateAfterTime');
       if (
         ((battle.nativeBarbarianWindup && u.kind === 'swordsman' && !u.hero) ||
-          (battle.nativeGoblinWindup && u.kind === 'goblin')) &&
+          (battle.nativeGoblinWindup && u.kind === 'goblin') ||
+          (battle.nativeWizardWindup && u.kind === 'wizard')) &&
         state.attackWindup
       ) {
         // Forced selection must also discard the source charge's committed target.
