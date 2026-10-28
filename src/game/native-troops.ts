@@ -883,6 +883,7 @@ export function stepNativeUnit(
   const sneakyGoblin = !!(battle.nativeSneakyGoblinWindup && u.kind === 'sneakygoblin');
   const superArcher = !!(battle.nativeSuperArcherWindup && u.kind === 'superarcher');
   const superWizard = !!(battle.nativeSuperWizardWindup && u.kind === 'superwizard');
+  const superBowler = !!(battle.nativeSuperBowlerWindup && u.kind === 'superbowler');
   const valkyrie = !!(
     battle.nativeValkyrieWindup &&
     (u.kind === 'valkyrie' || u.kind === 'supervalkyrie')
@@ -913,6 +914,7 @@ export function stepNativeUnit(
     sneakyGoblin ||
     superArcher ||
     superWizard ||
+    superBowler ||
     valkyrie ||
     witch ||
     hound;
@@ -943,7 +945,8 @@ export function stepNativeUnit(
         babyDragon ||
         superMinion ||
         minion ||
-        archer
+        archer ||
+        superBowler
       )
         releaseRangedAtDefender(
           ctx,
@@ -1130,6 +1133,7 @@ export function stepNativeUnit(
         sneakyGoblin ||
         superArcher ||
         superWizard ||
+        superBowler ||
         valkyrie ||
         witch ||
         hound ||
@@ -1904,7 +1908,10 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
   const frostmiteSplash = !!(battle.nativeFrostmites && source.kind === 'frostmite');
   const miteSplash = nativeMiteJump(battle, source.kind);
   const meteorSplash = !!(battle.nativeMeteorThrows && source.kind === 'meteorgolem');
-  const bowlerSplash = !!(battle.nativeBowlerBoulders && source.kind === 'bowler');
+  const bowlerSplash = !!(
+    (battle.nativeBowlerBoulders && source.kind === 'bowler') ||
+    (battle.nativeSuperBowlerWindup && source.kind === 'superbowler')
+  );
   const babySplash = !!(battle.nativeBabyDragonWindup && source.kind === 'babydragon');
   const bothLayers = miteSplash || meteorSplash;
   // Native defender-targeted shots retain their captured direct hit on either defender layer.

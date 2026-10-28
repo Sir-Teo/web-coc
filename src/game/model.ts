@@ -1091,6 +1091,8 @@ export interface Battle {
   nativeSuperWizardWindup?: true;
   /** Version 200: source Super Wizard pre-attack audio follows its shared charge clock. */
   nativeSuperWizardPreAttack?: true;
+  /** Version 201: Super Bowler charges before its original three-bounce ground projectile. */
+  nativeSuperBowlerWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;

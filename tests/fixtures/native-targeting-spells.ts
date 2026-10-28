@@ -14,6 +14,7 @@ export function nativeTargetingSpellRecording(
     | 'sneakygoblin'
     | 'superarcher'
     | 'superwizard'
+    | 'superbowler'
     | 'archer'
     | 'dragon'
     | 'minion'
@@ -52,7 +53,9 @@ export function nativeTargetingSpellRecording(
           ? { archer: 5 }
           : kind === 'superwizard'
             ? { wizard: 5 }
-            : {}),
+            : kind === 'superbowler'
+              ? { bowler: 1 }
+              : {}),
   };
   model.state.spells = { ...emptySpells(), [key]: 1 };
   model.state.spellLevels = { ...model.state.spellLevels, [key]: level };
