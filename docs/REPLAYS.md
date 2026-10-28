@@ -1249,3 +1249,14 @@ Only Super Hog Rider armies carrying Recall enable this change. Versions 178 and
 earlier retain their exclusion of split bodies. The new `recalled-troop` input
 supports portable reconstruction while the file envelope and village save
 format stay unchanged. See [source rules, card behavior and live pointer recordings](../reference/super-hog-recall/README.md).
+
+## Version 180: Apprentice Warden charge and native defender shots
+
+Apprentice Warden begins a full source-derived 0.9 s attack charge at engagement,
+then repeats at the existing 0.9 s period. Ground and air defenders receive the
+original level-specific native projectile after release, with damage at flight
+impact. Freeze/stun and attack-speed changes govern the charge; native poses use
+its captured action offset. Wall jumping, group targeting and the independent
+300 ms health aura keep their existing rules. Only carried Apprentice Wardens
+enable the change. Versions 179 and earlier retain their previous first-hit and
+defender-shot behavior. See [source limits and portable recordings](../reference/attacking-apprentice/README.md).

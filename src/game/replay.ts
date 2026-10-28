@@ -65,7 +65,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 179;
+export const REPLAY_VERSION = 180;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -209,7 +209,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 176 gives Super Hog Rider both source defeat abilities and a timed Rider landing.
  * Version 177 gives the Hog family source melee phases, including Hog Rider Puppet summons.
  * Version 178 gives ordinary Miners surfaced source windup/recovery phases.
- * Version 179 returns recalled Super Hog halves as independent raid reserves. */
+ * Version 179 returns recalled Super Hog halves as independent raid reserves.
+ * Version 180 gives Apprentice Warden source windups and native defender shots. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -356,6 +357,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 176 ||
   version === 177 ||
   version === 178 ||
+  version === 179 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -505,6 +507,9 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 180 && s.army.apprenticewarden > 0
+      ? { nativeApprenticeWindup: true as const }
+      : {}),
     ...(version >= 179 && s.army.superhogrider > 0 && s.spells.recall > 0
       ? { nativeSplitRecall: true as const }
       : {}),

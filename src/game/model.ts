@@ -1043,6 +1043,8 @@ export interface Battle {
   /** Version 179: recalled Super Hog halves return as separate raid-only reserves. */
   nativeSplitRecall?: true;
   recalledSplits?: Partial<Record<SplitHogKind, RecalledSplitTroop[]>>;
+  /** Version 180: Apprentice Warden source charge and ground/air projectile release. */
+  nativeApprenticeWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;

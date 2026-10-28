@@ -1,6 +1,7 @@
 import { houndUnitDirection } from './native-hound-geometry';
 import { releaseHoundAtDefender } from './native-hound-attack';
-import { releaseWitchAtDefender, resolveWitchImpact } from './native-witch-attack';
+import { resolveWitchImpact } from './native-witch-attack';
+import { releaseRangedAtDefender } from './native-ranged-release';
 import { sweepValkyrie } from './native-valkyrie-sweep';
 import { launchArcherPiercing, stepArcherPiercing } from './native-super-archer';
 import { resolveWardenFireball } from './native-fireball';
@@ -862,6 +863,7 @@ export function stepNativeUnit(
   const yeti = !!(battle.nativeYetiWindup && (u.kind === 'yeti' || u.kind === 'superyeti'));
   const hog = !!(battle.nativeHogWindup && hogAttackKind(u.kind));
   const miner = !!(battle.nativeMinerWindup && u.kind === 'miner');
+  const apprentice = !!(battle.nativeApprenticeWindup && u.kind === 'apprenticewarden');
   const valkyrie = !!(
     battle.nativeValkyrieWindup &&
     (u.kind === 'valkyrie' || u.kind === 'supervalkyrie')
@@ -878,6 +880,7 @@ export function stepNativeUnit(
     yeti ||
     hog ||
     miner ||
+    apprentice ||
     valkyrie ||
     witch ||
     hound;
@@ -886,7 +889,7 @@ export function stepNativeUnit(
     stepNativeAttackWindup(ctx, u, s, dt, actionDt, (target) => {
       if (valkyrie) sweepValkyrie(ctx, u, s, damage);
       else if ('building' in target) strike(ctx, u, s, target.building, damage);
-      else if (witch) releaseWitchAtDefender(ctx, u, s, target.defender, damage);
+      else if (witch || apprentice) releaseRangedAtDefender(ctx, u, s, target.defender, damage);
       else if (hound) releaseHoundAtDefender(ctx, u, s, target.defender, damage);
       else if (golem || giant || iceGolem || rootRider || electroTitan || yeti || hog || miner) {
         hurtDefender(battle, target.defender, damage, at);
@@ -1039,6 +1042,7 @@ export function stepNativeUnit(
         yeti ||
         hog ||
         miner ||
+        apprentice ||
         valkyrie ||
         witch ||
         hound ||

@@ -14,6 +14,7 @@ export type NativeDirectKind =
   | 'superyeti'
   | 'superhogrider'
   | 'hogrider'
+  | 'apprenticewarden'
   | 'miner';
 export type NativeDirectTarget = 'storage' | 'cannon' | 'garrison' | 'air-garrison' | 'monolith';
 

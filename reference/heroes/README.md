@@ -49,6 +49,6 @@ phone or desktop before activation, including simultaneous level 1 and level 8
 Healer pages. It verifies immediate native bodies, loaded shots and samples,
 read-only rendering and no new body graph/image request at activation. The
 renderer may separately read original pixels for saturating source tints. This
-is presentation-only; replay combat rules and version 179 are unchanged.
+is presentation-only and adds no replay version or combat rule.
 
 All six home-village heroes are recorded: Barbarian King, Archer Queen, Grand Warden, Royal Champion, Minion Prince and Dragon Duke. The two Builder Base heroes in the same table — Battle Machine and Battle Copter — are deliberately absent, as the Builder Base is not modelled. Which of the recorded heroes the village actually offers is a separate decision recorded in [HERO-PROGRESSION.md](../../docs/HERO-PROGRESSION.md).
