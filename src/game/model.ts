@@ -3702,13 +3702,13 @@ export class GameModel {
   }
   boostSuperTroop(kind: TroopKind) {
     if (this.battle) return;
-    const row = superLicence(kind);
-    if (
-      !row ||
-      this.townhallLevel < 11 ||
-      this.troopLevel(superOriginal(kind)!) < superMinimum(kind)
-    )
-      return this.notify('Requires Town Hall 11 and the original troop at its required level.');
+    const row = superLicence(kind),
+      original = superOriginal(kind);
+    if (!row || !original) return this.notify('Choose a Super Troop to boost.');
+    if (this.townhallLevel < 11 || this.troopLevel(original) < superMinimum(kind))
+      return this.notify(
+        `Requires Town Hall 11 and ${TROOPS[original].name} level ${superMinimum(kind)}.`,
+      );
     const now = this.clock;
     if ((this.state.superBoosts?.[kind] ?? 0) > now) return;
     if (Object.values(this.state.superBoosts ?? {}).filter((end) => end! > now).length >= 2)

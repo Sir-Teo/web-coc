@@ -24,7 +24,11 @@ export function superOriginal(kind: TroopKind): TroopKind | undefined {
   originals.set(kind, original);
   return original;
 }
-export const superMinimum = (kind: TroopKind) => num(superLicence(kind), 'MinOriginalLevel');
+/** The source stores a zero-based level index; research levels and UI labels are one-based. */
+export function superMinimum(kind: TroopKind) {
+  const row = superLicence(kind);
+  return row ? num(row, 'MinOriginalLevel') + 1 : 0;
+}
 
 export const superLevelOffset = (kind: TroopKind) =>
   Number((source.troopDefs[kind] as Record<string, string>).VisualLevel || 1) - 1;

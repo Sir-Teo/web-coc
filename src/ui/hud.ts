@@ -4580,7 +4580,11 @@ export class HUD {
     const kind = this.inspectedTroop,
       d = this.model.troopStats(kind),
       native = nativeUnitStats(kind, this.model.troopLevel(kind)),
-      guide = troopCombatGuide(kind, native);
+      guide = troopCombatGuide(kind, native),
+      original = superOriginal(kind),
+      description = original
+        ? `Activate a Super Troop boost to train this enhanced ${TROOPS[original].name}.`
+        : d.description;
     const healingStats = d.healer ? native : undefined;
     const heroHealingScale =
       kind === 'healer' && this.model.battle && !this.model.battle.nativeHealerHeroScaling
@@ -4613,7 +4617,9 @@ export class HUD {
                       ? 'Deploy first to draw defensive fire, then send your more fragile troops behind.'
                       : 'Spread your deployment to avoid mortar splash. Support your frontline with ranged damage and spells.');
     const rows: [string, string][] = [
-      ['Unlock requirement', `${BUILDINGS[troopFacility(kind)].name} ${TROOP_UNLOCK[kind]}`],
+      original
+        ? ['Boost requirement', `TH11 · ${TROOPS[original].name} level ${superMinimum(kind)}`]
+        : ['Unlock requirement', `${BUILDINGS[troopFacility(kind)].name} ${TROOP_UNLOCK[kind]}`],
       ['Favorite target', target],
       [
         d.healer ? 'Healing per second' : 'Damage per second',
@@ -4637,7 +4643,7 @@ export class HUD {
     }
     if (d.wallBreaker)
       rows.push(['Contact damage vs walls', damageNumber((d.damage + (d.deathDamage ?? 0)) * 40)]);
-    return `<div class="modal-body troop-info-body"><div class="troop-info-hero"><img src="${hudAsset(kind)}" alt="${d.name}"><div><span class="eyebrow">${d.role} · LEVEL ${this.model.troopDisplayLevel(kind)}</span><h2>${d.name}</h2><p>${d.description}</p></div></div><dl class="troop-stats">${rows.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl><p class="troop-tactic">${icon('Info', 20)}<span>${tactic}</span></p>${button('army', `${icon('Swords', 18)} Train troops`, 'game-btn green')}</div>`;
+    return `<div class="modal-body troop-info-body"><div class="troop-info-hero"><img src="${hudAsset(kind)}" alt="${d.name}"><div><span class="eyebrow">${d.role} · LEVEL ${this.model.troopDisplayLevel(kind)}</span><h2>${d.name}</h2><p>${description}</p></div></div><dl class="troop-stats">${rows.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl><p class="troop-tactic">${icon('Info', 20)}<span>${tactic}</span></p>${button('army', `${icon('Swords', 18)} Train troops`, 'game-btn green')}</div>`;
   }
   private spellInfo() {
     const kind = this.inspectedSpell,
