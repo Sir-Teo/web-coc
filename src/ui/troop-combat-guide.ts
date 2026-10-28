@@ -17,7 +17,14 @@ export function troopFavoriteTarget(stats: NativeUnitStats) {
 export function troopCombatGuide(kind: TroopKind, stats: NativeUnitStats) {
   const facts: [string, string][] = [];
   let tactic: string | undefined;
-  if (kind === 'superbarbarian') {
+  if (kind === 'superbowler') {
+    facts.push(
+      ['Boulder landings', `${stats.bounces}`],
+      ['Bounce distance', `${stats.bounceDistance} tiles`],
+    );
+    tactic =
+      'Use a frontline to protect it while boulders bounce through clustered buildings and ground troops.';
+  } else if (kind === 'superbarbarian') {
     const ability = nativeRow('abilities', stats.ability, stats.abilityLevel),
       duration = seconds(ability, 'DeactivateAfterTime');
     facts.push(

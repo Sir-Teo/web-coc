@@ -19,6 +19,7 @@ constants:
 
 | Troop | Added facts | Combat reference |
 | --- | --- | --- |
+| Super Bowler | Three boulder landings; three-tile bounce distance | [Source boulders and phases](../reference/attacking-super-bowler/README.md) |
 | Super Barbarian | Eight-second opening Rage; +70% damage and +1.5 tiles/s | [Rage and charges](../reference/attacking-super-barbarian/README.md) |
 | Sneaky Goblin | Five-second opening invisibility | [Invisibility and resource attacks](../reference/attacking-sneaky-goblin/README.md) |
 | Super Archer | Four extra arrow tiles; 0.3-tile piercing radius | [Piercing and charges](../reference/attacking-super-archer/README.md) |
@@ -29,8 +30,8 @@ constants:
 | Rocket Balloon | Four-second deployment boosters | [Rocket Balloon phases](../reference/attacking-rocket-balloon/README.md) |
 | Dragon Rider | 0.6-second death-blast delay | [Dragon Rider phases](../reference/attacking-dragon-rider/README.md) |
 
-Super Barbarian, Sneaky Goblin, Super Archer and Super Wizard each have advice
-for their own opening boost, resource raid, piercing line or branched attack.
+Super Bowler, Super Barbarian, Sneaky Goblin, Super Archer and Super Wizard each have advice
+for their own bouncing projectile, opening boost, resource raid, piercing line or branched attack.
 These tips describe playable behavior without exposing replay or simulation
 implementation details. Super Barbarian's speed bonus is additive tiles/second,
 not an attack-rate boost. Super Archer's extra travel is measured beyond its
@@ -43,7 +44,7 @@ crash labels accompany its version-190 combat boundary; see the linked
 reference for historical playback behavior.
 
 `tests/browser/troop-combat-guide.spec.ts` opens real catalog Info buttons for
-thirteen troop families at 390×844, 844×390 and 1440×960. It verifies source facts,
+fourteen troop families at 390×844, 844×390 and 1440×960. It verifies source facts,
 favorite targets, advice, text fit, horizontal overflow, touch targets,
 scrolling, training navigation and closing. Screenshots are saved under
 ignored `output/playtest/`. These are headless browser viewport checks, not

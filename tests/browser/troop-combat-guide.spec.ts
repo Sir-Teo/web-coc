@@ -2,6 +2,12 @@ import { expect, test } from '@playwright/test';
 
 const cases = [
   {
+    name: 'Super Bowler',
+    target: 'Any building',
+    tactic: 'boulders bounce through clustered buildings and ground troops',
+    facts: { 'Boulder landings': '3', 'Bounce distance': '3 tiles', 'Attack splash': '0.6 tiles' },
+  },
+  {
     name: 'Super Barbarian',
     target: 'Any building',
     tactic: 'opening Rage',
@@ -123,6 +129,7 @@ for (const viewport of [
           'Sneaky Goblin',
           'Super Archer',
           'Super Wizard',
+          'Super Bowler',
         ].includes(c.name)
       )
         await page.screenshot({
