@@ -1,5 +1,5 @@
 import type { TroopKind } from '../game/data';
-import type { NativeUnitStats } from '../game/native-units';
+import { nativeUnitRow, type NativeUnitStats } from '../game/native-units';
 import { nativeRow, num, seconds, tiles } from '../game/native-data';
 import { superMinionLongShot } from '../game/native-super-minion';
 
@@ -17,7 +17,37 @@ export function troopFavoriteTarget(stats: NativeUnitStats) {
 export function troopCombatGuide(kind: TroopKind, stats: NativeUnitStats) {
   const facts: [string, string][] = [];
   let tactic: string | undefined;
-  if (kind === 'superminion') {
+  if (kind === 'superbarbarian') {
+    const ability = nativeRow('abilities', stats.ability, stats.abilityLevel),
+      duration = seconds(ability, 'DeactivateAfterTime');
+    facts.push(
+      ['Opening Rage', `${duration} s`],
+      ['Rage damage bonus', `+${num(ability, 'BoostDamagePercentage')}%`],
+      ['Rage speed bonus', `+${num(ability, 'SpeedBoost') / 100} tiles/s`],
+    );
+    tactic = `Deploy close to targets to make the most of its opening Rage. Its extra damage and movement speed expire after ${duration} seconds.`;
+  } else if (kind === 'sneakygoblin') {
+    const ability = nativeRow('abilities', stats.ability, stats.abilityLevel);
+    facts.push(['Opening invisibility', `${seconds(ability, 'DeactivateAfterTime')} s`]);
+    tactic =
+      'Use its brief opening invisibility to raid exposed resource buildings. Clear a route first so it reaches its target before the cloak ends.';
+  } else if (kind === 'superarcher') {
+    const row = nativeUnitRow(kind, stats.level);
+    facts.push(
+      ['Extra arrow travel', `${tiles(row, 'PenetratingExtraRange')} tiles`],
+      ['Piercing radius', `${tiles(row, 'PenetratingRadius')} tiles`],
+    );
+    tactic =
+      'Line up buildings and defending troops so one arrow can pierce several targets. Arrows continue beyond their original target.';
+  } else if (kind === 'superwizard') {
+    facts.push(
+      ['Chain targets', `${num(nativeUnitRow(kind, stats.level), 'ChainAttackFactor')}`],
+      ['Chain radius', `${stats.chainDistance} tiles`],
+      ['Branch damage', `${Math.round((1 - stats.chainReduction) * 100)}%`],
+    );
+    tactic =
+      'Use a durable frontline to protect it while attacking clustered buildings and troops. Lightning branches spread from the first target to nearby enemies.';
+  } else if (kind === 'superminion') {
     const opening = superMinionLongShot(stats)!;
     facts.push(
       ['Long Shot attacks', `${opening.count}`],

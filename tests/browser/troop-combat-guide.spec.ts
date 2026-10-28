@@ -2,6 +2,34 @@ import { expect, test } from '@playwright/test';
 
 const cases = [
   {
+    name: 'Super Barbarian',
+    target: 'Any building',
+    tactic: 'opening Rage',
+    facts: {
+      'Opening Rage': '8 s',
+      'Rage damage bonus': '+70%',
+      'Rage speed bonus': '+1.5 tiles/s',
+    },
+  },
+  {
+    name: 'Sneaky Goblin',
+    target: 'Resources (2× damage)',
+    tactic: 'before the cloak ends',
+    facts: { 'Opening invisibility': '5 s' },
+  },
+  {
+    name: 'Super Archer',
+    target: 'Any building',
+    tactic: 'pierce several targets',
+    facts: { 'Extra arrow travel': '4 tiles', 'Piercing radius': '0.3 tiles' },
+  },
+  {
+    name: 'Super Wizard',
+    target: 'Any building',
+    tactic: 'Lightning branches',
+    facts: { 'Chain targets': '10', 'Chain radius': '3 tiles', 'Branch damage': '40%' },
+  },
+  {
     name: 'Super Minion',
     target: 'Any building',
     tactic: 'Long Shots',
@@ -87,7 +115,16 @@ for (const viewport of [
         .boundingBox();
       expect(close!.width).toBeGreaterThanOrEqual(44);
       expect(close!.height).toBeGreaterThanOrEqual(44);
-      if (c.name === 'Super Minion' || c.name === 'Baby Dragon')
+      if (
+        [
+          'Super Minion',
+          'Baby Dragon',
+          'Super Barbarian',
+          'Sneaky Goblin',
+          'Super Archer',
+          'Super Wizard',
+        ].includes(c.name)
+      )
         await page.screenshot({
           path: `output/playtest/troop-guide-${c.name.replaceAll(' ', '-').toLowerCase()}-${viewport.width}.png`,
         });
