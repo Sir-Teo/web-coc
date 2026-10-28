@@ -629,6 +629,13 @@ function supportAttackers(
       const ability = nativeRow('abilities', given, num(row, 'GivenSpecialAbilityLevel', 1) || 1);
       const state = (u.native ??= {});
       state.angryUntil = at + seconds(ability, 'DeactivateAfterTime');
+      if (battle.nativeBarbarianWindup && u.kind === 'swordsman' && !u.hero && state.attackWindup) {
+        // Forced selection must also discard the source charge's committed target.
+        delete state.attackWindup.engaged;
+        delete state.attackWindup.target;
+        delete state.attackWindup.animationOffset;
+        u.attacking = false;
+      }
       u.target = null;
       u.path = [];
       u.pathAt = 0;

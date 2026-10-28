@@ -246,7 +246,7 @@ describe('campaign Shrink Trap', () => {
       const a = setup(normal, false),
         b = setup(slowed, true);
       expect(Math.hypot(b.x - 15, b.y - 30)).toBeCloseTo(Math.hypot(a.x - 15, a.y - 30) / 2, 10);
-      if (kind === 'archer') {
+      if (kind === 'archer' || kind === 'swordsman') {
         // Travelling does not spend a source charge; the active-time budget is still halved.
         expect([a.cooldown, b.cooldown]).toEqual([0, 0]);
         expect([a.native!.attackWindup!.actionDt, b.native!.attackWindup!.actionDt]).toEqual([

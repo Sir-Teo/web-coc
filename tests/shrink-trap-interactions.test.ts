@@ -58,7 +58,14 @@ for (const hero of [false, true])
       const moved = (u: Unit) => Math.hypot(u.x - 15, u.y - 30);
       expect(moved(normal.u)).toBeGreaterThan(0);
       expect(moved(shrunk.u)).toBeCloseTo(moved(normal.u) / 2, 10);
-      expect([normal.u.cooldown, shrunk.u.cooldown]).toEqual([0.95, 0.975]);
+      if (hero) expect([normal.u.cooldown, shrunk.u.cooldown]).toEqual([0.95, 0.975]);
+      else {
+        expect([normal.u.cooldown, shrunk.u.cooldown]).toEqual([0, 0]);
+        expect([
+          normal.u.native!.attackWindup!.actionDt,
+          shrunk.u.native!.attackWindup!.actionDt,
+        ]).toEqual([0.05, 0.025]);
+      }
       expect([shrunk.u.hp, shrunk.u.maxHp]).toEqual([normal.u.hp, normal.u.maxHp]);
     });
 
@@ -66,8 +73,13 @@ it('keeps damage per hit while doubling the time to the next melee attack', () =
   const run = (shrink: boolean) => {
     const a = arena('swordsman', shrink, 29.8);
     a.u.cooldown = 0;
-    a.m.step(0.05);
-    const first = a.tower.maxHp - a.tower.hp;
+    while (!a.u.native?.attacks) {
+      expect(a.b.elapsed).toBeLessThan(3);
+      a.m.step(0.05);
+    }
+    const first = a.tower.maxHp - a.tower.hp,
+      firstAt = a.b.elapsed;
+    expect(firstAt).toBeCloseTo(shrink ? 2 : 1, 8);
     const rate = a.m.troopStats('swordsman').rate;
     for (let i = 0; i < Math.ceil((rate + 0.1) / 0.05); i++) a.m.step(0.05);
     return { first, damage: a.tower.maxHp - a.tower.hp };

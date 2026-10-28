@@ -12,7 +12,7 @@ import { KING_LEVELS } from '../src/game/king-progression';
 import catalog from '../reference/townhall/catalog.json';
 import { validateSave } from '../src/game/save';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
-import { REPLAY_VERSION } from '../src/game/replay';
+import { REPLAY_VERSION, replayBattle, type ReplayData } from '../src/game/replay';
 import { launchProjectile, stepProjectiles } from '../src/game/projectiles';
 import { stepDeathBombs } from '../src/game/bomb-tower';
 import { startSpellAura, stepSpellAuras } from '../src/game/spell-effects';
@@ -36,9 +36,14 @@ function rage(m: GameModel, king: { native?: { effects?: unknown } }, until: num
   m.battleHero('king')!.abilityUsed = true;
   (king.native ??= {}).effects = { boost: { until, speed: 2.25, damage: 1.2, attackSpeed: 0 } };
 }
-function arena(th = 7, level = 1) {
+function arena(th = 7, level = 1, version = REPLAY_VERSION) {
   const m = village(th, level);
   m.startBattle(0, true);
+  if (version !== REPLAY_VERSION) {
+    const data = (m as unknown as { recording: ReplayData }).recording;
+    data.version = version;
+    m.battle = replayBattle(data.initial, version);
+  }
   expect(m.deployHero(12, 15)).toBe(true);
   const b = m.battle!,
     king = b.units[0];
@@ -290,8 +295,8 @@ describe('King equipment activation', () => {
     m.step(0.1);
     expect(king.x).toBeCloseTo(active ? 10.425 : 10.2);
   });
-  it('boosts Puppet Barbarians independently for twenty seconds and leaves ordinary troops alone', () => {
-    const { m, b, king, target } = arena();
+  it('version 191 boosts Puppet Barbarians independently for twenty seconds and leaves ordinary troops alone', () => {
+    const { m, b, king, target } = arena(7, 1, 191);
     b.troopLevels.swordsman = 5;
     m.activateHeroAbility();
     king.hp = 0;

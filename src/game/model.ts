@@ -1073,6 +1073,8 @@ export interface Battle {
   nativeBalloonWindup?: true;
   /** Version 191: ordinary and Puppet Archers share source charges and native arrows. */
   nativeArcherWindup?: true;
+  /** Version 192: ordinary and King Puppet Barbarians share the source melee charge. */
+  nativeBarbarianWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;
@@ -6720,7 +6722,8 @@ export class GameModel {
         native &&
         ((b.nativePekkaWindup && u.kind === 'pekka') ||
           (b.nativeGiantWindup && u.kind === 'giant') ||
-          (b.nativeDragonWindup && u.kind === 'dragon'))
+          (b.nativeDragonWindup && u.kind === 'dragon') ||
+          (b.nativeBarbarianWindup && u.kind === 'swordsman' && !u.hero))
       );
       if (
         legacyAttack &&

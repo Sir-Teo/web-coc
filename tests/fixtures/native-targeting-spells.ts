@@ -1,8 +1,12 @@
 import { GameModel, makeBuilding } from '../../src/game/model';
 import { emptyArmy, emptySpells } from '../../src/game/army';
-import type { ReplayData } from '../../src/game/replay';
+import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
 /** Actual troop deployment and a real spell input exercise targeting, stuns and Totem health drain. */
-export function nativeTargetingSpellRecording(name: 'Totem Spell' | 'AngrySpell', level = 1) {
+export function nativeTargetingSpellRecording(
+  name: 'Totem Spell' | 'AngrySpell',
+  level = 1,
+  version = REPLAY_VERSION,
+) {
   const model = new GameModel(),
     key = name === 'Totem Spell' ? 'totem' : 'angry';
   model.state.king = undefined;
@@ -24,7 +28,9 @@ export function nativeTargetingSpellRecording(name: 'Totem Spell' | 'AngrySpell'
   model.state.spells = { ...emptySpells(), [key]: 1 };
   model.state.spellLevels = { ...model.state.spellLevels, [key]: level };
   model.startBattle(0, true);
-  const battle = model.battle!,
+  const data = (model as unknown as { recording: ReplayData }).recording;
+  data.version = version;
+  const battle = (model.battle = replayBattle(data.initial, version)),
     snapshots: { at: number; battle: unknown }[] = [],
     until = (time: number) => {
       while (battle.elapsed < time - 1e-9) {
@@ -46,6 +52,9 @@ export function nativeTargetingSpellRecording(name: 'Totem Spell' | 'AngrySpell'
   if (!model.castSpell(name === 'Totem Spell' ? 18 : unit.x, name === 'Totem Spell' ? 14 : unit.y))
     throw Error('Targeting spell cast failed');
   const cast = battle.nativeSpells![0];
+  until(cast.firstHit - 0.05);
+  snapshot();
+  const pending = battle.elapsed;
   until(cast.firstHit + 0.1);
   snapshot();
   const impact = battle.elapsed;
@@ -68,6 +77,7 @@ export function nativeTargetingSpellRecording(name: 'Totem Spell' | 'AngrySpell'
     level,
     unitId,
     before,
+    pending,
     after,
     impact,
     draining,

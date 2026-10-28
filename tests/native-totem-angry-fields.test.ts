@@ -142,7 +142,7 @@ for (const { name } of configs)
   it.each([1, 4])(
     `${name} level %s preserves version-126 target preference, stuns and Totem drain through portable seeks`,
     (level) => {
-      const r = nativeTargetingSpellRecording(name, level),
+      const r = nativeTargetingSpellRecording(name, level, 127),
         model = new GameModel(),
         at = (t: number) => r.snapshots.find((s) => s.at === t)!.battle as Battle;
       expect(at(r.before).units.find((u) => u.id === r.unitId)!.target).toBe(2);

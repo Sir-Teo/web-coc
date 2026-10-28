@@ -25,6 +25,7 @@ export type NativeDirectKind =
   | 'dragon'
   | 'balloon'
   | 'archer'
+  | 'swordsman'
   | 'miner';
 export type NativeDirectTarget =
   'storage' | 'cannon' | 'airdefense' | 'garrison' | 'air-garrison' | 'monolith';
@@ -159,13 +160,14 @@ export function nativeDirectRecording(
   level = 1,
   garrison: boolean | 'air' = false,
   chargeCheckpointSeconds = 0.7,
-  buildingTarget: 'cannon' | 'airdefense' = 'cannon',
+  buildingTarget: 'cannon' | 'airdefense' | 'storage' = 'cannon',
+  deployX = 11.4,
 ) {
   const r = nativeDirectBattle(
       kind,
       level,
       version,
-      garrison ? 6.9 : 11.4,
+      garrison ? 6.9 : deployX,
       garrison === 'air' ? 'air-garrison' : garrison ? 'garrison' : buildingTarget,
     ),
     snapshots: { at: number; battle: Battle }[] = [];

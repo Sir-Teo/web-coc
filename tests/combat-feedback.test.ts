@@ -37,7 +37,7 @@ describe('combat feedback comes from actual attacks', () => {
     const effects: FX[] = [];
     m.onEffect = (effect) => effects.push(effect);
     m.step(0.05);
-    if (kind === 'archer') {
+    if (kind === 'archer' || kind === 'swordsman') {
       expect(effects.some((e) => e.sourceId === attacker.id)).toBe(false);
       for (let i = 0; i < 20 && !effects.some((e) => e.sourceId === attacker.id); i++) m.step(0.05);
       expect(m.battle!.elapsed).toBeCloseTo(1, 8);
