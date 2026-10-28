@@ -879,6 +879,7 @@ export function stepNativeUnit(
   const babyDragon = !!(battle.nativeBabyDragonWindup && u.kind === 'babydragon');
   const minion = !!(battle.nativeMinionWindup && u.kind === 'minion');
   const archer = !!(battle.nativeArcherWindup && u.kind === 'archer');
+  const superBarbarian = !!(battle.nativeSuperBarbarianWindup && u.kind === 'superbarbarian');
   const valkyrie = !!(
     battle.nativeValkyrieWindup &&
     (u.kind === 'valkyrie' || u.kind === 'supervalkyrie')
@@ -905,6 +906,7 @@ export function stepNativeUnit(
     superMinion ||
     minion ||
     archer ||
+    superBarbarian ||
     valkyrie ||
     witch ||
     hound;
@@ -943,7 +945,17 @@ export function stepNativeUnit(
           damage * (headhunter && target.defender.kind === 'hero' ? s.heroMultiplier : 1),
         );
       else if (hound) releaseHoundAtDefender(ctx, u, s, target.defender, damage);
-      else if (golem || giant || iceGolem || rootRider || electroTitan || yeti || hog || miner) {
+      else if (
+        golem ||
+        giant ||
+        iceGolem ||
+        rootRider ||
+        electroTitan ||
+        yeti ||
+        hog ||
+        miner ||
+        superBarbarian
+      ) {
         hurtDefender(battle, target.defender, damage, at);
         if (iceGolem)
           applyDefenderFrost(
@@ -1105,6 +1117,7 @@ export function stepNativeUnit(
         superMinion ||
         minion ||
         archer ||
+        superBarbarian ||
         valkyrie ||
         witch ||
         hound ||

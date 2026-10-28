@@ -1079,6 +1079,8 @@ export interface Battle {
   nativeGoblinWindup?: true;
   /** Version 194: ordinary and Siege Barracks Wizards use source charges and fixed-aim fireballs. */
   nativeWizardWindup?: true;
+  /** Version 195: Super Barbarian charges after engagement while its deployment Rage keeps its own clock. */
+  nativeSuperBarbarianWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;

@@ -632,7 +632,8 @@ function supportAttackers(
       if (
         ((battle.nativeBarbarianWindup && u.kind === 'swordsman' && !u.hero) ||
           (battle.nativeGoblinWindup && u.kind === 'goblin') ||
-          (battle.nativeWizardWindup && u.kind === 'wizard')) &&
+          (battle.nativeWizardWindup && u.kind === 'wizard') ||
+          (battle.nativeSuperBarbarianWindup && u.kind === 'superbarbarian')) &&
         state.attackWindup
       ) {
         // Forced selection must also discard the source charge's committed target.
