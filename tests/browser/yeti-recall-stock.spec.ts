@@ -24,6 +24,8 @@ async function seek(page: Page, at: number) {
 }
 
 for (const { kind, level, version, width } of [
+  { kind: 'yeti', level: 1, version: 175, width: 390 },
+  { kind: 'superyeti', level: 8, version: 175, width: 1440 },
   { kind: 'yeti', level: 1, version: 145, width: 390 },
   { kind: 'yeti', level: 8, version: 145, width: 1440 },
   { kind: 'superyeti', level: 1, version: 145, width: 1440 },
@@ -61,7 +63,7 @@ for (const { kind, level, version, width } of [
         (kind) => window.__game.model.battle.units.filter((u) => u.kind === kind).length,
         kind === 'yeti' ? 'yetimite' : 'electromite',
       ),
-    ).toBe(version === 145 ? 1 : 0);
+    ).toBe(version >= 145 ? 1 : 0);
     await expect
       .poll(
         () =>

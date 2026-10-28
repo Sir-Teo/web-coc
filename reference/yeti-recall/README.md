@@ -41,6 +41,12 @@ or buff carry is inferred. Cloned and secondary units retain the existing Recall
 rules. Without Recall, complete current battle states equal version 144 after removing the
 capability flag.
 
+The no-Recall parity comparison is pinned to version 145 against 144. Version
+175 subsequently adds the parents' source claw windups; its
+[actual fight and near-Cannon Recall recordings](../attacking-yeti/README.md)
+retain complete current snapshots and verify a fresh return charge alongside
+the preserved stock queues.
+
 Regressions cover all eight stock/child tiers for both troop types, partial thresholds, a fully
 spent stock, death remainder, two independent same-type units and reverse-order mixed returns.
 Actual Cannon/Recall recordings at levels 1 and 8 retain 256 prior damage; 384 new damage then

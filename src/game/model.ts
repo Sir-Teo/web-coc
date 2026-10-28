@@ -1025,6 +1025,8 @@ export interface Battle {
   nativeRootRiderWindup?: true;
   /** Version 174: Electro Titan uses source whip phases against ground and air targets. */
   nativeElectroTitanWindup?: true;
+  /** Version 175: Yeti/Super Yeti use source claw windups without changing mite stocks. */
+  nativeYetiWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;

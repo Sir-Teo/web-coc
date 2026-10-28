@@ -4,8 +4,9 @@ import { campaignResources } from '../../src/game/campaign-loot';
 import { GameModel, makeBuilding, type Battle } from '../../src/game/model';
 import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
 import { isGarrisonDefender } from '../../src/game/defenders';
+import { superOriginal, superLevelOffset } from '../../src/game/special-troops';
 
-export type NativeDirectKind = 'icegolem' | 'rootrider' | 'electrotitan';
+export type NativeDirectKind = 'icegolem' | 'rootrider' | 'electrotitan' | 'yeti' | 'superyeti';
 export type NativeDirectTarget = 'storage' | 'cannon' | 'garrison' | 'air-garrison';
 
 export function nativeDirectBattle(
@@ -16,6 +17,8 @@ export function nativeDirectBattle(
   target: NativeDirectTarget = 'storage',
 ) {
   const garrison = target === 'garrison' || target === 'air-garrison';
+  const yeti = kind === 'yeti' || kind === 'superyeti';
+  const original = superOriginal(kind);
   const model = new GameModel();
   model.state.king = undefined;
   model.state.obstacles = [];
@@ -27,12 +30,16 @@ export function nativeDirectBattle(
       garrison ? 'clancastle' : target === 'cannon' ? 'cannon' : 'goldstorage',
       13,
       10,
-      garrison ? 9 : target === 'cannon' ? (kind === 'electrotitan' ? 21 : 6) : 18,
+      garrison ? 9 : target === 'cannon' ? (kind === 'electrotitan' || yeti ? 21 : 6) : 18,
     ),
   ];
   model.state.army = { ...emptyArmy(), [kind]: 1, archer: 2 };
-  model.state.troopLevels = { ...model.state.troopLevels, [kind]: level };
-  model.state.spells = emptySpells();
+  model.state.troopLevels = {
+    ...model.state.troopLevels,
+    ...(original ? { [original]: level + superLevelOffset(kind) } : {}),
+    [kind]: level,
+  };
+  model.state.spells = { ...emptySpells(), ...(yeti ? { recall: 1 } : {}) };
   model.startBattle(0, true);
   const data = (model as unknown as { recording: ReplayData }).recording;
   data.version = version;

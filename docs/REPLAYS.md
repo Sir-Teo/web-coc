@@ -1188,3 +1188,15 @@ damage and Wall immunity while a whip charges or Freeze holds it. Original poses
 follow the captured action offset. Only carried Electro Titan armies enable the
 change; versions 173 and earlier retain their immediate first hits. No source
 stat, asset or save changes. See [source distinctions and actual Cannon/Golem/Dragon recordings](../reference/attacking-electro-titan/README.md).
+
+## Version 175: Yeti family claw windups
+
+Yeti and Super Yeti charge for one second after reaching a building, wall or
+ground defender, then repeat at their source one-second period. Freeze/stun and
+attack-speed changes use the shared charge clock, and original poses follow its
+action offset. Recall can cancel a pending first claw; the returning body starts
+its own full windup while retaining the existing incoming-damage and mite-stock
+queues. Death still releases the finite remainder. Only carried Yeti family
+armies enable the change; versions 174 and earlier retain their immediate first
+hits. No source stats, assets, save format or mite rules change. See
+[source distinctions and actual fight/Recall recordings](../reference/attacking-yeti/README.md).

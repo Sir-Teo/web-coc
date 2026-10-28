@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 174;
+export const REPLAY_VERSION = 175;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -202,7 +202,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 171 gives Giant/Super Giant source split attack phases.
  * Version 172 gives Ice Golem split attack phases and direct defender frost.
  * Version 173 gives Root Rider split attack phases independently of her wall aura.
- * Version 174 gives Electro Titan ground/air whip phases independently of her electric aura. */
+ * Version 174 gives Electro Titan ground/air whip phases independently of her electric aura.
+ * Version 175 gives Yeti/Super Yeti source claws while retaining mite/Recall state. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -344,6 +345,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 171 ||
   version === 172 ||
   version === 173 ||
+  version === 174 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -492,6 +494,9 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 175 && (s.army.yeti > 0 || s.army.superyeti > 0)
+      ? { nativeYetiWindup: true as const }
+      : {}),
     ...(version >= 174 && s.army.electrotitan > 0
       ? { nativeElectroTitanWindup: true as const }
       : {}),
