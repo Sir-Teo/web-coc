@@ -46,7 +46,7 @@ import { NativeArtPacks, type NativeArtPack } from './native-art-pack';
 import { NativeProjectilePresentation } from './native-projectile-scene';
 import { nativeUnitStats } from './native-units';
 import { heroProjectileNames } from './hero-projectile-prefetch';
-import { superHogSplitStats } from './native-super-hog';
+import { SUPER_HOG_LANDING_EFFECT, superHogSplitStats } from './native-super-hog';
 import { hogPuppetLevel } from './native-hog-attacks';
 import { fireballEffects } from './fireball-effects';
 import { fireballShake } from './fireball-shake';
@@ -3156,6 +3156,10 @@ export class VillageScene extends Phaser.Scene {
     const darkOrb = !this.model.battle || !!this.model.battle.nativeDarkOrb;
     const seekingShield = !this.model.battle || !!this.model.battle.nativeSeekingShield;
     const superHog = !this.model.battle || !!this.model.battle.nativeSuperHogSplit;
+    const split =
+      superHog && kinds.includes('superhogrider')
+        ? superHogSplitStats(level('superhogrider'))
+        : undefined;
     const projectiles = this.model.reducedMotion
       ? ''
       : `${signature}|${setupSignature}|phoenix:${!!this.model.battle?.nativePhoenixResurrection}|fireball:${fireball}|giant-arrow:${giantArrow}|frost-flake:${frostFlake}|electro-boots:${electroBoots}|spiky-ball:${spikyBall}|dark-orb:${darkOrb}|seeking-shield:${seekingShield}|super-hog:${superHog}`;
@@ -3165,9 +3169,7 @@ export class VillageScene extends Phaser.Scene {
         projectiles
           ? [
               ...kinds.map((kind) => nativeUnitStats(kind, level(kind)).projectile),
-              ...(superHog && kinds.includes('superhogrider')
-                ? [superHogSplitStats(level('superhogrider')).projectile]
-                : []),
+              ...(split ? [split.projectile] : []),
               ...heroProjectileNames(setups, {
                 phoenixResurrection: !!this.model.battle?.nativePhoenixResurrection,
                 wardenFireball: fireball,
@@ -3179,6 +3181,7 @@ export class VillageScene extends Phaser.Scene {
             ]
           : [],
       );
+      if (projectiles && split) this.nativeProjectiles?.prefetchEffects([SUPER_HOG_LANDING_EFFECT]);
       if (fireball && !this.model.reducedMotion)
         this.nativeProjectiles?.prefetchEffects(fireballEffects(setups));
       if (
@@ -4835,6 +4838,11 @@ export class VillageScene extends Phaser.Scene {
     }
     for (const [kind, count] of Object.entries(battle.remaining)) if (count) kinds.add(kind);
     for (const child of carriedMiteArt(battle)) kinds.add(child);
+    if (battle.nativeSuperHogSplit) {
+      kinds.add('superhog');
+      kinds.add('superrider');
+    }
+    if (battle.nativeHogWindup && hogPuppetLevel(battle.nativeHeroes ?? [])) kinds.add('hogrider');
     for (const [kind, count] of Object.entries(battle.spells))
       if (count) spells.add(SPELL_SOURCE[kind as SpellKind]);
     this.troopSoundBattle = battle;

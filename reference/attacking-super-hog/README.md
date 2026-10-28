@@ -38,7 +38,11 @@ Spring-ejected parents release neither half. Both children inherit a cloned
 parent's expiry; an already-expired parent or a Rider whose deadline passes
 before arrival cannot create a lasting body. Recall of these explicitly leveled
 spawned halves remains outside the existing Recall deployment adapter.
-Source landing particles/audio are not added by this change.
+The original landing particles flow through the projectile renderer. Both halves
+reuse their existing deployment voices, with no extra voice layered over the
+Rider's arrival. The carried army warms their sound files and the landing effect
+pack before defeat; Puppet-only armies likewise warm their summoned Hog voices.
+This loading change needs no combat-version or save-format update.
 
 Only carried Super Hog Rider armies enable this split. Versions 175 and earlier
 retain their previous defeat behavior and request no optional split flight art.

@@ -6,6 +6,9 @@ import { nativeTroopFacingTarget } from './native-troop-facing';
 import type { Battle, Building, Unit } from './model';
 import type { UnitKind } from './data';
 
+/** Pinned JumpingRiderProjectile1–12 DestroyedEffect; combat tables omit visual fields. */
+export const SUPER_HOG_LANDING_EFFECT = 'Super Hog Rider Land Hit';
+
 const summon = (name: string, level: number) => {
   const row = nativeRow('spells', name, level),
     kind = unitKindForName(text(row, 'SummonTroop'));

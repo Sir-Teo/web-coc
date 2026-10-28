@@ -45,7 +45,7 @@ The take and its pitch come from a hash of the event's key: the unit's id and th
 
 ## When they play
 
-- **Deploy.** Units with a captured birth time use that clock; otherwise the scene notes the battle time of the first frame that shows each deployed unit. Units already on the field when the sound log starts, or after a seek, are noted silently, so seeking through a replay doesn't fire a burst of deploys. Units that another unit, a spell or an ability summons play no deploy sound.
+- **Deploy.** Units with a captured birth time use that clock; otherwise the scene notes the battle time of the first frame that shows each deployed unit. Units already on the field when the sound log starts, or after a seek, are noted silently, so seeking through a replay doesn't fire a burst of deploys. Explicitly marked summoned/clone bodies play no deploy sound. Source death-spawned units such as the split Super Hog and Rider retain their named deployment voices at their captured birth times.
 - **Attack and hit.** Most attacks use the scene's log of combat events against buildings or defenders, live or replayed. Captured Electromite/Electro Dragon/Super Wizard arcs and Meteor Golem packets keep their own timelines:
   - a melee blow is the attack and the hit at once;
   - a shot attacks at its launch and hits at its impact;
