@@ -1,7 +1,7 @@
 import { emptyArmy, emptySpells } from '../../src/game/army';
 import { campaignStage } from '../../src/game/campaign-catalog';
 import { campaignResources } from '../../src/game/campaign-loot';
-import { BUILDINGS } from '../../src/game/data';
+import { BUILDINGS, type TroopKind } from '../../src/game/data';
 import { GameModel, makeBuilding, type Battle } from '../../src/game/model';
 import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
 
@@ -11,6 +11,7 @@ export function deploymentLifecycleBattle(
   level = 1,
   version = REPLAY_VERSION,
   delay = 10,
+  research: Partial<Record<TroopKind, number>> = {},
 ) {
   const model = new GameModel();
   model.state.king = undefined;
@@ -23,7 +24,7 @@ export function deploymentLifecycleBattle(
     ),
   ];
   model.state.army = { ...emptyArmy(), giant: 1, [kind]: 1, archer: 1 };
-  model.state.troopLevels = { ...model.state.troopLevels, [kind]: level };
+  model.state.troopLevels = { ...model.state.troopLevels, ...research, [kind]: level };
   model.state.spells = emptySpells();
   model.startBattle(0, true);
   const data = (model as unknown as { recording: ReplayData }).recording;
@@ -56,8 +57,13 @@ export function deploymentLifecycleBattle(
 }
 
 /** Actual delayed deployment inputs, including the Druid's first Bear frame. */
-export function deploymentLifecycleRecording(kind: LifecycleKind, version = REPLAY_VERSION) {
-  const r = deploymentLifecycleBattle(kind, 1, version),
+export function deploymentLifecycleRecording(
+  kind: LifecycleKind,
+  version = REPLAY_VERSION,
+  level = 1,
+  research: Partial<Record<TroopKind, number>> = {},
+) {
+  const r = deploymentLifecycleBattle(kind, level, version, 10, research),
     snapshots: { at: number; battle: Battle }[] = [];
   const snapshot = () => {
     snapshots.push({ at: r.battle.elapsed, battle: JSON.parse(JSON.stringify(r.battle)) });

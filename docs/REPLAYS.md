@@ -1271,3 +1271,13 @@ Hero damage, normal troop/Guardian damage, 14-tile/s flight and impact-triggered
 poison. Freeze/stun, speed modifiers and original poses use the shared clock.
 Only carried Headhunters enable the change; versions 180 and earlier retain
 their previous first-release timing. See [source limits and actual Hero/Castle recordings](../reference/attacking-headhunter/README.md).
+
+## Version 182: Siege Barracks fixed bunker roster
+
+Siege Barracks reads `BunkerTroops` as the fixed source array `[PEKKA, Wizard]`,
+independently of level. Levels 2–6 now release their P.E.K.K.As in the first wave
+instead of inheriting Wizard as the primary kind. Per-level stock, own Laboratory
+tiers, lifetime, release deadlines and loss of unspawned troops on early defeat
+retain their rules. Only carried Siege Barracks enable the decoder. Versions
+181 and earlier preserve their old primary types. Scouting also warms both
+required child tiers, shots and samples. See [source array evidence and full-stock recordings](../reference/deployment-lifecycle/README.md#version-182-fixed-siege-barracks-roster).

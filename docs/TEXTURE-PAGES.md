@@ -63,9 +63,12 @@ Examples from pinned client 18.400.21:
 
 The scene retains these descendants across mode changes and warms their
 original attack samples from the carried army's recorded tiers. This expansion
-covers source secondaries and recurring summons; other lifecycle families use
-their existing selection paths. No combat state, replay version or save format
-is added.
+covers source secondaries, recurring summons and bunker troops. Siege Barracks
+warms P.E.K.K.A and Wizard at the attacker's recorded Laboratory tiers; old
+recordings use their historical roster. Furnace children inherit the Furnace
+tier. The separate [version-182 roster correction](../reference/deployment-lifecycle/README.md#version-182-fixed-siege-barracks-roster)
+fixes the Siege Barracks array decoding; preloading itself adds no combat state
+or save format.
 
 `tests/spawned-troop-prefetch.test.ts` compares demand with actual Witch waves,
 Monolith defeats, Druid evolution and both generations of Puppet spawns at the

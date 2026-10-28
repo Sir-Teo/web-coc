@@ -23,6 +23,7 @@ import { isSiege } from './special-troops';
 import { nativeMiteJump } from './native-mite-jumps';
 import { superHogLanding, superHogSplitStats } from './native-super-hog';
 import { hogAttackKind } from './native-hog-attacks';
+import { SIEGE_BARRACKS_KINDS } from './native-siege-barracks';
 import { sneezyCombatStats, sneezySpawner, sneezySummon } from './native-sneezy';
 import { distance2D } from './distance';
 import { furnaceReleasePoint } from './native-furnace-geometry';
@@ -2098,6 +2099,9 @@ function stepBunker(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: nu
     const first = num(row, 'BunkerTroopCount1'),
       second = num(row, 'BunkerTroopCount2');
     const total = first + second;
+    const kinds = ctx.battle.nativeSiegeBarracksTroops
+      ? SIEGE_BARRACKS_KINDS
+      : ([kind, 'wizard'] as const);
     while ((state.released ?? 0) < total && u.hp > 0) {
       const index = state.released ?? 0;
       const due =
@@ -2108,7 +2112,7 @@ function stepBunker(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: nu
           : ((index - first + 1) * Math.max(0, s.bunkerDecay - nativeSeconds(row, 'SpawnIdle'))) /
             (second + 1));
       if (due > at + 1e-9) break;
-      const spawnedKind = index < first ? kind : 'wizard';
+      const spawnedKind = kinds[index < first ? 0 : 1];
       spawnNativeUnit(
         ctx,
         spawnedKind,

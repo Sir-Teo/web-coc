@@ -65,7 +65,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 181;
+export const REPLAY_VERSION = 182;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -211,7 +211,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 178 gives ordinary Miners surfaced source windup/recovery phases.
  * Version 179 returns recalled Super Hog halves as independent raid reserves.
  * Version 180 gives Apprentice Warden source windups and native defender shots.
- * Version 181 gives Headhunter source windups while retaining hero-hunting rules. */
+ * Version 181 gives Headhunter source windups while retaining hero-hunting rules.
+ * Version 182 decodes Siege Barracks' fixed two-troop bunker roster independently of level. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -360,6 +361,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 178 ||
   version === 179 ||
   version === 180 ||
+  version === 181 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -509,6 +511,9 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 182 && s.army.siegebarracks > 0
+      ? { nativeSiegeBarracksTroops: true as const }
+      : {}),
     ...(version >= 181 && s.army.headhunter > 0 ? { nativeHeadhunterWindup: true as const } : {}),
     ...(version >= 180 && s.army.apprenticewarden > 0
       ? { nativeApprenticeWindup: true as const }

@@ -3075,6 +3075,10 @@ export class VillageScene extends Phaser.Scene {
           return [kind, levels];
         }),
       ),
+      {
+        researchedLevel: (kind) => this.model.troopLevel(kind),
+        siegeBarracksTroops: !this.model.battle || !!this.model.battle.nativeSiegeBarracksTroops,
+      },
     );
   }
   private wantedTroopArt() {
@@ -4863,7 +4867,11 @@ export class VillageScene extends Phaser.Scene {
           ...(soundRoots.get(kind) ?? []),
           this.model.troopLevel(kind as TroopKind),
         ]);
-    for (const kind of spawnedTroopArtLevels(soundRoots).keys()) kinds.add(kind);
+    for (const kind of spawnedTroopArtLevels(soundRoots, {
+      researchedLevel: (kind) => this.model.troopLevel(kind),
+      siegeBarracksTroops: !!battle.nativeSiegeBarracksTroops,
+    }).keys())
+      kinds.add(kind);
     for (const [kind, count] of Object.entries(battle.spells))
       if (count) spells.add(SPELL_SOURCE[kind as SpellKind]);
     this.troopSoundBattle = battle;

@@ -1047,6 +1047,8 @@ export interface Battle {
   nativeApprenticeWindup?: true;
   /** Version 181: Headhunter source charge, retaining hero priority and native poisoned cards. */
   nativeHeadhunterWindup?: true;
+  /** Version 182: Siege Barracks uses the fixed source P.E.K.K.A/Wizard roster at every tier. */
+  nativeSiegeBarracksTroops?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;

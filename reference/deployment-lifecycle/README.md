@@ -42,3 +42,37 @@ no pre-birth children, Druid deployments at 10 and 40 seconds, historical behavi
 for deployment at zero, and complete portable forward/reverse snapshots. The browser spec
 `tests/browser/deployment-lifecycle.spec.ts` checks current and historical behavior on desktop
 and phone, original parent/child/Bear meshes, read-only rendering, reduced motion and rewind.
+
+## Version 182: fixed Siege Barracks roster
+
+The source stores `BunkerTroops` as the array `[PEKKA, Wizard]` across its first
+two rows. This is independent of the per-level `BunkerTroopCount1` and
+`BunkerTroopCount2` columns. The
+[archived source comparison](../official-wiki/spells-siege-super/siege-barracks.md)
+explicitly records that distinction. The generic inherited-row reader treated
+the second name as a level-2 change, so levels 2–6 released Wizards in their
+first wave as well. A runtime probe confirmed one Wizard at level 2 and two
+Wizards at level 6 at the 1.3-second deadline.
+
+The version-182 Siege Barracks adapter reads the two fixed names separately:
+every tier now releases its 1/1/1/1/2/2 P.E.K.K.As, then 6/8/10/11/11/12 Wizards.
+Both kinds use the attacker's own recorded Laboratory levels. The existing
+deployment-relative 30-second drain, 1.3-second first release, later Wizard
+spacing and loss of unspawned stock on early defeat retain their rules. Exact
+modern executable wave timing remains unverified. Only initial armies carrying
+Siege Barracks enable this roster decoder; version 181 and earlier retain the
+inherited primary type, including the correct level-1 P.E.K.K.A.
+
+The source-derived preload demand also follows bunker children. Siege Barracks
+warms the required Laboratory-tier bodies, direct projectiles and original
+attack samples before deployment, using the historical roster for old replays.
+Furnace warms its inherited Firemite tier through the same path. This adds no
+village save format or portable replay envelope.
+
+`tests/siege-barracks-roster.test.ts` checks all six tiers at base and maximum
+research, every first-wave type and full stock, health drain, early defeat,
+historical types, preload tiers and complete portable recordings. Browser
+checks in `tests/browser/siege-barracks-roster.spec.ts` inspect levels 1, 2 and 6
+under both versions on phone and desktop: scouting preloads bodies, shots and
+samples, the original first-wave meshes draw, and full forward/backward replay
+state, read-only rendering and reduced motion agree.
