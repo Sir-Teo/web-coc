@@ -1,4 +1,4 @@
-import { emptyArmy, emptySpells } from '../../src/game/army';
+import { defaultSpellLevels, emptyArmy, emptySpells } from '../../src/game/army';
 import { campaignStage } from '../../src/game/campaign-catalog';
 import { campaignResources } from '../../src/game/campaign-loot';
 import { GameModel, makeBuilding, type Battle, type Building } from '../../src/game/model';
@@ -21,9 +21,16 @@ export type NativeDirectKind =
   | 'rocketballoon'
   | 'babydragon'
   | 'superminion'
+  | 'minion'
   | 'miner';
 export type NativeDirectTarget =
   'storage' | 'cannon' | 'airdefense' | 'garrison' | 'air-garrison' | 'monolith';
+
+interface NativeDirectOptions {
+  extraBuildings?: Building[];
+  spellLevels?: Partial<ReplayData['initial']['spells']>;
+  beforeDeploy?: (ctx: { model: GameModel; battle: Battle; step: () => void }) => void;
+}
 
 export function nativeDirectBattle(
   kind: NativeDirectKind,
@@ -32,7 +39,7 @@ export function nativeDirectBattle(
   x = 11.4,
   target: NativeDirectTarget = 'storage',
   spells: Partial<ReplayData['initial']['spells']> = {},
-  extraBuildings: Building[] = [],
+  options: NativeDirectOptions = {},
 ) {
   const garrison = target === 'garrison' || target === 'air-garrison';
   const yeti = kind === 'yeti' || kind === 'superyeti';
@@ -68,7 +75,7 @@ export function nativeDirectBattle(
                 : 6
               : 18,
     ),
-    ...extraBuildings,
+    ...(options.extraBuildings ?? []),
   ];
   model.state.army = { ...emptyArmy(), [kind]: 1, archer: kind === 'superhogrider' ? 0 : 2 };
   model.state.troopLevels = {
@@ -77,6 +84,12 @@ export function nativeDirectBattle(
     [kind]: level,
   };
   model.state.spells = { ...emptySpells(), ...(yeti ? { recall: 1 } : {}), ...spells };
+  if (options.spellLevels)
+    model.state.spellLevels = {
+      ...defaultSpellLevels(),
+      ...model.state.spellLevels,
+      ...options.spellLevels,
+    };
   model.startBattle(0, true);
   const data = (model as unknown as { recording: ReplayData }).recording;
   data.version = version;
@@ -114,6 +127,7 @@ export function nativeDirectBattle(
     const lure = battle.units[0];
     while (lure.hp > 0 || !battle.defenders?.some(isGarrisonDefender)) step();
   }
+  options.beforeDeploy?.({ model, battle, step });
   model.activeTroop = kind;
   if (!model.deploy(x, 11.5)) throw Error('Native direct attack deployment failed');
   const unit = battle.units.find((u) => u.kind === kind)!;

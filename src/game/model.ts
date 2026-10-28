@@ -1059,6 +1059,8 @@ export interface Battle {
   nativeBabyDragonWindup?: true;
   /** Version 187: Super Minion's eight offensive Long Shots and shared source charges. */
   nativeSuperMinionLongShots?: true;
+  /** Version 188: ordinary Minion source charges and native flying defender shots. */
+  nativeMinionWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;

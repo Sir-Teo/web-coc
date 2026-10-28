@@ -10,9 +10,17 @@ export const dragonRiderRecording = (
 
 /** Two real Monoliths bring down the Rider before its separate delayed crash blast. */
 export function dragonRiderDeathRecording(level = 1, version = REPLAY_VERSION) {
-  const r = nativeDirectBattle('dragonrider', level, version, 11.4, 'monolith', {}, [
-      makeBuilding(3, 'monolith', 18, 10, 1),
-    ]),
+  const r = nativeDirectBattle(
+      'dragonrider',
+      level,
+      version,
+      11.4,
+      'monolith',
+      {},
+      {
+        extraBuildings: [makeBuilding(3, 'monolith', 18, 10, 1)],
+      },
+    ),
     snapshots: { at: number; battle: Battle }[] = [];
   const snapshot = () => {
     if (snapshots.at(-1)?.at !== r.battle.elapsed)

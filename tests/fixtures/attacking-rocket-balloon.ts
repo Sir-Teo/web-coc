@@ -45,9 +45,17 @@ export function rocketBalloonIceBlockRecording(level = 4, version = REPLAY_VERSI
 
 /** Real Monolith fire defeats the Balloon; its delayed blast needs no attack timer. */
 export function rocketBalloonDeathRecording(level = 4, version = REPLAY_VERSION) {
-  const r = nativeDirectBattle('rocketballoon', level, version, 11.4, 'monolith', {}, [
-      makeBuilding(3, 'monolith', 18, 10, 1),
-    ]),
+  const r = nativeDirectBattle(
+      'rocketballoon',
+      level,
+      version,
+      11.4,
+      'monolith',
+      {},
+      {
+        extraBuildings: [makeBuilding(3, 'monolith', 18, 10, 1)],
+      },
+    ),
     snapshots: { at: number; battle: Battle }[] = [];
   const snapshot = () => {
     if (snapshots.at(-1)?.at !== r.battle.elapsed)

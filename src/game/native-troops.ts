@@ -873,6 +873,7 @@ export function stepNativeUnit(
   const dragonRider = !!(battle.nativeDragonRiderWindup && u.kind === 'dragonrider');
   const rocketBalloon = !!(battle.nativeRocketBalloonWindup && u.kind === 'rocketballoon');
   const babyDragon = !!(battle.nativeBabyDragonWindup && u.kind === 'babydragon');
+  const minion = !!(battle.nativeMinionWindup && u.kind === 'minion');
   const valkyrie = !!(
     battle.nativeValkyrieWindup &&
     (u.kind === 'valkyrie' || u.kind === 'supervalkyrie')
@@ -896,6 +897,7 @@ export function stepNativeUnit(
     rocketBalloon ||
     babyDragon ||
     superMinion ||
+    minion ||
     valkyrie ||
     witch ||
     hound;
@@ -922,7 +924,8 @@ export function stepNativeUnit(
         thrower ||
         dragonRider ||
         babyDragon ||
-        superMinion
+        superMinion ||
+        minion
       )
         releaseRangedAtDefender(
           ctx,
@@ -1091,6 +1094,7 @@ export function stepNativeUnit(
         rocketBalloon ||
         babyDragon ||
         superMinion ||
+        minion ||
         valkyrie ||
         witch ||
         hound ||
