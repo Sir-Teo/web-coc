@@ -48,6 +48,7 @@ import { nativeUnitStats } from './native-units';
 import { heroProjectileNames } from './hero-projectile-prefetch';
 import { SUPER_HOG_LANDING_EFFECT, superHogSplitStats } from './native-super-hog';
 import { heroSummonLevels } from './hero-summon-prefetch';
+import { spawnedTroopArtLevels } from './spawned-troop-prefetch';
 import { fireballEffects } from './fireball-effects';
 import { fireballShake } from './fireball-shake';
 import {
@@ -3032,8 +3033,9 @@ export class VillageScene extends Phaser.Scene {
       this.model.troopLevel(kind as TroopKind),
     );
   }
-  /** Troop kinds held at home or carried by the current battle, sorted. */
-  private wantedTroopArt(summons = this.heroSummonArt()) {
+  /** Army and active Puppet tiers, including source secondary/summoned descendants. */
+  private wantedTroopArtLevels() {
+    const summons = this.heroSummonArt();
     const wanted = new Set<string>();
     for (const army of [this.model.state.army, this.model.battle?.carriedArmy]) {
       if (!army) continue;
@@ -3053,7 +3055,30 @@ export class VillageScene extends Phaser.Scene {
       wanted.add('superhog');
       wanted.add('superrider');
     }
-    return [...wanted].sort();
+    return spawnedTroopArtLevels(
+      new Map(
+        [...wanted].map((kind) => {
+          const summoned = summons.get(kind) ?? [];
+          const carried =
+            this.model.state.army[kind as TroopKind] ||
+            this.model.battle?.carriedArmy?.[kind as TroopKind];
+          const parent =
+            kind === 'superhog' || kind === 'superrider'
+              ? 'superhogrider'
+              : Object.hasOwn(MITE_SPAWN_PARENTS, kind)
+                ? MITE_SPAWN_PARENTS[kind as keyof typeof MITE_SPAWN_PARENTS]
+                : kind;
+          const levels = [
+            ...(!summoned.length || carried ? [this.model.troopLevel(parent as TroopKind)] : []),
+            ...summoned,
+          ];
+          return [kind, levels];
+        }),
+      ),
+    );
+  }
+  private wantedTroopArt() {
+    return [...this.wantedTroopArtLevels().keys()].sort();
   }
   /** Baked character atlases the home lineup or current battle needs. */
   private wantedHeroArt() {
@@ -3084,25 +3109,10 @@ export class VillageScene extends Phaser.Scene {
    * release), not on first deploy, so the portrait window never opens mid-battle.
    */
   private prefetchArmyArt() {
-    const summons = this.heroSummonArt();
-    const kinds = this.wantedTroopArt(summons);
-    const level = (kind: string) =>
-      this.model.troopLevel(
-        (kind === 'superhog' || kind === 'superrider'
-          ? 'superhogrider'
-          : Object.hasOwn(MITE_SPAWN_PARENTS, kind)
-            ? MITE_SPAWN_PARENTS[kind as keyof typeof MITE_SPAWN_PARENTS]
-            : kind) as TroopKind,
-      );
-    const levels = (kind: string) => {
-      const summoned = summons.get(kind) ?? [];
-      const carried =
-        this.model.state.army[kind as TroopKind] ||
-        this.model.battle?.carriedArmy?.[kind as TroopKind];
-      return [
-        ...new Set([...(!summoned.length || carried ? [level(kind)] : []), ...summoned]),
-      ].sort((a, b) => a - b);
-    };
+    const demand = this.wantedTroopArtLevels();
+    const kinds = [...demand.keys()].sort();
+    const levels = (kind: string) => demand.get(kind)!;
+    const level = (kind: string) => levels(kind)[0];
     const signature = kinds.map((kind) => `${kind}:${levels(kind).join('/')}`).join(',');
     if (signature !== this.armyPrefetchSignature) {
       this.armyPrefetchSignature = signature;
@@ -4844,7 +4854,16 @@ export class VillageScene extends Phaser.Scene {
       kinds.add('superhog');
       kinds.add('superrider');
     }
-    for (const kind of heroSummonLevels(battle.nativeHeroes ?? []).keys()) kinds.add(kind);
+    const soundRoots = heroSummonLevels(battle.nativeHeroes ?? [], (kind) =>
+      this.model.troopLevel(kind as TroopKind),
+    );
+    for (const [kind, count] of Object.entries(battle.carriedArmy ?? {}))
+      if (count)
+        soundRoots.set(kind, [
+          ...(soundRoots.get(kind) ?? []),
+          this.model.troopLevel(kind as TroopKind),
+        ]);
+    for (const kind of spawnedTroopArtLevels(soundRoots).keys()) kinds.add(kind);
     for (const [kind, count] of Object.entries(battle.spells))
       if (count) spells.add(SPELL_SOURCE[kind as SpellKind]);
     this.troopSoundBattle = battle;

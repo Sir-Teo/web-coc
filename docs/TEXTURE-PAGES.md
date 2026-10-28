@@ -32,7 +32,7 @@ Each shape's source rectangle is copied with a two-texel border of its original 
 ## Loading
 
 - Village buildings: the pack's JSON loads once per family, then each level's pages decode and upload when a building of that level first draws; the fallback sprite covers until then. Boot prefetches the home village's levels, and a new battle prefetches its buildings' levels while scouting. Every state of a level (idle, construction, upgrade, damaged, trap) draws from the same pages.
-- Troops: the carried army prefetches its pack and its research level's pages; a unit of another level loads its pages when it first draws.
+- Troops: the carried army and active hero Puppets prefetch every needed research/fixed tier. Source secondary troops and recurring summons also warm their own body pages and direct projectiles before the first child appears. A different, unforeseen level still loads on first draw.
 - Cannons: untagged pages load with the deferred heavy art, together with the home village's Cannon levels. Opening a battle prefetches its Cannons' levels while scouting, and any other level loads when a Cannon of it first draws. Until its pages arrive, a Cannon keeps its fallback sprite and fallback shots. `CannonPresentation.prefetchLevels` lets a caller wait for levels it draws directly.
 - Archer Towers: untagged pages, Level 1 (what the Shop sells) and the home village's levels load at boot. Opening a battle prefetches its towers' levels while scouting, and any other level loads when a tower of it first draws, behind its fallback sprite; a placement preview of a level not yet loaded shows the fallback ghost. The rooftop Archer's pages load the same way and with the same levels, and a tower draws natively only once both its body and its Archer pages are in. `VillageArcherTowers.prefetchLevels` lets a caller wait for both. The arrows are a separate small graph and are not paged.
 - Both use `NativeLevelPages` (`src/game/native-level-pages.ts`), which queues untagged and named levels on the scene's loader and fetches any other level's pages on first use.
@@ -40,6 +40,40 @@ Each shape's source rectangle is copied with a two-texel border of its original 
 
 Readiness includes untagged shared pages. If a common page fails during boot, the fallback
 stays visible until the retry timer or a reconnect recovers it.
+
+### Source-derived troop children
+
+`spawnedTroopArtLevels` expands selected army and Puppet tiers through the same
+source fields that the existing battle uses. `SecondaryTroop`/`SecondaryTroopCount`
+inherit the parent's level, then clamp to the child's available rows as
+`spawnNativeUnit` does. Recurring `SummonTroop`/`SummonTroopCount` instead use
+their explicit `SummonLevel`. The expansion deduplicates kind/level pairs and
+keeps every tier needed by mixed parents without changing the input selection.
+
+Examples from pinned client 18.400.21:
+
+- Golem levels 1–15 warm the matching Golemite; Druid levels 1–6 warm the Bear
+  needed by both defeat and timed evolution.
+- Witch 1 warms Skeleton 1, while Witch 8 warms Skeleton 2. Super Witch uses
+  the fixed Big Boy level 1.
+- Lava and Ice Hound offspring clamp to the single Pup row retained by the
+  existing native unit model. This preload change preserves that combat rule.
+- A level 27 Lavaloon Puppet warms Lavaloon 11 and its subsequent Pup 11,
+  even when the army contains neither kind.
+
+The scene retains these descendants across mode changes and warms their
+original attack samples from the carried army's recorded tiers. This expansion
+covers source secondaries and recurring summons; other lifecycle families use
+their existing selection paths. No combat state, replay version or save format
+is added.
+
+`tests/spawned-troop-prefetch.test.ts` compares demand with actual Witch waves,
+Monolith defeats, Druid evolution and both generations of Puppet spawns at the
+first and last tiers. `tests/browser/spawned-troop-preload.spec.ts` checks seven
+families on phone or desktop: required pages, shots and samples are ready
+before deployment, original child meshes appear immediately, and no new child
+graph/image request begins on appearance. Drawing remains read-only. Separate
+source-pixel reads for saturating tints may still occur during rendering.
 `tests/browser/native-shared-page-recovery.spec.ts` covers Archer Tower body and resident
 pages failing during boot; `tests/native-level-pages.test.ts` also checks selective prefetching.
 
