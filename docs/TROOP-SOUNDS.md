@@ -331,3 +331,19 @@ cancels unfinished takes on retargeting or defeat. Completed takes keep their
 natural tails. Versions 201 and earlier retain their former sound path without
 the new journal. Ordinary Bowler and Super Wizard preserve their existing
 behavior. See [source limits and actual portable/Web Audio checks](../reference/attacking-super-bowler/README.md#recording-version-202-preparation-audio).
+
+
+## Super Bowler landing sounds (version 203)
+
+The first two landings now play `suptrollBoulder_bounce` from the original
+`sup_troll_rb_01.ogg` (11,803 bytes). The third reuses the original
+`trollBoulder_destroyed` sample. Their source volumes are 0.5 and 0.4, with
+pitch ranges 0.96–1.04 and 0.98–1.02. The regenerated catalog contains 363
+samples and 376 effects, preserving every prior file.
+
+Resolved projectile clocks enter a separate ten-second audio journal that
+survives caster defeat and reconstructs through portable seeks. Decoded
+originals cover the generated contact tone without duplicate presentation
+log entries. Ordinary Bowler impacts, Super Bowler preparation takes and all
+physical combat remain unchanged. Versions 202 and earlier retain their
+previous sound path. See [source evidence and Web Audio checks](../reference/attacking-super-bowler/README.md#recording-version-203-bounce-and-final-contact-audio).

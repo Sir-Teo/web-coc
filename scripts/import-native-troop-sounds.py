@@ -194,7 +194,7 @@ def build():
             entry.update(entries(rows, {'preAttack': 'PreAttackEffect'}))
         if key == 'electrodragon':
             entry.update(entries(rows, {'preAttack': 'PreAttackEffect', 'chain': 'ChainAttackEffect'}))
-        if key in ('meteorgolem', 'bowler'):
+        if key in ('meteorgolem', 'bowler', 'superbowler'):
             # This actor's impact sound belongs to its projectile, not characters.HitEffect.
             current, impacts = None, []
             for row in rows:
@@ -204,7 +204,7 @@ def build():
                 impacts.append({column: projectile[column] for column in ('DestroyedEffect', 'BounceEffect')
                                 if projectile.get(column)})
             events = {'projectileHit': 'DestroyedEffect'}
-            if key == 'bowler':
+            if key in ('bowler', 'superbowler'):
                 events['bounce'] = 'BounceEffect'
             entry.update(entries(impacts, events))
         if entry:

@@ -303,6 +303,7 @@
     "sfx/summon_die_02.ogg": "16018434218b95b71f1e6ba25b8f556c9e7513f8504697e47c22af0478481e04",
     "sfx/sup_troll_atk_01.ogg": "5c861a3c61f700a1540a05789d7177c2f798f6c23884ca5cfc36674160e4db0a",
     "sfx/sup_troll_atk_02.ogg": "afe6292a203ee700755a245c260426216d7486c4cd94d7bcd9570c2c0007a7cc",
+    "sfx/sup_troll_rb_01.ogg": "0bad000993dc6e042ffb284ebd86d8927ef006f7b20bb8ab66b33127197e2c86",
     "sfx/super_barb_deploy_01.ogg": "0cbec5856a4573dce6de8b52d6fcdb059a1dfc4d278497c4e9dde09809d189e0",
     "sfx/super_barb_deploy_02.ogg": "fcb9e05ddcdf2912c2e9c30e5cf23733c8006942e386f6060c32fb909d443aaa",
     "sfx/super_bowler_dep_04.ogg": "ccd9b192705ad08a9d893ab56c507bed8df0b53daea1f3d634423a7d40560a02",
@@ -847,7 +848,9 @@
       "name": "Super Bowler",
       "deploy": "Super Troll Deploy",
       "die": "Wizard Die",
-      "preAttack": "SuptrollAttack"
+      "preAttack": "SuptrollAttack",
+      "projectileHit": "trollBoulder_destroyed",
+      "bounce": "suptrollBoulder_bounce"
     },
     "superdragon": {
       "name": "Super Dragon",
@@ -5536,6 +5539,15 @@
         "delay": 0.0
       }
     ],
+    "suptrollBoulder_bounce": [
+      {
+        "sound": "sfx/sup_troll_rb_01.ogg",
+        "volume": 0.5,
+        "minPitch": 0.96,
+        "maxPitch": 1.04,
+        "delay": 0.0
+      }
+    ],
     "toxic_Predeploy": [
       {
         "sound": "sfx/vial_fall_02.ogg",
@@ -7059,6 +7071,11 @@
       "path": "assets/audio/troops-native/sup_troll_atk_02.ogg",
       "bytes": 18563,
       "sha256": "afe6292a203ee700755a245c260426216d7486c4cd94d7bcd9570c2c0007a7cc"
+    },
+    "sfx/sup_troll_rb_01.ogg": {
+      "path": "assets/audio/troops-native/sup_troll_rb_01.ogg",
+      "bytes": 11803,
+      "sha256": "0bad000993dc6e042ffb284ebd86d8927ef006f7b20bb8ab66b33127197e2c86"
     },
     "sfx/super_barb_deploy_01.ogg": {
       "path": "assets/audio/troops-native/super_barb_deploy_01.ogg",

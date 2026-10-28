@@ -4962,6 +4962,21 @@ export class VillageScene extends Phaser.Scene {
         return;
       }
     }
+    if (battle.nativeSuperBowlerImpactSounds && fx.type === 'impact') {
+      const impact = battle.nativeSuperBowlerImpacts?.find((event) => event.id === fx.projectileId);
+      if (impact) {
+        this.fxSounded = this.cueReady(
+          troopCue(
+            battle,
+            { id: impact.sourceId, kind: 'superbowler', level: impact.level },
+            impact.bounce < 2 ? 'bounce' : 'projectileHit',
+            'ready',
+            impact.at,
+          ),
+        );
+        return;
+      }
+    }
     const activation = heroAbilityActivation(battle, fx.abilityCastId);
     if (activation) {
       this.fxSounded = this.cueReady(effectCue(activation.effect, activation.key, activation.at));

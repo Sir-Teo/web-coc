@@ -100,7 +100,7 @@ takes, while completed one-shots retain their natural tails and bounded
 history. Angry Spell can cancel a pending take or retain a released tail and
 boulders already in flight. The three-bounce geometry, primary-hit exclusion,
 damage and physical attack clocks remain those introduced in version 201.
-The separate Super Bowler bounce sample is not part of this audio boundary.
+Version 202 does not include the separate Super Bowler bounce sample.
 
 `tests/attacking-super-bowler-audio.test.ts` checks all ten tiers, source take
 and pitch/volume metadata, precharge and repeat ages, recovery, Freeze/partial
@@ -116,3 +116,43 @@ forward/reverse seeks, read-only rendering, reduced motion and historical
 version-201 sound behavior at phone and desktop viewport sizes. A deliberate
 503 case retries the sample while the replay remains paused. These are browser
 viewport/audio checks, not physical-device performance or native timing claims.
+
+
+## Recording version 203: bounce and final-contact audio
+
+The source projectile names `suptrollBoulder_bounce` for a bounce and
+`trollBoulder_destroyed` for final destruction. The first two contacts of a
+three-landing boulder use `sup_troll_rb_01.ogg`: 11,803 unchanged original
+bytes, 1.382 seconds, volume 0.5, pitch 0.96–1.04 and zero delay. The final
+contact reuses the already shipped `rock_troll_explo_01.ogg`, at source volume
+0.4 and pitch 0.98–1.02. The importer now includes both projectile bindings
+for Super Bowler. Its output reproduces with 376 effects and 363 samples;
+all previous 362 files remain unchanged.
+
+A separate audio-only impact journal captures projectile identity, source,
+level, bounce index and exact resolved impact clock. It retains ten seconds
+of history and continues after the thrower falls. The first two records use
+the bounce effect; the third uses the destruction effect. Keys include the
+bounce index to keep contacts distinct. Rendering reads this history without
+changing combat. Once the original sample is decoded, it covers the generic
+contact tone and no duplicate event enters the presentation log.
+
+This boundary does not modify damage, projectile tracking, collision,
+three-bounce flight or preparation audio. The ordinary Bowler's independent
+impact journal and art remain unchanged. Versions 202 and earlier have no
+new journal or contact cues. No new particle art or native synchronization
+claim is introduced; existing projection and sample-time adapters remain.
+
+`tests/attacking-super-bowler-impact-audio.test.ts` covers all ten tiers,
+two bounce cues plus final destruction, source gain/pitch and exact clocks,
+read-only cue reconstruction, caster defeat, history retirement, twelve
+portable current/historical fights, six complete physical-state comparisons,
+actual Angry Spell retargeting and the conditional capability.
+
+`tests/browser/attacking-super-bowler-impact-audio.spec.ts` checks current and
+historical Storage/Cannon/frozen Golem fights, same-roster prewarming, decoded
+originals, exact Node/Chromium states and cues, Web Audio gain/rate/start
+offset at every contact, natural clip expiry, generated-tone coverage,
+absence of duplicate log entries, reverse seeks, reduced motion, read-only
+rendering and WebGL health at phone/desktop viewport sizes. A deliberate
+503 retries while paused without advancing the recording.

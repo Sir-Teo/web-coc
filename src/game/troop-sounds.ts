@@ -445,6 +445,20 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
         cue = troopCue(battle, actor, event, `bowler:${impact.id}:${event}`, impact.at);
       if (cue) cues.push(cue);
     }
+  if (battle.nativeSuperBowlerImpactSounds)
+    for (const impact of battle.nativeSuperBowlerImpacts ?? []) {
+      if (impact.at > elapsed + 1e-9 || !cueAudible(impact.at, elapsed)) continue;
+      const actor = { id: impact.sourceId, kind: 'superbowler' as const, level: impact.level },
+        event = impact.bounce < 2 ? 'bounce' : 'projectileHit',
+        cue = troopCue(
+          battle,
+          actor,
+          event,
+          `superbowler:${impact.id}:${impact.bounce}:${event}`,
+          impact.at,
+        );
+      if (cue) cues.push(cue);
+    }
   for (const shot of battle.nativeMeteorFlights ?? []) {
     if (!shot.native) continue;
     const actor = { id: shot.sourceId, kind: 'meteorgolem' as const, level: shot.native.level };

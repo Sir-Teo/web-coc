@@ -321,6 +321,10 @@ export function stepProjectiles(
     battle.nativeBowlerImpacts = battle.nativeBowlerImpacts.filter(
       (impact) => impact.at + 10 >= battle.elapsed - 1e-9,
     );
+  if (battle.nativeSuperBowlerImpacts)
+    battle.nativeSuperBowlerImpacts = battle.nativeSuperBowlerImpacts.filter(
+      (impact) => impact.at + 10 >= battle.elapsed - 1e-9,
+    );
   if (battle.nativeBowlerFlights)
     battle.nativeBowlerFlights = battle.nativeBowlerFlights.filter(
       (shot) => shot.impact + 10 >= battle.elapsed - 1e-9,
@@ -558,6 +562,18 @@ export function stepProjectiles(
     }
     if (battle.nativeBowlerImpactSounds && p.weapon === 'native' && p.native?.kind === 'bowler')
       (battle.nativeBowlerImpacts ??= []).push({
+        id: p.id,
+        sourceId: p.sourceId,
+        level: p.native.level,
+        bounce: p.native.bounce ?? 0,
+        at: p.impact,
+      });
+    if (
+      battle.nativeSuperBowlerImpactSounds &&
+      p.weapon === 'native' &&
+      p.native?.kind === 'superbowler'
+    )
+      (battle.nativeSuperBowlerImpacts ??= []).push({
         id: p.id,
         sourceId: p.sourceId,
         level: p.native.level,
