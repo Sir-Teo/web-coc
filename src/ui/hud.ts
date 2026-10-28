@@ -1,6 +1,7 @@
 import { isSiege, superOriginal, superMinimum, superLicence } from '../game/special-troops';
 import { phoenixLifeFraction } from '../game/native-status';
 import { nativeUnitStats } from '../game/native-units';
+import { SPLIT_HOG_KINDS, isSplitHog, type DeployTroopKind } from '../game/recalled-split-troops';
 import { archerTowerPortrait } from './archer-tower-portrait';
 import { positionBattleToast } from './battle-toast';
 import { infernoStats, type InfernoMode } from '../game/inferno-weapon';
@@ -2144,10 +2145,10 @@ export class HUD {
         this.render();
         break;
       case 'troop':
-        if (!m.battle || !m.battle.remaining[arg as TroopKind]) break;
+        if (!m.battle || !m.troopRemaining(arg as DeployTroopKind)) break;
         m.activeHero = false;
         m.activeHeroKind = null;
-        m.activeTroop = arg as TroopKind;
+        m.activeTroop = arg as DeployTroopKind;
         m.activeSpell = null;
         // Selection only moves the highlight and hint, which updateLive patches in place.
         this.updateLive();
@@ -2880,17 +2881,20 @@ export class HUD {
    ${button('edit-done', `${icon('Check', 20)}<span>Done</span>`, 'game-btn green edit-tool')}
  </div>`;
   }
-  private siegeUnavailable(kind: TroopKind) {
+  private siegeUnavailable(kind: DeployTroopKind) {
     return !!this.model.battle?.siegeDeployed && isSiege(kind);
   }
-  private troopCardLabel(kind: TroopKind, count: number, siegeBlocked: boolean) {
+  private troopCardLabel(kind: DeployTroopKind, count: number, siegeBlocked: boolean) {
+    if (isSplitHog(kind))
+      return `${TROOPS[kind].name}, level ${this.model.troopDisplayLevel(kind)}, ${count} recalled for this attack`;
     return `${TROOPS[kind].name}, ${siegeBlocked && count > 0 ? `${count} in reserve, siege machine already deployed` : `${count} available`}`;
   }
-  private troopCard(k: TroopKind, count: number, action: string, selected = false) {
+  private troopCard(k: DeployTroopKind, count: number, action: string, selected = false) {
     const flying = TROOPS[k].flying ? '<span class="air-tag">AIR</span>' : '';
     const siegeBlocked = action.startsWith('troop:') && this.siegeUnavailable(k);
     const unavailable = count === 0 || siegeBlocked;
-    return `<button class="troop-card ${selected ? 'selected' : ''} ${unavailable ? 'empty' : ''}" data-action="${action}" aria-label="${this.troopCardLabel(k, count, siegeBlocked)}" ${action.startsWith('troop') && unavailable ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('troop:') && TROOP_HOTKEYS[TROOP_ORDER.indexOf(k)] ? `<kbd class="troop-key">${TROOP_HOTKEYS[TROOP_ORDER.indexOf(k)].toUpperCase()}</kbd>` : ''}<img src="${hudAsset(k)}" alt="" draggable="false">${flying}<span class="troop-level">★ ${this.model.troopDisplayLevel(k)}</span><span class="troop-name">${TROOPS[k].name}</span></button>`;
+    const hotkey = isSplitHog(k) ? undefined : TROOP_HOTKEYS[TROOP_ORDER.indexOf(k)];
+    return `<button class="troop-card ${selected ? 'selected' : ''} ${unavailable ? 'empty' : ''}" data-action="${action}" aria-label="${this.troopCardLabel(k, count, siegeBlocked)}" ${isSplitHog(k) ? 'title="Recalled unit · this attack"' : ''} ${action.startsWith('troop') && unavailable ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('troop:') && hotkey ? `<kbd class="troop-key">${hotkey.toUpperCase()}</kbd>` : ''}<img src="${hudAsset(isSplitHog(k) ? 'superhogrider' : k)}" alt="" draggable="false">${flying}<span class="troop-level">★ ${this.model.troopDisplayLevel(k)}</span><span class="troop-name">${TROOPS[k].name}</span></button>`;
   }
   private spellCard(k: SpellKind, count: number, action: string, selected = false) {
     return `<button class="troop-card spell-card ${selected ? 'selected' : ''} ${count === 0 ? 'empty' : ''}" data-action="${action}" aria-label="${SPELLS[k].name}, ${count} available" ${action.startsWith('spell') && count === 0 ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('spell:') && SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)] ? `<kbd class="troop-key">${SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)]}</kbd>` : ''}<img src="${hudAsset(k)}" alt="" draggable="false"><span class="troop-level">★ ${this.model.spellLevel(k)}</span><span class="troop-name">${SPELLS[k].name.replace(' Spell', '')}</span></button>`;
@@ -3449,6 +3453,15 @@ export class HUD {
               !m.activeHero && !m.activeHeroKind && !m.activeSpell && m.activeTroop === k,
             ),
           )
+          .join('')}${SPLIT_HOG_KINDS.filter((kind) => b.recalledSplits?.[kind] !== undefined)
+          .map((kind) =>
+            this.troopCard(
+              kind,
+              m.troopRemaining(kind),
+              `troop:${kind}`,
+              !m.activeHero && !m.activeHeroKind && !m.activeSpell && m.activeTroop === kind,
+            ),
+          )
           .join('')}${
           SPELL_ORDER.some((k) => b.carried[k])
             ? `<span class="tray-divider"></span>${SPELL_ORDER.filter((k) => b.carried[k])
@@ -3480,6 +3493,8 @@ export class HUD {
     if (m.activeHeroKind) return this.nativeDeploymentHint(m.activeHeroKind);
     if (m.activeHero) return this.kingDeploymentHint();
     if (m.activeSpell) return `Tap anywhere to cast ${SPELLS[m.activeSpell].name}`;
+    if (isSplitHog(m.activeTroop))
+      return `${TROOPS[m.activeTroop].name} · ${m.troopRemaining(m.activeTroop) ? 'Recalled · Tap, hold or drag to redeploy' : 'All redeployed'}`;
     if (this.siegeUnavailable(m.activeTroop))
       return `${TROOPS[m.activeTroop].name} · Only one siege machine per attack`;
     if (b.remaining[m.activeTroop] <= 0)
@@ -5367,13 +5382,29 @@ export class HUD {
     // HUD. Mirrors troopCard/spellCard state (count, empty, disabled, selected).
     if (m.battle && !m.replay && refs.trayButtons.length) {
       const b = m.battle;
+      const tray = refs.deployLabel?.closest('.deploy-tray')?.querySelector('.army-tray');
+      let added = false;
+      if (tray)
+        for (const kind of SPLIT_HOG_KINDS) {
+          if (
+            b.recalledSplits?.[kind] === undefined ||
+            tray.querySelector(`[data-action="troop:${kind}"]`)
+          )
+            continue;
+          const card = this.troopCard(kind, m.troopRemaining(kind), `troop:${kind}`),
+            divider = tray.querySelector('.tray-divider');
+          if (divider) divider.insertAdjacentHTML('beforebegin', card);
+          else tray.insertAdjacentHTML('beforeend', card);
+          added = true;
+        }
+      if (added) refs = this.liveRefs = this.collectLiveRefs();
       for (const el of refs.trayButtons) {
         const action = el.dataset.action!;
         const troop = action.startsWith('troop:')
-          ? (action.slice('troop:'.length) as TroopKind)
+          ? (action.slice('troop:'.length) as DeployTroopKind)
           : null;
         const spell = troop ? null : (action.slice('spell:'.length) as SpellKind);
-        const count = troop ? (b.remaining[troop] ?? 0) : (b.spells[spell!] ?? 0);
+        const count = troop ? m.troopRemaining(troop) : (b.spells[spell!] ?? 0);
         const name = troop ? TROOPS[troop].name : SPELLS[spell!].name;
         const siegeBlocked = !!troop && this.siegeUnavailable(troop);
         const unavailable = count === 0 || siegeBlocked;

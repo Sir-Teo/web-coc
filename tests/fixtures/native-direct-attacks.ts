@@ -23,6 +23,7 @@ export function nativeDirectBattle(
   version = REPLAY_VERSION,
   x = 11.4,
   target: NativeDirectTarget = 'storage',
+  spells: Partial<ReplayData['initial']['spells']> = {},
 ) {
   const garrison = target === 'garrison' || target === 'air-garrison';
   const yeti = kind === 'yeti' || kind === 'superyeti';
@@ -61,7 +62,7 @@ export function nativeDirectBattle(
     ...(original ? { [original]: level + superLevelOffset(kind) } : {}),
     [kind]: level,
   };
-  model.state.spells = { ...emptySpells(), ...(yeti ? { recall: 1 } : {}) };
+  model.state.spells = { ...emptySpells(), ...(yeti ? { recall: 1 } : {}), ...spells };
   model.startBattle(0, true);
   const data = (model as unknown as { recording: ReplayData }).recording;
   data.version = version;

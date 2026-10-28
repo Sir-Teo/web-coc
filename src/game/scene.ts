@@ -2649,7 +2649,7 @@ export class VillageScene extends Phaser.Scene {
       const grid = this.gridAtPointer(p);
       if (
         deliberate &&
-        b.remaining[this.model.activeTroop] > 0 &&
+        this.model.troopRemaining(this.model.activeTroop) > 0 &&
         !this.model.deployBlocked(grid.x, grid.y)
       )
         return 'deploy';
@@ -2667,7 +2667,7 @@ export class VillageScene extends Phaser.Scene {
       !this.model.activeSpell &&
       !this.model.activeHero &&
       !this.model.activeHeroKind &&
-      b.remaining[this.model.activeTroop] > 0 &&
+      this.model.troopRemaining(this.model.activeTroop) > 0 &&
       !this.battleArtPending()
     );
   }

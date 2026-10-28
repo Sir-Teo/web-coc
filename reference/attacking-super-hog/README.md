@@ -36,8 +36,8 @@ cold seeks after landing without mutating combat state.
 
 Spring-ejected parents release neither half. Both children inherit a cloned
 parent's expiry; an already-expired parent or a Rider whose deadline passes
-before arrival cannot create a lasting body. Recall of these explicitly leveled
-spawned halves remains outside the existing Recall deployment adapter.
+before arrival cannot create a lasting body. From version 179, non-clone halves
+can [return through separate Recall reserve cards](../super-hog-recall/README.md).
 The original landing particles flow through the projectile renderer. Both halves
 reuse their existing deployment voices, with no extra voice layered over the
 Rider's arrival. The carried army warms their sound files and the landing effect

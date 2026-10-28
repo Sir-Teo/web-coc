@@ -40,6 +40,7 @@ export function needsRecallPresentation(battle: Battle | null | undefined) {
     (battle.spells.recall > 0 ||
       (battle.nativeRecallEvents?.length ?? 0) > 0 ||
       Object.values(battle.recalledHp ?? {}).some((hp) => (hp?.length ?? 0) > 0) ||
+      Object.values(battle.recalledSplits ?? {}).some((stock) => (stock?.length ?? 0) > 0) ||
       battle.nativeHeroes?.some((hero) => hero.recalledHp !== undefined) ||
       battle.hero?.recalledHp !== undefined)
   );

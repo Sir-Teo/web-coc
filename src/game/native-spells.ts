@@ -32,6 +32,7 @@ import { unitKindForName, isHeroUnitKind, isPetUnitKind, nativeUnitStats } from 
 import { tornadoPulse } from './native-traps';
 import { SPELL_SPEED_SCALE } from './spell-progression';
 import { retireRecallEvents } from './native-recall';
+import { isSplitHog } from './recalled-split-troops';
 import { revivableHero } from './revive-targets';
 import type { Battle, Building, FX, Unit } from './model';
 
@@ -194,7 +195,7 @@ const liveAttacker = (u: Unit, at: number) =>
   !u.native?.recalled &&
   !u.native?.phoenixWaiting &&
   (u.spawnedAt ?? 0) <= at + 1e-9;
-/** Stationary units (Furnace, Totem) and spawned units never return to the deployment bar. */
+/** Normal deployment-card eligibility; versioned split reserves are handled separately. */
 const deployable = (u: Unit) => !!u.hero || u.level === undefined;
 const housing = (u: Unit) => (u.hero ? 25 : TROOPS[u.kind].space);
 
@@ -717,7 +718,7 @@ function recallUnits(ctx: NativeSpellContext, cast: NativeSpellCast, at: number,
     .filter(
       (u) =>
         liveAttacker(u, at) &&
-        deployable(u) &&
+        (deployable(u) || (ctx.battle.nativeSplitRecall && isSplitHog(u.kind))) &&
         !isTotem(u) &&
         !u.native?.siege &&
         !u.native?.cloneUntil &&

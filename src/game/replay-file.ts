@@ -128,7 +128,7 @@ export function makeReplayFile(replay: ReplayData): ReplayFile {
       steps: [...replay.steps],
       actions: replay.actions.map((a) => {
         const base = { step: a.step, type: a.type };
-        if (a.type === 'troop' || a.type === 'spell')
+        if (a.type === 'troop' || a.type === 'recalled-troop' || a.type === 'spell')
           return {
             ...base,
             type: a.type,

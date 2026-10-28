@@ -1237,3 +1237,15 @@ controller. Only carried ordinary Miners enable this change; versions 177 and
 earlier retain immediate first hits. Super Miner's damage-ramp ticks, Diggy and
 Battle Drill remain unchanged. No source stats, assets, audio or save format
 change. See [source distinctions and actual Cannon/Castle recordings](../reference/attacking-miner/README.md).
+
+## Version 179: separate Recall reserves for Super Hog halves
+
+Recall can return the non-clone Super Hog and Super Rider, charging five housing
+per body. Separate cards preserve their health and level for redeployment in the
+same attack. Returned units start fresh melee clocks and do not charge deployment
+housing again. The battle stays open while a returned reserve is available;
+recalling the Hog during its sibling's flight does not cancel that arrival.
+Only Super Hog Rider armies carrying Recall enable this change. Versions 178 and
+earlier retain their exclusion of split bodies. The new `recalled-troop` input
+supports portable reconstruction while the file envelope and village save
+format stay unchanged. See [source rules, card behavior and live pointer recordings](../reference/super-hog-recall/README.md).

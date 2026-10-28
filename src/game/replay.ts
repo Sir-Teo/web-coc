@@ -3,6 +3,7 @@ import { validLadderMatch, type LadderMatch } from './ladder';
 import { validCraftedFields } from './crafted-defenses';
 import { isSiege, superOriginal } from './special-troops';
 import { hogPuppetLevel } from './native-hog-attacks';
+import { isSplitHog, type SplitHogKind } from './recalled-split-troops';
 import { MAX_ARCHER_TOWER_LEVEL } from './archer-tower-stats';
 import { validGearMode, validSpellTowerMode, validWeaponLevel } from './native-defense-stats';
 import { superchargeCount } from './native-supercharge';
@@ -64,7 +65,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 178;
+export const REPLAY_VERSION = 179;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -207,7 +208,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 175 gives Yeti/Super Yeti source claws while retaining mite/Recall state.
  * Version 176 gives Super Hog Rider both source defeat abilities and a timed Rider landing.
  * Version 177 gives the Hog family source melee phases, including Hog Rider Puppet summons.
- * Version 178 gives ordinary Miners surfaced source windup/recovery phases. */
+ * Version 178 gives ordinary Miners surfaced source windup/recovery phases.
+ * Version 179 returns recalled Super Hog halves as independent raid reserves. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -353,6 +355,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 175 ||
   version === 176 ||
   version === 177 ||
+  version === 178 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -451,6 +454,7 @@ export const MAX_REPLAY_STEPS_PER_UPDATE = 100;
 export const MAX_REPLAY_UPDATE_MS = 8;
 export type ReplayAction = { step: number } & (
   | { type: 'troop'; kind: keyof Army; x: number; y: number }
+  | { type: 'recalled-troop'; kind: SplitHogKind; x: number; y: number }
   | { type: 'spell'; kind: keyof SpellBook; x: number; y: number; targetHero?: HeroKind }
   | { type: 'hero'; x: number; y: number; hero?: HeroKind }
   | { type: 'ability'; hero?: HeroKind }
@@ -501,6 +505,9 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 179 && s.army.superhogrider > 0 && s.spells.recall > 0
+      ? { nativeSplitRecall: true as const }
+      : {}),
     ...(version >= 178 && s.army.miner > 0 ? { nativeMinerWindup: true as const } : {}),
     ...(version >= 177 &&
     (s.army.hogrider > 0 || s.army.superhogrider > 0 || hogPuppetLevel(s.heroes ?? []) > 0)
@@ -1238,9 +1245,22 @@ export function validateReplay(value: unknown): value is ReplayData {
       if (i !== value.actions.length - 1 || a.step !== value.steps.length) return false;
     } else if (a.type === 'ability') {
       if (!s.hero && !s.heroes?.some((hero: HeroSetup) => hero.kind === a.hero)) return false;
-    } else if (a.type === 'troop' || a.type === 'spell' || a.type === 'hero') {
+    } else if (
+      a.type === 'troop' ||
+      a.type === 'recalled-troop' ||
+      a.type === 'spell' ||
+      a.type === 'hero'
+    ) {
       if (!number(a.x, 0, mapSize) || !number(a.y, 0, mapSize)) return false;
       if (a.type === 'troop' && !troopKeys.includes(a.kind)) return false;
+      if (
+        a.type === 'recalled-troop' &&
+        (value.version < 179 ||
+          !isSplitHog(a.kind) ||
+          s.army.superhogrider <= 0 ||
+          s.spells.recall <= 0)
+      )
+        return false;
       if (a.type === 'spell' && !spellKeys.includes(a.kind)) return false;
       if (a.type === 'hero' && !s.hero && !s.heroes?.some((h: HeroSetup) => h.kind === a.hero))
         return false;

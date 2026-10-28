@@ -507,6 +507,12 @@ import { SPELL_SOURCE } from './spell-progression';
 import { isHeroUnitKind, isPetUnitKind, isSpawnKind, spawnStatsAt } from './native-units';
 import { spawnNativeUnit } from './native-troops';
 import {
+  isSplitHog,
+  type DeployTroopKind,
+  type SplitHogKind,
+  type RecalledSplitTroop,
+} from './recalled-split-troops';
+import {
   heroOf,
   heroTroopStats,
   heroUnitKind,
@@ -1034,6 +1040,9 @@ export interface Battle {
   nativeHogWindup?: true;
   /** Version 178: ordinary Miners surface for source windup/recovery before direct hits. */
   nativeMinerWindup?: true;
+  /** Version 179: recalled Super Hog halves return as separate raid-only reserves. */
+  nativeSplitRecall?: true;
+  recalledSplits?: Partial<Record<SplitHogKind, RecalledSplitTroop[]>>;
   nativeWitchShots?: {
     id: string;
     sourceId: number;
@@ -1367,7 +1376,7 @@ export class GameModel {
   activeHero = false;
   /** Version 46 battles select which hero the next deployment places. */
   activeHeroKind: HeroKind | null = null;
-  activeTroop: TroopKind = 'swordsman';
+  activeTroop: DeployTroopKind = 'swordsman';
   /** When set, tapping the battlefield casts this spell instead of deploying. */
   activeSpell: SpellKind | null = null;
   /**
@@ -2006,7 +2015,9 @@ export class GameModel {
   get queuedSpellCount() {
     return this.state.spellQueue.length;
   }
-  troopLevel(kind: TroopKind): number {
+  troopLevel(kind: DeployTroopKind): number {
+    if (isSplitHog(kind))
+      return this.battle?.recalledSplits?.[kind]?.[0]?.level ?? this.troopLevel('superhogrider');
     const original = superOriginal(kind);
     if (original && !this.battle?.troopLevels?.[kind])
       return Math.max(
@@ -2018,11 +2029,17 @@ export class GameModel {
       );
     return this.battle?.troopLevels?.[kind] ?? this.state.troopLevels?.[kind] ?? 1;
   }
-  troopDisplayLevel(kind: TroopKind) {
+  troopDisplayLevel(kind: DeployTroopKind) {
+    if (isSplitHog(kind)) return this.troopLevel(kind) + superLevelOffset('superhogrider');
     return this.troopLevel(kind) + (superOriginal(kind) ? superLevelOffset(kind) : 0);
   }
-  troopStats(kind: TroopKind, level = this.troopLevel(kind)) {
-    return troopStatsAt(kind, level);
+  troopStats(kind: DeployTroopKind, level = this.troopLevel(kind)) {
+    return isSplitHog(kind) ? spawnStatsAt(kind, level) : troopStatsAt(kind, level);
+  }
+  troopRemaining(kind: DeployTroopKind) {
+    return isSplitHog(kind)
+      ? (this.battle?.recalledSplits?.[kind]?.length ?? 0)
+      : (this.battle?.remaining[kind] ?? 0);
   }
   /** Battle stats for any unit; spawned units, heroes and pets carry their own level. */
   unitStats(u: Pick<Unit, 'kind' | 'level' | 'id'>) {
@@ -5887,6 +5904,7 @@ export class GameModel {
     if (this.activeHero) return this.deployHero(x, y);
     const b = this.battle,
       k = this.activeTroop;
+    if (isSplitHog(k)) return this.deployRecalledSplit(k, x, y);
     if (!b || b.finished || b.remaining[k] <= 0 || (isSiege(k) && b.siegeDeployed)) return false;
     const spot = this.guidePlacement({ troop: k }, x, y);
     if (!spot) return false;
@@ -5944,6 +5962,45 @@ export class GameModel {
         : { type: 'spawn', x, y },
     );
     this.guidePlaced({ troop: k });
+    this.deployChanged(starting);
+    return true;
+  }
+  /** A returned half keeps its own level and health; it never becomes a trainable home troop. */
+  private deployRecalledSplit(kind: SplitHogKind, x: number, y: number) {
+    const battle = this.battle,
+      stock = battle?.recalledSplits?.[kind];
+    if (
+      !battle?.nativeSplitRecall ||
+      battle.finished ||
+      !stock?.length ||
+      !Number.isFinite(x) ||
+      !Number.isFinite(y)
+    )
+      return false;
+    if (this.deployBlocked(x, y)) {
+      this.notify('Deploy on the grass outside the red boundary.');
+      return false;
+    }
+    this.recordAction({ type: 'recalled-troop', kind, x, y });
+    const starting = !battle.started;
+    this.beginFight();
+    const returned = stock.shift()!,
+      native = this.nativeContext(battle, this.sharedWalls(battle)),
+      unit = spawnNativeUnit(
+        { ...native, effect: () => {} },
+        kind,
+        returned.level,
+        x,
+        y,
+        battle.elapsed,
+        returned.owner,
+      );
+    unit.hp = Math.min(unit.maxHp, returned.hp);
+    this.onEffect(
+      recordRecallEvent(battle, unit, 'redeploy')
+        ? { type: 'recall-unit', sourceId: unit.id, text: 'redeploy', x: unit.x, y: unit.y }
+        : { type: 'spawn', x: unit.x, y: unit.y },
+    );
     this.deployChanged(starting);
     return true;
   }
@@ -6284,6 +6341,12 @@ export class GameModel {
     } else if (u.hero && b.hero) {
       b.hero.unitId = null;
       b.hero.recalledHp = u.hp;
+    } else if (b.nativeSplitRecall && isSplitHog(u.kind)) {
+      ((b.recalledSplits ??= {})[u.kind] ??= []).push({
+        level: u.level ?? this.troopLevel('superhogrider'),
+        hp: u.hp,
+        ...(u.native?.owner !== undefined ? { owner: u.native.owner } : {}),
+      });
     } else if (TROOP_KEYS.includes(u.kind as TroopKind)) {
       const kind = u.kind as TroopKind;
       b.remaining[kind]++;
@@ -7130,6 +7193,7 @@ export class GameModel {
         !b.nativeDarkOrbs?.some((s) => s.travelled < s.length - 1e-9) &&
         !b.nativeSeekingShieldCasts?.some((cast) => !cast.released) &&
         !b.nativePendingSpawns?.length &&
+        !Object.values(b.recalledSplits ?? {}).some((stock) => stock.length > 0) &&
         !b.nativeSpells?.some((cast) => nativeSpellCanStillFight(cast)) &&
         !TROOP_KEYS.some(
           (k) => b.remaining[k] > 0 && !(isSiege(k) && b.siegeDeployed) && !this.supportOnly(b, k),
@@ -7504,6 +7568,7 @@ export class GameModel {
   private recordAction(
     action:
       | Omit<Extract<ReplayAction, { type: 'troop' }>, 'step'>
+      | Omit<Extract<ReplayAction, { type: 'recalled-troop' }>, 'step'>
       | Omit<Extract<ReplayAction, { type: 'spell' }>, 'step'>
       | { type: 'hero'; x: number; y: number; hero?: HeroKind }
       | { type: 'ability'; hero?: HeroKind }
@@ -7793,7 +7858,7 @@ export class GameModel {
       data.actions[this.replayAction].step === this.replayStep
     ) {
       const a = data.actions[this.replayAction++];
-      if (a.type === 'troop') {
+      if (a.type === 'troop' || a.type === 'recalled-troop') {
         runner.activeTroop = a.kind;
         runner.deploy(a.x, a.y);
       } else if (a.type === 'spell') {
@@ -7841,6 +7906,7 @@ export class GameModel {
     this.replayBudget = Math.min(this.replayBudget, MAX_REPLAY_BACKLOG_SECONDS);
   }
   returnHome() {
+    if (isSplitHog(this.activeTroop)) this.activeTroop = 'superhogrider';
     if (this.goblinRaid) {
       this.goblinRaid = false;
       this.state.goblinRaidSeen = true;
