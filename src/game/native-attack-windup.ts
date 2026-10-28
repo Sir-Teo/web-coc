@@ -1,6 +1,6 @@
 import { BUILDINGS, TROOPS } from './data';
 import { chainRef, resolveChainTarget, type ChainRef, type ChainTarget } from './chain-targets';
-import { nearestAlertedDefender, preferredOrCommitted } from './defenders';
+import { nearestAlertedDefender, preferredHeroTarget, preferredOrCommitted } from './defenders';
 import { distance2D } from './distance';
 import { splitTiming } from './garrison-kinds';
 import { targetableBuilding } from './hidden-tesla';
@@ -138,12 +138,16 @@ export function stepNativeAttackWindup(
     !!(
       (ctx.battle.nativeWitchWindup && (unit.kind === 'witch' || unit.kind === 'superwitch')) ||
       (ctx.battle.nativeElectroTitanWindup && unit.kind === 'electrotitan') ||
-      (ctx.battle.nativeApprenticeWindup && unit.kind === 'apprenticewarden')
+      (ctx.battle.nativeApprenticeWindup && unit.kind === 'apprenticewarden') ||
+      (ctx.battle.nativeHeadhunterWindup && unit.kind === 'headhunter')
     );
   const target = st.target && resolve(ctx, st.target, airTargets);
   const traits = {
     ...TROOPS[unit.kind],
     airTargets,
+    ...(ctx.battle.nativeHeadhunterWindup && unit.kind === 'headhunter'
+      ? { preferHeroes: stats.preferHeroes }
+      : {}),
     ...(unit.kind !== 'bowler'
       ? {
           prefersDefenses:
@@ -176,7 +180,13 @@ export function stepNativeAttackWindup(
     candidate &&
     (!committedWall ||
       distance2D(candidate.x - unit.x, candidate.y - unit.y) <= stats.range + 1e-6);
-  if (!target || retaliate || ('defender' in target && wantsBuilding)) {
+  const preferredHero =
+    'preferHeroes' in traits && traits.preferHeroes
+      ? preferredHeroTarget(ctx.battle, unit, traits)
+      : undefined;
+  const heroInterrupt =
+    preferredHero && target && ('building' in target || target.defender.id !== preferredHero.id);
+  if (!target || heroInterrupt || retaliate || ('defender' in target && wantsBuilding)) {
     delete st.engaged;
     delete st.target;
     delete st.animationOffset;

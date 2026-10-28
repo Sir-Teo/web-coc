@@ -450,7 +450,7 @@ export interface DefenderRoute {
   enterWallRange?(wall: Building): void;
 }
 /** Hero hunters ignore alert distance and ordinary defenders while a valid Hero remains. */
-function preferredHeroTarget(battle: Battle, unit: Unit, troop: DefenderFightTraits) {
+export function preferredHeroTarget(battle: Battle, unit: Unit, troop: DefenderFightTraits) {
   let best: Defender | undefined;
   let bestDist = Infinity;
   for (const defender of battle.defenders ?? []) {

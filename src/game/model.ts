@@ -1045,6 +1045,8 @@ export interface Battle {
   recalledSplits?: Partial<Record<SplitHogKind, RecalledSplitTroop[]>>;
   /** Version 180: Apprentice Warden source charge and ground/air projectile release. */
   nativeApprenticeWindup?: true;
+  /** Version 181: Headhunter source charge, retaining hero priority and native poisoned cards. */
+  nativeHeadhunterWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;

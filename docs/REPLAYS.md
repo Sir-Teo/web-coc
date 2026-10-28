@@ -1260,3 +1260,14 @@ its captured action offset. Wall jumping, group targeting and the independent
 300 ms health aura keep their existing rules. Only carried Apprentice Wardens
 enable the change. Versions 179 and earlier retain their previous first-hit and
 defender-shot behavior. See [source limits and portable recordings](../reference/attacking-apprentice/README.md).
+
+## Version 181: Headhunter card charges
+
+Headhunter starts a source-derived 0.6 s charge after reaching a building or
+ground/air defender and repeats at the existing 0.6 s period. Hero preference
+continues during charges: a newly available Hero interrupts an ordinary target,
+while a committed valid Hero stays selected. Native cards retain fourfold direct
+Hero damage, normal troop/Guardian damage, 14-tile/s flight and impact-triggered
+poison. Freeze/stun, speed modifiers and original poses use the shared clock.
+Only carried Headhunters enable the change; versions 180 and earlier retain
+their previous first-release timing. See [source limits and actual Hero/Castle recordings](../reference/attacking-headhunter/README.md).

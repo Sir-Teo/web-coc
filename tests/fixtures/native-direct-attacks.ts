@@ -15,6 +15,7 @@ export type NativeDirectKind =
   | 'superhogrider'
   | 'hogrider'
   | 'apprenticewarden'
+  | 'headhunter'
   | 'miner';
 export type NativeDirectTarget = 'storage' | 'cannon' | 'garrison' | 'air-garrison' | 'monolith';
 
@@ -120,6 +121,7 @@ export function nativeDirectRecording(
   version = REPLAY_VERSION,
   level = 1,
   garrison: boolean | 'air' = false,
+  chargeCheckpointSeconds = 0.7,
 ) {
   const r = nativeDirectBattle(
       kind,
@@ -139,7 +141,7 @@ export function nativeDirectRecording(
   const engaged = snapshot();
   let charged: number | undefined;
   if (version >= timingVersion) {
-    r.until(engaged + 0.7);
+    r.until(engaged + chargeCheckpointSeconds);
     charged = snapshot();
     r.untilAttacks(1);
   }

@@ -281,7 +281,8 @@ it.each([
   'reconstructs actual $kind hits on an air=$air defender, Recall and expiry through portable backward seeks',
   ({ kind, air }) => {
     const { data, snapshots, hit, expired, defenderId, direct, total, dps, shots, recallAt } =
-      attackerHitPoisonRecording(kind, air);
+      // Compare the poison boundary using the same immediate-release timing in both engines.
+      attackerHitPoisonRecording(kind, air, 180);
     if (kind === 'lizard') expect(shots.at(-1)!.impact).toBeGreaterThan(recallAt);
     expect(validateReplay(data)).toBe(true);
     const hitState = snapshots.find((snapshot) => snapshot.at === hit)!.battle as Battle;

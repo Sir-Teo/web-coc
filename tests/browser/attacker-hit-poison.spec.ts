@@ -114,7 +114,9 @@ for (const kind of ['headhunter', 'lizard'] as const)
       });
       const old = await seek(page, times.expired);
       expect(old.poison).toBeUndefined();
-      expect(old.maxHp - old.hp).toBeCloseTo(kind === 'headhunter' ? times.direct : 0, 6);
+      // The legacy immediate first release sends two 4×63 cards before the same Recall.
+      if (kind === 'headhunter') expect(times.direct).toBe(252);
+      expect(old.maxHp - old.hp).toBeCloseTo(kind === 'headhunter' ? 504 : 0, 6);
       expect(await page.evaluate(() => window.__game.game.renderer.gl.getError())).toBe(0);
       expect(errors).toEqual([]);
     });

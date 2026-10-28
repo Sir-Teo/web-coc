@@ -864,6 +864,7 @@ export function stepNativeUnit(
   const hog = !!(battle.nativeHogWindup && hogAttackKind(u.kind));
   const miner = !!(battle.nativeMinerWindup && u.kind === 'miner');
   const apprentice = !!(battle.nativeApprenticeWindup && u.kind === 'apprenticewarden');
+  const headhunter = !!(battle.nativeHeadhunterWindup && u.kind === 'headhunter');
   const valkyrie = !!(
     battle.nativeValkyrieWindup &&
     (u.kind === 'valkyrie' || u.kind === 'supervalkyrie')
@@ -881,6 +882,7 @@ export function stepNativeUnit(
     hog ||
     miner ||
     apprentice ||
+    headhunter ||
     valkyrie ||
     witch ||
     hound;
@@ -889,7 +891,14 @@ export function stepNativeUnit(
     stepNativeAttackWindup(ctx, u, s, dt, actionDt, (target) => {
       if (valkyrie) sweepValkyrie(ctx, u, s, damage);
       else if ('building' in target) strike(ctx, u, s, target.building, damage);
-      else if (witch || apprentice) releaseRangedAtDefender(ctx, u, s, target.defender, damage);
+      else if (witch || apprentice || headhunter)
+        releaseRangedAtDefender(
+          ctx,
+          u,
+          s,
+          target.defender,
+          damage * (headhunter && target.defender.kind === 'hero' ? s.heroMultiplier : 1),
+        );
       else if (hound) releaseHoundAtDefender(ctx, u, s, target.defender, damage);
       else if (golem || giant || iceGolem || rootRider || electroTitan || yeti || hog || miner) {
         hurtDefender(battle, target.defender, damage, at);
@@ -1043,6 +1052,7 @@ export function stepNativeUnit(
         hog ||
         miner ||
         apprentice ||
+        headhunter ||
         valkyrie ||
         witch ||
         hound ||
