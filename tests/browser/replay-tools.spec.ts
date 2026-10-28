@@ -27,6 +27,11 @@ test('playback targets stay reachable at narrow portrait and landscape sizes', a
   await page.getByRole('button', { name: 'Watch replay' }).click();
   await expect(page.locator('#toast')).not.toHaveClass(/show/, { timeout: 500 });
   await page.locator('[data-action="replay-pause"]').click();
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
+  const pause = page.getByRole('button', { name: 'Pause', exact: true });
+  await expect(pause.locator('svg')).toHaveCount(1);
+  await expect(pause.locator('svg circle')).toHaveCount(0);
+  await pause.click();
   for (const [width, height] of [
     [320, 740],
     [390, 844],
@@ -36,12 +41,18 @@ test('playback targets stay reachable at narrow portrait and landscape sizes', a
     await page.setViewportSize({ width, height });
     await page.waitForFunction(
       (width) =>
-        window.__game.scene.cameras.main.width === Math.floor(width * window.devicePixelRatio),
+        Math.round(
+          window.__game.scene.cameras.main.width / window.__game.scene.scale.displayScale.x,
+        ) === width,
       width,
     );
     const controls = page.getByRole('region', { name: 'Replay playback' });
-    for (const name of ['Play', 'Restart', 'First deployment', 'Export replay', 'Back to log'])
-      await expect(controls.getByRole('button', { name, exact: true })).toBeVisible();
+    for (const name of ['Play', 'Restart', 'First deployment', 'Export replay', 'Back to log']) {
+      const button = controls.getByRole('button', { name, exact: true });
+      await expect(button).toBeVisible();
+      await expect(button.locator('svg')).toHaveCount(1);
+      await expect(button.locator('svg circle')).toHaveCount(0);
+    }
     for (const control of await controls.locator('button, input').all()) {
       await expect(control).toBeInViewport({ ratio: 1 });
       await expect

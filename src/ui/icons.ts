@@ -43,6 +43,9 @@ import {
   Wind,
   Timer,
   Play,
+  Pause,
+  SkipForward,
+  ArrowLeft,
   Check,
   Layers,
   TriangleAlert,
@@ -68,6 +71,9 @@ import {
 } from 'lucide';
 const icons = {
   Circle,
+  Pause,
+  SkipForward,
+  ArrowLeft,
   Landmark,
   ListChecks,
   FastForward,
