@@ -2,6 +2,17 @@ import { expect, test } from '@playwright/test';
 
 const cases = [
   {
+    name: 'Super Miner',
+    target: 'Any building',
+    tactic: 'Changing targets restarts the ramp',
+    facts: {
+      'Second tier DPS': '160',
+      'Maximum DPS': '280',
+      'Damage ramps after': '1.5 / 3 s',
+      'Death bomb delay': '1 s',
+    },
+  },
+  {
     name: 'Super Wall Breaker',
     target: 'Walls (40× damage)',
     tactic: 'both attack and death damage receive the Wall bonus',
@@ -142,6 +153,7 @@ for (const viewport of [
           'Super Wizard',
           'Super Bowler',
           'Super Wall Breaker',
+          'Super Miner',
         ].includes(c.name)
       )
         await page.screenshot({
@@ -179,6 +191,31 @@ for (const viewport of [
       ).toHaveText(value);
     await page.screenshot({
       path: `output/playtest/troop-guide-super-wall-breaker-14-${viewport.width}.png`,
+    });
+    await page
+      .locator('.troop-info-body')
+      .getByRole('button', { name: 'Train troops', exact: true })
+      .click();
+    await page.evaluate(() => {
+      const m = window.__game.model;
+      m.state.troopLevels = { ...m.state.troopLevels, miner: 12 };
+      m.changed();
+    });
+    await page.getByRole('button', { name: 'About Super Miner', exact: true }).click();
+    await expect(page.locator('.troop-info-hero .eyebrow')).toContainText('LEVEL 12');
+    for (const [label, value] of [
+      ['Second tier DPS', '510'],
+      ['Maximum DPS', '740'],
+      ['Damage per second', '265'],
+    ])
+      await expect(
+        page
+          .locator('.troop-stats > div')
+          .filter({ has: page.getByText(label, { exact: true }) })
+          .locator('dd'),
+      ).toHaveText(value);
+    await page.screenshot({
+      path: `output/playtest/troop-guide-super-miner-12-${viewport.width}.png`,
     });
     await page
       .locator('.troop-info-body')

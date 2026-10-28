@@ -19,6 +19,7 @@ constants:
 
 | Troop | Added facts | Combat reference |
 | --- | --- | --- |
+| Super Miner | Two ramp thresholds, stronger DPS tiers and death-bomb delay | [Source charges and ramp](../reference/attacking-super-miner/README.md) |
 | Super Wall Breaker | Combined contact damage and death-only damage against Walls | [Death blasts and source charges](../reference/attacking-super-wall-breaker/README.md) |
 | Super Bowler | Three boulder landings; three-tile bounce distance | [Source boulders and phases](../reference/attacking-super-bowler/README.md) |
 | Super Barbarian | Eight-second opening Rage; +70% damage and +1.5 tiles/s | [Rage and charges](../reference/attacking-super-barbarian/README.md) |
@@ -45,7 +46,7 @@ crash labels accompany its version-190 combat boundary; see the linked
 reference for historical playback behavior.
 
 `tests/browser/troop-combat-guide.spec.ts` opens real catalog Info buttons for
-fifteen troop families at 390×844, 844×390 and 1440×960. It verifies source facts,
+sixteen troop families at 390×844, 844×390 and 1440×960. It verifies source facts,
 favorite targets, advice, text fit, horizontal overflow, touch targets,
 scrolling, training navigation and closing. Screenshots are saved under
 ignored `output/playtest/`. These are headless browser viewport checks, not
@@ -55,3 +56,9 @@ Super Wall Breaker's Wall damage facts follow its current research tier. The
 browser checks separately raise its parent Wall Breaker to level 14 and
 verify 23,320 contact damage and 16,520 death damage against Walls. Advice
 explains that defeat on approach still triggers the death explosion.
+
+Super Miner shows its second and maximum DPS tiers, both source ramp
+thresholds and one-second death-bomb delay. Advice explains why staying on
+one target builds damage and changing targets resets the ramp. Browser
+coverage also raises the parent Miner to level 12 and verifies the displayed
+265 starting, 510 intermediate and 740 maximum DPS.
