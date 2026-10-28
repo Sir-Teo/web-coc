@@ -67,3 +67,45 @@ state equality, original living bodies, reverse seeks, read-only drawing,
 reduced motion, asset requests and WebGL health. Screenshots are written to
 ignored `output/playtest/`. These viewport checks do not measure physical
 phone performance.
+
+
+## Recording version 205: fresh in-range charge
+
+All ten source tiers specify `AttackSpeed=1000`,
+`NewTargetAttackDelay=1000` and no cooldown override. The shared
+[older-engine split-clock adapter](../attacking-giant/README.md) gives a
+one-second fresh charge, zero recovery and zero initial precharge. The unit
+completes one attack before its separate death effect; it does not repeat.
+Modern native executable first-hit timing remains unverified.
+
+Version 204 waits from target selection, so walking can spend the entire
+delay. Actual near Storage deployments enter range at 0.35 seconds and hit
+at 1.05 seconds, crediting only 0.75 seconds of charging. A farther drop
+enters range and hits at 1.65 seconds. Version 205 starts the complete charge
+in range: the same drops hit at 1.3 and 2.6 seconds. The source body samples
+the controller's captured action offset while the charge is pending.
+
+Buildings and blocking Walls share the release path. Wall-preferring source
+traits explicitly keep nearby defenders from canceling the building charge;
+the early UI roster's missing Wall flag no longer controls that decision.
+Freeze/stun hold the charge, action-rate modifiers and Shrink scale it, and
+a replacement target starts a fresh charge. Angry Spell cancels a pending
+charge before forced retargeting. Defeat before release resolves only the
+casualty blast. The version-204 death behavior and Wall multiplier remain
+in use, along with existing movement, routing, collision and splash geometry.
+No assets, audio samples or numerical stats change. Versions 204 and earlier
+retain their attack timing and former phase state shape.
+
+`tests/attacking-super-wall-breaker-windup.test.ts` checks all ten tiers from
+near/far, direct-plus-death damage, Freeze/stun, fast/slow clocks, Shrink,
+replacement targets, defender exclusion, defeat during charge, trap
+eligibility and carried-roster gating. Real Storage, live Cannon and full
+Wall-barrier deployments compare complete portable states in both seek
+directions at tiers 1/10 under versions 204/205. Actual Angry Spell levels
+1/4 separately check canceled pending charges and portable retarget states.
+
+`tests/browser/attacking-super-wall-breaker-windup.spec.ts` checks current and
+historical fights, original living bodies, source charge offsets, full
+Node/Chromium states, reverse seeks, read-only drawing, reduced motion,
+asset requests and WebGL health at phone/desktop widths. Screenshots go to
+ignored `output/playtest/`.

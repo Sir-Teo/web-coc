@@ -175,6 +175,9 @@ export function stepNativeAttackWindup(
   const traits = {
     ...TROOPS[unit.kind],
     airTargets,
+    ...(ctx.battle.nativeSuperWallBreakerWindup && unit.kind === 'superwallbreaker'
+      ? { wallBreaker: true as const }
+      : {}),
     ...(ctx.battle.nativeHeadhunterWindup && unit.kind === 'headhunter'
       ? { preferHeroes: stats.preferHeroes }
       : {}),

@@ -886,6 +886,7 @@ export function stepNativeUnit(
   const superArcher = !!(battle.nativeSuperArcherWindup && u.kind === 'superarcher');
   const superWizard = !!(battle.nativeSuperWizardWindup && u.kind === 'superwizard');
   const superBowler = !!(battle.nativeSuperBowlerWindup && u.kind === 'superbowler');
+  const superWallBreaker = !!(battle.nativeSuperWallBreakerWindup && u.kind === 'superwallbreaker');
   const valkyrie = !!(
     battle.nativeValkyrieWindup &&
     (u.kind === 'valkyrie' || u.kind === 'supervalkyrie')
@@ -917,6 +918,7 @@ export function stepNativeUnit(
     superArcher ||
     superWizard ||
     superBowler ||
+    superWallBreaker ||
     valkyrie ||
     witch ||
     hound;
@@ -1136,6 +1138,7 @@ export function stepNativeUnit(
         superArcher ||
         superWizard ||
         superBowler ||
+        superWallBreaker ||
         valkyrie ||
         witch ||
         hound ||
