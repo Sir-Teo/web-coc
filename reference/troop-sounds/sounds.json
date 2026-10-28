@@ -301,6 +301,8 @@
     "sfx/stonestriker_01.ogg": "121634c4dec28a13fd7798c442670c47032e721dbdb1f95248004ec1157504b3",
     "sfx/summon_attack_01.ogg": "6ae7f73d60a405a0dc0ce3b98e7b82e5f3620b5f4d351a64eb1e244de8f1fb57",
     "sfx/summon_die_02.ogg": "16018434218b95b71f1e6ba25b8f556c9e7513f8504697e47c22af0478481e04",
+    "sfx/sup_troll_atk_01.ogg": "5c861a3c61f700a1540a05789d7177c2f798f6c23884ca5cfc36674160e4db0a",
+    "sfx/sup_troll_atk_02.ogg": "afe6292a203ee700755a245c260426216d7486c4cd94d7bcd9570c2c0007a7cc",
     "sfx/super_barb_deploy_01.ogg": "0cbec5856a4573dce6de8b52d6fcdb059a1dfc4d278497c4e9dde09809d189e0",
     "sfx/super_barb_deploy_02.ogg": "fcb9e05ddcdf2912c2e9c30e5cf23733c8006942e386f6060c32fb909d443aaa",
     "sfx/super_bowler_dep_04.ogg": "ccd9b192705ad08a9d893ab56c507bed8df0b53daea1f3d634423a7d40560a02",
@@ -844,7 +846,8 @@
     "superbowler": {
       "name": "Super Bowler",
       "deploy": "Super Troll Deploy",
-      "die": "Wizard Die"
+      "die": "Wizard Die",
+      "preAttack": "SuptrollAttack"
     },
     "superdragon": {
       "name": "Super Dragon",
@@ -4463,6 +4466,22 @@
         "delay": 0.0
       }
     ],
+    "SuptrollAttack": [
+      {
+        "sound": "sfx/sup_troll_atk_01.ogg",
+        "volume": 0.7,
+        "minPitch": 0.98,
+        "maxPitch": 1.02,
+        "delay": 0.0
+      },
+      {
+        "sound": "sfx/sup_troll_atk_02.ogg",
+        "volume": 0.7,
+        "minPitch": 0.98,
+        "maxPitch": 1.02,
+        "delay": 0.0
+      }
+    ],
     "SwarriorGirl Attack2": [
       {
         "sound": "sfx/super_valk_atk_01.ogg",
@@ -7030,6 +7049,16 @@
       "path": "assets/audio/troops-native/summon_die_02.ogg",
       "bytes": 8984,
       "sha256": "16018434218b95b71f1e6ba25b8f556c9e7513f8504697e47c22af0478481e04"
+    },
+    "sfx/sup_troll_atk_01.ogg": {
+      "path": "assets/audio/troops-native/sup_troll_atk_01.ogg",
+      "bytes": 18772,
+      "sha256": "5c861a3c61f700a1540a05789d7177c2f798f6c23884ca5cfc36674160e4db0a"
+    },
+    "sfx/sup_troll_atk_02.ogg": {
+      "path": "assets/audio/troops-native/sup_troll_atk_02.ogg",
+      "bytes": 18563,
+      "sha256": "afe6292a203ee700755a245c260426216d7486c4cd94d7bcd9570c2c0007a7cc"
     },
     "sfx/super_barb_deploy_01.ogg": {
       "path": "assets/audio/troops-native/super_barb_deploy_01.ogg",

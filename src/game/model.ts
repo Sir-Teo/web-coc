@@ -1093,6 +1093,8 @@ export interface Battle {
   nativeSuperWizardPreAttack?: true;
   /** Version 201: Super Bowler charges before its original three-bounce ground projectile. */
   nativeSuperBowlerWindup?: true;
+  /** Version 202: source Super Bowler preparation samples share active charge audio. */
+  nativeSuperBowlerPreAttack?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;

@@ -45,8 +45,8 @@ adapters; modern executable and pixel parity are unverified.
 Only an army carrying Super Bowler enables this capability. Ordinary Bowler,
 defensive Bowlers and versions 200 and earlier retain their own rules and
 state shape. Village saves, numerical stats and assets do not change.
-`SuptrollAttack` preparation audio and the Super Bowler bounce sample remain
-a separate follow-up; this boundary adds neither those samples nor a journal.
+Version 201 leaves `SuptrollAttack` preparation audio and the Super Bowler
+bounce sample as a separate follow-up, adding neither those samples nor a journal.
 
 ## Validation
 
@@ -70,3 +70,49 @@ Node/Chromium states, reverse seeks, read-only rendering, reduced motion,
 asset requests and WebGL health at phone and desktop viewport widths. Two
 actual Angry Spell cases check forced retargeting. Screenshots go to ignored
 `output/playtest/`.
+
+
+## Recording version 202: preparation audio
+
+The character's source `PreAttackEffect` names sound-only `SuptrollAttack`.
+The importer now retains this binding and copies its two original takes:
+`sup_troll_atk_01.ogg` (18,772 bytes, 2.582 seconds) and
+`sup_troll_atk_02.ogg` (18,563 bytes, 2.527 seconds). Both match their pinned
+manifest hashes. Volume is 0.7, pitch varies from 0.98 to 1.02, and delay is
+zero. Event keys deterministically select a take and pitch. The catalog now
+contains 375 effects and 362 samples; all prior 360 files remain unchanged.
+The two new files add 37,335 bytes and no new graphics. Importer generation
+and `--check` reproduce the outputs from verified cached tables and samples.
+
+The shared Bowler/Super Wizard charge audio journal now serves Super Bowler
+as well. A fresh source charge already includes 1.1 seconds of precharge:
+the first 50-ms update therefore starts its take at 1.15 seconds of sample
+age. A near time-zero drop can have a negative cue origin, representing that
+elapsed sample offset; the cue is only emitted after engagement. Repeated
+takes begin after the 0.7-second recovery. This preserves the established
+split-clock and sound adapter rather than claiming verified modern native
+execution or sound synchronization.
+
+Freeze/stun hold active wall-time age and suppress playback until thaw.
+Action-rate changes retain normal sample age and source pitch; recovery waits
+before a new take. Target cancellation and caster defeat suppress unfinished
+takes, while completed one-shots retain their natural tails and bounded
+history. Angry Spell can cancel a pending take or retain a released tail and
+boulders already in flight. The three-bounce geometry, primary-hit exclusion,
+damage and physical attack clocks remain those introduced in version 201.
+The separate Super Bowler bounce sample is not part of this audio boundary.
+
+`tests/attacking-super-bowler-audio.test.ts` checks all ten tiers, source take
+and pitch/volume metadata, precharge and repeat ages, recovery, Freeze/partial
+thaw, action-rate independence, replacement targets, canceled takes, defeat,
+portable states/cues, actual Angry Spell inputs, and six complete physical-state
+comparisons against version 201. Existing ordinary Bowler and Super Wizard
+audio tests retain their samples, keys and source behavior.
+
+`tests/browser/attacking-super-bowler-audio.spec.ts` checks both original takes
+are decoded after same-roster home/battle prewarming, complete Node/Chromium
+states and cues, actual Web Audio gain/rate/start offset, natural tails,
+forward/reverse seeks, read-only rendering, reduced motion and historical
+version-201 sound behavior at phone and desktop viewport sizes. A deliberate
+503 case retries the sample while the replay remains paused. These are browser
+viewport/audio checks, not physical-device performance or native timing claims.

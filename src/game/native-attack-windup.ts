@@ -25,7 +25,7 @@ export interface NativeAttackWindupState {
   target?: ChainRef;
   /** Seconds relative to the original ActionFrame: windup before it, follow-through after. */
   animationOffset?: number;
-  /** Versions 159/200: Bowler/Super Wizard audio uses wall time independently of attack-speed scaling. */
+  /** Versions 159/200/202: Bowler family and Super Wizard audio uses wall time independently of attack-speed scaling. */
   audio?: {
     dt: number;
     sequence: number;
@@ -46,7 +46,8 @@ const state = (unit: Unit): NativeAttackWindupState =>
 export function nativePreAttackAudioEnabled(battle: Battle | undefined, unit: Pick<Unit, 'kind'>) {
   return !!(
     (battle?.nativeBowlerPreAttack && unit.kind === 'bowler') ||
-    (battle?.nativeSuperWizardPreAttack && unit.kind === 'superwizard')
+    (battle?.nativeSuperWizardPreAttack && unit.kind === 'superwizard') ||
+    (battle?.nativeSuperBowlerPreAttack && unit.kind === 'superbowler')
   );
 }
 

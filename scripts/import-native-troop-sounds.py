@@ -190,7 +190,7 @@ def build():
         entry = entries(rows, EVENTS)
         if key == 'superwizard':
             entry.update(entries(rows, {'chain': 'ChainAttackEffect', 'preAttack': 'PreAttackEffect'}))
-        if key == 'bowler':
+        if key in ('bowler', 'superbowler'):
             entry.update(entries(rows, {'preAttack': 'PreAttackEffect'}))
         if key == 'electrodragon':
             entry.update(entries(rows, {'preAttack': 'PreAttackEffect', 'chain': 'ChainAttackEffect'}))

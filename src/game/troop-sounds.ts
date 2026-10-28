@@ -408,7 +408,11 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
       if (cue) cues.push(cue);
     }
   }
-  if (battle.nativeBowlerPreAttack || battle.nativeSuperWizardPreAttack)
+  if (
+    battle.nativeBowlerPreAttack ||
+    battle.nativeSuperWizardPreAttack ||
+    battle.nativeSuperBowlerPreAttack
+  )
     for (const unit of battle.units) {
       if (!nativePreAttackAudioEnabled(battle, unit)) continue;
       const audio = (unit.kind === 'bowler' ? unit.native?.bowler : unit.native?.attackWindup)
