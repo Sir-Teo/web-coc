@@ -2,6 +2,17 @@ import { expect, test } from '@playwright/test';
 
 const cases = [
   {
+    name: 'Inferno Dragon',
+    target: 'Any building',
+    tactic: 'Protect it from Air Defenses',
+    facts: {
+      'Second tier DPS': '110',
+      'Maximum DPS': '1100',
+      'Damage ramps after': '1.7 / 3.2 s',
+      'Pause after a kill': '0.6 s',
+    },
+  },
+  {
     name: 'Super Miner',
     target: 'Any building',
     tactic: 'Changing targets restarts the ramp',
@@ -105,7 +116,7 @@ for (const viewport of [
   test(`source troop guide stays usable at ${viewport.width}×${viewport.height}`, async ({
     page,
   }) => {
-    test.setTimeout(120000);
+    test.setTimeout(180000);
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.setViewportSize(viewport);
@@ -154,9 +165,11 @@ for (const viewport of [
           'Super Bowler',
           'Super Wall Breaker',
           'Super Miner',
+          'Inferno Dragon',
         ].includes(c.name)
       )
         await page.screenshot({
+          animations: 'disabled',
           path: `output/playtest/troop-guide-${c.name.replaceAll(' ', '-').toLowerCase()}-${viewport.width}.png`,
         });
       const train = page
@@ -190,6 +203,7 @@ for (const viewport of [
           .locator('dd'),
       ).toHaveText(value);
     await page.screenshot({
+      animations: 'disabled',
       path: `output/playtest/troop-guide-super-wall-breaker-14-${viewport.width}.png`,
     });
     await page
@@ -215,7 +229,34 @@ for (const viewport of [
           .locator('dd'),
       ).toHaveText(value);
     await page.screenshot({
+      animations: 'disabled',
       path: `output/playtest/troop-guide-super-miner-12-${viewport.width}.png`,
+    });
+    await page
+      .locator('.troop-info-body')
+      .getByRole('button', { name: 'Train troops', exact: true })
+      .click();
+    await page.evaluate(() => {
+      const m = window.__game.model;
+      m.state.troopLevels = { ...m.state.troopLevels, babydragon: 12 };
+      m.changed();
+    });
+    await page.getByRole('button', { name: 'About Inferno Dragon', exact: true }).click();
+    await expect(page.locator('.troop-info-hero .eyebrow')).toContainText('LEVEL 12');
+    for (const [label, value] of [
+      ['Second tier DPS', '182'],
+      ['Maximum DPS', '1820'],
+      ['Damage per second', '91'],
+    ])
+      await expect(
+        page
+          .locator('.troop-stats > div')
+          .filter({ has: page.getByText(label, { exact: true }) })
+          .locator('dd'),
+      ).toHaveText(value);
+    await page.screenshot({
+      animations: 'disabled',
+      path: `output/playtest/troop-guide-inferno-dragon-12-${viewport.width}.png`,
     });
     await page
       .locator('.troop-info-body')

@@ -17,16 +17,20 @@ export function troopFavoriteTarget(stats: NativeUnitStats) {
 export function troopCombatGuide(kind: TroopKind, stats: NativeUnitStats) {
   const facts: [string, string][] = [];
   let tactic: string | undefined;
-  if (kind === 'superminer' && stats.damageRamp) {
+  if ((kind === 'superminer' || kind === 'infernodragon') && stats.damageRamp) {
     const ramp = stats.damageRamp;
     facts.push(
       ['Second tier DPS', `${ramp.dps[1]}`],
       ['Maximum DPS', `${ramp.dps[2]}`],
       ['Damage ramps after', `${ramp.switchAt[0]} / ${ramp.switchAt[1]} s`],
-      ['Death bomb delay', `${stats.deathDelay} s`],
+      kind === 'superminer'
+        ? ['Death bomb delay', `${stats.deathDelay} s`]
+        : ['Pause after a kill', `${ramp.killedCooldown} s`],
     );
     tactic =
-      'Keep it on a single target to build damage. Changing targets restarts the ramp. It travels underground and leaves a delayed ground explosion when defeated.';
+      kind === 'superminer'
+        ? 'Keep it on a single target to build damage. Changing targets restarts the ramp. It travels underground and leaves a delayed ground explosion when defeated.'
+        : 'Keep its beam on a single target to build damage. Changing targets restarts the ramp. Protect it from Air Defenses while it locks on.';
   } else if (kind === 'superwallbreaker') {
     const number = (value: number) => value.toLocaleString('en-US', { maximumFractionDigits: 2 });
     facts.push(

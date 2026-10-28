@@ -19,6 +19,7 @@ constants:
 
 | Troop | Added facts | Combat reference |
 | --- | --- | --- |
+| Inferno Dragon | Two ramp thresholds, stronger DPS tiers and recovery after a kill | [Source beam cadence](../reference/attacking-inferno-dragon/README.md) |
 | Super Miner | Two ramp thresholds, stronger DPS tiers and death-bomb delay | [Source charges and ramp](../reference/attacking-super-miner/README.md) |
 | Super Wall Breaker | Combined contact damage and death-only damage against Walls | [Death blasts and source charges](../reference/attacking-super-wall-breaker/README.md) |
 | Super Bowler | Three boulder landings; three-tile bounce distance | [Source boulders and phases](../reference/attacking-super-bowler/README.md) |
@@ -46,7 +47,7 @@ crash labels accompany its version-190 combat boundary; see the linked
 reference for historical playback behavior.
 
 `tests/browser/troop-combat-guide.spec.ts` opens real catalog Info buttons for
-sixteen troop families at 390×844, 844×390 and 1440×960. It verifies source facts,
+seventeen troop families at 390×844, 844×390 and 1440×960. It verifies source facts,
 favorite targets, advice, text fit, horizontal overflow, touch targets,
 scrolling, training navigation and closing. Screenshots are saved under
 ignored `output/playtest/`. These are headless browser viewport checks, not
@@ -62,3 +63,9 @@ thresholds and one-second death-bomb delay. Advice explains why staying on
 one target builds damage and changing targets resets the ramp. Browser
 coverage also raises the parent Miner to level 12 and verifies the displayed
 265 starting, 510 intermediate and 740 maximum DPS.
+
+Inferno Dragon shows both damage-ramp thresholds, stronger DPS tiers and
+its 0.6-second pause after a kill. Advice explains the single-target lock
+and protection from Air Defenses. Browser checks raise the parent Baby
+Dragon to level 12 and verify 91 starting, 182 intermediate and 1,820
+maximum DPS.
