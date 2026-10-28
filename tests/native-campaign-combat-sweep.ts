@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { GameModel } from '../src/game/model';
 import { emptyArmy, emptySpells } from '../src/game/army';
-import { BUILDINGS, TROOP_KEYS, maxTroopLevel } from '../src/game/data';
+import { BUILDINGS, TROOPS, TROOP_KEYS, maxTroopLevel } from '../src/game/data';
+import { SWEEPER } from '../src/game/air-control-stats';
 import {
   NATIVE_CAMPAIGN,
   freshNativeCampaign,
@@ -96,8 +97,11 @@ export function nativeCombatSweep(army: (typeof armies)[number]) {
         // as they land, so ten simulated minutes without any destruction mean the attack is over.
         let lastDestruction = b.destruction,
           stalledSince = 0;
+        const lastPushedAt = new Map<number, number>();
         for (let step = 0; step < 48000 && !b.finished; step++) {
           m.step(0.05);
+          for (const unit of b.units)
+            if (unit.hp > 0 && unit.airPush) lastPushedAt.set(unit.id, b.elapsed);
           if (b.destruction !== lastDestruction) {
             lastDestruction = b.destruction;
             stalledSince = step;
@@ -123,7 +127,28 @@ export function nativeCombatSweep(army: (typeof armies)[number]) {
         const where = `${b.elapsed}s, ${b.destruction}%, ${survivors} survivors`;
         if (!b.finished) {
           expect(b.destruction, where).toBeGreaterThan(0);
-          expect(survivors, where).toBeLessThanOrEqual(2);
+          if (survivors > 2) {
+            // A surviving Sweeper can hold a flying army indefinitely. Require actual
+            // recent displacement of every survivor attacking a still-firing target;
+            // a stationary crowd or a ground-routing failure must still fail.
+            const recent = b.elapsed - 3 * SWEEPER.rate,
+              firingSweepers = new Set(
+                b.buildings
+                  .filter(
+                    (v) =>
+                      v.kind === 'airsweeper' &&
+                      v.hp > 0 &&
+                      (b.airSweepers?.[v.id]?.shots.at(-1)?.at ?? -Infinity) >= recent,
+                  )
+                  .map((v) => v.id),
+              );
+            expect(firingSweepers.size, where).toBeGreaterThan(0);
+            for (const unit of b.units.filter((u) => u.hp > 0)) {
+              expect(TROOPS[unit.kind].flying, where).toBe(true);
+              expect(lastPushedAt.get(unit.id) ?? -Infinity, where).toBeGreaterThanOrEqual(recent);
+              expect(firingSweepers.has(unit.target ?? -1), where).toBe(true);
+            }
+          }
           m.finishBattle();
           expect(b.finished, where).toBe(true);
         }

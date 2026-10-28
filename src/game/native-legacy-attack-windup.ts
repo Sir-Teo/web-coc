@@ -1,6 +1,7 @@
 import { BUILDINGS, type TroopKind } from './data';
 import { hurtDefender } from './defenders';
 import { nativeUnitStats } from './native-units';
+import { releaseDragonFlame } from './native-dragon-flame';
 import { beginNativeAttackWindup, stepNativeAttackWindup } from './native-attack-windup';
 import type { ChainTarget } from './chain-targets';
 import type { Unit } from './model';
@@ -8,8 +9,8 @@ import type { NativeTroopContext } from './native-troops';
 
 const stats = (ctx: NativeTroopContext, unit: Unit) =>
   nativeUnitStats(unit.kind, unit.level ?? ctx.battle.troopLevels?.[unit.kind as TroopKind] ?? 1);
-/** Legacy-path melee troops keep their movement/selection and gain a split release clock. */
-export function stepLegacyMeleeWindup(
+/** Legacy-path troops retain movement, selection and release rules with a shared attack clock. */
+export function stepLegacyAttackWindup(
   ctx: NativeTroopContext,
   unit: Unit,
   dt: number,
@@ -17,6 +18,10 @@ export function stepLegacyMeleeWindup(
   damage: number,
 ) {
   return stepNativeAttackWindup(ctx, unit, stats(ctx, unit), dt, actionDt, (target) => {
+    if (ctx.battle.nativeDragonWindup && unit.kind === 'dragon') {
+      releaseDragonFlame(ctx, unit, stats(ctx, unit), target, damage);
+      return;
+    }
     let x: number, y: number;
     if ('building' in target) {
       ctx.damageBuilding(target.building, damage, ctx.battle.elapsed);
@@ -44,6 +49,6 @@ export function stepLegacyMeleeWindup(
     });
   });
 }
-export function beginLegacyMeleeWindup(ctx: NativeTroopContext, unit: Unit, target: ChainTarget) {
+export function beginLegacyAttackWindup(ctx: NativeTroopContext, unit: Unit, target: ChainTarget) {
   beginNativeAttackWindup(unit, stats(ctx, unit), target, ctx.battle);
 }

@@ -327,7 +327,7 @@ import {
   type HeroProgress,
   type BattleHero,
 } from './heroes';
-import { beginLegacyMeleeWindup, stepLegacyMeleeWindup } from './native-legacy-melee-windup';
+import { beginLegacyAttackWindup, stepLegacyAttackWindup } from './native-legacy-attack-windup';
 import {
   launchProjectile,
   stepProjectiles,
@@ -1061,6 +1061,8 @@ export interface Battle {
   nativeSuperMinionLongShots?: true;
   /** Version 188: ordinary Minion source charges and native flying defender shots. */
   nativeMinionWindup?: true;
+  /** Version 189: ordinary Dragon source charges and immediate same-layer flame splash. */
+  nativeDragonWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;
@@ -6700,13 +6702,15 @@ export class GameModel {
         stepNativeUnit(native, u, { damage, speed, heal }, unitDt, actionDt * poison.attack);
         continue;
       }
-      const legacyMelee = !!(
+      const legacyAttack = !!(
         native &&
-        ((b.nativePekkaWindup && u.kind === 'pekka') || (b.nativeGiantWindup && u.kind === 'giant'))
+        ((b.nativePekkaWindup && u.kind === 'pekka') ||
+          (b.nativeGiantWindup && u.kind === 'giant') ||
+          (b.nativeDragonWindup && u.kind === 'dragon'))
       );
       if (
-        legacyMelee &&
-        stepLegacyMeleeWindup(native!, u, unitDt, actionDt * poison.attack, damage)
+        legacyAttack &&
+        stepLegacyAttackWindup(native!, u, unitDt, actionDt * poison.attack, damage)
       )
         continue;
       const d = { ...base, heal, damage, speed };
@@ -6723,24 +6727,24 @@ export class GameModel {
           solidBuildings,
           (target, power) => this.damage(target, power),
           this.onEffect,
-          legacyMelee
+          legacyAttack
             ? {
                 ...troop,
-                airTargets: false,
+                airTargets: !!(b.nativeDragonWindup && u.kind === 'dragon'),
                 nativeBuildingAttack: (target: Building) =>
-                  beginLegacyMeleeWindup(native!, u, { building: target }),
+                  beginLegacyAttackWindup(native!, u, { building: target }),
               }
             : undefined,
           isTargetableLive,
           {
             buildings: routeBuildings,
-            ...(legacyMelee
+            ...(legacyAttack
               ? {
                   enterRange: () => {
                     const target = b.defenders?.find(
                       (defender) => defender.id === u.defenderTarget,
                     );
-                    if (target) beginLegacyMeleeWindup(native!, u, { defender: target });
+                    if (target) beginLegacyAttackWindup(native!, u, { defender: target });
                   },
                   attackReady: () => false,
                 }
@@ -6793,8 +6797,8 @@ export class GameModel {
       const distance = distanceTo(u, target);
       if (distance <= d.range) {
         u.attacking = true;
-        if (legacyMelee) {
-          beginLegacyMeleeWindup(native!, u, { building: target });
+        if (legacyAttack) {
+          beginLegacyAttackWindup(native!, u, { building: target });
           continue;
         }
         if (u.cooldown <= 0) {
@@ -6894,8 +6898,8 @@ export class GameModel {
         const wall = hit && hit.hp > 0 && !passableWalls?.has(hit.id) ? hit : undefined;
         if (wall && distanceTo(u, wall) <= d.range) {
           u.attacking = true;
-          if (legacyMelee) {
-            beginLegacyMeleeWindup(native!, u, { building: wall });
+          if (legacyAttack) {
+            beginLegacyAttackWindup(native!, u, { building: wall });
             continue;
           }
           if (u.cooldown <= 0) {

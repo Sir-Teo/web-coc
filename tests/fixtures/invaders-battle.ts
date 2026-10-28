@@ -2,6 +2,7 @@ import { emptySpells } from '../../src/game/army';
 import { GameModel } from '../../src/game/model';
 import { emptyArmy } from '../../src/game/army';
 import { freshNativeCampaign } from '../../src/game/native-campaign';
+import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
 import { developedSave } from './developed-village';
 
 /** A legal 200-space TH8 army approaching Invaders' original level-three Bomb Tower. */
@@ -35,9 +36,14 @@ export function deployInvaders(model: GameModel) {
       if (!model.deploy(6, 23.5)) throw Error('Invaders fixture deployment failed');
   }
 }
-export function invadersBattle(model = new GameModel(invadersVillage())) {
+export function invadersBattle(model = new GameModel(invadersVillage()), version = REPLAY_VERSION) {
   model.startCampaign(50);
   if (!model.battle) throw Error('Invaders did not open');
+  if (version !== REPLAY_VERSION) {
+    const data = (model as unknown as { recording: ReplayData }).recording;
+    data.version = version;
+    model.battle = replayBattle(data.initial, version);
+  }
   deployInvaders(model);
   return model;
 }

@@ -16,11 +16,12 @@ it('settles Invaders source loot once and retains the complete 272-entity map th
   expect(towers).toHaveLength(1);
   for (let i = 0; i < 1600 && !m.battle!.finished; i++) m.step(0.05);
   expect(m.battle!.finished).toBe(true);
-  // 65% before version 54 capped crowd separation.
-  expect(m.battle!.result).toMatchObject({ stars: 2, destruction: 60, trophies: 0 });
+  // Version 189's full Dragon charge changes this army's route and survival.
+  // The version-188 witness below preserves its former 60% / two-star outcome.
+  expect(m.battle!.result).toMatchObject({ stars: 1, destruction: 45, trophies: 0 });
   expect(m.battle!.deathBombs![towers[0].id]).toMatchObject({ damage: 220, resolved: true });
   const progress = m.state.nativeCampaign!;
-  expect(progress.stars[50]).toBe(2);
+  expect(progress.stars[50]).toBe(1);
   expect(progress.stars.slice(0, 50)).toEqual(otherStars);
   expect(progress.remaining.slice(0, 50)).toEqual(otherLoot);
   for (const resource of ['gold', 'elixir', 'dark'] as const) {
@@ -51,4 +52,28 @@ it('settles Invaders source loot once and retains the complete 272-entity map th
   expect(restored.battle!.result).toEqual(result);
   restored.returnHome();
   expect(JSON.stringify(restored.state)).toBe(home);
+});
+
+it('preserves the version-188 Invaders outcome and complete portable battle states', () => {
+  const m = invadersBattle(undefined, 188),
+    snapshots: { at: number; battle: string }[] = [];
+  for (let i = 0; i < 1600 && !m.battle!.finished; i++) {
+    if ([0, 39, 80, 200, 550].includes(i))
+      snapshots.push({ at: m.battle!.elapsed, battle: JSON.stringify(m.battle) });
+    m.step(0.05);
+  }
+  expect(m.battle!.result).toMatchObject({ stars: 2, destruction: 60, trophies: 0 });
+  const end = JSON.stringify(m.battle),
+    data = m.state.raidLog![0].replay!;
+  expect(data.version).toBe(188);
+  expect(m.openReplay(parseReplayFile(JSON.stringify(makeReplayFile(data))))).toBe(true);
+  for (const snapshot of [
+    ...snapshots,
+    ...snapshots.slice().reverse(),
+    { at: 9999, battle: end },
+  ]) {
+    m.seekReplay(snapshot.at);
+    while (m.replay!.seeking) m.step(0.05);
+    expect(JSON.parse(JSON.stringify(m.battle))).toEqual(JSON.parse(snapshot.battle));
+  }
 });

@@ -158,8 +158,8 @@ for (const width of [1440, 390])
     expect(result.same).toBe(true);
     expect(result.isolated).toBe(true);
     // The same result as tests/invaders.test.ts records for this fixture battle.
-    expect(result.result).toMatchObject({ stars: 2, destruction: 60, trophies: 0 });
-    expect(result.progress.stars[50]).toBe(2);
+    expect(result.result).toMatchObject({ stars: 1, destruction: 45, trophies: 0 });
+    expect(result.progress.stars[50]).toBe(1);
     expect(result.glError).toBe(0);
     expect(errors).toEqual([]);
     console.log(
