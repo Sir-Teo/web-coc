@@ -1,5 +1,6 @@
 import { isPetUnitKind } from './native-units';
 import { nativeMiteJump } from './native-mite-jumps';
+import { hogAttackKind } from './native-hog-attacks';
 import { cancelImageDecodes } from './cancel-image-decodes';
 import type Phaser from 'phaser';
 import { TROOPS, type TroopKind } from './data';
@@ -100,8 +101,14 @@ export class TroopNativePresentation {
   lodFrozen = 0;
   constructor(private scene: Phaser.Scene) {}
   /** Prefetch packs and level pages for the carried army when it changes, not on first deploy. */
-  prefetch(kinds: Iterable<string>, levelOf: (kind: string) => number) {
-    for (const kind of kinds) void this.load(kind).then(() => this.loadLevel(kind, levelOf(kind)));
+  prefetch(kinds: Iterable<string>, levelOf: (kind: string) => number | readonly number[]) {
+    for (const kind of kinds)
+      void this.load(kind).then(() => {
+        const selected = levelOf(kind);
+        // Different army and summon tiers must both wait for this kind's shared graph.
+        for (const level of new Set(typeof selected === 'number' ? [selected] : selected))
+          void this.loadLevel(kind, level);
+      });
   }
   private async decodeTexture(
     key: string,
@@ -428,6 +435,7 @@ export class TroopNativePresentation {
               (battle?.nativeRootRiderWindup && u.kind === 'rootrider') ||
               (battle?.nativeElectroTitanWindup && u.kind === 'electrotitan') ||
               (battle?.nativeYetiWindup && (u.kind === 'yeti' || u.kind === 'superyeti')) ||
+              (battle?.nativeHogWindup && hogAttackKind(u.kind)) ||
               (battle?.nativeHoundWindup && (u.kind === 'lavahound' || u.kind === 'icehound')) ||
               (battle?.nativeWitchWindup && (u.kind === 'witch' || u.kind === 'superwitch')) ||
               (battle?.nativeValkyrieWindup &&

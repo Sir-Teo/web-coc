@@ -1211,3 +1211,16 @@ suppresses both halves. Only carried Super Hog Rider armies enable the split.
 Versions 175 and earlier retain their previous absence of both children. No
 source stats, assets, save format or attack clocks change. See the
 [source evidence, geometry limits and Monolith recordings](../reference/attacking-super-hog/README.md).
+
+## Version 177: Hog family melee windups
+
+Hog Rider, Super Hog Rider and both split bodies charge for one second after
+reaching a building, blocking wall or ground defender, then repeat at the same
+source period. Freeze/stun and attack-speed changes use the shared action clock;
+original poses follow each body's action frame. Wall jumping, defense preference,
+the Rider's doubled Wall damage and the version-176 defeat flight stay in place.
+Carried Hog family armies or a Champion's Hog Rider Puppet enable the clock,
+including armies with no Hogs. Puppet summons retain their fixed equipment tier
+and 250 ms wave spacing; their body art warms before activation. Versions 176 and
+earlier retain immediate first hits. No source stats, assets, audio or save format
+change. See [source distinctions and actual Cannon/Monolith/Puppet recordings](../reference/attacking-hog/README.md).

@@ -1030,6 +1030,8 @@ export interface Battle {
   /** Version 176: Super Hog Rider defeats release the Hog and a source-timed flying Rider. */
   nativeSuperHogSplit?: true;
   nativeSuperHogFlights?: CombatProjectile[];
+  /** Version 177: Hog family and Puppet summons use source melee windups. */
+  nativeHogWindup?: true;
   nativeWitchShots?: {
     id: string;
     sourceId: number;

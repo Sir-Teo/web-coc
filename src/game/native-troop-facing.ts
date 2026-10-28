@@ -2,6 +2,7 @@ import { BUILDINGS } from './data';
 import type { Battle, Building, Unit } from './model';
 import { defenderHidden } from './defender-visibility';
 import { buildingIndex, defenderIndex } from './battle-index';
+import { hogAttackKind } from './native-hog-attacks';
 
 /** The actual attack destination, in the same priority order as native Hero facing. */
 export function nativeTroopFacingTarget(
@@ -19,6 +20,7 @@ export function nativeTroopFacingTarget(
     (battle.nativeRootRiderWindup && unit.kind === 'rootrider') ||
     (battle.nativeElectroTitanWindup && unit.kind === 'electrotitan') ||
     (battle.nativeYetiWindup && (unit.kind === 'yeti' || unit.kind === 'superyeti')) ||
+    (battle.nativeHogWindup && hogAttackKind(unit.kind)) ||
     (battle.nativeHoundWindup && (unit.kind === 'lavahound' || unit.kind === 'icehound')) ||
     (battle.nativeWitchWindup && (unit.kind === 'witch' || unit.kind === 'superwitch')) ||
     (battle.nativeValkyrieWindup && (unit.kind === 'valkyrie' || unit.kind === 'supervalkyrie'))

@@ -2,6 +2,7 @@ import { defendingHero, type DefendingHeroSetup } from './defending-heroes';
 import { validLadderMatch, type LadderMatch } from './ladder';
 import { validCraftedFields } from './crafted-defenses';
 import { isSiege, superOriginal } from './special-troops';
+import { hogPuppetLevel } from './native-hog-attacks';
 import { MAX_ARCHER_TOWER_LEVEL } from './archer-tower-stats';
 import { validGearMode, validSpellTowerMode, validWeaponLevel } from './native-defense-stats';
 import { superchargeCount } from './native-supercharge';
@@ -63,7 +64,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 176;
+export const REPLAY_VERSION = 177;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -204,7 +205,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 173 gives Root Rider split attack phases independently of her wall aura.
  * Version 174 gives Electro Titan ground/air whip phases independently of her electric aura.
  * Version 175 gives Yeti/Super Yeti source claws while retaining mite/Recall state.
- * Version 176 gives Super Hog Rider both source defeat abilities and a timed Rider landing. */
+ * Version 176 gives Super Hog Rider both source defeat abilities and a timed Rider landing.
+ * Version 177 gives the Hog family source melee phases, including Hog Rider Puppet summons. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -348,6 +350,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 173 ||
   version === 174 ||
   version === 175 ||
+  version === 176 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -496,6 +499,10 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 177 &&
+    (s.army.hogrider > 0 || s.army.superhogrider > 0 || hogPuppetLevel(s.heroes ?? []) > 0)
+      ? { nativeHogWindup: true as const }
+      : {}),
     ...(version >= 176 && s.army.superhogrider > 0 ? { nativeSuperHogSplit: true as const } : {}),
     ...(version >= 175 && (s.army.yeti > 0 || s.army.superyeti > 0)
       ? { nativeYetiWindup: true as const }

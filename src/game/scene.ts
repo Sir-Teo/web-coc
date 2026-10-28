@@ -47,6 +47,7 @@ import { NativeProjectilePresentation } from './native-projectile-scene';
 import { nativeUnitStats } from './native-units';
 import { heroProjectileNames } from './hero-projectile-prefetch';
 import { superHogSplitStats } from './native-super-hog';
+import { hogPuppetLevel } from './native-hog-attacks';
 import { fireballEffects } from './fireball-effects';
 import { fireballShake } from './fireball-shake';
 import {
@@ -3026,6 +3027,12 @@ export class VillageScene extends Phaser.Scene {
         grid.y < b.y + BUILDINGS[b.kind].size,
     );
   }
+  private hogPuppetArtLevel() {
+    const battle = this.model.battle;
+    return !battle || battle.nativeHogWindup
+      ? hogPuppetLevel(battle?.nativeHeroes ?? this.model.heroSetups())
+      : 0;
+  }
   /** Troop kinds held at home or carried by the current battle, sorted. */
   private wantedTroopArt() {
     const wanted = new Set<string>();
@@ -3039,6 +3046,7 @@ export class VillageScene extends Phaser.Scene {
     )
       wanted.add('frostmite');
     for (const child of carriedMiteArt(this.model.battle)) wanted.add(child);
+    if (this.hogPuppetArtLevel()) wanted.add('hogrider');
     if (
       (!this.model.battle || this.model.battle.nativeSuperHogSplit) &&
       wanted.has('superhogrider')
@@ -3078,15 +3086,21 @@ export class VillageScene extends Phaser.Scene {
    */
   private prefetchArmyArt() {
     const kinds = this.wantedTroopArt();
+    const puppet = this.hogPuppetArtLevel();
     const level = (kind: string) =>
-      this.model.troopLevel(
-        (kind === 'superhog' || kind === 'superrider'
-          ? 'superhogrider'
-          : Object.hasOwn(MITE_SPAWN_PARENTS, kind)
-            ? MITE_SPAWN_PARENTS[kind as keyof typeof MITE_SPAWN_PARENTS]
-            : kind) as TroopKind,
-      );
-    const signature = kinds.map((kind) => `${kind}:${level(kind)}`).join(',');
+      kind === 'hogrider' &&
+      puppet &&
+      !this.model.state.army.hogrider &&
+      !this.model.battle?.carriedArmy?.hogrider
+        ? puppet
+        : this.model.troopLevel(
+            (kind === 'superhog' || kind === 'superrider'
+              ? 'superhogrider'
+              : Object.hasOwn(MITE_SPAWN_PARENTS, kind)
+                ? MITE_SPAWN_PARENTS[kind as keyof typeof MITE_SPAWN_PARENTS]
+                : kind) as TroopKind,
+          );
+    const signature = `${kinds.map((kind) => `${kind}:${level(kind)}`).join(',')}|hog-puppet:${puppet}`;
     if (signature !== this.armyPrefetchSignature) {
       this.armyPrefetchSignature = signature;
       if (!this.model.battle) {
@@ -3095,7 +3109,10 @@ export class VillageScene extends Phaser.Scene {
         this.troopNativePresentation?.clear();
         this.troopNativePresentation?.releaseExcept(new Set(kinds));
       }
-      if (kinds.length) this.troopNativePresentation?.prefetch(kinds, level);
+      if (kinds.length)
+        this.troopNativePresentation?.prefetch(kinds, (kind) =>
+          kind === 'hogrider' && puppet ? [level(kind), puppet] : level(kind),
+        );
       if (kinds.includes('electromite'))
         this.nativeProjectiles?.prefetchEffects(ELECTROMITE_EFFECTS);
     }

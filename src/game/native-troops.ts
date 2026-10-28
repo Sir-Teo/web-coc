@@ -21,6 +21,7 @@ import { monolithArrow, stepEquipmentDash } from './native-equipment-effects';
 import { isSiege } from './special-troops';
 import { nativeMiteJump } from './native-mite-jumps';
 import { superHogLanding, superHogSplitStats } from './native-super-hog';
+import { hogAttackKind } from './native-hog-attacks';
 import { sneezyCombatStats, sneezySpawner, sneezySummon } from './native-sneezy';
 import { distance2D } from './distance';
 import { furnaceReleasePoint } from './native-furnace-geometry';
@@ -859,6 +860,7 @@ export function stepNativeUnit(
   const rootRider = !!(battle.nativeRootRiderWindup && u.kind === 'rootrider');
   const electroTitan = !!(battle.nativeElectroTitanWindup && u.kind === 'electrotitan');
   const yeti = !!(battle.nativeYetiWindup && (u.kind === 'yeti' || u.kind === 'superyeti'));
+  const hog = !!(battle.nativeHogWindup && hogAttackKind(u.kind));
   const valkyrie = !!(
     battle.nativeValkyrieWindup &&
     (u.kind === 'valkyrie' || u.kind === 'supervalkyrie')
@@ -873,6 +875,7 @@ export function stepNativeUnit(
     rootRider ||
     electroTitan ||
     yeti ||
+    hog ||
     valkyrie ||
     witch ||
     hound;
@@ -883,7 +886,7 @@ export function stepNativeUnit(
       else if ('building' in target) strike(ctx, u, s, target.building, damage);
       else if (witch) releaseWitchAtDefender(ctx, u, s, target.defender, damage);
       else if (hound) releaseHoundAtDefender(ctx, u, s, target.defender, damage);
-      else if (golem || giant || iceGolem || rootRider || electroTitan || yeti) {
+      else if (golem || giant || iceGolem || rootRider || electroTitan || yeti || hog) {
         hurtDefender(battle, target.defender, damage, at);
         if (iceGolem)
           applyDefenderFrost(
@@ -1032,6 +1035,7 @@ export function stepNativeUnit(
         rootRider ||
         electroTitan ||
         yeti ||
+        hog ||
         valkyrie ||
         witch ||
         hound ||
