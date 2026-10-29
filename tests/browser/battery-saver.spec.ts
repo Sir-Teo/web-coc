@@ -17,7 +17,7 @@ const loop = (page: Page) =>
     };
   });
 
-test('battery saver caps play at 30 FPS and 2× density, and turning it off restores both', async ({
+test('battery saver caps play at 30 FPS and turning it off retains the phone density budget', async ({
   page,
 }) => {
   await page.goto('/?lazyart');
@@ -44,8 +44,9 @@ test('battery saver caps play at 30 FPS and 2× density, and turning it off rest
     m.startCampaign(0);
   });
   await expect(page.locator('.battle-enemy')).toBeVisible();
+  // The canvas applies its cap outside the frame that renders the battle toolbar.
+  await expect.poll(async () => (await loop(page)).fpsLimit).toBe(30);
   const raid = await loop(page);
-  expect(raid.fpsLimit).toBe(30);
   expect(raid.width).toBeLessThanOrEqual(2 * 390);
   await page.evaluate(() => {
     const m = window.__game.model;
@@ -53,10 +54,10 @@ test('battery saver caps play at 30 FPS and 2× density, and turning it off rest
     m.returnHome();
   });
 
-  // Off: native 3× density at full scale and no cap in play.
+  // Off: full phone density (2×) and the normal 60 FPS phone cap in play.
   await page.locator('[data-action="settings"]').first().tap();
   await page.locator('[data-action="battery"]').tap();
-  await expect.poll(() => loop(page)).toEqual({ fpsLimit: 15, width: 3 * 390, saver: false });
+  await expect.poll(() => loop(page)).toEqual({ fpsLimit: 15, width: 2 * 390, saver: false });
   await page.locator('[data-action="close"]').first().tap();
-  await expect.poll(async () => (await loop(page)).fpsLimit).toBe(0);
+  await expect.poll(async () => (await loop(page)).fpsLimit).toBe(60);
 });

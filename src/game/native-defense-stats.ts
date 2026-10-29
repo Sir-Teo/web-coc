@@ -321,23 +321,6 @@ export const townHallWeaponLevels = (level: number) => {
   return weapon ? nativeLevelCount('weapons', weapon) : 0;
 };
 
-/** Builder's Hut repair: the Defending Builder character one level below the hut. */
-export function hutRepair(level: number) {
-  const row = nativeRow('buildings', 'Builders Hut', level);
-  const character = text(row, 'DefenceTroopCharacter');
-  const troopLevel = num(row, 'DefenceTroopLevel');
-  if (!character || !troopLevel) return null;
-  const builder = nativeRow('characters', character, troopLevel);
-  return {
-    count: Math.max(1, num(row, 'DefenceTroopCount', 1)),
-    heal: -num(builder, 'DPS') * seconds(builder, 'AttackSpeed'),
-    interval: seconds(builder, 'AttackSpeed'),
-    reach: tiles(builder, 'AttackRange'),
-    speed: num(builder, 'Speed') / 100,
-    area: tiles(row, 'AttackRange'),
-  };
-}
-
 /** Eagle Artillery wake weights: housing, heroes x1, spells x5 (client globals). */
 export const SPELL_WAKE_MULTIPLIER = nativeGlobal('SPELL_HOUSING_COST_MULTIPLIER', 500) / 100;
 export const HERO_WAKE_MULTIPLIER = nativeGlobal('HERO_HOUSING_COST_MULTIPLIER', 100) / 100;

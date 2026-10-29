@@ -50,8 +50,6 @@ export const isGarrisonKind = (value: unknown): value is GarrisonKind =>
 /** Secondary, summoned and trap-spawned kinds: never loaded into a bunker. */
 export const isSpawnedGarrisonKind = (kind: GarrisonKind) =>
   (GARRISON_KINDS[kind] as { spawned?: true }).spawned === true;
-/** Every source roster family now has implemented behavior; none keeps a village gated. */
-export const PENDING_GARRISON_CHARACTERS = [] as const;
 export function garrisonKindForCharacter(character: string): GarrisonKind | undefined {
   return (Object.keys(GARRISON_KINDS) as GarrisonKind[]).find(
     (kind) => GARRISON_KINDS[kind].character === character && !isSpawnedGarrisonKind(kind),

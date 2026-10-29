@@ -1870,6 +1870,124 @@ WebKit replay context blocks service workers to isolate replay controls from upd
 Standard production navigation/replay pass in both engines under their usual worker
 configuration. Chromium also passes offline reload/replay using cache `8c77ce408aa8`.
 
+## Reducing native attacker setup and group counting
+
+Native attackers now assemble only their applicable defender callbacks, without chains of
+temporary spread objects. An empty defender phase skips this setup; stale defender targets
+still take the shared cleanup path so the attacker chooses a fresh building target. Troop
+kind checks precede capability reads in the native attack paths. Attack windups without a
+committed target advance their clocks and clear cast state before skipping interruption scans.
+
+Support-group cells retain captured position bounds and total housing alongside their reused
+index arrays. Dense cells wholly inside the radius contribute their integer housing sum at
+once; cells wholly outside are skipped. Small cells and cells crossing the radius use the
+original per-unit distance calculation. Snapshot timing and unit-order ties stay unchanged.
+This aggregates whole cells rather than adding the per-unit rejection attempted above.
+
+The group witness compares 24 clustered, scattered and radius-boundary layouts against an
+independent full scan, including deaths, recalls, reordered units and recycled cells. It runs
+in Node, Chromium and WebKit. A separate regression retains stale-defender retargeting.
+
+Use `node scripts/battle-sim-benchmark.mjs --army=roster --warmup=4 --runs=5` and the same
+command with `--army=th18` to measure simulation work and compare complete final-state hashes.
+Timings on a shared host are noisy; compare warmed, alternating original/modified runs before
+attributing small changes to these optimizations.
+
+An alternating Node 26.8.2 comparison against `38363bf5` on the local Apple M1, with three
+warmups per variant and four measured runs per variant, reduces the full-roster fixture's
+mean thread CPU from 3,128.17 to 2,850.13 ms (8.9%). The ordinary TH18 army is inconclusive:
+its first comparison is 2.0% slower, while a six-run-per-variant repeat is 1.8% faster
+(885.35 to 869.52 ms). These measurements do not establish an ordinary-army speedup.
+Both fixtures match the original complete serialized battle state at every one of their
+400 steps, as well as retaining their final hashes across repeated runs.
+
+The full suite passes 7,831 tests; only the 288-battle campaign audit exceeds its 180-second
+wall-clock limit. Its three tests pass in an isolated retry (47.41 seconds of test work).
+The final 107 focused tests, six Chromium/WebKit group checks, source/test type checks,
+documentation validation and production build pass.
+
+## Mobile rendering, memory budgets and source cleanup
+
+Phones/tablets with primary coarse input now use a 2× canvas ceiling and a 60 FPS play cap.
+The canvas starts at 780×1688 on a 390×844, 3× phone rather than 1170×2532: 55.6% fewer
+pixels, with unchanged CSS coordinates, world zoom and DOM text density. Battery saver caps
+play at 30 FPS, idle villages at 30 FPS and quiet dialogs/reduced-motion idle views at 15 FPS.
+Adaptive quality can still lower density under sustained pressure.
+
+The shared `runtime-budget.ts` policy reduces the four retained rendering-cache budgets
+from 176 MiB to 44 MiB on phones: decoded village images 16 MiB, free blend buffers 12 MiB,
+baked tint textures 8 MiB and source pixel copies 8 MiB. These are eviction targets rather
+than a measured total-memory reduction. Active images and referenced tint textures keep
+their existing ownership and restoration behavior.
+
+`FramePacing` extracts idle/dialog/battery policy from the scene. The scene coalesces queued
+rate changes, cancels stale caps on input and clears its pending timer at shutdown. Unit
+cases cover the five-second idle boundary, structural changes, touch activity, reduced
+motion, battles, replay, placement and editing. Phone browser cases exercise caps, reset,
+rotation, taps, momentum, form gestures and artwork demand loading in Chromium/WebKit.
+
+Building presentation also uses the scene's existing `isoInto` helper and one reusable
+projection point. A full village pass no longer allocates a Vector2 for each supported
+building, including those subsequently culled. The optional allocating path stays available
+for other callers; both paths retain identical coordinates, cached poses and preview tints.
+
+The source audit removes 49 unreferenced runtime declarations (including obsolete table
+builders and Hero helpers), their unused imports and the unreachable historical Bowler
+re-export module. The shared attack-windup implementation continues serving the game and
+historical recordings. The remaining source modules are reachable through the entry's
+resolved imports, including dynamic imports. Runtime-constructed artwork paths are retained.
+The development content inventory derives one-level building names from the active tier
+assignments and building definitions, replacing its dependency on an otherwise-unused runtime name map;
+its generated inventory remains unchanged.
+
+With the development server running, `npm run test:battle:mobile` exercises the TH18 army
+on stage 61 at a 390×844, 3× touch viewport with a 4× CPU slowdown and demand-loaded art.
+The report records canvas size, frame work, draw calls and the emulation settings. Override
+with `--viewport=844x390`, `--dpr=2` or `--cpu=1` as needed. This emulates constraints;
+it does not measure a physical phone's GPU, thermals or process-memory use.
+
+On the local Apple M1, the final 288-unit phone fixture measures 60 FPS without CPU
+throttling (10.8 ms mean frame work, 17.8 ms p95 interval), at a 780×1688 canvas. At 4×
+CPU slowdown it remains CPU-bound at 13.3 FPS (73.7 ms mean work), even after adaptive
+density reaches 195×422. The profile spreads cost across combat, native building/effect
+presentation and render submission; these changes do not establish 60 FPS on low-end phones.
+
+Validation: all 7,840 tests in the full four-worker run pass. The final rendering changes
+pass 96 focused cases; the phone/input matrix passes 20 browser cases (two CDP-only WebKit
+cases skipped), and the cap/artwork-release/recovery matrix passes 24 cases. Two inventory
+tests, unchanged inventory generation, strict source/test typing, documentation validation
+and the production build also pass.
+
+## Final research and background-work pass
+
+The [Phaser 4 rendering guide](https://phaser.io/tutorials/phaser-4-shader-guide)
+recommends batching compatible objects, reusing drawing contexts and preserving the
+renderer wrappers that restore lost WebGL resources. The existing shared native-mesh/quad
+batch already implements that approach. Phaser 4.2.1 also enables `autoMobileTextures` by
+default; no extra texture-unit override is needed.
+
+[MDN's WebGL guidance](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices)
+supports smaller drawing buffers, bounded resource use and batching. The phone density and
+cache policies above apply these methods. A further packed-vertex cache was tested with
+alternating enabled/disabled runs at fixed density and a frozen TH18 battle under 4× CPU
+slowdown. Two trials, including a minimum-mesh-size variant, showed no consistent CPU
+improvement. The experimental cache was removed rather than adding retention and
+invalidation work without a demonstrated benefit.
+
+[MDN's Page Visibility guidance](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API)
+recommends avoiding unnecessary polling while hidden. The HUD's 250 ms refresh and the
+economy's one-second interval now stop entirely while hidden and restart once when visible.
+The existing resume handler advances the economy immediately to wall time; background saves,
+audio suspension and exit settlement retain their existing behavior. Cleanup removes the
+visibility listener as well as the timer, so a destroyed HUD or exited session cannot restart
+its poller. Unit cases cover initially hidden pages, repeated events and cleanup; phone
+browser cases verify no hidden callbacks, a forced save and immediate clock catch-up.
+
+Final validation passes 7,845 tests across 544 files. Twelve Chromium/WebKit cases cover
+background work, audio lifecycle, battery saver, phone density and save recovery. Strict
+source/test typing, the production build, formatting, documentation links and content
+inventory reproduction also pass.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

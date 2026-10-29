@@ -75,7 +75,6 @@ import {
 import {
   SPELL_TOWER_READY,
   spellTowerDefenderBoost,
-  spellTowerDefenderHidden,
   spellTowerDefenseBoost,
   spellTowerDestroyed,
   spellTowerHidden,
@@ -230,9 +229,6 @@ export function lateDefenderStats<T extends { damage: number; speed: number }>(
     ? stats
     : { ...stats, damage: stats.damage * rage.damage, speed: stats.speed + rage.speed };
 }
-/** Defending units concealed by a defensive Invisibility pulse. */
-export const lateDefenderHidden = (battle: Battle, defender: { id: number }) =>
-  spellTowerDefenderHidden(battle, defender);
 /** An attacker's Lightning strike: Defending Builders inside it reset their repair target. */
 export const lateLightningStrike = (battle: Battle, x: number, y: number, radius: number) =>
   defendingBuilderLightning(battle, x, y, radius);

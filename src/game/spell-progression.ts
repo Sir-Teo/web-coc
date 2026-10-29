@@ -47,8 +47,6 @@ export const jumpSeconds = (level = 1) => {
   const m = mechanics('jump', level);
   return m.pulses! * m.interval!;
 };
-/** How long a troop keeps vaulting after stepping out of the ring. */
-export const JUMP_LINGER = mechanics('jump', 1).jump!;
 export const JUMP_RADIUS = mechanics('jump', 1).radius!;
 /** Housing space of copies the Clone Spell may make, and how long a copy lives. */
 export const cloneHousing = (level = 1) => mechanics('clone', level).duplicateHousing!;
@@ -74,4 +72,3 @@ export const spellFactory = (kind: SpellKind) =>
   SPELL_ROSTER[SPELL_NAMES[kind]].building === 'Dark Spell Factory'
     ? ('darkspellfactory' as const)
     : ('spellfactory' as const);
-export const spellFactoryLevel = (kind: SpellKind) => SPELL_ROSTER[SPELL_NAMES[kind]].forge;

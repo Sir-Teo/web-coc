@@ -13,8 +13,6 @@ export function builderHutArt(level: number) {
     originY: (source.anchor[1] - top) / (bottom - top),
   };
 }
-/** Level-two armed registration, retained for callers that need one representative portrait. */
-export const BUILDER_HUT_ART = builderHutArt(2);
 export const BUILDER_HUT_ART_LEVELS = Object.keys(source.previews).map(Number);
 export function builderHutTexture(level: number, variant?: string) {
   void variant;

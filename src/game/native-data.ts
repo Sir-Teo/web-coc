@@ -32,8 +32,6 @@ interface CombatTables {
 }
 const combat = source as unknown as CombatTables &
   Record<NativeTable, Record<string, Record<string, string>[]>>;
-export const NATIVE_CLIENT_VERSION = combat.clientVersion;
-export const NATIVE_ROSTER = combat.roster;
 
 const cache = new Map<string, readonly NativeRow[]>();
 export const hasNative = (table: NativeTable, name: string) => Object.hasOwn(combat[table], name);
@@ -93,7 +91,6 @@ export const nativeGlobalArray = (name: string, column = 'NumberArray') =>
 /** Town Hall level table rows (1..18) including per-building count columns. */
 export const nativeTownHall = (level: number): NativeRow =>
   combat.townhall[Math.max(1, Math.min(combat.townhall.length, Math.floor(level) || 1)) - 1];
-export const nativeTownHallLevels = () => combat.townhall.length;
 export const nativeSuperLicence = (name: string): NativeRow | undefined =>
   combat.superLicences[name]?.[0];
 export const nativeSuperLicences = () => Object.keys(combat.superLicences);

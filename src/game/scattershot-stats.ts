@@ -1,7 +1,6 @@
 import source from '../../reference/scattershot/combat.json' with { type: 'json' };
 
 export const SCATTERSHOT_LEVELS = source.levels;
-export const MAX_SCATTERSHOT_LEVEL = source.levels.length;
 export const SCATTERSHOT_NATIVE_TILE = 512;
 const units = (value: number) => Math.trunc((value * SCATTERSHOT_NATIVE_TILE) / 100);
 

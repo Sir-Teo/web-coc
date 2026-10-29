@@ -15,7 +15,6 @@ import {
   GOBLIN_WEAPONS,
   LATE_GOBLIN_SOURCE,
   goblinBuildingArt,
-  goblinWeaponFor,
   type LateGoblinIdentity,
 } from './late-goblin-buildings-stats';
 
@@ -190,12 +189,6 @@ export function lateGoblinBounds(b: Pick<Building, 'npc' | 'level' | 'hp'>) {
   if (!bounds) throw Error(`Empty late Goblin building pose: ${npc}`);
   boundsCache.set(key, bounds);
   return bounds;
-}
-
-/** Height of the launch point above the ground center; StartHeight uses the village altitude scale. */
-export function lateGoblinMuzzle(b: Building) {
-  const weapon = goblinWeaponFor(b);
-  return weapon ? weapon.source.startHeight * LATE_GOBLIN_ALTITUDE : 0;
 }
 
 /** Original arrow mesh on its tracked flight, rotated toward the projected destination. */

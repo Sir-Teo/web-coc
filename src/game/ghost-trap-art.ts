@@ -1,5 +1,5 @@
 import native from '../../reference/skeleton-trap/native.json' with { type: 'json' };
-import { skeletonTrapArt, skeletonTrapAsset, skeletonTrapTexture } from './skeleton-art';
+import { skeletonTrapArt, skeletonTrapTexture } from './skeleton-art';
 
 /**
  * The Ghost Trap row names original Skeleton Trap coffin exports from sc/buildings.sc: armed
@@ -25,11 +25,6 @@ export function ghostTrapTexture(level: number, variant?: string) {
   void level;
   void variant;
   return skeletonTrapTexture('ground', GHOST_TRAP_EXPORTS.armed.tier);
-}
-export function ghostTrapAsset(level: number, variant?: string) {
-  void level;
-  void variant;
-  return skeletonTrapAsset('ground', GHOST_TRAP_EXPORTS.armed.tier);
 }
 /** The atlas frame and registration for a state: armed, the 24-fps trigger clip, or broken. */
 export function ghostTrapFrame(activatedAt: number | undefined, elapsed: number, reduced: boolean) {

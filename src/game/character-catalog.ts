@@ -70,8 +70,6 @@ export function characterProjectileGroups(animation: string): ReadonlySet<string
   animationProjectileGroups.set(key, groups);
   return groups;
 }
-/** Globals read by the pinned older engine that this client no longer contains. */
-export const ABSENT_GLOBALS = catalog.absentGlobals;
 /** Pinned globals read by Defending Builder repairs (healer slot percentages, post-damage delay). */
 export const REPAIR_GLOBALS = catalog.repairGlobals;
 /** A trap row that spawns characters (Ghost Trap), with explicit level inheritance. */
@@ -88,8 +86,6 @@ export function defenceTroopLevel(building: string, level: number) {
   if (!row) throw Error(`Missing native defence troop row ${building} ${level}`);
   return row;
 }
-/** Bunker buildings (source `Bunker=TRUE`) keyed by GlobalID. */
-export const BUNKER_BUILDINGS = catalog.bunkers;
 
 export const sourceNumber = (row: SourceRow | Record<string, string>, key: string) => {
   const value = row[key];

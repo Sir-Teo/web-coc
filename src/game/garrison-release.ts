@@ -30,8 +30,6 @@ export const initializeGarrison = (setup: GarrisonSetup, seed = 0): GarrisonStat
 export const isGarrisonBunker = (b: Pick<Building, 'kind' | 'npc'>) =>
   (b.kind === 'clancastle' && (b.npc === undefined || b.npc === 'goblin-castle')) ||
   (b.kind === 'camp' && b.npc === 'foreboding-cave');
-/** Older-engine 320ms countdown plus the following 64ms search tick; modern parity pending. */
-export const GARRISON_SEARCH_SECONDS = 0.384;
 const searchTime = (index: number) => (index * 384) / 1000;
 const exits = [
   [1, 0],

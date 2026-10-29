@@ -33,12 +33,6 @@ export const heroTownHallScale = (townhall: number) =>
   townhall <= 4 ? 0.5 : townhall === 5 ? 0.75 : 1;
 export const kingLevel = (level: number) =>
   KING_LEVELS[Math.max(0, Math.min(HERO_MAX_LEVEL, level) - 1)];
-
-// Default equipment is level 1. Equipment selection/upgrading is a separate system.
-export const KING_EQUIPMENT = {
-  puppet: { hp: 309, recovery: 110 },
-  vial: { dps: 17, recovery: 150 },
-} as const;
 export function heroStats(level: number, townhall: number, equipment?: KingEquipment) {
   const native = kingLevel(level),
     scale = heroTownHallScale(townhall),

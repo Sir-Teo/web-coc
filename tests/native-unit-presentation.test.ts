@@ -881,74 +881,96 @@ describe('native defense effect log', () => {
   });
 });
 
-it('shares identical wall samples without mixing levels or placement preview tints', () => {
-  const pack = JSON.parse(fs.readFileSync('public/assets/village-native/wall/graph.json', 'utf8'));
-  const p = new VillageNativePresentation(
-    fakeScene(),
-    () => {},
-    () => 0,
-  );
-  const state = p as unknown as {
-    packs: Map<string, unknown>;
-    levelsReady: Map<string, Set<number>>;
-    views: Map<
-      number,
-      Map<string, { view: { lastPoses: unknown[]; last: { x: number; y: number } } }>
-    >;
-  };
-  state.packs.set('wall', pack);
-  state.levelsReady.set('wall', new Set([12, 13]));
-  const walls = [
-    makeBuilding(1, 'wall', 10, 10, 12),
-    makeBuilding(2, 'wall', 11, 10, 12),
-    makeBuilding(3, 'wall', 12, 10, 13),
-  ];
-  const view = (id: number) => [...state.views.get(id)!.values()][0].view;
-  p.render(walls, null, 0.5, iso, new Map());
-  expect(view(1).lastPoses).toBe(view(2).lastPoses);
-  expect(view(1).last).not.toEqual(view(2).last);
-  expect(view(1).lastPoses).not.toEqual(view(3).lastPoses);
-  p.preview(makeBuilding(99, 'wall', 13, 10, 12), false);
-  p.render(walls, null, 1, iso, new Map());
-  const expected = nativeScenePoses(
-    pack.scenes.buildings,
-    'defense_wall_lvl12',
-    1,
-    {},
-    [1.2, 0, 0, 0, 1.2, -32],
-  );
-  expect(view(1).lastPoses).toEqual(expected);
-  expect(view(2).lastPoses).toEqual(expected);
-  expect(view(-1).lastPoses).not.toEqual(expected);
-  expect(view(-1).lastPoses).not.toBe(view(1).lastPoses);
-});
+it.each([false, true])(
+  'shares wall samples without mixing positions, levels or preview tints (scratch point: %s)',
+  (scratch) => {
+    const pack = JSON.parse(
+      fs.readFileSync('public/assets/village-native/wall/graph.json', 'utf8'),
+    );
+    const p = new VillageNativePresentation(
+      fakeScene(),
+      () => {},
+      () => 0,
+    );
+    const state = p as unknown as {
+      packs: Map<string, unknown>;
+      levelsReady: Map<string, Set<number>>;
+      views: Map<
+        number,
+        Map<string, { view: { lastPoses: unknown[]; last: { x: number; y: number } } }>
+      >;
+    };
+    state.packs.set('wall', pack);
+    state.levelsReady.set('wall', new Set([12, 13]));
+    const walls = [
+      makeBuilding(1, 'wall', 10, 10, 12),
+      makeBuilding(2, 'wall', 11, 10, 12),
+      makeBuilding(3, 'wall', 12, 10, 13),
+    ];
+    const view = (id: number) => [...state.views.get(id)!.values()][0].view;
+    const projectInto = scratch
+      ? (out: { x: number; y: number }, x: number, y: number) => Object.assign(out, iso(x, y))
+      : undefined;
+    p.render(walls, null, 0.5, iso, new Map(), projectInto);
+    expect(view(1).lastPoses).toBe(view(2).lastPoses);
+    expect(view(1).last).not.toEqual(view(2).last);
+    expect(view(1).lastPoses).not.toEqual(view(3).lastPoses);
+    p.preview(makeBuilding(99, 'wall', 13, 10, 12), false);
+    p.render(walls, null, 1, iso, new Map(), projectInto);
+    const expected = nativeScenePoses(
+      pack.scenes.buildings,
+      'defense_wall_lvl12',
+      1,
+      {},
+      [1.2, 0, 0, 0, 1.2, -32],
+    );
+    expect(view(1).lastPoses).toEqual(expected);
+    expect(view(2).lastPoses).toEqual(expected);
+    expect(view(-1).lastPoses).not.toEqual(expected);
+    expect(view(-1).lastPoses).not.toBe(view(1).lastPoses);
+  },
+);
 
-it('keeps static wall renders cached until their projected position changes', () => {
-  const pack = JSON.parse(fs.readFileSync('public/assets/village-native/wall/graph.json', 'utf8'));
-  const p = new VillageNativePresentation(
-    fakeScene(),
-    () => {},
-    () => 0,
-  );
-  const state = p as unknown as {
-    packs: Map<string, unknown>;
-    levelsReady: Map<string, Set<number>>;
-    views: Map<number, Map<string, { view: { renders: number; last: { x: number; y: number } } }>>;
-  };
-  state.packs.set('wall', pack);
-  state.levelsReady.set('wall', new Set([1]));
-  const wall = makeBuilding(1, 'wall', 10, 10, 1);
-  p.render([wall], null, 0, iso, new Map());
-  const view = [...state.views.get(1)!.values()][0].view;
-  p.render([wall], null, 1, iso, new Map());
-  expect(view.renders).toBe(1);
-  wall.x += 4;
-  p.render([wall], null, 2, iso, new Map());
-  expect(view.last).toMatchObject(iso(wall.x + 0.5, wall.y + 0.5));
-  expect(view.renders).toBe(2);
-  p.render([wall], null, 3, iso, new Map());
-  expect(view.renders).toBe(2);
-});
+it.each([false, true])(
+  'keeps static walls cached across projection changes (scratch point: %s)',
+  (scratch) => {
+    const pack = JSON.parse(
+      fs.readFileSync('public/assets/village-native/wall/graph.json', 'utf8'),
+    );
+    const p = new VillageNativePresentation(
+      fakeScene(),
+      () => {},
+      () => 0,
+    );
+    const state = p as unknown as {
+      packs: Map<string, unknown>;
+      levelsReady: Map<string, Set<number>>;
+      views: Map<
+        number,
+        Map<string, { view: { renders: number; last: { x: number; y: number } } }>
+      >;
+    };
+    state.packs.set('wall', pack);
+    state.levelsReady.set('wall', new Set([1]));
+    const wall = makeBuilding(1, 'wall', 10, 10, 1);
+    const allocate = vi.fn(iso);
+    const projectInto = scratch
+      ? (out: { x: number; y: number }, x: number, y: number) => Object.assign(out, iso(x, y))
+      : undefined;
+    const render = (time: number) => p.render([wall], null, time, allocate, new Map(), projectInto);
+    render(0);
+    const view = [...state.views.get(1)!.values()][0].view;
+    render(1);
+    expect(view.renders).toBe(1);
+    wall.x += 4;
+    render(2);
+    expect(view.last).toMatchObject(iso(wall.x + 0.5, wall.y + 0.5));
+    expect(view.renders).toBe(2);
+    render(3);
+    expect(view.renders).toBe(2);
+    if (scratch) expect(allocate).not.toHaveBeenCalled();
+  },
+);
 
 it('keeps resource controls distinct when sharing building samples', () => {
   const pack = JSON.parse(

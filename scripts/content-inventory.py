@@ -99,11 +99,20 @@ def mapped(script, constant):
 
 
 def implemented_buildings():
-    """The original names src/game/townhall-catalog.ts maps this game's buildings onto."""
+    """Read tabled names and explicitly gated one-level buildings from the live source."""
     text = (ROOT / 'src/game/townhall-catalog.ts').read_text()
     match = re.search(r'export const SOURCE_NAME[^=]*= \{(.*?)^\};', text, re.S | re.M)
     require(match is not None, 'Cannot read SOURCE_NAME from townhall-catalog.ts')
-    return set(re.findall(r":\s*'([^']+)'", match.group(1)))
+    names = set(re.findall(r":\s*'([^']+)'", match.group(1)))
+    tiers = (ROOT / 'src/game/tiers.ts').read_text()
+    definitions = (ROOT / 'src/game/data.ts').read_text()
+    # These buildings have no progression row. Follow their actual tier assignments rather
+    # than shipping an otherwise-unused name map just for this development report.
+    for kind in set(re.findall(r'\bBUILDING_COUNTS\.(\w+)\s*=', tiers)):
+        entry = re.search(rf'^  {re.escape(kind)}: \{{\s+name:\s*\'([^\']+)\'', definitions, re.M)
+        require(entry is not None, f'Cannot read explicitly gated building: {kind}')
+        names.add(entry.group(1))
+    return names
 
 
 def runtime_map(file, constant):
@@ -209,7 +218,6 @@ def build():
     # The Town Hall catalog tables only the entities this game builds, so for buildings and
     # traps pinning and implementing are the same step.
     building_names = (implemented_buildings()
-                      | runtime_map('townhall-catalog.ts', 'UNTIERED_SOURCE_NAME')
                       | {row['name'] for row in progression['buildings'].values()})
     # Imported seasonal traps use their own pinned reference packs.
     for folder in ['freeze-trap', 'shrink-trap', 'pumpkin-bomb', 'santa-trap']:

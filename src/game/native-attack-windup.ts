@@ -154,24 +154,35 @@ export function stepNativeAttackWindup(
   st.lastAt = at;
   unit.cooldown = Math.max(0, st.engaged ? st.remaining : st.recovery);
   const airTargets =
+    !!st.target &&
     stats.airTargets &&
     !!(
-      (ctx.battle.nativeWitchWindup && (unit.kind === 'witch' || unit.kind === 'superwitch')) ||
-      (ctx.battle.nativeElectroTitanWindup && unit.kind === 'electrotitan') ||
-      (ctx.battle.nativeApprenticeWindup && unit.kind === 'apprenticewarden') ||
-      (ctx.battle.nativeHeadhunterWindup && unit.kind === 'headhunter') ||
-      (ctx.battle.nativeThrowerWindup && unit.kind === 'thrower') ||
-      (ctx.battle.nativeDragonRiderWindup && unit.kind === 'dragonrider') ||
-      (ctx.battle.nativeBabyDragonWindup && unit.kind === 'babydragon') ||
-      (ctx.battle.nativeSuperMinionLongShots && unit.kind === 'superminion') ||
-      (ctx.battle.nativeMinionWindup && unit.kind === 'minion') ||
-      (ctx.battle.nativeDragonWindup && unit.kind === 'dragon') ||
-      (ctx.battle.nativeArcherWindup && unit.kind === 'archer') ||
-      (ctx.battle.nativeSuperArcherWindup && unit.kind === 'superarcher') ||
-      (ctx.battle.nativeSuperWizardWindup && unit.kind === 'superwizard') ||
-      (ctx.battle.nativeWizardWindup && unit.kind === 'wizard')
+      ((unit.kind === 'witch' || unit.kind === 'superwitch') && ctx.battle.nativeWitchWindup) ||
+      (unit.kind === 'electrotitan' && ctx.battle.nativeElectroTitanWindup) ||
+      (unit.kind === 'apprenticewarden' && ctx.battle.nativeApprenticeWindup) ||
+      (unit.kind === 'headhunter' && ctx.battle.nativeHeadhunterWindup) ||
+      (unit.kind === 'thrower' && ctx.battle.nativeThrowerWindup) ||
+      (unit.kind === 'dragonrider' && ctx.battle.nativeDragonRiderWindup) ||
+      (unit.kind === 'babydragon' && ctx.battle.nativeBabyDragonWindup) ||
+      (unit.kind === 'superminion' && ctx.battle.nativeSuperMinionLongShots) ||
+      (unit.kind === 'minion' && ctx.battle.nativeMinionWindup) ||
+      (unit.kind === 'dragon' && ctx.battle.nativeDragonWindup) ||
+      (unit.kind === 'archer' && ctx.battle.nativeArcherWindup) ||
+      (unit.kind === 'superarcher' && ctx.battle.nativeSuperArcherWindup) ||
+      (unit.kind === 'superwizard' && ctx.battle.nativeSuperWizardWindup) ||
+      (unit.kind === 'wizard' && ctx.battle.nativeWizardWindup)
     );
   const target = st.target && resolve(ctx, st.target, airTargets);
+  // Walking units have no committed cast. Their clocks above still advance, but they need
+  // neither defender traits nor interruption searches until a target has been acquired.
+  if (!target) {
+    delete st.engaged;
+    delete st.target;
+    delete st.animationOffset;
+    unit.cooldown = st.recovery;
+    advanceAudio(unit, st, at);
+    return false;
+  }
   const traits = {
     ...TROOPS[unit.kind],
     airTargets,
@@ -219,7 +230,7 @@ export function stepNativeAttackWindup(
       : undefined;
   const heroInterrupt =
     preferredHero && target && ('building' in target || target.defender.id !== preferredHero.id);
-  if (!target || heroInterrupt || retaliate || ('defender' in target && wantsBuilding)) {
+  if (heroInterrupt || retaliate || ('defender' in target && wantsBuilding)) {
     delete st.engaged;
     delete st.target;
     delete st.animationOffset;

@@ -1307,11 +1307,4 @@ function stepDeathBomb(ctx: NativeDefenseContext, tower: Building, state: Native
   ctx.effect({ type: 'blast', x: c.x, y: c.y, radius: death.radius, color: 0xff5a2a, major: true });
   if (death.spell) castNativeSpell(ctx.battle, death.spell, 1, 'defense', c.x, c.y, { at });
 }
-
-/** Presentation and battle-end helpers. */
-export const nativeDefensePending = (battle: Battle) =>
-  !!battle.nativePiercing?.length ||
-  Object.values(battle.nativeDefenses ?? {}).some(
-    (state) => state.deathAt !== undefined || !!state.chains?.length,
-  );
 export { isNativeDefenseKind };

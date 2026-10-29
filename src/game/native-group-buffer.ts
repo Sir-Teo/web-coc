@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { pruneFilterPool, type NativeGroupColor } from './native-group-color';
+import { runtimeBudget } from './runtime-budget';
 
 type Renderer = Phaser.Renderer.WebGL.WebGLRenderer;
 type TextureWrapper = Phaser.Renderer.WebGL.Wrappers.WebGLTextureWrapper;
@@ -64,7 +65,6 @@ export const groupBufferAreaLimit = (width: number, height: number) =>
   bucket(width) * bucket(height) * 4;
 /** Free buffers are destroyed after this long unused, or when the free set exceeds the byte cap. */
 const IDLE_MS = 2500;
-const FREE_BYTES = 48 << 20;
 
 class GroupBufferPool {
   private free: NativeGroupBuffer[] = [];
@@ -145,7 +145,7 @@ class GroupBufferPool {
     buffer.releasedAt = this.now();
     this.free.push(buffer);
     this.freeBytes += buffer.width * buffer.height * 4;
-    if (this.freeBytes > FREE_BYTES) this.trim(0);
+    if (this.freeBytes > runtimeBudget.freeGroupBytes) this.trim(0);
   }
   private sweep() {
     const now = this.now();
@@ -160,7 +160,10 @@ class GroupBufferPool {
     this.free.sort((a, b) => a.releasedAt - b.releasedAt);
     let drop = 0;
     let bytes = this.freeBytes;
-    while (drop < this.free.length && (this.free[drop].releasedAt < before || bytes > FREE_BYTES)) {
+    while (
+      drop < this.free.length &&
+      (this.free[drop].releasedAt < before || bytes > runtimeBudget.freeGroupBytes)
+    ) {
       bytes -= this.free[drop].width * this.free[drop].height * 4;
       drop++;
     }

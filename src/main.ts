@@ -25,6 +25,7 @@ import { watchSystemMotion } from './ui/motion';
 import { ScreenAwake } from './ui/screen-awake';
 import { Haptics } from './ui/haptics';
 import { onFirstAudioGesture } from './ui/first-audio-gesture';
+import { visibleInterval } from './ui/visible-interval';
 recordBootResources();
 decodeLoadedImages();
 /** A 1×1 fully transparent PNG. */
@@ -170,7 +171,7 @@ async function boot() {
       !model.battle ? 'none' : model.battle.finished ? 'finished' : 'active';
     let lastBattlePhase = battlePhase();
     const screenAwake = new ScreenAwake();
-    const economyTimer = setInterval(() => {
+    const stopEconomyTimer = visibleInterval(() => {
       model.tick(Date.now());
       const phase = battlePhase();
       const settled = phase !== lastBattlePhase && phase !== 'active';
@@ -185,7 +186,7 @@ async function boot() {
     window.addEventListener('pagehide', () => {
       cancelAudioGesture();
       audio.samples.stopAll();
-      clearInterval(economyTimer);
+      stopEconomyTimer();
       model.tick(Date.now());
       // A raid in progress has already spent its troops; settle it before the state is stored.
       model.suspendBattle();

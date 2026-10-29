@@ -79,6 +79,3 @@ export function spellTowerStats(level: number) {
   if (!row) throw Error(`Unsupported native Spell Tower level: ${level}`);
   return row;
 }
-/** Absolute battle time of pulse `index` for a spell deployed at `deployAt`. */
-export const spellPulseAt = (weapon: SpellTowerWeapon, deployAt: number, index: number) =>
-  deployAt + SPELL_TOWER[weapon].spell.firstHit + index * SPELL_TOWER[weapon].spell.interval;

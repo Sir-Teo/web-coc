@@ -10,6 +10,13 @@ account system or cross-device synchronization.
 model, Phaser scene, DOM HUD and audio manager. It also coordinates persistence,
 visibility changes and offline support.
 
+The HUD's 250 ms live refresh and the economy's one-second poll use
+`src/ui/visible-interval.ts`. Hidden documents clear these intervals; becoming visible
+restarts one timer for each caller. The main visibility handler immediately catches the
+economy up to wall time, so production and upgrade deadlines retain their offline behavior.
+Hiding still forces a save and stops audio. Page exit clears the economy listener; HUD
+destruction clears its own timer and listener.
+
 | Area              | Entry points                                                | Responsibility                                                     |
 | ----------------- | ----------------------------------------------------------- | ------------------------------------------------------------------ |
 | Simulation        | `src/game/model.ts`, `data.ts`                              | Village state, economy, commands and deterministic combat          |
@@ -36,6 +43,16 @@ growing for new waves. Refresh clears cell contents, unit indices, weights and a
 references before rebuilding in unit order; new arrivals still wait until the next snapshot.
 The group witness in `tests/fixtures/native-group-snapshot.ts` checks exact movement across
 snapshot capture, arrivals, deaths and moved cells in Node and both browser engines.
+Each cell also retains its housing total and captured position bounds. A cell wholly inside
+an anchor's radius contributes its total at once; a cell wholly outside is skipped. Cells
+crossing the boundary keep the original per-unit distance calculation. Housing sums are
+integers, so this preserves weights and first-in-unit-order ties. The full-scan witness
+also checks clustered, sparse and radius-boundary layouts as cells are reused.
+
+Native attackers construct defender traits and route callbacks directly for their active
+mechanics, preserving callback override order without temporary spread objects. A native
+attack windup with no committed target advances its clocks and clears the same cast state
+before returning; it skips defender-interruption setup until it has a target.
 
 Trap trigger searches likewise keep their cell map, bucket arrays and nearby-query storage
 in the per-battle trap index. Active counts preserve array capacity while rebuilds clear old
@@ -59,6 +76,30 @@ See [test performance](TEST-PERFORMANCE.md) for the reason behind this boundary.
 The large model, scene and HUD modules still coordinate many features. Extract a
 cohesive subsystem when changing it, with its existing tests intact; avoid moving
 large blocks solely to reduce a file's line count.
+
+### Mobile rendering budgets
+
+`runtime-budget.ts` selects the phone/tablet budget from primary coarse-pointer input,
+independently of browser names and viewport orientation. Canvas density starts at no more
+than 2× and play is capped at 60 FPS on high-refresh screens; DOM text stays at screen density.
+Adaptive quality can reduce density further. Battery
+saver retains this ceiling when switched off on a phone and restores native density on desktop.
+
+| Retained rendering resource | Phone/tablet | Desktop |
+| --------------------------- | ------------ | ------- |
+| Decoded village pages       | 16 MiB       | 64 MiB  |
+| Free blend-group buffers    | 12 MiB       | 48 MiB  |
+| Baked tint textures         | 8 MiB        | 32 MiB  |
+| Source pixel copies         | 8 MiB        | 32 MiB  |
+
+These are eviction budgets, not total process-memory limits. Live textures retain their
+owners and referenced tint textures remain protected. A 3× phone's initial canvas has 56%
+fewer pixels at 2×, with the same CSS geometry and world zoom.
+
+`frame-pacing.ts` owns idle, dialog and battery frame-rate policy. The scene applies changes
+outside Phaser's step, coalesces pending changes and cancels an obsolete idle cap on input.
+Simulation still advances at 20 Hz. Unit cases cover activity, reduced motion, live raids,
+replays and dialogs; phone browser cases cover density resets, taps and rotation.
 
 ## Content and assets
 
@@ -248,7 +289,7 @@ place, and reconnect retries for metadata and level pages at home and while scou
 Changing villages releases native building GPU pages that neither home nor the current
 village uses. Shared pages stay uploaded while any retained level needs them, and mode
 variants stay warm while their building family is present. Recent decoded images share a
-64 MiB warm cache, estimated as width × height × four bytes per image. Requests refresh
+16 MiB mobile / 64 MiB desktop warm cache, estimated as width × height × four bytes per image. Requests refresh
 recency; pending decodes stay shared, and completed pages leave the cache in request order
 when it exceeds the budget. Eviction drops only the cache reference: active Phaser textures
 retain their images for rendering, tint generation and graphics-context restoration. Recent

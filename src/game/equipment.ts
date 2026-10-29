@@ -70,9 +70,6 @@ export const EQUIPMENT_MAX_LEVEL = ITEMS.puppet.length;
 export const EQUIPMENT_LEVEL_BEFORE_47 = 9;
 const itemRow = (kind: EquipmentKind, level: number) =>
   ITEMS[kind][Math.min(EQUIPMENT_MAX_LEVEL, Math.max(1, Math.floor(level) || 1)) - 1];
-/** Forge an item level needs. All three items share a gate, a price and a tier column. */
-export const equipmentBlacksmith = (destination: number) =>
-  itemRow('puppet', destination).blacksmith;
 
 export const validEquipmentKind = (value: unknown): value is EquipmentKind =>
   typeof value === 'string' && EQUIPMENT_KEYS.includes(value as EquipmentKind);

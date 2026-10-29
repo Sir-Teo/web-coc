@@ -1,7 +1,6 @@
 import { distance2D } from './distance';
-import { TROOPS, type UnitKind } from './data';
+import { type UnitKind } from './data';
 import {
-  HERO_SOURCE,
   HERO_UNIT,
   PET_UNIT,
   heroTownHallScale,
@@ -11,7 +10,7 @@ import {
 } from './native-hero-data';
 import { flag, nativeRow, num, seconds, text, tiles } from './native-data';
 import { nativeUnitStats, spawnStatsAt, type NativeUnitStats } from './native-units';
-import { unitEffects, type UnitEffects } from './native-status';
+import { type UnitEffects } from './native-status';
 import type { Battle, Unit } from './model';
 
 /**
@@ -141,13 +140,6 @@ export function heroAbilityHeal(hero: HeroSetup, townhall: number) {
     : 0;
   return (own + itemBonuses(hero).heal) * heroTownHallScale(hero.kind, townhall);
 }
-/** Seconds the ability effects last (the longest DeactivateAfterTime of the triggered rows). */
-export function heroAbilityDuration(hero: HeroSetup) {
-  let duration = 0;
-  for (const ability of heroAbilities(hero))
-    duration = Math.max(duration, seconds(ability.row, 'DeactivateAfterTime'));
-  return duration;
-}
 export interface HeroAbility {
   name: string;
   level: number;
@@ -196,32 +188,12 @@ export function heroTroopStats(hero: HeroSetup, townhall: number, preserveHitDam
 }
 export const petTroopStats = (pet: { kind: PetKind; level: number }) =>
   spawnStatsAt(petUnitKind(pet.kind) as never, pet.level);
-
-/** A hero unit deployed in this battle (version 46+). */
-export const isHeroUnit = (battle: Battle, unit: Pick<Unit, 'id' | 'kind'>) =>
-  !!battle.nativeHeroes?.some((hero) => hero.unitId === unit.id);
-export const isPetUnit = (battle: Battle, unit: Pick<Unit, 'id'>) =>
-  !!battle.nativeHeroes?.some((hero) => hero.petId === unit.id);
-
-/** Pets stay within LeashLength + AttackRange of their hero (official wiki). */
-export function petLeash(pet: NativeUnitStats) {
-  return pet.leash + pet.range;
-}
 export function petAnchor(battle: Battle, unit: Unit) {
   const owner = petOwner(battle, unit);
   if (!owner || owner.unitId === null) return undefined;
   const hero = battle.units.find((u) => u.id === owner.unitId && u.hp > 0);
   return hero ? { hero, owner } : { hero: undefined, owner };
 }
-/** Hero name for notices and the battle bar. */
-export const heroDisplayName = (kind: HeroKind) => HERO_SOURCE[kind];
-/** Invisible heroes and pets cannot be chosen by defenses (shared with troop rules). */
-export const makeInvisible = (unit: Unit, until: number) => {
-  const effects = unitEffects(unit);
-  effects.invisibleUntil = Math.max(effects.invisibleUntil ?? 0, until);
-};
 /** Distance helper shared by hero systems. */
 export const gap = (a: { x: number; y: number }, b: { x: number; y: number }) =>
   distance2D(a.x - b.x, a.y - b.y);
-export const unitIsFlying = (unit: Pick<Unit, 'kind'>) => !!TROOPS[unit.kind].flying;
-export const abilityText = (row: ReturnType<typeof nativeRow>, key: string) => text(row, key);
