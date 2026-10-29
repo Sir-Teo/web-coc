@@ -146,7 +146,6 @@ const SOURCE: Record<string, string> = {
 const UNIT_TABLE = (kind: string): NativeTable =>
   isHeroUnitKind(kind) ? 'heroes' : isPetUnitKind(kind) ? 'pets' : 'characters';
 const KIND_BY_NAME = new Map(Object.entries(SOURCE).map(([kind, name]) => [name, kind]));
-export const nativeUnitName = (kind: string) => SOURCE[kind];
 export const unitKindForName = (name: string) => KIND_BY_NAME.get(name);
 export const isSpawnKind = (kind: string): kind is SpawnKind => Object.hasOwn(SPAWN_SOURCE, kind);
 export const nativeUnitLevels = (kind: string) =>

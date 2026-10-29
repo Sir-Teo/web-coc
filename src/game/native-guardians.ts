@@ -5,7 +5,6 @@ import { distance2D } from './distance';
 import { activeBoost } from './native-boost';
 import { BUILDINGS, TROOPS } from './data';
 import type { Defender, GuardianDefender } from './defenders';
-import { knockback } from './native-defenses';
 import {
   flag,
   list,
@@ -21,7 +20,6 @@ import {
 import { castNativeSpell } from './native-spells';
 import { hurtUnit, unitHidden } from './native-status';
 import { launchProjectile } from './projectiles';
-import { SPELL_SPEED_SCALE } from './spell-progression';
 import type { NativeTroopContext } from './native-troops';
 import { findPath, type Battle, type Building, type Unit } from './model';
 
@@ -452,20 +450,7 @@ function attack(
   );
 }
 
-/** Pushes struck units for Logger logs; called by the piercing-shot resolver. */
-export function pushFromLog(
-  ctx: NativeTroopContext,
-  u: Unit,
-  dirX: number,
-  dirY: number,
-  distance: number,
-) {
-  if (distance <= 0 || u.native?.siege) return;
-  knockback(ctx, u, u.x - dirX, u.y - dirY, distance);
-}
-
 export const isGuardian = (d: Defender): d is GuardianDefender => d.kind === 'guardian';
-export const guardianRageSpeed = (speedBoost: number) => speedBoost / SPELL_SPEED_SCALE;
 
 /** Places the Town Hall 18 Guardian on the first version 45 battle step. */
 export function stepGuardians(ctx: NativeTroopContext, dt: number) {

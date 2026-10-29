@@ -249,6 +249,7 @@ import { useFastDepthSort, useFastVisibleChildren } from './display-sort';
 import { setMaxDensity } from './display';
 import { PanFling } from './pan-fling';
 import { RenderDetail } from './render-detail';
+import { FramePacing } from './frame-pacing';
 import { configureFieldTiles } from './field-tiles';
 import { defeatPose } from './unit-defeat';
 import { EffectTimeline, type EffectTween } from './effect-timeline';
@@ -388,13 +389,6 @@ interface LateArtRequest {
   /** Undefined preserves the explicit full preload. */
   animations?: ReadonlySet<string>;
 }
-/** Idle home frame-rate ceiling (see VillageScene.updateIdleRate). */
-const IDLE_AFTER_MS = 5000;
-const IDLE_FPS = 30;
-const IDLE_FPS_REDUCED = 15;
-/** Battery saver: the frame cap in play (never above the idle caps) and canvas density ceiling. */
-const SAVER_FPS = 30;
-const SAVER_MAX_DENSITY = 2;
 const IDLE_WAKE_EVENTS = ['pointerdown', 'pointermove', 'wheel', 'keydown', 'touchstart'] as const;
 /** Bounded backoff for a failed art request: 5 s, 10 s, 20 s ... capped at five minutes. */
 const artRetryDelay = (attempts: number) => Math.min(300_000, 5000 * 2 ** (attempts - 1));
@@ -1516,6 +1510,8 @@ export class VillageScene extends Phaser.Scene {
       this.game.canvas.removeEventListener('webglcontextrestored', onContextRestored);
       document.removeEventListener('visibilitychange', watchRestore);
       clearTimeout(restoreTimer);
+      clearTimeout(this.frameRateTimer);
+      this.frameRateTimer = undefined;
       if (this.model.onEffect !== undefined) this.model.onEffect = () => {};
     });
   }
@@ -5205,6 +5201,7 @@ export class VillageScene extends Phaser.Scene {
       reduced ? 0 : clock,
       iso,
       this.sprites,
+      isoInto,
     );
     this.nativeDefenses.render(visible, battle, clock, reduced, iso, AIR_LIFT);
     const drillCues = this.darkDrillPresentation.render(
@@ -7019,61 +7016,38 @@ export class VillageScene extends Phaser.Scene {
     );
   }
 
-  /** When the player last did anything (performance.now ms); see `updateIdleRate`. */
-  private activeAt = performance.now();
-  /** Structural revision seen by the idle check: a real change counts as activity. */
-  private idleRevision = -1;
-  /** The frame-rate ceiling now applied (0: none): the idle cap, or the battery saver's in play. */
+  private readonly framePacing = new FramePacing(performance.now());
+  /** The desired frame cap, including any change queued outside this simulation step. */
   idleFrameRate = 0;
-  /** The battery saver choice the canvas density was last set for. */
+  private frameRateTimer: ReturnType<typeof setTimeout> | undefined;
   private batterySaver = false;
-  /** DOM dialogs own input; their dimmed village background needs fewer draws. */
-  private get playFrameRate() {
-    if (this.uiBlocked && !this.model.replay && (!this.model.battle || this.model.battle.finished))
-      return IDLE_FPS_REDUCED;
-    return this.model.state.settings.batterySaver ? SAVER_FPS : 0;
-  }
-  /** Input of any kind restores the play frame rate at once. */
+  /** Input restores the play rate immediately and cancels an older queued idle cap. */
   private wake = () => {
-    this.activeAt = performance.now();
-    if (this.idleFrameRate !== this.playFrameRate) this.setIdleFrameRate(this.playFrameRate);
+    clearTimeout(this.frameRateTimer);
+    this.frameRateTimer = undefined;
+    const rate = this.framePacing.wake(this.model, this.uiBlocked, performance.now());
+    this.idleFrameRate = rate;
+    if (this.game.loop.fpsLimit !== rate) this.setIdleFrameRate(rate);
   };
   private setIdleFrameRate(rate: number) {
     this.idleFrameRate = rate;
     this.game.loop.setFPSLimit(rate);
   }
-  /**
-   * An idle home village redraws everything each frame, although its clips run at 24-30 fps and
-   * nothing else moves. After IDLE_AFTER_MS without input, a battle, a placement or a real change,
-   * the loop is capped (lower still under reduced motion, where nothing animates); any input
-   * lifts the cap before the next frame. A dialog keeps the village at 15 FPS while its DOM
-   * controls stay responsive; live battles and replays retain their play rate behind dialogs.
-   * The battery saver caps play too, and lowers density.
-   */
+  /** Apply policy outside Phaser's step; coalesce changes before the next timer runs. */
   private updateIdleRate() {
-    const m = this.model;
-    const saver = !!m.state.settings.batterySaver;
+    const saver = !!this.model.state.settings.batterySaver;
     if (saver !== this.batterySaver) {
       this.batterySaver = saver;
-      // Resizing mid-step would reallocate the canvas under this frame's draw.
-      setTimeout(() => setMaxDensity(this.game, saver ? SAVER_MAX_DENSITY : Infinity), 0);
+      setTimeout(() => setMaxDensity(this.game, saver ? 2 : Infinity), 0);
     }
-    if (m.structuralRevision !== this.idleRevision) {
-      this.idleRevision = m.structuralRevision;
-      this.activeAt = performance.now();
-    }
-    const busy =
-      !!m.battle || !!m.replay || !!m.placement || !!m.wallMove || m.editing || this.uiBlocked;
-    if (busy) this.activeAt = performance.now();
-    const rate =
-      performance.now() - this.activeAt < IDLE_AFTER_MS
-        ? this.playFrameRate
-        : m.reducedMotion
-          ? IDLE_FPS_REDUCED
-          : IDLE_FPS;
-    // Applied outside the step: changing the limit restarts the loop's frame scheduling.
-    if (rate !== this.idleFrameRate) setTimeout(() => this.setIdleFrameRate(rate), 0);
+    const rate = this.framePacing.sample(this.model, this.uiBlocked, performance.now());
+    if (rate === this.idleFrameRate) return;
     this.idleFrameRate = rate;
+    if (this.frameRateTimer !== undefined) return;
+    this.frameRateTimer = setTimeout(() => {
+      this.frameRateTimer = undefined;
+      this.setIdleFrameRate(this.idleFrameRate);
+    }, 0);
   }
   /** Moves the camera along a touch pan's glide; anything else moving it ends the glide. */
   private stepFling() {

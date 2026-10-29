@@ -146,14 +146,3 @@ export function characterArt(animation: string) {
   artCache.set(animation, art);
   return art;
 }
-/** Imported previews (idle frame zero, two pixels per native unit) and their padded icons. */
-export function characterPreview(animation: string) {
-  const target = aliasTarget(animation);
-  const key = Object.entries(CHARACTER_GRAPHS).find(([, g]) => g.animation === target)?.[0];
-  return key
-    ? {
-        preview: `/assets/characters-native/${key}/preview.png`,
-        icon: `/assets/characters-native/${key}/icon.png`,
-      }
-    : undefined;
-}

@@ -49,7 +49,10 @@ import {
   attackerDefenderTarget,
   damageDefenders,
   hurtDefender,
+  hasDefenderCandidates,
   stepAttackerVsDefenders,
+  type DefenderFightTraits,
+  type DefenderRoute,
 } from './defenders';
 import { applyDefenderFrost } from './defender-frost';
 import { activeAsDefense } from './native-defenses';
@@ -579,6 +582,14 @@ const nearer = (d: number, distance: number, b: Building, best: Building | undef
   d < distance - 1e-9 || (Math.abs(d - distance) <= 1e-9 && !!best && b.id < best.id);
 
 /** Group-following support units trail the nearest cluster of friendly housing. */
+interface GroupCell {
+  units: number[];
+  space: number;
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+}
 interface GroupWeights {
   tick: number;
   radius: number;
@@ -587,9 +598,9 @@ interface GroupWeights {
   y: Float64Array;
   space: Float64Array;
   /** Cell → indices into the snapshot arrays. */
-  grid: Map<number, number[]>;
+  grid: Map<number, GroupCell>;
   /** Empty cell lists kept for the next snapshot. */
-  buckets: number[][];
+  buckets: GroupCell[];
   /** Snapshot index per living unit id. */
   index: Map<number, number>;
   /** Cluster weight per unit id, measured on demand from the snapshot. */
@@ -637,9 +648,9 @@ function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats, following: boo
         cached.y = new Float64Array(capacity);
         cached.space = new Float64Array(capacity);
       }
-      for (const list of cached.grid.values()) {
-        list.length = 0;
-        cached.buckets.push(list);
+      for (const bucket of cached.grid.values()) {
+        bucket.units.length = 0;
+        cached.buckets.push(bucket);
       }
       cached.grid.clear();
       cached.index.clear();
@@ -659,9 +670,28 @@ function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats, following: boo
       cached.space[i] = TROOPS[other.kind].space;
       cached.index.set(other.id, i);
       const key = groupCell(Math.floor(other.x / cell), Math.floor(other.y / cell));
-      let list = cached.grid.get(key);
-      if (!list) cached.grid.set(key, (list = cached.buckets.pop() ?? []));
-      list.push(i);
+      let bucket = cached.grid.get(key);
+      if (!bucket) {
+        bucket = cached.buckets.pop() ?? {
+          units: [],
+          space: 0,
+          minX: 0,
+          maxX: 0,
+          minY: 0,
+          maxY: 0,
+        };
+        bucket.space = 0;
+        bucket.minX = bucket.maxX = other.x;
+        bucket.minY = bucket.maxY = other.y;
+        cached.grid.set(key, bucket);
+      } else {
+        bucket.minX = Math.min(bucket.minX, other.x);
+        bucket.maxX = Math.max(bucket.maxX, other.x);
+        bucket.minY = Math.min(bucket.minY, other.y);
+        bucket.maxY = Math.max(bucket.maxY, other.y);
+      }
+      bucket.units.push(i);
+      bucket.space += cached.space[i];
       // Anchor candidates in unit order: units that do not follow a group themselves. Units
       // missing from the snapshot (spawned later this tick) could never win a weight of 0.
       if (!nativeUnitStats(other.kind, unitLevel(battle, other)).groups) cached.anchors.push(other);
@@ -687,9 +717,30 @@ function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats, following: boo
       cy = Math.floor(ay / cell);
     for (let dx = -1; dx <= 1; dx++)
       for (let dy = -1; dy <= 1; dy++) {
-        const list = snapshot.grid.get(groupCell(cx + dx, cy + dy));
-        if (!list) continue;
-        for (const other of list)
+        const bucket = snapshot.grid.get(groupCell(cx + dx, cy + dy));
+        if (!bucket) continue;
+        // Small buckets are cheaper to scan directly. For dense cells, classify the
+        // captured bounds once and include or reject the whole integer housing total.
+        // Boundary cells keep the original distance calculation and its rounding.
+        if (bucket.units.length >= 8) {
+          if (
+            distance2D(
+              Math.max(Math.abs(bucket.minX - ax), Math.abs(bucket.maxX - ax)),
+              Math.max(Math.abs(bucket.minY - ay), Math.abs(bucket.maxY - ay)),
+            ) <= snapshot.radius
+          ) {
+            space += bucket.space;
+            continue;
+          }
+          if (
+            distance2D(
+              Math.max(bucket.minX - ax, 0, ax - bucket.maxX),
+              Math.max(bucket.minY - ay, 0, ay - bucket.maxY),
+            ) > snapshot.radius
+          )
+            continue;
+        }
+        for (const other of bucket.units)
           if (distance2D(snapshot.x[other] - ax, snapshot.y[other] - ay) <= snapshot.radius)
             space += snapshot.space[other];
       }
@@ -747,10 +798,10 @@ export function stepNativeUnit(
   let s = statsFor(battle, u);
   const state = (u.native ??= {});
   const at = battle.elapsed;
-  const superMinion = !!(battle.nativeSuperMinionLongShots && u.kind === 'superminion');
+  const superMinion = !!(u.kind === 'superminion' && battle.nativeSuperMinionLongShots);
   if (superMinion) s = superMinionAttackStats(s, state.attacks ?? 0);
   const damageRamp = battle.nativeTroopDamageRamp ? s.damageRamp : undefined;
-  const infernoCadence = !!(battle.nativeInfernoDragonCadence && u.kind === 'infernodragon');
+  const infernoCadence = !!(u.kind === 'infernodragon' && battle.nativeInfernoDragonCadence);
   if (damageRamp && state.damageRamp) {
     const previous = state.damageRamp.defender
       ? battle.defenders?.find((d) => d.id === state.damageRamp!.targetId)
@@ -762,7 +813,7 @@ export function stepNativeUnit(
     u.kind === 'barbarianking' &&
     heroOf(battle, u)
   );
-  if ((battle.nativeChampionHaste && u.kind === 'royalchampion') || nativeStickHorse)
+  if ((u.kind === 'royalchampion' && battle.nativeChampionHaste) || nativeStickHorse)
     s = { ...s, rate: heroAttackInterval(u, at, s.rate) };
   if (nativeStickHorse) {
     const jumping = (state.effects?.jumpUntil ?? 0) > at + 1e-9;
@@ -815,7 +866,7 @@ export function stepNativeUnit(
         splash: override.splash ?? s.splash,
       };
   }
-  const evolvingDruid = !!(battle.nativeDruidWindup && u.kind === 'druid');
+  const evolvingDruid = !!(u.kind === 'druid' && battle.nativeDruidWindup);
   stepLifecycle(ctx, u, s, at);
   if (evolvingDruid && u.kind !== 'druid') {
     delete state.healerWindup;
@@ -845,7 +896,7 @@ export function stepNativeUnit(
   const speed = boosted.speed;
   const damage =
     boosted.damage * aloneScale(battle, u, s, state) +
-    ((battle.nativeQueenVialDamage && u.kind === 'archerqueen' && heroOf(battle, u)) || chargedHero
+    ((u.kind === 'archerqueen' && battle.nativeQueenVialDamage && heroOf(battle, u)) || chargedHero
       ? heroExtraDamage(u, at)
       : 0);
   if (s.speed <= 0 && !s.summon && !s.bunker && s.range < 0.05) return;
@@ -883,40 +934,40 @@ export function stepNativeUnit(
     }
     return;
   }
-  const electroDragon = !!(battle.nativeElectroDragon && u.kind === 'electrodragon');
+  const electroDragon = !!(u.kind === 'electrodragon' && battle.nativeElectroDragon);
   if (electroDragon && stepElectroDragonCharge(ctx, u, s, damage, speed, dt, actionDt)) return;
-  const bowler = !!(battle.nativeBowlerWindup && u.kind === 'bowler');
-  const golem = !!(battle.nativeGolemWindup && (u.kind === 'golem' || u.kind === 'golemite'));
-  const giant = !!(battle.nativeGiantWindup && u.kind === 'supergiant');
-  const iceGolem = !!(battle.nativeIceGolemWindup && u.kind === 'icegolem');
-  const rootRider = !!(battle.nativeRootRiderWindup && u.kind === 'rootrider');
-  const electroTitan = !!(battle.nativeElectroTitanWindup && u.kind === 'electrotitan');
-  const yeti = !!(battle.nativeYetiWindup && (u.kind === 'yeti' || u.kind === 'superyeti'));
+  const bowler = !!(u.kind === 'bowler' && battle.nativeBowlerWindup);
+  const golem = !!((u.kind === 'golem' || u.kind === 'golemite') && battle.nativeGolemWindup);
+  const giant = !!(u.kind === 'supergiant' && battle.nativeGiantWindup);
+  const iceGolem = !!(u.kind === 'icegolem' && battle.nativeIceGolemWindup);
+  const rootRider = !!(u.kind === 'rootrider' && battle.nativeRootRiderWindup);
+  const electroTitan = !!(u.kind === 'electrotitan' && battle.nativeElectroTitanWindup);
+  const yeti = !!((u.kind === 'yeti' || u.kind === 'superyeti') && battle.nativeYetiWindup);
   const hog = !!(battle.nativeHogWindup && hogAttackKind(u.kind));
-  const miner = !!(battle.nativeMinerWindup && u.kind === 'miner');
-  const superMiner = !!(battle.nativeSuperMinerWindup && u.kind === 'superminer');
-  const apprentice = !!(battle.nativeApprenticeWindup && u.kind === 'apprenticewarden');
-  const headhunter = !!(battle.nativeHeadhunterWindup && u.kind === 'headhunter');
-  const thrower = !!(battle.nativeThrowerWindup && u.kind === 'thrower');
-  const dragonRider = !!(battle.nativeDragonRiderWindup && u.kind === 'dragonrider');
-  const rocketBalloon = !!(battle.nativeRocketBalloonWindup && u.kind === 'rocketballoon');
-  const balloon = !!(battle.nativeBalloonWindup && u.kind === 'balloon');
-  const babyDragon = !!(battle.nativeBabyDragonWindup && u.kind === 'babydragon');
-  const minion = !!(battle.nativeMinionWindup && u.kind === 'minion');
-  const archer = !!(battle.nativeArcherWindup && u.kind === 'archer');
-  const superBarbarian = !!(battle.nativeSuperBarbarianWindup && u.kind === 'superbarbarian');
-  const sneakyGoblin = !!(battle.nativeSneakyGoblinWindup && u.kind === 'sneakygoblin');
-  const superArcher = !!(battle.nativeSuperArcherWindup && u.kind === 'superarcher');
-  const superWizard = !!(battle.nativeSuperWizardWindup && u.kind === 'superwizard');
-  const superBowler = !!(battle.nativeSuperBowlerWindup && u.kind === 'superbowler');
-  const superWallBreaker = !!(battle.nativeSuperWallBreakerWindup && u.kind === 'superwallbreaker');
-  const wallBreaker = !!(battle.nativeWallBreakerWindup && u.kind === 'wallbreaker');
+  const miner = !!(u.kind === 'miner' && battle.nativeMinerWindup);
+  const superMiner = !!(u.kind === 'superminer' && battle.nativeSuperMinerWindup);
+  const apprentice = !!(u.kind === 'apprenticewarden' && battle.nativeApprenticeWindup);
+  const headhunter = !!(u.kind === 'headhunter' && battle.nativeHeadhunterWindup);
+  const thrower = !!(u.kind === 'thrower' && battle.nativeThrowerWindup);
+  const dragonRider = !!(u.kind === 'dragonrider' && battle.nativeDragonRiderWindup);
+  const rocketBalloon = !!(u.kind === 'rocketballoon' && battle.nativeRocketBalloonWindup);
+  const balloon = !!(u.kind === 'balloon' && battle.nativeBalloonWindup);
+  const babyDragon = !!(u.kind === 'babydragon' && battle.nativeBabyDragonWindup);
+  const minion = !!(u.kind === 'minion' && battle.nativeMinionWindup);
+  const archer = !!(u.kind === 'archer' && battle.nativeArcherWindup);
+  const superBarbarian = !!(u.kind === 'superbarbarian' && battle.nativeSuperBarbarianWindup);
+  const sneakyGoblin = !!(u.kind === 'sneakygoblin' && battle.nativeSneakyGoblinWindup);
+  const superArcher = !!(u.kind === 'superarcher' && battle.nativeSuperArcherWindup);
+  const superWizard = !!(u.kind === 'superwizard' && battle.nativeSuperWizardWindup);
+  const superBowler = !!(u.kind === 'superbowler' && battle.nativeSuperBowlerWindup);
+  const superWallBreaker = !!(u.kind === 'superwallbreaker' && battle.nativeSuperWallBreakerWindup);
+  const wallBreaker = !!(u.kind === 'wallbreaker' && battle.nativeWallBreakerWindup);
   const valkyrie = !!(
     battle.nativeValkyrieWindup &&
     (u.kind === 'valkyrie' || u.kind === 'supervalkyrie')
   );
-  const witch = !!(battle.nativeWitchWindup && (u.kind === 'witch' || u.kind === 'superwitch'));
-  const hound = !!(battle.nativeHoundWindup && (u.kind === 'lavahound' || u.kind === 'icehound'));
+  const witch = !!((u.kind === 'witch' || u.kind === 'superwitch') && battle.nativeWitchWindup);
+  const hound = !!((u.kind === 'lavahound' || u.kind === 'icehound') && battle.nativeHoundWindup);
   const splitAttack =
     bowler ||
     golem ||
@@ -1071,10 +1122,10 @@ export function stepNativeUnit(
   )
     return;
   const miteJump = nativeMiteJump(battle, u.kind);
-  const electromite = battle.nativeElectromites && u.kind === 'electromite';
-  const meteorThrow = battle.nativeMeteorThrows && u.kind === 'meteorgolem';
-  const heroHunter = battle.nativeHeadhunterHeroRules && u.kind === 'headhunter';
-  const poisonLizard = battle.nativeAttackerHitPoison && u.kind === 'poisonlizard';
+  const electromite = u.kind === 'electromite' && battle.nativeElectromites;
+  const meteorThrow = u.kind === 'meteorgolem' && battle.nativeMeteorThrows;
+  const heroHunter = u.kind === 'headhunter' && battle.nativeHeadhunterHeroRules;
+  const poisonLizard = u.kind === 'poisonlizard' && battle.nativeAttackerHitPoison;
   const jumpingChase =
     s.jumper &&
     (battle.nativeSourceJumperChase ||
@@ -1093,11 +1144,11 @@ export function stepNativeUnit(
           level: s.level,
           ...(s.frostTime > 0 ? { frost: { seconds: s.frostTime, percent: s.frostPercent } } : {}),
         }
-      : ((battle.nativeHeadhunterCards && u.kind === 'headhunter') ||
+      : ((u.kind === 'headhunter' && battle.nativeHeadhunterCards) ||
             poisonLizard ||
             chargedHero ||
-            (battle.nativePhoenixResurrection && u.kind === 'phoenix') ||
-            (battle.nativeSneezyController && u.kind === 'sneezy') ||
+            (u.kind === 'phoenix' && battle.nativePhoenixResurrection) ||
+            (u.kind === 'sneezy' && battle.nativeSneezyController) ||
             nativeHeroAttack) &&
           s.projectile
         ? {
@@ -1109,9 +1160,102 @@ export function stepNativeUnit(
   const readyToAttack = u.cooldown <= 0;
   const undergroundChase = battle.nativeUndergroundDefenderChase && s.underground;
   const masterBuilding = followPetMaster(ctx, u, s);
-  if (
-    !masterBuilding &&
-    stepAttackerVsDefenders(
+  let fightingDefender = false;
+  // A stale defender target still takes the shared cleanup path, even when all defenders
+  // have died. Otherwise an empty defender phase needs no options or route preparation.
+  if (!masterBuilding && (u.defenderTarget !== undefined || hasDefenderCandidates(battle))) {
+    // Build only the applicable callbacks, without temporary spread objects for every unit
+    // on every tick. Assignment order retains the original callback override precedence.
+    const traits: DefenderFightTraits = {
+      prefersDefenses: s.preferredClass === 'Defense' || !!s.preferredBuilding || undefined,
+      prefersResources: s.preferredClass === 'Resource' || undefined,
+      wallBreaker: s.preferredClass === 'Wall' || undefined,
+      healer: s.heal > 0 && s.dps <= 0,
+      flying: s.flying || undefined,
+      splash: s.splash || undefined,
+      airTargets: s.airTargets,
+    };
+    if (electromite) {
+      traits.prefersBuildings = true;
+      traits.nativeAttack = (target, power) =>
+        attackElectromite(ctx, u, power, { defender: target });
+    }
+    if (u.kind === 'superarcher' && battle.nativeArcherPiercing) {
+      traits.nativeAttack = (target, power) =>
+        launchArcherPiercing(ctx, u, power, { defender: target });
+      traits.nativeBuildingAttack = (target, power) => strike(ctx, u, s, target, power);
+    }
+    if (u.kind === 'superwizard' && battle.nativeSuperWizard) {
+      traits.nativeAttack = (target, power) =>
+        attackSuperWizard(ctx, u, power, { defender: target });
+      traits.nativeBuildingAttack = (target, power) => strike(ctx, u, s, target, power);
+    }
+    if (meteorThrow) {
+      traits.nativeAttack = (target, power) => throwMeteorAtDefender(ctx, u, s, power, target);
+      traits.nativeBuildingAttack = (target, power) => strike(ctx, u, s, target, power);
+    }
+    if (splitAttack && (!bowler || battle.nativeBowlerWallWindup))
+      traits.nativeBuildingAttack = (target) =>
+        beginNativeAttackWindup(u, s, { building: target }, battle);
+    if (heroHunter) {
+      traits.preferHeroes = s.preferHeroes;
+      traits.heroDamageScale = s.heroMultiplier;
+    }
+    if (poisonLizard) traits.seekUnalerted = true;
+    if (defenderProjectile) traits.nativeProjectile = defenderProjectile;
+    if (gauntletSplash > 0) traits.nativeMeleeSplash = gauntletSplash;
+    if (undergroundChase) traits.underground = true;
+    if (nativeHeroAttack && !s.projectile) traits.nativeDirectHit = true;
+    if (damageRamp) {
+      traits.nativeDamageRamp = damageRamp;
+      traits.nativeDirectHit = !s.projectile;
+    }
+    if (infernoCadence) traits.nativeRampingCadence = true;
+    if (battle.nativeMonolithDefenderDamage && frostArrow)
+      traits.nativeTargetHpBonus = num(frostArrow, 'DamagePermilHp') / 1000;
+
+    const route: DefenderRoute = {
+      buildings: jumpingChase
+        ? routeBuildings(ctx, true)
+        : (ctx.routableBuildings ?? ctx.buildings),
+      wallTile: ctx.wallTile,
+      passableWalls: ctx.passableWalls,
+      budget: ctx.pathBudget,
+      breaches: ctx.breaches,
+    };
+    if (jumpingChase) route.jumpWalls = true;
+    if (undergroundChase) route.enterRange = () => surfaceUndergroundUnit(ctx, u, at);
+    if (miteJump || electromite) {
+      route.targetAcquired = () => {
+        state.targetAt = at;
+      };
+      route.attackReady = () => {
+        state.targetAt ??= at;
+        return at + 1e-9 >= state.targetAt + s.newTargetDelay;
+      };
+    }
+    if (battle.nativeDiggyMasterTarget && isHeroUnitKind(u.kind))
+      route.enterWallRange = (wall) => {
+        state.wallTarget = wall.id;
+      };
+    if (electroDragon)
+      route.attackReady = () => {
+        const target = battle.defenders?.find((d) => d.id === u.defenderTarget);
+        if (target) beginElectroDragonCharge(ctx, u, s, { defender: target });
+        return false;
+      };
+    if (splitAttack) {
+      route.enterRange = () => {
+        const target = battle.defenders?.find((d) => d.id === u.defenderTarget);
+        if (target) {
+          if (undergroundChase) surfaceUndergroundUnit(ctx, u, at);
+          beginNativeAttackWindup(u, s, { defender: target }, battle);
+        }
+      };
+      route.attackReady = () => false;
+    }
+    if (attackDisabled) route.attackReady = () => false;
+    fightingDefender = stepAttackerVsDefenders(
       battle,
       u,
       { damage, speed, range: s.range, rate: s.rate * unitAttackIntervalScale(u, at) },
@@ -1119,146 +1263,12 @@ export function stepNativeUnit(
       ctx.buildings,
       (target, power) => ctx.damageBuilding(target, power, battle.elapsed),
       ctx.effect,
-      {
-        prefersDefenses: s.preferredClass === 'Defense' || !!s.preferredBuilding || undefined,
-        prefersResources: s.preferredClass === 'Resource' || undefined,
-        ...(electromite
-          ? {
-              prefersBuildings: true,
-              nativeAttack: (target: Defender, power: number) =>
-                attackElectromite(ctx, u, power, { defender: target }),
-            }
-          : {}),
-        ...(battle.nativeArcherPiercing && u.kind === 'superarcher'
-          ? {
-              nativeAttack: (target: Defender, power: number) =>
-                launchArcherPiercing(ctx, u, power, { defender: target }),
-              nativeBuildingAttack: (target: Building, power: number) =>
-                strike(ctx, u, s, target, power),
-            }
-          : {}),
-        ...(battle.nativeSuperWizard && u.kind === 'superwizard'
-          ? {
-              nativeAttack: (target: Defender, power: number) =>
-                attackSuperWizard(ctx, u, power, { defender: target }),
-              nativeBuildingAttack: (target: Building, power: number) =>
-                strike(ctx, u, s, target, power),
-            }
-          : {}),
-        ...(meteorThrow
-          ? {
-              nativeAttack: (target: Defender, power: number) =>
-                throwMeteorAtDefender(ctx, u, s, power, target),
-              nativeBuildingAttack: (target: Building, power: number) =>
-                strike(ctx, u, s, target, power),
-            }
-          : {}),
-        wallBreaker: s.preferredClass === 'Wall' || undefined,
-        healer: s.heal > 0 && s.dps <= 0,
-        ...(golem ||
-        giant ||
-        iceGolem ||
-        rootRider ||
-        electroTitan ||
-        yeti ||
-        hog ||
-        miner ||
-        superMiner ||
-        apprentice ||
-        headhunter ||
-        thrower ||
-        dragonRider ||
-        rocketBalloon ||
-        balloon ||
-        babyDragon ||
-        superMinion ||
-        minion ||
-        archer ||
-        superBarbarian ||
-        sneakyGoblin ||
-        superArcher ||
-        superWizard ||
-        superBowler ||
-        superWallBreaker ||
-        wallBreaker ||
-        valkyrie ||
-        witch ||
-        hound ||
-        (bowler && battle.nativeBowlerWallWindup)
-          ? {
-              nativeBuildingAttack: (target: Building) =>
-                beginNativeAttackWindup(u, s, { building: target }, battle),
-            }
-          : {}),
-        flying: s.flying || undefined,
-        splash: s.splash || undefined,
-        airTargets: s.airTargets,
-        ...(heroHunter ? { preferHeroes: s.preferHeroes, heroDamageScale: s.heroMultiplier } : {}),
-        ...(poisonLizard ? { seekUnalerted: true } : {}),
-        ...(defenderProjectile ? { nativeProjectile: defenderProjectile } : {}),
-        ...(gauntletSplash > 0 ? { nativeMeleeSplash: gauntletSplash } : {}),
-        ...(undergroundChase ? { underground: true } : {}),
-        ...(nativeHeroAttack && !s.projectile ? { nativeDirectHit: true } : {}),
-        ...(damageRamp ? { nativeDamageRamp: damageRamp, nativeDirectHit: !s.projectile } : {}),
-        ...(infernoCadence ? { nativeRampingCadence: true } : {}),
-        ...(battle.nativeMonolithDefenderDamage && frostArrow
-          ? { nativeTargetHpBonus: num(frostArrow, 'DamagePermilHp') / 1000 }
-          : {}),
-      },
+      traits,
       ctx.isTargetable,
-      {
-        buildings: jumpingChase
-          ? routeBuildings(ctx, true)
-          : (ctx.routableBuildings ?? ctx.buildings),
-        ...(jumpingChase ? { jumpWalls: true } : {}),
-        ...(undergroundChase ? { enterRange: () => surfaceUndergroundUnit(ctx, u, at) } : {}),
-        ...(miteJump || electromite
-          ? {
-              targetAcquired: () => {
-                state.targetAt = at;
-              },
-              attackReady: () => {
-                state.targetAt ??= at;
-                return at + 1e-9 >= state.targetAt + s.newTargetDelay;
-              },
-            }
-          : {}),
-        ...(battle.nativeDiggyMasterTarget && isHeroUnitKind(u.kind)
-          ? {
-              enterWallRange: (wall: Building) => {
-                state.wallTarget = wall.id;
-              },
-            }
-          : {}),
-        ...(electroDragon
-          ? {
-              attackReady: () => {
-                const target = battle.defenders?.find((d) => d.id === u.defenderTarget);
-                if (target) beginElectroDragonCharge(ctx, u, s, { defender: target });
-                return false;
-              },
-            }
-          : {}),
-        ...(splitAttack
-          ? {
-              enterRange: () => {
-                const target = battle.defenders?.find((d) => d.id === u.defenderTarget);
-                if (target) {
-                  if (undergroundChase) surfaceUndergroundUnit(ctx, u, at);
-                  beginNativeAttackWindup(u, s, { defender: target }, battle);
-                }
-              },
-              attackReady: () => false,
-            }
-          : {}),
-        ...(attackDisabled ? { attackReady: () => false } : {}),
-        wallTile: ctx.wallTile,
-        passableWalls: ctx.passableWalls,
-        budget: ctx.pathBudget,
-        breaches: ctx.breaches,
-      },
-    )
-  ) {
+      route,
+    );
+  }
+  if (fightingDefender) {
     if (attackDisabled) u.attacking = false;
     if (damageRamp && !u.attacking) delete state.damageRamp;
     if (undergroundChase && !u.attacking) {
@@ -1387,7 +1397,7 @@ export function stepNativeUnit(
     y: Math.max(target.y, Math.min(u.y, target.y + BUILDINGS[target.kind].size)),
   };
   if (s.flying || s.underground) {
-    if (battle.nativeDiggySurfaceStun && u.kind === 'diggy') {
+    if (u.kind === 'diggy' && battle.nativeDiggySurfaceStun) {
       state.surfaced = false;
       state.burrowed = true;
     }

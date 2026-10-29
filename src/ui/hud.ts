@@ -4,6 +4,7 @@ import { nativeUnitStats } from '../game/native-units';
 import { SPLIT_HOG_KINDS, isSplitHog, type DeployTroopKind } from '../game/recalled-split-troops';
 import { archerTowerPortrait } from './archer-tower-portrait';
 import { positionBattleToast } from './battle-toast';
+import { visibleInterval } from './visible-interval';
 import { infernoStats, type InfernoMode } from '../game/inferno-weapon';
 import { cannonIconAsset } from '../game/cannon-art';
 import { darkStorageCapacity } from '../game/dark-storage-stats';
@@ -774,7 +775,7 @@ export class HUD {
   private actionSource: HTMLElement | null = null;
   private dragging = false;
   private cancelDrawerDrag: (() => void) | null = null;
-  private liveTimer: ReturnType<typeof setInterval> | undefined;
+  private stopLiveTimer: (() => void) | undefined;
   private lastAnchorLeft = -1;
   private lastAnchorTop = -1;
   /** The card the last anchor position was written to; a rebuilt card must be placed again. */
@@ -1015,13 +1016,13 @@ export class HUD {
       else this.showDrawer('army');
     };
     this.render();
-    this.liveTimer = setInterval(() => this.updateLive(), 250);
+    this.stopLiveTimer = visibleInterval(() => this.updateLive(), 250);
     this.trackAnchor();
   }
   destroy() {
     this.stopRepeat();
     this.cancelDrawerDrag?.();
-    if (this.liveTimer !== undefined) clearInterval(this.liveTimer);
+    this.stopLiveTimer?.();
     if (this.raf) cancelAnimationFrame(this.rafId);
     this.raf = false;
     this.listeners.abort();

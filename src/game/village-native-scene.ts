@@ -12,6 +12,7 @@ import {
 import { hasNativeDefenseBody, nativeDefenseBody } from './native-defense-poses';
 import { nativeTrapValues } from './native-traps';
 import { DecodedImageCache } from './decoded-image-cache';
+import { runtimeBudget } from './runtime-budget';
 import progressionSource from '../../reference/full-client/progression.json' with { type: 'json' };
 const progression = progressionSource as unknown as {
   buildings: Record<string, (typeof progressionSource.buildings)['townhall']>;
@@ -54,7 +55,7 @@ function fetchPack(key: string, path: string) {
   return pending;
 }
 /** Recent decoded pages; active Phaser textures independently retain their own images. */
-const decoded = new DecodedImageCache<HTMLImageElement>(64 * 1024 * 1024);
+const decoded = new DecodedImageCache<HTMLImageElement>(runtimeBudget.decodedImageBytes);
 /**
  * The textures one level of a pack draws, decoded and ready to upload. A paged pack (see
  * scripts/native-pages.mjs) tags each page with the levels that draw it, so a village fetches
@@ -260,6 +261,7 @@ export class VillageNativePresentation {
   private placement?: { building: Building; valid: boolean };
   private seen = new Set<number>();
   private used = new Set<string>();
+  private point: Point = { x: 0, y: 0 };
   /** Identical building samples share poses only for this pass; never retain a timeline cache. */
   private frameSamples = new Map<string, readonly NativeScenePose[]>();
   preview(building?: Building, valid = true) {
@@ -431,6 +433,7 @@ export class VillageNativePresentation {
     seconds: number,
     iso: (x: number, y: number) => { x: number; y: number },
     sprites: Map<number, Phaser.GameObjects.Image>,
+    projectInto?: (out: Point, x: number, y: number) => void,
   ) {
     this.frameSamples.clear();
     this.wantedPacks.clear();
@@ -462,7 +465,11 @@ export class VillageNativePresentation {
       const size = BUILDINGS[b.kind].size;
       // Viewport cull before pose sampling; retain hidden views so scrolling
       // back never reallocates their RenderTextures.
-      const earlyPoint = iso(b.x + size / 2, b.y + size / 2);
+      let earlyPoint: Point;
+      if (projectInto) {
+        earlyPoint = this.point;
+        projectInto(earlyPoint, b.x + size / 2, b.y + size / 2);
+      } else earlyPoint = iso(b.x + size / 2, b.y + size / 2);
       if (camView && b.id !== -1) {
         const margin = 450;
         if (

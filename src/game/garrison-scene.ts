@@ -65,11 +65,6 @@ export function preloadGarrisonCharacter(
   const art = characterArt(name);
   preloadNativeMeshes(scene, art.graph, art.prefix);
 }
-/** Explicit callers retain the complete foundation character preload. */
-export function preloadGarrisonCharacters(scene: Phaser.Scene) {
-  preloadGarrisonDeath(scene);
-  for (const name of BOOT_GARRISON_CHARACTERS) preloadGarrisonCharacter(scene, name);
-}
 /** Selected defender bodies and shared projectiles; explicit callers can still preload all. */
 export function preloadLateGarrisonTroops(scene: Phaser.Scene, animations?: ReadonlySet<string>) {
   if (animations?.size === 0) return;

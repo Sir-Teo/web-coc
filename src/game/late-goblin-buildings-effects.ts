@@ -84,8 +84,6 @@ export function nativeEffectPlayer(
   };
   return { cues, poses, particle, emitters: data.particles };
 }
-
-export const LATE_GOBLIN_EFFECTS = raw.effects as Record<string, Row[]>;
 export const LATE_GOBLIN_SOUNDS = raw.sounds;
 export const lateGoblinSample = (path: string) =>
   `late-goblin-${path.split('/').at(-1)!.replace('.ogg', '')}`;

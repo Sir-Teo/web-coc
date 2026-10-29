@@ -80,7 +80,6 @@ export const UNAVAILABLE_ACHIEVEMENTS = catalog.achievements.filter(
 );
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));
 export const achievementById = (id: string) => BY_ID.get(id);
-export const countedAchievement = (a: AchievementDef) => COUNTED.includes(a.action);
 
 /**
  * Whether a destroyed building counts toward a "destroy" achievement. A level in the row asks

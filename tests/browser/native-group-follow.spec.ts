@@ -1,5 +1,22 @@
 import { expect, test } from '@playwright/test';
 
+test('group housing totals preserve the full-scan winner at radius boundaries', async ({
+  page,
+}) => {
+  await page.route('**/native-group-test', (route) =>
+    route.fulfill({
+      contentType: 'text/html',
+      body: '<!doctype html><title>Group housing</title>',
+    }),
+  );
+  await page.goto('/native-group-test');
+  const samples = await page.evaluate(async () => {
+    const { nativeGroupHousingWitness } = await import('/tests/fixtures/native-group-snapshot.ts');
+    return nativeGroupHousingWitness();
+  });
+  for (const sample of samples) expect(sample.actual).toEqual(sample.expected);
+});
+
 test('native group followers retain the original snapshot timing and exact movement', async ({
   page,
 }) => {

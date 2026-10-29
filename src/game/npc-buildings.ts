@@ -1,11 +1,11 @@
 import goblinLevels from '../../reference/goblin-buildings/levels.json' with { type: 'json' };
-import { GOBLIN_BUILDING_ART, goblinBuildingAsset, isGoblinBuilding } from './goblin-building-art';
+import { GOBLIN_BUILDING_ART, isGoblinBuilding } from './goblin-building-art';
 import type { BuildingKind } from './data';
 import { PUMPKIN_ART } from './pumpkin-bomb';
 import { SANTA_ART } from './santa-art';
 import { SHRINK_ART } from './shrink-trap-art';
-import { FREEZE_TRAP_ART, freezeTrapAsset, freezeTrapTexture } from './freeze-trap-art';
-import { GHOST_TRAP_ART, ghostTrapAsset, ghostTrapTexture } from './ghost-trap-art';
+import { FREEZE_TRAP_ART, freezeTrapTexture } from './freeze-trap-art';
+import { GHOST_TRAP_ART, ghostTrapTexture } from './ghost-trap-art';
 import { LATE_GOBLIN_BUILDING_ART, isLateGoblinBuilding } from './late-goblin-buildings-art';
 
 /** Native campaign identities, independent of the player's upgrade catalog.
@@ -132,22 +132,6 @@ export function validNpcBuilding(value: unknown, kind: BuildingKind, level: numb
 }
 /** Native DamagePerSecond=2, AttackSpeed=800 ms; the player Cannon has 7 DPS. */
 export const TUTORIAL_CANNON_DAMAGE = 2 * 0.8;
-export const npcAsset = (npc: NpcBuildingKind) =>
-  isLateGoblinBuilding(npc)
-    ? LATE_GOBLIN_BUILDING_ART[npc].asset
-    : npc === 'freeze-trap'
-      ? freezeTrapAsset(1)
-      : npc === 'ghost-trap'
-        ? ghostTrapAsset(1)
-        : npc === 'shrink-trap'
-          ? SHRINK_ART.asset
-          : isGoblinBuilding(npc)
-            ? goblinBuildingAsset(npc)
-            : npc === 'santa-trap'
-              ? SANTA_ART.asset
-              : npc === 'pumpkin-bomb'
-                ? PUMPKIN_ART.asset
-                : '/assets/buildings/cannon.webp';
 /** Registered native Goblin previews share their live clip's anchor and scale. */
 export const npcArt = (npc: NpcBuildingKind) =>
   isLateGoblinBuilding(npc)

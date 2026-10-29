@@ -10,6 +10,7 @@ import {
 import { nativeSceneStats } from './native-scene-flatten';
 import { NATIVE_SOURCE_PAGE_LIMIT, readNativeSourcePixels } from './native-source-pixels';
 import { nativeTintPixels } from './native-tint-pixels';
+import { runtimeBudget } from './runtime-budget';
 import {
   nativeMeshTexture,
   nativeTriangles,
@@ -84,7 +85,6 @@ function prepareAdditiveTexture(scene: Phaser.Scene, key: string) {
  */
 const TINT_ORDER = new Map<string, number>();
 /** Baked textures are texel copies: budget bytes, not texture count. */
-const MAX_TINTED_BYTES = 32 << 20;
 let tintedBytesTotal = 0;
 /** Baked colors quantize to byte steps (source colors are 8-bit) so keys stay bounded. */
 const TINT_STEP = 255;
@@ -110,9 +110,9 @@ export function releaseTint(key: string) {
 }
 /** Drops least recently used unreferenced pages while over budget. */
 function evictTints(keep?: string) {
-  if (tintedBytesTotal <= MAX_TINTED_BYTES || !tintTextures) return;
+  if (tintedBytesTotal <= runtimeBudget.tintedTextureBytes || !tintTextures) return;
   for (const [key, bytes] of TINT_ORDER) {
-    if (tintedBytesTotal <= MAX_TINTED_BYTES) break;
+    if (tintedBytesTotal <= runtimeBudget.tintedTextureBytes) break;
     if (key === keep || TINT_REFS.has(key)) continue;
     if (tintTextures.exists(key)) tintTextures.remove(key);
     tintedBytesTotal -= bytes;
@@ -169,7 +169,6 @@ function leafRegion(vertices: readonly number[], pageWidth: number, pageHeight: 
  * asynchronous bitmap crops remain available when that readback cannot be used.
  */
 const SOURCE_PIXELS = new Map<string, { image: CanvasImageSource; data: ImageData }>();
-const SOURCE_BUDGET = 32 << 20;
 const PAGE_LIMIT = NATIVE_SOURCE_PAGE_LIMIT;
 let sourceBytes = 0;
 function sourcePixels(key: string, image: HTMLImageElement): ImageData | undefined {
@@ -198,7 +197,7 @@ function sourcePixels(key: string, image: HTMLImageElement): ImageData | undefin
   SOURCE_PIXELS.set(key, { image, data });
   sourceBytes += bytes;
   for (const [oldest, entry] of SOURCE_PIXELS) {
-    if (sourceBytes <= SOURCE_BUDGET) break;
+    if (sourceBytes <= runtimeBudget.sourcePixelBytes) break;
     SOURCE_PIXELS.delete(oldest);
     sourceBytes -= entry.data.data.length;
   }

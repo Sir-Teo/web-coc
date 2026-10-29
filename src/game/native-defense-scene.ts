@@ -20,7 +20,6 @@ import {
 import { nativeDirectionRoot } from './native-projectile-poses';
 import { nativeDefenseTarget, nativeLabels } from './native-defense-poses';
 import { weaponFor } from './native-defenses';
-import { nativeRow, text } from './native-data';
 import { buildingIndex, unitIndex } from './battle-index';
 
 type Point = { x: number; y: number };
@@ -753,11 +752,5 @@ export class NativeDefensePresentation {
     return key;
   }
 }
-
-/** Spell records a defense or trap can cast, for callers that only have the client name. */
-export const nativeDefenseSpellRow = (name: string, level: number) =>
-  nativeRow('spells', name, level);
-export const nativeDefenseSpellEffect = (name: string, level: number, column: string) =>
-  text(nativeDefenseSpellRow(name, level), column);
 
 export type { NativeMeshGraph };

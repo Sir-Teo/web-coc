@@ -46,7 +46,6 @@ export const TORNADO_TRAP_LEVELS = source.trap.map((trap: Record<string, string>
   };
 });
 export type TornadoTrapLevel = (typeof TORNADO_TRAP_LEVELS)[number];
-export const MAX_TORNADO_TRAP_LEVEL = TORNADO_TRAP_LEVELS.length;
 export const TORNADO_SIEGE_FORCE_TIER = source.siegeForceTier;
 
 export function tornadoTrapStats(level: number) {

@@ -1,9 +1,10 @@
 import type Phaser from 'phaser';
 import { RenderQuality } from './render-quality';
+import { runtimeBudget } from './runtime-budget';
 
 // Keep a single backbuffer below 16 megapixels (64 MB of color pixels before
-// depth/stencil and driver buffers). Ordinary Retina desktops and 3× phones
-// render at their native density; very large displays stay within this budget.
+// depth/stencil and driver buffers). The device policy below chooses the working
+// density; very large displays also stay within this hard allocation budget.
 const MAX_RENDER_PIXELS = 16_000_000;
 
 export function displaySize(width: number, height: number, density: number, maxDimension = 8192) {
@@ -26,7 +27,8 @@ const densityCeilings = new WeakMap<Phaser.Game, number>();
 const resizers = new WeakMap<Phaser.Game, () => void>();
 /**
  * Caps canvas density (battery saver: 2, so a 3× phone draws 4/9 of its native pixels).
- * `Infinity` restores native density. Applies at once, or when `configureDisplay` runs.
+ * `Infinity` restores the device budget (up to 2× on phones/tablets). Applies at once,
+ * or when `configureDisplay` runs. DOM text always retains native screen density.
  */
 export function setMaxDensity(game: Phaser.Game, maxDensity: number) {
   if ((densityCeilings.get(game) ?? Infinity) === maxDensity) return;
@@ -51,7 +53,11 @@ export function configureDisplay(game: Phaser.Game) {
   let appliedScale = quality.scale;
   let pendingQuality = false;
   const targetDensity = () =>
-    Math.min(window.devicePixelRatio, densityCeilings.get(game) ?? Infinity);
+    Math.min(
+      window.devicePixelRatio,
+      runtimeBudget.maxDensity,
+      densityCeilings.get(game) ?? Infinity,
+    );
   const resize = () => {
     const rect = parent.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return;

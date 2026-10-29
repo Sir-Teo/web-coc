@@ -14,18 +14,26 @@
  * battle after warmup to isolate GPU work; --profile saves a Chrome CPU profile alongside JSON.
  * --lazyart uses production's on-demand art loading instead of the eager developer preload.
  * --mesh-batch=quad|tri compares frozen root meshes in the shared sprite or legacy triangle batch.
+ * --mobile uses touch input and a 390x844, 3× viewport by default; --viewport=WxH overrides it.
+ * --cpu=4 applies Chromium's 4× CPU slowdown after artwork loads. This emulates constraints,
+ * not a physical phone's GPU, thermals or memory. --dpr still overrides the pixel ratio.
  */
 import { chromium } from '@playwright/test';
 import fs from 'node:fs/promises';
 
 const arg = (name, fallback) =>
-  process.argv.find((a) => a.startsWith(`--${name}=`))?.split('=')[1] ?? fallback;
+  process.argv.findLast((a) => a.startsWith(`--${name}=`))?.split('=')[1] ?? fallback;
 const army = arg('army', 'roster');
 const level = arg('level', 'max');
 const stage = Number(arg('stage', 61));
 const warmup = Number(arg('warmup', 3));
 const seconds = Number(arg('seconds', 6));
-const dpr = Number(arg('dpr', 2));
+const mobile = process.argv.includes('--mobile');
+const [width, height] = arg('viewport', mobile ? '390x844' : '1440x960')
+  .split('x')
+  .map(Number);
+const dpr = Number(arg('dpr', mobile ? 3 : 2));
+const cpuRate = Number(arg('cpu', 1));
 const gl = process.argv.includes('--gl');
 const freeze = process.argv.includes('--freeze');
 const msaa = arg('msaa', 'default');
@@ -38,13 +46,24 @@ if (!['default', 'on', 'off'].includes(msaa)) throw Error('Use --msaa=default, o
 if (!['default', 'quad', 'tri'].includes(meshBatch))
   throw Error('Use --mesh-batch=default, quad or tri.');
 if (meshBatch !== 'default' && !freeze) throw Error('--mesh-batch requires --freeze.');
+if (
+  ![width, height].every((n) => Number.isInteger(n) && n > 0) ||
+  !Number.isFinite(dpr) ||
+  dpr <= 0
+)
+  throw Error('Use a positive --viewport=390x844 and --dpr=3.');
+if (!Number.isFinite(cpuRate) || cpuRate < 1) throw Error('Use --cpu=1 or a larger slowdown.');
+if (!Number.isFinite(seconds) || seconds <= 0 || !Number.isFinite(warmup) || warmup < 0)
+  throw Error('Use positive --seconds and nonnegative --warmup.');
 
 const browser = await chromium.launch(
   process.platform === 'darwin' ? { args: ['--use-angle=metal'] } : {},
 );
 const page = await browser.newPage({
-  viewport: { width: 1440, height: 960 },
+  viewport: { width, height },
   deviceScaleFactor: dpr,
+  isMobile: mobile,
+  hasTouch: mobile,
 });
 // Compare context multisampling without changing texture filtering or production settings.
 if (msaa !== 'default')
@@ -191,6 +210,8 @@ const deployed = await page.evaluate(async () => {
   scene.resetCamera();
   return b.units.length;
 });
+const client = profile || cpuRate !== 1 ? await page.context().newCDPSession(page) : null;
+if (cpuRate !== 1) await client.send('Emulation.setCPUThrottlingRate', { rate: cpuRate });
 await page.evaluate((gl) => {
   const game = window.__game.game;
   // CPU time of Phaser's per-frame step, unquantized by vsync.
@@ -266,8 +287,7 @@ const census = () =>
     };
   });
 const before = await census();
-const client = profile ? await page.context().newCDPSession(page) : null;
-if (client) {
+if (profile) {
   await client.send('Profiler.enable');
   await client.send('Profiler.start');
 }
@@ -317,7 +337,7 @@ const frames = await page.evaluate(
 );
 const after = await census();
 await fs.mkdir('output/playtest', { recursive: true });
-if (client) {
+if (profile) {
   const { profile } = await client.send('Profiler.stop');
   await fs.writeFile('output/playtest/battle-load.cpuprofile', JSON.stringify(profile));
 }
@@ -332,7 +352,9 @@ const rendering = await page.evaluate(() => {
   };
 });
 const report = {
-  environment: `Headless Chromium ${browser.version()} on ${process.platform}, 1440×960 at ${dpr}×; not a physical device`,
+  environment: `Headless Chromium ${browser.version()} on ${process.platform}, ${width}×${height} at ${dpr}×; not a physical device`,
+  mobile,
+  cpuRate,
   renderer,
   rendering,
   freeze,

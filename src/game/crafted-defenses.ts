@@ -80,9 +80,6 @@ export function craftedRegistration(kind: CraftedKind, tier = 1) {
     height: (portrait.height * CRAFTED_PLATFORM_WIDTH) / 177,
   };
 }
-export const freshCrafting = (): CraftingState => ({
-  modules: { candle: [1, 1, 1], hunter: [1, 1, 1], cake: [1, 1, 1] },
-});
 /** The defense's displayed level: its three module levels added together (3 to 30). */
 export const craftedLevel = (levels: ModuleLevels) => levels[0] + levels[1] + levels[2];
 
@@ -160,25 +157,6 @@ export function candleTargets(stats: CraftedStats, seconds: number) {
 
 export const validCraftedKind = (v: unknown): v is CraftedKind =>
   typeof v === 'string' && (CRAFTED_KINDS as readonly string[]).includes(v);
-export function validCrafting(value: unknown): value is CraftingState {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
-  const c = value as Record<string, unknown>;
-  if (c.chosen !== undefined && !validCraftedKind(c.chosen)) return false;
-  const modules = c.modules as Record<string, unknown> | undefined;
-  return (
-    !!modules &&
-    typeof modules === 'object' &&
-    CRAFTED_KINDS.every((k) => {
-      const levels = modules[k];
-      return (
-        Array.isArray(levels) &&
-        levels.length === 3 &&
-        levels.every((l) => Number.isInteger(l) && l >= 1 && l <= MODULE_MAX_LEVEL)
-      );
-    }) &&
-    Object.keys(modules).every((k) => validCraftedKind(k))
-  );
-}
 
 /**
  * A building's Crafting Station fields: only a station carries them, module levels are 1-10,

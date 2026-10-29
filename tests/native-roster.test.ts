@@ -7,6 +7,7 @@ import { emptyArmy, emptySpells } from '../src/game/army';
 import { nativeUnitStats } from '../src/game/native-units';
 import {
   nativeGroupLifecycleWitness,
+  nativeGroupHousingWitness,
   nativeGroupSnapshotWitness,
 } from './fixtures/native-group-snapshot';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
@@ -36,6 +37,26 @@ const run = (m: GameModel, seconds: number, step = 0.05) => {
 const building = (m: GameModel, id: number) => m.battle!.buildings.find((b) => b.id === id)!;
 
 describe('version 45 native roster battles', () => {
+  it('retargets buildings after its last defender disappears', () => {
+    const m = arena([['goldstorage', 10, 10]], { apprenticewarden: 1 });
+    m.activeTroop = 'apprenticewarden';
+    expect(m.deploy(3, 3)).toBe(true);
+    const unit = m.battle!.units[0];
+    m.battle!.defenders = [];
+    unit.defenderTarget = 9999;
+    unit.target = 1;
+    unit.path = [{ x: 47, y: 47 }];
+    unit.pathAt = 10;
+    m.step(0.05);
+    expect(unit.defenderTarget).toBeUndefined();
+    expect(unit.target).toBe(10);
+    expect(unit.path).not.toContainEqual({ x: 47, y: 47 });
+  });
+
+  it('matches a full housing scan across clustered, sparse and boundary layouts', () => {
+    for (const sample of nativeGroupHousingWitness())
+      expect(sample.actual).toEqual(sample.expected);
+  });
   it('captures group positions from an attacking follower and refreshes them next tick', () => {
     expect(nativeGroupSnapshotWitness()).toEqual({
       attack: { attacking: true, x: 16, y: 21 },

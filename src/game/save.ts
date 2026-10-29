@@ -43,7 +43,7 @@ import { validStarBonus, validTreasury } from './leagues';
 import { BUILDINGS, maxTroopLevel, SPELL_KEYS, TROOP_KEYS, isSpellKind } from './data';
 import { emptySpells, expandArmyRoster } from './army';
 import { maxSpellLevelFor } from './spell-progression';
-import { BATTLE_SPEEDS, initialSave, type Save } from './model';
+import { BATTLE_SPEEDS, type Save } from './model';
 const KEY = 'crown-clan-save-v1';
 /**
  * Ceiling on stored buildings, and on the slots of a saved layout. A maxed Town Hall 18 village
@@ -870,6 +870,3 @@ export function forgetReplacedVillage() {
 }
 export const saveFileName = (recordings: boolean) =>
   recordings ? 'crown-and-clan-village.json' : 'crown-and-clan-village-only.json';
-export function freshSave() {
-  return initialSave();
-}

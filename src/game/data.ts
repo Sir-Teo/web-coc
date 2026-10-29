@@ -1412,7 +1412,6 @@ export const LATE_TROOP_KEYS = ['healer', 'dragon', 'pekka'] as const;
 export const LEGACY_TROOP_KEYS = PRE_EXPANSION_TROOP_KEYS.filter(
   (k) => !LATE_TROOP_KEYS.includes(k as (typeof LATE_TROOP_KEYS)[number]),
 );
-export const LEGACY_SPELL_KEYS: readonly LegacySpellKind[] = ['rage', 'heal', 'lightning'];
 /** The spells released before the native roster; version 50 and older recordings carry these. */
 export const RELEASED_SPELL_KEYS: readonly SpellKind[] = [
   'rage',

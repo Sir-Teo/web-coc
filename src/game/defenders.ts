@@ -582,6 +582,13 @@ export function preferredOrCommitted(
   for (const b of buildings) if (b.id === unit.target && b.hp > 0 && targetable(b)) return true;
   return false;
 }
+/** Skeleton traps retain their historical pre-spawn eligibility; other defenders wait. */
+export function hasDefenderCandidates(battle: Pick<Battle, 'defenders' | 'elapsed'>) {
+  return !!battle.defenders?.some(
+    (d) => d.hp > 0 && (d.kind === 'skeleton' || d.spawnedAt <= battle.elapsed),
+  );
+}
+
 export function stepAttackerVsDefenders(
   battle: Battle,
   unit: Unit,
@@ -605,11 +612,7 @@ export function stepAttackerVsDefenders(
   // Early-return when no defenders exist before scanning all buildings twice.
   // Mirrors the no-target branch below: a stale defenderTarget also clears the
   // building target so the unit retargets instead of resuming its old route.
-  if (
-    !(battle.defenders ?? []).some(
-      (d) => d.hp > 0 && (d.kind === 'skeleton' || d.spawnedAt <= battle.elapsed),
-    )
-  ) {
+  if (!hasDefenderCandidates(battle)) {
     if (unit.defenderTarget !== undefined) {
       delete unit.defenderTarget;
       unit.target = null;

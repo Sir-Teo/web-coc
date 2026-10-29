@@ -3,7 +3,6 @@ import { TROOPS, SPELLS, SPELL_KEYS, TROOP_KEYS, type SpellKind, type UnitKind }
 import type { Battle } from './model';
 
 export const EAGLE_ARTILLERY_LEVELS = source.levels;
-export const MAX_EAGLE_ARTILLERY_LEVEL = source.levels.length;
 /** Native logic positions use 512 units per tile; CSV ranges become `(value << 9) / 100`. */
 export const NATIVE_TILE = 512;
 const units = (value: number) => Math.trunc((value * NATIVE_TILE) / 100);

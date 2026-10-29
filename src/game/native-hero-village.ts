@@ -1,7 +1,6 @@
 import type { KingEquipment } from './equipment';
 import {
   HERO_KINDS,
-  PET_KINDS,
   heroDefaultItems,
   heroItems,
   heroMaxLevel,
@@ -152,4 +151,3 @@ export function validPetProgress(value: unknown): value is PetProgress {
   }
   return true;
 }
-export const PET_ORDER = PET_KINDS;
