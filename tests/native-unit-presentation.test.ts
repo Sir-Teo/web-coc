@@ -7,6 +7,7 @@ import { nativeUnitStats } from '../src/game/native-units';
 import { createGuardian, guardianStats, stepGuardian } from '../src/game/native-guardians';
 import type { NativeTroopContext } from '../src/game/native-troops';
 import { attackingBoogerBattle } from './fixtures/attacking-booger';
+import { attackingSpellBatBattle } from './fixtures/attacking-spell-bat';
 import { nativeDirectBattle } from './fixtures/native-direct-attacks';
 import { maxTroopLevel } from '../src/game/data';
 
@@ -78,6 +79,9 @@ vi.mock('../src/game/native-scene-view', () => {
     }
     destroy() {
       this.objects = [];
+    }
+    retire() {
+      this.destroy();
     }
   }
   return { NativeSceneView, quantizedDensity: (d: number) => Math.max(1, Math.round(d * 2) / 2) };
@@ -221,6 +225,60 @@ describe('unit motion tracker', () => {
 });
 
 describe('troop native presentation', () => {
+  for (const version of [216, 217])
+    for (const level of [1, 8])
+      it(`Bat Spell ${level} draws its physical source contact in version ${version}`, () => {
+        const r = attackingSpellBatBattle(level, version),
+          p = new TroopNativePresentation(fakeScene()),
+          pack = JSON.parse(
+            fs.readFileSync('public/assets/troops-native/spellbat/graph.json', 'utf8'),
+          );
+        const internals = p as unknown as {
+          packs: Map<string, unknown>;
+          levelsReady: Map<string, Set<number>>;
+          views: Map<number, { sample: { frame: number } }>;
+        };
+        internals.packs.set('spellbat', pack);
+        internals.levelsReady.set('spellbat', new Set([1]));
+        r.untilAttacks(1);
+        const releases = [JSON.parse(JSON.stringify(r.battle)) as Battle];
+        r.untilAttacks(2);
+        releases.push(JSON.parse(JSON.stringify(r.battle)) as Battle);
+        for (const battle of [...releases, ...releases.slice().reverse()]) {
+          const before = JSON.stringify(battle);
+          p.render(battle, false, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(version >= 217 ? 5 : 0);
+          p.render(battle, true, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(0);
+          expect(JSON.stringify(battle)).toBe(before);
+        }
+      });
+
+  it('holds a frozen Bat charge in its original pose without changing combat state', () => {
+    const r = attackingSpellBatBattle(1, 217),
+      p = new TroopNativePresentation(fakeScene()),
+      pack = JSON.parse(fs.readFileSync('public/assets/troops-native/spellbat/graph.json', 'utf8'));
+    const internals = p as unknown as {
+      packs: Map<string, unknown>;
+      levelsReady: Map<string, Set<number>>;
+      views: Map<number, { state: string; sample: { frame: number } }>;
+    };
+    internals.packs.set('spellbat', pack);
+    internals.levelsReady.set('spellbat', new Set([1]));
+    r.until(r.battle.elapsed + 0.9);
+    p.render(r.battle, false, iso, 46, new Map());
+    const frame = internals.views.get(r.unit.id)!.sample.frame;
+    expect(frame).toBeGreaterThan(0);
+    r.unit.native!.effects = { frozenUntil: r.battle.elapsed + 1 };
+    r.step();
+    expect(r.unit.attacking).toBe(false);
+    const before = JSON.stringify(r.battle);
+    p.render(r.battle, false, iso, 46, new Map());
+    expect(internals.views.get(r.unit.id)!.state).toBe('attack');
+    expect(internals.views.get(r.unit.id)!.sample.frame).toBe(frame);
+    expect(JSON.stringify(r.battle)).toBe(before);
+  });
+
   for (const kind of ['archer', 'minion', 'wizard', 'dragon', 'rootrider'] as const)
     for (const level of [1, maxTroopLevel(kind)])
       for (const version of [215, 216])

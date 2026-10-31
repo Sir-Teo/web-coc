@@ -940,6 +940,7 @@ export function stepNativeUnit(
   const golem = !!((u.kind === 'golem' || u.kind === 'golemite') && battle.nativeGolemWindup);
   const bear = !!(u.kind === 'bear' && battle.nativeBearWindup);
   const booger = !!(u.kind === 'booger' && battle.nativeBoogerWindup);
+  const spellBat = !!(u.kind === 'spellbat' && battle.nativeSpellBatWindup);
   const giant = !!(u.kind === 'supergiant' && battle.nativeGiantWindup);
   const iceGolem = !!(u.kind === 'icegolem' && battle.nativeIceGolemWindup);
   const rootRider = !!(u.kind === 'rootrider' && battle.nativeRootRiderWindup);
@@ -983,6 +984,7 @@ export function stepNativeUnit(
     golem ||
     bear ||
     booger ||
+    spellBat ||
     giant ||
     iceGolem ||
     rootRider ||
@@ -1067,6 +1069,7 @@ export function stepNativeUnit(
         golem ||
         bear ||
         booger ||
+        spellBat ||
         witchSummon ||
         giant ||
         iceGolem ||
@@ -1091,7 +1094,7 @@ export function stepNativeUnit(
           sourceId: u.id,
           targetId: target.defender.id,
           targetDefender: true,
-          ...(booger
+          ...(booger || spellBat
             ? { fromAir: true, toAir: target.defender.mode === 'air' }
             : electroTitan
               ? { toAir: target.defender.mode === 'air' }

@@ -1719,3 +1719,15 @@ physical release tick before showing its next charge. This is a renderer-local
 adjustment: combat clocks, damage, projectiles and movement retain their values.
 Recordings from version 215 and earlier retain their previous presentation.
 See [source-frame evidence and complete-state checks](../reference/attack-contact-pose/README.md).
+
+## Version 217: Bat Spell melee phases
+
+Setups carrying a Bat Spell enable a one-second fresh melee charge for the
+source tier-one Bats after approach, with 0.5-second recovery inside their
+two-second repeat period. Freeze/stun, action-rate modifiers, Shrink and
+remaining recovery use the shared phased attack rules. Ground and air defenders
+receive direct hits when Defense preference and commitment permit them. Original
+meshes follow the captured phase, including contact and held frozen poses.
+Spell waves, counts and child stats retain their rules. Versions 216 and earlier
+keep the acquisition delay and previous attack state. See
+[source timing, adapter limits and portable checks](../reference/attacking-spell-bat/README.md).
