@@ -56,3 +56,12 @@ battle completion. Shared Super Archer, Giant Arrow and Dark Orb tests cover the
 extended collision path. Browser checks cover original meshes, early-stop
 presentation, replay states and base/maximum Info at phone, landscape and desktop
 sizes. Screenshots remain in ignored `output/playtest/`.
+
+The sound presenter also reads these captured logs: original `Log Siege Attack`
+at launch and `Generic Hit` at each recorded physical contact. Live launch/hit
+logging is suppressed for these logs to avoid duplicate cues. Their source tier
+and timestamps survive caster loss and backward seeks, and future/expired cues
+are excluded. Old event-log sounds remain in place for version 223 and earlier.
+Focused model and Web Audio browser checks cover reconstruction, playback rate,
+read-only sampling and historical controls. This audio repair changes no combat
+state or replay version.
