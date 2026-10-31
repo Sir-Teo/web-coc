@@ -1,3 +1,12 @@
+import { resolveFlameFlingerImpact } from './native-flame-flinger-impact';
+import {
+  beginFlameFlingerBurst,
+  prepareFlameFlingerBurst,
+  stepFlameFlingerBurst,
+  flameFlingerBurstStats,
+  releaseFlameFlingerShot,
+  type FlameFlingerBurstState,
+} from './native-flame-flinger';
 import { launchRollingLog } from './native-log-launcher';
 import { stepTroopLauncher, resolveTroopLauncherImpact } from './native-troop-launcher';
 import { attackStoneSlammer } from './native-stone-slammer';
@@ -143,6 +152,8 @@ export interface NativeUnitState {
   attackWindup?: NativeAttackWindupState;
   /** Version 221: a charged first flame and the remaining source burst. */
   superDragonBurst?: SuperDragonBurstState;
+  /** Version 228: charged first shot and remaining Flame Flinger projectiles. */
+  flameFlingerBurst?: FlameFlingerBurstState;
   /** Version 210: committed friendly-unit cast, separate from enemy target namespaces. */
   healerWindup?: HealerWindupState;
   /** Version 95: the source waiting bird and its separately drawn Egg. */
@@ -991,6 +1002,8 @@ export function stepNativeUnit(
   const babyDragon = !!(u.kind === 'babydragon' && battle.nativeBabyDragonWindup);
   const superDragon = !!(u.kind === 'superdragon' && battle.nativeSuperDragonBurst);
   if (superDragon) prepareSuperDragonBurst(u, at);
+  const flameFlinger = !!(u.kind === 'flameflinger' && battle.nativeFlameFlingerBursts);
+  if (flameFlinger) prepareFlameFlingerBurst(u, at);
   const minion = !!(u.kind === 'minion' && battle.nativeMinionWindup);
   const archer = !!(u.kind === 'archer' && battle.nativeArcherWindup);
   const superBarbarian = !!(u.kind === 'superbarbarian' && battle.nativeSuperBarbarianWindup);
@@ -1039,6 +1052,7 @@ export function stepNativeUnit(
     stoneSlammer ||
     babyDragon ||
     superDragon ||
+    flameFlinger ||
     superMinion ||
     minion ||
     archer ||
@@ -1061,7 +1075,8 @@ export function stepNativeUnit(
           num(nativeRow('abilities', s.ability, s.abilityLevel), 'BoostAttackSpeedPercentage') /
             100)
       : actionDt;
-  const burstRate = superDragon && dt > 0 ? phaseDt / dt / unitAttackIntervalScale(u, at) : 0;
+  const burstRate =
+    (superDragon || flameFlinger) && dt > 0 ? phaseDt / dt / unitAttackIntervalScale(u, at) : 0;
   const windupHandled =
     splitAttack &&
     stepNativeAttackWindup(ctx, u, s, dt, phaseDt, (target) => {
@@ -1080,6 +1095,10 @@ export function stepNativeUnit(
         const launched = beginSuperDragonBurst(u, target, at, burstRate),
           flame = superDragonBurstStats(s.level).damage * (damage / s.damage);
         releaseSuperDragonFlame(ctx, u, s, flame, target, launched);
+      } else if (flameFlinger) {
+        const launched = beginFlameFlingerBurst(u, s.level, target, at, burstRate),
+          shot = flameFlingerBurstStats(s.level).damage * (damage / s.damage);
+        releaseFlameFlingerShot(ctx, u, s, shot, target, launched);
       } else if (stoneSlammer) attackStoneSlammer(ctx, u, s, damage, target);
       else if (superArcher) launchArcherPiercing(ctx, u, damage, target);
       else if (superWizard) attackSuperWizard(ctx, u, damage, target);
@@ -1196,6 +1215,14 @@ export function stepNativeUnit(
     stepSuperDragonBurst(ctx, u, burstRate, (target, launched) => {
       const flame = superDragonBurstStats(s.level).damage * (damage / s.damage);
       releaseSuperDragonFlame(ctx, u, s, flame, target, launched);
+    })
+  )
+    return;
+  if (
+    flameFlinger &&
+    stepFlameFlingerBurst(ctx, u, burstRate, (target, launched) => {
+      const shot = flameFlingerBurstStats(s.level).damage * (damage / s.damage);
+      releaseFlameFlingerShot(ctx, u, s, shot, target, launched);
     })
   )
     return;
@@ -2083,6 +2110,7 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
     return;
   }
   if (resolveWitchImpact(ctx, p)) return;
+  if (resolveFlameFlingerImpact(ctx, p)) return;
   if (
     (ctx.battle.nativeWizardWindup && p.native?.kind === 'wizard') ||
     (ctx.battle.nativeSuperDragonBurst && p.native?.kind === 'superdragon')

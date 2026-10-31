@@ -51,3 +51,6 @@ Lightning controls and old/new capability. Browser checks cover full portable
 states, original body/projectile meshes, the isolated Wall pulse difference,
 rewind, reduced motion and source Info across phone, landscape and desktop.
 Screenshots remain in ignored `output/playtest/`.
+
+Version 228 adds the later [charged three-projectile attack](../flame-flinger-bursts/README.md);
+the historical scope described above remains unchanged for earlier replays.

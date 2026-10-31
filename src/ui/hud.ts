@@ -1,3 +1,4 @@
+import { flameFlingerBurstStats } from '../game/native-flame-flinger';
 import { troopLauncherStats } from '../game/native-troop-launcher';
 import { superDragonBurstStats } from '../game/native-super-dragon';
 import { spellCombatGuide } from './spell-combat-guide';
@@ -4305,7 +4306,9 @@ export class HUD {
         hit =
           k === 'superdragon' && (!m.battle || m.battle.nativeSuperDragonBurst)
             ? damageNumber(superDragonBurstStats(m.armyLevel(k)).damage)
-            : d.damage;
+            : k === 'flameflinger' && (!m.battle || m.battle.nativeFlameFlingerBursts)
+              ? damageNumber(flameFlingerBurstStats(m.armyLevel(k)).damage)
+              : d.damage;
       const issue = m.troopTrainingIssue(k);
       const unlocked = !issue;
       const room = m.troopRoom(k);
@@ -4615,6 +4618,11 @@ export class HUD {
         kind === 'superdragon' && (!this.model.battle || this.model.battle.nativeSuperDragonBurst)
           ? superDragonBurstStats(native.level)
           : undefined,
+      flameBurst =
+        kind === 'flameflinger' &&
+        (!this.model.battle || this.model.battle.nativeFlameFlingerBursts)
+          ? flameFlingerBurstStats(native.level)
+          : undefined,
       stoneSlammer =
         kind === 'stoneslammer' &&
         (!this.model.battle || !!this.model.battle.nativeStoneSlammerAttacks),
@@ -4635,6 +4643,7 @@ export class HUD {
           !this.model.battle || !!this.model.battle.nativeFlameFlingerWallPulse,
         flameFlingerBurnOverlap:
           !this.model.battle || !!this.model.battle.nativeFlameFlingerBurnOverlap,
+        flameFlingerBursts: !this.model.battle || !!this.model.battle.nativeFlameFlingerBursts,
       }),
       original = superOriginal(kind),
       boostNote =
@@ -4685,11 +4694,13 @@ export class HUD {
             [
               d.healer
                 ? 'Healing per second'
-                : stoneSlammer
-                  ? 'Primary damage per second'
-                  : rollingLog
-                    ? 'Log damage per second'
-                    : 'Damage per second',
+                : flameBurst
+                  ? 'Direct damage per second'
+                  : stoneSlammer
+                    ? 'Primary damage per second'
+                    : rollingLog
+                      ? 'Log damage per second'
+                      : 'Damage per second',
               damageNumber((d.heal ?? d.damage) / d.rate),
             ],
             [
@@ -4699,12 +4710,14 @@ export class HUD {
                   : 'Healing per pulse'
                 : burst
                   ? 'Damage per flame'
-                  : stoneSlammer
-                    ? 'Primary damage per hit'
-                    : rollingLog
-                      ? 'Log damage per hit'
-                      : 'Damage per hit',
-              damageNumber(d.heal ?? burst?.damage ?? d.damage),
+                  : flameBurst
+                    ? 'Damage per projectile'
+                    : stoneSlammer
+                      ? 'Primary damage per hit'
+                      : rollingLog
+                        ? 'Log damage per hit'
+                        : 'Damage per hit',
+              damageNumber(d.heal ?? burst?.damage ?? flameBurst?.damage ?? d.damage),
             ],
           ] as [string, string][])
         : []),
@@ -4723,10 +4736,10 @@ export class HUD {
                 ? launcher
                   ? 'Barrel interval'
                   : 'Healing interval'
-                : burst
+                : burst || flameBurst
                   ? 'Burst interval'
                   : 'Attack interval',
-              `${burst?.period ?? d.rate}s`,
+              `${burst?.period ?? flameBurst?.period ?? d.rate}s`,
             ],
           ] as [string, string][])
         : []),

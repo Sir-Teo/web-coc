@@ -403,6 +403,7 @@ export function stepProjectiles(
           (p.native?.kind === 'witch' || p.native?.kind === 'superwitch')) ||
         (battle.nativeWizardWindup && p.native?.kind === 'wizard') ||
         (battle.nativeSuperDragonBurst && p.native?.kind === 'superdragon') ||
+        (battle.nativeFlameFlingerBursts && p.native?.kind === 'flameflinger') ||
         (battle.nativeTroopLauncherFriendly && p.native?.troopLauncher)) &&
       p.native
     ) {

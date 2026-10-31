@@ -53,3 +53,6 @@ burst, flight scatter and attack phases remain outside this correction.
 Browser checks compare old/new portable states, original bodies, read-only
 rendering, rewind and historical/current guide labels. The normal Info matrix
 covers both research extremes at phone, landscape and desktop sizes.
+
+Version 228 adds the later [charged three-projectile attack](../flame-flinger-bursts/README.md);
+the historical scope described above remains unchanged for earlier replays.

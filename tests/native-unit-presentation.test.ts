@@ -14,6 +14,7 @@ import { nativeDirectBattle } from './fixtures/native-direct-attacks';
 import { maxTroopLevel } from '../src/game/data';
 import { stoneSlammerBattle } from './fixtures/attacking-stone-slammer';
 import { troopLauncherBattle } from './fixtures/attacking-troop-launcher';
+import { flameFlingerBurstBattle } from './fixtures/flame-flinger-burst';
 
 // Scene views are Phaser objects; record what the presentations ask them to draw instead.
 vi.mock('../src/game/native-scene-view', () => {
@@ -249,6 +250,24 @@ describe('unit motion tracker', () => {
 });
 
 describe('troop native presentation', () => {
+  for (const version of [227, 228])
+    for (const level of [1, 5])
+      it(`Flame Flinger ${level} draws the original release pose in version ${version}`, () => {
+        const r = flameFlingerBurstBattle(level, version),
+          { p, internals } = loadedTroopPresentation(['flameflinger']);
+        r.untilShots(1);
+        const releases = [JSON.parse(JSON.stringify(r.battle)) as Battle];
+        r.untilShots(version >= 228 ? 4 : 2);
+        releases.push(JSON.parse(JSON.stringify(r.battle)) as Battle);
+        for (const battle of [...releases, ...releases.slice().reverse()]) {
+          const before = JSON.stringify(battle);
+          p.render(battle, false, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(version >= 228 ? 6 : 0);
+          p.render(battle, true, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(0);
+          expect(JSON.stringify(battle)).toBe(before);
+        }
+      });
   for (const version of [222, 223])
     for (const level of [1, 4])
       it(`Troop Launcher ${level} draws its original contact pose in version ${version}`, () => {

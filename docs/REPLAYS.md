@@ -1830,3 +1830,14 @@ bonus, remain additive. Due Flame Flinger pulses resolve in scheduled-time order
 for consistent shared budgets. Single-area damage, geometry and other spells
 retain their existing paths. Version 226 and earlier keep complete old states
 and guide readouts. See [damage sharing, chronology and validation](../reference/flame-flinger-overlap/README.md).
+
+## Version 228: charged Flame Flinger projectile bursts
+
+New carried Flame Flingers charge before releasing three projectiles spaced by
+0.128 seconds. Their 5.312-second cycle preserves source average direct DPS.
+Active-time holds, fractional remainders and committed target behavior use the
+shared attacker controller. Each fixed-aim ground projectile resolves one area
+hit and then its own source burn; Walls receive their direct multiplier once.
+Released shots and burns survive caster loss. Original attack poses align with
+the first release. Version 227 and earlier retain single-release combat and old
+readouts. See [source timing, limits and validation](../reference/flame-flinger-bursts/README.md).

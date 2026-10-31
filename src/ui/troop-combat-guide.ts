@@ -1,3 +1,4 @@
+import { flameFlingerBurstStats } from '../game/native-flame-flinger';
 import { logLauncherStats } from '../game/native-log-launcher';
 import { troopLauncherStats } from '../game/native-troop-launcher';
 import { stoneSlammerSecondaryStats } from '../game/native-stone-slammer';
@@ -54,6 +55,7 @@ export function troopCombatGuide(
     drillSurfaceWalls?: boolean;
     flameFlingerWallPulse?: boolean;
     flameFlingerBurnOverlap?: boolean;
+    flameFlingerBursts?: boolean;
   } = {},
 ) {
   const facts: [string, string][] = [];
@@ -102,7 +104,8 @@ export function troopCombatGuide(
   } else if (kind === 'flameflinger' && rules.flameFlingerWallPulse !== false) {
     const projectile = nativeRow('projectiles', stats.projectile),
       burn = nativeRow('spells', text(projectile, 'HitSpell'), num(projectile, 'HitSpellLevel', 1)),
-      interval = seconds(burn, 'TimeBetweenHitsMS');
+      interval = seconds(burn, 'TimeBetweenHitsMS'),
+      burst = rules.flameFlingerBursts !== false ? flameFlingerBurstStats(stats.level) : undefined;
     facts.push(
       [
         'Maximum burn damage per pulse',
@@ -116,8 +119,10 @@ export function troopCombatGuide(
         `+${num(burn, 'Damage') * (num(burn, 'PreferredTargetDamageMod', 1) - 1)}`,
       ],
       [
-        'Direct hit damage vs walls',
-        (stats.damage * stats.damageMultiplier).toLocaleString('en-US'),
+        burst ? 'Projectile damage vs walls' : 'Direct hit damage vs walls',
+        ((burst?.damage ?? stats.damage) * stats.damageMultiplier).toLocaleString('en-US', {
+          maximumFractionDigits: 2,
+        }),
       ],
       ['Health loss', `${stats.loseHp / stats.loseHpInterval} HP/s`],
       ['Can receive healing', stats.immuneToHealing ? 'No' : 'Yes'],
@@ -131,6 +136,14 @@ export function troopCombatGuide(
       );
       tactic +=
         ' Overlapping areas share the damage-over-time cap; each area still adds its small pulse hit.';
+    }
+    if (burst) {
+      facts.push(
+        ['Shots per burst', `${burst.count}`],
+        ['Shot spacing', `${burst.delay} s`],
+        ['Fresh charge', `${burst.firstHit} s`],
+      );
+      tactic += ' Each charged attack releases three projectiles.';
     }
   } else if (kind === 'battledrill' && rules.drillSurfaceWalls !== false) {
     const ability = nativeRow('abilities', 'BattleDrillStunOnSurface'),

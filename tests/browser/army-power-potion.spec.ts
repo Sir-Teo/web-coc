@@ -24,6 +24,7 @@ for (const viewport of [
         hogrider: 1,
         dragon: 1,
         trooplauncher: 1,
+        flameflinger: 1,
       };
       m.state.spellLevels = { ...m.state.spellLevels, clone: 1, freeze: 1, heal: 1 };
       m.addMagicItem('power-potion');
@@ -42,6 +43,7 @@ for (const viewport of [
     expect(await page.evaluate(() => window.__game.model.usePotion('power-potion'))).toBe(true);
     await expect(tile('Yeti').locator('h3')).toHaveText('Yeti ★8');
     await expect(tile('Troop Launcher').locator('.shop-count')).toContainText('7 barrels');
+    await expect(tile('Flame Flinger').locator('.shop-count')).toContainText('325.8');
     await expect(tile('Yeti').locator('.shop-count')).toContainText('4650');
     await expect(tile('Super Giant').locator('h3')).toHaveText('Super Giant ★14');
     await expect(
@@ -88,6 +90,17 @@ for (const viewport of [
           'Damage per second': '537',
           'Damage per flame': '192.46',
           'Flames per burst': 'Up to 10',
+        },
+      },
+      {
+        name: 'Flame Flinger',
+        level: 5,
+        research: 'Researched level 1',
+        facts: {
+          'Damage per projectile': '325.8',
+          'Direct damage per second': '184',
+          'Shots per burst': '3',
+          'Maximum sustained burn DPS': '130',
         },
       },
       {
@@ -160,6 +173,7 @@ for (const viewport of [
     await expect(tile('Yeti').locator('h3')).toHaveText('Yeti ★1');
     await expect(tile('Clone Spell').locator('h3')).toHaveText('Clone ★1');
     await expect(tile('Troop Launcher').locator('.shop-count')).toContainText('5 barrels');
+    await expect(tile('Flame Flinger').locator('.shop-count')).toContainText('224.87');
     await page.getByRole('button', { name: 'About Yeti', exact: true }).click();
     await expect(row('Yetimite stock')).toHaveText('8');
     await expect(page.locator('.troop-info-body .potion-level')).toHaveCount(0);

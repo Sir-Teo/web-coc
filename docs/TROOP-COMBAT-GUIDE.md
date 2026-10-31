@@ -264,17 +264,17 @@ prior guide. Base/maximum research browser checks cover phone, landscape and
 desktop with the same text-fit and training-navigation checks. See
 [surfacing Wall destruction](../reference/battle-drill-surface-walls/README.md).
 
-Flame Flinger Info now distinguishes its burn pulses from direct impact damage.
-At base/maximum research it shows 33/53 maximum damage per burn pulse, a
-0.4-second interval, 2.5-tile radius and 30-second pulse window. Walls receive
-24 additional damage per pulse; direct Wall hits retain the separate eightfold
-bonus. The guide also explains 17 HP/s drain, healing immunity and supporting
-its long-range approach. It retains the current generic direct-attack readouts;
-the source's three-shot burst is outside this correction. Historical battle
-inspection retains the old guide. See [preferred Wall pulse damage](../reference/flame-flinger-wall-pulse/README.md).
+Flame Flinger Info distinguishes direct projectiles from persistent burn areas.
+It lists three shots, 0.128-second spacing, a 4.48-second fresh charge and the
+5.312-second burst interval. Base/maximum research shows 127/184 direct DPS and
+224.87/325.8 damage per projectile, with a separate eightfold Wall hit. Army
+cards use the same effective projectile damage, including Power Potion previews.
 
-New Flame Flinger armies also list their 80–130 sustained burn DPS cap and
-explain overlapping areas. The damage-over-time portion shares one cap while
-each area retains its small flat pulse hit. Historical replays keep the prior
-guide. This does not introduce the three-shot burst. See
-[shared building poison](../reference/flame-flinger-overlap/README.md).
+Burn facts list 33/53 maximum damage per pulse, a 0.4-second interval, 2.5-tile
+radius and 30-second pulse window. Overlapping areas share their 80–130 sustained
+damage-over-time cap, while small per-area flat hits remain additive; Walls
+receive 24 extra damage per flat pulse. Advice explains range, protecting the
+machine and 17 HP/s drain. Historical battle inspection retains the old labels
+and facts appropriate to its rules. See [projectile bursts](../reference/flame-flinger-bursts/README.md),
+[preferred Wall pulse damage](../reference/flame-flinger-wall-pulse/README.md)
+and [shared building poison](../reference/flame-flinger-overlap/README.md).

@@ -1,3 +1,4 @@
+import { flameFlingerBurstStats } from './native-flame-flinger';
 import { superDragonBurstStats } from './native-super-dragon';
 import { BUILDINGS, TROOPS } from './data';
 import { chainRef, resolveChainTarget, type ChainRef, type ChainTarget } from './chain-targets';
@@ -91,7 +92,9 @@ function gap(unit: Unit, target: ChainTarget) {
 function timingFor(unit: Unit, stats: NativeUnitStats) {
   return unit.kind === 'superdragon' && unit.native?.superDragonBurst
     ? superDragonBurstStats(stats.level).timing
-    : splitTiming(nativeUnitRow(unit.kind, stats.level));
+    : unit.kind === 'flameflinger' && unit.native?.flameFlingerBurst
+      ? flameFlingerBurstStats(stats.level).timing
+      : splitTiming(nativeUnitRow(unit.kind, stats.level));
 }
 function pose(unit: Unit, st: NativeAttackWindupState, stats: NativeUnitStats) {
   const timing = timingFor(unit, stats);
@@ -262,9 +265,11 @@ export function stepNativeAttackWindup(
     return false;
   }
   if (st.recovery > 1e-9) {
-    // A Super Dragon has already committed its remaining flames. Finish that take
+    // An active burst has already committed its remaining projectiles. Finish that take
     // against a living target before moving to start another burst.
-    const bursting = unit.kind === 'superdragon' && unit.native?.superDragonBurst?.shotsLeft;
+    const bursting =
+      (unit.kind === 'superdragon' && unit.native?.superDragonBurst?.shotsLeft) ||
+      (unit.kind === 'flameflinger' && unit.native?.flameFlingerBurst?.shotsLeft);
     if (distance > stats.range + 1e-6 && !bursting) {
       delete st.engaged;
       delete st.animationOffset;
