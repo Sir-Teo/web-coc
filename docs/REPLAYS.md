@@ -1752,3 +1752,13 @@ at the hit. Retargeting, Freeze and attack-rate effects use the shared melee
 controller. Summon timing, threefold Wall damage and the pinned client's health
 decay keep their existing rules. Older recordings retain their instant first hit;
 see [source timing and replay checks](../reference/attacking-ruin-knight/README.md).
+
+## Version 220: Ruin Witch respects closed walls and hidden rubble
+
+New armies carrying Ruin Witch select visible rubble reachable without breaking
+walls. Closed compartments are skipped, open detours and Jump crossings remain
+available, and the Witch retries when a wall opens or hiding expires. Practice
+and native campaign routes retain their respective grid resolution. Existing
+vacuum/summon timing and Knight combat remain unchanged. Version 219 and earlier
+retain the previous wall-crossing route; see
+[rubble reachability and replay checks](../reference/ruin-witch-rubble-routes/README.md).

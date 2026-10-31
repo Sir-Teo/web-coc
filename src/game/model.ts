@@ -111,6 +111,8 @@ import {
   BuildingListSnapshot,
   PATH_MEMO_LIMIT,
   findSubtilePath,
+  subtileReachability,
+  gridReachability,
   resetSubtileGrids,
   subtileSolid,
 } from './subtile-path';
@@ -1119,6 +1121,8 @@ export interface Battle {
   nativeSpellSkeletonWindup?: true;
   /** Version 219: Ruin Witch Knights charge before direct ground melee hits. */
   nativeRuinKnightWindup?: true;
+  /** Version 220: Ruin Witch selects visible rubble reachable without breaking walls. */
+  nativeRuinWitchRubbleRoutes?: true;
   /** Version 207: source demolition contact cues reconstruct and cover the death tone. */
   nativeWallBreakerSounds?: true;
   /** Version 206: both Wall Breaker contact splashes include ground defenders. */
@@ -8332,6 +8336,7 @@ interface TileGrid {
   wall: Uint8Array;
   /** Exact search results: A* is a pure function of the grid, start cell, goal and range. */
   paths: Map<string, readonly { x: number; y: number }[]>;
+  regions?: Int32Array;
 }
 const TILE_GRID_SLOTS = 6;
 const tileGrids: TileGrid[] = [];
@@ -8384,6 +8389,17 @@ function tileGridFor(buildings: Building[], breaches: readonly { x: number; y: n
   if (tileGrids.length > TILE_GRID_SLOTS) tileGrids.pop();
   return grid;
 }
+/** Reachability uses the same collision resolution as the battle's ordinary routes. */
+export function pathReachability(
+  start: { x: number; y: number },
+  buildings: Building[],
+  subtiles = false,
+) {
+  return subtiles
+    ? subtileReachability(start, buildings)
+    : gridReachability(tileGridFor(buildings, []), start, 1);
+}
+
 export function findPath(
   start: { x: number; y: number },
   target: Building | { x: number; y: number },
@@ -8392,8 +8408,10 @@ export function findPath(
   subtiles = false,
   /** Jump Spell rings. A wall inside one costs nothing to cross while the ring holds. */
   breaches: readonly { x: number; y: number }[] = [],
+  /** Rubble seekers need an open route rather than a wall-breaking cost. */
+  blockWalls = false,
 ): { x: number; y: number }[] {
-  if (subtiles) return findSubtilePath(start, target, buildings, range);
+  if (subtiles) return findSubtilePath(start, target, buildings, range, blockWalls);
   const grid = tileGridFor(buildings, breaches);
   const sx = Math.max(0, Math.min(MAP_SIZE - 1, Math.floor(start.x))),
     sy = Math.max(0, Math.min(MAP_SIZE - 1, Math.floor(start.y))),
@@ -8402,10 +8420,10 @@ export function findPath(
     'level' in target && target.kind in BUILDINGS ? BUILDINGS[target.kind as BuildingKind].size : 0;
   // The start point matters only through its cell and whether it is already in range.
   const far = distanceTo(start, target) > range;
-  const key = `${first},${target.x},${target.y},${goalSize},${range},${far ? 1 : 0}`;
+  const key = `${first},${target.x},${target.y},${goalSize},${range},${far ? 1 : 0}${blockWalls ? ',solid' : ''}`;
   const known = grid.paths.get(key);
   if (known) return known.map((p) => ({ x: p.x, y: p.y }));
-  const path = searchTilePath(grid, first, target, goalSize, range, far);
+  const path = searchTilePath(grid, first, target, goalSize, range, far, blockWalls);
   if (grid.paths.size >= PATH_MEMO_LIMIT) grid.paths.clear();
   grid.paths.set(
     key,
@@ -8425,6 +8443,7 @@ function searchTilePath(
   goalSize: number,
   range: number,
   far: boolean,
+  blockWalls: boolean,
 ): { x: number; y: number }[] {
   const size = MAP_SIZE;
   const blocked = grid.blocked,
@@ -8546,7 +8565,7 @@ function searchTilePath(
       else ny--;
       if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
       const n = ny * size + nx;
-      if (blocked[n]) continue;
+      if (blocked[n] || (blockWalls && wall[n])) continue;
       if (stamp[n] !== epoch) {
         stamp[n] = epoch;
         cost[n] = Infinity;

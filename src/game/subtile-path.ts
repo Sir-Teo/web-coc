@@ -95,6 +95,8 @@ interface SubtileGrid {
   wall: Uint8Array;
   /** Exact search results by (start cell, goal, range): A* is a pure function of these. */
   paths: Map<string, readonly number[]>;
+  /** Lazy wall-blocked connected components for non-attacking rubble seekers. */
+  regions?: Int32Array;
 }
 /**
  * Routes, crowd separation and movement effects alternate between a few lists every tick
@@ -146,6 +148,83 @@ function gridFor(buildings: readonly Building[]): SubtileGrid {
 /** The grid the current search reads (set at the start of every search). */
 let blocked: Uint8Array = new Uint8Array(CELLS),
   wall: Uint8Array = new Uint8Array(CELLS);
+
+/** Connected open ground, including Jump-opened walls already removed by the caller. */
+export function subtileReachability(
+  start: { x: number; y: number },
+  buildings: readonly Building[],
+) {
+  return gridReachability(gridFor(buildings), start, SUBTILES);
+}
+
+/** The whole-tile and sub-tile grids share a lazy wall-blocked region map. */
+export function gridReachability(
+  grid: { blocked: Uint8Array; wall: Uint8Array; regions?: Int32Array },
+  start: { x: number; y: number },
+  resolution: 1 | 2,
+) {
+  const size = MAP_SIZE * resolution,
+    cells = size * size;
+  if (!grid.regions) {
+    const regions = new Int32Array(cells),
+      queue = new Int32Array(cells);
+    let region = 0;
+    for (let first = 0; first < cells; first++) {
+      if (regions[first] || grid.blocked[first] || grid.wall[first]) continue;
+      regions[first] = ++region;
+      let head = 0,
+        tail = 1;
+      queue[0] = first;
+      while (head < tail) {
+        const n = queue[head++],
+          x = n % size,
+          y = Math.floor(n / size);
+        for (let d = 0; d < 4; d++) {
+          const nx = x + (d === 0 ? 1 : d === 1 ? -1 : 0),
+            ny = y + (d === 2 ? 1 : d === 3 ? -1 : 0);
+          if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+          const next = ny * size + nx;
+          if (regions[next] || grid.blocked[next] || grid.wall[next]) continue;
+          regions[next] = region;
+          queue[tail++] = next;
+        }
+      }
+    }
+    grid.regions = regions;
+  }
+  const regions = grid.regions,
+    sx = Math.max(0, Math.min(size - 1, Math.floor(start.x * resolution))),
+    sy = Math.max(0, Math.min(size - 1, Math.floor(start.y * resolution)));
+  let region = regions[sy * size + sx];
+  // Jump coverage can end with a body on a wall. Let it leave for the closest
+  // adjacent open region, without treating a chain of wall cells as walkable.
+  if (!region) {
+    let best = Infinity;
+    for (let d = 0; d < 4; d++) {
+      const x = sx + (d === 0 ? 1 : d === 1 ? -1 : 0),
+        y = sy + (d === 2 ? 1 : d === 3 ? -1 : 0);
+      if (x < 0 || y < 0 || x >= size || y >= size || !regions[y * size + x]) continue;
+      const dx = (x + 0.5) / resolution - start.x,
+        dy = (y + 0.5) / resolution - start.y,
+        distance = dx * dx + dy * dy;
+      if (distance < best) {
+        best = distance;
+        region = regions[y * size + x];
+      }
+    }
+  }
+  return (target: Pick<Building, 'kind' | 'x' | 'y'>) => {
+    if (!region) return false;
+    const width = BUILDINGS[target.kind].size,
+      x0 = Math.max(0, Math.floor(target.x * resolution)),
+      y0 = Math.max(0, Math.floor(target.y * resolution)),
+      x1 = Math.min(size, Math.ceil((target.x + width) * resolution)),
+      y1 = Math.min(size, Math.ceil((target.y + width) * resolution));
+    for (let y = y0; y < y1; y++)
+      for (let x = x0; x < x1; x++) if (regions[y * size + x] === region) return true;
+    return false;
+  };
+}
 
 /**
  * Point collision for ground movement (crowd separation, pushback, vortex pulls): any
@@ -225,6 +304,7 @@ export function findSubtilePath(
   target: Building | { x: number; y: number },
   buildings: readonly Building[],
   range: number,
+  blockWalls = false,
 ): { x: number; y: number }[] {
   const grid = gridFor(buildings);
   blocked = grid.blocked;
@@ -235,10 +315,10 @@ export function findSubtilePath(
   const goalSize = 'kind' in target && target.kind in BUILDINGS ? BUILDINGS[target.kind].size : 0;
   // The start point matters only through its cell and whether it is already in range.
   const far = distanceTo(start, target) > range;
-  const key = `${first},${target.x},${target.y},${goalSize},${range},${far ? 1 : 0}`;
+  const key = `${first},${target.x},${target.y},${goalSize},${range},${far ? 1 : 0}${blockWalls ? ',solid' : ''}`;
   const known = grid.paths.get(key);
   if (known) return unpackPath(known);
-  const path = searchSubtilePath(first, sx, sy, target, goalSize, range, far);
+  const path = searchSubtilePath(first, sx, sy, target, goalSize, range, far, blockWalls);
   if (grid.paths.size >= PATH_MEMO_LIMIT) grid.paths.clear();
   grid.paths.set(key, packPath(path));
   return path;
@@ -270,6 +350,7 @@ function searchSubtilePath(
   goalSize: number,
   range: number,
   far: boolean,
+  blockWalls: boolean,
 ): { x: number; y: number }[] {
   if (epoch === 0xffffffff) {
     stamp.fill(0);
@@ -380,7 +461,7 @@ function searchSubtilePath(
       else ny--;
       if (nx < 0 || ny < 0 || nx >= SIZE || ny >= SIZE) continue;
       const n = ny * SIZE + nx;
-      if (blocked[n]) continue;
+      if (blocked[n] || (blockWalls && wall[n])) continue;
       if (stamp[n] !== generation) {
         stamp[n] = generation;
         cost[n] = Infinity;

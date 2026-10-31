@@ -85,6 +85,7 @@ import { flag, nativeRow, num, seconds as nativeSeconds, text, tiles } from './n
 import { castNativeSpell, stepNativeSpells, type NativeSpellContext } from './native-spells';
 import {
   buildingEffects,
+  buildingHidden,
   healUnit,
   unitAttackIntervalScale,
   unitEffects,
@@ -111,7 +112,15 @@ import {
   type NativeUnitStats,
 } from './native-units';
 import { launchProjectile, type CombatProjectile } from './projectiles';
-import { breachTarget, distanceTo, findPath, type Battle, type Building, type Unit } from './model';
+import {
+  breachTarget,
+  distanceTo,
+  findPath,
+  pathReachability,
+  type Battle,
+  type Building,
+  type Unit,
+} from './model';
 
 /** Version 45+ native roster behavior state, created lazily on the unit. */
 export interface NativeUnitState {
@@ -2424,13 +2433,17 @@ function stepRuinWitch(
     return;
   }
   ruin.phase = 'seek';
-  const consumed = (battle.consumedRubble ??= []);
+  const consumed = (battle.consumedRubble ??= []),
+    routes = battle.nativeRuinWitchRubbleRoutes ? routeBuildings(ctx, false) : undefined,
+    reaches = routes ? pathReachability(u, routes, !!battle.nativeSubtiles) : undefined;
   let pile = battle.buildings.find((b) => b.id === ruin.rubble && !consumed.includes(b.id));
+  if (reaches && pile && (buildingHidden(battle, pile) || !reaches(pile))) pile = undefined;
   if (!pile) {
     const eaten = new Set(consumed);
     let best = Infinity;
     for (const b of battle.buildings) {
       if (b.hp > 0 || b.kind === 'wall' || isTrap(b.kind) || eaten.has(b.id)) continue;
+      if (reaches && (buildingHidden(battle, b) || !reaches(b))) continue;
       const d = distanceTo(u, b);
       if (d < best - 1e-9 || (Math.abs(d - best) <= 1e-9 && pile && b.id < pile.id)) {
         best = d;
@@ -2451,13 +2464,15 @@ function stepRuinWitch(
     return;
   }
   if (!u.path.length || u.pathAt <= 0) {
-    u.path = findPath(
-      u,
-      { x: pile.x, y: pile.y, level: pile.level, kind: pile.kind } as Building,
-      ctx.buildings.filter((b) => b.hp > 0),
-      1,
-      !!ctx.battle.nativeSubtiles,
-    );
+    u.path = routes
+      ? findPath(u, pile, routes, 1, !!battle.nativeSubtiles, [], true)
+      : findPath(
+          u,
+          { x: pile.x, y: pile.y, level: pile.level, kind: pile.kind } as Building,
+          ctx.buildings.filter((b) => b.hp > 0),
+          1,
+          !!ctx.battle.nativeSubtiles,
+        );
     u.pathAt = 1.5;
   }
   let travel = speed * dt;
