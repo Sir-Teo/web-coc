@@ -32,6 +32,11 @@ stalemate bound) separate from its wall-clock budget, a measured per-stage timeo
 stage that reaches either bound is a legitimate unfinished raid, not a failure: on
 Warden's Folly a Defending Builder repairs the last Archer's damage as fast as it lands.
 
+The authored campaign audit also runs one bounded case per army: six cases of twelve
+stages and four approaches retain the complete 288-battle matrix. Each case keeps its
+existing three-minute deadline, per-battle checks and applicable opening, progression-gate
+or veteran-clear assertions. The combined JSON report retains stage/army/approach order.
+
 Do not turn off isolation globally: suites with `vi.mock` need independent module
 state. Increasing worker count can increase memory and contention without improving
 wall time. Investigate a slow or stuck test before raising its timeout.

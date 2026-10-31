@@ -1,5 +1,5 @@
 import { emptyArmy, emptySpells } from '../src/game/army';
-import { it, expect } from 'vitest';
+import { afterAll, it, expect } from 'vitest';
 import fs from 'node:fs';
 import { GameModel, enemyBase, makeBuilding } from '../src/game/model';
 import {
@@ -104,6 +104,28 @@ const armies = [
     },
   },
 ];
+interface AuditResult {
+  stage: number;
+  name: string;
+  army: string;
+  side: number;
+  destruction: number;
+  stars: number;
+  duration: number;
+}
+const auditResults: AuditResult[] = [];
+afterAll(() => {
+  const armyOrder = new Map(armies.map((army, i) => [army.name, i]));
+  const results = auditResults
+    .slice()
+    .sort(
+      (a, b) =>
+        a.stage - b.stage || armyOrder.get(a.army)! - armyOrder.get(b.army)! || a.side - b.side,
+    );
+  fs.mkdirSync('output/playtest', { recursive: true });
+  fs.writeFileSync('output/playtest/campaign-balance.json', JSON.stringify(results, null, 2));
+});
+
 it('all twelve authored layouts are distinct, in bounds and have no overlapping footprints', () => {
   const signatures = new Set<string>();
   for (let stage = 0; stage < 12; stage++) {
@@ -126,12 +148,12 @@ it('all twelve authored layouts are distinct, in bounds and have no overlapping 
   }
   expect(signatures.size).toBe(12);
 });
-// The 288 full battle simulations take over 20 seconds on GitHub-hosted runners.
-// Allow CI headroom for this audit while keeping the normal timeout for other tests.
-it('campaign has a viable opening, a progression gate and a reachable final fortress', () => {
-  const results = [];
-  for (let stage = 0; stage < 12; stage++)
-    for (const army of armies)
+// Each army runs all twelve stages from four sides. Keep the 288-battle matrix in
+// six bounded cases so unrelated CPU-heavy files cannot time out the whole audit.
+for (const army of armies)
+  it(`campaign audit: ${army.name} across all twelve stages and four approaches`, () => {
+    const results: AuditResult[] = [];
+    for (let stage = 0; stage < 12; stage++)
       for (let side = 0; side < 4; side++) {
         const m = new GameModel();
         m.state.stars.fill(1);
@@ -238,21 +260,28 @@ it('campaign has a viable opening, a progression gate and a reachable final fort
           duration: Math.round(m.battle!.elapsed),
         });
       }
-  fs.mkdirSync('output/playtest', { recursive: true });
-  fs.writeFileSync('output/playtest/campaign-balance.json', JSON.stringify(results, null, 2));
-  expect(
-    results.filter((r) => r.stage === 1 && r.army === 'early-developed').every((r) => r.stars >= 1),
-  ).toBe(true);
-  expect(
-    results.filter((r) => r.stage === 12 && r.army === 'early-developed').every((r) => r.stars < 3),
-  ).toBe(true);
-  for (let stage = 1; stage <= 12; stage++)
-    expect(
-      results.some((r) => r.stage === stage && r.army === 'veteran' && r.stars === 3),
-      `Stage ${stage} cannot be cleared`,
-    ).toBe(true);
-  // This 288-battle functional matrix is not a frame-time benchmark.
-}, 180_000);
+    auditResults.push(...results);
+    expect(results).toHaveLength(48);
+    if (army.name === 'early-developed') {
+      expect(
+        results
+          .filter((r) => r.stage === 1 && r.army === 'early-developed')
+          .every((r) => r.stars >= 1),
+      ).toBe(true);
+      expect(
+        results
+          .filter((r) => r.stage === 12 && r.army === 'early-developed')
+          .every((r) => r.stars < 3),
+      ).toBe(true);
+    }
+    if (army.name === 'veteran')
+      for (let stage = 1; stage <= 12; stage++)
+        expect(
+          results.some((r) => r.stage === stage && r.army === 'veteran' && r.stars === 3),
+          `Stage ${stage} cannot be cleared`,
+        ).toBe(true);
+    // This functional matrix is not a frame-time benchmark.
+  }, 180_000);
 
 it('the actual starter army can win the opening raid without spells or upgrades', () => {
   const stars = approaches.map((approach) => {
