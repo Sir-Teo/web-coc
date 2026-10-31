@@ -1,8 +1,9 @@
 import type { TroopKind } from '../game/data';
 import { nativeUnitRow, nativeUnitStats, type NativeUnitStats } from '../game/native-units';
-import { nativeGlobalArray, nativeRow, num, seconds, tiles } from '../game/native-data';
+import { nativeGlobalArray, nativeRow, num, seconds, text, tiles } from '../game/native-data';
 import { superHogSplitStats } from '../game/native-super-hog';
 import { superMinionLongShot } from '../game/native-super-minion';
+import { rageModifiers } from '../game/native-rage';
 import { nativeHitPoison } from '../game/defender-hit-poison';
 
 /** These units use their summon controller instead of their placeholder attack columns. */
@@ -287,6 +288,41 @@ export function troopCombatGuide(kind: TroopKind, stats: NativeUnitStats) {
     );
     tactic =
       'Let a frontline draw fire while it opens walls. Its bomb explodes when it attacks or is defeated; both attack and death damage receive the Wall bonus.';
+  } else if (kind === 'meteorgolem') {
+    const mite = nativeUnitStats('meteormite', stats.level);
+    facts.push(
+      ['Wall damage multiplier', `${stats.damageMultiplier}×`],
+      [
+        'Damage per throw vs walls',
+        (stats.damage * stats.damageMultiplier).toLocaleString('en-US'),
+      ],
+      ['Meteormite maximum hitpoints', mite.hp.toLocaleString('en-US')],
+      ['Meteormite DPS', `${mite.dps}`],
+      ['Meteormite damage per hit', `${mite.damage}`],
+      ['Meteormite targets', troopAttackTargets(mite)],
+      ['Meteormite movement', troopMovement(mite)],
+      ['Merge search radius', `${mite.mergeRadius} tiles`],
+    );
+    tactic =
+      'At full health, a throw splits it into two Meteormites. The halves inherit its current health and jump walls; nearby idle halves can merge again. Cloned halves cannot merge. Below 1% health, only the thrown half remains.';
+  } else if (kind === 'supervalkyrie') {
+    const ability = nativeRow('abilities', stats.ability, stats.abilityLevel),
+      rage = nativeRow('spells', text(ability, 'SelfSpell'), num(ability, 'SelfSpellLevel', 1)),
+      troop = rageModifiers(rage, false, false),
+      preferred = rageModifiers(rage, false, true),
+      hero = rageModifiers(rage, true, false),
+      hits = Math.max(1, num(rage, 'NumberOfHits', 1));
+    facts.push(
+      ['Rage radius on defeat', `${tiles(rage, 'Radius')} tiles`],
+      ['Rage troop damage bonus', `+${Math.round(troop.damage * 100)}%`],
+      ['Rage hero damage bonus', `+${Math.round(hero.damage * 100)}%`],
+      ['Rage movement bonus', `+${troop.speed} tiles/s`],
+      ['Rage movement with favorite target', `+${preferred.speed} tiles/s`],
+      ['Rage pulse window', `${(hits - 1) * seconds(rage, 'TimeBetweenHitsMS')} s`],
+      ['Rage effect lingers', `${seconds(rage, 'BoostTimeMS')} s`],
+    );
+    tactic =
+      'When defeated, she leaves a smaller Rage field for nearby troops. Keep allies inside it to boost damage and movement; heroes receive reduced bonuses. Siege machines and Totems are unaffected.';
   } else if (kind === 'superhogrider') {
     const split = superHogSplitStats(stats.level),
       hog = nativeUnitStats(split.hog.kind, split.hog.level),

@@ -50,6 +50,8 @@ constants:
 | Super Miner | Two ramp thresholds, stronger DPS tiers and death-bomb delay | [Source charges and ramp](../reference/attacking-super-miner/README.md) |
 | Super Wall Breaker | Combined contact damage and death-only damage against Walls | [Death blasts and source charges](../reference/attacking-super-wall-breaker/README.md) |
 | Bowler | Two boulder landings and four-tile bounce distance | [Fixed boulder landings](../reference/attacking-bowler/README.md) |
+| Meteor Golem | Wall throw damage, tier-specific Meteormite HP/DPS/hit, wall crossing and merge search radius | [Golem](../reference/official-wiki/troops/meteor-golem.md) and [Meteormites](../reference/official-wiki/troops/meteor-golem-meteormite.md) |
+| Super Valkyrie | Death Rage radius, troop/Hero damage, movement, pulse window and effect linger | [Pinned Farewell Gift](../reference/official-wiki/spells-siege-super/super-valkyrie.md) |
 | Super Hog Rider | Tier-specific Hog/Rider HP, DPS, preferences, wall movement and landing delay | [Defeat split](../reference/attacking-super-hog/README.md) |
 | Super Bowler | Three boulder landings; three-tile bounce distance | [Source boulders and phases](../reference/attacking-super-bowler/README.md) |
 | Super Barbarian | Eight-second opening Rage; +70% damage and +1.5 tiles/s | [Rage and charges](../reference/attacking-super-barbarian/README.md) |
@@ -76,12 +78,12 @@ crash labels accompany its version-190 combat boundary; see the linked
 reference for historical playback behavior.
 
 `tests/browser/troop-combat-guide.spec.ts` opens real catalog Info buttons for
-thirty-three troop families at 390×844, 844×390 and 1440×960. It verifies source facts,
+thirty-five troop families at 390×844, 844×390 and 1440×960. It verifies source facts,
 favorite targets, advice, text fit, horizontal overflow, touch targets,
 scrolling, training navigation and closing. Screenshots are saved under
 ignored `output/playtest/`. These are headless browser viewport checks, not
 physical-phone performance measurements. Two catalog groups and two researched-tier
-groups per viewport retain the three-minute case limit; twenty-one researched profiles
+groups per viewport retain the three-minute case limit; twenty-three researched profiles
 check that parent research selects the correct troop, summon and ability tier.
 
 Super Wall Breaker's Wall damage facts follow its current research tier. The
@@ -166,3 +168,17 @@ Siege Barracks lists its 30-second base lifetime and 1.3-second first release.
 summoners at base/maximum research on the same three viewports: six cases per
 browser check roles, absent direct-attack rows, child facts, text fit, scrolling
 and training navigation. Screenshots stay in ignored `output/playtest/`.
+
+Meteor Golem lists fivefold Wall throw damage and its own tier's Meteormite
+maximum HP, DPS, hit damage, ground targets and wall crossing. Advice explains
+the thrown/staying split, health inheritance, re-merging by nearby idle halves,
+clone restrictions and the below-1%-health exception. Merge search uses the
+source five-tile radius. At Meteor Golem 3, the readout shows 2,900 Wall damage
+and a maximum 8,750-HP Meteormite with 230 DPS and 345 damage per hit.
+
+Super Valkyrie's Farewell Gift uses its linked ability/spell rows and the same
+Rage modifier adapter as combat: radius four, +160% troop damage, +80% Hero
+damage, +3.25 tiles/s ordinary movement and +1.625 with a favorite target. It
+labels the 17.7-second first-to-last pulse window and one-second lingering effect
+separately, rather than substituting the wiki's simplified duration. Base and
+maximum parent-research profiles inspect these facts at all three viewports.

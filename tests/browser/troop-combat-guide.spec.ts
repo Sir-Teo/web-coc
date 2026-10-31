@@ -2,6 +2,37 @@ import { expect, test } from '@playwright/test';
 
 const cases = [
   {
+    name: 'Meteor Golem',
+    target: 'Any building',
+    tactic: 'Cloned halves cannot merge',
+    facts: {
+      'Wall damage multiplier': '5×',
+      'Damage per throw vs walls': '2,400',
+      'Meteormite maximum hitpoints': '7,250',
+      'Meteormite DPS': '190',
+      'Meteormite damage per hit': '285',
+      'Meteormite targets': 'Ground only',
+      'Meteormite movement': 'Ground · crosses walls',
+      'Merge search radius': '5 tiles',
+      'Attack targets': 'Ground and air',
+    },
+  },
+  {
+    name: 'Super Valkyrie',
+    target: 'Any building',
+    tactic: 'heroes receive reduced bonuses',
+    facts: {
+      'Rage radius on defeat': '4 tiles',
+      'Rage troop damage bonus': '+160%',
+      'Rage hero damage bonus': '+80%',
+      'Rage movement bonus': '+3.25 tiles/s',
+      'Rage movement with favorite target': '+1.625 tiles/s',
+      'Rage pulse window': '17.7 s',
+      'Rage effect lingers': '1 s',
+      'Attack targets': 'Ground only',
+    },
+  },
+  {
     name: 'Bowler',
     target: 'Any building',
     tactic: 'bounce continues along the original throw direction',
@@ -343,6 +374,37 @@ const cases = [
 
 const upgrades = [
   {
+    kind: 'meteorgolem',
+    name: 'Meteor Golem',
+    level: 3,
+    facts: {
+      'Wall damage multiplier': '5×',
+      'Damage per throw vs walls': '2,900',
+      'Meteormite maximum hitpoints': '8,750',
+      'Meteormite DPS': '230',
+      'Meteormite damage per hit': '345',
+      'Meteormite targets': 'Ground only',
+      'Meteormite movement': 'Ground · crosses walls',
+      'Merge search radius': '5 tiles',
+    },
+  },
+  {
+    kind: 'valkyrie',
+    name: 'Super Valkyrie',
+    level: 12,
+    facts: {
+      'Rage radius on defeat': '4 tiles',
+      'Rage troop damage bonus': '+160%',
+      'Rage hero damage bonus': '+80%',
+      'Rage movement bonus': '+3.25 tiles/s',
+      'Rage movement with favorite target': '+1.625 tiles/s',
+      'Rage pulse window': '17.7 s',
+      'Rage effect lingers': '1 s',
+      'Damage per second': '405',
+      'Damage per hit': '445.5',
+    },
+  },
+  {
     kind: 'bowler',
     name: 'Bowler',
     level: 10,
@@ -609,6 +671,8 @@ for (const viewport of [
         expect(close!.height).toBeGreaterThanOrEqual(44);
         if (
           [
+            'Meteor Golem',
+            'Super Valkyrie',
             'Super Hog Rider',
             'Electro Titan',
             'Apprentice Warden',
