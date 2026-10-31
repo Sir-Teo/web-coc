@@ -1,6 +1,6 @@
 import type { TroopKind } from '../game/data';
-import { nativeUnitRow, type NativeUnitStats } from '../game/native-units';
-import { nativeRow, num, seconds, tiles } from '../game/native-data';
+import { nativeUnitRow, nativeUnitStats, type NativeUnitStats } from '../game/native-units';
+import { nativeGlobalArray, nativeRow, num, seconds, tiles } from '../game/native-data';
 import { superMinionLongShot } from '../game/native-super-minion';
 
 /** Favorite targets use the combat source, including native troops without legacy UI flags. */
@@ -13,11 +13,50 @@ export function troopFavoriteTarget(stats: NativeUnitStats) {
   return group ? `${group}${bonus(stats.preferredMultiplier)}` : 'Any building';
 }
 
+export function troopAttackTargets(stats: NativeUnitStats) {
+  if (stats.groundTargets && stats.airTargets) return 'Ground and air';
+  if (stats.groundTargets) return 'Ground only';
+  if (stats.airTargets) return 'Air only';
+  return 'None';
+}
+
+export function troopMovement(stats: NativeUnitStats) {
+  if (stats.flying) return 'Air · ignores walls';
+  if (stats.underground) return 'Ground · burrows under walls';
+  if (stats.jumper) return 'Ground · crosses walls';
+  return 'Ground';
+}
+
 /** Short player-facing advice and source ability facts for the Army information panel. */
 export function troopCombatGuide(kind: TroopKind, stats: NativeUnitStats) {
   const facts: [string, string][] = [];
   let tactic: string | undefined;
-  if ((kind === 'superminer' || kind === 'infernodragon') && stats.damageRamp) {
+  if (kind === 'healer') {
+    const stacking = nativeGlobalArray('HEAL_STACK_PERCENT');
+    facts.push(
+      [
+        'Full-strength Healers per group',
+        `${stacking.filter((percent) => percent === 100).length}`,
+      ],
+      [
+        'Healers adding healing per group',
+        `Up to ${stacking.filter((percent) => percent > 0).length}`,
+      ],
+    );
+  } else if (kind === 'druid') {
+    const bear = nativeUnitStats('bear', stats.level);
+    facts.push(
+      ['Recipients per chain', `Up to ${stats.bounces + 1}`],
+      [
+        'Healing bounce range',
+        `${tiles(nativeRow('projectiles', stats.projectile), 'MaxBounceDistance')} tiles`,
+      ],
+      ['Transforms after', `${stats.evolveTime} s`],
+      ['Bear maximum hitpoints', bear.hp.toLocaleString('en-US')],
+      ['Bear damage per second', `${bear.dps}`],
+      ['Bear favorite target', troopFavoriteTarget(bear)],
+    );
+  } else if ((kind === 'superminer' || kind === 'infernodragon') && stats.damageRamp) {
     const ramp = stats.damageRamp;
     facts.push(
       ['Second tier DPS', `${ramp.dps[1]}`],

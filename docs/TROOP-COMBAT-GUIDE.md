@@ -8,6 +8,13 @@ roster's UI flags. Rocket Balloon and Dragon Rider correctly show **Defenses**;
 Lava Hound names **Air Defense**, and Headhunter shows its fourfold Hero damage.
 Resource and Wall preferences retain their source multipliers.
 
+Offensive troops also list their ground/air attack targets separately from
+their favorite target. Movement distinguishes flight, burrowing under Walls
+and ground troops that can cross Walls. These read the source combat flags:
+a flying Lava Hound still attacks ground targets only, while Headhunter can
+attack both layers and cross Walls. Healing units retain their friendly-target
+labels instead of receiving an offensive-target row.
+
 Flying troops no longer share Balloon-specific bombing advice. Minion,
 Super Minion, Baby Dragon, Rocket Balloon and Dragon Rider each have a concise
 tip for their behavior. Other flyers receive general flight and air-defense
@@ -19,6 +26,8 @@ constants:
 
 | Troop | Added facts | Combat reference |
 | --- | --- | --- |
+| Healer | Two full-strength Healers and up to seven contributing Healers per group | [Friendly casts and stacking](../reference/attacking-healer/README.md) |
+| Druid | Four recipients per chain, 4.5-tile bounce range, 30-second transformation and research-tier Bear stats | [Friendly casts and transformation](../reference/attacking-druid/README.md) |
 | Inferno Dragon | Two ramp thresholds, stronger DPS tiers and recovery after a kill | [Source beam cadence](../reference/attacking-inferno-dragon/README.md) |
 | Super Miner | Two ramp thresholds, stronger DPS tiers and death-bomb delay | [Source charges and ramp](../reference/attacking-super-miner/README.md) |
 | Super Wall Breaker | Combined contact damage and death-only damage against Walls | [Death blasts and source charges](../reference/attacking-super-wall-breaker/README.md) |
@@ -47,7 +56,7 @@ crash labels accompany its version-190 combat boundary; see the linked
 reference for historical playback behavior.
 
 `tests/browser/troop-combat-guide.spec.ts` opens real catalog Info buttons for
-seventeen troop families at 390×844, 844×390 and 1440×960. It verifies source facts,
+nineteen troop families at 390×844, 844×390 and 1440×960. It verifies source facts,
 favorite targets, advice, text fit, horizontal overflow, touch targets,
 scrolling, training navigation and closing. Screenshots are saved under
 ignored `output/playtest/`. These are headless browser viewport checks, not
@@ -69,3 +78,15 @@ its 0.6-second pause after a kill. Advice explains the single-target lock
 and protection from Air Defenses. Browser checks raise the parent Baby
 Dragon to level 12 and verify 91 starting, 182 intermediate and 1,820
 maximum DPS.
+
+Healer's group limits come from the pinned stacking table. Druid's chain and
+transformation facts use the same source adapters as combat, and its Bear
+hitpoints, DPS and Defense preference follow the Druid's research tier. Advice
+explains that transformation ends healing and preserves the current health
+percentage. Browser checks also inspect Healer 11 and Druid 6, including 88.56
+and 132.25 Hero healing per second and the level-6 Bear's 2,750 maximum HP and
+225 DPS. Existing historical replay inspection retains its older Hero-healing
+ratio.
+
+The Druid's Bear now also spends its source melee charge before the first hit;
+see [Bear timing](../reference/attacking-bear/README.md) for the version-212 boundary.

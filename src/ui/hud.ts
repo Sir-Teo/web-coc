@@ -62,7 +62,12 @@ import { BUILDER_MENU_TEXTS, builderMenu, type BuilderOption } from '../game/bui
 import Phaser from 'phaser';
 import { pendingHeroRevive } from '../game/revive-targets';
 import { TROOP_ORDER, SPELL_ORDER, spellUnlockLabel } from './army-roster';
-import { troopCombatGuide, troopFavoriteTarget } from './troop-combat-guide';
+import {
+  troopAttackTargets,
+  troopCombatGuide,
+  troopFavoriteTarget,
+  troopMovement,
+} from './troop-combat-guide';
 import {
   TROOP_UNLOCK,
   SPELL_UNLOCK,
@@ -4601,7 +4606,7 @@ export class HUD {
       guide.tactic ??
       (d.healer
         ? kind === 'druid'
-          ? `Heals friendly ground and air troops with bouncing pulses, then transforms into a Bear. Heroes receive ${Math.round(heroHealingScale * 100)}% healing.`
+          ? `Heals friendly ground and air troops with bouncing pulses, then stops healing and transforms into a Bear that targets defenses. The Bear keeps the Druid's health percentage. Heroes receive ${Math.round(heroHealingScale * 100)}% healing.`
           : `Deploy behind a ground army. Healing pulses land where the ally was when cast, restoring nearby ground troops. Heroes receive ${Math.round(heroHealingScale * 100)}% healing. Additional Healers have diminishing effectiveness; eight or more add no further healing to the same group.`
         : kind === 'dragon'
           ? 'Fly over walls and burn clustered buildings. Dragons have no favorite target, so clear outer buildings to guide them toward Air Defenses.'
@@ -4630,12 +4635,13 @@ export class HUD {
       [d.healer ? 'Healing per pulse' : 'Damage per hit', damageNumber(d.heal ?? d.damage)],
       ['Hitpoints', n(d.hp)],
       ['Housing space', `${d.space}`],
-      ['Movement', d.flying ? 'Air · ignores walls' : 'Ground'],
+      ['Movement', troopMovement(native)],
       ['Movement speed', `${d.speed} tiles/s`],
       [d.healer ? 'Healing range' : 'Attack range', `${d.range} tile${d.range === 1 ? '' : 's'}`],
       [d.healer ? 'Healing interval' : 'Attack interval', `${d.rate}s`],
     ];
     rows.splice(2, 0, ...guide.facts);
+    if (!d.healer) rows.splice(2, 0, ['Attack targets', troopAttackTargets(native)]);
     if (d.splash) rows.push([d.healer ? 'Healing radius' : 'Attack splash', `${d.splash} tiles`]);
     if (d.healer)
       rows.push(['Hero healing per second', damageNumber((d.heal! / d.rate) * heroHealingScale)]);

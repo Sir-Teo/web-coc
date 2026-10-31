@@ -2,6 +2,35 @@ import { expect, test } from '@playwright/test';
 
 const cases = [
   {
+    name: 'Healer',
+    target: 'Friendly ground troops',
+    tactic: 'Additional Healers have diminishing effectiveness',
+    facts: {
+      'Full-strength Healers per group': '2',
+      'Healers adding healing per group': 'Up to 7',
+      'Healing per second': '36',
+      'Hero healing per second': '19.8',
+      'Healing radius': '1.5 tiles',
+      Movement: 'Air · ignores walls',
+    },
+  },
+  {
+    name: 'Druid',
+    target: 'Friendly ground and air troops',
+    tactic: "The Bear keeps the Druid's health percentage",
+    facts: {
+      'Recipients per chain': 'Up to 4',
+      'Healing bounce range': '4.5 tiles',
+      'Transforms after': '30 s',
+      'Bear maximum hitpoints': '1,900',
+      'Bear damage per second': '150',
+      'Bear favorite target': 'Defenses',
+      'Healing per second': '80',
+      'Hero healing per second': '84',
+      Movement: 'Ground · crosses walls',
+    },
+  },
+  {
     name: 'Inferno Dragon',
     target: 'Any building',
     tactic: 'Protect it from Air Defenses',
@@ -10,6 +39,7 @@ const cases = [
       'Maximum DPS': '1100',
       'Damage ramps after': '1.7 / 3.2 s',
       'Pause after a kill': '0.6 s',
+      'Attack targets': 'Ground and air',
     },
   },
   {
@@ -21,6 +51,8 @@ const cases = [
       'Maximum DPS': '280',
       'Damage ramps after': '1.5 / 3 s',
       'Death bomb delay': '1 s',
+      'Attack targets': 'Ground only',
+      Movement: 'Ground · burrows under walls',
     },
   },
   {
@@ -97,8 +129,18 @@ const cases = [
     facts: { 'Death blast delay': '0.6 s' },
   },
   { name: 'Minion', target: 'Any building', tactic: 'single-target damage', facts: {} },
-  { name: 'Lava Hound', target: 'Air Defense', tactic: 'Fly over Walls', facts: {} },
-  { name: 'Headhunter', target: 'Heroes (4× damage)', tactic: 'Spread your deployment', facts: {} },
+  {
+    name: 'Lava Hound',
+    target: 'Air Defense',
+    tactic: 'Fly over Walls',
+    facts: { 'Attack targets': 'Ground only', Movement: 'Air · ignores walls' },
+  },
+  {
+    name: 'Headhunter',
+    target: 'Heroes (4× damage)',
+    tactic: 'Spread your deployment',
+    facts: { 'Attack targets': 'Ground and air', Movement: 'Ground · crosses walls' },
+  },
   {
     name: 'Balloon',
     target: 'Defenses',
@@ -156,6 +198,8 @@ for (const viewport of [
       expect(close!.height).toBeGreaterThanOrEqual(44);
       if (
         [
+          'Healer',
+          'Druid',
           'Super Minion',
           'Baby Dragon',
           'Super Barbarian',
@@ -262,6 +306,50 @@ for (const viewport of [
       .locator('.troop-info-body')
       .getByRole('button', { name: 'Train troops', exact: true })
       .click();
+    for (const upgraded of [
+      {
+        kind: 'healer',
+        name: 'Healer',
+        level: 11,
+        facts: { 'Healing per second': '82', 'Hero healing per second': '88.56' },
+      },
+      {
+        kind: 'druid',
+        name: 'Druid',
+        level: 6,
+        facts: {
+          'Bear maximum hitpoints': '2,750',
+          'Bear damage per second': '225',
+          'Healing per second': '115',
+          'Hero healing per second': '132.25',
+        },
+      },
+    ]) {
+      await page.evaluate(({ kind, level }) => {
+        const m = window.__game.model;
+        m.state.troopLevels = { ...m.state.troopLevels, [kind]: level };
+        m.changed();
+      }, upgraded);
+      await page.getByRole('button', { name: `About ${upgraded.name}`, exact: true }).click();
+      await expect(page.locator('.troop-info-hero .eyebrow')).toContainText(
+        `LEVEL ${upgraded.level}`,
+      );
+      for (const [label, value] of Object.entries(upgraded.facts))
+        await expect(
+          page
+            .locator('.troop-stats > div')
+            .filter({ has: page.getByText(label, { exact: true }) })
+            .locator('dd'),
+        ).toHaveText(value);
+      await page.screenshot({
+        animations: 'disabled',
+        path: `output/playtest/troop-guide-${upgraded.kind}-${upgraded.level}-${viewport.width}.png`,
+      });
+      await page
+        .locator('.troop-info-body')
+        .getByRole('button', { name: 'Train troops', exact: true })
+        .click();
+    }
     await page.getByRole('button', { name: 'About Minion', exact: true }).click();
     await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
     await expect(page.locator('.troop-info-body')).toHaveCount(0);
