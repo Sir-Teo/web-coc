@@ -2,6 +2,7 @@ import type { TroopKind } from '../game/data';
 import { nativeUnitRow, nativeUnitStats, type NativeUnitStats } from '../game/native-units';
 import { nativeGlobalArray, nativeRow, num, seconds, tiles } from '../game/native-data';
 import { superMinionLongShot } from '../game/native-super-minion';
+import { nativeHitPoison } from '../game/defender-hit-poison';
 
 /** Favorite targets use the combat source, including native troops without legacy UI flags. */
 export function troopFavoriteTarget(stats: NativeUnitStats) {
@@ -79,6 +80,29 @@ export function troopCombatGuide(kind: TroopKind, stats: NativeUnitStats) {
       tactic =
         'Protect her while the Big Boy draws ground fire. She supports it with ranged attacks against ground and air; only one of her Big Boys can be alive at a time.';
     }
+  } else if (kind === 'headhunter') {
+    const poison = nativeHitPoison(stats);
+    facts.push(['Hit damage vs heroes', `${stats.damage * stats.heroMultiplier}`]);
+    if (poison)
+      facts.push(
+        ['Hit poison duration', `${poison.duration} s`],
+        ['Poison movement slow', `${Math.round(-poison.speed * 100)}%`],
+        ['Poison attack slow', `${Math.round(-poison.attack * 100)}%`],
+      );
+    tactic =
+      'Send it behind a frontline to hunt defending heroes. It crosses walls and its cards slow ground and air defenders.';
+  } else if (kind === 'supergiant' && stats.damageMultiplierTarget === 'Wall') {
+    facts.push(
+      ['Wall damage multiplier', `${stats.damageMultiplier}×`],
+      [
+        'Damage per hit vs walls',
+        (stats.damage * stats.damageMultiplier).toLocaleString('en-US', {
+          maximumFractionDigits: 2,
+        }),
+      ],
+    );
+    tactic =
+      'Let it tank defensive fire for ground troops. It deals extra damage to blocking walls while pursuing defenses.';
   } else if (kind === 'yeti' || kind === 'superyeti') {
     const ability = nativeRow('abilities', stats.ability, stats.abilityLevel),
       mite = nativeUnitStats(

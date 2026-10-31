@@ -48,3 +48,12 @@ that feature's historical boundary from the later first-release timing change.
 recordings on phone and desktop, original charge poses and live card meshes,
 exact seeking, read-only drawing, reduced motion, asset requests and WebGL health.
 Screenshots go to ignored `output/playtest/`.
+
+## Army information
+
+The Army panel now gives hero-hunting advice and uses the combat `nativeHitPoison`
+helper for its three-second on-hit poison and separate movement/attack slows. Direct
+hero-hit damage remains separate from poison damage. Base research shows 252 hero-hit
+damage, 40% movement slow and 55% attack slow; level 4 shows 324, 46% and 68%.
+Chromium and WebKit checks cover both tiers, original portraits, layout, scrolling
+and controls at three viewport sizes. Combat and source assets are unchanged.

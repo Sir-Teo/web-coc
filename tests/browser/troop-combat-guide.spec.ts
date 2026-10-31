@@ -2,6 +2,16 @@ import { expect, test } from '@playwright/test';
 
 const cases = [
   {
+    name: 'Super Giant',
+    target: 'Defenses',
+    tactic: 'blocking walls while pursuing defenses',
+    facts: {
+      'Wall damage multiplier': '5×',
+      'Damage per hit vs walls': '900',
+      'Attack targets': 'Ground only',
+    },
+  },
+  {
     name: 'Yeti',
     target: 'Any building',
     tactic: 'Yetimites, which jump walls and prefer defenses',
@@ -236,8 +246,15 @@ const cases = [
   {
     name: 'Headhunter',
     target: 'Heroes (4× damage)',
-    tactic: 'Spread your deployment',
-    facts: { 'Attack targets': 'Ground and air', Movement: 'Ground · crosses walls' },
+    tactic: 'hunt defending heroes',
+    facts: {
+      'Attack targets': 'Ground and air',
+      Movement: 'Ground · crosses walls',
+      'Hit damage vs heroes': '252',
+      'Hit poison duration': '3 s',
+      'Poison movement slow': '40%',
+      'Poison attack slow': '55%',
+    },
   },
   {
     name: 'Balloon',
@@ -302,6 +319,8 @@ for (const viewport of [
         expect(close!.height).toBeGreaterThanOrEqual(44);
         if (
           [
+            'Headhunter',
+            'Super Giant',
             'Yeti',
             'Super Yeti',
             'Golem',
@@ -438,6 +457,23 @@ for (const viewport of [
       .getByRole('button', { name: 'Train troops', exact: true })
       .click();
     for (const upgraded of [
+      {
+        kind: 'headhunter',
+        name: 'Headhunter',
+        level: 4,
+        facts: {
+          'Hit damage vs heroes': '324',
+          'Hit poison duration': '3 s',
+          'Poison movement slow': '46%',
+          'Poison attack slow': '68%',
+        },
+      },
+      {
+        kind: 'giant',
+        name: 'Super Giant',
+        level: 14,
+        facts: { 'Wall damage multiplier': '5×', 'Damage per hit vs walls': '2,050' },
+      },
       {
         kind: 'yeti',
         name: 'Yeti',
