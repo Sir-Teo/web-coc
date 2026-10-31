@@ -49,6 +49,10 @@ const profiles = [
       ['First group', '4', '4'],
       ['Spawn duration', '8 s', '15 s'],
       ['Summon attack targets', 'Ground only', 'Ground only'],
+      ['Shield breaks into', '1 unshielded Skeleton', '1 unshielded Skeleton'],
+      ['Shielded Skeleton hitpoints', '30', '30'],
+      ['Unshielded Skeleton hitpoints', '30', '30'],
+      ['Skeleton DPS', '25', '25'],
     ],
   },
   {
@@ -62,6 +66,10 @@ const profiles = [
       ['First group', '2', '2'],
       ['Spawn duration', '3 s', '13.8 s'],
       ['Summon attack targets', 'Ground and air', 'Ground and air'],
+      ['Bat hitpoints', '20', '20'],
+      ['Bat DPS', '30', '30'],
+      ['Bat damage per hit', '60', '60'],
+      ['Bat attack interval', '2 s', '2 s'],
     ],
   },
   {

@@ -71,18 +71,38 @@ export function spellCombatGuide(kind: SpellKind, level: number): SpellCombatGui
         unitKindForName(text(row, 'SummonTroop'))!,
         num(row, 'SpawnUpgradeLevel', 1),
       );
+      const facts: SpellCombatGuide['facts'] = [
+        [kind === 'bat' ? 'Bats summoned' : 'Skeletons summoned', `${num(row, 'UnitsToSpawn')}`],
+        ['First group', `${num(row, 'SpawnFirstGroupSize')}`],
+        ['Spawn duration', `${seconds(row, 'SpawnDuration')} s`],
+        ['Summon attack targets', troopAttackTargets(summon)],
+      ];
+      if (kind === 'bat')
+        facts.push(
+          ['Bat hitpoints', number(summon.hp)],
+          ['Bat DPS', `${summon.dps}`],
+          ['Bat damage per hit', `${summon.damage}`],
+          ['Bat attack interval', `${summon.rate} s`],
+        );
+      else {
+        const unshielded = nativeUnitStats(unitKindForName(summon.secondary)!, summon.level);
+        facts.push(
+          [
+            'Shield breaks into',
+            `${summon.secondaryCount} unshielded Skeleton${summon.secondaryCount === 1 ? '' : 's'}`,
+          ],
+          ['Shielded Skeleton hitpoints', number(summon.hp)],
+          ['Unshielded Skeleton hitpoints', number(unshielded.hp)],
+          ['Skeleton DPS', `${summon.dps}`],
+        );
+      }
       return {
         targets: kind === 'bat' ? 'Summons air troops' : 'Summons ground troops',
-        facts: [
-          [kind === 'bat' ? 'Bats summoned' : 'Skeletons summoned', `${num(row, 'UnitsToSpawn')}`],
-          ['First group', `${num(row, 'SpawnFirstGroupSize')}`],
-          ['Spawn duration', `${seconds(row, 'SpawnDuration')} s`],
-          ['Summon attack targets', troopAttackTargets(summon)],
-        ],
+        facts,
         tactic:
           kind === 'bat'
             ? 'Bats prefer defenses and can attack ground and air targets. Distract or freeze area defenses while the swarm arrives; the spell releases its Bats over time.'
-            : 'Place shielded Skeletons near a ground target to distract it or add damage. The spell releases its squad over time; protect them from area attacks.',
+            : 'Place shielded Skeletons near a ground target to distract it or add damage. Each is replaced by an unshielded Skeleton when its shield breaks. The squad arrives over time; protect them from area attacks.',
       };
     }
     case 'totem': {

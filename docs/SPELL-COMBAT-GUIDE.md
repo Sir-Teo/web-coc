@@ -19,8 +19,8 @@ are unchanged.
 | Poison | Maximum DPS, movement/attack slows and reduced Hero damage; keep defenders in the ramping cloud. |
 | Earthquake | First-cast damage as a share of maximum building HP, tier-dependent ground-defender damage, diminishing building damage and increasing effectiveness against walls. |
 | Haste | Ordinary and favorite-target movement boosts, no damage boost, pulse window and one-second linger; heroes use half the ordinary movement boost. |
-| Skeleton | Summon count, first group, spawn duration and ground attack targets; protect the arriving shielded squad from area damage. |
-| Bat | Summon count, first group, spawn duration and ground/air attack targets; protect the defense-seeking swarm from area defenses. |
+| Skeleton | Summon count, first group, spawn duration, ground attack targets, shield-break replacement, each body's HP and DPS; protect the arriving squad from area damage. |
+| Bat | Summon count, first group, spawn duration, ground/air attack targets, HP, DPS, hit damage and attack interval; protect the defense-seeking swarm from area defenses. |
 | Totem | Chained summon HP and initial stun; a stationary decoy draws fire while losing health. |
 | Overgrowth | Root duration, no damage, building-only targets and the rooted buildings' temporary immunity. |
 | Ice Block | Freeze duration and ability-tier damage protection; friendly troops pause and nearby enemies freeze. |
@@ -38,6 +38,13 @@ Summon movement and attack targets are separate facts. The source `Spell Bat` ro
 flies and declares both ground and air targets. `Spell Shielded Skeleton` moves
 and attacks on the ground. Neither panel inherits the generic troop-target row
 previously shown for all spells.
+
+Each shielded Skeleton is replaced by one unshielded Skeleton when its shield
+breaks. Both source bodies have 30 HP and 25 DPS. Bats have 20 HP, 30 DPS and
+60 damage per hit at a two-second interval. Every spell research tier creates
+the same tier-one bodies; the increased spell count and spawn duration remain
+separate from those child stats. Base and maximum research checks cover these
+facts in each viewport.
 
 `tests/browser/spell-combat-guide.spec.ts` opens all nine real Info buttons at base
 and maximum research tiers, across 390×844, 844×390 and 1440×960 viewports. It checks
