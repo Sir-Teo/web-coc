@@ -217,6 +217,13 @@ machines at base/maximum research on phone, landscape and desktop. It checks
 source values, targets and movement, advice, text fit, scrolling and training
 navigation. The guide does not claim unimplemented Clan Castle payload release.
 
+Siege Barracks lists its P.E.K.K.A and Wizard stock, release order, 1.3-second
+first release, 30-second lifetime, health drain and healing immunity. Spawned
+troops use the attacker's own troop levels. Historical battles before the
+version-182 roster correction omit the current roster facts. The guide does
+not describe Clan Castle payload release. Source counts and levels follow
+the [pinned Siege Barracks](../reference/official-wiki/spells-siege-super/siege-barracks.md).
+
 Stone Slammer now labels its source damage/DPS as primary and lists the wider
 secondary blast separately: 100–200 damage at level 1 and 350–700 at level 6.
 Full secondary damage extends through two tiles, falling to its minimum at

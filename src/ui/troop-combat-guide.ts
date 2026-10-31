@@ -56,6 +56,7 @@ export function troopCombatGuide(
     flameFlingerWallPulse?: boolean;
     flameFlingerBurnOverlap?: boolean;
     flameFlingerBursts?: boolean;
+    siegeBarracksTroops?: boolean;
   } = {},
 ) {
   const facts: [string, string][] = [];
@@ -194,12 +195,28 @@ export function troopCombatGuide(
       tactic += ` Each attack adds a wider ground blast that weakens beyond ${blast.falloffStart} tiles. Walls take extra damage.`;
     }
   } else if (kind === 'siegebarracks') {
+    const row = nativeUnitRow(kind, stats.level);
     facts.push(
       ['Base lifetime', `${stats.bunkerDecay} s`],
-      ['First release delay', `${seconds(nativeUnitRow(kind, stats.level), 'SpawnIdle')} s`],
+      ['First release delay', `${seconds(row, 'SpawnIdle')} s`],
+      [
+        'Health loss',
+        `${(stats.hp / stats.bunkerDecay).toLocaleString('en-US', { maximumFractionDigits: 2 })} HP/s`,
+      ],
+      ['Can receive healing', stats.immuneToHealing ? 'No' : 'Yes'],
     );
+    if (rules.siegeBarracksTroops !== false)
+      facts.push(
+        ['P.E.K.K.A stock', `${num(row, 'BunkerTroopCount1')}`],
+        ['Wizard stock', `${num(row, 'BunkerTroopCount2')}`],
+        ['Release order', 'P.E.K.K.As, then Wizards'],
+        ['Spawned troop levels', 'Your P.E.K.K.A and Wizard levels'],
+      );
     tactic =
-      'Deploy on a safe edge to release its troops. Its health drains over time; troops still inside are lost if it is destroyed early.';
+      'Deploy on a safe edge to release its troops. It stays in place and cannot be healed. Its health drains over time; troops still inside are lost if it is destroyed early.';
+    if (rules.siegeBarracksTroops !== false)
+      tactic +=
+        ' It releases its P.E.K.K.As first, followed by Wizards using your own troop levels.';
   } else if (kind === 'ruinwitch') {
     const knight = nativeUnitStats('ruinknight', stats.summonLevel),
       row = nativeUnitRow('ruinknight', stats.summonLevel),
