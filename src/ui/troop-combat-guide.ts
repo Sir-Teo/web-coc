@@ -5,8 +5,15 @@ import { superHogSplitStats } from '../game/native-super-hog';
 import { superMinionLongShot } from '../game/native-super-minion';
 import { nativeHitPoison } from '../game/defender-hit-poison';
 
+/** These units use their summon controller instead of their placeholder attack columns. */
+export function troopSummonsOnly(stats: NativeUnitStats) {
+  return !!(stats.bunker || stats.consumeDebris);
+}
+
 /** Favorite targets use the combat source, including native troops without legacy UI flags. */
 export function troopFavoriteTarget(stats: NativeUnitStats) {
+  if (stats.consumeDebris) return 'Rubble';
+  if (stats.bunker) return 'None';
   const bonus = (scale: number) => (scale > 1 ? ` (${scale}× damage)` : '');
   if (stats.preferHeroes) return `Heroes${bonus(stats.heroMultiplier)}`;
   if (stats.preferredBuilding)
@@ -16,6 +23,7 @@ export function troopFavoriteTarget(stats: NativeUnitStats) {
 }
 
 export function troopAttackTargets(stats: NativeUnitStats) {
+  if (troopSummonsOnly(stats)) return 'None';
   if (stats.groundTargets && stats.airTargets) return 'Ground and air';
   if (stats.groundTargets) return 'Ground only';
   if (stats.airTargets) return 'Air only';
@@ -33,7 +41,45 @@ export function troopMovement(stats: NativeUnitStats) {
 export function troopCombatGuide(kind: TroopKind, stats: NativeUnitStats) {
   const facts: [string, string][] = [];
   let tactic: string | undefined;
-  if (kind === 'healer') {
+  if (kind === 'furnace') {
+    const firemite = nativeUnitStats('firemite', stats.level);
+    facts.push(
+      ['Firemite stock', `${stats.bunkerCount}`],
+      ['Base lifetime', `${stats.bunkerDecay} s`],
+      ['Health loss', `${stats.hp / stats.bunkerDecay} HP/s`],
+      ['Firemite hitpoints', firemite.hp.toLocaleString('en-US')],
+      ['Firemite damage per jump', `${firemite.damage}`],
+      ['Firemite targets', troopAttackTargets(firemite)],
+    );
+    tactic =
+      'Place it behind a frontline to release Firemites before its health runs out. Friendly health auras can extend its lifetime, but its stock is finite. Each Firemite jumps once at a ground or air target.';
+  } else if (kind === 'siegebarracks') {
+    facts.push(
+      ['Base lifetime', `${stats.bunkerDecay} s`],
+      ['First release delay', `${seconds(nativeUnitRow(kind, stats.level), 'SpawnIdle')} s`],
+    );
+    tactic =
+      'Deploy on a safe edge to release its troops. Its health drains over time; troops still inside are lost if it is destroyed early.';
+  } else if (kind === 'ruinwitch') {
+    const knight = nativeUnitStats('ruinknight', stats.summonLevel),
+      row = nativeUnitRow('ruinknight', stats.summonLevel),
+      limit = stats.summonLifetimeLimit || stats.summonLimit;
+    facts.push(
+      ['Knights per rubble pile', `${stats.summonCount}`],
+      ['Lifetime Knight limit', `${limit}`],
+      [
+        'Vacuum time',
+        `${seconds(nativeUnitRow(kind, stats.level), 'DebrisSummonCompletionTime')} s`,
+      ],
+      ['Summon windup', `${stats.summonDelay} s`],
+      ['Knight hitpoints', knight.hp.toLocaleString('en-US')],
+      ['Knight DPS', `${knight.dps}`],
+      ['Knight targets', troopAttackTargets(knight)],
+      ['Knight damage vs walls', (knight.damage * knight.damageMultiplier).toLocaleString('en-US')],
+      ['Knight health loss', `${num(row, 'LoseHpPerTick') / seconds(row, 'LoseHpInterval')} HP/s`],
+    );
+    tactic = `Destroy buildings first to provide rubble. Each pile creates one Ruin Knight; after ${limit} summons the Witch disappears. Knights attack ground targets, deal extra damage to walls and lose health over time.`;
+  } else if (kind === 'healer') {
     const stacking = nativeGlobalArray('HEAL_STACK_PERCENT');
     facts.push(
       [

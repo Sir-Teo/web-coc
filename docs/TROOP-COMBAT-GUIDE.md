@@ -27,6 +27,9 @@ constants:
 
 | Troop | Added facts | Combat reference |
 | --- | --- | --- |
+| Furnace | Firemite stock, base lifetime, health loss and tier-specific child HP/jump damage | [Deployment lifecycle](../reference/deployment-lifecycle/README.md) and [health auras](../reference/furnace-life-aura/README.md) |
+| Ruin Witch | Rubble consumption, lifetime summon limit, cast timing and tier-specific Knight stats/health loss | [Pinned Ruin Witch](../reference/official-wiki/troops/ruin-witch.md) and [Knight attack phases](../reference/attacking-ruin-knight/README.md) |
+| Siege Barracks | Base lifetime and first release delay | [Deployment lifecycle](../reference/deployment-lifecycle/README.md) |
 | Witch | Skeleton wave size, living limit and tier-specific HP/DPS | [Parent and summoned attacks](../reference/attacking-witch/README.md) |
 | Super Witch | One living Big Boy, its HP, DPS and damage per swing | [Parent and summoned attacks](../reference/attacking-witch/README.md) |
 | Healer | Two full-strength Healers and up to seven contributing Healers per group | [Friendly casts and stacking](../reference/attacking-healer/README.md) |
@@ -141,3 +144,25 @@ adapter resolves each child's research tier and the 1.3-second Rider flight.
 The guide explains that Spring Trap ejection creates neither half. Minimum and
 maximum research previews check both children, including the Hog's 320–1,200 HP
 and Rider's 250–900 HP, at all three viewports.
+
+Furnace, Ruin Witch and Siege Barracks now identify themselves as **Summoners**
+in Army cards and Info. Their placeholder attack columns are omitted: they show
+no direct attack targets, and the cards say **Summons** instead of displaying a
+nonfunctional hit value. Ruin Witch prefers **Rubble**; the stationary spawners
+have no favorite target. Ordinary attackers and friendly healers retain their
+combat/healing rows. These distinctions use the same bunker/debris flags that
+select their simulation controllers.
+
+Furnace lists 19–22 Firemites, a 60-second base lifetime and fixed 25.5–30 HP/s
+drain. Its Firemite preview follows the Furnace's own tier, ending at 325 HP and
+80 damage per jump at Furnace 4. The extra fifth Firemite source tier is not
+substituted for that child. Health auras can extend the parent's lifetime while
+its stock stays finite. Ruin Witch shows one Knight per pile and the pinned
+client's eight-summon lifetime limit, four-second vacuum and two-second summon.
+Its Knight preview includes threefold Wall damage and the pinned 80 HP/s drain.
+Siege Barracks lists its 30-second base lifetime and 1.3-second first release.
+
+`tests/browser/summoner-army-preview.spec.ts` separately checks these three
+summoners at base/maximum research on the same three viewports: six cases per
+browser check roles, absent direct-attack rows, child facts, text fit, scrolling
+and training navigation. Screenshots stay in ignored `output/playtest/`.
