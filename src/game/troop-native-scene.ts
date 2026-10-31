@@ -431,6 +431,8 @@ export class TroopNativePresentation {
           : (battle?.nativeGolemWindup && (u.kind === 'golem' || u.kind === 'golemite')) ||
               (battle?.nativeBearWindup && u.kind === 'bear') ||
               (battle?.nativeSpellBatWindup && u.kind === 'spellbat') ||
+              (battle?.nativeSpellSkeletonWindup &&
+                (u.kind === 'spellskeletonshielded' || u.kind === 'spellskeleton')) ||
               (battle?.nativeWitchSummonWindup && (u.kind === 'skeleton' || u.kind === 'bigboy')) ||
               (battle?.nativeHoundPupWindup &&
                 (u.kind === 'lavapup' || u.kind === 'icehoundpup')) ||

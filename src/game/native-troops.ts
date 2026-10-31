@@ -941,6 +941,10 @@ export function stepNativeUnit(
   const bear = !!(u.kind === 'bear' && battle.nativeBearWindup);
   const booger = !!(u.kind === 'booger' && battle.nativeBoogerWindup);
   const spellBat = !!(u.kind === 'spellbat' && battle.nativeSpellBatWindup);
+  const spellSkeleton = !!(
+    battle.nativeSpellSkeletonWindup &&
+    (u.kind === 'spellskeletonshielded' || u.kind === 'spellskeleton')
+  );
   const giant = !!(u.kind === 'supergiant' && battle.nativeGiantWindup);
   const iceGolem = !!(u.kind === 'icegolem' && battle.nativeIceGolemWindup);
   const rootRider = !!(u.kind === 'rootrider' && battle.nativeRootRiderWindup);
@@ -985,6 +989,7 @@ export function stepNativeUnit(
     bear ||
     booger ||
     spellBat ||
+    spellSkeleton ||
     giant ||
     iceGolem ||
     rootRider ||
@@ -1070,6 +1075,7 @@ export function stepNativeUnit(
         bear ||
         booger ||
         spellBat ||
+        spellSkeleton ||
         witchSummon ||
         giant ||
         iceGolem ||

@@ -1731,3 +1731,14 @@ meshes follow the captured phase, including contact and held frozen poses.
 Spell waves, counts and child stats retain their rules. Versions 216 and earlier
 keep the acquisition delay and previous attack state. See
 [source timing, adapter limits and portable checks](../reference/attacking-spell-bat/README.md).
+
+## Version 218: Skeleton Spell body attack phases
+
+Setups carrying Skeleton Spell enable one-second fresh melee swings and repeats
+for both shielded and unshielded source bodies. Freeze/stun, action-rate modifiers
+and Shrink use the shared attack clock. Shield breaks retain their replacement,
+health and spawn rules; the new body starts its own full charge. Hits remain
+ground-only, with existing resource damage reduction. Original meshes follow
+each clip's source timing, physical contact and held frozen poses. Versions 217
+and earlier keep immediate in-range hits and their previous complete state. See
+[source timing, spawn limits and portable checks](../reference/attacking-spell-skeletons/README.md).

@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 import { GameModel, makeBuilding } from '../src/game/model';
 import { nativeUnitStats } from '../src/game/native-units';
-import { replayBattle } from '../src/game/replay';
+import { replayBattle, type ReplayData } from '../src/game/replay';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import { spawnGarrisonDefender } from '../src/game/garrison-combat';
 import { nativeTroopFacingTarget } from '../src/game/native-troop-facing';
@@ -197,28 +197,39 @@ it('only Witch parent armies enable these summoned melee phases', () => {
   expect(replayBattle(r.data.initial, 213).nativeWitchSummonWindup).toBe(true);
 });
 
-it('a real Skeleton Spell keeps its own attack controller alongside a carried Witch', () => {
-  const model = new GameModel();
-  model.state.king = undefined;
-  model.state.obstacles = [];
-  model.state.buildings = [
-    makeBuilding(1, 'townhall', 36, 36, 1),
-    makeBuilding(2, 'goldstorage', 13, 10, 18),
-  ];
-  model.state.army = { ...emptyArmy(), witch: 1 };
-  model.state.spells = { ...emptySpells(), skeleton: 1 };
-  model.startBattle(0, true);
-  expect(model.battle!.nativeWitchSummonWindup).toBe(true);
-  model.activeSpell = 'skeleton';
-  expect(model.castSpell(13.2, 11.5)).toBe(true);
-  const summoned = () => model.battle!.units.find((u) => u.kind === 'spellskeletonshielded');
-  while (!summoned()?.attacking) {
-    if (model.battle!.elapsed > 5) throw Error('Skeleton Spell attack checkpoint expired');
-    model.step(0.05);
-  }
-  expect(summoned()!.native!.attacks).toBeGreaterThanOrEqual(1);
-  expect(summoned()!.native!.attackWindup).toBeUndefined();
-});
+for (const version of [213, 218])
+  it(`a real Skeleton Spell keeps its version-${version} controller alongside a carried Witch`, () => {
+    const model = new GameModel();
+    model.state.king = undefined;
+    model.state.obstacles = [];
+    model.state.buildings = [
+      makeBuilding(1, 'townhall', 36, 36, 1),
+      makeBuilding(2, 'goldstorage', 13, 10, 18),
+    ];
+    model.state.army = { ...emptyArmy(), witch: 1 };
+    model.state.spells = { ...emptySpells(), skeleton: 1 };
+    model.startBattle(0, true);
+    const recording = (model as unknown as { recording: ReplayData }).recording;
+    recording.version = version;
+    model.battle = replayBattle(recording.initial, version);
+    expect(model.battle!.nativeWitchSummonWindup).toBe(true);
+    model.activeSpell = 'skeleton';
+    expect(model.castSpell(13.2, 11.5)).toBe(true);
+    const summoned = () => model.battle!.units.find((u) => u.kind === 'spellskeletonshielded');
+    while (!summoned()?.attacking) {
+      if (model.battle!.elapsed > 5) throw Error('Skeleton Spell attack checkpoint expired');
+      model.step(0.05);
+    }
+    if (version >= 218) {
+      expect(model.battle!.nativeSpellSkeletonWindup).toBe(true);
+      expect(summoned()!.native!.attacks ?? 0).toBe(0);
+      expect(summoned()!.native!.attackWindup!.remaining).toBeGreaterThan(0);
+    } else {
+      expect(model.battle!.nativeSpellSkeletonWindup).toBeUndefined();
+      expect(summoned()!.native!.attacks).toBeGreaterThanOrEqual(1);
+      expect(summoned()!.native!.attackWindup).toBeUndefined();
+    }
+  });
 
 for (const version of [212, 213])
   for (const level of [1, 8])
