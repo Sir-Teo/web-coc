@@ -14,6 +14,13 @@ npx vitest run --reporter=json --outputFile=output/vitest-results.json
 The JSON report includes per-file timing. Measure on the current revision and host
 instead of relying on historical test counts or durations.
 
+On hosts using software WebGL, run the full simulation suite without active browser
+checks, then run Playwright and production checks one job at a time. Separate
+worktrees still share the host's CPU budget. Concurrent rendering can exhaust a
+campaign stage's wall-clock budget or delay browser clicks and refresh assertions.
+After such a failure, retain the log and rerun the affected case without competing
+browser jobs before changing a timeout or game rule.
+
 ## Keep imports small
 
 A simulation test should not parse presentation graphs. Render-only data belongs in
