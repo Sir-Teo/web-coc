@@ -30,6 +30,9 @@ constants:
 | Furnace | Firemite stock, base lifetime, health loss and tier-specific child HP/jump damage | [Deployment lifecycle](../reference/deployment-lifecycle/README.md) and [health auras](../reference/furnace-life-aura/README.md) |
 | Ruin Witch | Rubble consumption, lifetime summon limit, cast timing and tier-specific Knight stats/health loss | [Pinned Ruin Witch](../reference/official-wiki/troops/ruin-witch.md) and [Knight attack phases](../reference/attacking-ruin-knight/README.md) |
 | Siege Barracks | Base lifetime and first release delay | [Deployment lifecycle](../reference/deployment-lifecycle/README.md) |
+| Wall Wrecker | Town Hall movement destination, tenfold Wall ram damage and healing immunity | [Pinned Wall Wrecker](../reference/official-wiki/spells-siege-super/wall-wrecker.md) |
+| Battle Blimp | Town Hall movement destination, death-blast damage/delay and healing immunity | [Pinned Battle Blimp](../reference/official-wiki/spells-siege-super/battle-blimp.md) |
+| Stone Slammer | Death-blast damage/delay and healing immunity | [Pinned Stone Slammer](../reference/official-wiki/spells-siege-super/stone-slammer.md) |
 | Witch | Skeleton wave size, living limit and tier-specific HP/DPS | [Parent and summoned attacks](../reference/attacking-witch/README.md) |
 | Super Witch | One living Big Boy, its HP, DPS and damage per swing | [Parent and summoned attacks](../reference/attacking-witch/README.md) |
 | Healer | Two full-strength Healers and up to seven contributing Healers per group | [Friendly casts and stacking](../reference/attacking-healer/README.md) |
@@ -196,3 +199,18 @@ research at the same three viewports, including flame damage, timing facts,
 scrolling and training navigation. The combat browser scenarios also exercise
 original flame meshes against buildings and real ground/air Castle defenders,
 portable replay rewind and historical controls.
+
+Wall Wrecker and Battle Blimp list their Town Hall movement destination
+separately from their damage preference. Wall Wrecker shows tenfold Wall
+damage and 3,250–8,710 damage per ram at research levels 1–6. Battle Blimp
+shows its 700–1,200 death blast with a 0.7-second delay; Stone Slammer retains
+500 death damage and a 0.416-second delay. Existing death-damage and radius rows remain shared
+with other death-blast troops. Wall Wrecker no longer receives the unrelated
+40× Wall Breaker contact-damage row. All three explain that they cannot receive
+healing and have advice for their ground route or air approach.
+
+`tests/browser/siege-army-preview.spec.ts` separately checks these three
+machines at base/maximum research on phone, landscape and desktop. It checks
+source values, targets and movement, advice, text fit, scrolling and training
+navigation. The guide does not claim unimplemented Clan Castle payload
+release or Stone Slammer secondary-splash behavior.

@@ -4697,7 +4697,7 @@ export class HUD {
       rows.push(['Damage on destruction', damageNumber(d.deathDamage)]);
       rows.push(['Death blast radius', `${d.deathRadius} tiles`]);
     }
-    if (d.wallBreaker)
+    if (kind === 'wallbreaker' || kind === 'superwallbreaker')
       rows.push(['Contact damage vs walls', damageNumber((d.damage + (d.deathDamage ?? 0)) * 40)]);
     return `<div class="modal-body troop-info-body"><div class="troop-info-hero"><img src="${hudAsset(kind)}" alt="${d.name}"><div><span class="eyebrow">${direct ? d.role : 'SUMMONER'} · LEVEL ${displayLevel}</span><h2>${d.name}</h2><p>${description}</p></div></div>${boostNote}<dl class="troop-stats">${rows.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl><p class="troop-tactic">${icon('Info', 20)}<span>${tactic}</span></p>${button('army', `${icon('Swords', 18)} Train troops`, 'game-btn green')}</div>`;
   }

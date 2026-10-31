@@ -55,6 +55,32 @@ export function troopCombatGuide(kind: TroopKind, stats: NativeUnitStats, superD
     );
     tactic =
       'Place it behind a frontline to release Firemites before its health runs out. Friendly health auras can extend its lifetime, but its stock is finite. Each Firemite jumps once at a ground or air target.';
+  } else if (kind === 'wallwrecker') {
+    facts.push(
+      ['Movement destination', text(nativeUnitRow(kind, stats.level), 'PreferredMovementTarget')],
+      ['Wall damage multiplier', `${stats.preferredMultiplier}×`],
+      [
+        'Damage per ram vs walls',
+        (stats.damage * stats.preferredMultiplier).toLocaleString('en-US'),
+      ],
+      ['Can receive healing', stats.immuneToHealing ? 'No' : 'Yes'],
+    );
+    tactic =
+      'Deploy in line with the Town Hall to open a ground route. It heads toward the Town Hall and deals extra damage to blocking walls. Protect it with other troops; it cannot be healed.';
+  } else if (kind === 'battleblimp' || kind === 'stoneslammer') {
+    if (kind === 'battleblimp')
+      facts.push([
+        'Movement destination',
+        text(nativeUnitRow(kind, stats.level), 'PreferredMovementTarget'),
+      ]);
+    facts.push(
+      ['Death blast delay', `${stats.deathDelay} s`],
+      ['Can receive healing', stats.immuneToHealing ? 'No' : 'Yes'],
+    );
+    tactic =
+      kind === 'battleblimp'
+        ? 'Choose an approach to the Town Hall that avoids Air Defenses. It bombs buildings along its flight and releases a delayed blast when destroyed. It cannot be healed.'
+        : 'Send it after defenses while other troops distract Air Defenses. Its boulders and delayed death blast damage ground targets. It cannot be healed.';
   } else if (kind === 'siegebarracks') {
     facts.push(
       ['Base lifetime', `${stats.bunkerDecay} s`],
