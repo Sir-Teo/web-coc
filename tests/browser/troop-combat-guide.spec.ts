@@ -2,6 +2,28 @@ import { expect, test } from '@playwright/test';
 
 const cases = [
   {
+    name: 'Golem',
+    target: 'Defenses',
+    tactic: 'splits into Golemites',
+    facts: {
+      'Golemites on defeat': '2',
+      'Golemite hitpoints': '1,020',
+      'Golemite DPS': '7',
+      'Golemite targets': 'Ground only',
+    },
+  },
+  {
+    name: 'Ice Golem',
+    target: 'Defenses',
+    tactic: 'giving the rest of your army time to advance',
+    facts: {
+      'Freeze on defeat': '4 s',
+      'Freeze radius': '7.5 tiles',
+      'Hit chill duration': '2 s',
+      'Hit chill slow': '50%',
+    },
+  },
+  {
     name: 'Witch',
     target: 'Any building',
     tactic: 'the Skeletons fight on the ground',
@@ -252,6 +274,8 @@ for (const viewport of [
         expect(close!.height).toBeGreaterThanOrEqual(44);
         if (
           [
+            'Golem',
+            'Ice Golem',
             'Lava Hound',
             'Ice Hound',
             'Witch',
@@ -384,6 +408,28 @@ for (const viewport of [
       .getByRole('button', { name: 'Train troops', exact: true })
       .click();
     for (const upgraded of [
+      {
+        kind: 'golem',
+        name: 'Golem',
+        level: 15,
+        facts: {
+          'Golemites on defeat': '4',
+          'Golemite hitpoints': '2,040',
+          'Golemite DPS': '22',
+          'Golemite targets': 'Ground only',
+        },
+      },
+      {
+        kind: 'icegolem',
+        name: 'Ice Golem',
+        level: 9,
+        facts: {
+          'Freeze on defeat': '9 s',
+          'Freeze radius': '7.5 tiles',
+          'Hit chill duration': '2 s',
+          'Hit chill slow': '50%',
+        },
+      },
       {
         kind: 'lavahound',
         name: 'Lava Hound',

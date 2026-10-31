@@ -79,6 +79,27 @@ export function troopCombatGuide(kind: TroopKind, stats: NativeUnitStats) {
       tactic =
         'Protect her while the Big Boy draws ground fire. She supports it with ranged attacks against ground and air; only one of her Big Boys can be alive at a time.';
     }
+  } else if (kind === 'golem') {
+    const golemite = nativeUnitStats('golemite', stats.level);
+    facts.push(
+      ['Golemites on defeat', `${stats.secondaryCount}`],
+      ['Golemite hitpoints', golemite.hp.toLocaleString('en-US')],
+      ['Golemite DPS', `${golemite.dps}`],
+      ['Golemite targets', troopAttackTargets(golemite)],
+    );
+    tactic =
+      'Use it as a frontline while damage dealers work behind it. It splits into Golemites when defeated; both the Golem and its Golemites prefer defenses.';
+  } else if (kind === 'icegolem') {
+    const ability = nativeRow('abilities', stats.ability, stats.abilityLevel),
+      freeze = nativeRow('spells', ability.SelfSpell, num(ability, 'SelfSpellLevel', 1));
+    facts.push(
+      ['Freeze on defeat', `${seconds(freeze, 'FreezeTimeMS')} s`],
+      ['Freeze radius', `${tiles(freeze, 'Radius')} tiles`],
+      ['Hit chill duration', `${stats.frostTime} s`],
+      ['Hit chill slow', `${Math.round(stats.frostPercent * 100)}%`],
+    );
+    tactic =
+      'Send it ahead of ground damage dealers. It slows enemies it hits and freezes nearby targets on defeat, giving the rest of your army time to advance.';
   } else if (kind === 'lavahound' || kind === 'icehound') {
     const pup = nativeUnitStats(kind === 'lavahound' ? 'lavapup' : 'icehoundpup', 1);
     facts.push(

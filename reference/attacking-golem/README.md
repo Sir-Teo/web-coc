@@ -66,3 +66,12 @@ version 119; its historical damage is not reinterpreted as a current Golem fight
 current-version test keeps full forward/reverse snapshots and checks that Invisibility cancels
 a Golem charge against the hidden defender. This preserves both historical spell proof and
 coverage of the new controller's visibility behavior.
+
+## Army information
+
+The Army panel follows the parent's source level when showing Golemite health and DPS,
+and uses its finite secondary count. Level 1 shows two Golemites with 1,020 HP and
+7 DPS each; level 15 shows four with 2,040 HP and 22 DPS each. Both the parent and its
+Golemites retain defense preference and ground-only attacks. Browser checks cover base
+and maximum research, phone/landscape/desktop layout, scrolling and controls in Chromium
+and WebKit. Combat, artwork and sound assets are unchanged by this information panel.
