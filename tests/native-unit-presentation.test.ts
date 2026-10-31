@@ -6,6 +6,7 @@ import { HERO_UNIT, PET_UNIT } from '../src/game/native-hero-data';
 import { nativeUnitStats } from '../src/game/native-units';
 import { createGuardian, guardianStats, stepGuardian } from '../src/game/native-guardians';
 import type { NativeTroopContext } from '../src/game/native-troops';
+import { attackingBoogerBattle } from './fixtures/attacking-booger';
 
 // Scene views are Phaser objects; record what the presentations ask them to draw instead.
 vi.mock('../src/game/native-scene-view', () => {
@@ -369,6 +370,50 @@ describe('troop native presentation', () => {
 });
 
 describe('hero native presentation', () => {
+  it('draws Booger source windup and contact frames through Freeze and backward redraws', () => {
+    const r = attackingBoogerBattle(1, 215),
+      p = new HeroNativePresentation(fakeScene()),
+      atlas = JSON.parse(fs.readFileSync('public/assets/heroes-native/booger/atlas.json', 'utf8')),
+      snapshots: { battle: Battle; frame: number }[] = [];
+    const internals = p as unknown as {
+      packs: Map<string, unknown>;
+      positions: Map<number, { direction: number }>;
+      sprites: Map<number, any>;
+    };
+    internals.packs.set('heroes-native/booger', atlas);
+    const capture = (frame: number) =>
+      snapshots.push({
+        battle: JSON.parse(JSON.stringify({ ...r.battle, units: [r.unit] })),
+        frame,
+      });
+    while (!r.unit.attacking) r.step();
+    capture(0);
+    r.until(r.battle.elapsed + 0.5);
+    capture(2);
+    r.unit.native!.effects = { frozenUntil: r.battle.elapsed + 1 };
+    r.until(r.battle.elapsed + 0.3);
+    capture(2);
+    r.untilAttacks(1);
+    capture(9);
+    r.untilAttacks(2);
+    capture(9);
+    for (const { battle, frame: index } of [...snapshots, ...snapshots.slice().reverse()]) {
+      const before = JSON.stringify(battle);
+      p.render(battle, false, iso, 46, new Map(), new Map());
+      const direction = internals.positions.get(r.unit.id)!.direction,
+        frame = atlas.states.attack.frames[direction][index];
+      expect(internals.sprites.get(r.unit.id).frame.name).toBe(
+        `${frame.x}:${frame.y}:${frame.w}:${frame.h}`,
+      );
+      p.render(battle, true, iso, 46, new Map(), new Map());
+      const reduced = atlas.states.attack.frames[direction][0];
+      expect(internals.sprites.get(r.unit.id).frame.name).toBe(
+        `${reduced.x}:${reduced.y}:${reduced.w}:${reduced.h}`,
+      );
+      expect(JSON.stringify(battle)).toBe(before);
+    }
+  });
+
   it.each([false, true])(
     'draws the source Phoenix Egg ground pose without a synthetic idle clip, reduced=%s',
     (reduced) => {

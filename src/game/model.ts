@@ -1109,6 +1109,8 @@ export interface Battle {
   nativeWitchSummonWindup?: true;
   /** Version 214: Hound Pups spend their source charge before releasing a projectile. */
   nativeHoundPupWindup?: true;
+  /** Version 215: Sneezy's Boogers spend source charge before direct ground/air hits. */
+  nativeBoogerWindup?: true;
   /** Version 207: source demolition contact cues reconstruct and cover the death tone. */
   nativeWallBreakerSounds?: true;
   /** Version 206: both Wall Breaker contact splashes include ground defenders. */

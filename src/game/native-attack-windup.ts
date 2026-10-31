@@ -167,6 +167,7 @@ export function stepNativeAttackWindup(
       (unit.kind === 'superminion' && ctx.battle.nativeSuperMinionLongShots) ||
       (unit.kind === 'minion' && ctx.battle.nativeMinionWindup) ||
       (unit.kind === 'dragon' && ctx.battle.nativeDragonWindup) ||
+      (unit.kind === 'booger' && ctx.battle.nativeBoogerWindup) ||
       ((unit.kind === 'lavapup' || unit.kind === 'icehoundpup') &&
         ctx.battle.nativeHoundPupWindup) ||
       (unit.kind === 'archer' && ctx.battle.nativeArcherWindup) ||
@@ -278,6 +279,9 @@ export function stepNativeAttackWindup(
   st.recovery = Math.max(0, timing.recovery + overshoot);
   unit.cooldown = st.remaining;
   pose(unit, st, stats);
+  // A zero-recovery Booger still draws its source contact frame on physical release.
+  if (ctx.battle.nativeBoogerWindup && unit.kind === 'booger' && timing.recovery === 0)
+    st.animationOffset = 0;
   return true;
 }
 

@@ -1701,3 +1701,13 @@ their two-second, 50% chill at launch, including impacts after the shooter's def
 Original child action meshes use the recorded charge offset. Parent combat and death
 releases retain their rules. Versions 213 and earlier preserve immediate child shots.
 See [source timing, interpretation limits and portable checks](../reference/attacking-hound/README.md#recording-version-214-pup-attack-charge).
+
+## Version 215: Sneezy Booger melee charges
+
+Hero setups carrying Sneezy enable a one-second first charge and one-second repeat for
+its Boogers. These flying melee troops hit ground and air targets directly. Freeze/stun
+holds charge time; attack-speed modifiers and Shrink scale it. The original baked atlas
+follows charge offsets and draws its contact frame on release, including a held charge
+pose during Freeze. Sneezy's summons, tiers, ownership, transformation and Recall retain
+their rules. Versions 214 and earlier preserve their previous attacks and presentation.
+See [source timing, adapter limits and portable checks](../reference/attacking-booger/README.md).

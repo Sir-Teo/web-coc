@@ -7,7 +7,7 @@ import { nativeUnitStats } from './native-units';
 import { heroAttackInterval } from './native-hero-abilities';
 import { sneezySpawner, sneezySummon, SNEEZY_SPAWNER_SCALE } from './native-sneezy';
 import { heroGrowthScale, heroKnockoutFadeAt } from './hero-growth';
-import { unitAttackIntervalScale } from './native-status';
+import { unitAttackIntervalScale, unitFrozen } from './native-status';
 import type { Battle, Unit } from './model';
 import type { Defender } from './defenders';
 import { buildingIndex, defenderIndex, unitIndex } from './battle-index';
@@ -48,6 +48,7 @@ export interface BakedFrame {
 export interface BakedState {
   fps: number;
   loop: boolean;
+  actionFrame?: number | null;
   frames: BakedFrame[][];
 }
 interface Atlas {
@@ -298,6 +299,9 @@ export class HeroNativePresentation {
       const u = actor.unit,
         d = actor.defender;
       const body = (u ?? d)!;
+      const boogerCharge =
+        u?.kind === 'booger' && battle.nativeBoogerWindup ? u.native?.attackWindup : undefined;
+      const attacking = body.attacking || !!(boogerCharge?.engaged && u && unitFrozen(u, elapsed));
       const deathAt = body.defeatedAt ?? elapsed;
       const deathAge = elapsed - deathAt;
       const fadeAt = u ? heroKnockoutFadeAt(battle, u) : deathAt;
@@ -322,12 +326,12 @@ export class HeroNativePresentation {
         body.x,
         body.y,
         elapsed,
-        !body.attacking && body.path.length > 0,
+        !attacking && body.path.length > 0,
       );
-      const moving = !body.attacking && motion.moving;
+      const moving = !attacking && motion.moving;
       const old = this.positions.get(actor.track);
       let heading: { x: number; y: number } | undefined;
-      if (body.attacking || gauntletKnockout) {
+      if (attacking || gauntletKnockout) {
         if (u) {
           const wall =
             typeof u.native?.wallTarget === 'number'
@@ -366,7 +370,7 @@ export class HeroNativePresentation {
               ? 'jump'
               : summon
                 ? 'attack2'
-                : body.attacking
+                : attacking
                   ? 'attack'
                   : moving
                     ? 'walk'
@@ -399,12 +403,15 @@ export class HeroNativePresentation {
           ? deathAge
           : summon
             ? elapsed - summon.at
-            : body.attacking
+            : attacking
               ? d?.kind === 'guardian'
                 ? guardianAttackAnimationTime(d)
                 : Math.max(0, rate - body.cooldown)
               : clock - since;
-      if (pack.normalizedAttack && body.attacking && body.hp > 0) seconds /= Math.max(0.01, rate);
+      if (pack.normalizedAttack && attacking && body.hp > 0) seconds /= Math.max(0.01, rate);
+      const boogerOffset = boogerCharge?.animationOffset;
+      if (!reduced && attacking && body.hp > 0 && boogerOffset !== undefined)
+        seconds = Math.max(0, (state.actionFrame ?? 0) / state.fps + boogerOffset);
       const frames = state.frames[direction % state.frames.length];
       const frame =
         reduced && gauntletKnockout
