@@ -41,6 +41,8 @@ constants:
 | Super Giant | Fivefold Wall damage and tier-specific Wall hit | [Giant attacks](../reference/attacking-giant/README.md) |
 | Root Rider | Wall aura pulse damage, interval and radius | [Independent wall aura](../reference/attacking-root-rider/README.md) |
 | Electro Dragon | Five chain targets, three-tile hops and 80% retained damage per hop | [Charged chain lightning](NATIVE-HEROES.md#version-109-electro-dragon-charge-and-mixed-target-lightning) |
+| Electro Titan | Independent aura DPS, pulse damage/interval, radius and reduced Hero damage | [Whip and independent aura](../reference/attacking-electro-titan/README.md) |
+| Apprentice Warden | Health aura percentage, radius and recipients | [Source attacks and aura](../reference/attacking-apprentice/README.md) |
 | Inferno Dragon | Two ramp thresholds, stronger DPS tiers and recovery after a kill | [Source beam cadence](../reference/attacking-inferno-dragon/README.md) |
 | Super Miner | Two ramp thresholds, stronger DPS tiers and death-bomb delay | [Source charges and ramp](../reference/attacking-super-miner/README.md) |
 | Super Wall Breaker | Combined contact damage and death-only damage against Walls | [Death blasts and source charges](../reference/attacking-super-wall-breaker/README.md) |
@@ -69,12 +71,12 @@ crash labels accompany its version-190 combat boundary; see the linked
 reference for historical playback behavior.
 
 `tests/browser/troop-combat-guide.spec.ts` opens real catalog Info buttons for
-twenty-nine troop families at 390×844, 844×390 and 1440×960. It verifies source facts,
+thirty-one troop families at 390×844, 844×390 and 1440×960. It verifies source facts,
 favorite targets, advice, text fit, horizontal overflow, touch targets,
 scrolling, training navigation and closing. Screenshots are saved under
 ignored `output/playtest/`. These are headless browser viewport checks, not
 physical-phone performance measurements. Two catalog groups and two researched-tier
-groups per viewport retain the three-minute case limit; seventeen researched profiles
+groups per viewport retain the three-minute case limit; nineteen researched profiles
 check that parent research selects the correct troop, summon and ability tier.
 
 Super Wall Breaker's Wall damage facts follow its current research tier. The
@@ -119,3 +121,11 @@ Root Rider's wall aura lists 4,000 damage per pulse, a 0.4-second interval and a
 chain targets, three-tile hops and 80% retained damage per hop. Their advice explains
 opening paths for ground troops and attacking clustered targets. Base and maximum
 research profiles check the same ability facts at all three viewports.
+
+Electro Titan's aura is separate from her displayed whip damage: 30 to 60 damage
+every 0.4 seconds, or 75 to 150 DPS, within 3.5 tiles. It leaves walls unharmed,
+damages ground/air defenders and deals 25% damage to Heroes. Apprentice Warden's
+seven-tile aura supplies a temporary health buffer of 20% to 26%, excluding himself,
+siege machines and Totems. The guide distinguishes this buffer from healing and
+explains that overlapping health auras use the strongest bonus. Both entries read
+their research-tier aura spell and have base/maximum viewport coverage.

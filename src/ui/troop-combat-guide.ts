@@ -80,6 +80,26 @@ export function troopCombatGuide(kind: TroopKind, stats: NativeUnitStats) {
       tactic =
         'Protect her while the Big Boy draws ground fire. She supports it with ranged attacks against ground and air; only one of her Big Boys can be alive at a time.';
     }
+  } else if (kind === 'electrotitan' && stats.aura) {
+    const aura = nativeRow('spells', stats.aura, stats.auraLevel);
+    facts.push(
+      ['Aura DPS', `${num(aura, 'Damage') / seconds(aura, 'TimeBetweenHitsMS')}`],
+      ['Aura damage per pulse', `${num(aura, 'Damage')}`],
+      ['Aura pulse interval', `${seconds(aura, 'TimeBetweenHitsMS')} s`],
+      ['Aura radius', `${tiles(aura, 'Radius')} tiles`],
+      ['Aura damage vs heroes', `${num(aura, 'HeroDamageMultiplier', 100)}%`],
+    );
+    tactic =
+      'Keep her near clustered buildings and defending troops so her aura adds damage alongside her whip. The aura reaches ground and air, leaves walls unharmed and keeps pulsing during Freeze.';
+  } else if (kind === 'apprenticewarden' && stats.aura) {
+    const aura = nativeRow('spells', stats.aura, stats.auraLevel);
+    facts.push(
+      ['Health aura bonus', `+${num(aura, 'ExtraHealthPermil') / 10}%`],
+      ['Health aura radius', `${tiles(aura, 'Radius')} tiles`],
+      ['Health aura targets', 'Other ground and air troops'],
+    );
+    tactic =
+      'Keep him with a group to add a temporary health buffer to other troops. It does not heal existing damage or affect siege machines or Totems. Overlapping health auras use the strongest bonus.';
   } else if (kind === 'rootrider' && stats.aura) {
     const aura = nativeRow('spells', stats.aura, stats.auraLevel);
     facts.push(

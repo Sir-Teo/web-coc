@@ -2,6 +2,31 @@ import { expect, test } from '@playwright/test';
 
 const cases = [
   {
+    name: 'Electro Titan',
+    target: 'Any building',
+    tactic: 'keeps pulsing during Freeze',
+    facts: {
+      'Aura DPS': '75',
+      'Aura damage per pulse': '30',
+      'Aura pulse interval': '0.4 s',
+      'Aura radius': '3.5 tiles',
+      'Aura damage vs heroes': '25%',
+      'Attack targets': 'Ground and air',
+    },
+  },
+  {
+    name: 'Apprentice Warden',
+    target: 'Any building',
+    tactic: 'does not heal existing damage',
+    facts: {
+      'Health aura bonus': '+20%',
+      'Health aura radius': '7 tiles',
+      'Health aura targets': 'Other ground and air troops',
+      'Attack targets': 'Ground and air',
+      Movement: 'Ground · crosses walls',
+    },
+  },
+  {
     name: 'Root Rider',
     target: 'Defenses',
     tactic: 'pulses damage into nearby walls',
@@ -290,6 +315,28 @@ const cases = [
 
 const upgrades = [
   {
+    kind: 'electrotitan',
+    name: 'Electro Titan',
+    level: 5,
+    facts: {
+      'Aura DPS': '150',
+      'Aura damage per pulse': '60',
+      'Aura pulse interval': '0.4 s',
+      'Aura radius': '3.5 tiles',
+      'Aura damage vs heroes': '25%',
+    },
+  },
+  {
+    kind: 'apprenticewarden',
+    name: 'Apprentice Warden',
+    level: 4,
+    facts: {
+      'Health aura bonus': '+26%',
+      'Health aura radius': '7 tiles',
+      'Health aura targets': 'Other ground and air troops',
+    },
+  },
+  {
     kind: 'rootrider',
     name: 'Root Rider',
     level: 4,
@@ -507,6 +554,8 @@ for (const viewport of [
         expect(close!.height).toBeGreaterThanOrEqual(44);
         if (
           [
+            'Electro Titan',
+            'Apprentice Warden',
             'Root Rider',
             'Electro Dragon',
             'Headhunter',
@@ -583,13 +632,22 @@ for (const viewport of [
         await expect(page.locator('.troop-info-hero .eyebrow')).toContainText(
           `LEVEL ${upgraded.level}`,
         );
+        const base = cases.find((c) => c.name === upgraded.name)!;
+        const row = (label: string) =>
+          page
+            .locator('.troop-stats > div')
+            .filter({ has: page.getByText(label, { exact: true }) })
+            .locator('dd');
+        await expect(row('Favorite target')).toHaveText(base.target);
+        const attackTargets = Object.entries(base.facts).find(
+          ([label]) => label === 'Attack targets',
+        )?.[1];
+        if (attackTargets) await expect(row('Attack targets')).toHaveText(attackTargets);
         for (const [label, value] of Object.entries(upgraded.facts))
-          await expect(
-            page
-              .locator('.troop-stats > div')
-              .filter({ has: page.getByText(label, { exact: true }) })
-              .locator('dd'),
-          ).toHaveText(value);
+          await expect(row(label)).toHaveText(value);
+        await page.locator('.modal').evaluate(async (el) => {
+          await Promise.all(el.getAnimations().map((animation) => animation.finished));
+        });
         await page.screenshot({
           animations: 'disabled',
           path: `output/playtest/troop-guide-${upgraded.name.replaceAll(' ', '-').toLowerCase()}-${upgraded.level}-${viewport.width}.png`,
