@@ -166,9 +166,20 @@ for (const viewport of [
       await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
     }
     // Expiry changes previews without consuming research levels or another item.
-    await page.evaluate(() => {
+    const expired = await page.evaluate(() => {
       const m = window.__game.model;
       m.tick(m.clock + 3_600_001);
+      return {
+        clock: m.clock,
+        boostEnd: m.state.boosts?.army?.end ?? null,
+        remaining: m.boostLeft('army'),
+        yetiLevel: m.armyLevel('yeti'),
+      };
+    });
+    expect(expired, 'the Power Potion expires in the model before the card refresh').toMatchObject({
+      boostEnd: null,
+      remaining: 0,
+      yetiLevel: 1,
     });
     await expect(tile('Yeti').locator('h3')).toHaveText('Yeti ★1');
     await expect(tile('Clone Spell').locator('h3')).toHaveText('Clone ★1');
