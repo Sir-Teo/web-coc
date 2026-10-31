@@ -39,6 +39,8 @@ for (const viewport of [
             'Damage per ram vs walls': upgraded ? '8,710' : '3,250',
             'Damage per hit': upgraded ? '871' : '325',
             'Can receive healing': 'No',
+            'Fresh ram charge': '0.75 s',
+            'Ram recovery': '0.55 s',
             'Attack targets': 'Ground only',
             Movement: 'Ground',
           },

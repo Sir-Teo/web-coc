@@ -1141,6 +1141,8 @@ export interface Battle {
   nativeFlameFlingerBurnOverlap?: true;
   /** Version 228: charged three-projectile Flame Flinger bursts. */
   nativeFlameFlingerBursts?: true;
+  /** Version 229: Wall Wrecker source ram windup and recovery. */
+  nativeWallWreckerWindup?: true;
   /** Version 207: source demolition contact cues reconstruct and cover the death tone. */
   nativeWallBreakerSounds?: true;
   /** Version 206: both Wall Breaker contact splashes include ground defenders. */

@@ -200,7 +200,8 @@ export function stepNativeAttackWindup(
   const traits = {
     ...TROOPS[unit.kind],
     airTargets,
-    ...(ctx.battle.nativeSuperWallBreakerWindup && unit.kind === 'superwallbreaker'
+    ...((ctx.battle.nativeSuperWallBreakerWindup && unit.kind === 'superwallbreaker') ||
+    (ctx.battle.nativeWallWreckerWindup && unit.kind === 'wallwrecker')
       ? { wallBreaker: true as const }
       : {}),
     ...(ctx.battle.nativeHeadhunterWindup && unit.kind === 'headhunter'

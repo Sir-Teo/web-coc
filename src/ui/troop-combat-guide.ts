@@ -1,4 +1,5 @@
 import { flameFlingerBurstStats } from '../game/native-flame-flinger';
+import { splitTiming } from '../game/garrison-kinds';
 import { logLauncherStats } from '../game/native-log-launcher';
 import { troopLauncherStats } from '../game/native-troop-launcher';
 import { stoneSlammerSecondaryStats } from '../game/native-stone-slammer';
@@ -57,6 +58,7 @@ export function troopCombatGuide(
     flameFlingerBurnOverlap?: boolean;
     flameFlingerBursts?: boolean;
     siegeBarracksTroops?: boolean;
+    wallWreckerWindup?: boolean;
   } = {},
 ) {
   const facts: [string, string][] = [];
@@ -169,6 +171,14 @@ export function troopCombatGuide(
     );
     tactic =
       'Deploy in line with the Town Hall to open a ground route. It heads toward the Town Hall and deals extra damage to blocking walls. Protect it with other troops; it cannot be healed.';
+    if (rules.wallWreckerWindup !== false) {
+      const timing = splitTiming(nativeUnitRow(kind, stats.level));
+      facts.push(
+        ['Fresh ram charge', `${timing.firstHit} s`],
+        ['Ram recovery', `${timing.recovery} s`],
+      );
+      tactic += ' Each ram has a windup before contact.';
+    }
   } else if (kind === 'battleblimp' || kind === 'stoneslammer') {
     if (kind === 'battleblimp')
       facts.push([

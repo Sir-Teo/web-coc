@@ -1841,3 +1841,13 @@ hit and then its own source burn; Walls receive their direct multiplier once.
 Released shots and burns survive caster loss. Original attack poses align with
 the first release. Version 227 and earlier retain single-release combat and old
 readouts. See [source timing, limits and validation](../reference/flame-flinger-bursts/README.md).
+
+## Version 229: charged Wall Wrecker rams
+
+New carried Wall Wreckers use a 0.75-second windup and 0.55-second recovery,
+retaining their 1.3-second repeat period and existing ram damage shape. Real
+building and blocking-Wall engagements begin a fresh charge; Freeze/stun,
+slowdown and target loss follow the shared attacker phases. Original source
+poses align with contact and face the committed Wall. Version 228 and earlier
+retain complete old states and omit the new phase readouts. See
+[source timing, retained behavior and validation](../reference/attacking-wall-wrecker/README.md).

@@ -999,6 +999,7 @@ export function stepNativeUnit(
   const balloon = !!(u.kind === 'balloon' && battle.nativeBalloonWindup);
   const rollingLog = !!(u.kind === 'loglauncher' && battle.nativeLogLauncherPiercing);
   const stoneSlammer = !!(u.kind === 'stoneslammer' && battle.nativeStoneSlammerAttacks);
+  const wallWrecker = !!(u.kind === 'wallwrecker' && battle.nativeWallWreckerWindup);
   const babyDragon = !!(u.kind === 'babydragon' && battle.nativeBabyDragonWindup);
   const superDragon = !!(u.kind === 'superdragon' && battle.nativeSuperDragonBurst);
   if (superDragon) prepareSuperDragonBurst(u, at);
@@ -1050,6 +1051,7 @@ export function stepNativeUnit(
     rocketBalloon ||
     balloon ||
     stoneSlammer ||
+    wallWrecker ||
     babyDragon ||
     superDragon ||
     flameFlinger ||

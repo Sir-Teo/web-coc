@@ -212,6 +212,11 @@ with other death-blast troops. Wall Wrecker no longer receives the unrelated
 40× Wall Breaker contact-damage row. All three explain that they cannot receive
 healing and have advice for their ground route or air approach.
 
+Current Wall Wrecker Info also lists its 0.75-second fresh ram charge and
+0.55-second recovery. The original body aligns its contact pose with the hit;
+historical battles before version 229 omit the new phase facts. See
+[ram phases and retained behavior](../reference/attacking-wall-wrecker/README.md).
+
 `tests/browser/siege-army-preview.spec.ts` separately checks these three
 machines at base/maximum research on phone, landscape and desktop. It checks
 source values, targets and movement, advice, text fit, scrolling and training
