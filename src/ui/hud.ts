@@ -4602,7 +4602,7 @@ export class HUD {
       original = superOriginal(kind),
       boostNote =
         level > this.model.troopLevel(kind)
-          ? `<p class="hero-stats-note potion-level">Power Potion · Researched level ${this.model.troopDisplayLevel(kind)} · <b data-boost-end="${this.model.state.boosts!.army!.end}">${time(this.model.boostLeft('army'))}</b> left</p>`
+          ? `<p class="hero-stats-note potion-level">Power Potion · Researched ${original ? `${TROOPS[original].name} ` : ''}level ${this.model.troopLevel(original ?? kind)} · <b data-boost-end="${this.model.state.boosts!.army!.end}">${time(this.model.boostLeft('army'))}</b> left</p>`
           : '',
       description = original
         ? `Activate a Super Troop boost to train this enhanced ${TROOPS[original].name}.`

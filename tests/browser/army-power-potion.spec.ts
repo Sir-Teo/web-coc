@@ -17,7 +17,7 @@ for (const viewport of [
     await page.evaluate(() => {
       const m = window.__game.model;
       m.townhall.level = 18;
-      m.state.troopLevels = { ...m.state.troopLevels, yeti: 1, giant: 5 };
+      m.state.troopLevels = { ...m.state.troopLevels, yeti: 1, giant: 5, hogrider: 1 };
       m.state.spellLevels = { ...m.state.spellLevels, clone: 1, freeze: 1, heal: 1 };
       m.addMagicItem('power-potion');
       m.tick(m.clock);
@@ -36,6 +36,9 @@ for (const viewport of [
     await expect(tile('Yeti').locator('h3')).toHaveText('Yeti ★8');
     await expect(tile('Yeti').locator('.shop-count')).toContainText('4650');
     await expect(tile('Super Giant').locator('h3')).toHaveText('Super Giant ★14');
+    await expect(
+      tile('Super Hog Rider').locator('[data-action="boost-super:superhogrider"]'),
+    ).toBeDisabled();
     await expect(tile('Clone Spell').locator('h3')).toHaveText('Clone ★9');
     await expect(tile('Clone Spell').locator('.shop-count')).toHaveText('48 housing copied');
     const preparation = page.locator('.drawer-foot > span');
@@ -54,21 +57,37 @@ for (const viewport of [
       {
         name: 'Yeti',
         level: 8,
-        research: 1,
+        research: 'Researched level 1',
         facts: { Hitpoints: '4,650', 'Yetimite stock': '14', 'Yetimite damage per hit': '92' },
       },
       {
         name: 'Super Giant',
         level: 14,
-        research: 5,
+        research: 'Researched Giant level 5',
         facts: { Hitpoints: '5,600', 'Damage per hit vs walls': '2,050' },
       },
-      { name: 'Clone Spell', level: 9, research: 1, facts: { 'Housing copied': '48' } },
-      { name: 'Freeze Spell', level: 8, research: 1, facts: { 'Freeze duration': '6s' } },
+      {
+        name: 'Super Hog Rider',
+        level: 15,
+        research: 'Researched Hog Rider level 1',
+        facts: { Hitpoints: '2,350' },
+      },
+      {
+        name: 'Clone Spell',
+        level: 9,
+        research: 'Researched level 1',
+        facts: { 'Housing copied': '48' },
+      },
+      {
+        name: 'Freeze Spell',
+        level: 8,
+        research: 'Researched level 1',
+        facts: { 'Freeze duration': '6s' },
+      },
       {
         name: 'Healing Spell',
         level: 12,
-        research: 1,
+        research: 'Researched level 1',
         facts: { 'Total troop healing': '3,075', 'Total hero healing': '1,691.25' },
       },
     ]) {
@@ -76,9 +95,7 @@ for (const viewport of [
       await expect(page.locator('.troop-info-hero .eyebrow')).toContainText(
         `LEVEL ${profile.level}`,
       );
-      await expect(page.locator('.troop-info-body .potion-level')).toContainText(
-        `Researched level ${profile.research}`,
-      );
+      await expect(page.locator('.troop-info-body .potion-level')).toContainText(profile.research);
       for (const [label, value] of Object.entries(profile.facts))
         await expect(row(label)).toHaveText(value);
       const note = page.locator('.troop-info-body .potion-level');
@@ -122,11 +139,12 @@ for (const viewport of [
         return [
           m.troopLevel('yeti'),
           m.troopLevel('giant'),
+          m.troopLevel('hogrider'),
           m.spellLevel('clone'),
           m.magicItemCount('power-potion'),
         ];
       }),
-    ).toEqual([1, 5, 1, 0]);
+    ).toEqual([1, 5, 1, 1, 0]);
     expect(
       await page.evaluate(async () => {
         const { makeBuilding } = await import('/src/game/model.ts');
