@@ -272,3 +272,9 @@ bonus. The guide also explains 17 HP/s drain, healing immunity and supporting
 its long-range approach. It retains the current generic direct-attack readouts;
 the source's three-shot burst is outside this correction. Historical battle
 inspection retains the old guide. See [preferred Wall pulse damage](../reference/flame-flinger-wall-pulse/README.md).
+
+New Flame Flinger armies also list their 80–130 sustained burn DPS cap and
+explain overlapping areas. The damage-over-time portion shares one cap while
+each area retains its small flat pulse hit. Historical replays keep the prior
+guide. This does not introduce the three-shot burst. See
+[shared building poison](../reference/flame-flinger-overlap/README.md).

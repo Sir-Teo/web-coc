@@ -36,6 +36,8 @@ for (const viewport of [
             'Burn pulse interval': '0.4 s',
             'Burn radius': '2.5 tiles',
             'Burn duration': '30 s',
+            'Maximum sustained burn DPS': upgraded ? '130' : '80',
+            'Overlapping areas': 'Shared burn cap',
             'Wall bonus per burn pulse': '+24',
             'Direct hit damage vs walls': upgraded ? '7,360' : '5,080',
             'Health loss': '17 HP/s',

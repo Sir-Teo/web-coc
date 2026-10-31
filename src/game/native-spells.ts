@@ -1,3 +1,4 @@
+import { flameFlingerPoisonDamage } from './native-flame-flinger-poison';
 import { fieldSpellHistoryUntil } from './field-spell-effects';
 import { cancelNativeAttackWindup } from './native-attack-windup';
 import { cancelElectroDragonCharge } from './native-electro-dragon';
@@ -201,7 +202,30 @@ const liveAttacker = (u: Unit, at: number) =>
 const deployable = (u: Unit) => !!u.hero || u.level === undefined;
 const housing = (u: Unit) => (u.hero ? 25 : TROOPS[u.kind].space);
 
-/** Resolve every pulse whose scheduled time has been reached, in cast order. */
+const fixedFlamePool = (cast: NativeSpellCast) =>
+  cast.name === 'FireSpiritExplosion' && cast.side === 'attack' && cast.follow === undefined;
+
+/** Shared burn budgets receive physical pulse order, including overdue and staggered areas. */
+function stepFlamePools(ctx: NativeSpellContext) {
+  for (;;) {
+    let next: NativeSpellCast | undefined,
+      nextAt = Infinity;
+    for (const cast of ctx.battle.nativeSpells ?? []) {
+      if (cast.ended || !fixedFlamePool(cast) || cast.hits >= cast.total) continue;
+      const at = cast.firstHit + cast.hits * cast.interval;
+      if (at > ctx.battle.elapsed + 1e-9) continue;
+      if (at < nextAt || (at === nextAt && cast.id < next!.id)) {
+        next = cast;
+        nextAt = at;
+      }
+    }
+    if (!next) return;
+    resolvePulse(ctx, next, nextAt);
+    next.hits++;
+  }
+}
+
+/** Cast order, with new Flame Flinger groups resolving their shared pulses chronologically. */
 export function stepNativeSpells(ctx: NativeSpellContext) {
   const battle = ctx.battle;
   retireOvergrowthRoots(battle);
@@ -218,8 +242,13 @@ export function stepNativeSpells(ctx: NativeSpellContext) {
       (cast) =>
         Math.max(spellEndTime(cast) + 10, fieldSpellHistoryUntil(cast)) >= battle.elapsed - 1e-9,
     );
+  let flamePulsesResolved = false;
   for (const cast of battle.nativeSpells ?? []) {
     if (cast.ended) continue;
+    if (battle.nativeFlameFlingerBurnOverlap && !flamePulsesResolved && fixedFlamePool(cast)) {
+      stepFlamePools(ctx);
+      flamePulsesResolved = true;
+    }
     while (cast.hits < cast.total) {
       const at = cast.firstHit + cast.hits * cast.interval;
       if (at > battle.elapsed + 1e-9) break;
@@ -352,17 +381,21 @@ function harmDefense(
           at,
           true,
         );
-      // Burning pools (Firemite) carry poison damage without building immunities.
+      // Burning areas carry poison damage without building immunities.
       if (poison > 0) {
-        const e = buildingEffects(battle, b);
-        const key = `${cast.id}`;
-        const exposure = (e.burn ??= {});
-        exposure[key] ??= at;
         const tick = cast.interval || 0.4;
-        const ramp = flag(row, 'PoisonIncreaseSlowly')
-          ? Math.min(1, (at - exposure[key] + tick) / 5)
-          : 1;
-        ctx.damageBuilding(b, poison * tick * ramp, at, true);
+        if (battle.nativeFlameFlingerBurnOverlap && fixedFlamePool(cast))
+          ctx.damageBuilding(b, flameFlingerPoisonDamage(battle, b, row, at, tick), at, true);
+        else {
+          const e = buildingEffects(battle, b),
+            key = `${cast.id}`,
+            exposure = (e.burn ??= {});
+          exposure[key] ??= at;
+          const ramp = flag(row, 'PoisonIncreaseSlowly')
+            ? Math.min(1, (at - exposure[key] + tick) / 5)
+            : 1;
+          ctx.damageBuilding(b, poison * tick * ramp, at, true);
+        }
       }
       if (quakeBuilding > 0) quake(ctx, cast, row, b, quakeBuilding, at);
       if (freeze > 0 && !overgrowth) {

@@ -1821,3 +1821,12 @@ The separate poison ramp, direct projectile damage/Wall bonus and release clock
 are retained. Version 225 and earlier keep their complete prior states. Current
 Info explains burn pulses, their Wall bonus and the separate direct Wall hit.
 See [source interpretation, remaining burst limits and validation](../reference/flame-flinger-wall-pulse/README.md).
+
+## Version 227: shared Flame Flinger building poison
+
+New carried Flame Flingers share a sustained building-poison cap across their
+persistent burn areas. Their flat per-area hits, including the version-226 Wall
+bonus, remain additive. Due Flame Flinger pulses resolve in scheduled-time order
+for consistent shared budgets. Single-area damage, geometry and other spells
+retain their existing paths. Version 226 and earlier keep complete old states
+and guide readouts. See [damage sharing, chronology and validation](../reference/flame-flinger-overlap/README.md).

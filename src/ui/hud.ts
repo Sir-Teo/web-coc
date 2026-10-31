@@ -4633,6 +4633,8 @@ export class HUD {
         drillSurfaceWalls: !this.model.battle || !!this.model.battle.nativeDrillSurfaceWalls,
         flameFlingerWallPulse:
           !this.model.battle || !!this.model.battle.nativeFlameFlingerWallPulse,
+        flameFlingerBurnOverlap:
+          !this.model.battle || !!this.model.battle.nativeFlameFlingerBurnOverlap,
       }),
       original = superOriginal(kind),
       boostNote =

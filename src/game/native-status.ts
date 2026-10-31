@@ -72,6 +72,12 @@ export interface BuildingEffects {
   overgrownUntil?: number;
   /** First exposure per burning cast, for ramping pool damage. */
   burn?: Record<string, number>;
+  /** Version 227: one sustained poison cap across overlapping Flame Flinger areas. */
+  flameBurn?: {
+    since: number;
+    until: number;
+    damage?: { at: number; budget: number; cap: number; dps: number };
+  };
 }
 /** Buildings that attackers cannot choose this sample (Overgrowth, Invisibility). */
 export const buildingHidden = (

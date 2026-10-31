@@ -53,6 +53,7 @@ export function troopCombatGuide(
     logLauncherPiercing?: boolean;
     drillSurfaceWalls?: boolean;
     flameFlingerWallPulse?: boolean;
+    flameFlingerBurnOverlap?: boolean;
   } = {},
 ) {
   const facts: [string, string][] = [];
@@ -123,6 +124,14 @@ export function troopCombatGuide(
     );
     tactic =
       'Fire from a safe edge at defenses. Impacts leave a burn that grows stronger with steady exposure, and walls take extra damage from both direct hits and burn pulses. Protect it from defenders and long-range defenses as its health drains.';
+    if (rules.flameFlingerBurnOverlap !== false) {
+      facts.push(
+        ['Maximum sustained burn DPS', `${num(burn, 'PoisonDPS')}`],
+        ['Overlapping areas', 'Shared burn cap'],
+      );
+      tactic +=
+        ' Overlapping areas share the damage-over-time cap; each area still adds its small pulse hit.';
+    }
   } else if (kind === 'battledrill' && rules.drillSurfaceWalls !== false) {
     const ability = nativeRow('abilities', 'BattleDrillStunOnSurface'),
       surface = nativeRow('spells', text(ability, 'SelfSpell'), num(ability, 'SelfSpellLevel', 1));
