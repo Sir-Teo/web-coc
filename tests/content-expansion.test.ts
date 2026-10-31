@@ -8,7 +8,7 @@ import { replayBattle, validateReplay } from '../src/game/replay';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import { bakedDirection, bakedFrame } from '../src/game/hero-native-scene';
 import { hurtUnit } from '../src/game/native-status';
-function arena() {
+function arena(friendlyGiant = false) {
   const m = new GameModel();
   m.state.obstacles = [];
   m.state.buildings = [
@@ -16,7 +16,12 @@ function arena() {
     makeBuilding(2, 'goldstorage', 15, 15, 10),
     makeBuilding(3, 'cannon', 20, 20, 10),
   ];
-  m.state.army = { ...emptyArmy(), trooplauncher: 1, sneakygoblin: 1 };
+  m.state.army = {
+    ...emptyArmy(),
+    trooplauncher: 1,
+    sneakygoblin: 1,
+    ...(friendlyGiant ? { giant: 1 } : {}),
+  };
   m.state.spells = { ...emptySpells(), freeze: 1 };
   m.state.nextId = 5000;
   m.startBattle(0, true);
@@ -74,14 +79,16 @@ describe('content expansion', () => {
     m.boostSuperTroop('superbarbarian');
     expect(m.troopUnlocked('superbarbarian')).toBe(true);
   });
-  it('Troop Launcher fires a barrel and releases the source mixed troop group', () => {
-    const m = arena();
+  it('Troop Launcher reinforces a deployed friendly group with its source payload', () => {
+    const m = arena(true);
+    m.activeTroop = 'giant';
+    expect(m.deploy(5, 5)).toBe(true);
     m.activeTroop = 'trooplauncher';
     expect(m.deploy(10, 10)).toBe(true);
     run(m, 5);
     for (const kind of ['giant', 'swordsman', 'archer', 'wallbreaker'])
       expect(
-        m.battle!.units.some((u) => u.kind === kind),
+        m.battle!.units.some((u) => u.kind === kind && u.level === 9),
         kind,
       ).toBe(true);
   });
