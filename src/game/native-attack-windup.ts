@@ -1,3 +1,4 @@
+import { superDragonBurstStats } from './native-super-dragon';
 import { BUILDINGS, TROOPS } from './data';
 import { chainRef, resolveChainTarget, type ChainRef, type ChainTarget } from './chain-targets';
 import { nearestAlertedDefender, preferredHeroTarget, preferredOrCommitted } from './defenders';
@@ -87,8 +88,13 @@ function gap(unit: Unit, target: ChainTarget) {
     Math.max(b.y - unit.y, 0, unit.y - b.y - size),
   );
 }
+function timingFor(unit: Unit, stats: NativeUnitStats) {
+  return unit.kind === 'superdragon' && unit.native?.superDragonBurst
+    ? superDragonBurstStats(stats.level).timing
+    : splitTiming(nativeUnitRow(unit.kind, stats.level));
+}
 function pose(unit: Unit, st: NativeAttackWindupState, stats: NativeUnitStats) {
-  const timing = splitTiming(nativeUnitRow(unit.kind, stats.level));
+  const timing = timingFor(unit, stats);
   st.animationOffset = st.engaged
     ? st.recovery > 1e-9
       ? timing.recovery - st.recovery
@@ -167,6 +173,7 @@ export function stepNativeAttackWindup(
       (unit.kind === 'superminion' && ctx.battle.nativeSuperMinionLongShots) ||
       (unit.kind === 'minion' && ctx.battle.nativeMinionWindup) ||
       (unit.kind === 'dragon' && ctx.battle.nativeDragonWindup) ||
+      (unit.kind === 'superdragon' && ctx.battle.nativeSuperDragonBurst) ||
       (unit.kind === 'booger' && ctx.battle.nativeBoogerWindup) ||
       (unit.kind === 'spellbat' && ctx.battle.nativeSpellBatWindup) ||
       ((unit.kind === 'lavapup' || unit.kind === 'icehoundpup') &&
@@ -255,7 +262,10 @@ export function stepNativeAttackWindup(
     return false;
   }
   if (st.recovery > 1e-9) {
-    if (distance > stats.range + 1e-6) {
+    // A Super Dragon has already committed its remaining flames. Finish that take
+    // against a living target before moving to start another burst.
+    const bursting = unit.kind === 'superdragon' && unit.native?.superDragonBurst?.shotsLeft;
+    if (distance > stats.range + 1e-6 && !bursting) {
       delete st.engaged;
       delete st.animationOffset;
     }
@@ -272,7 +282,7 @@ export function stepNativeAttackWindup(
     return true;
   }
   const overshoot = Math.min(0, st.remaining),
-    timing = splitTiming(nativeUnitRow(unit.kind, stats.level));
+    timing = timingFor(unit, stats);
   unit.attacking = true;
   releaseAudio(st, at);
   release(target);
@@ -296,7 +306,7 @@ export function beginNativeAttackWindup(
   const st = state(unit),
     ref = chainRef(target);
   if (!st.engaged || st.target?.id !== ref.id || st.target.building !== ref.building) {
-    const timing = splitTiming(nativeUnitRow(unit.kind, stats.level));
+    const timing = timingFor(unit, stats);
     st.target = ref;
     st.engaged = true;
     st.remaining = st.recoveryAtStart + timing.firstHit - st.actionDt;

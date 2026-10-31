@@ -399,7 +399,8 @@ export function stepProjectiles(
         (battle.nativeWardenFireball && p.native?.fireball) ||
         (battle.nativeWitchWindup &&
           (p.native?.kind === 'witch' || p.native?.kind === 'superwitch')) ||
-        (battle.nativeWizardWindup && p.native?.kind === 'wizard')) &&
+        (battle.nativeWizardWindup && p.native?.kind === 'wizard') ||
+        (battle.nativeSuperDragonBurst && p.native?.kind === 'superdragon')) &&
       p.native
     ) {
       let cached = trackableByNative.get(p.native.name);

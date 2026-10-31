@@ -17,7 +17,7 @@ for (const viewport of [
     await page.evaluate(() => {
       const m = window.__game.model;
       m.townhall.level = 18;
-      m.state.troopLevels = { ...m.state.troopLevels, yeti: 1, giant: 5, hogrider: 1 };
+      m.state.troopLevels = { ...m.state.troopLevels, yeti: 1, giant: 5, hogrider: 1, dragon: 1 };
       m.state.spellLevels = { ...m.state.spellLevels, clone: 1, freeze: 1, heal: 1 };
       m.addMagicItem('power-potion');
       m.tick(m.clock);
@@ -71,6 +71,16 @@ for (const viewport of [
         level: 15,
         research: 'Researched Hog Rider level 1',
         facts: { Hitpoints: '2,350' },
+      },
+      {
+        name: 'Super Dragon',
+        level: 13,
+        research: 'Researched Dragon level 1',
+        facts: {
+          'Damage per second': '537',
+          'Damage per flame': '192.46',
+          'Flames per burst': 'Up to 10',
+        },
       },
       {
         name: 'Clone Spell',
@@ -140,11 +150,12 @@ for (const viewport of [
           m.troopLevel('yeti'),
           m.troopLevel('giant'),
           m.troopLevel('hogrider'),
+          m.troopLevel('dragon'),
           m.spellLevel('clone'),
           m.magicItemCount('power-potion'),
         ];
       }),
-    ).toEqual([1, 5, 1, 1, 0]);
+    ).toEqual([1, 5, 1, 1, 1, 0]);
     expect(
       await page.evaluate(async () => {
         const { makeBuilding } = await import('/src/game/model.ts');

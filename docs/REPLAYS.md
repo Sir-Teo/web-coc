@@ -1762,3 +1762,13 @@ and native campaign routes retain their respective grid resolution. Existing
 vacuum/summon timing and Knight combat remain unchanged. Version 219 and earlier
 retain the previous wall-crossing route; see
 [rubble reachability and replay checks](../reference/ruin-witch-rubble-routes/README.md).
+
+## Version 221: attacking Super Dragon flame bursts
+
+New carried Super Dragons charge before ten individually timed flames, retaining
+source average DPS across the burst/recovery cycle. Freeze, attack-rate effects,
+per-flame boosts, interrupted targets and original projectile flight use recorded
+active time. Each flame splashes once on its captured target layer and keeps
+its fixed aim point. Version 220 and earlier retain their single large release. Current
+Army readouts show per-flame damage and burst timing; old replays retain their
+old readout. See [source fields, timing and validation](../reference/attacking-super-dragon/README.md).

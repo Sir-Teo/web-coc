@@ -1,3 +1,5 @@
+import { burstGap } from './native-burst-timing';
+export { BURST_STEP } from './native-burst-timing';
 import type { BuildingKind } from './data';
 import { superchargeBonus } from './native-supercharge';
 import {
@@ -57,8 +59,6 @@ export type GearMode = 'long' | 'fast';
  * counts and in-game per-hit values match this exactly: Firespitter 1.024 + 19 x 0.064 = 2.24 s
  * (46.03 per ball at level 1) and Multi-Gear Fast Attack 0.384 + 3 x 0.192 = 0.96 s (156 per ball).
  */
-export const BURST_STEP = 0.064;
-const burstGap = (attackSpeed: number) => Math.ceil(attackSpeed / BURST_STEP - 1e-9) * BURST_STEP;
 
 export interface NativeWeapon {
   /** Client row that supplied the numbers (building or weapon). */

@@ -1123,6 +1123,8 @@ export interface Battle {
   nativeRuinKnightWindup?: true;
   /** Version 220: Ruin Witch selects visible rubble reachable without breaking walls. */
   nativeRuinWitchRubbleRoutes?: true;
+  /** Version 221: attacking Super Dragons emit source ten-flame bursts. */
+  nativeSuperDragonBurst?: true;
   /** Version 207: source demolition contact cues reconstruct and cover the death tone. */
   nativeWallBreakerSounds?: true;
   /** Version 206: both Wall Breaker contact splashes include ground defenders. */

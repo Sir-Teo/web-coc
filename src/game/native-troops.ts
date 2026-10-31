@@ -1,3 +1,11 @@
+import {
+  beginSuperDragonBurst,
+  prepareSuperDragonBurst,
+  stepSuperDragonBurst,
+  superDragonBurstStats,
+  type SuperDragonBurstState,
+} from './native-super-dragon';
+import { chainPoint, type ChainTarget } from './chain-targets';
 import { houndUnitDirection } from './native-hound-geometry';
 import { releaseHoundAtDefender } from './native-hound-attack';
 import { resolveWitchImpact } from './native-witch-attack';
@@ -130,6 +138,8 @@ export interface NativeUnitState {
   electroDragon?: ElectroDragonState;
   bowler?: NativeAttackWindupState;
   attackWindup?: NativeAttackWindupState;
+  /** Version 221: a charged first flame and the remaining source burst. */
+  superDragonBurst?: SuperDragonBurstState;
   /** Version 210: committed friendly-unit cast, separate from enemy target namespaces. */
   healerWindup?: HealerWindupState;
   /** Version 95: the source waiting bird and its separately drawn Egg. */
@@ -970,6 +980,8 @@ export function stepNativeUnit(
   const rocketBalloon = !!(u.kind === 'rocketballoon' && battle.nativeRocketBalloonWindup);
   const balloon = !!(u.kind === 'balloon' && battle.nativeBalloonWindup);
   const babyDragon = !!(u.kind === 'babydragon' && battle.nativeBabyDragonWindup);
+  const superDragon = !!(u.kind === 'superdragon' && battle.nativeSuperDragonBurst);
+  if (superDragon) prepareSuperDragonBurst(u, at);
   const minion = !!(u.kind === 'minion' && battle.nativeMinionWindup);
   const archer = !!(u.kind === 'archer' && battle.nativeArcherWindup);
   const superBarbarian = !!(u.kind === 'superbarbarian' && battle.nativeSuperBarbarianWindup);
@@ -1016,6 +1028,7 @@ export function stepNativeUnit(
     rocketBalloon ||
     balloon ||
     babyDragon ||
+    superDragon ||
     superMinion ||
     minion ||
     archer ||
@@ -1038,7 +1051,8 @@ export function stepNativeUnit(
           num(nativeRow('abilities', s.ability, s.abilityLevel), 'BoostAttackSpeedPercentage') /
             100)
       : actionDt;
-  if (
+  const burstRate = superDragon && dt > 0 ? phaseDt / dt / unitAttackIntervalScale(u, at) : 0;
+  const windupHandled =
     splitAttack &&
     stepNativeAttackWindup(ctx, u, s, dt, phaseDt, (target) => {
       const power =
@@ -1052,7 +1066,11 @@ export function stepNativeUnit(
               at,
             )
           : damage;
-      if (superArcher) launchArcherPiercing(ctx, u, damage, target);
+      if (superDragon) {
+        const launched = beginSuperDragonBurst(u, target, at, burstRate),
+          flame = superDragonBurstStats(s.level).damage * (damage / s.damage);
+        releaseSuperDragonFlame(ctx, u, s, flame, target, launched);
+      } else if (superArcher) launchArcherPiercing(ctx, u, damage, target);
       else if (superWizard) attackSuperWizard(ctx, u, damage, target);
       else if (valkyrie) sweepValkyrie(ctx, u, s, damage);
       else if ('building' in target) strike(ctx, u, s, target.building, power);
@@ -1161,9 +1179,16 @@ export function stepNativeUnit(
       if (superMiner && damageRamp)
         finishRampingHit(u, 'building' in target ? target.building : target.defender, damageRamp);
       if (superMinion) finishSuperMinionOpening(u, s);
+    });
+  if (
+    superDragon &&
+    stepSuperDragonBurst(ctx, u, burstRate, (target, launched) => {
+      const flame = superDragonBurstStats(s.level).damage * (damage / s.damage);
+      releaseSuperDragonFlame(ctx, u, s, flame, target, launched);
     })
   )
     return;
+  if (windupHandled) return;
   const miteJump = nativeMiteJump(battle, u.kind);
   const electromite = u.kind === 'electromite' && battle.nativeElectromites;
   const meteorThrow = u.kind === 'meteorgolem' && battle.nativeMeteorThrows;
@@ -1593,6 +1618,43 @@ function selfAreaHit(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, damag
   ctx.effect({ type: 'blast', x: u.x, y: u.y, radius, sourceId: u.id });
 }
 
+/** A flame keeps its own source timestamp and original ground/air projectile. */
+function releaseSuperDragonFlame(
+  ctx: NativeTroopContext,
+  unit: Unit,
+  stats: NativeUnitStats,
+  damage: number,
+  target: ChainTarget,
+  at: number,
+) {
+  const point = chainPoint(target),
+    building = 'building' in target;
+  launchProjectile(
+    ctx.battle,
+    {
+      weapon: 'native',
+      native: { name: stats.projectile, kind: unit.kind, level: stats.level },
+      sourceId: unit.id,
+      targetId: building ? target.building.id : target.defender.id,
+      targetBuilding: building,
+      ...(!building ? { targetDefender: true } : {}),
+      fromX: unit.x,
+      fromY: unit.y,
+      x: point.x,
+      y: point.y,
+      fromAir: true,
+      toAir: !building && target.defender.mode === 'air',
+      damage: building ? damage * damageMultiplier(ctx.battle, stats, target.building, at) : damage,
+      splash: stats.splash,
+    },
+    ctx.effect,
+    at,
+  );
+  const state = unit.native!;
+  state.lastAttackAt = at;
+  state.attacks = (state.attacks ?? 0) + 1;
+}
+
 /** Resolve one attack against a building according to the unit's native attack shape. */
 function strike(
   ctx: NativeTroopContext,
@@ -2000,7 +2062,10 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
     return;
   }
   if (resolveWitchImpact(ctx, p)) return;
-  if (ctx.battle.nativeWizardWindup && p.native?.kind === 'wizard') {
+  if (
+    (ctx.battle.nativeWizardWindup && p.native?.kind === 'wizard') ||
+    (ctx.battle.nativeSuperDragonBurst && p.native?.kind === 'superdragon')
+  ) {
     resolveRangedAreaImpact(ctx, p);
     return;
   }

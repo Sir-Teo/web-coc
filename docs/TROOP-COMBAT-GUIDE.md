@@ -60,6 +60,7 @@ constants:
 | Super Wizard | Ten total targets; three-tile branch radius; 40% branch damage | [Chain Magic and phases](../reference/attacking-super-wizard/README.md) |
 | Super Minion | Eight Long Shot attacks; 9.75-tile opening range | [Offensive Long Shot](../reference/attacking-super-minion/README.md) |
 | Baby Dragon | +100% damage, +50% attack rate and 4.5-tile ally radius | [Tantrum and phases](../reference/attacking-baby-dragon/README.md) |
+| Super Dragon | Up to ten flames, 0.192-second spacing, 0.32-second first charge and damage per flame | [Charged flame bursts](../reference/attacking-super-dragon/README.md) |
 | Balloon | 0.416-second death-blast delay | [Source attacks and crash](../reference/attacking-balloon/README.md) |
 | Rocket Balloon | Four-second deployment boosters | [Rocket Balloon phases](../reference/attacking-rocket-balloon/README.md) |
 | Dragon Rider | 0.6-second death-blast delay | [Dragon Rider phases](../reference/attacking-dragon-rider/README.md) |
@@ -182,3 +183,16 @@ damage, +3.25 tiles/s ordinary movement and +1.625 with a favorite target. It
 labels the 17.7-second first-to-last pulse window and one-second lingering effect
 separately, rather than substituting the wiki's simplified duration. Base and
 maximum parent-research profiles inspect these facts at all three viewports.
+
+Super Dragon cards and Info show damage per flame rather than a combined hit.
+The ten-flame burst retains source average DPS over its 3.584-second cycle.
+Advice explains that a committed burst finishes against a living moving target,
+while target loss cancels the remaining flames. The source tier follows parent
+Dragon research and active Power Potion previews. Historical battle inspection
+retains the former single-hit readout.
+
+`tests/browser/super-dragon-info.spec.ts` separately checks minimum/maximum
+research at the same three viewports, including flame damage, timing facts,
+scrolling and training navigation. The combat browser scenarios also exercise
+original flame meshes against buildings and real ground/air Castle defenders,
+portable replay rewind and historical controls.

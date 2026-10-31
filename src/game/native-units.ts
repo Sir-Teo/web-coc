@@ -160,7 +160,7 @@ export interface NativeUnitStats {
   name: string;
   level: number;
   hp: number;
-  /** Damage each attack resolves; negative DPS rows (healers) keep their positive heal here. */
+  /** Generic single-release damage; burst controllers normalize each flame separately. Healers keep positive healing here. */
   damage: number;
   dps: number;
   damageRamp?: NativeDamageRampStats;

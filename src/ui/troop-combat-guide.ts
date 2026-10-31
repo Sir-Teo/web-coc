@@ -1,3 +1,4 @@
+import { superDragonBurstStats } from '../game/native-super-dragon';
 import type { TroopKind } from '../game/data';
 import { nativeUnitRow, nativeUnitStats, type NativeUnitStats } from '../game/native-units';
 import { nativeGlobalArray, nativeRow, num, seconds, text, tiles } from '../game/native-data';
@@ -39,7 +40,7 @@ export function troopMovement(stats: NativeUnitStats) {
 }
 
 /** Short player-facing advice and source ability facts for the Army information panel. */
-export function troopCombatGuide(kind: TroopKind, stats: NativeUnitStats) {
+export function troopCombatGuide(kind: TroopKind, stats: NativeUnitStats, superDragonBurst = true) {
   const facts: [string, string][] = [];
   let tactic: string | undefined;
   if (kind === 'furnace') {
@@ -386,6 +387,15 @@ export function troopCombatGuide(kind: TroopKind, stats: NativeUnitStats) {
       ['Long Shot range', `${opening.range} tiles`],
     );
     tactic = `Use its first ${opening.count} Long Shots to attack from farther away. After they are spent, it moves closer to use its normal range.`;
+  } else if (kind === 'superdragon' && superDragonBurst) {
+    const burst = superDragonBurstStats(stats.level);
+    facts.push(
+      ['Flames per burst', `Up to ${burst.count}`],
+      ['Flame spacing', `${burst.delay} s`],
+      ['First flame charge', `${burst.firstHit} s`],
+    );
+    tactic =
+      'Keep it on a target long enough to finish its flame burst. Changing targets stops the remaining flames. Protect it from Air Defenses.';
   } else if (kind === 'babydragon') {
     const ability = nativeRow('abilities', stats.ability, stats.abilityLevel),
       radius = tiles(ability, 'ActiveWhileAloneRadius');
