@@ -32,6 +32,7 @@ constants:
 | Siege Barracks | Base lifetime and first release delay | [Deployment lifecycle](../reference/deployment-lifecycle/README.md) |
 | Wall Wrecker | Town Hall movement destination, tenfold Wall ram damage and healing immunity | [Pinned Wall Wrecker](../reference/official-wiki/spells-siege-super/wall-wrecker.md) |
 | Battle Blimp | Town Hall movement destination, death-blast damage/delay and healing immunity | [Pinned Battle Blimp](../reference/official-wiki/spells-siege-super/battle-blimp.md) |
+| Flame Flinger | Burn pulses, extra Wall damage, direct Wall hit and health drain | [Preferred Wall pulse damage](../reference/flame-flinger-wall-pulse/README.md) |
 | Battle Drill | Surfacing stun/radius, nearby Wall destruction and healing immunity | [Surfacing Wall destruction](../reference/battle-drill-surface-walls/README.md) |
 | Log Launcher | Log travel, structure budget, nearby blast, Wall bonus and health drain | [Rolling corridors](../reference/attacking-log-launcher/README.md) |
 | Stone Slammer | Primary/secondary blast distinction, damage falloff, Wall bonus, death-blast delay and healing immunity | [Source attack phases and blasts](../reference/attacking-stone-slammer/README.md) |
@@ -262,3 +263,12 @@ intrinsic surfacing ability and spell. Historical battle inspection retains the
 prior guide. Base/maximum research browser checks cover phone, landscape and
 desktop with the same text-fit and training-navigation checks. See
 [surfacing Wall destruction](../reference/battle-drill-surface-walls/README.md).
+
+Flame Flinger Info now distinguishes its burn pulses from direct impact damage.
+At base/maximum research it shows 33/53 maximum damage per burn pulse, a
+0.4-second interval, 2.5-tile radius and 30-second pulse window. Walls receive
+24 additional damage per pulse; direct Wall hits retain the separate eightfold
+bonus. The guide also explains 17 HP/s drain, healing immunity and supporting
+its long-range approach. It retains the current generic direct-attack readouts;
+the source's three-shot burst is outside this correction. Historical battle
+inspection retains the old guide. See [preferred Wall pulse damage](../reference/flame-flinger-wall-pulse/README.md).

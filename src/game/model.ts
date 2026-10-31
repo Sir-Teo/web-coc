@@ -1135,6 +1135,8 @@ export interface Battle {
   nativeRollingLogs?: RollingLogShot[];
   /** Version 225: Battle Drill surfacing destroys nearby Walls separately from its stun. */
   nativeDrillSurfaceWalls?: true;
+  /** Version 226: Flame Flinger burn pulses honor their flat-damage Wall preference. */
+  nativeFlameFlingerWallPulse?: true;
   /** Version 207: source demolition contact cues reconstruct and cover the death tone. */
   nativeWallBreakerSounds?: true;
   /** Version 206: both Wall Breaker contact splashes include ground defenders. */

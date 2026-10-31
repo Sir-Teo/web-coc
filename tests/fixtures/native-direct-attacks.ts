@@ -28,6 +28,7 @@ export type NativeDirectKind =
   | 'trooplauncher'
   | 'loglauncher'
   | 'battledrill'
+  | 'flameflinger'
   | 'balloon'
   | 'archer'
   | 'swordsman'

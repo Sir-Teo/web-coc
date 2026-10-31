@@ -52,6 +52,7 @@ export function troopCombatGuide(
     troopLauncherFriendly?: boolean;
     logLauncherPiercing?: boolean;
     drillSurfaceWalls?: boolean;
+    flameFlingerWallPulse?: boolean;
   } = {},
 ) {
   const facts: [string, string][] = [];
@@ -97,6 +98,31 @@ export function troopCombatGuide(
     );
     tactic =
       'Line it up with the Town Hall to roll logs through a corridor. Each log travels up to 20 tiles and hits up to four structures, including walls. Ground defenders can also be hit. Each release adds a blast around the launcher; Overgrowth-covered structures stop the rolling log. Protect it as its health drains.';
+  } else if (kind === 'flameflinger' && rules.flameFlingerWallPulse !== false) {
+    const projectile = nativeRow('projectiles', stats.projectile),
+      burn = nativeRow('spells', text(projectile, 'HitSpell'), num(projectile, 'HitSpellLevel', 1)),
+      interval = seconds(burn, 'TimeBetweenHitsMS');
+    facts.push(
+      [
+        'Maximum burn damage per pulse',
+        `${num(burn, 'Damage') + num(burn, 'PoisonDPS') * interval}`,
+      ],
+      ['Burn pulse interval', `${interval} s`],
+      ['Burn radius', `${tiles(burn, 'Radius')} tiles`],
+      ['Burn duration', `${num(burn, 'NumberOfHits') * interval} s`],
+      [
+        'Wall bonus per burn pulse',
+        `+${num(burn, 'Damage') * (num(burn, 'PreferredTargetDamageMod', 1) - 1)}`,
+      ],
+      [
+        'Direct hit damage vs walls',
+        (stats.damage * stats.damageMultiplier).toLocaleString('en-US'),
+      ],
+      ['Health loss', `${stats.loseHp / stats.loseHpInterval} HP/s`],
+      ['Can receive healing', stats.immuneToHealing ? 'No' : 'Yes'],
+    );
+    tactic =
+      'Fire from a safe edge at defenses. Impacts leave a burn that grows stronger with steady exposure, and walls take extra damage from both direct hits and burn pulses. Protect it from defenders and long-range defenses as its health drains.';
   } else if (kind === 'battledrill' && rules.drillSurfaceWalls !== false) {
     const ability = nativeRow('abilities', 'BattleDrillStunOnSurface'),
       surface = nativeRow('spells', text(ability, 'SelfSpell'), num(ability, 'SelfSpellLevel', 1));

@@ -1812,3 +1812,12 @@ Wall stun immunity. Existing two-second building stun, defending-character and
 storage immunities, burrowing and one-cast-per-emergence behavior remain in place.
 Version 224 and earlier retain Walls and complete old states. See
 [source fields, geometry and replay validation](../reference/battle-drill-surface-walls/README.md).
+
+## Version 226: Flame Flinger preferred Wall pulse damage
+
+New carried Flame Flingers apply their burn spell's 25× preferred-Wall modifier
+to its one-point flat pulse component, adding 24 damage to Walls each pulse.
+The separate poison ramp, direct projectile damage/Wall bonus and release clock
+are retained. Version 225 and earlier keep their complete prior states. Current
+Info explains burn pulses, their Wall bonus and the separate direct Wall hit.
+See [source interpretation, remaining burst limits and validation](../reference/flame-flinger-wall-pulse/README.md).

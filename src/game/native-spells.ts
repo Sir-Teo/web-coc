@@ -304,6 +304,10 @@ function harmDefense(
   const poison = num(row, 'PoisonDPS');
   const drillWalls =
     battle.nativeDrillSurfaceWalls && cast.name === 'DrillerSurfacing' && flag(row, 'DestroyWalls');
+  const flameWallPulse =
+    battle.nativeFlameFlingerWallPulse &&
+    cast.name === 'FireSpiritExplosion' &&
+    text(row, 'PreferredTarget') === 'Wall';
   const overgrowth = flag(row, 'Overgrowth');
   const invisible =
     battle.nativeInvisibilityTargets && !overgrowth ? seconds(row, 'InvisibilityTime') : 0;
@@ -340,7 +344,14 @@ function harmDefense(
         continue;
       }
       if (buildingSpellImmune(row, b)) continue;
-      if (damage > 0) ctx.damageBuilding(b, damage, at, true);
+      if (damage > 0)
+        ctx.damageBuilding(
+          b,
+          damage *
+            (flameWallPulse && b.kind === 'wall' ? num(row, 'PreferredTargetDamageMod', 1) : 1),
+          at,
+          true,
+        );
       // Burning pools (Firemite) carry poison damage without building immunities.
       if (poison > 0) {
         const e = buildingEffects(battle, b);

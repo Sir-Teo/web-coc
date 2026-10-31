@@ -4631,6 +4631,8 @@ export class HUD {
           !this.model.battle || !!this.model.battle.nativeTroopLauncherFriendly,
         logLauncherPiercing: !this.model.battle || !!this.model.battle.nativeLogLauncherPiercing,
         drillSurfaceWalls: !this.model.battle || !!this.model.battle.nativeDrillSurfaceWalls,
+        flameFlingerWallPulse:
+          !this.model.battle || !!this.model.battle.nativeFlameFlingerWallPulse,
       }),
       original = superOriginal(kind),
       boostNote =
