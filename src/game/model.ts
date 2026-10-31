@@ -1105,6 +1105,8 @@ export interface Battle {
   nativeDruidWindup?: true;
   /** Version 212: Druid Bears spend their source melee charge after reaching a target. */
   nativeBearWindup?: true;
+  /** Version 213: Witch Skeletons and Super Witch Big Boys spend source melee phases. */
+  nativeWitchSummonWindup?: true;
   /** Version 207: source demolition contact cues reconstruct and cover the death tone. */
   nativeWallBreakerSounds?: true;
   /** Version 206: both Wall Breaker contact splashes include ground defenders. */

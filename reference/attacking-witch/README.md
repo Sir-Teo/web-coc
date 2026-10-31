@@ -127,3 +127,37 @@ states. Desktop/phone browser recordings decode the original samples and check a
 gain, playback rate and seek offset; spent clips stay silent even while their journal entry
 remains inside the ten-second horizon. Original impact-sample HTTP 503 recovery happens
 while playback stays paused and complete battle state remains unchanged.
+
+## Recording version 213: summoned melee phases
+
+The two `characters.Skeleton` tiers inherit `AttackSpeed=1000`, 0.4-tile
+reach and ground-only attacks. `characters.Big Boy` has a two-second period,
+one-tile reach and ground-only attacks. Neither row supplies a cooldown override
+or initial target delay. The existing older-engine split-clock adapter therefore
+gives Skeleton a one-second fresh swing with no recovery, and Big Boy a
+1.5-second swing plus 0.5-second recovery. Modern native executable timing remains
+unverified.
+
+A carried Witch or Super Witch enables these phases for its summoned Skeletons
+and Big Boys. Fresh swings begin after approach; Freeze/stun, action-rate
+modifiers and Shrink preserve active time. Replacement targets spend a fresh
+swing after recovery left, and direct attacks remain ground-only. The original
+bodies use captured action offsets and committed Wall facing. Parent attacks,
+source summon tiers, ownership, stock, scheduled births and movement retain their
+existing rules. Witch levels 1–7 create Skeleton 1; Witch 8 creates Skeleton 2.
+Every Super Witch tier creates Big Boy 1. Existing spawn presentation is retained;
+this boundary does not reconstruct the Skeleton row's separate `SpawnIdle` field.
+
+Versions 212 and earlier retain immediate first child hits and their former state
+shape. Spell-created Skeletons and defending Skeletons retain their own controllers.
+No numerical stats, village-save format or assets change.
+
+`tests/attacking-witch-summon-windup.test.ts` covers both Skeleton tiers and Big Boy,
+near/far approaches, first/repeat clocks, damage, Freeze/stun, partial thaw, modifiers,
+Shrink, target changes and recovery, ground/air defenders, defeat, Wall charges,
+facing and irregular steps. Real parent deployments compare complete portable
+states in both seek directions at parent levels 1/8 under versions 212/213.
+`tests/browser/attacking-witch-summon-windup.spec.ts` checks Node/browser states,
+original child bodies, cast offsets, reduced motion, read-only drawing, asset
+requests and WebGL health at phone/desktop sizes. Screenshots go to ignored
+`output/playtest/`; these are viewport checks, not physical-phone measurements.

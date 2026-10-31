@@ -1681,3 +1681,13 @@ body follows the recorded offset and committed Wall facing. Defense preference,
 ground-only direct damage and Druid healing remain unchanged. Versions 211
 and earlier retain their immediate first Bear hits and original state shape.
 See [source timing and portable checks](../reference/attacking-bear/README.md).
+
+## Version 213: Witch summoned melee phases
+
+Witch Skeletons spend a one-second fresh swing; Super Witch Big Boys spend
+1.5 seconds with 0.5-second recovery inside their two-second period. Both begin
+after reaching a target, pause through Freeze/stun and scale with action rate
+and Shrink. Source bodies follow captured offsets and Wall facing. Parent attacks,
+summon levels, stock, ownership and scheduled births retain their behavior.
+Versions 212 and earlier keep immediate child hits. See
+[source timing, spawn interpretation limits and portable checks](../reference/attacking-witch/README.md#recording-version-213-summoned-melee-phases).

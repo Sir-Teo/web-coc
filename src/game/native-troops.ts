@@ -968,6 +968,10 @@ export function stepNativeUnit(
     (u.kind === 'valkyrie' || u.kind === 'supervalkyrie')
   );
   const witch = !!((u.kind === 'witch' || u.kind === 'superwitch') && battle.nativeWitchWindup);
+  const witchSummon = !!(
+    battle.nativeWitchSummonWindup &&
+    (u.kind === 'skeleton' || u.kind === 'bigboy')
+  );
   const hound = !!((u.kind === 'lavahound' || u.kind === 'icehound') && battle.nativeHoundWindup);
   const splitAttack =
     bowler ||
@@ -1000,6 +1004,7 @@ export function stepNativeUnit(
     wallBreaker ||
     valkyrie ||
     witch ||
+    witchSummon ||
     hound;
   const phaseDt =
     babyDragon && state.alone
@@ -1053,6 +1058,7 @@ export function stepNativeUnit(
       else if (
         golem ||
         bear ||
+        witchSummon ||
         giant ||
         iceGolem ||
         rootRider ||
