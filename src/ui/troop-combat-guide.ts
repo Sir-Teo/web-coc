@@ -1,3 +1,4 @@
+import { troopLauncherStats } from '../game/native-troop-launcher';
 import { stoneSlammerSecondaryStats } from '../game/native-stone-slammer';
 import { superDragonBurstStats } from '../game/native-super-dragon';
 import type { TroopKind } from '../game/data';
@@ -44,11 +45,29 @@ export function troopMovement(stats: NativeUnitStats) {
 export function troopCombatGuide(
   kind: TroopKind,
   stats: NativeUnitStats,
-  rules: { superDragonBurst?: boolean; stoneSlammerAttacks?: boolean } = {},
+  rules: {
+    superDragonBurst?: boolean;
+    stoneSlammerAttacks?: boolean;
+    troopLauncherFriendly?: boolean;
+  } = {},
 ) {
   const facts: [string, string][] = [];
   let tactic: string | undefined;
-  if (kind === 'furnace') {
+  if (kind === 'trooplauncher' && rules.troopLauncherFriendly !== false) {
+    const barrel = troopLauncherStats(stats.level);
+    facts.push(
+      ['Barrel stock', `${barrel.count}`],
+      ['Deployment warmup', `${barrel.spawnIdle} s`],
+      ['Barrel charge', `${barrel.charge} s`],
+      ['Barrel flight', `${barrel.flight} s`],
+      ['Health loss', `${barrel.healthLoss} HP/s`],
+      ['Can receive healing', stats.immuneToHealing ? 'No' : 'Yes'],
+      ...barrel.payload.map((p) => [`${p.name}s per barrel`, `${p.count}`] as [string, string]),
+      ['Payload troop levels', [...new Set(barrel.payload.map((p) => p.level))].join(' / ')],
+    );
+    tactic =
+      'Deploy a fighting group first. It stays in place and reinforces a concentrated friendly group with troop barrels. Its small heal is secondary; protect it, because unfired barrels are lost if it is destroyed.';
+  } else if (kind === 'furnace') {
     const firemite = nativeUnitStats('firemite', stats.level);
     facts.push(
       ['Firemite stock', `${stats.bunkerCount}`],

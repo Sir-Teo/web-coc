@@ -12,7 +12,8 @@ export function nativeTroopFacingTarget(
 ) {
   if (
     (battle.nativeHealerWindup && unit.kind === 'healer') ||
-    (battle.nativeDruidWindup && unit.kind === 'druid')
+    (battle.nativeDruidWindup && unit.kind === 'druid') ||
+    (battle.nativeTroopLauncherFriendly && unit.kind === 'trooplauncher')
   ) {
     const ally = battle.units.find(
       (u) => u.id === (unit.native?.healerWindup?.targetId ?? unit.healTarget),

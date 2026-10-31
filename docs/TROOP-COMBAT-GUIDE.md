@@ -230,3 +230,16 @@ The ordinary troop stat, target and movement rows remain the source of numbers.
 at phone, landscape and desktop widths. It opens real Info buttons, compares
 source targets/movement with the advice, checks text fit and unique row labels,
 and returns through the training button. Screenshots remain in ignored output.
+
+Troop Launcher now explains its friendly reinforcement role while retaining its
+real small heal. Cards show five to seven barrels. Info lists four payload
+families, their fixed level 9–12 tiers, source stock, warmup/charge, 2.2-second
+flight and 25 HP/s drain. Advice explains deploying a fighting group first and
+protecting unfired stock. Delivery range and cadence are labeled reinforcement
+range and barrel interval. These facts share the [friendly barrel adapter](../reference/attacking-troop-launcher/README.md).
+
+`tests/browser/troop-launcher-guide.spec.ts` checks base/maximum research at all
+three viewports, including the retained six-HP heal and source payload counts.
+Power Potion checks raise the preview to seven barrels and level-12 payloads,
+then return to five barrels without changing the permanent level-one research.
+Historical battle inspection retains its prior facts and labels.

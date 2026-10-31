@@ -1127,6 +1127,8 @@ export interface Battle {
   nativeSuperDragonBurst?: true;
   /** Version 222: Stone Slammer attack phases and its secondary ground blast. */
   nativeStoneSlammerAttacks?: true;
+  /** Version 223: Troop Launcher reinforces eligible friendly groups. */
+  nativeTroopLauncherFriendly?: true;
   /** Version 207: source demolition contact cues reconstruct and cover the death tone. */
   nativeWallBreakerSounds?: true;
   /** Version 206: both Wall Breaker contact splashes include ground defenders. */
@@ -6071,7 +6073,8 @@ export class GameModel {
       pathAt: 0,
       attacking: false,
       ...(nativeBehavior(b, k) ? { native: initialNativeState(k, this.troopLevel(k)) } : {}),
-      ...(b.nativeLifecycleBirth && (k === 'furnace' || k === 'siegebarracks' || k === 'druid')
+      ...((b.nativeLifecycleBirth && (k === 'furnace' || k === 'siegebarracks' || k === 'druid')) ||
+      (b.nativeTroopLauncherFriendly && k === 'trooplauncher')
         ? { spawnedAt: b.elapsed }
         : {}),
     });
@@ -7326,7 +7329,9 @@ export class GameModel {
       b.destruction === 100 ||
       (timedBattle(b) && b.elapsed >= BATTLE_SECONDS) ||
       (!b.shells.length &&
-        !b.projectiles?.some((p) => p.weapon !== 'healing' && !p.native?.healing) &&
+        !b.projectiles?.some(
+          (p) => p.native?.troopLauncher || (p.weapon !== 'healing' && !p.native?.healing),
+        ) &&
         !Object.values(b.deathBombs ?? {}).some((bomb) => !bomb.resolved && !bomb.cancelled) &&
         !lateCampaignPending(b) &&
         !b.units.some(

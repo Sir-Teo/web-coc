@@ -474,7 +474,8 @@ export class TroopNativePresentation {
                 (u.kind === 'valkyrie' || u.kind === 'supervalkyrie'))
             ? u.native?.attackWindup?.animationOffset
             : (battle?.nativeHealerWindup && u.kind === 'healer') ||
-                (battle?.nativeDruidWindup && u.kind === 'druid')
+                (battle?.nativeDruidWindup && u.kind === 'druid') ||
+                (battle?.nativeTroopLauncherFriendly && u.kind === 'trooplauncher')
               ? u.native?.healerWindup?.animationOffset
               : undefined;
       // With no recovery, the next charge is already pending on the physical release tick.

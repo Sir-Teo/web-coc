@@ -1,3 +1,4 @@
+import { stepTroopLauncher, resolveTroopLauncherImpact } from './native-troop-launcher';
 import { attackStoneSlammer } from './native-stone-slammer';
 import {
   beginSuperDragonBurst,
@@ -920,6 +921,10 @@ export function stepNativeUnit(
       ? heroExtraDamage(u, at)
       : 0);
   if (s.speed <= 0 && !s.summon && !s.bunker && s.range < 0.05) return;
+  if (battle.nativeTroopLauncherFriendly && u.kind === 'trooplauncher') {
+    stepTroopLauncher(ctx, u, s, dt, actionDt);
+    return;
+  }
   if (s.heal > 0 && s.dps <= 0 && !isSiege(u.kind)) {
     stepNativeHealer(ctx, u, s, boosted.heal ?? s.heal, speed, dt, actionDt);
     return;
@@ -2061,6 +2066,7 @@ export function stepNativeChains(ctx: NativeTroopContext) {
 
 /** Native projectile arrival: damage, splash, bounces and on-hit spells. */
 export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile) {
+  if (resolveTroopLauncherImpact(ctx, p)) return;
   if (ctx.battle.nativeSuperHogSplit && p.native?.superHogSplit) {
     releaseProjectileLanding(ctx, p.id);
     return;

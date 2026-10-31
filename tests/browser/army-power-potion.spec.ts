@@ -17,7 +17,14 @@ for (const viewport of [
     await page.evaluate(() => {
       const m = window.__game.model;
       m.townhall.level = 18;
-      m.state.troopLevels = { ...m.state.troopLevels, yeti: 1, giant: 5, hogrider: 1, dragon: 1 };
+      m.state.troopLevels = {
+        ...m.state.troopLevels,
+        yeti: 1,
+        giant: 5,
+        hogrider: 1,
+        dragon: 1,
+        trooplauncher: 1,
+      };
       m.state.spellLevels = { ...m.state.spellLevels, clone: 1, freeze: 1, heal: 1 };
       m.addMagicItem('power-potion');
       m.tick(m.clock);
@@ -34,6 +41,7 @@ for (const viewport of [
     await expect(tile('Clone Spell').locator('h3')).toHaveText('Clone ★1');
     expect(await page.evaluate(() => window.__game.model.usePotion('power-potion'))).toBe(true);
     await expect(tile('Yeti').locator('h3')).toHaveText('Yeti ★8');
+    await expect(tile('Troop Launcher').locator('.shop-count')).toContainText('7 barrels');
     await expect(tile('Yeti').locator('.shop-count')).toContainText('4650');
     await expect(tile('Super Giant').locator('h3')).toHaveText('Super Giant ★14');
     await expect(
@@ -80,6 +88,18 @@ for (const viewport of [
           'Damage per second': '537',
           'Damage per flame': '192.46',
           'Flames per burst': 'Up to 10',
+        },
+      },
+      {
+        name: 'Troop Launcher',
+        level: 4,
+        research: 'Researched level 1',
+        facts: {
+          'Barrel stock': '7',
+          'Payload troop levels': '12',
+          'Archers per barrel': '4',
+          'Wall Breakers per barrel': '2',
+          'Healing per barrel': '6',
         },
       },
       {
@@ -139,6 +159,7 @@ for (const viewport of [
     });
     await expect(tile('Yeti').locator('h3')).toHaveText('Yeti ★1');
     await expect(tile('Clone Spell').locator('h3')).toHaveText('Clone ★1');
+    await expect(tile('Troop Launcher').locator('.shop-count')).toContainText('5 barrels');
     await page.getByRole('button', { name: 'About Yeti', exact: true }).click();
     await expect(row('Yetimite stock')).toHaveText('8');
     await expect(page.locator('.troop-info-body .potion-level')).toHaveCount(0);
@@ -151,11 +172,12 @@ for (const viewport of [
           m.troopLevel('giant'),
           m.troopLevel('hogrider'),
           m.troopLevel('dragon'),
+          m.troopLevel('trooplauncher'),
           m.spellLevel('clone'),
           m.magicItemCount('power-potion'),
         ];
       }),
-    ).toEqual([1, 5, 1, 1, 1, 0]);
+    ).toEqual([1, 5, 1, 1, 1, 1, 0]);
     expect(
       await page.evaluate(async () => {
         const { makeBuilding } = await import('/src/game/model.ts');

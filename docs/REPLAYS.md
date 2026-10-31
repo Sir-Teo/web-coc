@@ -1782,3 +1782,13 @@ Original body contact poses, active-time holds and retarget recovery follow the
 shared attacker controller. Current troop Info distinguishes primary hit/DPS from
 secondary damage. Version 221 and earlier retain their old attacks and readouts.
 See [source fields, geometry limits and replay checks](../reference/attacking-stone-slammer/README.md).
+
+## Version 223: Troop Launcher friendly reinforcements
+
+New carried Troop Launchers wait for a qualifying friendly group, then deliver
+source troop barrels on their friendly cast clock. The fixed-point barrel
+retains its small heal, all four source payload groups, research-tier stock and
+child levels. Released barrels survive parent/recipient loss and can hold the
+battle open until their troops arrive. Payload troops use their native attack
+phases. Version 222 and earlier retain enemy-targeted barrels and complete old
+state. See [source fields, group adapter and validation](../reference/attacking-troop-launcher/README.md).
