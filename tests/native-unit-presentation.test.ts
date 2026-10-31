@@ -8,6 +8,7 @@ import { createGuardian, guardianStats, stepGuardian } from '../src/game/native-
 import type { NativeTroopContext } from '../src/game/native-troops';
 import { attackingBoogerBattle } from './fixtures/attacking-booger';
 import { attackingSpellBatBattle } from './fixtures/attacking-spell-bat';
+import { attackingRuinKnightBattle } from './fixtures/attacking-ruin-knight';
 import { attackingSpellSkeletonBattle } from './fixtures/attacking-spell-skeletons';
 import { nativeDirectBattle } from './fixtures/native-direct-attacks';
 import { maxTroopLevel } from '../src/game/data';
@@ -187,19 +188,22 @@ type Views = Map<
 >;
 const viewsOf = (p: object) => (p as unknown as { views: Views }).views;
 
-const spellSkeletonPresentation = () => {
+const loadedTroopPresentation = (kinds: readonly string[]) => {
   const p = new TroopNativePresentation(fakeScene());
   const internals = p as unknown as {
     packs: Map<string, unknown>;
     levelsReady: Map<string, Set<number>>;
     views: Map<number, { state: string; sample: { frame: number } }>;
   };
-  for (const kind of ['spellskeletonshielded', 'spellskeleton']) {
-    internals.packs.set(
-      kind,
-      JSON.parse(fs.readFileSync(`public/assets/troops-native/${kind}/graph.json`, 'utf8')),
+  for (const kind of kinds) {
+    const pack = JSON.parse(
+      fs.readFileSync(`public/assets/troops-native/${kind}/graph.json`, 'utf8'),
     );
-    internals.levelsReady.set(kind, new Set([1]));
+    internals.packs.set(kind, pack);
+    internals.levelsReady.set(
+      kind,
+      new Set(pack.levels.map((row: { level: number }) => row.level)),
+    );
   }
   return { p, internals };
 };
@@ -243,12 +247,49 @@ describe('unit motion tracker', () => {
 });
 
 describe('troop native presentation', () => {
+  for (const version of [218, 219])
+    for (const level of [1, 4])
+      it(`Ruin Knight ${level} draws its original contact pose in version ${version}`, () => {
+        const r = attackingRuinKnightBattle(level, version),
+          { p, internals } = loadedTroopPresentation(['ruinknight', 'ruinwitch', 'wizard']);
+        r.untilAttacks(1);
+        const releases = [JSON.parse(JSON.stringify(r.battle)) as Battle];
+        r.untilAttacks(2);
+        releases.push(JSON.parse(JSON.stringify(r.battle)) as Battle);
+        for (const battle of [...releases, ...releases.slice().reverse()]) {
+          const before = JSON.stringify(battle);
+          p.render(battle, false, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(version >= 219 ? 24 : 0);
+          p.render(battle, true, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(0);
+          expect(JSON.stringify(battle)).toBe(before);
+        }
+      });
+  it('a frozen Ruin Knight holds its source charge pose without changing battle state', () => {
+    const r = attackingRuinKnightBattle(),
+      { p, internals } = loadedTroopPresentation(['ruinknight', 'ruinwitch', 'wizard']);
+    while (!r.unit.attacking) r.step();
+    r.until(r.battle.elapsed + 0.6);
+    p.render(r.battle, false, iso, 46, new Map());
+    const frame = internals.views.get(r.unit.id)!.sample.frame;
+    expect(frame).toBeGreaterThan(0);
+    expect(frame).toBeLessThan(24);
+    r.unit.native!.effects = { frozenUntil: r.battle.elapsed + 1 };
+    r.step();
+    expect(r.unit.attacking).toBe(false);
+    const before = JSON.stringify(r.battle);
+    p.render(r.battle, false, iso, 46, new Map());
+    expect(internals.views.get(r.unit.id)!.state).toBe('attack');
+    expect(internals.views.get(r.unit.id)!.sample.frame).toBe(frame);
+    expect(JSON.stringify(r.battle)).toBe(before);
+  });
+
   for (const unshielded of [false, true]) {
     for (const version of [217, 218])
       for (const level of [1, 8])
         it(`spell Skeleton shieldless=${unshielded} from spell${level} draws source contact at version${version}`, () => {
           const r = attackingSpellSkeletonBattle(level, version, unshielded),
-            { p, internals } = spellSkeletonPresentation();
+            { p, internals } = loadedTroopPresentation(['spellskeletonshielded', 'spellskeleton']);
           r.untilAttacks(1);
           const releases = [JSON.parse(JSON.stringify(r.battle)) as Battle];
           r.untilAttacks(2);
@@ -264,7 +305,7 @@ describe('troop native presentation', () => {
         });
     it(`a frozen spell Skeleton shieldless=${unshielded} retains its original charge pose`, () => {
       const r = attackingSpellSkeletonBattle(1, 218, unshielded),
-        { p, internals } = spellSkeletonPresentation();
+        { p, internals } = loadedTroopPresentation(['spellskeletonshielded', 'spellskeleton']);
       r.until(r.battle.elapsed + 0.9);
       p.render(r.battle, false, iso, 46, new Map());
       const frame = internals.views.get(r.unit.id)!.sample.frame;

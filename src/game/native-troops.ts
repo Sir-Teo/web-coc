@@ -939,6 +939,7 @@ export function stepNativeUnit(
   const bowler = !!(u.kind === 'bowler' && battle.nativeBowlerWindup);
   const golem = !!((u.kind === 'golem' || u.kind === 'golemite') && battle.nativeGolemWindup);
   const bear = !!(u.kind === 'bear' && battle.nativeBearWindup);
+  const ruinKnight = !!(u.kind === 'ruinknight' && battle.nativeRuinKnightWindup);
   const booger = !!(u.kind === 'booger' && battle.nativeBoogerWindup);
   const spellBat = !!(u.kind === 'spellbat' && battle.nativeSpellBatWindup);
   const spellSkeleton = !!(
@@ -987,6 +988,7 @@ export function stepNativeUnit(
     bowler ||
     golem ||
     bear ||
+    ruinKnight ||
     booger ||
     spellBat ||
     spellSkeleton ||
@@ -1073,6 +1075,7 @@ export function stepNativeUnit(
       else if (
         golem ||
         bear ||
+        ruinKnight ||
         booger ||
         spellBat ||
         spellSkeleton ||

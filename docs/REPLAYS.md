@@ -1742,3 +1742,13 @@ ground-only, with existing resource damage reduction. Original meshes follow
 each clip's source timing, physical contact and held frozen poses. Versions 217
 and earlier keep immediate in-range hits and their previous complete state. See
 [source timing, spawn limits and portable checks](../reference/attacking-spell-skeletons/README.md).
+
+## Version 219: Ruin Knight melee phases
+
+New armies carrying Ruin Witch give her summoned Knights their one-second
+source melee charge before the first ground hit. Repeat attacks retain their
+one-second interval, and the original attack animation reaches its contact frame
+at the hit. Retargeting, Freeze and attack-rate effects use the shared melee
+controller. Summon timing, threefold Wall damage and the pinned client's health
+decay keep their existing rules. Older recordings retain their instant first hit;
+see [source timing and replay checks](../reference/attacking-ruin-knight/README.md).
