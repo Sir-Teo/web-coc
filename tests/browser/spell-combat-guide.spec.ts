@@ -53,6 +53,7 @@ const profiles = [
       ['Shielded Skeleton hitpoints', '30', '30'],
       ['Unshielded Skeleton hitpoints', '30', '30'],
       ['Skeleton DPS', '25', '25'],
+      ['Damage vs resource buildings', '15%', '15%'],
     ],
   },
   {
@@ -70,6 +71,7 @@ const profiles = [
       ['Bat DPS', '30', '30'],
       ['Bat damage per hit', '60', '60'],
       ['Bat attack interval', '2 s', '2 s'],
+      ['Damage vs resource buildings', '15%', '15%'],
     ],
   },
   {

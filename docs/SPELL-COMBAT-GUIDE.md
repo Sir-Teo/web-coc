@@ -46,6 +46,10 @@ the same tier-one bodies; the increased spell count and spawn duration remain
 separate from those child stats. Base and maximum research checks cover these
 facts in each viewport.
 
+Both kinds of summon deal 15% of their normal damage to resource buildings,
+matching their existing 85% reduction. The panels show that rate separately
+from the ordinary DPS and hit damage, including at maximum spell research.
+
 `tests/browser/spell-combat-guide.spec.ts` opens all nine real Info buttons at base
 and maximum research tiers, across 390×844, 844×390 and 1440×960 viewports. It checks
 targets, tier-specific facts, advice, text fit, horizontal overflow, the research

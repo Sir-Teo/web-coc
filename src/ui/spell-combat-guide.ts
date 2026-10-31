@@ -76,6 +76,7 @@ export function spellCombatGuide(kind: SpellKind, level: number): SpellCombatGui
         ['First group', `${num(row, 'SpawnFirstGroupSize')}`],
         ['Spawn duration', `${seconds(row, 'SpawnDuration')} s`],
         ['Summon attack targets', troopAttackTargets(summon)],
+        ['Damage vs resource buildings', `${number((1 - summon.storageReduction) * 100)}%`],
       ];
       if (kind === 'bat')
         facts.push(
