@@ -1671,3 +1671,13 @@ healing launch from stale Druid stats after the body changes. Flights
 already released retain their Druid tier and land normally. Versions 210
 and earlier retain immediate launches and the old transformation-frame
 packet. See [source clocks and portable checks](../reference/attacking-druid/README.md).
+
+## Version 212: Druid Bear melee charges
+
+Bears created through Druid evolution or defeat spend a one-second source
+charge after reaching their target, then repeat every second. Freeze, stun,
+action-rate modifiers and Shrink preserve the active clock. The original
+body follows the recorded offset and committed Wall facing. Defense preference,
+ground-only direct damage and Druid healing remain unchanged. Versions 211
+and earlier retain their immediate first Bear hits and original state shape.
+See [source timing and portable checks](../reference/attacking-bear/README.md).

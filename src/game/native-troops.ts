@@ -938,6 +938,7 @@ export function stepNativeUnit(
   if (electroDragon && stepElectroDragonCharge(ctx, u, s, damage, speed, dt, actionDt)) return;
   const bowler = !!(u.kind === 'bowler' && battle.nativeBowlerWindup);
   const golem = !!((u.kind === 'golem' || u.kind === 'golemite') && battle.nativeGolemWindup);
+  const bear = !!(u.kind === 'bear' && battle.nativeBearWindup);
   const giant = !!(u.kind === 'supergiant' && battle.nativeGiantWindup);
   const iceGolem = !!(u.kind === 'icegolem' && battle.nativeIceGolemWindup);
   const rootRider = !!(u.kind === 'rootrider' && battle.nativeRootRiderWindup);
@@ -971,6 +972,7 @@ export function stepNativeUnit(
   const splitAttack =
     bowler ||
     golem ||
+    bear ||
     giant ||
     iceGolem ||
     rootRider ||
@@ -1050,6 +1052,7 @@ export function stepNativeUnit(
       else if (hound) releaseHoundAtDefender(ctx, u, s, target.defender, damage);
       else if (
         golem ||
+        bear ||
         giant ||
         iceGolem ||
         rootRider ||

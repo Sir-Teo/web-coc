@@ -1103,6 +1103,8 @@ export interface Battle {
   nativeHealerWindup?: true;
   /** Version 211: Druid friendly casts spend their source charge and recovery. */
   nativeDruidWindup?: true;
+  /** Version 212: Druid Bears spend their source melee charge after reaching a target. */
+  nativeBearWindup?: true;
   /** Version 207: source demolition contact cues reconstruct and cover the death tone. */
   nativeWallBreakerSounds?: true;
   /** Version 206: both Wall Breaker contact splashes include ground defenders. */
