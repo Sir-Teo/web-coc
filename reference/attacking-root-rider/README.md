@@ -31,6 +31,12 @@ Rider destroys a level-15 Wall while crossing it; a speed-boosted Rider crosses
 before the same aura pulses can finish it. Exact native engine projection,
 footprint geometry and aura startup timing are not newly claimed.
 
+The Army information panel reads the aura's 4,000 damage per pulse, 0.4-second
+interval and 0.75-tile radius from those same spell fields. Its advice explains
+wall crossing and opening paths while pursuing defenses. These facts remain
+unchanged across the four source research tiers; they are separate from the
+Rider's ordinary damage per hit and attack interval.
+
 Only carried Root Rider armies enable the new attack clock. Versions 172 and
 earlier retain their immediate first hits and original combat state. No source
 stat, art, audio, save or aura rule changes are required.

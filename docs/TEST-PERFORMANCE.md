@@ -37,8 +37,8 @@ stages and four approaches retain the complete 288-battle matrix. Each case keep
 existing three-minute deadline, per-battle checks and applicable opening, progression-gate
 or veteran-clear assertions. The combined JSON report retains stage/army/approach order.
 
-Army information dialog checks split the troop catalog into two groups and check researched
-tiers separately at each viewport, retaining the three-minute deadline. After the real boot,
+Army information dialog checks split both the troop catalog and researched-tier profiles
+into two groups per viewport, retaining the three-minute deadline. After the real boot,
 art loading and Army opening, these DOM checks pause the village's Phaser animation loop.
 The original portraits, CSS animations, source values, scrolling and controls remain under
 test. Active simulation and rendering retain separate combat and production checks.

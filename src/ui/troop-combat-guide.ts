@@ -80,6 +80,23 @@ export function troopCombatGuide(kind: TroopKind, stats: NativeUnitStats) {
       tactic =
         'Protect her while the Big Boy draws ground fire. She supports it with ranged attacks against ground and air; only one of her Big Boys can be alive at a time.';
     }
+  } else if (kind === 'rootrider' && stats.aura) {
+    const aura = nativeRow('spells', stats.aura, stats.auraLevel);
+    facts.push(
+      ['Wall aura damage per pulse', num(aura, 'Damage').toLocaleString('en-US')],
+      ['Wall aura pulse interval', `${seconds(aura, 'TimeBetweenHitsMS')} s`],
+      ['Wall aura radius', `${tiles(aura, 'Radius')} tiles`],
+    );
+    tactic =
+      'It crosses walls and pulses damage into nearby walls. Use it to open paths for ground troops while it pursues defenses.';
+  } else if (kind === 'electrodragon') {
+    facts.push(
+      ['Chain targets', `Up to ${stats.chainDepth}`],
+      ['Chain radius', `${stats.chainDistance} tiles`],
+      ['Chain damage per hop', `${Math.round((1 - stats.chainReduction) * 100)}%`],
+    );
+    tactic =
+      'Use it against clustered buildings and defending troops. Its lightning can chain through ground and air targets; protect it while it charges.';
   } else if (kind === 'headhunter') {
     const poison = nativeHitPoison(stats);
     facts.push(['Hit damage vs heroes', `${stats.damage * stats.heroMultiplier}`]);

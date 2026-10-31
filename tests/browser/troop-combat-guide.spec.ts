@@ -2,6 +2,29 @@ import { expect, test } from '@playwright/test';
 
 const cases = [
   {
+    name: 'Root Rider',
+    target: 'Defenses',
+    tactic: 'pulses damage into nearby walls',
+    facts: {
+      'Wall aura damage per pulse': '4,000',
+      'Wall aura pulse interval': '0.4 s',
+      'Wall aura radius': '0.75 tiles',
+      Movement: 'Ground · crosses walls',
+      'Attack targets': 'Ground only',
+    },
+  },
+  {
+    name: 'Electro Dragon',
+    target: 'Any building',
+    tactic: 'protect it while it charges',
+    facts: {
+      'Chain targets': 'Up to 5',
+      'Chain radius': '3 tiles',
+      'Chain damage per hop': '80%',
+      'Attack targets': 'Ground and air',
+    },
+  },
+  {
     name: 'Super Giant',
     target: 'Defenses',
     tactic: 'blocking walls while pursuing defenses',
@@ -265,6 +288,171 @@ const cases = [
   { name: 'Wall Breaker', target: 'Walls (40× damage)', tactic: 'Both deal 40× damage', facts: {} },
 ];
 
+const upgrades = [
+  {
+    kind: 'rootrider',
+    name: 'Root Rider',
+    level: 4,
+    facts: {
+      'Wall aura damage per pulse': '4,000',
+      'Wall aura pulse interval': '0.4 s',
+      'Wall aura radius': '0.75 tiles',
+    },
+  },
+  {
+    kind: 'electrodragon',
+    name: 'Electro Dragon',
+    level: 9,
+    facts: { 'Chain targets': 'Up to 5', 'Chain radius': '3 tiles', 'Chain damage per hop': '80%' },
+  },
+  {
+    kind: 'wallbreaker',
+    name: 'Super Wall Breaker',
+    level: 14,
+    facts: { 'Contact damage vs walls': '23,320', 'Death damage vs walls': '16,520' },
+  },
+  {
+    kind: 'miner',
+    name: 'Super Miner',
+    level: 12,
+    facts: { 'Second tier DPS': '510', 'Maximum DPS': '740', 'Damage per second': '265' },
+  },
+  {
+    kind: 'babydragon',
+    name: 'Inferno Dragon',
+    level: 12,
+    facts: { 'Second tier DPS': '182', 'Maximum DPS': '1820', 'Damage per second': '91' },
+  },
+  {
+    kind: 'headhunter',
+    name: 'Headhunter',
+    level: 4,
+    facts: {
+      'Hit damage vs heroes': '324',
+      'Hit poison duration': '3 s',
+      'Poison movement slow': '46%',
+      'Poison attack slow': '68%',
+    },
+  },
+  {
+    kind: 'giant',
+    name: 'Super Giant',
+    level: 14,
+    facts: { 'Wall damage multiplier': '5×', 'Damage per hit vs walls': '2,050' },
+  },
+  {
+    kind: 'yeti',
+    name: 'Yeti',
+    level: 8,
+    facts: {
+      'Yetimite stock': '14',
+      'Damage taken per release': '600',
+      'Yetimite hitpoints': '590',
+      'Yetimite damage per hit': '92',
+      'Yetimite favorite target': 'Defenses (4× damage)',
+    },
+  },
+  {
+    kind: 'yeti',
+    name: 'Super Yeti',
+    level: 8,
+    facts: {
+      'Electromite stock': '14',
+      'Damage taken per release': '400',
+      'Electromite first building hit': '368',
+      'Chain targets': 'Up to 3',
+      'Chain radius': '3 tiles',
+      'Stun per hit': '0.1 s',
+      'Chain damage per hop': '80%',
+    },
+  },
+  {
+    kind: 'golem',
+    name: 'Golem',
+    level: 15,
+    facts: {
+      'Golemites on defeat': '4',
+      'Golemite hitpoints': '2,040',
+      'Golemite DPS': '22',
+      'Golemite targets': 'Ground only',
+    },
+  },
+  {
+    kind: 'icegolem',
+    name: 'Ice Golem',
+    level: 9,
+    facts: {
+      'Freeze on defeat': '9 s',
+      'Freeze radius': '7.5 tiles',
+      'Hit chill duration': '2 s',
+      'Hit chill slow': '50%',
+    },
+  },
+  {
+    kind: 'lavahound',
+    name: 'Lava Hound',
+    level: 8,
+    facts: {
+      'Pups on defeat': '22',
+      'Pup hitpoints': '50',
+      'Pup DPS': '35',
+      'Pup targets': 'Ground and air',
+    },
+  },
+  {
+    kind: 'lavahound',
+    name: 'Ice Hound',
+    level: 8,
+    facts: {
+      'Pups on defeat': '16',
+      'Pup hitpoints': '50',
+      'Pup DPS': '35',
+      'Pup targets': 'Ground and air',
+      'Pup chill duration': '2 s',
+      'Pup chill slow': '50%',
+    },
+  },
+  {
+    kind: 'witch',
+    name: 'Witch',
+    level: 8,
+    facts: {
+      'Skeletons per wave': '5',
+      'Skeleton limit': '16',
+      'Skeleton hitpoints': '45',
+      'Skeleton DPS': '30',
+    },
+  },
+  {
+    kind: 'witch',
+    name: 'Super Witch',
+    level: 8,
+    facts: {
+      'Big Boys at a time': '1',
+      'Big Boy hitpoints': '4,100',
+      'Big Boy DPS': '350',
+      'Big Boy damage per hit': '700',
+    },
+  },
+  {
+    kind: 'healer',
+    name: 'Healer',
+    level: 11,
+    facts: { 'Healing per second': '82', 'Hero healing per second': '88.56' },
+  },
+  {
+    kind: 'druid',
+    name: 'Druid',
+    level: 6,
+    facts: {
+      'Bear maximum hitpoints': '2,750',
+      'Bear damage per second': '225',
+      'Healing per second': '115',
+      'Hero healing per second': '132.25',
+    },
+  },
+];
+
 for (const viewport of [
   { width: 390, height: 844 },
   { width: 844, height: 390 },
@@ -319,6 +507,8 @@ for (const viewport of [
         expect(close!.height).toBeGreaterThanOrEqual(44);
         if (
           [
+            'Root Rider',
+            'Electro Dragon',
             'Headhunter',
             'Super Giant',
             'Yeti',
@@ -366,254 +556,52 @@ for (const viewport of [
       expect(errors).toEqual([]);
     });
 
-  test(`researched troop guide follows source tiers at ${viewport.width}×${viewport.height}`, async ({
-    page,
-  }) => {
-    test.setTimeout(180000);
-    const errors: string[] = [];
-    page.on('pageerror', (e) => errors.push(e.message));
-    await page.setViewportSize(viewport);
-    await page.goto('/?lazyart');
-    await page.waitForFunction(() => window.__game?.scene.artSettled);
-    await page.locator('[data-action="skip-tutorial"]').click();
-    await page.locator('.train-add').click();
-    // Dialog layout and source stats do not depend on the village's animation loop.
-    await page.evaluate(() => window.__game.game.loop.sleep());
-    await page.evaluate(() => {
-      const m = window.__game.model;
-      m.state.troopLevels = { ...m.state.troopLevels, wallbreaker: 14 };
-      m.changed();
+  for (const [index, upgradedGroup] of [
+    upgrades.slice(0, Math.ceil(upgrades.length / 2)),
+    upgrades.slice(Math.ceil(upgrades.length / 2)),
+  ].entries())
+    test(`researched troop guide group ${index + 1} follows source tiers at ${viewport.width}×${viewport.height}`, async ({
+      page,
+    }) => {
+      test.setTimeout(180000);
+      const errors: string[] = [];
+      page.on('pageerror', (e) => errors.push(e.message));
+      await page.setViewportSize(viewport);
+      await page.goto('/?lazyart');
+      await page.waitForFunction(() => window.__game?.scene.artSettled);
+      await page.locator('[data-action="skip-tutorial"]').click();
+      await page.locator('.train-add').click();
+      // Dialog layout and source stats do not depend on the village's animation loop.
+      await page.evaluate(() => window.__game.game.loop.sleep());
+      for (const upgraded of upgradedGroup) {
+        await page.evaluate(({ kind, level }) => {
+          const m = window.__game.model;
+          m.state.troopLevels = { ...m.state.troopLevels, [kind]: level };
+          m.changed();
+        }, upgraded);
+        await page.getByRole('button', { name: `About ${upgraded.name}`, exact: true }).click();
+        await expect(page.locator('.troop-info-hero .eyebrow')).toContainText(
+          `LEVEL ${upgraded.level}`,
+        );
+        for (const [label, value] of Object.entries(upgraded.facts))
+          await expect(
+            page
+              .locator('.troop-stats > div')
+              .filter({ has: page.getByText(label, { exact: true }) })
+              .locator('dd'),
+          ).toHaveText(value);
+        await page.screenshot({
+          animations: 'disabled',
+          path: `output/playtest/troop-guide-${upgraded.name.replaceAll(' ', '-').toLowerCase()}-${upgraded.level}-${viewport.width}.png`,
+        });
+        await page
+          .locator('.troop-info-body')
+          .getByRole('button', { name: 'Train troops', exact: true })
+          .click();
+      }
+      await page.getByRole('button', { name: 'About Minion', exact: true }).click();
+      await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
+      await expect(page.locator('.troop-info-body')).toHaveCount(0);
+      expect(errors).toEqual([]);
     });
-    await page.getByRole('button', { name: 'About Super Wall Breaker', exact: true }).click();
-    await expect(page.locator('.troop-info-hero .eyebrow')).toContainText('LEVEL 14');
-    for (const [label, value] of [
-      ['Contact damage vs walls', '23,320'],
-      ['Death damage vs walls', '16,520'],
-    ])
-      await expect(
-        page
-          .locator('.troop-stats > div')
-          .filter({ has: page.getByText(label, { exact: true }) })
-          .locator('dd'),
-      ).toHaveText(value);
-    await page.screenshot({
-      animations: 'disabled',
-      path: `output/playtest/troop-guide-super-wall-breaker-14-${viewport.width}.png`,
-    });
-    await page
-      .locator('.troop-info-body')
-      .getByRole('button', { name: 'Train troops', exact: true })
-      .click();
-    await page.evaluate(() => {
-      const m = window.__game.model;
-      m.state.troopLevels = { ...m.state.troopLevels, miner: 12 };
-      m.changed();
-    });
-    await page.getByRole('button', { name: 'About Super Miner', exact: true }).click();
-    await expect(page.locator('.troop-info-hero .eyebrow')).toContainText('LEVEL 12');
-    for (const [label, value] of [
-      ['Second tier DPS', '510'],
-      ['Maximum DPS', '740'],
-      ['Damage per second', '265'],
-    ])
-      await expect(
-        page
-          .locator('.troop-stats > div')
-          .filter({ has: page.getByText(label, { exact: true }) })
-          .locator('dd'),
-      ).toHaveText(value);
-    await page.screenshot({
-      animations: 'disabled',
-      path: `output/playtest/troop-guide-super-miner-12-${viewport.width}.png`,
-    });
-    await page
-      .locator('.troop-info-body')
-      .getByRole('button', { name: 'Train troops', exact: true })
-      .click();
-    await page.evaluate(() => {
-      const m = window.__game.model;
-      m.state.troopLevels = { ...m.state.troopLevels, babydragon: 12 };
-      m.changed();
-    });
-    await page.getByRole('button', { name: 'About Inferno Dragon', exact: true }).click();
-    await expect(page.locator('.troop-info-hero .eyebrow')).toContainText('LEVEL 12');
-    for (const [label, value] of [
-      ['Second tier DPS', '182'],
-      ['Maximum DPS', '1820'],
-      ['Damage per second', '91'],
-    ])
-      await expect(
-        page
-          .locator('.troop-stats > div')
-          .filter({ has: page.getByText(label, { exact: true }) })
-          .locator('dd'),
-      ).toHaveText(value);
-    await page.screenshot({
-      animations: 'disabled',
-      path: `output/playtest/troop-guide-inferno-dragon-12-${viewport.width}.png`,
-    });
-    await page
-      .locator('.troop-info-body')
-      .getByRole('button', { name: 'Train troops', exact: true })
-      .click();
-    for (const upgraded of [
-      {
-        kind: 'headhunter',
-        name: 'Headhunter',
-        level: 4,
-        facts: {
-          'Hit damage vs heroes': '324',
-          'Hit poison duration': '3 s',
-          'Poison movement slow': '46%',
-          'Poison attack slow': '68%',
-        },
-      },
-      {
-        kind: 'giant',
-        name: 'Super Giant',
-        level: 14,
-        facts: { 'Wall damage multiplier': '5×', 'Damage per hit vs walls': '2,050' },
-      },
-      {
-        kind: 'yeti',
-        name: 'Yeti',
-        level: 8,
-        facts: {
-          'Yetimite stock': '14',
-          'Damage taken per release': '600',
-          'Yetimite hitpoints': '590',
-          'Yetimite damage per hit': '92',
-          'Yetimite favorite target': 'Defenses (4× damage)',
-        },
-      },
-      {
-        kind: 'yeti',
-        name: 'Super Yeti',
-        level: 8,
-        facts: {
-          'Electromite stock': '14',
-          'Damage taken per release': '400',
-          'Electromite first building hit': '368',
-          'Chain targets': 'Up to 3',
-          'Chain radius': '3 tiles',
-          'Stun per hit': '0.1 s',
-          'Chain damage per hop': '80%',
-        },
-      },
-      {
-        kind: 'golem',
-        name: 'Golem',
-        level: 15,
-        facts: {
-          'Golemites on defeat': '4',
-          'Golemite hitpoints': '2,040',
-          'Golemite DPS': '22',
-          'Golemite targets': 'Ground only',
-        },
-      },
-      {
-        kind: 'icegolem',
-        name: 'Ice Golem',
-        level: 9,
-        facts: {
-          'Freeze on defeat': '9 s',
-          'Freeze radius': '7.5 tiles',
-          'Hit chill duration': '2 s',
-          'Hit chill slow': '50%',
-        },
-      },
-      {
-        kind: 'lavahound',
-        name: 'Lava Hound',
-        level: 8,
-        facts: {
-          'Pups on defeat': '22',
-          'Pup hitpoints': '50',
-          'Pup DPS': '35',
-          'Pup targets': 'Ground and air',
-        },
-      },
-      {
-        kind: 'lavahound',
-        name: 'Ice Hound',
-        level: 8,
-        facts: {
-          'Pups on defeat': '16',
-          'Pup hitpoints': '50',
-          'Pup DPS': '35',
-          'Pup targets': 'Ground and air',
-          'Pup chill duration': '2 s',
-          'Pup chill slow': '50%',
-        },
-      },
-      {
-        kind: 'witch',
-        name: 'Witch',
-        level: 8,
-        facts: {
-          'Skeletons per wave': '5',
-          'Skeleton limit': '16',
-          'Skeleton hitpoints': '45',
-          'Skeleton DPS': '30',
-        },
-      },
-      {
-        kind: 'witch',
-        name: 'Super Witch',
-        level: 8,
-        facts: {
-          'Big Boys at a time': '1',
-          'Big Boy hitpoints': '4,100',
-          'Big Boy DPS': '350',
-          'Big Boy damage per hit': '700',
-        },
-      },
-      {
-        kind: 'healer',
-        name: 'Healer',
-        level: 11,
-        facts: { 'Healing per second': '82', 'Hero healing per second': '88.56' },
-      },
-      {
-        kind: 'druid',
-        name: 'Druid',
-        level: 6,
-        facts: {
-          'Bear maximum hitpoints': '2,750',
-          'Bear damage per second': '225',
-          'Healing per second': '115',
-          'Hero healing per second': '132.25',
-        },
-      },
-    ]) {
-      await page.evaluate(({ kind, level }) => {
-        const m = window.__game.model;
-        m.state.troopLevels = { ...m.state.troopLevels, [kind]: level };
-        m.changed();
-      }, upgraded);
-      await page.getByRole('button', { name: `About ${upgraded.name}`, exact: true }).click();
-      await expect(page.locator('.troop-info-hero .eyebrow')).toContainText(
-        `LEVEL ${upgraded.level}`,
-      );
-      for (const [label, value] of Object.entries(upgraded.facts))
-        await expect(
-          page
-            .locator('.troop-stats > div')
-            .filter({ has: page.getByText(label, { exact: true }) })
-            .locator('dd'),
-        ).toHaveText(value);
-      await page.screenshot({
-        animations: 'disabled',
-        path: `output/playtest/troop-guide-${upgraded.name.replaceAll(' ', '-').toLowerCase()}-${upgraded.level}-${viewport.width}.png`,
-      });
-      await page
-        .locator('.troop-info-body')
-        .getByRole('button', { name: 'Train troops', exact: true })
-        .click();
-    }
-    await page.getByRole('button', { name: 'About Minion', exact: true }).click();
-    await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
-    await expect(page.locator('.troop-info-body')).toHaveCount(0);
-    expect(errors).toEqual([]);
-  });
 }

@@ -30,6 +30,16 @@ constants:
 | Super Witch | One living Big Boy, its HP, DPS and damage per swing | [Parent and summoned attacks](../reference/attacking-witch/README.md) |
 | Healer | Two full-strength Healers and up to seven contributing Healers per group | [Friendly casts and stacking](../reference/attacking-healer/README.md) |
 | Druid | Four recipients per chain, 4.5-tile bounce range, 30-second transformation and research-tier Bear stats | [Friendly casts and transformation](../reference/attacking-druid/README.md) |
+| Lava Hound | Pup count, HP, DPS and ground/air targets | [Hound and Pup attacks](../reference/attacking-hound/README.md) |
+| Ice Hound | Ice Pup count, HP, DPS, targets and hit chill | [Hound and Pup attacks](../reference/attacking-hound/README.md) |
+| Golem | Golemite count, HP, DPS and ground targets | [Golem and Golemite attacks](../reference/attacking-golem/README.md) |
+| Ice Golem | Defeat Freeze duration/radius and hit chill | [Ice Golem attacks](../reference/attacking-ice-golem/README.md) |
+| Yeti | Yetimite stock, release threshold, HP, hit damage and Defense bonus | [Yeti and summoned attacks](../reference/attacking-yeti/README.md) |
+| Super Yeti | Electromite stock, release threshold, first building hit, chain and stun | [Yeti and summoned attacks](../reference/attacking-yeti/README.md) |
+| Headhunter | Hit damage against Heroes and poison duration/slows | [Headhunter attacks](../reference/attacking-headhunter/README.md) |
+| Super Giant | Fivefold Wall damage and tier-specific Wall hit | [Giant attacks](../reference/attacking-giant/README.md) |
+| Root Rider | Wall aura pulse damage, interval and radius | [Independent wall aura](../reference/attacking-root-rider/README.md) |
+| Electro Dragon | Five chain targets, three-tile hops and 80% retained damage per hop | [Charged chain lightning](NATIVE-HEROES.md#version-109-electro-dragon-charge-and-mixed-target-lightning) |
 | Inferno Dragon | Two ramp thresholds, stronger DPS tiers and recovery after a kill | [Source beam cadence](../reference/attacking-inferno-dragon/README.md) |
 | Super Miner | Two ramp thresholds, stronger DPS tiers and death-bomb delay | [Source charges and ramp](../reference/attacking-super-miner/README.md) |
 | Super Wall Breaker | Combined contact damage and death-only damage against Walls | [Death blasts and source charges](../reference/attacking-super-wall-breaker/README.md) |
@@ -58,11 +68,13 @@ crash labels accompany its version-190 combat boundary; see the linked
 reference for historical playback behavior.
 
 `tests/browser/troop-combat-guide.spec.ts` opens real catalog Info buttons for
-twenty-one troop families at 390×844, 844×390 and 1440×960. It verifies source facts,
+twenty-nine troop families at 390×844, 844×390 and 1440×960. It verifies source facts,
 favorite targets, advice, text fit, horizontal overflow, touch targets,
 scrolling, training navigation and closing. Screenshots are saved under
 ignored `output/playtest/`. These are headless browser viewport checks, not
-physical-phone performance measurements.
+physical-phone performance measurements. Two catalog groups and two researched-tier
+groups per viewport retain the three-minute case limit; seventeen researched profiles
+check that parent research selects the correct troop, summon and ability tier.
 
 Super Wall Breaker's Wall damage facts follow its current research tier. The
 browser checks separately raise its parent Wall Breaker to level 14 and
@@ -100,3 +112,9 @@ retains one Big Boy with 4,100 HP, 350 DPS and 700 damage per swing at both ends
 of the parent's research table. Advice distinguishes the casters' ground/air
 attacks from their ground-only summons. Separate viewport scenarios check
 catalog usability and researched-tier readouts without extending test timeouts.
+
+Root Rider's wall aura lists 4,000 damage per pulse, a 0.4-second interval and a
+0.75-tile radius independently of its melee attack. Electro Dragon lists up to five
+chain targets, three-tile hops and 80% retained damage per hop. Their advice explains
+opening paths for ground troops and attacking clustered targets. Base and maximum
+research profiles check the same ability facts at all three viewports.
