@@ -219,3 +219,14 @@ secondary blast separately: 100–200 damage at level 1 and 350–700 at level 6
 Full secondary damage extends through two tiles, falling to its minimum at
 three tiles. Its guide reads the shared secondary-blast adapter and source
 25× Wall multiplier. Historical battle inspection retains the prior rows.
+
+Barbarian, Archer, Giant, Goblin, Wizard, Dragon, P.E.K.K.A, Miner, Thrower,
+Hog Rider and Valkyrie now have individual tactical advice. It distinguishes
+frontlines, resource damage, ground/air splash, single-target swings, burrowing,
+long range, wall crossing and sweeping attacks using existing combat behavior.
+The ordinary troop stat, target and movement rows remain the source of numbers.
+
+`tests/browser/basic-troop-guide.spec.ts` checks these eleven families separately
+at phone, landscape and desktop widths. It opens real Info buttons, compares
+source targets/movement with the advice, checks text fit and unique row labels,
+and returns through the training button. Screenshots remain in ignored output.

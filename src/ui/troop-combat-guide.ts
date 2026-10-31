@@ -460,6 +460,39 @@ export function troopCombatGuide(
     facts.push(['Death blast delay', `${stats.deathDelay} s`]);
     tactic =
       'Send it after defenses and support it against Air Defenses. Its delayed death blast damages nearby ground targets.';
+  } else if (kind === 'swordsman') {
+    tactic =
+      'Use small groups to clear exposed buildings or draw ground fire. They must reach targets on foot and cannot attack air defenders.';
+  } else if (kind === 'archer') {
+    tactic =
+      'Shoot over walls from behind a frontline. Spread Archers out to reduce losses to area damage; they can attack ground and air defenders.';
+  } else if (kind === 'giant') {
+    tactic =
+      'Send Giants ahead to draw fire while ranged troops deal damage. They pursue defenses and need an open ground route through walls.';
+  } else if (kind === 'goblin') {
+    tactic =
+      'Use them to raid resource buildings after defenses are distracted. Their resource damage bonus rewards a clear path through walls.';
+  } else if (kind === 'wizard') {
+    tactic =
+      'Keep Wizards behind a durable frontline. Their splash hits grouped defenders on the target’s ground or air layer.';
+  } else if (kind === 'dragon') {
+    tactic =
+      'Use its splash against grouped ground or air defenders. Keep Air Defenses distracted while Dragons attack.';
+  } else if (kind === 'pekka') {
+    tactic =
+      'Use it as a durable frontline against buildings. Its heavy single-target swings need support against groups and air defenders.';
+  } else if (kind === 'miner') {
+    tactic =
+      'It burrows under walls, then surfaces to attack. Place Healing spells where the group will fight after surfacing.';
+  } else if (kind === 'thrower') {
+    tactic =
+      'Keep Throwers behind a frontline to use their long range. They can attack ground and air defenders but need an open route through walls.';
+  } else if (kind === 'hogrider') {
+    tactic =
+      'Use its wall crossing to reach defenses. Keep the group supported against traps and defending troops while it pursues defenses.';
+  } else if (kind === 'valkyrie') {
+    tactic =
+      'Send her into groups of nearby buildings and ground defenders to use her sweeping attack. Support her against air defenders and open a path through walls.';
   } else if (kind === 'minion') {
     tactic =
       'Use small groups to finish exposed buildings while air defenses are distracted. Minions deal single-target damage.';
