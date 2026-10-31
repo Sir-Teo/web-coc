@@ -7,9 +7,15 @@ the permanent research level visible, including parent-level numbering for Super
 Troops. Expiry restores the research-level previews; research levels and unlock
 requirements remain permanent. An open battle or replay keeps its recorded tiers.
 
+Power Potion notes in troop/spell Info and the Army preparation footer, and the
+Hero Potion roster note, update their remaining time in place through the existing
+live timer registry. Timer-only updates keep the panel mounted; expiry automatically
+restores research previews and removes the note.
+
 `tests/browser/army-power-potion.spec.ts` checks phone and desktop previews for Yeti,
 Super Giant, Clone, Freeze and Healing, source-tier facts, potion expiry and unchanged
-research. Existing model checks verify that battles record the boosted levels.
+research, advancing note/footer countdowns, mounted dialogs and automatic expiry.
+Existing model checks verify that battles record the boosted levels.
 
 The Town Hall card has an **Items** button that opens the village's magic items. Each item shows what it does, how many are held out of its limit, its use, and a Sell button that cashes one in for gems.
 

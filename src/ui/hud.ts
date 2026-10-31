@@ -3847,7 +3847,7 @@ export class HUD {
     const lineup = m.heroLineup;
     return `<div class="modal-body hero-body">
       <p class="hero-stats-note">Hero Hall ${hall.level} · ${slots} battle slot${slots === 1 ? '' : 's'} · ${lineup.length} selected. Heroes use no army space and return at full health for every attack.</p>
-      ${m.boostLeft('heroes') ? `<p class="hero-stats-note potion-level">${icon('Sparkles', 14)} Hero Potion · ${time(m.boostLeft('heroes'))} left · heroes and pets fight at their Town Hall maximum.</p>` : ''}
+      ${m.boostLeft('heroes') ? `<p class="hero-stats-note potion-level">${icon('Sparkles', 14)} Hero Potion · <b data-boost-end="${m.state.boosts!.heroes!.end}">${time(m.boostLeft('heroes'))}</b> left · heroes and pets fight at their Town Hall maximum.</p>` : ''}
       ${HERO_KINDS.map((kind) => this.heroRosterCard(kind)).join('')}
       ${button('practice', 'Practice with this army', 'game-btn blue', m.armyReady ? '' : 'disabled')}
     </div>`;
@@ -4282,7 +4282,7 @@ export class HUD {
     const overCapacity = overTroops || overSpells;
     const power = m.boostLeft('army');
     const preparationNote = power
-      ? `Power Potion · ${time(power)} left · troops and spells fight at their Town Hall maximum`
+      ? `Power Potion · <b data-boost-end="${m.state.boosts!.army!.end}">${time(power)}</b> left · troops and spells fight at their Town Hall maximum`
       : overCapacity
         ? overTroops && overSpells
           ? 'Your army is kept. Deploy or remove troops and spells to make room.'
@@ -4602,7 +4602,7 @@ export class HUD {
       original = superOriginal(kind),
       boostNote =
         level > this.model.troopLevel(kind)
-          ? `<p class="hero-stats-note potion-level">Power Potion · Researched level ${this.model.troopDisplayLevel(kind)} · ${time(this.model.boostLeft('army'))} left</p>`
+          ? `<p class="hero-stats-note potion-level">Power Potion · Researched level ${this.model.troopDisplayLevel(kind)} · <b data-boost-end="${this.model.state.boosts!.army!.end}">${time(this.model.boostLeft('army'))}</b> left</p>`
           : '',
       description = original
         ? `Activate a Super Troop boost to train this enhanced ${TROOPS[original].name}.`
@@ -4675,7 +4675,7 @@ export class HUD {
       guide = spellCombatGuide(kind, level),
       boostNote =
         level > this.model.spellLevel(kind)
-          ? `<p class="hero-stats-note potion-level">Power Potion · Researched level ${this.model.spellLevel(kind)} · ${time(this.model.boostLeft('army'))} left</p>`
+          ? `<p class="hero-stats-note potion-level">Power Potion · Researched level ${this.model.spellLevel(kind)} · <b data-boost-end="${this.model.state.boosts!.army!.end}">${time(this.model.boostLeft('army'))}</b> left</p>`
           : '';
     const rows: [string, string][] = [
       ['Unlock requirement', spellUnlockLabel(kind)],
