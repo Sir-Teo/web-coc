@@ -2,6 +2,34 @@ import { expect, test } from '@playwright/test';
 
 const cases = [
   {
+    name: 'Yeti',
+    target: 'Any building',
+    tactic: 'Yetimites, which jump walls and prefer defenses',
+    facts: {
+      'Yetimite stock': '8',
+      'Damage taken per release': '600',
+      'Yetimite targets': 'Ground and air',
+      'Yetimite hitpoints': '300',
+      'Yetimite damage per hit': '56',
+      'Yetimite favorite target': 'Defenses (4× damage)',
+    },
+  },
+  {
+    name: 'Super Yeti',
+    target: 'Any building',
+    tactic: 'briefly stunning them',
+    facts: {
+      'Electromite stock': '7',
+      'Damage taken per release': '400',
+      'Electromite targets': 'Ground and air',
+      'Electromite first building hit': '224',
+      'Chain targets': 'Up to 3',
+      'Chain radius': '3 tiles',
+      'Stun per hit': '0.1 s',
+      'Chain damage per hop': '80%',
+    },
+  },
+  {
     name: 'Golem',
     target: 'Defenses',
     tactic: 'splits into Golemites',
@@ -274,6 +302,8 @@ for (const viewport of [
         expect(close!.height).toBeGreaterThanOrEqual(44);
         if (
           [
+            'Yeti',
+            'Super Yeti',
             'Golem',
             'Ice Golem',
             'Lava Hound',
@@ -408,6 +438,32 @@ for (const viewport of [
       .getByRole('button', { name: 'Train troops', exact: true })
       .click();
     for (const upgraded of [
+      {
+        kind: 'yeti',
+        name: 'Yeti',
+        level: 8,
+        facts: {
+          'Yetimite stock': '14',
+          'Damage taken per release': '600',
+          'Yetimite hitpoints': '590',
+          'Yetimite damage per hit': '92',
+          'Yetimite favorite target': 'Defenses (4× damage)',
+        },
+      },
+      {
+        kind: 'yeti',
+        name: 'Super Yeti',
+        level: 8,
+        facts: {
+          'Electromite stock': '14',
+          'Damage taken per release': '400',
+          'Electromite first building hit': '368',
+          'Chain targets': 'Up to 3',
+          'Chain radius': '3 tiles',
+          'Stun per hit': '0.1 s',
+          'Chain damage per hop': '80%',
+        },
+      },
       {
         kind: 'golem',
         name: 'Golem',

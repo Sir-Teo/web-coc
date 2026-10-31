@@ -79,6 +79,41 @@ export function troopCombatGuide(kind: TroopKind, stats: NativeUnitStats) {
       tactic =
         'Protect her while the Big Boy draws ground fire. She supports it with ranged attacks against ground and air; only one of her Big Boys can be alive at a time.';
     }
+  } else if (kind === 'yeti' || kind === 'superyeti') {
+    const ability = nativeRow('abilities', stats.ability, stats.abilityLevel),
+      mite = nativeUnitStats(
+        kind === 'yeti' ? 'yetimite' : 'electromite',
+        num(ability, 'TroopLevel', 1),
+      ),
+      name = kind === 'yeti' ? 'Yetimite' : 'Electromite';
+    facts.push(
+      [`${name} stock`, `${num(ability, 'TroopCount')}`],
+      [
+        'Damage taken per release',
+        `${num(ability, 'SpawnnedTroopsPerDamage') || stats.spawnWhenDamaged}`,
+      ],
+      [`${name} targets`, troopAttackTargets(mite)],
+    );
+    if (kind === 'yeti') {
+      facts.push(
+        ['Yetimite hitpoints', mite.hp.toLocaleString('en-US')],
+        ['Yetimite damage per hit', `${mite.damage}`],
+        ['Yetimite favorite target', troopFavoriteTarget(mite)],
+      );
+      tactic =
+        'Let it draw fire to release Yetimites, which jump walls and prefer defenses. It releases its remaining stock when defeated.';
+    } else {
+      const chain = nativeRow('abilities', mite.ability, mite.abilityLevel);
+      facts.push(
+        ['Electromite first building hit', `${mite.damage * mite.preferredMultiplier}`],
+        ['Chain targets', `Up to ${num(chain, 'ChainAttackDepth')}`],
+        ['Chain radius', `${tiles(chain, 'ChainAttackDistance')} tiles`],
+        ['Stun per hit', `${seconds(chain, 'FrostOnHitTime')} s`],
+        ['Chain damage per hop', `${100 - num(chain, 'ChainAttackDamageReductionPercent')}%`],
+      );
+      tactic =
+        'Let it draw fire to release Electromites. Each Electromite chains through nearby buildings or ground and air defenders, briefly stunning them. Damage falls with each hop; remaining stock is released on defeat.';
+    }
   } else if (kind === 'golem') {
     const golemite = nativeUnitStats('golemite', stats.level);
     facts.push(

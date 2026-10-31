@@ -57,6 +57,6 @@ The Army panel resolves the active death ability's `SelfSpell` and `SelfSpellLev
 show its Freeze duration and radius, alongside the parent's source hit chill. Base and
 maximum research show 4 s and 9 s respectively, with a 7.5-tile radius and a two-second,
 50% hit slow. The existing local spell adapter applies `FreezeTimeMS` uniformly inside
-`Radius`; the native `FreezeOuterTimeMS` radial interpretation remains unmodeled. This
+`Radius`; the native `FreezeOuterTimeMS` field is not modeled. This
 information update changes no spell or combat behavior. Chromium and WebKit checks cover
 source values, researched tiers, scrolling and controls at three viewport sizes.
