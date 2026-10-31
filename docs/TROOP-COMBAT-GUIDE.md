@@ -26,6 +26,8 @@ constants:
 
 | Troop | Added facts | Combat reference |
 | --- | --- | --- |
+| Witch | Skeleton wave size, living limit and tier-specific HP/DPS | [Parent and summoned attacks](../reference/attacking-witch/README.md) |
+| Super Witch | One living Big Boy, its HP, DPS and damage per swing | [Parent and summoned attacks](../reference/attacking-witch/README.md) |
 | Healer | Two full-strength Healers and up to seven contributing Healers per group | [Friendly casts and stacking](../reference/attacking-healer/README.md) |
 | Druid | Four recipients per chain, 4.5-tile bounce range, 30-second transformation and research-tier Bear stats | [Friendly casts and transformation](../reference/attacking-druid/README.md) |
 | Inferno Dragon | Two ramp thresholds, stronger DPS tiers and recovery after a kill | [Source beam cadence](../reference/attacking-inferno-dragon/README.md) |
@@ -56,7 +58,7 @@ crash labels accompany its version-190 combat boundary; see the linked
 reference for historical playback behavior.
 
 `tests/browser/troop-combat-guide.spec.ts` opens real catalog Info buttons for
-nineteen troop families at 390×844, 844×390 and 1440×960. It verifies source facts,
+twenty-one troop families at 390×844, 844×390 and 1440×960. It verifies source facts,
 favorite targets, advice, text fit, horizontal overflow, touch targets,
 scrolling, training navigation and closing. Screenshots are saved under
 ignored `output/playtest/`. These are headless browser viewport checks, not
@@ -90,3 +92,11 @@ ratio.
 
 The Druid's Bear now also spends its source melee charge before the first hit;
 see [Bear timing](../reference/attacking-bear/README.md) for the version-212 boundary.
+
+Witch's Skeleton facts follow the parent's summon tier: level-1 Witch creates
+four Skeletons per wave with a six-unit living limit, 30 HP and 25 DPS. Witch 8
+creates five per wave with a sixteen-unit limit, 45 HP and 30 DPS. Super Witch
+retains one Big Boy with 4,100 HP, 350 DPS and 700 damage per swing at both ends
+of the parent's research table. Advice distinguishes the casters' ground/air
+attacks from their ground-only summons. Separate viewport scenarios check
+catalog usability and researched-tier readouts without extending test timeouts.

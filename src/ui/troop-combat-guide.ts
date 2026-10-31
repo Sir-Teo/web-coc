@@ -56,6 +56,29 @@ export function troopCombatGuide(kind: TroopKind, stats: NativeUnitStats) {
       ['Bear damage per second', `${bear.dps}`],
       ['Bear favorite target', troopFavoriteTarget(bear)],
     );
+  } else if (kind === 'witch' || kind === 'superwitch') {
+    const summon = nativeUnitStats(kind === 'witch' ? 'skeleton' : 'bigboy', stats.summonLevel);
+    if (kind === 'witch') {
+      facts.push(
+        ['Skeletons per wave', `${stats.summonCount}`],
+        ['Skeleton limit', `${stats.summonLimit}`],
+        ['Skeleton hitpoints', `${summon.hp}`],
+        ['Skeleton DPS', `${summon.dps}`],
+        ['Skeleton targets', troopAttackTargets(summon)],
+      );
+      tactic =
+        'Keep her behind a frontline so she can keep summoning Skeletons. Her ranged attacks hit ground and air; the Skeletons fight on the ground.';
+    } else {
+      facts.push(
+        ['Big Boys at a time', `${stats.summonLimit}`],
+        ['Big Boy hitpoints', summon.hp.toLocaleString('en-US')],
+        ['Big Boy DPS', `${summon.dps}`],
+        ['Big Boy damage per hit', `${summon.damage}`],
+        ['Big Boy targets', troopAttackTargets(summon)],
+      );
+      tactic =
+        'Protect her while the Big Boy draws ground fire. She supports it with ranged attacks against ground and air; only one of her Big Boys can be alive at a time.';
+    }
   } else if ((kind === 'superminer' || kind === 'infernodragon') && stats.damageRamp) {
     const ramp = stats.damageRamp;
     facts.push(

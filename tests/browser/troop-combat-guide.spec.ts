@@ -2,6 +2,32 @@ import { expect, test } from '@playwright/test';
 
 const cases = [
   {
+    name: 'Witch',
+    target: 'Any building',
+    tactic: 'the Skeletons fight on the ground',
+    facts: {
+      'Skeletons per wave': '4',
+      'Skeleton limit': '6',
+      'Skeleton hitpoints': '30',
+      'Skeleton DPS': '25',
+      'Skeleton targets': 'Ground only',
+      'Attack targets': 'Ground and air',
+    },
+  },
+  {
+    name: 'Super Witch',
+    target: 'Any building',
+    tactic: 'only one of her Big Boys can be alive at a time',
+    facts: {
+      'Big Boys at a time': '1',
+      'Big Boy hitpoints': '4,100',
+      'Big Boy DPS': '350',
+      'Big Boy damage per hit': '700',
+      'Big Boy targets': 'Ground only',
+      'Attack targets': 'Ground and air',
+    },
+  },
+  {
     name: 'Healer',
     target: 'Friendly ground troops',
     tactic: 'Additional Healers have diminishing effectiveness',
@@ -154,7 +180,7 @@ for (const viewport of [
   { width: 390, height: 844 },
   { width: 844, height: 390 },
   { width: 1440, height: 960 },
-])
+]) {
   test(`source troop guide stays usable at ${viewport.width}×${viewport.height}`, async ({
     page,
   }) => {
@@ -198,6 +224,8 @@ for (const viewport of [
       expect(close!.height).toBeGreaterThanOrEqual(44);
       if (
         [
+          'Witch',
+          'Super Witch',
           'Healer',
           'Druid',
           'Super Minion',
@@ -229,6 +257,23 @@ for (const viewport of [
         page.getByRole('button', { name: `About ${c.name}`, exact: true }),
       ).toBeVisible();
     }
+    await page.getByRole('button', { name: 'About Minion', exact: true }).click();
+    await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
+    await expect(page.locator('.troop-info-body')).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+
+  test(`researched troop guide follows source tiers at ${viewport.width}×${viewport.height}`, async ({
+    page,
+  }) => {
+    test.setTimeout(180000);
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await page.setViewportSize(viewport);
+    await page.goto('/?lazyart');
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    await page.locator('[data-action="skip-tutorial"]').click();
+    await page.locator('.train-add').click();
     await page.evaluate(() => {
       const m = window.__game.model;
       m.state.troopLevels = { ...m.state.troopLevels, wallbreaker: 14 };
@@ -308,6 +353,28 @@ for (const viewport of [
       .click();
     for (const upgraded of [
       {
+        kind: 'witch',
+        name: 'Witch',
+        level: 8,
+        facts: {
+          'Skeletons per wave': '5',
+          'Skeleton limit': '16',
+          'Skeleton hitpoints': '45',
+          'Skeleton DPS': '30',
+        },
+      },
+      {
+        kind: 'witch',
+        name: 'Super Witch',
+        level: 8,
+        facts: {
+          'Big Boys at a time': '1',
+          'Big Boy hitpoints': '4,100',
+          'Big Boy DPS': '350',
+          'Big Boy damage per hit': '700',
+        },
+      },
+      {
         kind: 'healer',
         name: 'Healer',
         level: 11,
@@ -343,7 +410,7 @@ for (const viewport of [
         ).toHaveText(value);
       await page.screenshot({
         animations: 'disabled',
-        path: `output/playtest/troop-guide-${upgraded.kind}-${upgraded.level}-${viewport.width}.png`,
+        path: `output/playtest/troop-guide-${upgraded.name.replaceAll(' ', '-').toLowerCase()}-${upgraded.level}-${viewport.width}.png`,
       });
       await page
         .locator('.troop-info-body')
@@ -355,3 +422,4 @@ for (const viewport of [
     await expect(page.locator('.troop-info-body')).toHaveCount(0);
     expect(errors).toEqual([]);
   });
+}
