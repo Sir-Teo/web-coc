@@ -344,6 +344,8 @@ test('on a phone the Army drawer gives the troop catalog most of its width', asy
 });
 
 test('the Army catalog can be searched and filtered by readiness and family', async ({ page }) => {
+  // Full-art startup and the expanded live filter sequence share this case's budget.
+  test.setTimeout(120000);
   await page.locator('.train-add').click();
   const names = () =>
     page
@@ -355,6 +357,17 @@ test('the Army catalog can be searched and filtered by readiness and family', as
   expect((await names()).length).toBeGreaterThan(0);
   // Typing keeps the field focused and never pans the camera.
   await expect(page.locator('#army-search')).toBeFocused();
+  for (const [query, expected] of [
+    ['pekka', ['P.E.K.K.A']],
+    ['P.E.K.K.A', ['P.E.K.K.A']],
+    ['wallbreaker', ['Wall Breaker', 'Super Wall Breaker']],
+    ['ice-hound', ['Ice Hound']],
+  ] as const) {
+    await page.locator('#army-search').fill(query);
+    await expect.poll(async () => (await names()).sort()).toEqual([...expected].sort());
+    await expect(page.locator('#army-search')).toBeFocused();
+    await expect(page.locator('#army-search')).toHaveValue(query);
+  }
   await page.locator('#army-search').fill('');
   await page.locator('#army-family').selectOption('siege');
   await expect.poll(async () => (await names()).length).toBeLessThan(all);

@@ -4155,8 +4155,15 @@ export class HUD {
     const m = this.model,
       f = this.armyFilter;
     const name = (spell ? SPELLS[kind as SpellKind] : TROOPS[kind as TroopKind]).name;
-    const query = f.query.trim().toLowerCase();
-    if (query && !name.toLowerCase().includes(query)) return false;
+    const query = f.query.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+    if (
+      query &&
+      !name
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}]/gu, '')
+        .includes(query)
+    )
+      return false;
     const unlocked = spell
       ? m.spellUnlocked(kind as SpellKind)
       : m.troopUnlocked(kind as TroopKind);
