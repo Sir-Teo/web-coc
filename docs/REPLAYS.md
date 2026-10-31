@@ -1711,3 +1711,11 @@ follows charge offsets and draws its contact frame on release, including a held 
 pose during Freeze. Sneezy's summons, tiers, ownership, transformation and Recall retain
 their rules. Versions 214 and earlier preserve their previous attacks and presentation.
 See [source timing, adapter limits and portable checks](../reference/attacking-booger/README.md).
+
+## Version 216: Physical release contact poses
+
+A phased attack with no remaining recovery now draws its source contact pose on the
+physical release tick before showing its next charge. This is a renderer-local
+adjustment: combat clocks, damage, projectiles and movement retain their values.
+Recordings from version 215 and earlier retain their previous presentation.
+See [source-frame evidence and complete-state checks](../reference/attack-contact-pose/README.md).

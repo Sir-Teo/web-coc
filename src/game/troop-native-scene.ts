@@ -425,7 +425,7 @@ export class TroopNativePresentation {
         dragon.clock < dragon.animAt + TROOPS.electrodragon.rate - 1e-9
           ? Math.max(0, dragon.clock - dragon.animAt)
           : undefined;
-      const windupOffset =
+      let windupOffset =
         battle?.nativeBowlerWindup && u.kind === 'bowler'
           ? u.native?.bowler?.animationOffset
           : (battle?.nativeGolemWindup && (u.kind === 'golem' || u.kind === 'golemite')) ||
@@ -472,6 +472,15 @@ export class TroopNativePresentation {
                 (battle?.nativeDruidWindup && u.kind === 'druid')
               ? u.native?.healerWindup?.animationOffset
               : undefined;
+      // With no recovery, the next charge is already pending on the physical release tick.
+      // Draw the source contact pose once; preserve the simulation's charge metadata.
+      if (
+        battle?.nativeAttackContactPose &&
+        windupOffset !== undefined &&
+        windupOffset < 0 &&
+        u.native?.lastAttackAt === elapsed
+      )
+        windupOffset = 0;
       const requested =
         u.hp <= 0
           ? 'die'

@@ -7,6 +7,8 @@ import { nativeUnitStats } from '../src/game/native-units';
 import { createGuardian, guardianStats, stepGuardian } from '../src/game/native-guardians';
 import type { NativeTroopContext } from '../src/game/native-troops';
 import { attackingBoogerBattle } from './fixtures/attacking-booger';
+import { nativeDirectBattle } from './fixtures/native-direct-attacks';
+import { maxTroopLevel } from '../src/game/data';
 
 // Scene views are Phaser objects; record what the presentations ask them to draw instead.
 vi.mock('../src/game/native-scene-view', () => {
@@ -219,6 +221,38 @@ describe('unit motion tracker', () => {
 });
 
 describe('troop native presentation', () => {
+  for (const kind of ['archer', 'minion', 'wizard', 'dragon', 'rootrider'] as const)
+    for (const level of [1, maxTroopLevel(kind)])
+      for (const version of [215, 216])
+        it(`${kind} ${level} draws the source contact pose in version ${version}`, () => {
+          const r = nativeDirectBattle(kind, level, version),
+            p = new TroopNativePresentation(fakeScene()),
+            pack = JSON.parse(
+              fs.readFileSync(`public/assets/troops-native/${kind}/graph.json`, 'utf8'),
+            ),
+            source = pack.levels.find((l) => l.level === level).states.attack;
+          const internals = p as unknown as {
+            packs: Map<string, unknown>;
+            levelsReady: Map<string, Set<number>>;
+            views: Map<number, { sample: { frame: number } }>;
+          };
+          internals.packs.set(kind, pack);
+          internals.levelsReady.set(kind, new Set([level]));
+          r.untilAttacks(1);
+          const releases = [JSON.parse(JSON.stringify(r.battle)) as Battle];
+          r.untilAttacks(2);
+          releases.push(JSON.parse(JSON.stringify(r.battle)) as Battle);
+          for (const battle of [...releases, ...releases.slice().reverse()]) {
+            const before = JSON.stringify(battle);
+            p.render(battle, false, iso, 46, new Map());
+            const expected = version >= 216 || kind === 'rootrider' ? source.actionFrame - 1 : 0;
+            expect(internals.views.get(r.unit.id)!.sample.frame).toBe(expected);
+            p.render(battle, true, iso, 46, new Map());
+            expect(internals.views.get(r.unit.id)!.sample.frame).toBe(0);
+            expect(JSON.stringify(battle)).toBe(before);
+          }
+        });
+
   it.each([false, true])(
     'attaches the Inferno Dragon beam to its drawn mouth, reduced=%s',
     (reduced) => {
