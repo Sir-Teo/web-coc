@@ -1,7 +1,8 @@
 # Troop combat guide
 
 Open a troop's **Info** button in the Army catalog to inspect its current
-research stats, preferred target and tactical advice. Locked troops can be
+combat stats, preferred target and tactical advice. An active Power Potion
+previews boosted stats and identifies the permanent research level. Locked troops can be
 inspected too. The guide's combat preferences now come from the same pinned
 client fields as the simulation, including native troops without the early
 roster's UI flags. Rocket Balloon and Dragon Rider correctly show **Defenses**;

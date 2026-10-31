@@ -24,6 +24,7 @@ notes in those references are not current release guarantees.
 - [Town Hall tiers](TOWNHALL-TIERS.md)
 - [Army unlock progression](ARMY-UNLOCKS.md)
 - [Troop combat guide](TROOP-COMBAT-GUIDE.md)
+- [Spell combat guide](SPELL-COMBAT-GUIDE.md)
 - [Super Troop boost requirements](SUPER-TROOP-BOOSTS.md)
 - [Ten-troop progression milestone (historical)](TROOP-PROGRESSION.md)
 - [Starter troop progression](STARTER-TROOP-PROGRESSION.md)

@@ -1,3 +1,4 @@
+import { spellCombatGuide } from './spell-combat-guide';
 import { isSiege, superOriginal, superMinimum, superLicence } from '../game/special-troops';
 import { phoenixLifeFraction } from '../game/native-status';
 import { nativeUnitStats } from '../game/native-units';
@@ -4671,6 +4672,7 @@ export class HUD {
     const kind = this.inspectedSpell,
       level = this.model.battle ? this.model.spellLevel(kind) : this.model.armySpellLevel(kind),
       d = this.model.spellStats(kind, level),
+      guide = spellCombatGuide(kind, level),
       boostNote =
         level > this.model.spellLevel(kind)
           ? `<p class="hero-stats-note potion-level">Power Potion · Researched level ${this.model.spellLevel(kind)} · ${time(this.model.boostLeft('army'))} left</p>`
@@ -4681,20 +4683,22 @@ export class HUD {
       ['Effect radius', `${d.radius} tiles`],
       [
         'Targets',
-        kind === 'lightning'
-          ? 'Enemy buildings'
-          : kind === 'freeze'
-            ? 'Defences and defending troops'
-            : kind === 'invisibility' || kind === 'clone' || kind === 'recall'
-              ? 'Your own troops'
-              : kind === 'jump'
-                ? 'Walls beneath the ring'
-                : kind === 'revive'
-                  ? 'Your fallen hero'
-                  : 'Ground and air troops',
+        guide?.targets ??
+          (kind === 'lightning'
+            ? 'Enemy buildings'
+            : kind === 'freeze'
+              ? 'Defences and defending troops'
+              : kind === 'invisibility' || kind === 'clone' || kind === 'recall'
+                ? 'Your own troops'
+                : kind === 'jump'
+                  ? 'Walls beneath the ring'
+                  : kind === 'revive'
+                    ? 'Your fallen hero'
+                    : 'Ground and air troops'),
       ],
     ];
-    if (kind === 'lightning') rows.push(['Damage', n(d.damage)], ['Stun duration', '0.1s']);
+    if (guide) rows.push(...guide.facts);
+    else if (kind === 'lightning') rows.push(['Damage', n(d.damage)], ['Stun duration', '0.1s']);
     else if (kind === 'jump')
       rows.push(['Damage', 'None'], ['Breach holds for', `${jumpSeconds(level)}s`]);
     else if (kind === 'clone')
@@ -4735,7 +4739,8 @@ export class HUD {
         ['Hero effectiveness', '50% of each boost'],
       );
     const tactic =
-      kind === 'jump'
+      guide?.tactic ??
+      (kind === 'jump'
         ? 'Lay it over the wall you want opened, not over your troops. Ground troops walk straight across while the ring holds, and the wall is still standing when it closes.'
         : kind === 'clone'
           ? 'Copy what is already winning, not what is about to die. Copies are made at full health and fade after half a minute whatever happens to them.'
@@ -4751,7 +4756,7 @@ export class HUD {
                     ? 'Aim at clustered defenses. The bolt hits any building footprint within its radius, but Town Halls, resource storages and traps are immune. Surviving defenses briefly stop and choose a target again.'
                     : kind === 'heal'
                       ? 'Place Healing where damaged troops will stay. Each spell heals independently, so overlapping rings stack. Heroes receive 55% of the healing; defeated troops cannot be revived.'
-                      : 'Lead your troops with the ring. Damage and movement increase without changing attack speed. Overlapping Rage spells do not add their boosts, and the stronger spell or hero ability boost takes effect.';
+                      : 'Lead your troops with the ring. Damage and movement increase without changing attack speed. Overlapping Rage spells do not add their boosts, and the stronger spell or hero ability boost takes effect.');
     return `<div class="modal-body troop-info-body spell-info-body"><div class="troop-info-hero"><img src="${hudAsset(kind)}" alt="${d.name}"><div><span class="eyebrow">${d.role} · LEVEL ${level}</span><h2>${d.name}</h2><p>${d.description}</p></div></div>${boostNote}<dl class="troop-stats">${rows.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl><p class="troop-tactic">${icon('Info', 20)}<span>${tactic}</span></p>${button(`research-view:${kind}`, `${icon('FlaskConical', 18)} Research spell`, 'game-btn green')}</div>`;
   }
   private surrender() {
