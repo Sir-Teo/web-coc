@@ -32,7 +32,7 @@ constants:
 | Siege Barracks | Base lifetime and first release delay | [Deployment lifecycle](../reference/deployment-lifecycle/README.md) |
 | Wall Wrecker | Town Hall movement destination, tenfold Wall ram damage and healing immunity | [Pinned Wall Wrecker](../reference/official-wiki/spells-siege-super/wall-wrecker.md) |
 | Battle Blimp | Town Hall movement destination, death-blast damage/delay and healing immunity | [Pinned Battle Blimp](../reference/official-wiki/spells-siege-super/battle-blimp.md) |
-| Stone Slammer | Death-blast damage/delay and healing immunity | [Pinned Stone Slammer](../reference/official-wiki/spells-siege-super/stone-slammer.md) |
+| Stone Slammer | Primary/secondary blast distinction, damage falloff, Wall bonus, death-blast delay and healing immunity | [Source attack phases and blasts](../reference/attacking-stone-slammer/README.md) |
 | Witch | Skeleton wave size, living limit and tier-specific HP/DPS | [Parent and summoned attacks](../reference/attacking-witch/README.md) |
 | Super Witch | One living Big Boy, its HP, DPS and damage per swing | [Parent and summoned attacks](../reference/attacking-witch/README.md) |
 | Healer | Two full-strength Healers and up to seven contributing Healers per group | [Friendly casts and stacking](../reference/attacking-healer/README.md) |
@@ -212,5 +212,10 @@ healing and have advice for their ground route or air approach.
 `tests/browser/siege-army-preview.spec.ts` separately checks these three
 machines at base/maximum research on phone, landscape and desktop. It checks
 source values, targets and movement, advice, text fit, scrolling and training
-navigation. The guide does not claim unimplemented Clan Castle payload
-release or Stone Slammer secondary-splash behavior.
+navigation. The guide does not claim unimplemented Clan Castle payload release.
+
+Stone Slammer now labels its source damage/DPS as primary and lists the wider
+secondary blast separately: 100–200 damage at level 1 and 350–700 at level 6.
+Full secondary damage extends through two tiles, falling to its minimum at
+three tiles. Its guide reads the shared secondary-blast adapter and source
+25× Wall multiplier. Historical battle inspection retains the prior rows.

@@ -1772,3 +1772,13 @@ active time. Each flame splashes once on its captured target layer and keeps
 its fixed aim point. Version 220 and earlier retain their single large release. Current
 Army readouts show per-flame damage and burst timing; old replays retain their
 old readout. See [source fields, timing and validation](../reference/attacking-super-dragon/README.md).
+
+## Version 222: Stone Slammer phases and secondary blast
+
+New carried Stone Slammers spend their full fresh charge after arriving, then
+resolve the heavy ground hit and the wider secondary blast together. The latter
+retains maximum damage through two tiles and falls to its minimum at three tiles.
+Original body contact poses, active-time holds and retarget recovery follow the
+shared attacker controller. Current troop Info distinguishes primary hit/DPS from
+secondary damage. Version 221 and earlier retain their old attacks and readouts.
+See [source fields, geometry limits and replay checks](../reference/attacking-stone-slammer/README.md).

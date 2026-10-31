@@ -1125,6 +1125,8 @@ export interface Battle {
   nativeRuinWitchRubbleRoutes?: true;
   /** Version 221: attacking Super Dragons emit source ten-flame bursts. */
   nativeSuperDragonBurst?: true;
+  /** Version 222: Stone Slammer attack phases and its secondary ground blast. */
+  nativeStoneSlammerAttacks?: true;
   /** Version 207: source demolition contact cues reconstruct and cover the death tone. */
   nativeWallBreakerSounds?: true;
   /** Version 206: both Wall Breaker contact splashes include ground defenders. */

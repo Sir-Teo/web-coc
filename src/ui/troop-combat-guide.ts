@@ -1,3 +1,4 @@
+import { stoneSlammerSecondaryStats } from '../game/native-stone-slammer';
 import { superDragonBurstStats } from '../game/native-super-dragon';
 import type { TroopKind } from '../game/data';
 import { nativeUnitRow, nativeUnitStats, type NativeUnitStats } from '../game/native-units';
@@ -40,7 +41,11 @@ export function troopMovement(stats: NativeUnitStats) {
 }
 
 /** Short player-facing advice and source ability facts for the Army information panel. */
-export function troopCombatGuide(kind: TroopKind, stats: NativeUnitStats, superDragonBurst = true) {
+export function troopCombatGuide(
+  kind: TroopKind,
+  stats: NativeUnitStats,
+  rules: { superDragonBurst?: boolean; stoneSlammerAttacks?: boolean } = {},
+) {
   const facts: [string, string][] = [];
   let tactic: string | undefined;
   if (kind === 'furnace') {
@@ -81,6 +86,17 @@ export function troopCombatGuide(kind: TroopKind, stats: NativeUnitStats, superD
       kind === 'battleblimp'
         ? 'Choose an approach to the Town Hall that avoids Air Defenses. It bombs buildings along its flight and releases a delayed blast when destroyed. It cannot be healed.'
         : 'Send it after defenses while other troops distract Air Defenses. Its boulders and delayed death blast damage ground targets. It cannot be healed.';
+    if (kind === 'stoneslammer' && rules.stoneSlammerAttacks !== false) {
+      const blast = stoneSlammerSecondaryStats(stats.level);
+      facts.push(
+        ['Secondary blast damage', `${blast.minimum}–${blast.maximum}`],
+        ['Secondary blast radius', `${blast.radius} tiles`],
+        ['Full secondary damage within', `${blast.falloffStart} tiles`],
+        ['Secondary minimum damage at', `${blast.falloffEnd} tiles`],
+        ['Wall damage multiplier', `${stats.damageMultiplier}×`],
+      );
+      tactic += ` Each attack adds a wider ground blast that weakens beyond ${blast.falloffStart} tiles. Walls take extra damage.`;
+    }
   } else if (kind === 'siegebarracks') {
     facts.push(
       ['Base lifetime', `${stats.bunkerDecay} s`],
@@ -413,7 +429,7 @@ export function troopCombatGuide(kind: TroopKind, stats: NativeUnitStats, superD
       ['Long Shot range', `${opening.range} tiles`],
     );
     tactic = `Use its first ${opening.count} Long Shots to attack from farther away. After they are spent, it moves closer to use its normal range.`;
-  } else if (kind === 'superdragon' && superDragonBurst) {
+  } else if (kind === 'superdragon' && rules.superDragonBurst !== false) {
     const burst = superDragonBurstStats(stats.level);
     facts.push(
       ['Flames per burst', `Up to ${burst.count}`],

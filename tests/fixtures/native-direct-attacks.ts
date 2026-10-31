@@ -24,6 +24,7 @@ export type NativeDirectKind =
   | 'minion'
   | 'dragon'
   | 'superdragon'
+  | 'stoneslammer'
   | 'balloon'
   | 'archer'
   | 'swordsman'

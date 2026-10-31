@@ -12,6 +12,7 @@ import { attackingRuinKnightBattle } from './fixtures/attacking-ruin-knight';
 import { attackingSpellSkeletonBattle } from './fixtures/attacking-spell-skeletons';
 import { nativeDirectBattle } from './fixtures/native-direct-attacks';
 import { maxTroopLevel } from '../src/game/data';
+import { stoneSlammerBattle } from './fixtures/attacking-stone-slammer';
 
 // Scene views are Phaser objects; record what the presentations ask them to draw instead.
 vi.mock('../src/game/native-scene-view', () => {
@@ -247,6 +248,25 @@ describe('unit motion tracker', () => {
 });
 
 describe('troop native presentation', () => {
+  for (const version of [221, 222])
+    for (const level of [1, 6])
+      it(`Stone Slammer ${level} draws its original contact pose in version ${version}`, () => {
+        const r = stoneSlammerBattle(level, version),
+          { p, internals } = loadedTroopPresentation(['stoneslammer']);
+        r.untilAttacks(1);
+        const releases = [JSON.parse(JSON.stringify(r.battle)) as Battle];
+        r.untilAttacks(2);
+        releases.push(JSON.parse(JSON.stringify(r.battle)) as Battle);
+        for (const battle of [...releases, ...releases.slice().reverse()]) {
+          const before = JSON.stringify(battle);
+          p.render(battle, false, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(version >= 222 ? 9 : 0);
+          p.render(battle, true, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(0);
+          expect(JSON.stringify(battle)).toBe(before);
+        }
+      });
+
   for (const version of [218, 219])
     for (const level of [1, 4])
       it(`Ruin Knight ${level} draws its original contact pose in version ${version}`, () => {

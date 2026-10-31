@@ -4610,11 +4610,13 @@ export class HUD {
         kind === 'superdragon' && (!this.model.battle || this.model.battle.nativeSuperDragonBurst)
           ? superDragonBurstStats(native.level)
           : undefined,
-      guide = troopCombatGuide(
-        kind,
-        native,
-        !this.model.battle || !!this.model.battle.nativeSuperDragonBurst,
-      ),
+      stoneSlammer =
+        kind === 'stoneslammer' &&
+        (!this.model.battle || !!this.model.battle.nativeStoneSlammerAttacks),
+      guide = troopCombatGuide(kind, native, {
+        superDragonBurst: !this.model.battle || !!this.model.battle.nativeSuperDragonBurst,
+        stoneSlammerAttacks: !this.model.battle || !!this.model.battle.nativeStoneSlammerAttacks,
+      }),
       original = superOriginal(kind),
       boostNote =
         level > this.model.troopLevel(kind)
@@ -4662,11 +4664,21 @@ export class HUD {
       ...(direct
         ? ([
             [
-              d.healer ? 'Healing per second' : 'Damage per second',
+              d.healer
+                ? 'Healing per second'
+                : stoneSlammer
+                  ? 'Primary damage per second'
+                  : 'Damage per second',
               damageNumber((d.heal ?? d.damage) / d.rate),
             ],
             [
-              d.healer ? 'Healing per pulse' : burst ? 'Damage per flame' : 'Damage per hit',
+              d.healer
+                ? 'Healing per pulse'
+                : burst
+                  ? 'Damage per flame'
+                  : stoneSlammer
+                    ? 'Primary damage per hit'
+                    : 'Damage per hit',
               damageNumber(d.heal ?? burst?.damage ?? d.damage),
             ],
           ] as [string, string][])

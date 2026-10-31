@@ -1,3 +1,4 @@
+import { attackStoneSlammer } from './native-stone-slammer';
 import {
   beginSuperDragonBurst,
   prepareSuperDragonBurst,
@@ -979,6 +980,7 @@ export function stepNativeUnit(
   const dragonRider = !!(u.kind === 'dragonrider' && battle.nativeDragonRiderWindup);
   const rocketBalloon = !!(u.kind === 'rocketballoon' && battle.nativeRocketBalloonWindup);
   const balloon = !!(u.kind === 'balloon' && battle.nativeBalloonWindup);
+  const stoneSlammer = !!(u.kind === 'stoneslammer' && battle.nativeStoneSlammerAttacks);
   const babyDragon = !!(u.kind === 'babydragon' && battle.nativeBabyDragonWindup);
   const superDragon = !!(u.kind === 'superdragon' && battle.nativeSuperDragonBurst);
   if (superDragon) prepareSuperDragonBurst(u, at);
@@ -1027,6 +1029,7 @@ export function stepNativeUnit(
     dragonRider ||
     rocketBalloon ||
     balloon ||
+    stoneSlammer ||
     babyDragon ||
     superDragon ||
     superMinion ||
@@ -1070,7 +1073,8 @@ export function stepNativeUnit(
         const launched = beginSuperDragonBurst(u, target, at, burstRate),
           flame = superDragonBurstStats(s.level).damage * (damage / s.damage);
         releaseSuperDragonFlame(ctx, u, s, flame, target, launched);
-      } else if (superArcher) launchArcherPiercing(ctx, u, damage, target);
+      } else if (stoneSlammer) attackStoneSlammer(ctx, u, s, damage, target);
+      else if (superArcher) launchArcherPiercing(ctx, u, damage, target);
       else if (superWizard) attackSuperWizard(ctx, u, damage, target);
       else if (valkyrie) sweepValkyrie(ctx, u, s, damage);
       else if ('building' in target) strike(ctx, u, s, target.building, power);
