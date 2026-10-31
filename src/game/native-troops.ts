@@ -1,3 +1,4 @@
+import { launchRollingLog } from './native-log-launcher';
 import { stepTroopLauncher, resolveTroopLauncherImpact } from './native-troop-launcher';
 import { attackStoneSlammer } from './native-stone-slammer';
 import {
@@ -985,6 +986,7 @@ export function stepNativeUnit(
   const dragonRider = !!(u.kind === 'dragonrider' && battle.nativeDragonRiderWindup);
   const rocketBalloon = !!(u.kind === 'rocketballoon' && battle.nativeRocketBalloonWindup);
   const balloon = !!(u.kind === 'balloon' && battle.nativeBalloonWindup);
+  const rollingLog = !!(u.kind === 'loglauncher' && battle.nativeLogLauncherPiercing);
   const stoneSlammer = !!(u.kind === 'stoneslammer' && battle.nativeStoneSlammerAttacks);
   const babyDragon = !!(u.kind === 'babydragon' && battle.nativeBabyDragonWindup);
   const superDragon = !!(u.kind === 'superdragon' && battle.nativeSuperDragonBurst);
@@ -1252,6 +1254,11 @@ export function stepNativeUnit(
       splash: s.splash || undefined,
       airTargets: s.airTargets,
     };
+    if (rollingLog) {
+      traits.nativeAttack = (target, power) =>
+        launchRollingLog(ctx, u, s, power, { defender: target });
+      traits.nativeBuildingAttack = (target, power) => strike(ctx, u, s, target, power);
+    }
     if (electromite) {
       traits.prefersBuildings = true;
       traits.nativeAttack = (target, power) =>
@@ -1674,6 +1681,10 @@ function strike(
 ) {
   const battle = ctx.battle;
   const state = (u.native ??= {});
+  if (battle.nativeLogLauncherPiercing && u.kind === 'loglauncher') {
+    launchRollingLog(ctx, u, s, damage, { building: target });
+    return;
+  }
   if (battle.nativeArcherPiercing && u.kind === 'superarcher') {
     launchArcherPiercing(ctx, u, damage, { building: target });
     return;
@@ -2975,7 +2986,12 @@ export function stepNativeBattle(ctx: NativeTroopContext) {
   stepElectromiteArcs(ctx);
   stepElectroDragonArcs(ctx);
   stepSuperWizardBranches(ctx);
-  if (ctx.battle.nativeGiantArrow || ctx.battle.nativeDarkOrb) stepHeroPiercing(ctx);
+  if (
+    ctx.battle.nativeGiantArrow ||
+    ctx.battle.nativeDarkOrb ||
+    ctx.battle.nativeLogLauncherPiercing
+  )
+    stepHeroPiercing(ctx);
   else stepArcherPiercing(ctx);
   stepPendingSpawns(ctx);
 }

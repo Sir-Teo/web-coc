@@ -32,6 +32,7 @@ constants:
 | Siege Barracks | Base lifetime and first release delay | [Deployment lifecycle](../reference/deployment-lifecycle/README.md) |
 | Wall Wrecker | Town Hall movement destination, tenfold Wall ram damage and healing immunity | [Pinned Wall Wrecker](../reference/official-wiki/spells-siege-super/wall-wrecker.md) |
 | Battle Blimp | Town Hall movement destination, death-blast damage/delay and healing immunity | [Pinned Battle Blimp](../reference/official-wiki/spells-siege-super/battle-blimp.md) |
+| Log Launcher | Log travel, structure budget, nearby blast, Wall bonus and health drain | [Rolling corridors](../reference/attacking-log-launcher/README.md) |
 | Stone Slammer | Primary/secondary blast distinction, damage falloff, Wall bonus, death-blast delay and healing immunity | [Source attack phases and blasts](../reference/attacking-stone-slammer/README.md) |
 | Witch | Skeleton wave size, living limit and tier-specific HP/DPS | [Parent and summoned attacks](../reference/attacking-witch/README.md) |
 | Super Witch | One living Big Boy, its HP, DPS and damage per swing | [Parent and summoned attacks](../reference/attacking-witch/README.md) |
@@ -243,3 +244,12 @@ three viewports, including the retained six-HP heal and source payload counts.
 Power Potion checks raise the preview to seven barrels and level-12 payloads,
 then return to five barrels without changing the permanent level-one research.
 Historical battle inspection retains its prior facts and labels.
+
+Log Launcher Info now labels its log DPS/hit separately from the point-blank
+blast. It lists 20-tile travel, up to four structures, 4× Wall damage, the
+2,900–3,600 nearby blast, 156 HP/s drain and healing immunity. Advice explains
+lining up with the Town Hall, ground-defender collateral and Overgrowth stopping
+logs. These facts share the [rolling corridor adapter](../reference/attacking-log-launcher/README.md).
+Base/maximum research browser checks cover phone, landscape and desktop widths,
+unique labels, text fit and training navigation. Historical battle readouts
+retain their former labels and facts.

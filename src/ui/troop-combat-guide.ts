@@ -1,3 +1,4 @@
+import { logLauncherStats } from '../game/native-log-launcher';
 import { troopLauncherStats } from '../game/native-troop-launcher';
 import { stoneSlammerSecondaryStats } from '../game/native-stone-slammer';
 import { superDragonBurstStats } from '../game/native-super-dragon';
@@ -49,6 +50,7 @@ export function troopCombatGuide(
     superDragonBurst?: boolean;
     stoneSlammerAttacks?: boolean;
     troopLauncherFriendly?: boolean;
+    logLauncherPiercing?: boolean;
   } = {},
 ) {
   const facts: [string, string][] = [];
@@ -79,6 +81,21 @@ export function troopCombatGuide(
     );
     tactic =
       'Place it behind a frontline to release Firemites before its health runs out. Friendly health auras can extend its lifetime, but its stock is finite. Each Firemite jumps once at a ground or air target.';
+  } else if (kind === 'loglauncher' && rules.logLauncherPiercing !== false) {
+    const log = logLauncherStats(stats.level);
+    facts.push(
+      ['Movement destination', text(nativeUnitRow(kind, stats.level), 'PreferredMovementTarget')],
+      ['Log travel distance', `${log.range} tiles`],
+      ['Structures per log', `Up to ${log.maximumBuildings}`],
+      ['Wall damage multiplier', `${log.wallMultiplier}×`],
+      ['Log damage vs walls', (stats.damage * log.wallMultiplier).toLocaleString('en-US')],
+      ['Point-blank blast damage', log.blastDamage.toLocaleString('en-US')],
+      ['Point-blank blast radius', `${log.blastRadius} tile`],
+      ['Health loss', `${log.healthLoss} HP/s`],
+      ['Can receive healing', stats.immuneToHealing ? 'No' : 'Yes'],
+    );
+    tactic =
+      'Line it up with the Town Hall to roll logs through a corridor. Each log travels up to 20 tiles and hits up to four structures, including walls. Ground defenders can also be hit. Each release adds a blast around the launcher; Overgrowth-covered structures stop the rolling log. Protect it as its health drains.';
   } else if (kind === 'wallwrecker') {
     facts.push(
       ['Movement destination', text(nativeUnitRow(kind, stats.level), 'PreferredMovementTarget')],

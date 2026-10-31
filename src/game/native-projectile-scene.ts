@@ -292,9 +292,15 @@ export class NativeProjectilePresentation {
       ...(battle.nativeArcherShots ?? []),
       ...(battle.nativeGiantArrows ?? []),
       ...(battle.nativeDarkOrbs ?? []),
+      ...(battle.nativeRollingLogs ?? []),
     ]) {
       const end = shot.launched + shot.length / shot.speed;
-      if (elapsed > end + AFTERLIFE || this.history.has(shot.id)) continue;
+      const seen = this.history.get(shot.id);
+      if (
+        elapsed > end + AFTERLIFE ||
+        (seen && (!('logLauncher' in shot) || seen.piercing?.length === shot.length))
+      )
+        continue;
       const packPath = nativeProjectilePack(shot.projectile);
       if (!packPath) continue;
       this.history.set(shot.id, {

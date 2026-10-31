@@ -4618,6 +4618,9 @@ export class HUD {
       stoneSlammer =
         kind === 'stoneslammer' &&
         (!this.model.battle || !!this.model.battle.nativeStoneSlammerAttacks),
+      rollingLog =
+        kind === 'loglauncher' &&
+        (!this.model.battle || !!this.model.battle.nativeLogLauncherPiercing),
       launcher =
         kind === 'trooplauncher' &&
         (!this.model.battle || !!this.model.battle.nativeTroopLauncherFriendly),
@@ -4626,6 +4629,7 @@ export class HUD {
         stoneSlammerAttacks: !this.model.battle || !!this.model.battle.nativeStoneSlammerAttacks,
         troopLauncherFriendly:
           !this.model.battle || !!this.model.battle.nativeTroopLauncherFriendly,
+        logLauncherPiercing: !this.model.battle || !!this.model.battle.nativeLogLauncherPiercing,
       }),
       original = superOriginal(kind),
       boostNote =
@@ -4678,7 +4682,9 @@ export class HUD {
                 ? 'Healing per second'
                 : stoneSlammer
                   ? 'Primary damage per second'
-                  : 'Damage per second',
+                  : rollingLog
+                    ? 'Log damage per second'
+                    : 'Damage per second',
               damageNumber((d.heal ?? d.damage) / d.rate),
             ],
             [
@@ -4690,7 +4696,9 @@ export class HUD {
                   ? 'Damage per flame'
                   : stoneSlammer
                     ? 'Primary damage per hit'
-                    : 'Damage per hit',
+                    : rollingLog
+                      ? 'Log damage per hit'
+                      : 'Damage per hit',
               damageNumber(d.heal ?? burst?.damage ?? d.damage),
             ],
           ] as [string, string][])

@@ -1792,3 +1792,14 @@ child levels. Released barrels survive parent/recipient loss and can hold the
 battle open until their troops arrive. Payload troops use their native attack
 phases. Version 222 and earlier retain enemy-targeted barrels and complete old
 state. See [source fields, group adapter and validation](../reference/attacking-troop-launcher/README.md).
+
+## Version 224: Log Launcher physical rolling corridors
+
+New carried Log Launchers release finite 20-tile logs that apply damage as they
+travel, stopping after four standing structures or an Overgrowth-covered
+structure. Ground defenders can be struck without consuming the structure
+budget. Each release also applies its source nearby ground blast. Released logs
+survive caster loss and hold the battle open. Moving-fire cadence and health-loss
+clocks are retained. Version 223 and earlier retain the old destination-time
+corridor and complete state. See [source fields, collision conventions and
+validation](../reference/attacking-log-launcher/README.md).

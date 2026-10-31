@@ -1,3 +1,4 @@
+import type { RollingLogShot } from './native-log-launcher';
 import type { OvergrowthRoot } from './native-overgrowth';
 import type { ArcherPiercingShot } from './native-super-archer';
 import type { SuperWizardBranch, SuperWizardZap } from './native-super-wizard';
@@ -1129,6 +1130,9 @@ export interface Battle {
   nativeStoneSlammerAttacks?: true;
   /** Version 223: Troop Launcher reinforces eligible friendly groups. */
   nativeTroopLauncherFriendly?: true;
+  /** Version 224: finite, physical rolling logs and the separate nearby blast. */
+  nativeLogLauncherPiercing?: true;
+  nativeRollingLogs?: RollingLogShot[];
   /** Version 207: source demolition contact cues reconstruct and cover the death tone. */
   nativeWallBreakerSounds?: true;
   /** Version 206: both Wall Breaker contact splashes include ground defenders. */
@@ -7343,6 +7347,7 @@ export class GameModel {
         !b.nativeElectroDragonArcs?.length &&
         !b.nativeSuperWizardBranches?.length &&
         !b.nativeArcherShots?.some((s) => s.travelled < s.length - 1e-9) &&
+        !b.nativeRollingLogs?.some((s) => s.travelled < s.length - 1e-9) &&
         !b.nativeGiantArrows?.some((s) => s.travelled < s.length - 1e-9) &&
         !b.nativeDarkOrbs?.some((s) => s.travelled < s.length - 1e-9) &&
         !b.nativeSeekingShieldCasts?.some((cast) => !cast.released) &&

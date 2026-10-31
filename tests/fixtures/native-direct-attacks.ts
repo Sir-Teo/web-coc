@@ -26,6 +26,7 @@ export type NativeDirectKind =
   | 'superdragon'
   | 'stoneslammer'
   | 'trooplauncher'
+  | 'loglauncher'
   | 'balloon'
   | 'archer'
   | 'swordsman'
@@ -45,6 +46,8 @@ export type NativeDirectTarget =
   'storage' | 'cannon' | 'airdefense' | 'garrison' | 'air-garrison' | 'monolith';
 
 interface NativeDirectOptions {
+  layout?: Building[];
+  deployY?: number;
   buildingLevel?: number;
   extraBuildings?: Building[];
   spellLevels?: Partial<ReplayData['initial']['spells']>;
@@ -67,7 +70,7 @@ export function nativeDirectBattle(
   model.state.king = undefined;
   model.state.obstacles = [];
   model.state.nextId = 100;
-  model.state.buildings = [
+  model.state.buildings = options.layout ?? [
     makeBuilding(1, 'townhall', 36, 36, 1),
     makeBuilding(
       2,
@@ -157,7 +160,8 @@ export function nativeDirectBattle(
   }
   options.beforeDeploy?.({ model, battle, step });
   model.activeTroop = kind;
-  if (!model.deploy(x, 11.5)) throw Error('Native direct attack deployment failed');
+  if (!model.deploy(x, options.deployY ?? 11.5))
+    throw Error('Native direct attack deployment failed');
   const unit = battle.units.filter((u) => u.kind === kind).at(-1)!;
   const until = (at: number) => {
     while (battle.elapsed < at - 1e-9) step();
