@@ -46,6 +46,8 @@ constants:
 | Inferno Dragon | Two ramp thresholds, stronger DPS tiers and recovery after a kill | [Source beam cadence](../reference/attacking-inferno-dragon/README.md) |
 | Super Miner | Two ramp thresholds, stronger DPS tiers and death-bomb delay | [Source charges and ramp](../reference/attacking-super-miner/README.md) |
 | Super Wall Breaker | Combined contact damage and death-only damage against Walls | [Death blasts and source charges](../reference/attacking-super-wall-breaker/README.md) |
+| Bowler | Two boulder landings and four-tile bounce distance | [Fixed boulder landings](../reference/attacking-bowler/README.md) |
+| Super Hog Rider | Tier-specific Hog/Rider HP, DPS, preferences, wall movement and landing delay | [Defeat split](../reference/attacking-super-hog/README.md) |
 | Super Bowler | Three boulder landings; three-tile bounce distance | [Source boulders and phases](../reference/attacking-super-bowler/README.md) |
 | Super Barbarian | Eight-second opening Rage; +70% damage and +1.5 tiles/s | [Rage and charges](../reference/attacking-super-barbarian/README.md) |
 | Sneaky Goblin | Five-second opening invisibility | [Invisibility and resource attacks](../reference/attacking-sneaky-goblin/README.md) |
@@ -71,12 +73,12 @@ crash labels accompany its version-190 combat boundary; see the linked
 reference for historical playback behavior.
 
 `tests/browser/troop-combat-guide.spec.ts` opens real catalog Info buttons for
-thirty-one troop families at 390×844, 844×390 and 1440×960. It verifies source facts,
+thirty-three troop families at 390×844, 844×390 and 1440×960. It verifies source facts,
 favorite targets, advice, text fit, horizontal overflow, touch targets,
 scrolling, training navigation and closing. Screenshots are saved under
 ignored `output/playtest/`. These are headless browser viewport checks, not
 physical-phone performance measurements. Two catalog groups and two researched-tier
-groups per viewport retain the three-minute case limit; nineteen researched profiles
+groups per viewport retain the three-minute case limit; twenty-one researched profiles
 check that parent research selects the correct troop, summon and ability tier.
 
 Super Wall Breaker's Wall damage facts follow its current research tier. The
@@ -129,3 +131,13 @@ seven-tile aura supplies a temporary health buffer of 20% to 26%, excluding hims
 siege machines and Totems. The guide distinguishes this buffer from healing and
 explains that overlapping health auras use the strongest bonus. Both entries read
 their research-tier aura spell and have base/maximum viewport coverage.
+
+Bowler's two total boulder landings and four-tile bounce extension are distinct
+from Super Bowler's three landings and three-tile extension. Its advice explains
+the fixed direction of the second landing. Super Hog Rider shows the Hog and
+Rider separately: the Hog crosses walls and prefers defenses, while the Rider
+attacks any building and needs an open ground route. The shared defeat-split
+adapter resolves each child's research tier and the 1.3-second Rider flight.
+The guide explains that Spring Trap ejection creates neither half. Minimum and
+maximum research previews check both children, including the Hog's 320–1,200 HP
+and Rider's 250–900 HP, at all three viewports.

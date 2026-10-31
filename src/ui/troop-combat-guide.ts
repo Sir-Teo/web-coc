@@ -1,6 +1,7 @@
 import type { TroopKind } from '../game/data';
 import { nativeUnitRow, nativeUnitStats, type NativeUnitStats } from '../game/native-units';
 import { nativeGlobalArray, nativeRow, num, seconds, tiles } from '../game/native-data';
+import { superHogSplitStats } from '../game/native-super-hog';
 import { superMinionLongShot } from '../game/native-super-minion';
 import { nativeHitPoison } from '../game/defender-hit-poison';
 
@@ -240,13 +241,32 @@ export function troopCombatGuide(kind: TroopKind, stats: NativeUnitStats) {
     );
     tactic =
       'Let a frontline draw fire while it opens walls. Its bomb explodes when it attacks or is defeated; both attack and death damage receive the Wall bonus.';
-  } else if (kind === 'superbowler') {
+  } else if (kind === 'superhogrider') {
+    const split = superHogSplitStats(stats.level),
+      hog = nativeUnitStats(split.hog.kind, split.hog.level),
+      rider = nativeUnitStats(split.rider.kind, split.rider.level);
+    facts.push(
+      ['Hog hitpoints', hog.hp.toLocaleString('en-US')],
+      ['Hog DPS', `${hog.dps}`],
+      ['Hog favorite target', troopFavoriteTarget(hog)],
+      ['Hog movement', troopMovement(hog)],
+      ['Rider hitpoints', rider.hp.toLocaleString('en-US')],
+      ['Rider DPS', `${rider.dps}`],
+      ['Rider favorite target', troopFavoriteTarget(rider)],
+      ['Rider movement', troopMovement(rider)],
+      ['Rider landing delay', `${split.duration} s`],
+    );
+    tactic =
+      'When defeated, it releases one Hog immediately and one Rider after a short backward flight. The Hog jumps walls and pursues defenses; the Rider attacks any building and needs an open path through walls. Spring Trap ejection releases neither half.';
+  } else if (kind === 'bowler' || kind === 'superbowler') {
     facts.push(
       ['Boulder landings', `${stats.bounces}`],
       ['Bounce distance', `${stats.bounceDistance} tiles`],
     );
     tactic =
-      'Use a frontline to protect it while boulders bounce through clustered buildings and ground troops.';
+      kind === 'bowler'
+        ? 'Line up ground targets so the second boulder landing reaches behind the first. The bounce continues along the original throw direction.'
+        : 'Use a frontline to protect it while boulders bounce through clustered buildings and ground troops.';
   } else if (kind === 'superbarbarian') {
     const ability = nativeRow('abilities', stats.ability, stats.abilityLevel),
       duration = seconds(ability, 'DeactivateAfterTime');

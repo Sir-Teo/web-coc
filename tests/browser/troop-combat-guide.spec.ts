@@ -2,6 +2,34 @@ import { expect, test } from '@playwright/test';
 
 const cases = [
   {
+    name: 'Bowler',
+    target: 'Any building',
+    tactic: 'bounce continues along the original throw direction',
+    facts: {
+      'Boulder landings': '2',
+      'Bounce distance': '4 tiles',
+      'Attack splash': '0.3 tiles',
+      'Attack targets': 'Ground only',
+    },
+  },
+  {
+    name: 'Super Hog Rider',
+    target: 'Defenses',
+    tactic: 'Spring Trap ejection releases neither half',
+    facts: {
+      'Hog hitpoints': '320',
+      'Hog DPS': '32',
+      'Hog favorite target': 'Defenses',
+      'Hog movement': 'Ground · crosses walls',
+      'Rider hitpoints': '250',
+      'Rider DPS': '100',
+      'Rider favorite target': 'Any building',
+      'Rider movement': 'Ground',
+      'Rider landing delay': '1.3 s',
+      'Attack targets': 'Ground only',
+    },
+  },
+  {
     name: 'Electro Titan',
     target: 'Any building',
     tactic: 'keeps pulsing during Freeze',
@@ -315,6 +343,33 @@ const cases = [
 
 const upgrades = [
   {
+    kind: 'bowler',
+    name: 'Bowler',
+    level: 10,
+    facts: {
+      'Boulder landings': '2',
+      'Bounce distance': '4 tiles',
+      'Damage per second': '160',
+      Hitpoints: '860',
+    },
+  },
+  {
+    kind: 'hogrider',
+    name: 'Super Hog Rider',
+    level: 15,
+    facts: {
+      'Hog hitpoints': '1,200',
+      'Hog DPS': '80',
+      'Hog favorite target': 'Defenses',
+      'Hog movement': 'Ground · crosses walls',
+      'Rider hitpoints': '900',
+      'Rider DPS': '300',
+      'Rider favorite target': 'Any building',
+      'Rider movement': 'Ground',
+      'Rider landing delay': '1.3 s',
+    },
+  },
+  {
     kind: 'electrotitan',
     name: 'Electro Titan',
     level: 5,
@@ -554,6 +609,7 @@ for (const viewport of [
         expect(close!.height).toBeGreaterThanOrEqual(44);
         if (
           [
+            'Super Hog Rider',
             'Electro Titan',
             'Apprentice Warden',
             'Root Rider',
