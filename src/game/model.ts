@@ -1133,6 +1133,8 @@ export interface Battle {
   /** Version 224: finite, physical rolling logs and the separate nearby blast. */
   nativeLogLauncherPiercing?: true;
   nativeRollingLogs?: RollingLogShot[];
+  /** Version 225: Battle Drill surfacing destroys nearby Walls separately from its stun. */
+  nativeDrillSurfaceWalls?: true;
   /** Version 207: source demolition contact cues reconstruct and cover the death tone. */
   nativeWallBreakerSounds?: true;
   /** Version 206: both Wall Breaker contact splashes include ground defenders. */

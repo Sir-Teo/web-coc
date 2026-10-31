@@ -1803,3 +1803,12 @@ survive caster loss and hold the battle open. Moving-fire cadence and health-los
 clocks are retained. Version 223 and earlier retain the old destination-time
 corridor and complete state. See [source fields, collision conventions and
 validation](../reference/attacking-log-launcher/README.md).
+
+## Version 225: Battle Drill surfacing Wall destruction
+
+New carried Battle Drills destroy living Walls inside their surfacing spell's
+1.5-tile area. The Wall destruction flag is handled separately from ordinary
+Wall stun immunity. Existing two-second building stun, defending-character and
+storage immunities, burrowing and one-cast-per-emergence behavior remain in place.
+Version 224 and earlier retain Walls and complete old states. See
+[source fields, geometry and replay validation](../reference/battle-drill-surface-walls/README.md).

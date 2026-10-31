@@ -32,6 +32,7 @@ constants:
 | Siege Barracks | Base lifetime and first release delay | [Deployment lifecycle](../reference/deployment-lifecycle/README.md) |
 | Wall Wrecker | Town Hall movement destination, tenfold Wall ram damage and healing immunity | [Pinned Wall Wrecker](../reference/official-wiki/spells-siege-super/wall-wrecker.md) |
 | Battle Blimp | Town Hall movement destination, death-blast damage/delay and healing immunity | [Pinned Battle Blimp](../reference/official-wiki/spells-siege-super/battle-blimp.md) |
+| Battle Drill | Surfacing stun/radius, nearby Wall destruction and healing immunity | [Surfacing Wall destruction](../reference/battle-drill-surface-walls/README.md) |
 | Log Launcher | Log travel, structure budget, nearby blast, Wall bonus and health drain | [Rolling corridors](../reference/attacking-log-launcher/README.md) |
 | Stone Slammer | Primary/secondary blast distinction, damage falloff, Wall bonus, death-blast delay and healing immunity | [Source attack phases and blasts](../reference/attacking-stone-slammer/README.md) |
 | Witch | Skeleton wave size, living limit and tier-specific HP/DPS | [Parent and summoned attacks](../reference/attacking-witch/README.md) |
@@ -253,3 +254,11 @@ logs. These facts share the [rolling corridor adapter](../reference/attacking-lo
 Base/maximum research browser checks cover phone, landscape and desktop widths,
 unique labels, text fit and training navigation. Historical battle readouts
 retain their former labels and facts.
+
+Battle Drill Info explains its two-second surfacing stun, 1.5-tile area and
+nearby Wall destruction, alongside healing immunity. Its advice distinguishes
+underground travel from vulnerability while surfaced. The numbers come from its
+intrinsic surfacing ability and spell. Historical battle inspection retains the
+prior guide. Base/maximum research browser checks cover phone, landscape and
+desktop with the same text-fit and training-navigation checks. See
+[surfacing Wall destruction](../reference/battle-drill-surface-walls/README.md).

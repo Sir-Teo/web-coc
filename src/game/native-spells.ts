@@ -302,6 +302,8 @@ function harmDefense(
   const quakeBuilding = num(row, 'BuildingDamagePermil') / 1000;
   const quakeTroop = num(row, 'TroopDamagePermil') / 1000;
   const poison = num(row, 'PoisonDPS');
+  const drillWalls =
+    battle.nativeDrillSurfaceWalls && cast.name === 'DrillerSurfacing' && flag(row, 'DestroyWalls');
   const overgrowth = flag(row, 'Overgrowth');
   const invisible =
     battle.nativeInvisibilityTargets && !overgrowth ? seconds(row, 'InvisibilityTime') : 0;
@@ -326,11 +328,18 @@ function harmDefense(
     stun > 0 ||
     quakeBuilding > 0 ||
     poison > 0 ||
-    invisible > 0
+    invisible > 0 ||
+    drillWalls
   ) {
     for (const b of battle.buildings) {
-      if (b.hp <= 0 || buildingSpellImmune(row, b) || concealedTesla(battle, b)) continue;
+      if (b.hp <= 0 || concealedTesla(battle, b)) continue;
       if (footprintDistance(x, y, b) > radius + 1e-9) continue;
+      // ImmunityWalls excludes the stun; the intrinsic surfacing destruction is separate.
+      if (drillWalls && b.kind === 'wall') {
+        ctx.damageBuilding(b, b.maxHp, at, true);
+        continue;
+      }
+      if (buildingSpellImmune(row, b)) continue;
       if (damage > 0) ctx.damageBuilding(b, damage, at, true);
       // Burning pools (Firemite) carry poison damage without building immunities.
       if (poison > 0) {

@@ -66,7 +66,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 224;
+export const REPLAY_VERSION = 225;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -414,6 +414,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 221 ||
   version === 222 ||
   version === 223 ||
+  version === 224 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -564,6 +565,7 @@ export interface ReplayPlayback {
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   const launcher = version >= 223 && s.army.trooplauncher > 0;
   return {
+    ...(version >= 225 && s.army.battledrill > 0 ? { nativeDrillSurfaceWalls: true as const } : {}),
     ...(version >= 224 && s.army.loglauncher > 0
       ? { nativeLogLauncherPiercing: true as const }
       : {}),

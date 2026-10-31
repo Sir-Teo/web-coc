@@ -4630,6 +4630,7 @@ export class HUD {
         troopLauncherFriendly:
           !this.model.battle || !!this.model.battle.nativeTroopLauncherFriendly,
         logLauncherPiercing: !this.model.battle || !!this.model.battle.nativeLogLauncherPiercing,
+        drillSurfaceWalls: !this.model.battle || !!this.model.battle.nativeDrillSurfaceWalls,
       }),
       original = superOriginal(kind),
       boostNote =

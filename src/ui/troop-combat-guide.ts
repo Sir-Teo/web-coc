@@ -51,6 +51,7 @@ export function troopCombatGuide(
     stoneSlammerAttacks?: boolean;
     troopLauncherFriendly?: boolean;
     logLauncherPiercing?: boolean;
+    drillSurfaceWalls?: boolean;
   } = {},
 ) {
   const facts: [string, string][] = [];
@@ -96,6 +97,17 @@ export function troopCombatGuide(
     );
     tactic =
       'Line it up with the Town Hall to roll logs through a corridor. Each log travels up to 20 tiles and hits up to four structures, including walls. Ground defenders can also be hit. Each release adds a blast around the launcher; Overgrowth-covered structures stop the rolling log. Protect it as its health drains.';
+  } else if (kind === 'battledrill' && rules.drillSurfaceWalls !== false) {
+    const ability = nativeRow('abilities', 'BattleDrillStunOnSurface'),
+      surface = nativeRow('spells', text(ability, 'SelfSpell'), num(ability, 'SelfSpellLevel', 1));
+    facts.push(
+      ['Surfacing stun', `${seconds(surface, 'StunTimeMS')} s`],
+      ['Surfacing radius', `${tiles(surface, 'Radius')} tiles`],
+      ['Walls in surfacing radius', 'Destroyed'],
+      ['Can receive healing', stats.immuneToHealing ? 'No' : 'Yes'],
+    );
+    tactic =
+      'Burrow beneath walls to reach defenses. Each emergence destroys nearby walls and stuns surrounding defenses. It becomes vulnerable while surfaced, so support it against defenders and nearby defenses. It cannot be healed.';
   } else if (kind === 'wallwrecker') {
     facts.push(
       ['Movement destination', text(nativeUnitRow(kind, stats.level), 'PreferredMovementTarget')],
