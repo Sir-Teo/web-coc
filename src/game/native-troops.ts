@@ -973,6 +973,10 @@ export function stepNativeUnit(
     (u.kind === 'skeleton' || u.kind === 'bigboy')
   );
   const hound = !!((u.kind === 'lavahound' || u.kind === 'icehound') && battle.nativeHoundWindup);
+  const houndPup = !!(
+    (u.kind === 'lavapup' || u.kind === 'icehoundpup') &&
+    battle.nativeHoundPupWindup
+  );
   const splitAttack =
     bowler ||
     golem ||
@@ -1005,7 +1009,8 @@ export function stepNativeUnit(
     valkyrie ||
     witch ||
     witchSummon ||
-    hound;
+    hound ||
+    houndPup;
   const phaseDt =
     babyDragon && state.alone
       ? actionDt *
@@ -1045,7 +1050,8 @@ export function stepNativeUnit(
         superMinion ||
         minion ||
         archer ||
-        superBowler
+        superBowler ||
+        houndPup
       )
         releaseRangedAtDefender(
           ctx,

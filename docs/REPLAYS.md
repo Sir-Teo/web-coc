@@ -1691,3 +1691,13 @@ and Shrink. Source bodies follow captured offsets and Wall facing. Parent attack
 summon levels, stock, ownership and scheduled births retain their behavior.
 Versions 212 and earlier keep immediate child hits. See
 [source timing, spawn interpretation limits and portable checks](../reference/attacking-witch/README.md#recording-version-213-summoned-melee-phases).
+
+## Version 214: Hound Pup attack charges
+
+Armies carrying Lava Hound or Ice Hound enable a one-second first charge and one-second
+repeat for their source Lava Pups and Ice Hound Pups. Both retain native projectile
+flight, ground/air targeting and tier-one child stats. Ice Pup defender shots capture
+their two-second, 50% chill at launch, including impacts after the shooter's defeat.
+Original child action meshes use the recorded charge offset. Parent combat and death
+releases retain their rules. Versions 213 and earlier preserve immediate child shots.
+See [source timing, interpretation limits and portable checks](../reference/attacking-hound/README.md#recording-version-214-pup-attack-charge).

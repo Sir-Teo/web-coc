@@ -75,3 +75,38 @@ Historical browser expectations are captured in Chromium to preserve the old hos
 those cases do not claim cross-engine equality. Original Pup meshes, reverse seeks,
 read-only/reduced-motion rendering and WebGL health also pass. Replay seeds are derived
 from stage index by the existing schema; no standalone setup seed is introduced.
+
+## Recording version 214: Pup attack charge
+
+Both source child rows, `Lava Pup` and `Ice Hound Pup`, declare `AttackSpeed=1000`,
+`AttackRange=225`, `DPS=35`, `Hitpoints=50`, and both ground and air targets. Each has
+one source tier; raising the parent level changes its finite release count, not the
+child's stats. Neither row declares a cooldown override or initial target delay. The
+same pinned older-engine timing adapter described above therefore gives a one-second
+first charge, zero recovery, and a one-second repeat. This is a local interpretation;
+modern executable timing and exact projectile aim remain unverified.
+
+A pre-change ordinary Monolith-death probe found immediate first Pup releases at
+engagement for minimum/maximum Lava Hound and Ice Hound parents. Version 214 starts
+its charge only once a target is in range. Freeze/stun pauses the charge; attack-speed
+modifiers and Shrink scale the first and repeat periods. Original child action meshes
+use the captured phase offset. Pups still fly, cross Walls, and attack ground or air.
+
+Their existing source projectiles (`tinyhound_projectile` and
+`icy_tinyhound_projectile`) travel at `Speed=300` (three tiles per second). Building
+shots retain their existing native damage and frost path. Defender shots now release
+through the same source projectile adapter after charging, with Ice Pup's
+`FrostOnHitTime=2000` and `FrostOnHitPercent=50` captured at launch. This keeps the
+two-second, 50% chill after the shooter dies. Parent attacks, death blasts, Ice death
+Freeze, seeded child positions, ownership, finite stock and art/audio assets are
+unchanged. Equipment-created Lavaloon Pups use a distinct kind and retain their rules.
+
+Only initial armies carrying Lava Hound or Ice Hound enable the new phases. Version
+213 and earlier keep immediate Pup attacks and their previous state shape. Tests check
+historical ordinary wave snapshots against SHA-256 digests captured before this change,
+as well as full forward/reverse portable states in both versions. Source projectile
+identity, flight speed, damage, ground/air defender targeting, captured Ice frost,
+Freeze/stun, faster/slower clocks, Shrink, retargeting and defeated attackers have model
+coverage. Ordinary recordings use actual Monolith defeats without injected combat state;
+isolated damage checks freeze other bodies and the Monolith and discard their in-flight
+shots, while retaining the parent's delayed death blast.

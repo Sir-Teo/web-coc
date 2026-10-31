@@ -167,6 +167,8 @@ export function stepNativeAttackWindup(
       (unit.kind === 'superminion' && ctx.battle.nativeSuperMinionLongShots) ||
       (unit.kind === 'minion' && ctx.battle.nativeMinionWindup) ||
       (unit.kind === 'dragon' && ctx.battle.nativeDragonWindup) ||
+      ((unit.kind === 'lavapup' || unit.kind === 'icehoundpup') &&
+        ctx.battle.nativeHoundPupWindup) ||
       (unit.kind === 'archer' && ctx.battle.nativeArcherWindup) ||
       (unit.kind === 'superarcher' && ctx.battle.nativeSuperArcherWindup) ||
       (unit.kind === 'superwizard' && ctx.battle.nativeSuperWizardWindup) ||

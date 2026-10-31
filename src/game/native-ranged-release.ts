@@ -16,7 +16,14 @@ export function releaseRangedAtDefender(
     ctx.battle,
     {
       weapon: 'native',
-      native: { name: stats.projectile, kind: unit.kind, level: stats.level },
+      native: {
+        name: stats.projectile,
+        kind: unit.kind,
+        level: stats.level,
+        ...(ctx.battle.nativeDefenderFrost && stats.frostTime > 0
+          ? { frost: { seconds: stats.frostTime, percent: stats.frostPercent } }
+          : {}),
+      },
       sourceId: unit.id,
       targetId: target.id,
       targetBuilding: false,
