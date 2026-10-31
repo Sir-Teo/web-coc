@@ -110,3 +110,8 @@ Freeze/stun, faster/slower clocks, Shrink, retargeting and defeated attackers ha
 coverage. Ordinary recordings use actual Monolith defeats without injected combat state;
 isolated damage checks freeze other bodies and the Monolith and discard their in-flight
 shots, while retaining the parent's delayed death blast.
+
+Chromium and WebKit checks compare complete Node battle states through birth, charge,
+release, flight and impact in both seek directions. They cover current and historical
+recordings, original Pup bodies and projectiles, source tier, read-only/reduced-motion
+rendering and WebGL health on phone and desktop.

@@ -79,6 +79,25 @@ export function troopCombatGuide(kind: TroopKind, stats: NativeUnitStats) {
       tactic =
         'Protect her while the Big Boy draws ground fire. She supports it with ranged attacks against ground and air; only one of her Big Boys can be alive at a time.';
     }
+  } else if (kind === 'lavahound' || kind === 'icehound') {
+    const pup = nativeUnitStats(kind === 'lavahound' ? 'lavapup' : 'icehoundpup', 1);
+    facts.push(
+      ['Pups on defeat', `${stats.secondaryCount}`],
+      ['Pup hitpoints', `${pup.hp}`],
+      ['Pup DPS', `${pup.dps}`],
+      ['Pup targets', troopAttackTargets(pup)],
+    );
+    if (kind === 'icehound') {
+      facts.push(
+        ['Pup chill duration', `${pup.frostTime} s`],
+        ['Pup chill slow', `${Math.round(pup.frostPercent * 100)}%`],
+      );
+      tactic =
+        'Send it ahead of other air troops to draw Air Defense fire. Its hits slow enemies, and its defeat freezes nearby targets and releases Ice Pups whose shots also chill.';
+    } else {
+      tactic =
+        'Send it ahead of other air troops to draw Air Defense fire. On defeat it bursts into Pups that attack buildings and ground or air defenders.';
+    }
   } else if ((kind === 'superminer' || kind === 'infernodragon') && stats.damageRamp) {
     const ramp = stats.damageRamp;
     facts.push(

@@ -158,8 +158,30 @@ const cases = [
   {
     name: 'Lava Hound',
     target: 'Air Defense',
-    tactic: 'Fly over Walls',
-    facts: { 'Attack targets': 'Ground only', Movement: 'Air · ignores walls' },
+    tactic: 'draw Air Defense fire',
+    facts: {
+      'Pups on defeat': '8',
+      'Pup hitpoints': '50',
+      'Pup DPS': '35',
+      'Pup targets': 'Ground and air',
+      'Attack targets': 'Ground only',
+      Movement: 'Air · ignores walls',
+    },
+  },
+  {
+    name: 'Ice Hound',
+    target: 'Air Defense',
+    tactic: 'Ice Pups whose shots also chill',
+    facts: {
+      'Pups on defeat': '6',
+      'Pup hitpoints': '50',
+      'Pup DPS': '35',
+      'Pup targets': 'Ground and air',
+      'Pup chill duration': '2 s',
+      'Pup chill slow': '50%',
+      'Attack targets': 'Ground only',
+      Movement: 'Air · ignores walls',
+    },
   },
   {
     name: 'Headhunter',
@@ -181,87 +203,95 @@ for (const viewport of [
   { width: 844, height: 390 },
   { width: 1440, height: 960 },
 ]) {
-  test(`source troop guide stays usable at ${viewport.width}×${viewport.height}`, async ({
-    page,
-  }) => {
-    test.setTimeout(180000);
-    const errors: string[] = [];
-    page.on('pageerror', (e) => errors.push(e.message));
-    await page.setViewportSize(viewport);
-    await page.goto('/?lazyart');
-    await page.waitForFunction(() => window.__game?.scene.artSettled);
-    await page.locator('[data-action="skip-tutorial"]').click();
-    await page.locator('.train-add').click();
-    for (const c of cases) {
-      await page.getByRole('button', { name: `About ${c.name}`, exact: true }).click();
-      await expect(page.locator('.troop-info-hero h2')).toHaveText(c.name);
-      const row = (label: string) =>
-        page
-          .locator('.troop-stats > div')
-          .filter({ has: page.getByText(label, { exact: true }) })
-          .locator('dd');
-      await expect(row('Favorite target')).toHaveText(c.target);
-      for (const [label, value] of Object.entries(c.facts))
-        await expect(row(label)).toHaveText(value);
-      await expect(page.locator('.troop-tactic')).toContainText(c.tactic);
-      if (c.name !== 'Balloon')
-        await expect(page.locator('.troop-tactic')).not.toContainText('sending Balloons');
-      await page.locator('.modal').evaluate(async (el) => {
-        await Promise.all(el.getAnimations().map((a) => a.finished));
-      });
-      const layout = await page.locator('.troop-info-body').evaluate((body) => ({
-        cellsFit: [...body.querySelectorAll('.troop-stats > div')].every(
-          (el) => el.scrollWidth <= el.clientWidth,
-        ),
-        documentWidth: document.documentElement.scrollWidth,
-      }));
-      expect(layout.cellsFit).toBe(true);
-      expect(layout.documentWidth).toBeLessThanOrEqual(viewport.width);
-      const close = await page
-        .getByRole('button', { name: 'Close dialog', exact: true })
-        .boundingBox();
-      expect(close!.width).toBeGreaterThanOrEqual(44);
-      expect(close!.height).toBeGreaterThanOrEqual(44);
-      if (
-        [
-          'Witch',
-          'Super Witch',
-          'Healer',
-          'Druid',
-          'Super Minion',
-          'Baby Dragon',
-          'Super Barbarian',
-          'Sneaky Goblin',
-          'Super Archer',
-          'Super Wizard',
-          'Super Bowler',
-          'Super Wall Breaker',
-          'Super Miner',
-          'Inferno Dragon',
-        ].includes(c.name)
-      )
-        await page.screenshot({
-          animations: 'disabled',
-          path: `output/playtest/troop-guide-${c.name.replaceAll(' ', '-').toLowerCase()}-${viewport.width}.png`,
+  for (const [index, group] of [
+    cases.slice(0, Math.ceil(cases.length / 2)),
+    cases.slice(Math.ceil(cases.length / 2)),
+  ].entries())
+    test(`source troop guide group ${index + 1} stays usable at ${viewport.width}×${viewport.height}`, async ({
+      page,
+    }) => {
+      test.setTimeout(180000);
+      const errors: string[] = [];
+      page.on('pageerror', (e) => errors.push(e.message));
+      await page.setViewportSize(viewport);
+      await page.goto('/?lazyart');
+      await page.waitForFunction(() => window.__game?.scene.artSettled);
+      await page.locator('[data-action="skip-tutorial"]').click();
+      await page.locator('.train-add').click();
+      // Dialog layout and source stats do not depend on the village's animation loop.
+      await page.evaluate(() => window.__game.game.loop.sleep());
+      for (const c of group) {
+        await page.getByRole('button', { name: `About ${c.name}`, exact: true }).click();
+        await expect(page.locator('.troop-info-hero h2')).toHaveText(c.name);
+        const row = (label: string) =>
+          page
+            .locator('.troop-stats > div')
+            .filter({ has: page.getByText(label, { exact: true }) })
+            .locator('dd');
+        await expect(row('Favorite target')).toHaveText(c.target);
+        for (const [label, value] of Object.entries(c.facts))
+          await expect(row(label)).toHaveText(value);
+        await expect(page.locator('.troop-tactic')).toContainText(c.tactic);
+        if (c.name !== 'Balloon')
+          await expect(page.locator('.troop-tactic')).not.toContainText('sending Balloons');
+        await page.locator('.modal').evaluate(async (el) => {
+          await Promise.all(el.getAnimations().map((a) => a.finished));
         });
-      const train = page
-        .locator('.troop-info-body')
-        .getByRole('button', { name: 'Train troops', exact: true });
-      await train.scrollIntoViewIfNeeded();
-      const box = await train.boundingBox();
-      expect(box!.height).toBeGreaterThanOrEqual(44);
-      expect(box!.y).toBeGreaterThanOrEqual(0);
-      expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);
-      await train.click();
-      await expect(
-        page.getByRole('button', { name: `About ${c.name}`, exact: true }),
-      ).toBeVisible();
-    }
-    await page.getByRole('button', { name: 'About Minion', exact: true }).click();
-    await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
-    await expect(page.locator('.troop-info-body')).toHaveCount(0);
-    expect(errors).toEqual([]);
-  });
+        const layout = await page.locator('.troop-info-body').evaluate((body) => ({
+          cellsFit: [...body.querySelectorAll('.troop-stats > div')].every(
+            (el) => el.scrollWidth <= el.clientWidth,
+          ),
+          documentWidth: document.documentElement.scrollWidth,
+        }));
+        expect(layout.cellsFit).toBe(true);
+        expect(layout.documentWidth).toBeLessThanOrEqual(viewport.width);
+        const close = await page
+          .getByRole('button', { name: 'Close dialog', exact: true })
+          .boundingBox();
+        expect(close!.width).toBeGreaterThanOrEqual(44);
+        expect(close!.height).toBeGreaterThanOrEqual(44);
+        if (
+          [
+            'Lava Hound',
+            'Ice Hound',
+            'Witch',
+            'Super Witch',
+            'Healer',
+            'Druid',
+            'Super Minion',
+            'Baby Dragon',
+            'Super Barbarian',
+            'Sneaky Goblin',
+            'Super Archer',
+            'Super Wizard',
+            'Super Bowler',
+            'Super Wall Breaker',
+            'Super Miner',
+            'Inferno Dragon',
+          ].includes(c.name)
+        )
+          await page.screenshot({
+            animations: 'disabled',
+            path: `output/playtest/troop-guide-${c.name.replaceAll(' ', '-').toLowerCase()}-${viewport.width}.png`,
+          });
+        const train = page
+          .locator('.troop-info-body')
+          .getByRole('button', { name: 'Train troops', exact: true });
+        await train.scrollIntoViewIfNeeded();
+        const box = await train.boundingBox();
+        expect(box!.height).toBeGreaterThanOrEqual(44);
+        expect(box!.y).toBeGreaterThanOrEqual(0);
+        expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);
+        await train.click();
+        await expect(
+          page.getByRole('button', { name: `About ${c.name}`, exact: true }),
+        ).toBeVisible();
+      }
+      await page.getByRole('button', { name: 'About Minion', exact: true }).click();
+      await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
+      await expect(page.locator('.troop-info-body')).toHaveCount(0);
+      expect(errors).toEqual([]);
+    });
 
   test(`researched troop guide follows source tiers at ${viewport.width}×${viewport.height}`, async ({
     page,
@@ -274,6 +304,8 @@ for (const viewport of [
     await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('[data-action="skip-tutorial"]').click();
     await page.locator('.train-add').click();
+    // Dialog layout and source stats do not depend on the village's animation loop.
+    await page.evaluate(() => window.__game.game.loop.sleep());
     await page.evaluate(() => {
       const m = window.__game.model;
       m.state.troopLevels = { ...m.state.troopLevels, wallbreaker: 14 };
@@ -352,6 +384,30 @@ for (const viewport of [
       .getByRole('button', { name: 'Train troops', exact: true })
       .click();
     for (const upgraded of [
+      {
+        kind: 'lavahound',
+        name: 'Lava Hound',
+        level: 8,
+        facts: {
+          'Pups on defeat': '22',
+          'Pup hitpoints': '50',
+          'Pup DPS': '35',
+          'Pup targets': 'Ground and air',
+        },
+      },
+      {
+        kind: 'lavahound',
+        name: 'Ice Hound',
+        level: 8,
+        facts: {
+          'Pups on defeat': '16',
+          'Pup hitpoints': '50',
+          'Pup DPS': '35',
+          'Pup targets': 'Ground and air',
+          'Pup chill duration': '2 s',
+          'Pup chill slow': '50%',
+        },
+      },
       {
         kind: 'witch',
         name: 'Witch',
