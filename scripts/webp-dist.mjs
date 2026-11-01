@@ -21,12 +21,14 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { cpus } from 'node:os';
 import sharp from 'sharp';
+import { createWebpCache } from './webp-cache.mjs';
 
 const dist = path.resolve('dist');
 const assets = path.join(dist, 'assets');
 const cache = path.resolve('node_modules/.cache/webp-dist');
 const SETTINGS = { lossless: true, exact: true, effort: 4 };
 const settingsKey = JSON.stringify(SETTINGS);
+const cachedWebp = createWebpCache(cache);
 
 async function walk(dir, out = []) {
   for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
@@ -49,15 +51,10 @@ async function worker() {
   for (let file = queue.pop(); file; file = queue.pop()) {
     const source = await fs.readFile(file);
     const hash = createHash('sha1').update(settingsKey).update(source).digest('hex');
-    const cached = path.join(cache, hash + '.webp');
-    let webp;
-    try {
-      webp = await fs.readFile(cached);
-    } catch {
-      webp = await sharp(source).webp(SETTINGS).toBuffer();
-      await fs.writeFile(cached, webp);
+    const webp = await cachedWebp(hash, async () => {
       encoded++;
-    }
+      return sharp(source).webp(SETTINGS).toBuffer();
+    });
     await fs.writeFile(file.slice(0, -4) + '.webp', webp);
     pngBytes += source.length;
     webpBytes += webp.length;

@@ -12,7 +12,8 @@ export function nativeTroopFacingTarget(
 ) {
   if (
     (battle.nativeHealerWindup && unit.kind === 'healer') ||
-    (battle.nativeDruidWindup && unit.kind === 'druid')
+    (battle.nativeDruidWindup && unit.kind === 'druid') ||
+    (battle.nativeTroopLauncherFriendly && unit.kind === 'trooplauncher')
   ) {
     const ally = battle.units.find(
       (u) => u.id === (unit.native?.healerWindup?.targetId ?? unit.healTarget),
@@ -23,10 +24,18 @@ export function nativeTroopFacingTarget(
   const wall = buildings.get(unit.native?.wallTarget ?? NaN);
   if (wall && wall.hp > 0) return { x: wall.x + 0.5, y: wall.y + 0.5 };
   const windup =
+    (battle.nativeWallWreckerWindup && unit.kind === 'wallwrecker') ||
+    (battle.nativeBattleDrillWindup && unit.kind === 'battledrill') ||
     (battle.nativeGolemWindup && (unit.kind === 'golem' || unit.kind === 'golemite')) ||
+    (battle.nativeBearWindup && unit.kind === 'bear') ||
+    (battle.nativeRuinKnightWindup && unit.kind === 'ruinknight') ||
+    (battle.nativeSpellSkeletonWindup &&
+      (unit.kind === 'spellskeletonshielded' || unit.kind === 'spellskeleton')) ||
+    (battle.nativeWitchSummonWindup && (unit.kind === 'skeleton' || unit.kind === 'bigboy')) ||
     (battle.nativePekkaWindup && unit.kind === 'pekka') ||
     (battle.nativeGiantWindup && (unit.kind === 'giant' || unit.kind === 'supergiant')) ||
     (battle.nativeIceGolemWindup && unit.kind === 'icegolem') ||
+    (battle.nativeFlameFlingerBursts && unit.kind === 'flameflinger') ||
     (battle.nativeRootRiderWindup && unit.kind === 'rootrider') ||
     (battle.nativeElectroTitanWindup && unit.kind === 'electrotitan') ||
     (battle.nativeYetiWindup && (unit.kind === 'yeti' || unit.kind === 'superyeti')) ||

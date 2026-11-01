@@ -231,6 +231,13 @@ export class BattleSoundLog {
       (event === 'attack' || event === 'hit')
     )
       return;
+    // Rolling logs retain their launch and physical contacts for replay reconstruction.
+    if (
+      battle.nativeLogLauncherPiercing &&
+      u.kind === 'loglauncher' &&
+      (event === 'attack' || event === 'hit')
+    )
+      return;
     // Version 94's beam owns a sustained loop; do not restart the same clip every damage tick.
     if (battle.nativeTroopDamageRamp && u.kind === 'infernodragon' && event === 'attack') return;
     if (
@@ -532,6 +539,19 @@ export function troopSoundCues(battle: Battle | null, log: BattleSoundLog): Samp
     const actor = { id: shot.sourceId, kind: 'superarcher' as const, level: shot.level };
     const cue = troopCue(battle, actor, 'attack', `${shot.id}:attack`, shot.launched);
     if (cue) cues.push(cue);
+  }
+  for (const shot of battle.nativeRollingLogs ?? []) {
+    const actor = { id: shot.sourceId, kind: 'loglauncher' as const, level: shot.level };
+    if (shot.launched <= elapsed + 1e-9 && cueAudible(shot.launched, elapsed)) {
+      const cue = troopCue(battle, actor, 'attack', `${shot.id}:attack`, shot.launched);
+      if (cue) cues.push(cue);
+    }
+    for (const hit of shot.hit) {
+      if (hit.at > elapsed + 1e-9 || !cueAudible(hit.at, elapsed)) continue;
+      const key = `${shot.id}:${hit.target.building ? 'building' : 'defender'}:${hit.target.id}:hit`,
+        cue = troopCue(battle, actor, 'hit', key, hit.at);
+      if (cue) cues.push(cue);
+    }
   }
   for (const root of battle.nativeOvergrowthRoots ?? []) {
     if (root.until > elapsed + 1e-9 || !cueAudible(root.until, elapsed)) continue;

@@ -29,6 +29,11 @@ clock. Source aura damage, phase, immunity and local footprint geometry do not
 change. Native aura startup timing and modern slow composition are not newly
 claimed.
 
+The Army information panel distinguishes aura damage from the ordinary whip.
+It reads the same source spell tier for 75–150 aura DPS, 30–60 damage per pulse,
+the 0.4-second interval, 3.5-tile radius and 25% Hero damage. Advice explains the
+independent ground/air aura, Wall immunity and continued pulses during Freeze.
+
 Only carried Electro Titan armies enable this boundary. Versions 173 and earlier
 retain their immediate first hits and original state. No source stats, assets,
 audio or save format changes are required.

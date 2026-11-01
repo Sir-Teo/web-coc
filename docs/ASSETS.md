@@ -70,6 +70,20 @@ reconstruct and verify these compatibility files as well as the compact pages.
 If the compact layout changes again, give it a new URL version and retain the prior
 layout's page too; cached JavaScript can still contain its UV coordinates.
 
+## Production texture compression
+
+The production build converts asset PNGs to lossless WebP with exact transparent
+RGB values, then rewrites shipping references. `scripts/webp-dist.mjs` caches
+encoded bytes under `node_modules/.cache/webp-dist` using the source bytes and
+encoder settings. Identical concurrent textures share one encode.
+
+`scripts/webp-cache.mjs` writes a private temporary file and publishes it by atomic
+rename. A different worker or build process can only read a complete cache entry.
+Cached RIFF headers and declared lengths are checked before reuse, so truncated
+entries from an interrupted older build are regenerated. Source PNGs and encoding
+settings stay unchanged. `tests/webp-cache.test.ts` covers duplicate requests,
+an interrupted write with an independent builder, truncated entries and retries.
+
 ## Changing or removing assets
 
 1. Identify the owning generator/importer and read its reference notes.

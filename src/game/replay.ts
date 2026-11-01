@@ -66,7 +66,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 211;
+export const REPLAY_VERSION = 232;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -401,6 +401,27 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 208 ||
   version === 209 ||
   version === 210 ||
+  version === 211 ||
+  version === 212 ||
+  version === 213 ||
+  version === 214 ||
+  version === 215 ||
+  version === 216 ||
+  version === 217 ||
+  version === 218 ||
+  version === 219 ||
+  version === 220 ||
+  version === 221 ||
+  version === 222 ||
+  version === 223 ||
+  version === 224 ||
+  version === 225 ||
+  version === 226 ||
+  version === 227 ||
+  version === 228 ||
+  version === 229 ||
+  version === 230 ||
+  version === 231 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -503,6 +524,7 @@ export type ReplayAction = { step: number } & (
   | { type: 'spell'; kind: keyof SpellBook; x: number; y: number; targetHero?: HeroKind }
   | { type: 'hero'; x: number; y: number; hero?: HeroKind }
   | { type: 'ability'; hero?: HeroKind }
+  | { type: 'siege-end' }
   | { type: 'end' }
 );
 export interface ReplaySetup {
@@ -549,7 +571,53 @@ export interface ReplayPlayback {
   complete: boolean;
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
+  const launcher = version >= 223 && s.army.trooplauncher > 0;
   return {
+    ...(version >= 232 && TROOP_KEYS.some((kind) => isSiege(kind) && s.army[kind] > 0)
+      ? { nativeSiegeManualRelease: true as const }
+      : {}),
+    ...(version >= 231 && (s.army.battleblimp > 0 || s.army.loglauncher > 0)
+      ? { nativeMovingSiegeFreezeClock: true as const }
+      : {}),
+    ...(version >= 230 && s.army.battledrill > 0 ? { nativeBattleDrillWindup: true as const } : {}),
+    ...(version >= 229 && s.army.wallwrecker > 0 ? { nativeWallWreckerWindup: true as const } : {}),
+    ...(version >= 228 && s.army.flameflinger > 0
+      ? { nativeFlameFlingerBursts: true as const }
+      : {}),
+    ...(version >= 227 && s.army.flameflinger > 0
+      ? { nativeFlameFlingerBurnOverlap: true as const }
+      : {}),
+    ...(version >= 226 && s.army.flameflinger > 0
+      ? { nativeFlameFlingerWallPulse: true as const }
+      : {}),
+    ...(version >= 225 && s.army.battledrill > 0 ? { nativeDrillSurfaceWalls: true as const } : {}),
+    ...(version >= 224 && s.army.loglauncher > 0
+      ? { nativeLogLauncherPiercing: true as const }
+      : {}),
+    ...(launcher ? { nativeTroopLauncherFriendly: true as const } : {}),
+    ...(version >= 222 && s.army.stoneslammer > 0
+      ? { nativeStoneSlammerAttacks: true as const }
+      : {}),
+    ...(version >= 221 && s.army.superdragon > 0 ? { nativeSuperDragonBurst: true as const } : {}),
+    ...(version >= 220 && s.army.ruinwitch > 0
+      ? { nativeRuinWitchRubbleRoutes: true as const }
+      : {}),
+    ...(version >= 219 && s.army.ruinwitch > 0 ? { nativeRuinKnightWindup: true as const } : {}),
+    ...(version >= 218 && s.spells.skeleton > 0
+      ? { nativeSpellSkeletonWindup: true as const }
+      : {}),
+    ...(version >= 217 && s.spells.bat > 0 ? { nativeSpellBatWindup: true as const } : {}),
+    ...(version >= 216 ? { nativeAttackContactPose: true as const } : {}),
+    ...(version >= 215 && s.heroes?.some((h) => h.pet?.kind === 'sneezy')
+      ? { nativeBoogerWindup: true as const }
+      : {}),
+    ...(version >= 214 && (s.army.lavahound > 0 || s.army.icehound > 0)
+      ? { nativeHoundPupWindup: true as const }
+      : {}),
+    ...(version >= 213 && (s.army.witch > 0 || s.army.superwitch > 0)
+      ? { nativeWitchSummonWindup: true as const }
+      : {}),
+    ...(version >= 212 && s.army.druid > 0 ? { nativeBearWindup: true as const } : {}),
     ...(version >= 211 && s.army.druid > 0 ? { nativeDruidWindup: true as const } : {}),
     ...(version >= 210 && (s.army.healer > 0 || heroSummonLevels(s.heroes ?? []).has('healer'))
       ? { nativeHealerWindup: true as const }
@@ -558,13 +626,15 @@ export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
       ? { nativeInfernoDragonCadence: true as const }
       : {}),
     ...(version >= 208 && s.army.superminer > 0 ? { nativeSuperMinerWindup: true as const } : {}),
-    ...(version >= 207 && (s.army.wallbreaker > 0 || s.army.superwallbreaker > 0)
+    ...(version >= 207 && (s.army.wallbreaker > 0 || s.army.superwallbreaker > 0 || launcher)
       ? { nativeWallBreakerSounds: true as const }
       : {}),
-    ...(version >= 206 && (s.army.wallbreaker > 0 || s.army.superwallbreaker > 0)
+    ...(version >= 206 && (s.army.wallbreaker > 0 || s.army.superwallbreaker > 0 || launcher)
       ? { nativeWallBreakerSplash: true as const }
       : {}),
-    ...(version >= 206 && s.army.wallbreaker > 0 ? { nativeWallBreakerWindup: true as const } : {}),
+    ...(version >= 206 && (s.army.wallbreaker > 0 || launcher)
+      ? { nativeWallBreakerWindup: true as const }
+      : {}),
     ...(version >= 205 && s.army.superwallbreaker > 0
       ? { nativeSuperWallBreakerWindup: true as const }
       : {}),
@@ -595,10 +665,11 @@ export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
       : {}),
     ...(version >= 193 && s.army.goblin > 0 ? { nativeGoblinWindup: true as const } : {}),
     ...(version >= 192 &&
-    (s.army.swordsman > 0 || heroSummonLevels(s.heroes ?? []).has('swordsman'))
+    (s.army.swordsman > 0 || heroSummonLevels(s.heroes ?? []).has('swordsman') || launcher)
       ? { nativeBarbarianWindup: true as const }
       : {}),
-    ...(version >= 191 && (s.army.archer > 0 || heroSummonLevels(s.heroes ?? []).has('archer'))
+    ...(version >= 191 &&
+    (s.army.archer > 0 || heroSummonLevels(s.heroes ?? []).has('archer') || launcher)
       ? { nativeArcherWindup: true as const }
       : {}),
     ...(version >= 190 && s.army.balloon > 0 ? { nativeBalloonWindup: true as const } : {}),
@@ -637,7 +708,7 @@ export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
       : {}),
     ...(version >= 173 && s.army.rootrider > 0 ? { nativeRootRiderWindup: true as const } : {}),
     ...(version >= 172 && s.army.icegolem > 0 ? { nativeIceGolemWindup: true as const } : {}),
-    ...(version >= 171 && (s.army.giant > 0 || s.army.supergiant > 0)
+    ...(version >= 171 && (s.army.giant > 0 || s.army.supergiant > 0 || launcher)
       ? { nativeGiantWindup: true as const }
       : {}),
     ...(version >= 170 && (s.army.lavahound > 0 || s.army.icehound > 0)
@@ -1358,6 +1429,9 @@ export function validateReplay(value: unknown): value is ReplayData {
     last = a.step;
     if (a.type === 'end') {
       if (i !== value.actions.length - 1 || a.step !== value.steps.length) return false;
+    } else if (a.type === 'siege-end') {
+      if (value.version < 232 || !troopKeys.some((kind) => isSiege(kind) && s.army[kind] > 0))
+        return false;
     } else if (a.type === 'ability') {
       if (!s.hero && !s.heroes?.some((hero: HeroSetup) => hero.kind === a.hero)) return false;
     } else if (

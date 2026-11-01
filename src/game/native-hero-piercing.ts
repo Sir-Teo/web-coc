@@ -1,3 +1,9 @@
+import {
+  isRollingLog,
+  rollingLogAccepts,
+  rollingLogDamage,
+  rollingLogHit,
+} from './native-log-launcher';
 import { chainPoint, chainRef } from './chain-targets';
 import { applyDefenderFrost } from './defender-frost';
 import type { DarkOrbShot } from './native-dark-orb';
@@ -7,20 +13,22 @@ import { buildingEffects } from './native-status';
 import { stepPiercingShots, type ArcherPiercingShot } from './native-super-archer';
 import type { NativeTroopContext } from './native-troops';
 
-/** All enabled hero corridors share the Super Archer arrival order and collision convention. */
+/** All enabled attacker corridors share the Super Archer arrival order and collision convention. */
 export function stepHeroPiercing(ctx: NativeTroopContext) {
   const b = ctx.battle;
-  if (!b.nativeGiantArrow && !b.nativeDarkOrb) return;
+  if (!b.nativeGiantArrow && !b.nativeDarkOrb && !b.nativeLogLauncherPiercing) return;
   const shots: (ArcherPiercingShot | GiantArrowShot | DarkOrbShot)[] = [
     ...(b.nativeArcherShots ?? []),
     ...(b.nativeGiantArrows ?? []),
     ...(b.nativeDarkOrbs ?? []),
+    ...(b.nativeRollingLogs ?? []),
   ];
   if (!shots.length) return;
   stepPiercingShots(
     ctx,
     shots,
     (shot, target, at) => {
+      if (isRollingLog(shot)) return rollingLogDamage(ctx, shot, target, at);
       if (!('airDefenseMultiplier' in shot) && !('frost' in shot)) return shot.damage;
       const point = chainPoint(target),
         ref = chainRef(target);
@@ -48,6 +56,10 @@ export function stepHeroPiercing(ctx: NativeTroopContext) {
       );
     },
     (shot, target, at, damaged) => {
+      if (isRollingLog(shot)) {
+        rollingLogHit(ctx, shot, target, at);
+        return;
+      }
       if (
         b.nativeGiantArrowConstructs &&
         damaged &&
@@ -68,10 +80,12 @@ export function stepHeroPiercing(ctx: NativeTroopContext) {
         } else applyDefenderFrost(target.defender, shot.frost, at);
       }
     },
+    (shot, target) => !isRollingLog(shot) || rollingLogAccepts(shot, target),
   );
   const retained = (shot: ArcherPiercingShot) =>
     shot.launched + shot.length / shot.speed + 10 >= b.elapsed - 1e-9;
   if (b.nativeArcherShots) b.nativeArcherShots = b.nativeArcherShots.filter(retained);
   if (b.nativeGiantArrows) b.nativeGiantArrows = b.nativeGiantArrows.filter(retained);
   if (b.nativeDarkOrbs) b.nativeDarkOrbs = b.nativeDarkOrbs.filter(retained);
+  if (b.nativeRollingLogs) b.nativeRollingLogs = b.nativeRollingLogs.filter(retained);
 }

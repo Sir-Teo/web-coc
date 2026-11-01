@@ -24,13 +24,16 @@ const distanceSq = (a: Unit, b: Unit) => distanceSquared2D(a.x - b.x, a.y - b.y)
 
 /** Choose before movement so healers in the same update see the same group. */
 export function prepareHealerTargets(battle: Battle) {
+  const sharedHealer = (unit: Unit) =>
+    !!TROOPS[unit.kind].healer &&
+    !(battle.nativeTroopLauncherFriendly && unit.kind === 'trooplauncher');
   // Early-return when no healers are on the field: avoids O(units²) clustering.
-  if (!battle.units.some((u) => TROOPS[u.kind].healer && u.hp > 0)) return;
+  if (!battle.units.some((u) => sharedHealer(u) && u.hp > 0)) return;
   const allies = battle.units.filter((u) => groundAlly(battle, u));
   if (!allies.length) {
     if (battle.nativeFriendlyEligibility)
       for (const healer of battle.units)
-        if (TROOPS[healer.kind].healer && healer.hp > 0) delete healer.healTarget;
+        if (sharedHealer(healer) && healer.hp > 0) delete healer.healTarget;
     return;
   }
   const allyIds = new Set(allies.map((u) => u.id));
@@ -67,7 +70,7 @@ export function prepareHealerTargets(battle: Battle) {
     return space;
   };
   for (const healer of battle.units) {
-    if (!TROOPS[healer.kind].healer || healer.hp <= 0) continue;
+    if (!sharedHealer(healer) || healer.hp <= 0) continue;
     if (allyIds.has(healer.healTarget ?? -1)) continue;
     // Min-scan with the old sort's winner (distance + injury penalty, then id). The cluster
     // filter does not depend on the pick so far, so it runs only for would-be winners.
@@ -171,6 +174,7 @@ export function healerContribution(battle: Battle, recipient: Unit, sourceId: nu
   const sources = new Set([sourceId]);
   for (const healer of battle.units) {
     if (!TROOPS[healer.kind].healer || healer.hp <= 0) continue;
+    if (battle.nativeTroopLauncherFriendly && healer.kind === 'trooplauncher') continue;
     if (battle.nativeUnicornController && !friendlyCombatant(healer, battle.elapsed)) continue;
     const target = byId.get(healer.healTarget ?? -1);
     if (battle.nativeUnicornController && healer.kind === 'unicorn') {

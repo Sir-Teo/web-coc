@@ -1,3 +1,6 @@
+import { encodeArmy, decodeSharedArmy } from './army-share';
+import { siegeSelfDestructAbility } from './native-siege-release';
+import type { RollingLogShot } from './native-log-launcher';
 import type { OvergrowthRoot } from './native-overgrowth';
 import type { ArcherPiercingShot } from './native-super-archer';
 import type { SuperWizardBranch, SuperWizardZap } from './native-super-wizard';
@@ -111,6 +114,8 @@ import {
   BuildingListSnapshot,
   PATH_MEMO_LIMIT,
   findSubtilePath,
+  subtileReachability,
+  gridReachability,
   resetSubtileGrids,
   subtileSolid,
 } from './subtile-path';
@@ -1103,6 +1108,49 @@ export interface Battle {
   nativeHealerWindup?: true;
   /** Version 211: Druid friendly casts spend their source charge and recovery. */
   nativeDruidWindup?: true;
+  /** Version 212: Druid Bears spend their source melee charge after reaching a target. */
+  nativeBearWindup?: true;
+  /** Version 213: Witch Skeletons and Super Witch Big Boys spend source melee phases. */
+  nativeWitchSummonWindup?: true;
+  /** Version 214: Hound Pups spend their source charge before releasing a projectile. */
+  nativeHoundPupWindup?: true;
+  /** Version 215: Sneezy's Boogers spend source charge before direct ground/air hits. */
+  nativeBoogerWindup?: true;
+  /** Version 216: render physical contact before a phased attack starts its next charge. */
+  nativeAttackContactPose?: true;
+  /** Version 217: spell-created Bats spend source melee charge and recovery. */
+  nativeSpellBatWindup?: true;
+  /** Version 218: both Skeleton Spell bodies spend source melee phases. */
+  nativeSpellSkeletonWindup?: true;
+  /** Version 219: Ruin Witch Knights charge before direct ground melee hits. */
+  nativeRuinKnightWindup?: true;
+  /** Version 220: Ruin Witch selects visible rubble reachable without breaking walls. */
+  nativeRuinWitchRubbleRoutes?: true;
+  /** Version 221: attacking Super Dragons emit source ten-flame bursts. */
+  nativeSuperDragonBurst?: true;
+  /** Version 222: Stone Slammer attack phases and its secondary ground blast. */
+  nativeStoneSlammerAttacks?: true;
+  /** Version 223: Troop Launcher reinforces eligible friendly groups. */
+  nativeTroopLauncherFriendly?: true;
+  /** Version 224: finite, physical rolling logs and the separate nearby blast. */
+  nativeLogLauncherPiercing?: true;
+  nativeRollingLogs?: RollingLogShot[];
+  /** Version 225: Battle Drill surfacing destroys nearby Walls separately from its stun. */
+  nativeDrillSurfaceWalls?: true;
+  /** Version 226: Flame Flinger burn pulses honor their flat-damage Wall preference. */
+  nativeFlameFlingerWallPulse?: true;
+  /** Version 227: overlapping Flame Flinger pools share building poison damage. */
+  nativeFlameFlingerBurnOverlap?: true;
+  /** Version 228: charged three-projectile Flame Flinger bursts. */
+  nativeFlameFlingerBursts?: true;
+  /** Version 229: Wall Wrecker source ram windup and recovery. */
+  nativeWallWreckerWindup?: true;
+  /** Version 230: surfaced Battle Drill attack windup and recovery. */
+  nativeBattleDrillWindup?: true;
+  /** Version 231: moving-fire siege cooldowns pause during native Freeze/stun. */
+  nativeMovingSiegeFreezeClock?: true;
+  /** Version 232: a deployed siege can use its source manual self-destruct. */
+  nativeSiegeManualRelease?: true;
   /** Version 207: source demolition contact cues reconstruct and cover the death tone. */
   nativeWallBreakerSounds?: true;
   /** Version 206: both Wall Breaker contact splashes include ground defenders. */
@@ -4002,6 +4050,14 @@ export class GameModel {
     this.state.armyPresets ??= [null, null, null];
     const previous = this.state.armyPresets[slot];
     if (previous) this.overwritten.presets.set(slot, structuredClone(previous));
+    this.state.armyPresets[slot] = this.currentArmyComposition(
+      name?.trim() || previous?.name || `Army ${slot + 1}`,
+    );
+    this.notify('Army saved.');
+    this.changed();
+  }
+  /** A fresh composition snapshot excludes research, balances and other village state. */
+  private currentArmyComposition(name: string): ArmyPreset {
     const gear = this.gear,
       pets = this.petProgress;
     const heroes = this.heroLineup.map((kind) => ({
@@ -4009,14 +4065,32 @@ export class GameModel {
       items: (gear.loadouts[kind] ?? []).filter((slug) => gear.levels[slug] !== undefined),
       ...(pets.assigned[kind] ? { pet: pets.assigned[kind] } : {}),
     }));
-    this.state.armyPresets[slot] = {
-      name: (name?.trim() || this.state.armyPresets[slot]?.name || `Army ${slot + 1}`).slice(0, 32),
+    return {
+      name: name.slice(0, 32),
       army: { ...this.state.army },
       spells: { ...this.state.spells },
       ...(heroes.length ? { heroes } : {}),
     };
-    this.notify('Army saved.');
-    this.changed();
+  }
+  armyShareCode(slot?: number) {
+    if (this.battle) return null;
+    if (slot !== undefined && (!Number.isInteger(slot) || slot < 0 || slot > 2)) return null;
+    const preset =
+      slot === undefined
+        ? this.canSaveArmyPreset
+          ? this.currentArmyComposition('Shared army')
+          : null
+        : this.state.armyPresets?.[slot];
+    return preset ? encodeArmy(preset) : null;
+  }
+  /** Decode first, then apply the same atomic preparation and hero rules as Quick armies. */
+  useSharedArmy(code: string) {
+    const decoded = decodeSharedArmy(code);
+    if (!decoded || !this.prepareArmy(decoded.preset.army, decoded.preset.spells)) return false;
+    const { preset } = decoded;
+    const changes = [...decoded.notes, ...this.applyPresetHeroes(preset)];
+    this.notify(`${preset.name} is ready.${changes.length ? ` ${changes.join(' · ')}.` : ''}`);
+    return true;
   }
   /**
    * What loading a Quick army's heroes would do here: the lineup that fits this Hero Hall, and a
@@ -5484,6 +5558,30 @@ export class GameModel {
     this.deployChanged(starting);
     return true;
   }
+  /** The one living, player-deployed siege whose source ability can end it. */
+  get deployedSiege() {
+    const b = this.battle;
+    if (this.replay || !b?.nativeSiegeManualRelease || !b.siegeDeployed || !b.started || b.finished)
+      return undefined;
+    return b.units.find(
+      (unit) =>
+        unit.hp > 0 &&
+        !unit.spent &&
+        !unit.ejected &&
+        !unit.native?.recalled &&
+        siegeSelfDestructAbility(unit, unit.level ?? this.troopLevel(unit.kind as TroopKind)),
+    );
+  }
+  /** Self-destruct bypasses damage protection; the shared casualty pass owns death effects. */
+  endSiege() {
+    const unit = this.deployedSiege;
+    if (!unit) return false;
+    this.recordAction({ type: 'siege-end' });
+    unit.hp = 0;
+    unit.defeatedAt = this.battle!.elapsed;
+    this.changed();
+    return true;
+  }
   /** One ability activation per hero and battle; a knocked-out hero fires it automatically. */
   activateNativeHeroAbility(kind: HeroKind, automatic = false) {
     if (this.replay) return false;
@@ -6047,7 +6145,8 @@ export class GameModel {
       pathAt: 0,
       attacking: false,
       ...(nativeBehavior(b, k) ? { native: initialNativeState(k, this.troopLevel(k)) } : {}),
-      ...(b.nativeLifecycleBirth && (k === 'furnace' || k === 'siegebarracks' || k === 'druid')
+      ...((b.nativeLifecycleBirth && (k === 'furnace' || k === 'siegebarracks' || k === 'druid')) ||
+      (b.nativeTroopLauncherFriendly && k === 'trooplauncher')
         ? { spawnedAt: b.elapsed }
         : {}),
     });
@@ -6717,6 +6816,18 @@ export class GameModel {
           u.native?.effects?.stunUntil ?? 0,
         );
         cooldownDt *= Math.min(1, Math.max(0, b.elapsed - heldUntil) / unitDt);
+      } else if (
+        b.nativeMovingSiegeFreezeClock &&
+        (u.kind === 'battleblimp' || u.kind === 'loglauncher')
+      ) {
+        const heldUntil = Math.max(
+          u.native?.effects?.frozenUntil ?? 0,
+          u.native?.effects?.stunUntil ?? 0,
+        );
+        cooldownDt *=
+          b.elapsed <= heldUntil + 1e-9
+            ? 0
+            : Math.min(1, Math.max(0, b.elapsed - heldUntil) / unitDt);
       }
       u.cooldown -= poison.attack === 1 ? cooldownDt : cooldownDt * poison.attack;
       u.pathAt -= unitDt;
@@ -7302,7 +7413,9 @@ export class GameModel {
       b.destruction === 100 ||
       (timedBattle(b) && b.elapsed >= BATTLE_SECONDS) ||
       (!b.shells.length &&
-        !b.projectiles?.some((p) => p.weapon !== 'healing' && !p.native?.healing) &&
+        !b.projectiles?.some(
+          (p) => p.native?.troopLauncher || (p.weapon !== 'healing' && !p.native?.healing),
+        ) &&
         !Object.values(b.deathBombs ?? {}).some((bomb) => !bomb.resolved && !bomb.cancelled) &&
         !lateCampaignPending(b) &&
         !b.units.some(
@@ -7314,6 +7427,7 @@ export class GameModel {
         !b.nativeElectroDragonArcs?.length &&
         !b.nativeSuperWizardBranches?.length &&
         !b.nativeArcherShots?.some((s) => s.travelled < s.length - 1e-9) &&
+        !b.nativeRollingLogs?.some((s) => s.travelled < s.length - 1e-9) &&
         !b.nativeGiantArrows?.some((s) => s.travelled < s.length - 1e-9) &&
         !b.nativeDarkOrbs?.some((s) => s.travelled < s.length - 1e-9) &&
         !b.nativeSeekingShieldCasts?.some((cast) => !cast.released) &&
@@ -7697,6 +7811,7 @@ export class GameModel {
       | Omit<Extract<ReplayAction, { type: 'spell' }>, 'step'>
       | { type: 'hero'; x: number; y: number; hero?: HeroKind }
       | { type: 'ability'; hero?: HeroKind }
+      | { type: 'siege-end' }
       | { type: 'end' },
   ) {
     if (!this.recording) return;
@@ -7993,6 +8108,7 @@ export class GameModel {
         a.hero ? runner.deployNativeHero(a.hero, a.x, a.y) : runner.deployHero(a.x, a.y);
       else if (a.type === 'ability')
         a.hero ? runner.activateNativeHeroAbility(a.hero) : runner.activateHeroAbility();
+      else if (a.type === 'siege-end') runner.endSiege();
       else runner.finishBattle();
     }
     if (this.replayStep === data.steps.length) {
@@ -8316,6 +8432,7 @@ interface TileGrid {
   wall: Uint8Array;
   /** Exact search results: A* is a pure function of the grid, start cell, goal and range. */
   paths: Map<string, readonly { x: number; y: number }[]>;
+  regions?: Int32Array;
 }
 const TILE_GRID_SLOTS = 6;
 const tileGrids: TileGrid[] = [];
@@ -8368,6 +8485,17 @@ function tileGridFor(buildings: Building[], breaches: readonly { x: number; y: n
   if (tileGrids.length > TILE_GRID_SLOTS) tileGrids.pop();
   return grid;
 }
+/** Reachability uses the same collision resolution as the battle's ordinary routes. */
+export function pathReachability(
+  start: { x: number; y: number },
+  buildings: Building[],
+  subtiles = false,
+) {
+  return subtiles
+    ? subtileReachability(start, buildings)
+    : gridReachability(tileGridFor(buildings, []), start, 1);
+}
+
 export function findPath(
   start: { x: number; y: number },
   target: Building | { x: number; y: number },
@@ -8376,8 +8504,10 @@ export function findPath(
   subtiles = false,
   /** Jump Spell rings. A wall inside one costs nothing to cross while the ring holds. */
   breaches: readonly { x: number; y: number }[] = [],
+  /** Rubble seekers need an open route rather than a wall-breaking cost. */
+  blockWalls = false,
 ): { x: number; y: number }[] {
-  if (subtiles) return findSubtilePath(start, target, buildings, range);
+  if (subtiles) return findSubtilePath(start, target, buildings, range, blockWalls);
   const grid = tileGridFor(buildings, breaches);
   const sx = Math.max(0, Math.min(MAP_SIZE - 1, Math.floor(start.x))),
     sy = Math.max(0, Math.min(MAP_SIZE - 1, Math.floor(start.y))),
@@ -8386,10 +8516,10 @@ export function findPath(
     'level' in target && target.kind in BUILDINGS ? BUILDINGS[target.kind as BuildingKind].size : 0;
   // The start point matters only through its cell and whether it is already in range.
   const far = distanceTo(start, target) > range;
-  const key = `${first},${target.x},${target.y},${goalSize},${range},${far ? 1 : 0}`;
+  const key = `${first},${target.x},${target.y},${goalSize},${range},${far ? 1 : 0}${blockWalls ? ',solid' : ''}`;
   const known = grid.paths.get(key);
   if (known) return known.map((p) => ({ x: p.x, y: p.y }));
-  const path = searchTilePath(grid, first, target, goalSize, range, far);
+  const path = searchTilePath(grid, first, target, goalSize, range, far, blockWalls);
   if (grid.paths.size >= PATH_MEMO_LIMIT) grid.paths.clear();
   grid.paths.set(
     key,
@@ -8409,6 +8539,7 @@ function searchTilePath(
   goalSize: number,
   range: number,
   far: boolean,
+  blockWalls: boolean,
 ): { x: number; y: number }[] {
   const size = MAP_SIZE;
   const blocked = grid.blocked,
@@ -8530,7 +8661,7 @@ function searchTilePath(
       else ny--;
       if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
       const n = ny * size + nx;
-      if (blocked[n]) continue;
+      if (blocked[n] || (blockWalls && wall[n])) continue;
       if (stamp[n] !== epoch) {
         stamp[n] = epoch;
         cost[n] = Infinity;

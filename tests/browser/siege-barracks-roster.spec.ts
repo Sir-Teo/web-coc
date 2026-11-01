@@ -110,6 +110,28 @@ for (const c of [
       expect(result.readOnly).toBe(true);
     }
     const born = await seek(r.children);
+    const guide = await page.evaluate(() => {
+      const { model, hud } = window.__game;
+      hud.inspectedTroop = 'siegebarracks';
+      const before = JSON.stringify(model.battle),
+        doc = new DOMParser().parseFromString(hud.troopInfo(), 'text/html');
+      return {
+        readOnly: before === JSON.stringify(model.battle),
+        facts: Object.fromEntries(
+          [...doc.querySelectorAll('.troop-stats > div')].map((row) => [
+            row.querySelector('dt')?.textContent,
+            row.querySelector('dd')?.textContent,
+          ]),
+        ),
+      };
+    });
+    expect(guide.readOnly).toBe(true);
+    expect(guide.facts['P.E.K.K.A stock']).toBe(
+      c.version >= 182 ? `${c.level >= 5 ? 2 : 1}` : undefined,
+    );
+    expect(guide.facts['Wizard stock']).toBe(
+      c.version >= 182 ? `${c.level === 1 ? 6 : c.level === 2 ? 8 : 12}` : undefined,
+    );
     const bodies = await page.evaluate((id) => {
       const { model, scene } = window.__game,
         units = model.battle.units.filter((u) => u.native?.owner === id);

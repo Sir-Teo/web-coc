@@ -1,5 +1,23 @@
 # Magic items
 
+The Army catalog and troop/spell information panels preview Power Potion combat
+levels while it is active. Troop HP, damage and summoned-unit facts, as well as
+spell effects, use the same boosted tier that a new battle records. A note keeps
+the permanent research level visible, including the original troop's name and actual saved level for Super
+Troops. Locked Super Troop previews do not turn their minimum display tier into
+research or remove the normal boost requirement. Expiry restores the research-level previews; research levels and unlock
+requirements remain permanent. An open battle or replay keeps its recorded tiers.
+
+Power Potion notes in troop/spell Info and the Army preparation footer, and the
+Hero Potion roster note, update their remaining time in place through the existing
+live timer registry. Timer-only updates keep the panel mounted; expiry automatically
+restores research previews and removes the note.
+
+`tests/browser/army-power-potion.spec.ts` checks phone and desktop previews for Yeti,
+Super Giant, Super Hog Rider, Clone, Freeze and Healing, source-tier facts, potion expiry and unchanged
+research, advancing note/footer countdowns, mounted dialogs and automatic expiry.
+Existing model checks verify that battles record the boosted levels.
+
 The Town Hall card has an **Items** button that opens the village's magic items. Each item shows what it does, how many are held out of its limit, its use, and a Sell button that cashes one in for gems.
 
 ## Source

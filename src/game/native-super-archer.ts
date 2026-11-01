@@ -99,6 +99,7 @@ export function stepPiercingShots<T extends ArcherPiercingShot>(
   shots: readonly T[],
   power?: (shot: T, target: ChainTarget, at: number) => number,
   resolved?: (shot: T, target: ChainTarget, at: number, damaged: boolean) => void,
+  accepts?: (shot: T, target: ChainTarget, at: number) => boolean,
 ) {
   const b = ctx.battle;
   const candidates: (ChainTarget & { shot: T; at: number })[] = [];
@@ -144,6 +145,7 @@ export function stepPiercingShots<T extends ArcherPiercingShot>(
     const { shot, at } = target,
       point = chainPoint(target),
       ref = chainRef(target);
+    if (accepts && !accepts(shot, target, at)) continue;
     shot.hit.push({
       target: ref,
       at,

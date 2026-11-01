@@ -50,3 +50,13 @@ replacement, backward seeks, reduced-motion/read-only rendering and WebGL health
 on desktop and phone. `tests/browser/yeti-recall-stock.spec.ts` adds current-rule
 normal/Super Yeti cases alongside its version-145/144 recordings, including the
 original spawned mite art. Screenshots are written under ignored `output/playtest/`.
+
+## Army information
+
+The Army panel resolves finite mite stock, damage per release and child tier from each
+parent's active source ability. It shows Yetimite health, hit damage, ground/air targets
+and defense preference, and the Electromite's first building hit, three-target chain,
+three-tile radius, 0.1 s stun and 80% damage retained per hop. The first-hit label avoids
+applying its full damage to every chain hop. Base and maximum research values, original
+portraits, scrolling and controls pass Chromium and WebKit checks at three viewport sizes.
+This information update changes no combat rule, art or audio asset.

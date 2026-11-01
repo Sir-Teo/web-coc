@@ -3757,6 +3757,15 @@ h3 {
 .layout-import-summary.bad {
   color: #b03a2e;
 }
+.army-import-preview h4 {
+  margin: 0 0 6px;
+  overflow-wrap: anywhere;
+}
+.army-import-preview .game-btn,
+[data-action^='army-share:'] {
+  min-height: 44px;
+  margin-top: 10px;
+}
 .layout-import .layout-actions {
   margin-left: 0;
   flex-wrap: wrap;
@@ -4956,6 +4965,13 @@ h3 {
   display: block;
   height: 100%;
   background: #b1ee74;
+}
+.siege-release-card {
+  border-color: #b57422;
+  background: linear-gradient(#ffe8b0, #dca657);
+}
+.siege-release-card img {
+  object-fit: contain;
 }
 .hero-body {
   text-align: center;

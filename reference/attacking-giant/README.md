@@ -55,3 +55,12 @@ Clone, Healing, Recall, Ice Block and resurrected-aura recordings with Giants.
 states, first/last-level original meshes, native action offsets, reverse seeks,
 historical recordings, reduced-motion/read-only rendering and WebGL health at
 desktop and phone widths. Screenshots are written under ignored `output/playtest/`.
+
+## Super Giant Army information
+
+The Army panel reads the separate Wall target multiplier instead of treating it as
+favorite-target damage. Super Giant still prefers defenses. Its source multiplier is
+5×: source tier 1 gives 900 damage per hit against walls, while Giant research level 14
+selects Super Giant source tier 10 and gives 2,050. Browser checks cover source values,
+research-level mapping, original portraits and usable phone/landscape/desktop layouts
+in Chromium and WebKit. Combat, art and audio assets retain their behavior.

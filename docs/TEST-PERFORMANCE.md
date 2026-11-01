@@ -14,6 +14,13 @@ npx vitest run --reporter=json --outputFile=output/vitest-results.json
 The JSON report includes per-file timing. Measure on the current revision and host
 instead of relying on historical test counts or durations.
 
+On hosts using software WebGL, run the full simulation suite without active browser
+checks, then run Playwright and production checks one job at a time. Separate
+worktrees still share the host's CPU budget. Concurrent rendering can exhaust a
+campaign stage's wall-clock budget or delay browser clicks and refresh assertions.
+After such a failure, retain the log and rerun the affected case without competing
+browser jobs before changing a timeout or game rule.
+
 ## Keep imports small
 
 A simulation test should not parse presentation graphs. Render-only data belongs in
@@ -31,6 +38,17 @@ The sweep keeps its simulation bounds (a 48,000-step cap and a ten-minute no-des
 stalemate bound) separate from its wall-clock budget, a measured per-stage timeout. A
 stage that reaches either bound is a legitimate unfinished raid, not a failure: on
 Warden's Folly a Defending Builder repairs the last Archer's damage as fast as it lands.
+
+The authored campaign audit also runs one bounded case per army: six cases of twelve
+stages and four approaches retain the complete 288-battle matrix. Each case keeps its
+existing three-minute deadline, per-battle checks and applicable opening, progression-gate
+or veteran-clear assertions. The combined JSON report retains stage/army/approach order.
+
+Army information dialog checks split both the troop catalog and researched-tier profiles
+into two groups per viewport, retaining the three-minute deadline. After the real boot,
+art loading and Army opening, these DOM checks pause the village's Phaser animation loop.
+The original portraits, CSS animations, source values, scrolling and controls remain under
+test. Active simulation and rendering retain separate combat and production checks.
 
 Do not turn off isolation globally: suites with `vi.mock` need independent module
 state. Increasing worker count can increase memory and contention without improving

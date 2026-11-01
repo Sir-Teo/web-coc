@@ -2,9 +2,17 @@
 
 Troops with native packs draw their sampled client scenes through
 `src/game/troop-native-scene.ts`. Walk and idle state follow simulation movement; attack
-poses follow cooldowns. Pausing battle time holds the native pose, and reduced motion
+poses follow source attack phases or cooldowns. Pausing battle time holds the native pose, and reduced motion
 samples frame zero. Once a native view takes over, its hidden fallback sprite no longer
 updates its walk frame or facing.
+
+Battle Blimp and Log Launcher play their original attack takes after releasing
+while moving, then return to walking after the natural tail. Source release frames
+are three and zero respectively. Their body ages follow the remaining combat
+cooldown, including version-231 native Freeze/stun holds; older recordings retain
+their own cooldown rules. Cold/backward seeks, read-only sampling and reduced
+motion are covered alongside their moving release recordings. See
+[moving-fire siege attacks](../reference/moving-siege-attacks/README.md).
 
 The specialist and late-troop browser checks inspect native pose samples and visible
 objects for movement, direction changes, pause, reduced motion and cleanup. Their paused

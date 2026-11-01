@@ -16,7 +16,7 @@ Each coordinate is one character of the URL-safe base-64 alphabet, since the fie
 
 ## Receiving
 
-Opening a layout link starts the game with the layouts panel open, and so does pasting one into the address of an open tab. The link is then dropped from the address, so a reload does not offer it again. A link can also be pasted into the box. The box names the Town Hall the layout was made at and how many buildings it places; a damaged link is reported, and its copy buttons stay disabled.
+Opening a layout link starts the game with the layouts panel open, and so does pasting one into the address of an open tab. The link is then dropped from the address, so a reload does not offer it again. Both hash links and `?layout=` links are consumed, while unrelated query flags are kept. A link can also be pasted into the box. The box names the Town Hall the layout was made at and how many buildings it places; a damaged link is reported, and its copy buttons stay disabled.
 
 Broken URL escape sequences are reported as damaged layouts, including when a link opens
 a new tab. They do not prevent the village from starting.

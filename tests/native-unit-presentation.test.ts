@@ -6,6 +6,18 @@ import { HERO_UNIT, PET_UNIT } from '../src/game/native-hero-data';
 import { nativeUnitStats } from '../src/game/native-units';
 import { createGuardian, guardianStats, stepGuardian } from '../src/game/native-guardians';
 import type { NativeTroopContext } from '../src/game/native-troops';
+import { attackingBoogerBattle } from './fixtures/attacking-booger';
+import { attackingSpellBatBattle } from './fixtures/attacking-spell-bat';
+import { attackingRuinKnightBattle } from './fixtures/attacking-ruin-knight';
+import { attackingSpellSkeletonBattle } from './fixtures/attacking-spell-skeletons';
+import { nativeDirectBattle } from './fixtures/native-direct-attacks';
+import { maxTroopLevel } from '../src/game/data';
+import { stoneSlammerBattle } from './fixtures/attacking-stone-slammer';
+import { troopLauncherBattle } from './fixtures/attacking-troop-launcher';
+import { flameFlingerBurstBattle } from './fixtures/flame-flinger-burst';
+import { wallWreckerBattle } from './fixtures/attacking-wall-wrecker';
+import { drillSurfaceBattle } from './fixtures/battle-drill-surface-walls';
+import { logLauncherBattle } from './fixtures/attacking-log-launcher';
 
 // Scene views are Phaser objects; record what the presentations ask them to draw instead.
 vi.mock('../src/game/native-scene-view', () => {
@@ -75,6 +87,9 @@ vi.mock('../src/game/native-scene-view', () => {
     }
     destroy() {
       this.objects = [];
+    }
+    retire() {
+      this.destroy();
     }
   }
   return { NativeSceneView, quantizedDensity: (d: number) => Math.max(1, Math.round(d * 2) / 2) };
@@ -179,6 +194,26 @@ type Views = Map<
 >;
 const viewsOf = (p: object) => (p as unknown as { views: Views }).views;
 
+const loadedTroopPresentation = (kinds: readonly string[]) => {
+  const p = new TroopNativePresentation(fakeScene());
+  const internals = p as unknown as {
+    packs: Map<string, unknown>;
+    levelsReady: Map<string, Set<number>>;
+    views: Map<number, { state: string; sample: { frame: number; name: string; mirror: number } }>;
+  };
+  for (const kind of kinds) {
+    const pack = JSON.parse(
+      fs.readFileSync(`public/assets/troops-native/${kind}/graph.json`, 'utf8'),
+    );
+    internals.packs.set(kind, pack);
+    internals.levelsReady.set(
+      kind,
+      new Set(pack.levels.map((row: { level: number }) => row.level)),
+    );
+  }
+  return { p, internals };
+};
+
 describe('unit motion tracker', () => {
   it('keeps walking across rendered frames between 20 Hz simulation steps', () => {
     const motion = new UnitMotionTracker();
@@ -218,6 +253,310 @@ describe('unit motion tracker', () => {
 });
 
 describe('troop native presentation', () => {
+  for (const kind of ['battleblimp', 'loglauncher'] as const)
+    for (const level of [1, 6])
+      it(`moving-fire ${kind} ${level} draws its release take while traveling, freezing and rewinding`, () => {
+        const r =
+            kind === 'loglauncher'
+              ? logLauncherBattle(level, 231)
+              : nativeDirectBattle('battleblimp', level, 231),
+          { p, internals } = loadedTroopPresentation([kind]);
+        r.untilAttacks(1);
+        expect(r.unit.attacking).toBe(false);
+        const released = r.battle.elapsed,
+          first = JSON.parse(JSON.stringify(r.battle)) as Battle;
+        r.until(released + 0.15);
+        const advanced = JSON.parse(JSON.stringify(r.battle)) as Battle;
+        r.unit.native!.effects = { frozenUntil: r.battle.elapsed + 1 };
+        r.until(r.battle.elapsed + 0.5);
+        const frozen = JSON.parse(JSON.stringify(r.battle)) as Battle;
+        delete r.unit.native!.effects.frozenUntil;
+        const duration = kind === 'loglauncher' ? 80 / 30 : 18 / 30 - 3 / 30;
+        r.until(released + duration + 0.55);
+        const tail = JSON.parse(JSON.stringify(r.battle)) as Battle,
+          samples: { state: string; frame: number; name: string; mirror: number }[] = [];
+        for (const battle of [first, advanced, frozen, tail, advanced, first]) {
+          const before = JSON.stringify(battle);
+          p.render(battle, false, iso, 46, new Map());
+          const view = internals.views.get(r.unit.id)!;
+          samples.push({
+            state: view.state,
+            frame: view.sample.frame,
+            name: view.sample.name,
+            mirror: view.sample.mirror,
+          });
+          p.render(battle, true, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(0);
+          expect(JSON.stringify(battle)).toBe(before);
+        }
+        expect(samples[0].state).toBe('attack');
+        expect(samples[0].frame).toBe(kind === 'loglauncher' ? 0 : 3);
+        expect(samples[1].frame).toBe(samples[0].frame + 4);
+        expect(samples[2]).toEqual(samples[1]);
+        expect(samples[3].state).toBe('walk');
+        expect(samples[4]).toEqual(samples[1]);
+        expect(samples[5]).toEqual(samples[0]);
+        const cold = loadedTroopPresentation([kind]);
+        cold.p.render(advanced, false, iso, 46, new Map());
+        const view = cold.internals.views.get(r.unit.id)!;
+        expect({
+          state: view.state,
+          frame: view.sample.frame,
+          name: view.sample.name,
+          mirror: view.sample.mirror,
+        }).toEqual(samples[1]);
+      });
+  for (const version of [229, 230])
+    for (const level of [1, 6])
+      it(`Battle Drill ${level} draws its original contact in version ${version}`, () => {
+        const r = drillSurfaceBattle(level, version),
+          { p, internals } = loadedTroopPresentation(['battledrill']);
+        r.untilAttacks(1);
+        const contacts = [JSON.parse(JSON.stringify(r.battle)) as Battle];
+        r.untilAttacks(2);
+        contacts.push(JSON.parse(JSON.stringify(r.battle)) as Battle);
+        for (const battle of [...contacts, ...contacts.slice().reverse()]) {
+          const before = JSON.stringify(battle);
+          p.render(battle, false, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(version >= 230 ? 3 : 0);
+          p.render(battle, true, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(0);
+          expect(JSON.stringify(battle)).toBe(before);
+        }
+      });
+  for (const version of [228, 229])
+    for (const level of [1, 6])
+      it(`Wall Wrecker ${level} draws its source ram contact in version ${version}`, () => {
+        const r = wallWreckerBattle(level, version),
+          { p, internals } = loadedTroopPresentation(['wallwrecker']);
+        r.untilAttacks(1);
+        const contacts = [JSON.parse(JSON.stringify(r.battle)) as Battle];
+        r.untilAttacks(2);
+        contacts.push(JSON.parse(JSON.stringify(r.battle)) as Battle);
+        for (const battle of [...contacts, ...contacts.slice().reverse()]) {
+          const before = JSON.stringify(battle);
+          p.render(battle, false, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(version >= 229 ? 20 : 0);
+          p.render(battle, true, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(0);
+          expect(JSON.stringify(battle)).toBe(before);
+        }
+      });
+  for (const version of [227, 228])
+    for (const level of [1, 5])
+      it(`Flame Flinger ${level} draws the original release pose in version ${version}`, () => {
+        const r = flameFlingerBurstBattle(level, version),
+          { p, internals } = loadedTroopPresentation(['flameflinger']);
+        r.untilShots(1);
+        const releases = [JSON.parse(JSON.stringify(r.battle)) as Battle];
+        r.untilShots(version >= 228 ? 4 : 2);
+        releases.push(JSON.parse(JSON.stringify(r.battle)) as Battle);
+        for (const battle of [...releases, ...releases.slice().reverse()]) {
+          const before = JSON.stringify(battle);
+          p.render(battle, false, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(version >= 228 ? 6 : 0);
+          p.render(battle, true, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(0);
+          expect(JSON.stringify(battle)).toBe(before);
+        }
+      });
+  for (const version of [222, 223])
+    for (const level of [1, 4])
+      it(`Troop Launcher ${level} draws its original contact pose in version ${version}`, () => {
+        const r = troopLauncherBattle(level, version),
+          { p, internals } = loadedTroopPresentation(['trooplauncher']);
+        r.untilShots(1);
+        const releases = [JSON.parse(JSON.stringify(r.battle)) as Battle];
+        r.untilShots(2);
+        releases.push(JSON.parse(JSON.stringify(r.battle)) as Battle);
+        for (const battle of [...releases, ...releases.slice().reverse()]) {
+          const before = JSON.stringify(battle);
+          p.render(battle, false, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(version >= 223 ? 8 : 0);
+          p.render(battle, true, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(0);
+          expect(JSON.stringify(battle)).toBe(before);
+        }
+      });
+
+  for (const version of [221, 222])
+    for (const level of [1, 6])
+      it(`Stone Slammer ${level} draws its original contact pose in version ${version}`, () => {
+        const r = stoneSlammerBattle(level, version),
+          { p, internals } = loadedTroopPresentation(['stoneslammer']);
+        r.untilAttacks(1);
+        const releases = [JSON.parse(JSON.stringify(r.battle)) as Battle];
+        r.untilAttacks(2);
+        releases.push(JSON.parse(JSON.stringify(r.battle)) as Battle);
+        for (const battle of [...releases, ...releases.slice().reverse()]) {
+          const before = JSON.stringify(battle);
+          p.render(battle, false, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(version >= 222 ? 9 : 0);
+          p.render(battle, true, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(0);
+          expect(JSON.stringify(battle)).toBe(before);
+        }
+      });
+
+  for (const version of [218, 219])
+    for (const level of [1, 4])
+      it(`Ruin Knight ${level} draws its original contact pose in version ${version}`, () => {
+        const r = attackingRuinKnightBattle(level, version),
+          { p, internals } = loadedTroopPresentation(['ruinknight', 'ruinwitch', 'wizard']);
+        r.untilAttacks(1);
+        const releases = [JSON.parse(JSON.stringify(r.battle)) as Battle];
+        r.untilAttacks(2);
+        releases.push(JSON.parse(JSON.stringify(r.battle)) as Battle);
+        for (const battle of [...releases, ...releases.slice().reverse()]) {
+          const before = JSON.stringify(battle);
+          p.render(battle, false, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(version >= 219 ? 24 : 0);
+          p.render(battle, true, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(0);
+          expect(JSON.stringify(battle)).toBe(before);
+        }
+      });
+  it('a frozen Ruin Knight holds its source charge pose without changing battle state', () => {
+    const r = attackingRuinKnightBattle(),
+      { p, internals } = loadedTroopPresentation(['ruinknight', 'ruinwitch', 'wizard']);
+    while (!r.unit.attacking) r.step();
+    r.until(r.battle.elapsed + 0.6);
+    p.render(r.battle, false, iso, 46, new Map());
+    const frame = internals.views.get(r.unit.id)!.sample.frame;
+    expect(frame).toBeGreaterThan(0);
+    expect(frame).toBeLessThan(24);
+    r.unit.native!.effects = { frozenUntil: r.battle.elapsed + 1 };
+    r.step();
+    expect(r.unit.attacking).toBe(false);
+    const before = JSON.stringify(r.battle);
+    p.render(r.battle, false, iso, 46, new Map());
+    expect(internals.views.get(r.unit.id)!.state).toBe('attack');
+    expect(internals.views.get(r.unit.id)!.sample.frame).toBe(frame);
+    expect(JSON.stringify(r.battle)).toBe(before);
+  });
+
+  for (const unshielded of [false, true]) {
+    for (const version of [217, 218])
+      for (const level of [1, 8])
+        it(`spell Skeleton shieldless=${unshielded} from spell${level} draws source contact at version${version}`, () => {
+          const r = attackingSpellSkeletonBattle(level, version, unshielded),
+            { p, internals } = loadedTroopPresentation(['spellskeletonshielded', 'spellskeleton']);
+          r.untilAttacks(1);
+          const releases = [JSON.parse(JSON.stringify(r.battle)) as Battle];
+          r.untilAttacks(2);
+          releases.push(JSON.parse(JSON.stringify(r.battle)) as Battle);
+          for (const battle of [...releases, ...releases.slice().reverse()]) {
+            const before = JSON.stringify(battle);
+            p.render(battle, false, iso, 46, new Map());
+            expect(internals.views.get(r.unit.id)!.sample.frame).toBe(version >= 218 ? 7 : 0);
+            p.render(battle, true, iso, 46, new Map());
+            expect(internals.views.get(r.unit.id)!.sample.frame).toBe(0);
+            expect(JSON.stringify(battle)).toBe(before);
+          }
+        });
+    it(`a frozen spell Skeleton shieldless=${unshielded} retains its original charge pose`, () => {
+      const r = attackingSpellSkeletonBattle(1, 218, unshielded),
+        { p, internals } = loadedTroopPresentation(['spellskeletonshielded', 'spellskeleton']);
+      r.until(r.battle.elapsed + 0.9);
+      p.render(r.battle, false, iso, 46, new Map());
+      const frame = internals.views.get(r.unit.id)!.sample.frame;
+      expect(frame).toBeGreaterThan(0);
+      r.unit.native!.effects = { frozenUntil: r.battle.elapsed + 1 };
+      r.step();
+      expect(r.unit.attacking).toBe(false);
+      const before = JSON.stringify(r.battle);
+      p.render(r.battle, false, iso, 46, new Map());
+      expect(internals.views.get(r.unit.id)!.state).toBe('attack');
+      expect(internals.views.get(r.unit.id)!.sample.frame).toBe(frame);
+      expect(JSON.stringify(r.battle)).toBe(before);
+    });
+  }
+  for (const version of [216, 217])
+    for (const level of [1, 8])
+      it(`Bat Spell ${level} draws its physical source contact in version ${version}`, () => {
+        const r = attackingSpellBatBattle(level, version),
+          p = new TroopNativePresentation(fakeScene()),
+          pack = JSON.parse(
+            fs.readFileSync('public/assets/troops-native/spellbat/graph.json', 'utf8'),
+          );
+        const internals = p as unknown as {
+          packs: Map<string, unknown>;
+          levelsReady: Map<string, Set<number>>;
+          views: Map<number, { sample: { frame: number } }>;
+        };
+        internals.packs.set('spellbat', pack);
+        internals.levelsReady.set('spellbat', new Set([1]));
+        r.untilAttacks(1);
+        const releases = [JSON.parse(JSON.stringify(r.battle)) as Battle];
+        r.untilAttacks(2);
+        releases.push(JSON.parse(JSON.stringify(r.battle)) as Battle);
+        for (const battle of [...releases, ...releases.slice().reverse()]) {
+          const before = JSON.stringify(battle);
+          p.render(battle, false, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(version >= 217 ? 5 : 0);
+          p.render(battle, true, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(0);
+          expect(JSON.stringify(battle)).toBe(before);
+        }
+      });
+
+  it('holds a frozen Bat charge in its original pose without changing combat state', () => {
+    const r = attackingSpellBatBattle(1, 217),
+      p = new TroopNativePresentation(fakeScene()),
+      pack = JSON.parse(fs.readFileSync('public/assets/troops-native/spellbat/graph.json', 'utf8'));
+    const internals = p as unknown as {
+      packs: Map<string, unknown>;
+      levelsReady: Map<string, Set<number>>;
+      views: Map<number, { state: string; sample: { frame: number } }>;
+    };
+    internals.packs.set('spellbat', pack);
+    internals.levelsReady.set('spellbat', new Set([1]));
+    r.until(r.battle.elapsed + 0.9);
+    p.render(r.battle, false, iso, 46, new Map());
+    const frame = internals.views.get(r.unit.id)!.sample.frame;
+    expect(frame).toBeGreaterThan(0);
+    r.unit.native!.effects = { frozenUntil: r.battle.elapsed + 1 };
+    r.step();
+    expect(r.unit.attacking).toBe(false);
+    const before = JSON.stringify(r.battle);
+    p.render(r.battle, false, iso, 46, new Map());
+    expect(internals.views.get(r.unit.id)!.state).toBe('attack');
+    expect(internals.views.get(r.unit.id)!.sample.frame).toBe(frame);
+    expect(JSON.stringify(r.battle)).toBe(before);
+  });
+
+  for (const kind of ['archer', 'minion', 'wizard', 'dragon', 'rootrider'] as const)
+    for (const level of [1, maxTroopLevel(kind)])
+      for (const version of [215, 216])
+        it(`${kind} ${level} draws the source contact pose in version ${version}`, () => {
+          const r = nativeDirectBattle(kind, level, version),
+            p = new TroopNativePresentation(fakeScene()),
+            pack = JSON.parse(
+              fs.readFileSync(`public/assets/troops-native/${kind}/graph.json`, 'utf8'),
+            ),
+            source = pack.levels.find((l) => l.level === level).states.attack;
+          const internals = p as unknown as {
+            packs: Map<string, unknown>;
+            levelsReady: Map<string, Set<number>>;
+            views: Map<number, { sample: { frame: number } }>;
+          };
+          internals.packs.set(kind, pack);
+          internals.levelsReady.set(kind, new Set([level]));
+          r.untilAttacks(1);
+          const releases = [JSON.parse(JSON.stringify(r.battle)) as Battle];
+          r.untilAttacks(2);
+          releases.push(JSON.parse(JSON.stringify(r.battle)) as Battle);
+          for (const battle of [...releases, ...releases.slice().reverse()]) {
+            const before = JSON.stringify(battle);
+            p.render(battle, false, iso, 46, new Map());
+            const expected = version >= 216 || kind === 'rootrider' ? source.actionFrame - 1 : 0;
+            expect(internals.views.get(r.unit.id)!.sample.frame).toBe(expected);
+            p.render(battle, true, iso, 46, new Map());
+            expect(internals.views.get(r.unit.id)!.sample.frame).toBe(0);
+            expect(JSON.stringify(battle)).toBe(before);
+          }
+        });
+
   it.each([false, true])(
     'attaches the Inferno Dragon beam to its drawn mouth, reduced=%s',
     (reduced) => {
@@ -369,6 +708,50 @@ describe('troop native presentation', () => {
 });
 
 describe('hero native presentation', () => {
+  it('draws Booger source windup and contact frames through Freeze and backward redraws', () => {
+    const r = attackingBoogerBattle(1, 215),
+      p = new HeroNativePresentation(fakeScene()),
+      atlas = JSON.parse(fs.readFileSync('public/assets/heroes-native/booger/atlas.json', 'utf8')),
+      snapshots: { battle: Battle; frame: number }[] = [];
+    const internals = p as unknown as {
+      packs: Map<string, unknown>;
+      positions: Map<number, { direction: number }>;
+      sprites: Map<number, any>;
+    };
+    internals.packs.set('heroes-native/booger', atlas);
+    const capture = (frame: number) =>
+      snapshots.push({
+        battle: JSON.parse(JSON.stringify({ ...r.battle, units: [r.unit] })),
+        frame,
+      });
+    while (!r.unit.attacking) r.step();
+    capture(0);
+    r.until(r.battle.elapsed + 0.5);
+    capture(2);
+    r.unit.native!.effects = { frozenUntil: r.battle.elapsed + 1 };
+    r.until(r.battle.elapsed + 0.3);
+    capture(2);
+    r.untilAttacks(1);
+    capture(9);
+    r.untilAttacks(2);
+    capture(9);
+    for (const { battle, frame: index } of [...snapshots, ...snapshots.slice().reverse()]) {
+      const before = JSON.stringify(battle);
+      p.render(battle, false, iso, 46, new Map(), new Map());
+      const direction = internals.positions.get(r.unit.id)!.direction,
+        frame = atlas.states.attack.frames[direction][index];
+      expect(internals.sprites.get(r.unit.id).frame.name).toBe(
+        `${frame.x}:${frame.y}:${frame.w}:${frame.h}`,
+      );
+      p.render(battle, true, iso, 46, new Map(), new Map());
+      const reduced = atlas.states.attack.frames[direction][0];
+      expect(internals.sprites.get(r.unit.id).frame.name).toBe(
+        `${reduced.x}:${reduced.y}:${reduced.w}:${reduced.h}`,
+      );
+      expect(JSON.stringify(battle)).toBe(before);
+    }
+  });
+
   it.each([false, true])(
     'draws the source Phoenix Egg ground pose without a synthetic idle clip, reduced=%s',
     (reduced) => {

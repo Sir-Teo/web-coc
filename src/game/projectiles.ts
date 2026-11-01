@@ -94,6 +94,8 @@ export interface CombatProjectile {
     phoenixRevive?: { heroId: number; birdId: number; spellLevel: number };
     /** Version 100: friendly recovery and per-chain visited recipients, captured at launch. */
     healing?: { remaining: number; hit: number[] };
+    /** Version 223: a friendly barrel heals at its captured point and releases its troops. */
+    troopLauncher?: true;
   };
   /** Version 45+ defense shot rules resolved on impact (bounces, hit spells, %-hitpoint bonus). */
   defense?: NativeDefenseShot;
@@ -399,7 +401,10 @@ export function stepProjectiles(
         (battle.nativeWardenFireball && p.native?.fireball) ||
         (battle.nativeWitchWindup &&
           (p.native?.kind === 'witch' || p.native?.kind === 'superwitch')) ||
-        (battle.nativeWizardWindup && p.native?.kind === 'wizard')) &&
+        (battle.nativeWizardWindup && p.native?.kind === 'wizard') ||
+        (battle.nativeSuperDragonBurst && p.native?.kind === 'superdragon') ||
+        (battle.nativeFlameFlingerBursts && p.native?.kind === 'flameflinger') ||
+        (battle.nativeTroopLauncherFriendly && p.native?.troopLauncher)) &&
       p.native
     ) {
       let cached = trackableByNative.get(p.native.name);

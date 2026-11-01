@@ -362,3 +362,10 @@ the generated explosion tone and retain its feedback. Failed clips keep
 the tone until retry succeeds, including while playback stays paused.
 The imported catalog and every sample file remain unchanged. See
 [source keys, physical-state comparisons and Web Audio checks](../reference/attacking-wall-breaker/README.md#recording-version-207-contact-audio).
+
+Rolling Log Launcher shots now reconstruct their original launch sample and
+physical contact samples from the captured log records, including after rewind
+or caster loss. Live event logging skips these owned launch/hit cues so contacts
+play once. Scheduled future contacts and expired cues are excluded. Version 223
+and earlier keep their original event-log sounds. This is presentation-only and
+does not change combat or replay versions; see the [rolling corridor reference](../reference/attacking-log-launcher/README.md).

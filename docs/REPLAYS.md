@@ -1671,3 +1671,213 @@ healing launch from stale Druid stats after the body changes. Flights
 already released retain their Druid tier and land normally. Versions 210
 and earlier retain immediate launches and the old transformation-frame
 packet. See [source clocks and portable checks](../reference/attacking-druid/README.md).
+
+## Version 212: Druid Bear melee charges
+
+Bears created through Druid evolution or defeat spend a one-second source
+charge after reaching their target, then repeat every second. Freeze, stun,
+action-rate modifiers and Shrink preserve the active clock. The original
+body follows the recorded offset and committed Wall facing. Defense preference,
+ground-only direct damage and Druid healing remain unchanged. Versions 211
+and earlier retain their immediate first Bear hits and original state shape.
+See [source timing and portable checks](../reference/attacking-bear/README.md).
+
+## Version 213: Witch summoned melee phases
+
+Witch Skeletons spend a one-second fresh swing; Super Witch Big Boys spend
+1.5 seconds with 0.5-second recovery inside their two-second period. Both begin
+after reaching a target, pause through Freeze/stun and scale with action rate
+and Shrink. Source bodies follow captured offsets and Wall facing. Parent attacks,
+summon levels, stock, ownership and scheduled births retain their behavior.
+Versions 212 and earlier keep immediate child hits. See
+[source timing, spawn interpretation limits and portable checks](../reference/attacking-witch/README.md#recording-version-213-summoned-melee-phases).
+
+## Version 214: Hound Pup attack charges
+
+Armies carrying Lava Hound or Ice Hound enable a one-second first charge and one-second
+repeat for their source Lava Pups and Ice Hound Pups. Both retain native projectile
+flight, ground/air targeting and tier-one child stats. Ice Pup defender shots capture
+their two-second, 50% chill at launch, including impacts after the shooter's defeat.
+Original child action meshes use the recorded charge offset. Parent combat and death
+releases retain their rules. Versions 213 and earlier preserve immediate child shots.
+See [source timing, interpretation limits and portable checks](../reference/attacking-hound/README.md#recording-version-214-pup-attack-charge).
+
+## Version 215: Sneezy Booger melee charges
+
+Hero setups carrying Sneezy enable a one-second first charge and one-second repeat for
+its Boogers. These flying melee troops hit ground and air targets directly. Freeze/stun
+holds charge time; attack-speed modifiers and Shrink scale it. The original baked atlas
+follows charge offsets and draws its contact frame on release, including a held charge
+pose during Freeze. Sneezy's summons, tiers, ownership, transformation and Recall retain
+their rules. Versions 214 and earlier preserve their previous attacks and presentation.
+See [source timing, adapter limits and portable checks](../reference/attacking-booger/README.md).
+
+## Version 216: Physical release contact poses
+
+A phased attack with no remaining recovery now draws its source contact pose on the
+physical release tick before showing its next charge. This is a renderer-local
+adjustment: combat clocks, damage, projectiles and movement retain their values.
+Recordings from version 215 and earlier retain their previous presentation.
+See [source-frame evidence and complete-state checks](../reference/attack-contact-pose/README.md).
+
+## Version 217: Bat Spell melee phases
+
+Setups carrying a Bat Spell enable a one-second fresh melee charge for the
+source tier-one Bats after approach, with 0.5-second recovery inside their
+two-second repeat period. Freeze/stun, action-rate modifiers, Shrink and
+remaining recovery use the shared phased attack rules. Ground and air defenders
+receive direct hits when Defense preference and commitment permit them. Original
+meshes follow the captured phase, including contact and held frozen poses.
+Spell waves, counts and child stats retain their rules. Versions 216 and earlier
+keep the acquisition delay and previous attack state. See
+[source timing, adapter limits and portable checks](../reference/attacking-spell-bat/README.md).
+
+## Version 218: Skeleton Spell body attack phases
+
+Setups carrying Skeleton Spell enable one-second fresh melee swings and repeats
+for both shielded and unshielded source bodies. Freeze/stun, action-rate modifiers
+and Shrink use the shared attack clock. Shield breaks retain their replacement,
+health and spawn rules; the new body starts its own full charge. Hits remain
+ground-only, with existing resource damage reduction. Original meshes follow
+each clip's source timing, physical contact and held frozen poses. Versions 217
+and earlier keep immediate in-range hits and their previous complete state. See
+[source timing, spawn limits and portable checks](../reference/attacking-spell-skeletons/README.md).
+
+## Version 219: Ruin Knight melee phases
+
+New armies carrying Ruin Witch give her summoned Knights their one-second
+source melee charge before the first ground hit. Repeat attacks retain their
+one-second interval, and the original attack animation reaches its contact frame
+at the hit. Retargeting, Freeze and attack-rate effects use the shared melee
+controller. Summon timing, threefold Wall damage and the pinned client's health
+decay keep their existing rules. Older recordings retain their instant first hit;
+see [source timing and replay checks](../reference/attacking-ruin-knight/README.md).
+
+## Version 220: Ruin Witch respects closed walls and hidden rubble
+
+New armies carrying Ruin Witch select visible rubble reachable without breaking
+walls. Closed compartments are skipped, open detours and Jump crossings remain
+available, and the Witch retries when a wall opens or hiding expires. Practice
+and native campaign routes retain their respective grid resolution. Existing
+vacuum/summon timing and Knight combat remain unchanged. Version 219 and earlier
+retain the previous wall-crossing route; see
+[rubble reachability and replay checks](../reference/ruin-witch-rubble-routes/README.md).
+
+## Version 221: attacking Super Dragon flame bursts
+
+New carried Super Dragons charge before ten individually timed flames, retaining
+source average DPS across the burst/recovery cycle. Freeze, attack-rate effects,
+per-flame boosts, interrupted targets and original projectile flight use recorded
+active time. Each flame splashes once on its captured target layer and keeps
+its fixed aim point. Version 220 and earlier retain their single large release. Current
+Army readouts show per-flame damage and burst timing; old replays retain their
+old readout. See [source fields, timing and validation](../reference/attacking-super-dragon/README.md).
+
+## Version 222: Stone Slammer phases and secondary blast
+
+New carried Stone Slammers spend their full fresh charge after arriving, then
+resolve the heavy ground hit and the wider secondary blast together. The latter
+retains maximum damage through two tiles and falls to its minimum at three tiles.
+Original body contact poses, active-time holds and retarget recovery follow the
+shared attacker controller. Current troop Info distinguishes primary hit/DPS from
+secondary damage. Version 221 and earlier retain their old attacks and readouts.
+See [source fields, geometry limits and replay checks](../reference/attacking-stone-slammer/README.md).
+
+## Version 223: Troop Launcher friendly reinforcements
+
+New carried Troop Launchers wait for a qualifying friendly group, then deliver
+source troop barrels on their friendly cast clock. The fixed-point barrel
+retains its small heal, all four source payload groups, research-tier stock and
+child levels. Released barrels survive parent/recipient loss and can hold the
+battle open until their troops arrive. Payload troops use their native attack
+phases. Version 222 and earlier retain enemy-targeted barrels and complete old
+state. See [source fields, group adapter and validation](../reference/attacking-troop-launcher/README.md).
+
+## Version 224: Log Launcher physical rolling corridors
+
+New carried Log Launchers release finite 20-tile logs that apply damage as they
+travel, stopping after four standing structures or an Overgrowth-covered
+structure. Ground defenders can be struck without consuming the structure
+budget. Each release also applies its source nearby ground blast. Released logs
+survive caster loss and hold the battle open. Moving-fire cadence and health-loss
+clocks are retained. Version 223 and earlier retain the old destination-time
+corridor and complete state. See [source fields, collision conventions and
+validation](../reference/attacking-log-launcher/README.md).
+
+## Version 225: Battle Drill surfacing Wall destruction
+
+New carried Battle Drills destroy living Walls inside their surfacing spell's
+1.5-tile area. The Wall destruction flag is handled separately from ordinary
+Wall stun immunity. Existing two-second building stun, defending-character and
+storage immunities, burrowing and one-cast-per-emergence behavior remain in place.
+Version 224 and earlier retain Walls and complete old states. See
+[source fields, geometry and replay validation](../reference/battle-drill-surface-walls/README.md).
+
+## Version 226: Flame Flinger preferred Wall pulse damage
+
+New carried Flame Flingers apply their burn spell's 25× preferred-Wall modifier
+to its one-point flat pulse component, adding 24 damage to Walls each pulse.
+The separate poison ramp, direct projectile damage/Wall bonus and release clock
+are retained. Version 225 and earlier keep their complete prior states. Current
+Info explains burn pulses, their Wall bonus and the separate direct Wall hit.
+See [source interpretation, remaining burst limits and validation](../reference/flame-flinger-wall-pulse/README.md).
+
+## Version 227: shared Flame Flinger building poison
+
+New carried Flame Flingers share a sustained building-poison cap across their
+persistent burn areas. Their flat per-area hits, including the version-226 Wall
+bonus, remain additive. Due Flame Flinger pulses resolve in scheduled-time order
+for consistent shared budgets. Single-area damage, geometry and other spells
+retain their existing paths. Version 226 and earlier keep complete old states
+and guide readouts. See [damage sharing, chronology and validation](../reference/flame-flinger-overlap/README.md).
+
+## Version 228: charged Flame Flinger projectile bursts
+
+New carried Flame Flingers charge before releasing three projectiles spaced by
+0.128 seconds. Their 5.312-second cycle preserves source average direct DPS.
+Active-time holds, fractional remainders and committed target behavior use the
+shared attacker controller. Each fixed-aim ground projectile resolves one area
+hit and then its own source burn; Walls receive their direct multiplier once.
+Released shots and burns survive caster loss. Original attack poses align with
+the first release. Version 227 and earlier retain single-release combat and old
+readouts. See [source timing, limits and validation](../reference/flame-flinger-bursts/README.md).
+
+## Version 229: charged Wall Wrecker rams
+
+New carried Wall Wreckers use a 0.75-second windup and 0.55-second recovery,
+retaining their 1.3-second repeat period and existing ram damage shape. Real
+building and blocking-Wall engagements begin a fresh charge; Freeze/stun,
+slowdown and target loss follow the shared attacker phases. Original source
+poses align with contact and face the committed Wall. Version 228 and earlier
+retain complete old states and omit the new phase readouts. See
+[source timing, retained behavior and validation](../reference/attacking-wall-wrecker/README.md).
+
+## Version 230: surfaced Battle Drill attack phases
+
+New carried Battle Drills surface and release their existing stun/Wall-destruction
+spell before charging a 1.5-second hit. A 0.2-second recovery retains the existing
+1.7-second repeat period and damage. Ground defenders receive one direct melee
+hit; retreating targets cancel the exposed swing before reburrowing. Freeze/stun,
+slowdown and target/caster loss use the shared phases. Original poses align with
+contact. Version 229 and earlier retain complete old states and phase readouts.
+See [source timing, surfacing behavior and validation](../reference/attacking-battle-drill/README.md).
+
+## Version 231: native Freeze/stun holds for moving-fire sieges
+
+New carried Battle Blimps and Log Launchers pause their moving-fire cooldowns
+during native Freeze/stun. A hold ending inside a sample spends only its active
+remainder. Release periods, movement, damage and projectiles retain their existing
+paths. Version 230 and earlier keep complete old states and countdown behavior.
+The read-only presenter draws original attack takes after moving releases and
+follows each recording's cooldown, including current held poses. See
+[clock behavior, original frames and validation](../reference/moving-siege-attacks/README.md).
+
+## Version 232: manually ending a deployed siege
+
+Current battles carrying a siege expose an End siege army-card button after
+its deployment. The recorded `siege-end` action destroys the living machine
+through its source self-destruct ability and preserves ordinary death effects,
+released shots and already spawned troops. It does not free the deployment slot.
+Replay viewers cannot activate it. Versions before 232 and armies without a
+siege reject this input; prior complete states remain unchanged. The portable
+file envelope remains version 1. See [source abilities, controls and validation](../reference/manual-siege-release/README.md).

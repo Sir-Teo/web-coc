@@ -63,3 +63,9 @@ Versions 86 and earlier preserve their previous routing and hidden defender atta
 exposure, damage/trap guards, reburrowing, cooldown/Freeze states and real Miner/Diggy attacks with
 retaliation through portable backward seeks. `tests/browser/underground-defender-chase.spec.ts`
 checks native actors, actual retaliation, reduced-motion parity and historical playback on desktop and phone.
+
+Version 225 also honors Battle Drill's separate `DestroyWalls` surfacing effect.
+The existing one-cast-per-emergence transition removes nearby Walls while
+preserving their immunity to the ordinary stun. This uses the spell's existing
+footprint radius; underground routes and surfaced attack timing are unchanged.
+See [source fields and replay checks](../reference/battle-drill-surface-walls/README.md).

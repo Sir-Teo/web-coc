@@ -28,6 +28,12 @@ rules. Only an initial army carrying Apprentice Warden enables the new clock;
 version 179 and earlier retain their original timing and defender projectiles.
 No source stats, assets, save format or replay envelope change.
 
+The Army information panel reads `Apprentice Aura` at the same source tier. Its
+`ExtraHealthPermil=200/220/240/260` supplies a 20/22/24/26% health buffer within
+seven tiles. `DoesNotAffectOwner` and Siege/Totem immunity keep the owner and those
+units out. Advice distinguishes extra health from healing and describes the
+existing strongest-source rule for overlapping health auras.
+
 ## Validation
 
 `tests/attacking-apprentice-windup.test.ts` covers all four source levels from

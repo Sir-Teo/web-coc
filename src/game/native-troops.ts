@@ -1,3 +1,23 @@
+import { resolveFlameFlingerImpact } from './native-flame-flinger-impact';
+import {
+  beginFlameFlingerBurst,
+  prepareFlameFlingerBurst,
+  stepFlameFlingerBurst,
+  flameFlingerBurstStats,
+  releaseFlameFlingerShot,
+  type FlameFlingerBurstState,
+} from './native-flame-flinger';
+import { launchRollingLog } from './native-log-launcher';
+import { stepTroopLauncher, resolveTroopLauncherImpact } from './native-troop-launcher';
+import { attackStoneSlammer } from './native-stone-slammer';
+import {
+  beginSuperDragonBurst,
+  prepareSuperDragonBurst,
+  stepSuperDragonBurst,
+  superDragonBurstStats,
+  type SuperDragonBurstState,
+} from './native-super-dragon';
+import { chainPoint, type ChainTarget } from './chain-targets';
 import { houndUnitDirection } from './native-hound-geometry';
 import { releaseHoundAtDefender } from './native-hound-attack';
 import { resolveWitchImpact } from './native-witch-attack';
@@ -85,6 +105,7 @@ import { flag, nativeRow, num, seconds as nativeSeconds, text, tiles } from './n
 import { castNativeSpell, stepNativeSpells, type NativeSpellContext } from './native-spells';
 import {
   buildingEffects,
+  buildingHidden,
   healUnit,
   unitAttackIntervalScale,
   unitEffects,
@@ -111,7 +132,15 @@ import {
   type NativeUnitStats,
 } from './native-units';
 import { launchProjectile, type CombatProjectile } from './projectiles';
-import { breachTarget, distanceTo, findPath, type Battle, type Building, type Unit } from './model';
+import {
+  breachTarget,
+  distanceTo,
+  findPath,
+  pathReachability,
+  type Battle,
+  type Building,
+  type Unit,
+} from './model';
 
 /** Version 45+ native roster behavior state, created lazily on the unit. */
 export interface NativeUnitState {
@@ -121,6 +150,10 @@ export interface NativeUnitState {
   electroDragon?: ElectroDragonState;
   bowler?: NativeAttackWindupState;
   attackWindup?: NativeAttackWindupState;
+  /** Version 221: a charged first flame and the remaining source burst. */
+  superDragonBurst?: SuperDragonBurstState;
+  /** Version 228: charged first shot and remaining Flame Flinger projectiles. */
+  flameFlingerBurst?: FlameFlingerBurstState;
   /** Version 210: committed friendly-unit cast, separate from enemy target namespaces. */
   healerWindup?: HealerWindupState;
   /** Version 95: the source waiting bird and its separately drawn Egg. */
@@ -900,6 +933,10 @@ export function stepNativeUnit(
       ? heroExtraDamage(u, at)
       : 0);
   if (s.speed <= 0 && !s.summon && !s.bunker && s.range < 0.05) return;
+  if (battle.nativeTroopLauncherFriendly && u.kind === 'trooplauncher') {
+    stepTroopLauncher(ctx, u, s, dt, actionDt);
+    return;
+  }
   if (s.heal > 0 && s.dps <= 0 && !isSiege(u.kind)) {
     stepNativeHealer(ctx, u, s, boosted.heal ?? s.heal, speed, dt, actionDt);
     return;
@@ -938,6 +975,14 @@ export function stepNativeUnit(
   if (electroDragon && stepElectroDragonCharge(ctx, u, s, damage, speed, dt, actionDt)) return;
   const bowler = !!(u.kind === 'bowler' && battle.nativeBowlerWindup);
   const golem = !!((u.kind === 'golem' || u.kind === 'golemite') && battle.nativeGolemWindup);
+  const bear = !!(u.kind === 'bear' && battle.nativeBearWindup);
+  const ruinKnight = !!(u.kind === 'ruinknight' && battle.nativeRuinKnightWindup);
+  const booger = !!(u.kind === 'booger' && battle.nativeBoogerWindup);
+  const spellBat = !!(u.kind === 'spellbat' && battle.nativeSpellBatWindup);
+  const spellSkeleton = !!(
+    battle.nativeSpellSkeletonWindup &&
+    (u.kind === 'spellskeletonshielded' || u.kind === 'spellskeleton')
+  );
   const giant = !!(u.kind === 'supergiant' && battle.nativeGiantWindup);
   const iceGolem = !!(u.kind === 'icegolem' && battle.nativeIceGolemWindup);
   const rootRider = !!(u.kind === 'rootrider' && battle.nativeRootRiderWindup);
@@ -952,7 +997,15 @@ export function stepNativeUnit(
   const dragonRider = !!(u.kind === 'dragonrider' && battle.nativeDragonRiderWindup);
   const rocketBalloon = !!(u.kind === 'rocketballoon' && battle.nativeRocketBalloonWindup);
   const balloon = !!(u.kind === 'balloon' && battle.nativeBalloonWindup);
+  const rollingLog = !!(u.kind === 'loglauncher' && battle.nativeLogLauncherPiercing);
+  const stoneSlammer = !!(u.kind === 'stoneslammer' && battle.nativeStoneSlammerAttacks);
+  const wallWrecker = !!(u.kind === 'wallwrecker' && battle.nativeWallWreckerWindup);
+  const battleDrill = !!(u.kind === 'battledrill' && battle.nativeBattleDrillWindup);
   const babyDragon = !!(u.kind === 'babydragon' && battle.nativeBabyDragonWindup);
+  const superDragon = !!(u.kind === 'superdragon' && battle.nativeSuperDragonBurst);
+  if (superDragon) prepareSuperDragonBurst(u, at);
+  const flameFlinger = !!(u.kind === 'flameflinger' && battle.nativeFlameFlingerBursts);
+  if (flameFlinger) prepareFlameFlingerBurst(u, at);
   const minion = !!(u.kind === 'minion' && battle.nativeMinionWindup);
   const archer = !!(u.kind === 'archer' && battle.nativeArcherWindup);
   const superBarbarian = !!(u.kind === 'superbarbarian' && battle.nativeSuperBarbarianWindup);
@@ -967,10 +1020,23 @@ export function stepNativeUnit(
     (u.kind === 'valkyrie' || u.kind === 'supervalkyrie')
   );
   const witch = !!((u.kind === 'witch' || u.kind === 'superwitch') && battle.nativeWitchWindup);
+  const witchSummon = !!(
+    battle.nativeWitchSummonWindup &&
+    (u.kind === 'skeleton' || u.kind === 'bigboy')
+  );
   const hound = !!((u.kind === 'lavahound' || u.kind === 'icehound') && battle.nativeHoundWindup);
+  const houndPup = !!(
+    (u.kind === 'lavapup' || u.kind === 'icehoundpup') &&
+    battle.nativeHoundPupWindup
+  );
   const splitAttack =
     bowler ||
     golem ||
+    bear ||
+    ruinKnight ||
+    booger ||
+    spellBat ||
+    spellSkeleton ||
     giant ||
     iceGolem ||
     rootRider ||
@@ -985,7 +1051,12 @@ export function stepNativeUnit(
     dragonRider ||
     rocketBalloon ||
     balloon ||
+    stoneSlammer ||
+    wallWrecker ||
+    battleDrill ||
     babyDragon ||
+    superDragon ||
+    flameFlinger ||
     superMinion ||
     minion ||
     archer ||
@@ -998,7 +1069,9 @@ export function stepNativeUnit(
     wallBreaker ||
     valkyrie ||
     witch ||
-    hound;
+    witchSummon ||
+    hound ||
+    houndPup;
   const phaseDt =
     babyDragon && state.alone
       ? actionDt *
@@ -1006,7 +1079,9 @@ export function stepNativeUnit(
           num(nativeRow('abilities', s.ability, s.abilityLevel), 'BoostAttackSpeedPercentage') /
             100)
       : actionDt;
-  if (
+  const burstRate =
+    (superDragon || flameFlinger) && dt > 0 ? phaseDt / dt / unitAttackIntervalScale(u, at) : 0;
+  const windupHandled =
     splitAttack &&
     stepNativeAttackWindup(ctx, u, s, dt, phaseDt, (target) => {
       const power =
@@ -1020,7 +1095,16 @@ export function stepNativeUnit(
               at,
             )
           : damage;
-      if (superArcher) launchArcherPiercing(ctx, u, damage, target);
+      if (superDragon) {
+        const launched = beginSuperDragonBurst(u, target, at, burstRate),
+          flame = superDragonBurstStats(s.level).damage * (damage / s.damage);
+        releaseSuperDragonFlame(ctx, u, s, flame, target, launched);
+      } else if (flameFlinger) {
+        const launched = beginFlameFlingerBurst(u, s.level, target, at, burstRate),
+          shot = flameFlingerBurstStats(s.level).damage * (damage / s.damage);
+        releaseFlameFlingerShot(ctx, u, s, shot, target, launched);
+      } else if (stoneSlammer) attackStoneSlammer(ctx, u, s, damage, target);
+      else if (superArcher) launchArcherPiercing(ctx, u, damage, target);
       else if (superWizard) attackSuperWizard(ctx, u, damage, target);
       else if (valkyrie) sweepValkyrie(ctx, u, s, damage);
       else if ('building' in target) strike(ctx, u, s, target.building, power);
@@ -1038,7 +1122,8 @@ export function stepNativeUnit(
         superMinion ||
         minion ||
         archer ||
-        superBowler
+        superBowler ||
+        houndPup
       )
         releaseRangedAtDefender(
           ctx,
@@ -1050,6 +1135,12 @@ export function stepNativeUnit(
       else if (hound) releaseHoundAtDefender(ctx, u, s, target.defender, damage);
       else if (
         golem ||
+        bear ||
+        ruinKnight ||
+        booger ||
+        spellBat ||
+        spellSkeleton ||
+        witchSummon ||
         giant ||
         iceGolem ||
         rootRider ||
@@ -1059,7 +1150,8 @@ export function stepNativeUnit(
         miner ||
         superMiner ||
         superBarbarian ||
-        sneakyGoblin
+        sneakyGoblin ||
+        battleDrill
       ) {
         hurtDefender(battle, target.defender, power, at);
         if (iceGolem)
@@ -1073,7 +1165,11 @@ export function stepNativeUnit(
           sourceId: u.id,
           targetId: target.defender.id,
           targetDefender: true,
-          ...(electroTitan ? { toAir: target.defender.mode === 'air' } : {}),
+          ...(booger || spellBat
+            ? { fromAir: true, toAir: target.defender.mode === 'air' }
+            : electroTitan
+              ? { toAir: target.defender.mode === 'air' }
+              : {}),
           x: u.x,
           y: u.y,
           toX: target.defender.x,
@@ -1118,9 +1214,24 @@ export function stepNativeUnit(
       if (superMiner && damageRamp)
         finishRampingHit(u, 'building' in target ? target.building : target.defender, damageRamp);
       if (superMinion) finishSuperMinionOpening(u, s);
+    });
+  if (
+    superDragon &&
+    stepSuperDragonBurst(ctx, u, burstRate, (target, launched) => {
+      const flame = superDragonBurstStats(s.level).damage * (damage / s.damage);
+      releaseSuperDragonFlame(ctx, u, s, flame, target, launched);
     })
   )
     return;
+  if (
+    flameFlinger &&
+    stepFlameFlingerBurst(ctx, u, burstRate, (target, launched) => {
+      const shot = flameFlingerBurstStats(s.level).damage * (damage / s.damage);
+      releaseFlameFlingerShot(ctx, u, s, shot, target, launched);
+    })
+  )
+    return;
+  if (windupHandled) return;
   const miteJump = nativeMiteJump(battle, u.kind);
   const electromite = u.kind === 'electromite' && battle.nativeElectromites;
   const meteorThrow = u.kind === 'meteorgolem' && battle.nativeMeteorThrows;
@@ -1175,6 +1286,11 @@ export function stepNativeUnit(
       splash: s.splash || undefined,
       airTargets: s.airTargets,
     };
+    if (rollingLog) {
+      traits.nativeAttack = (target, power) =>
+        launchRollingLog(ctx, u, s, power, { defender: target });
+      traits.nativeBuildingAttack = (target, power) => strike(ctx, u, s, target, power);
+    }
     if (electromite) {
       traits.prefersBuildings = true;
       traits.nativeAttack = (target, power) =>
@@ -1550,6 +1666,43 @@ function selfAreaHit(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, damag
   ctx.effect({ type: 'blast', x: u.x, y: u.y, radius, sourceId: u.id });
 }
 
+/** A flame keeps its own source timestamp and original ground/air projectile. */
+function releaseSuperDragonFlame(
+  ctx: NativeTroopContext,
+  unit: Unit,
+  stats: NativeUnitStats,
+  damage: number,
+  target: ChainTarget,
+  at: number,
+) {
+  const point = chainPoint(target),
+    building = 'building' in target;
+  launchProjectile(
+    ctx.battle,
+    {
+      weapon: 'native',
+      native: { name: stats.projectile, kind: unit.kind, level: stats.level },
+      sourceId: unit.id,
+      targetId: building ? target.building.id : target.defender.id,
+      targetBuilding: building,
+      ...(!building ? { targetDefender: true } : {}),
+      fromX: unit.x,
+      fromY: unit.y,
+      x: point.x,
+      y: point.y,
+      fromAir: true,
+      toAir: !building && target.defender.mode === 'air',
+      damage: building ? damage * damageMultiplier(ctx.battle, stats, target.building, at) : damage,
+      splash: stats.splash,
+    },
+    ctx.effect,
+    at,
+  );
+  const state = unit.native!;
+  state.lastAttackAt = at;
+  state.attacks = (state.attacks ?? 0) + 1;
+}
+
 /** Resolve one attack against a building according to the unit's native attack shape. */
 function strike(
   ctx: NativeTroopContext,
@@ -1560,6 +1713,10 @@ function strike(
 ) {
   const battle = ctx.battle;
   const state = (u.native ??= {});
+  if (battle.nativeLogLauncherPiercing && u.kind === 'loglauncher') {
+    launchRollingLog(ctx, u, s, damage, { building: target });
+    return;
+  }
   if (battle.nativeArcherPiercing && u.kind === 'superarcher') {
     launchArcherPiercing(ctx, u, damage, { building: target });
     return;
@@ -1952,12 +2109,17 @@ export function stepNativeChains(ctx: NativeTroopContext) {
 
 /** Native projectile arrival: damage, splash, bounces and on-hit spells. */
 export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile) {
+  if (resolveTroopLauncherImpact(ctx, p)) return;
   if (ctx.battle.nativeSuperHogSplit && p.native?.superHogSplit) {
     releaseProjectileLanding(ctx, p.id);
     return;
   }
   if (resolveWitchImpact(ctx, p)) return;
-  if (ctx.battle.nativeWizardWindup && p.native?.kind === 'wizard') {
+  if (resolveFlameFlingerImpact(ctx, p)) return;
+  if (
+    (ctx.battle.nativeWizardWindup && p.native?.kind === 'wizard') ||
+    (ctx.battle.nativeSuperDragonBurst && p.native?.kind === 'superdragon')
+  ) {
     resolveRangedAreaImpact(ctx, p);
     return;
   }
@@ -2390,13 +2552,17 @@ function stepRuinWitch(
     return;
   }
   ruin.phase = 'seek';
-  const consumed = (battle.consumedRubble ??= []);
+  const consumed = (battle.consumedRubble ??= []),
+    routes = battle.nativeRuinWitchRubbleRoutes ? routeBuildings(ctx, false) : undefined,
+    reaches = routes ? pathReachability(u, routes, !!battle.nativeSubtiles) : undefined;
   let pile = battle.buildings.find((b) => b.id === ruin.rubble && !consumed.includes(b.id));
+  if (reaches && pile && (buildingHidden(battle, pile) || !reaches(pile))) pile = undefined;
   if (!pile) {
     const eaten = new Set(consumed);
     let best = Infinity;
     for (const b of battle.buildings) {
       if (b.hp > 0 || b.kind === 'wall' || isTrap(b.kind) || eaten.has(b.id)) continue;
+      if (reaches && (buildingHidden(battle, b) || !reaches(b))) continue;
       const d = distanceTo(u, b);
       if (d < best - 1e-9 || (Math.abs(d - best) <= 1e-9 && pile && b.id < pile.id)) {
         best = d;
@@ -2417,13 +2583,15 @@ function stepRuinWitch(
     return;
   }
   if (!u.path.length || u.pathAt <= 0) {
-    u.path = findPath(
-      u,
-      { x: pile.x, y: pile.y, level: pile.level, kind: pile.kind } as Building,
-      ctx.buildings.filter((b) => b.hp > 0),
-      1,
-      !!ctx.battle.nativeSubtiles,
-    );
+    u.path = routes
+      ? findPath(u, pile, routes, 1, !!battle.nativeSubtiles, [], true)
+      : findPath(
+          u,
+          { x: pile.x, y: pile.y, level: pile.level, kind: pile.kind } as Building,
+          ctx.buildings.filter((b) => b.hp > 0),
+          1,
+          !!ctx.battle.nativeSubtiles,
+        );
     u.pathAt = 1.5;
   }
   let travel = speed * dt;
@@ -2851,7 +3019,12 @@ export function stepNativeBattle(ctx: NativeTroopContext) {
   stepElectromiteArcs(ctx);
   stepElectroDragonArcs(ctx);
   stepSuperWizardBranches(ctx);
-  if (ctx.battle.nativeGiantArrow || ctx.battle.nativeDarkOrb) stepHeroPiercing(ctx);
+  if (
+    ctx.battle.nativeGiantArrow ||
+    ctx.battle.nativeDarkOrb ||
+    ctx.battle.nativeLogLauncherPiercing
+  )
+    stepHeroPiercing(ctx);
   else stepArcherPiercing(ctx);
   stepPendingSpawns(ctx);
 }
