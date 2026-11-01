@@ -16,6 +16,7 @@ import { stoneSlammerBattle } from './fixtures/attacking-stone-slammer';
 import { troopLauncherBattle } from './fixtures/attacking-troop-launcher';
 import { flameFlingerBurstBattle } from './fixtures/flame-flinger-burst';
 import { wallWreckerBattle } from './fixtures/attacking-wall-wrecker';
+import { drillSurfaceBattle } from './fixtures/battle-drill-surface-walls';
 
 // Scene views are Phaser objects; record what the presentations ask them to draw instead.
 vi.mock('../src/game/native-scene-view', () => {
@@ -251,6 +252,24 @@ describe('unit motion tracker', () => {
 });
 
 describe('troop native presentation', () => {
+  for (const version of [229, 230])
+    for (const level of [1, 6])
+      it(`Battle Drill ${level} draws its original contact in version ${version}`, () => {
+        const r = drillSurfaceBattle(level, version),
+          { p, internals } = loadedTroopPresentation(['battledrill']);
+        r.untilAttacks(1);
+        const contacts = [JSON.parse(JSON.stringify(r.battle)) as Battle];
+        r.untilAttacks(2);
+        contacts.push(JSON.parse(JSON.stringify(r.battle)) as Battle);
+        for (const battle of [...contacts, ...contacts.slice().reverse()]) {
+          const before = JSON.stringify(battle);
+          p.render(battle, false, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(version >= 230 ? 3 : 0);
+          p.render(battle, true, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(0);
+          expect(JSON.stringify(battle)).toBe(before);
+        }
+      });
   for (const version of [228, 229])
     for (const level of [1, 6])
       it(`Wall Wrecker ${level} draws its source ram contact in version ${version}`, () => {

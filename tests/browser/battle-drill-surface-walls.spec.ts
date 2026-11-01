@@ -24,6 +24,10 @@ async function seek(page: Page, at: number, id: number) {
 }
 
 for (const c of [
+  { level: 1, version: 230, x: 10.5, width: 390 },
+  { level: 6, version: 230, x: 5, width: 1440 },
+  { level: 6, version: 229, x: 10.5, width: 390 },
+  { level: 1, version: 229, x: 5, width: 1440 },
   { level: 1, version: 225, x: 10.5, width: 390 },
   { level: 6, version: 225, x: 5, width: 1440 },
   { level: 6, version: 224, x: 10.5, width: 390 },
@@ -64,23 +68,46 @@ for (const c of [
     });
     expect(wallState.hp === 0).toBe(c.version >= 225);
     expect(wallState.stun).toBeGreaterThan(wallState.at);
+    if (c.version >= 230) {
+      const contact = r.snapshots
+        .find((s) => s.battle.units.find((u) => u.id === r.id)?.native?.attacks)!
+        .battle.units.find((u) => u.id === r.id)!.native!.lastAttackAt!;
+      await seek(page, contact, r.id);
+    }
     await expect
       .poll(
         () =>
-          page.evaluate((id) => {
-            const { scene } = window.__game;
-            scene.drawOverlay(0);
-            const body = scene.troopNativePresentation.views.get(id);
-            return (
-              body?.kind === 'battledrill' &&
-              body.view.objects.some(
-                (o) => o.visible && o.alpha > 0 && o.texture?.key !== '__MISSING',
-              )
-            );
-          }, r.id),
+          page.evaluate(
+            ({ id, version }) => {
+              const { scene } = window.__game;
+              scene.drawOverlay(0);
+              const body = scene.troopNativePresentation.views.get(id);
+              return (
+                body?.kind === 'battledrill' &&
+                (version < 230 || body.sample.frame === 3) &&
+                body.view.objects.some(
+                  (o) => o.visible && o.alpha > 0 && o.texture?.key !== '__MISSING',
+                )
+              );
+            },
+            { id: r.id, version: c.version },
+          ),
         { timeout: 30000 },
       )
       .toBe(true);
+    const guide = await page.evaluate(() => {
+      const { model, hud } = window.__game;
+      hud.inspectedTroop = 'battledrill';
+      const before = JSON.stringify(model.battle),
+        doc = new DOMParser().parseFromString(hud.troopInfo(), 'text/html');
+      return {
+        labels: [...doc.querySelectorAll('.troop-stats dt')].map((el) => el.textContent),
+        readOnly: before === JSON.stringify(model.battle),
+      };
+    });
+    expect(guide.readOnly).toBe(true);
+    expect(guide.labels.includes('Fresh drill charge')).toBe(c.version >= 230);
+    expect(guide.labels.includes('Drill recovery')).toBe(c.version >= 230);
     await page.screenshot({
       path: `output/playtest/battle-drill-${c.level}-${c.version}-${c.width}.png`,
       animations: 'disabled',
@@ -88,6 +115,9 @@ for (const c of [
     const last = await seek(page, r.snapshots.at(-1)!.at, r.id);
     expect(await page.evaluate(() => !!window.__game.model.battle.nativeDrillSurfaceWalls)).toBe(
       c.version >= 225,
+    );
+    expect(await page.evaluate(() => !!window.__game.model.battle.nativeBattleDrillWindup)).toBe(
+      c.version >= 230,
     );
     await page.evaluate(() => window.__game.model.toggleReducedMotion());
     expect(await page.evaluate(() => JSON.stringify(window.__game.model.battle))).toBe(last.battle);

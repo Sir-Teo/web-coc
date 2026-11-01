@@ -1143,6 +1143,8 @@ export interface Battle {
   nativeFlameFlingerBursts?: true;
   /** Version 229: Wall Wrecker source ram windup and recovery. */
   nativeWallWreckerWindup?: true;
+  /** Version 230: surfaced Battle Drill attack windup and recovery. */
+  nativeBattleDrillWindup?: true;
   /** Version 207: source demolition contact cues reconstruct and cover the death tone. */
   nativeWallBreakerSounds?: true;
   /** Version 206: both Wall Breaker contact splashes include ground defenders. */

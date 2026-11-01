@@ -1000,6 +1000,7 @@ export function stepNativeUnit(
   const rollingLog = !!(u.kind === 'loglauncher' && battle.nativeLogLauncherPiercing);
   const stoneSlammer = !!(u.kind === 'stoneslammer' && battle.nativeStoneSlammerAttacks);
   const wallWrecker = !!(u.kind === 'wallwrecker' && battle.nativeWallWreckerWindup);
+  const battleDrill = !!(u.kind === 'battledrill' && battle.nativeBattleDrillWindup);
   const babyDragon = !!(u.kind === 'babydragon' && battle.nativeBabyDragonWindup);
   const superDragon = !!(u.kind === 'superdragon' && battle.nativeSuperDragonBurst);
   if (superDragon) prepareSuperDragonBurst(u, at);
@@ -1052,6 +1053,7 @@ export function stepNativeUnit(
     balloon ||
     stoneSlammer ||
     wallWrecker ||
+    battleDrill ||
     babyDragon ||
     superDragon ||
     flameFlinger ||
@@ -1148,7 +1150,8 @@ export function stepNativeUnit(
         miner ||
         superMiner ||
         superBarbarian ||
-        sneakyGoblin
+        sneakyGoblin ||
+        battleDrill
       ) {
         hurtDefender(battle, target.defender, power, at);
         if (iceGolem)

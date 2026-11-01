@@ -36,6 +36,8 @@ for (const viewport of [
             'Surfacing radius': '1.5 tiles',
             'Walls in surfacing radius': 'Destroyed',
             'Can receive healing': 'No',
+            'Fresh drill charge': '1.5 s',
+            'Drill recovery': '0.2 s',
             'Damage per second': upgraded ? '640' : '430',
             'Damage per hit': upgraded ? '1,088' : '731',
             Movement: 'Ground · burrows under walls',

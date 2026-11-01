@@ -25,6 +25,7 @@ export function nativeTroopFacingTarget(
   if (wall && wall.hp > 0) return { x: wall.x + 0.5, y: wall.y + 0.5 };
   const windup =
     (battle.nativeWallWreckerWindup && unit.kind === 'wallwrecker') ||
+    (battle.nativeBattleDrillWindup && unit.kind === 'battledrill') ||
     (battle.nativeGolemWindup && (unit.kind === 'golem' || unit.kind === 'golemite')) ||
     (battle.nativeBearWindup && unit.kind === 'bear') ||
     (battle.nativeRuinKnightWindup && unit.kind === 'ruinknight') ||

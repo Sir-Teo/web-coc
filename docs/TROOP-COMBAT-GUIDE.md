@@ -276,6 +276,12 @@ prior guide. Base/maximum research browser checks cover phone, landscape and
 desktop with the same text-fit and training-navigation checks. See
 [surfacing Wall destruction](../reference/battle-drill-surface-walls/README.md).
 
+Current Battle Drill Info also lists a 1.5-second fresh drill charge and
+0.2-second recovery. Surfacing and its spell precede the charged single-target
+hit; its 1.7-second repeat interval and hit damage remain unchanged. Historical
+battles before version 230 omit the phase facts. See
+[surfaced attack phases](../reference/attacking-battle-drill/README.md).
+
 Flame Flinger Info distinguishes direct projectiles from persistent burn areas.
 It lists three shots, 0.128-second spacing, a 4.48-second fresh charge and the
 5.312-second burst interval. Base/maximum research shows 127/184 direct DPS and

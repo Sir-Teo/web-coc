@@ -1851,3 +1851,13 @@ slowdown and target loss follow the shared attacker phases. Original source
 poses align with contact and face the committed Wall. Version 228 and earlier
 retain complete old states and omit the new phase readouts. See
 [source timing, retained behavior and validation](../reference/attacking-wall-wrecker/README.md).
+
+## Version 230: surfaced Battle Drill attack phases
+
+New carried Battle Drills surface and release their existing stun/Wall-destruction
+spell before charging a 1.5-second hit. A 0.2-second recovery retains the existing
+1.7-second repeat period and damage. Ground defenders receive one direct melee
+hit; retreating targets cancel the exposed swing before reburrowing. Freeze/stun,
+slowdown and target/caster loss use the shared phases. Original poses align with
+contact. Version 229 and earlier retain complete old states and phase readouts.
+See [source timing, surfacing behavior and validation](../reference/attacking-battle-drill/README.md).

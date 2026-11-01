@@ -4646,6 +4646,7 @@ export class HUD {
         flameFlingerBursts: !this.model.battle || !!this.model.battle.nativeFlameFlingerBursts,
         siegeBarracksTroops: !this.model.battle || !!this.model.battle.nativeSiegeBarracksTroops,
         wallWreckerWindup: !this.model.battle || !!this.model.battle.nativeWallWreckerWindup,
+        battleDrillWindup: !this.model.battle || !!this.model.battle.nativeBattleDrillWindup,
       }),
       original = superOriginal(kind),
       boostNote =

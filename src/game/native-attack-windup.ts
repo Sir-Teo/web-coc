@@ -256,7 +256,8 @@ export function stepNativeAttackWindup(
   const distance = gap(unit, target);
   if (
     ((ctx.battle.nativeMinerWindup && unit.kind === 'miner') ||
-      (ctx.battle.nativeSuperMinerWindup && unit.kind === 'superminer')) &&
+      (ctx.battle.nativeSuperMinerWindup && unit.kind === 'superminer') ||
+      (ctx.battle.nativeBattleDrillWindup && unit.kind === 'battledrill')) &&
     distance > stats.range + 1e-6
   ) {
     // Reburrowing ends the exposed swing; emergence must begin a fresh charge.

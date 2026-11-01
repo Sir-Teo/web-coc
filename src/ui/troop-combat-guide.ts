@@ -59,6 +59,7 @@ export function troopCombatGuide(
     flameFlingerBursts?: boolean;
     siegeBarracksTroops?: boolean;
     wallWreckerWindup?: boolean;
+    battleDrillWindup?: boolean;
   } = {},
 ) {
   const facts: [string, string][] = [];
@@ -159,6 +160,14 @@ export function troopCombatGuide(
     );
     tactic =
       'Burrow beneath walls to reach defenses. Each emergence destroys nearby walls and stuns surrounding defenses. It becomes vulnerable while surfaced, so support it against defenders and nearby defenses. It cannot be healed.';
+    if (rules.battleDrillWindup !== false) {
+      const timing = splitTiming(nativeUnitRow(kind, stats.level));
+      facts.push(
+        ['Fresh drill charge', `${timing.firstHit} s`],
+        ['Drill recovery', `${timing.recovery} s`],
+      );
+      tactic += ' It charges its drill after surfacing before dealing the first hit.';
+    }
   } else if (kind === 'wallwrecker') {
     facts.push(
       ['Movement destination', text(nativeUnitRow(kind, stats.level), 'PreferredMovementTarget')],
