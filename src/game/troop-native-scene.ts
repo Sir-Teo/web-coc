@@ -4,7 +4,7 @@ import { hogAttackKind } from './native-hog-attacks';
 import { cancelImageDecodes } from './cancel-image-decodes';
 import type Phaser from 'phaser';
 import { TROOPS, type TroopKind } from './data';
-import type { Battle, Building } from './model';
+import type { Battle, Building, Unit } from './model';
 import { nativeScenePosesShared, nativeSceneLocator, type NativeMeshGraph } from './native-mesh';
 import { nativeTroopFacingTarget } from './native-troop-facing';
 import { nativeMeshTexture } from './native-mesh-scene';
@@ -406,10 +406,15 @@ export class TroopNativePresentation {
       // runs at 20 Hz without interpolation, so most rendered frames see no displacement.
       const motion = this.motion.update(u.id, u.x, u.y, elapsed, !u.attacking && u.path.length > 0);
       const moving = !u.attacking && motion.moving;
-      const target = u.attacking ? nativeTroopFacingTarget(battle!, u, buildings) : undefined;
+      const movingFire = movingSiegeAttackPhase(u, elapsed, pack, level);
+      const target = u.attacking
+        ? nativeTroopFacingTarget(battle!, u, buildings)
+        : movingFire !== undefined
+          ? (u.path[0] ?? nativeTroopFacingTarget(battle!, u, buildings))
+          : undefined;
       let facing = this.facings.get(u.id);
       if (!facing) this.facings.set(u.id, (facing = { dx: 1, dy: 0 }));
-      if (u.attacking && target) {
+      if (target) {
         facing.dx = target.x - u.x;
         facing.dy = target.y - u.y;
       } else if (moving && motion.heading) {
@@ -493,7 +498,10 @@ export class TroopNativePresentation {
       const requested =
         u.hp <= 0
           ? 'die'
-          : dragonPhase !== undefined || windupOffset !== undefined || u.attacking
+          : dragonPhase !== undefined ||
+              windupOffset !== undefined ||
+              movingFire !== undefined ||
+              u.attacking
             ? 'attack'
             : moving
               ? 'walk'
@@ -530,6 +538,7 @@ export class TroopNativePresentation {
       else if (dragonPhase !== undefined) seconds = dragonPhase;
       else if (windupOffset !== undefined)
         seconds = Math.max(0, Math.max(0, state.actionFrame - 1) / (clip?.fps ?? 1) + windupOffset);
+      else if (movingFire !== undefined) seconds = movingFire;
       else if (u.attacking) {
         // Cooldowns reset to the scaled attack interval (boosts, poison, chill), as for heroes.
         const interval = Math.max(
@@ -666,6 +675,35 @@ function levelRow(pack: Pack, level: number) {
 
 const clipSeconds = (clip: { timeline: unknown[]; fps: number }) =>
   Math.max(1, clip.timeline.length) / Math.max(1, clip.fps);
+
+/** Moving-fire sieges keep traveling while their original release take plays. */
+function movingSiegeAttackPhase(
+  unit: Unit,
+  elapsed: number,
+  pack: Pack,
+  level: Pack['levels'][number],
+) {
+  if (
+    (unit.kind !== 'battleblimp' && unit.kind !== 'loglauncher') ||
+    unit.hp <= 0 ||
+    unit.native?.lastAttackAt === undefined ||
+    unit.native.lastAttackAt > elapsed + 1e-9 ||
+    unit.cooldown <= 0
+  )
+    return undefined;
+  const attack = level.states.attack,
+    graph = attack && pack.scenes[attack.scene],
+    clip = graph && graph.clips[graph.exports[attack.exports[0]]];
+  if (!clip) return undefined;
+  // Follow the combat cooldown, including version-231 native Freeze/stun holds.
+  const interval = Math.max(
+      TROOPS[unit.kind].rate * unitAttackIntervalScale(unit, elapsed),
+      unit.cooldown,
+    ),
+    seconds =
+      Math.max(0, attack.actionFrame - 1) / clip.fps + Math.max(0, interval - unit.cooldown);
+  return seconds < clipSeconds(clip) - 1e-9 ? seconds : undefined;
+}
 
 /**
  * Moves a kept (LOD) view to a new origin without resampling: every drawn object shifts by the

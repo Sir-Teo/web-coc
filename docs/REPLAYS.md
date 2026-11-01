@@ -1861,3 +1861,13 @@ hit; retreating targets cancel the exposed swing before reburrowing. Freeze/stun
 slowdown and target/caster loss use the shared phases. Original poses align with
 contact. Version 229 and earlier retain complete old states and phase readouts.
 See [source timing, surfacing behavior and validation](../reference/attacking-battle-drill/README.md).
+
+## Version 231: native Freeze/stun holds for moving-fire sieges
+
+New carried Battle Blimps and Log Launchers pause their moving-fire cooldowns
+during native Freeze/stun. A hold ending inside a sample spends only its active
+remainder. Release periods, movement, damage and projectiles retain their existing
+paths. Version 230 and earlier keep complete old states and countdown behavior.
+The read-only presenter draws original attack takes after moving releases and
+follows each recording's cooldown, including current held poses. See
+[clock behavior, original frames and validation](../reference/moving-siege-attacks/README.md).

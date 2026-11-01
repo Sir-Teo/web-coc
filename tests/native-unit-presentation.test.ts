@@ -17,6 +17,7 @@ import { troopLauncherBattle } from './fixtures/attacking-troop-launcher';
 import { flameFlingerBurstBattle } from './fixtures/flame-flinger-burst';
 import { wallWreckerBattle } from './fixtures/attacking-wall-wrecker';
 import { drillSurfaceBattle } from './fixtures/battle-drill-surface-walls';
+import { logLauncherBattle } from './fixtures/attacking-log-launcher';
 
 // Scene views are Phaser objects; record what the presentations ask them to draw instead.
 vi.mock('../src/game/native-scene-view', () => {
@@ -198,7 +199,7 @@ const loadedTroopPresentation = (kinds: readonly string[]) => {
   const internals = p as unknown as {
     packs: Map<string, unknown>;
     levelsReady: Map<string, Set<number>>;
-    views: Map<number, { state: string; sample: { frame: number } }>;
+    views: Map<number, { state: string; sample: { frame: number; name: string; mirror: number } }>;
   };
   for (const kind of kinds) {
     const pack = JSON.parse(
@@ -252,6 +253,59 @@ describe('unit motion tracker', () => {
 });
 
 describe('troop native presentation', () => {
+  for (const kind of ['battleblimp', 'loglauncher'] as const)
+    for (const level of [1, 6])
+      it(`moving-fire ${kind} ${level} draws its release take while traveling, freezing and rewinding`, () => {
+        const r =
+            kind === 'loglauncher'
+              ? logLauncherBattle(level, 231)
+              : nativeDirectBattle('battleblimp', level, 231),
+          { p, internals } = loadedTroopPresentation([kind]);
+        r.untilAttacks(1);
+        expect(r.unit.attacking).toBe(false);
+        const released = r.battle.elapsed,
+          first = JSON.parse(JSON.stringify(r.battle)) as Battle;
+        r.until(released + 0.15);
+        const advanced = JSON.parse(JSON.stringify(r.battle)) as Battle;
+        r.unit.native!.effects = { frozenUntil: r.battle.elapsed + 1 };
+        r.until(r.battle.elapsed + 0.5);
+        const frozen = JSON.parse(JSON.stringify(r.battle)) as Battle;
+        delete r.unit.native!.effects.frozenUntil;
+        const duration = kind === 'loglauncher' ? 80 / 30 : 18 / 30 - 3 / 30;
+        r.until(released + duration + 0.55);
+        const tail = JSON.parse(JSON.stringify(r.battle)) as Battle,
+          samples: { state: string; frame: number; name: string; mirror: number }[] = [];
+        for (const battle of [first, advanced, frozen, tail, advanced, first]) {
+          const before = JSON.stringify(battle);
+          p.render(battle, false, iso, 46, new Map());
+          const view = internals.views.get(r.unit.id)!;
+          samples.push({
+            state: view.state,
+            frame: view.sample.frame,
+            name: view.sample.name,
+            mirror: view.sample.mirror,
+          });
+          p.render(battle, true, iso, 46, new Map());
+          expect(internals.views.get(r.unit.id)!.sample.frame).toBe(0);
+          expect(JSON.stringify(battle)).toBe(before);
+        }
+        expect(samples[0].state).toBe('attack');
+        expect(samples[0].frame).toBe(kind === 'loglauncher' ? 0 : 3);
+        expect(samples[1].frame).toBe(samples[0].frame + 4);
+        expect(samples[2]).toEqual(samples[1]);
+        expect(samples[3].state).toBe('walk');
+        expect(samples[4]).toEqual(samples[1]);
+        expect(samples[5]).toEqual(samples[0]);
+        const cold = loadedTroopPresentation([kind]);
+        cold.p.render(advanced, false, iso, 46, new Map());
+        const view = cold.internals.views.get(r.unit.id)!;
+        expect({
+          state: view.state,
+          frame: view.sample.frame,
+          name: view.sample.name,
+          mirror: view.sample.mirror,
+        }).toEqual(samples[1]);
+      });
   for (const version of [229, 230])
     for (const level of [1, 6])
       it(`Battle Drill ${level} draws its original contact in version ${version}`, () => {

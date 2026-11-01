@@ -1145,6 +1145,8 @@ export interface Battle {
   nativeWallWreckerWindup?: true;
   /** Version 230: surfaced Battle Drill attack windup and recovery. */
   nativeBattleDrillWindup?: true;
+  /** Version 231: moving-fire siege cooldowns pause during native Freeze/stun. */
+  nativeMovingSiegeFreezeClock?: true;
   /** Version 207: source demolition contact cues reconstruct and cover the death tone. */
   nativeWallBreakerSounds?: true;
   /** Version 206: both Wall Breaker contact splashes include ground defenders. */
@@ -6760,6 +6762,18 @@ export class GameModel {
           u.native?.effects?.stunUntil ?? 0,
         );
         cooldownDt *= Math.min(1, Math.max(0, b.elapsed - heldUntil) / unitDt);
+      } else if (
+        b.nativeMovingSiegeFreezeClock &&
+        (u.kind === 'battleblimp' || u.kind === 'loglauncher')
+      ) {
+        const heldUntil = Math.max(
+          u.native?.effects?.frozenUntil ?? 0,
+          u.native?.effects?.stunUntil ?? 0,
+        );
+        cooldownDt *=
+          b.elapsed <= heldUntil + 1e-9
+            ? 0
+            : Math.min(1, Math.max(0, b.elapsed - heldUntil) / unitDt);
       }
       u.cooldown -= poison.attack === 1 ? cooldownDt : cooldownDt * poison.attack;
       u.pathAt -= unitDt;

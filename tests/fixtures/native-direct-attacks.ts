@@ -26,6 +26,7 @@ export type NativeDirectKind =
   | 'superdragon'
   | 'stoneslammer'
   | 'wallwrecker'
+  | 'battleblimp'
   | 'trooplauncher'
   | 'loglauncher'
   | 'battledrill'
