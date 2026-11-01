@@ -1,3 +1,4 @@
+import { armyFromLink, armyLink, decodeArmy } from '../game/army-share';
 import { flameFlingerBurstStats } from '../game/native-flame-flinger';
 import { troopLauncherStats } from '../game/native-troop-launcher';
 import { superDragonBurstStats } from '../game/native-super-dragon';
@@ -745,6 +746,7 @@ export class HUD {
   private presetNames = new Map<number, { name: string; preset: ArmyPreset | null }>();
   /** A shared layout link or code waiting to be copied into a slot (pasted or opened). */
   private layoutCode = '';
+  private sharedArmyCode = '';
   private toastTimer?: ReturnType<typeof setTimeout>;
   private toastFrame = 0;
   private resultShown = false;
@@ -963,6 +965,11 @@ export class HUD {
             name: t.value,
             preset: this.model.state.armyPresets?.[slot] ?? null,
           });
+        }
+        if (t.id === 'army-code') {
+          this.sharedArmyCode = t.value;
+          const preview = this.root.querySelector('.army-import-preview');
+          if (preview) preview.innerHTML = this.sharedArmyPreview();
         }
         if (t.id === 'layout-code') {
           this.layoutCode = t.value;
@@ -1911,6 +1918,15 @@ export class HUD {
       case 'battle-log':
         this.show('battle-log');
         break;
+      case 'army-share':
+        void this.shareArmy(arg === 'current' ? undefined : Number(arg));
+        break;
+      case 'army-import': {
+        const code = armyFromLink(this.sharedArmyCode) ?? this.sharedArmyCode.trim();
+        if (m.useSharedArmy(code)) this.sharedArmyCode = '';
+        this.render();
+        break;
+      }
       case 'preset-save': {
         const slot = Number(arg);
         m.saveArmyPreset(
@@ -4534,11 +4550,49 @@ export class HUD {
         const fits =
           p && armySpace(p.army) <= m.capacity && spellSpace(p.spells) <= m.spellCapacity;
         const issue = p ? m.armyPreparationIssue(p.army, p.spells) : null;
-        return `<article class="preset-card"><div class="preset-title"><span class="preset-number">${slot + 1}</span><label for="preset-name-${slot}">Army name<input id="preset-name-${slot}" maxlength="32" value="${html(this.presetNames.get(slot)?.name ?? p?.name ?? `Army ${slot + 1}`)}"></label><small>${p ? `${armySpace(p.army)} troop · ${spellSpace(p.spells)} spell spaces${presetSiege(p.army) ? ` · ${presetSiege(p.army)} siege` : ''}` : 'Empty slot'}</small></div>${p ? this.composition(p.army, p.spells) : '<p class="preset-empty">Build an army in the Army drawer, then save it here.</p>'}${p?.heroes?.length ? this.presetHeroes(p) : ''}<div class="preset-actions">${button(`preset-save:${slot}`, `${icon('Save', 16)} ${p ? 'Save current army' : 'Save army'}`, 'game-btn stone', m.canSaveArmyPreset ? '' : 'disabled')}${m.canUndoSlot('preset', slot) ? button(`preset-undo:${slot}`, `${icon('RotateCcw', 16)} Undo save`, 'game-btn stone') : ''}${button(`preset-load:${slot}`, `${icon('Check', 16)} ${p && !fits ? 'Needs more housing' : issue ? 'Locked composition' : 'Use army'}`, 'game-btn green', fits && !issue ? '' : 'disabled')}</div>${issue ? `<p class="preset-empty">${issue}</p>` : ''}</article>`;
+        return `<article class="preset-card"><div class="preset-title"><span class="preset-number">${slot + 1}</span><label for="preset-name-${slot}">Army name<input id="preset-name-${slot}" maxlength="32" value="${html(this.presetNames.get(slot)?.name ?? p?.name ?? `Army ${slot + 1}`)}"></label><small>${p ? `${armySpace(p.army)} troop · ${spellSpace(p.spells)} spell spaces${presetSiege(p.army) ? ` · ${presetSiege(p.army)} siege` : ''}` : 'Empty slot'}</small></div>${p ? this.composition(p.army, p.spells) : '<p class="preset-empty">Build an army in the Army drawer, then save it here.</p>'}${p?.heroes?.length ? this.presetHeroes(p) : ''}<div class="preset-actions">${button(`preset-save:${slot}`, `${icon('Save', 16)} ${p ? 'Save current army' : 'Save army'}`, 'game-btn stone', m.canSaveArmyPreset ? '' : 'disabled')}${m.canUndoSlot('preset', slot) ? button(`preset-undo:${slot}`, `${icon('RotateCcw', 16)} Undo save`, 'game-btn stone') : ''}${button(`army-share:${slot}`, `${icon('Upload', 16)} Share`, 'game-btn stone', p ? '' : 'disabled')}${button(`preset-load:${slot}`, `${icon('Check', 16)} ${p && !fits ? 'Needs more housing' : issue ? 'Locked composition' : 'Use army'}`, 'game-btn green', fits && !issue ? '' : 'disabled')}</div>${issue ? `<p class="preset-empty">${issue}</p>` : ''}</article>`;
       })
       .join(
         '',
-      )}${button('army', `${icon('Swords', 17)} Edit current army`, 'game-btn blue')}</div>`;
+      )}<div class="preset-actions">${button('army-share:current', `${icon('Upload', 16)} Share current army`, 'game-btn stone', m.canSaveArmyPreset ? '' : 'disabled')}${button('army', `${icon('Swords', 17)} Edit current army`, 'game-btn blue')}</div><section class="layout-import army-import"><h3>${icon('Download', 18)} Shared army</h3><label for="army-code">Army link</label><input id="army-code" inputmode="url" autocomplete="off" spellcheck="false" maxlength="8192" placeholder="Paste a Crown &amp; Clan army link" value="${html(this.sharedArmyCode)}"><div class="army-import-preview" aria-live="polite">${this.sharedArmyPreview()}</div></section></div>`;
+  }
+  private sharedArmyPreview() {
+    const code = armyFromLink(this.sharedArmyCode) ?? this.sharedArmyCode.trim(),
+      preset = code ? decodeArmy(code) : null;
+    if (!preset)
+      return `<p class="layout-import-summary${code ? ' bad' : ''}">${code ? 'This army link is damaged or unsupported.' : 'Preview an army link here before using it.'}</p>`;
+    const issue = this.model.armyPreparationIssue(preset.army, preset.spells);
+    return `<h4>${html(preset.name)}</h4><p class="layout-import-summary">${armySpace(preset.army)} troop spaces · ${spellSpace(preset.spells)} spell spaces${presetSiege(preset.army) ? ` · ${presetSiege(preset.army)} siege` : ''}</p>${this.composition(preset.army, preset.spells)}${preset.heroes?.length ? this.presetHeroes(preset) : ''}${issue ? `<p class="layout-import-summary bad">${html(issue)}</p>` : ''}${button('army-import', `${icon('Check', 16)} Use shared army`, 'game-btn green', issue ? 'disabled' : '')}`;
+  }
+  private async shareArmy(slot?: number) {
+    const code = this.model.armyShareCode(slot);
+    if (!code) return;
+    const link = armyLink(location.href, code);
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Crown & Clan army', url: link });
+        return;
+      }
+      await navigator.clipboard.writeText(link);
+      this.model.notify('Army link copied.');
+      return;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+    }
+    this.sharedArmyCode = link;
+    this.render();
+    const field = this.root.querySelector<HTMLInputElement>('#army-code');
+    field?.focus();
+    field?.select();
+    this.model.notify('Copy the army link from the field below.');
+  }
+  receiveArmy(code: string) {
+    this.sharedArmyCode = code;
+    if (this.model.battle) {
+      this.model.notify('Shared army ready. Return home and open Quick armies to use it.');
+      return;
+    }
+    this.show('army-presets');
   }
   /** Quick armies and the Cookbook, as the original's army screen tabs them. */
   private presetTabs() {

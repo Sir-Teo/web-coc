@@ -1,3 +1,4 @@
+import { encodeArmy, decodeArmy } from './army-share';
 import { siegeSelfDestructAbility } from './native-siege-release';
 import type { RollingLogShot } from './native-log-launcher';
 import type { OvergrowthRoot } from './native-overgrowth';
@@ -4049,6 +4050,14 @@ export class GameModel {
     this.state.armyPresets ??= [null, null, null];
     const previous = this.state.armyPresets[slot];
     if (previous) this.overwritten.presets.set(slot, structuredClone(previous));
+    this.state.armyPresets[slot] = this.currentArmyComposition(
+      name?.trim() || previous?.name || `Army ${slot + 1}`,
+    );
+    this.notify('Army saved.');
+    this.changed();
+  }
+  /** A fresh composition snapshot excludes research, balances and other village state. */
+  private currentArmyComposition(name: string): ArmyPreset {
     const gear = this.gear,
       pets = this.petProgress;
     const heroes = this.heroLineup.map((kind) => ({
@@ -4056,14 +4065,31 @@ export class GameModel {
       items: (gear.loadouts[kind] ?? []).filter((slug) => gear.levels[slug] !== undefined),
       ...(pets.assigned[kind] ? { pet: pets.assigned[kind] } : {}),
     }));
-    this.state.armyPresets[slot] = {
-      name: (name?.trim() || this.state.armyPresets[slot]?.name || `Army ${slot + 1}`).slice(0, 32),
+    return {
+      name: name.slice(0, 32),
       army: { ...this.state.army },
       spells: { ...this.state.spells },
       ...(heroes.length ? { heroes } : {}),
     };
-    this.notify('Army saved.');
-    this.changed();
+  }
+  armyShareCode(slot?: number) {
+    if (this.battle) return null;
+    if (slot !== undefined && (!Number.isInteger(slot) || slot < 0 || slot > 2)) return null;
+    const preset =
+      slot === undefined
+        ? this.canSaveArmyPreset
+          ? this.currentArmyComposition('Shared army')
+          : null
+        : this.state.armyPresets?.[slot];
+    return preset ? encodeArmy(preset) : null;
+  }
+  /** Decode first, then apply the same atomic preparation and hero rules as Quick armies. */
+  useSharedArmy(code: string) {
+    const preset = decodeArmy(code);
+    if (!preset || !this.prepareArmy(preset.army, preset.spells)) return false;
+    const changes = this.applyPresetHeroes(preset);
+    this.notify(`${preset.name} is ready.${changes.length ? ` ${changes.join(' · ')}.` : ''}`);
+    return true;
   }
   /**
    * What loading a Quick army's heroes would do here: the lineup that fits this Hero Hall, and a

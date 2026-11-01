@@ -51,6 +51,7 @@ notes in those references are not current release guarantees.
 - [Gem purchases: missing resources, Treasure packs and speed-up prices](GEM-PURCHASES.md)
 - [Builder menu](BUILDER-MENU.md)
 - [Army recipes (Cookbook)](ARMY-RECIPES.md)
+- [Sharing an army](ARMY-SHARING.md)
 - [Practice Mode](PRACTICE-MODE.md)
 - [Trader](TRADER.md)
 - [Village objects: the Trader's camp and the Super Troop building](VILLAGE-OBJECTS.md)

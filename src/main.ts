@@ -1,3 +1,4 @@
+import { armyFromLink } from './game/army-share';
 import Phaser from 'phaser';
 import './style.css';
 import './ui/compact-hud.css';
@@ -72,8 +73,16 @@ async function boot() {
       history.replaceState(null, '', location.pathname + location.search);
       hud.receiveLayout(code);
     };
+    const offerArmy = () => {
+      const code = armyFromLink(location.href);
+      if (!code) return;
+      history.replaceState(null, '', location.pathname + location.search);
+      hud.receiveArmy(code);
+    };
     offerLayout();
+    offerArmy();
     window.addEventListener('hashchange', offerLayout);
+    window.addEventListener('hashchange', offerArmy);
     const game = new Phaser.Game({
       type: Phaser.WEBGL,
       parent: 'game',

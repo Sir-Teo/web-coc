@@ -85,3 +85,8 @@ Every button and the Clan Castle toggle are at least 44 pixels tall at phone wid
 - saves three recipes, checks the 44-pixel "Save over" buttons once the slots are full, and saves over slot 2;
 - returns to the Quick armies tab and finds the saved recipes and the undo button;
 - checks the message shown below Town Hall 10.
+
+Quick armies can also [share current or saved compositions as local links](ARMY-SHARING.md).
+Opening a link offers a preview before applying the receiving village’s housing,
+unlock and hero rules. These links use a separate local format from the source
+Cookbook codes described above.
