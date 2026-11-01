@@ -1,3 +1,4 @@
+import { siegeSelfDestructAbility } from './native-siege-release';
 import type { RollingLogShot } from './native-log-launcher';
 import type { OvergrowthRoot } from './native-overgrowth';
 import type { ArcherPiercingShot } from './native-super-archer';
@@ -1147,6 +1148,8 @@ export interface Battle {
   nativeBattleDrillWindup?: true;
   /** Version 231: moving-fire siege cooldowns pause during native Freeze/stun. */
   nativeMovingSiegeFreezeClock?: true;
+  /** Version 232: a deployed siege can use its source manual self-destruct. */
+  nativeSiegeManualRelease?: true;
   /** Version 207: source demolition contact cues reconstruct and cover the death tone. */
   nativeWallBreakerSounds?: true;
   /** Version 206: both Wall Breaker contact splashes include ground defenders. */
@@ -5528,6 +5531,30 @@ export class GameModel {
     this.deployChanged(starting);
     return true;
   }
+  /** The one living, player-deployed siege whose source ability can end it. */
+  get deployedSiege() {
+    const b = this.battle;
+    if (this.replay || !b?.nativeSiegeManualRelease || !b.siegeDeployed || !b.started || b.finished)
+      return undefined;
+    return b.units.find(
+      (unit) =>
+        unit.hp > 0 &&
+        !unit.spent &&
+        !unit.ejected &&
+        !unit.native?.recalled &&
+        siegeSelfDestructAbility(unit, unit.level ?? this.troopLevel(unit.kind as TroopKind)),
+    );
+  }
+  /** Self-destruct bypasses damage protection; the shared casualty pass owns death effects. */
+  endSiege() {
+    const unit = this.deployedSiege;
+    if (!unit) return false;
+    this.recordAction({ type: 'siege-end' });
+    unit.hp = 0;
+    unit.defeatedAt = this.battle!.elapsed;
+    this.changed();
+    return true;
+  }
   /** One ability activation per hero and battle; a knocked-out hero fires it automatically. */
   activateNativeHeroAbility(kind: HeroKind, automatic = false) {
     if (this.replay) return false;
@@ -7757,6 +7784,7 @@ export class GameModel {
       | Omit<Extract<ReplayAction, { type: 'spell' }>, 'step'>
       | { type: 'hero'; x: number; y: number; hero?: HeroKind }
       | { type: 'ability'; hero?: HeroKind }
+      | { type: 'siege-end' }
       | { type: 'end' },
   ) {
     if (!this.recording) return;
@@ -8053,6 +8081,7 @@ export class GameModel {
         a.hero ? runner.deployNativeHero(a.hero, a.x, a.y) : runner.deployHero(a.x, a.y);
       else if (a.type === 'ability')
         a.hero ? runner.activateNativeHeroAbility(a.hero) : runner.activateHeroAbility();
+      else if (a.type === 'siege-end') runner.endSiege();
       else runner.finishBattle();
     }
     if (this.replayStep === data.steps.length) {

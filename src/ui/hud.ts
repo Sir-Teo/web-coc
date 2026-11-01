@@ -2161,6 +2161,9 @@ export class HUD {
         }
         this.render();
         break;
+      case 'siege-end':
+        m.endSiege();
+        break;
       case 'troop':
         if (!m.battle || !m.troopRemaining(arg as DeployTroopKind)) break;
         m.activeHero = false;
@@ -2907,6 +2910,8 @@ export class HUD {
     return `${TROOPS[kind].name}, ${siegeBlocked && count > 0 ? `${count} in reserve, siege machine already deployed` : `${count} available`}`;
   }
   private troopCard(k: DeployTroopKind, count: number, action: string, selected = false) {
+    const siege = action.startsWith('troop:') ? this.model.deployedSiege : undefined;
+    if (siege?.kind === k) return this.siegeReleaseCard(siege);
     const flying = TROOPS[k].flying ? '<span class="air-tag">AIR</span>' : '';
     const siegeBlocked = action.startsWith('troop:') && this.siegeUnavailable(k);
     const unavailable = count === 0 || siegeBlocked;
@@ -2918,6 +2923,11 @@ export class HUD {
     return `<button class="troop-card spell-card ${selected ? 'selected' : ''} ${count === 0 ? 'empty' : ''}" data-action="${action}" aria-label="${SPELLS[k].name}, ${count} available" ${action.startsWith('spell') && count === 0 ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('spell:') && SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)] ? `<kbd class="troop-key">${SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)]}</kbd>` : ''}<img src="${hudAsset(k)}" alt="" draggable="false"><span class="troop-level">★ ${this.model.spellLevel(k)}</span><span class="troop-name">${SPELLS[k].name.replace(' Spell', '')}</span></button>`;
   }
 
+  private siegeReleaseCard(unit: NonNullable<GameModel['deployedSiege']>) {
+    const name = TROOPS[unit.kind].name,
+      level = unit.level ?? this.model.troopLevel(unit.kind as TroopKind);
+    return `<button class="troop-card siege-release-card" data-action="siege-end" data-siege-kind="${unit.kind}" aria-label="End ${name}" title="Destroy ${name} now. Already released troops and shots remain active."><span class="troop-count">${icon('Bomb', 14)}</span><img src="${hudAsset(unit.kind)}" alt="" draggable="false"><span class="troop-level">★ ${level}</span><span class="hero-health"><i style="width:${pct((unit.hp / unit.maxHp) * 100)}"></i></span><span class="troop-name">End siege</span></button>`;
+  }
   /** Town Hall 18: Guardian choice and upgrades. */
   /** The Crafting Station card opens its panel. */
   private craftingButton(b: Building) {
@@ -3522,6 +3532,8 @@ export class HUD {
     if (m.activeSpell) return `Tap anywhere to cast ${SPELLS[m.activeSpell].name}`;
     if (isSplitHog(m.activeTroop))
       return `${TROOPS[m.activeTroop].name} · ${m.troopRemaining(m.activeTroop) ? 'Recalled · Tap, hold or drag to redeploy' : 'All redeployed'}`;
+    if (m.deployedSiege?.kind === m.activeTroop)
+      return `${TROOPS[m.activeTroop].name} · End siege destroys this machine`;
     if (this.siegeUnavailable(m.activeTroop))
       return `${TROOPS[m.activeTroop].name} · Only one siege machine per attack`;
     if (b.remaining[m.activeTroop] <= 0)
@@ -5396,7 +5408,7 @@ export class HUD {
       trayButtons: tray
         ? Array.from(
             tray.querySelectorAll<HTMLButtonElement>(
-              '[data-action^="troop:"],[data-action^="spell:"]',
+              '[data-action^="troop:"],[data-action^="spell:"],[data-action="siege-end"]',
             ),
           )
         : [],
@@ -5543,11 +5555,29 @@ export class HUD {
           added = true;
         }
       if (added) refs = this.liveRefs = this.collectLiveRefs();
+      let siegeCardsChanged = false;
+      const siege = m.deployedSiege;
       for (const el of refs.trayButtons) {
         const action = el.dataset.action!;
+        if (action === 'siege-end') {
+          if (!siege || siege.kind !== el.dataset.siegeKind) {
+            const kind = el.dataset.siegeKind as TroopKind;
+            el.outerHTML = this.troopCard(kind, m.troopRemaining(kind), `troop:${kind}`);
+            siegeCardsChanged = true;
+          } else {
+            const health = el.querySelector<HTMLElement>('.hero-health i');
+            if (health) health.style.width = pct((siege.hp / siege.maxHp) * 100);
+          }
+          continue;
+        }
         const troop = action.startsWith('troop:')
           ? (action.slice('troop:'.length) as DeployTroopKind)
           : null;
+        if (troop && siege?.kind === troop) {
+          el.outerHTML = this.siegeReleaseCard(siege);
+          siegeCardsChanged = true;
+          continue;
+        }
         const spell = troop ? null : (action.slice('spell:'.length) as SpellKind);
         const count = troop ? m.troopRemaining(troop) : (b.spells[spell!] ?? 0);
         const name = troop ? TROOPS[troop].name : SPELLS[spell!].name;
@@ -5565,6 +5595,7 @@ export class HUD {
           : `${name}, ${count} available`;
         if (el.getAttribute('aria-label') !== label) el.setAttribute('aria-label', label);
       }
+      if (siegeCardsChanged) refs = this.liveRefs = this.collectLiveRefs();
       setText(refs.deployLabel, this.deployHint());
     }
     for (const el of refs.resources)

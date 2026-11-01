@@ -1871,3 +1871,13 @@ paths. Version 230 and earlier keep complete old states and countdown behavior.
 The read-only presenter draws original attack takes after moving releases and
 follows each recording's cooldown, including current held poses. See
 [clock behavior, original frames and validation](../reference/moving-siege-attacks/README.md).
+
+## Version 232: manually ending a deployed siege
+
+Current battles carrying a siege expose an End siege army-card button after
+its deployment. The recorded `siege-end` action destroys the living machine
+through its source self-destruct ability and preserves ordinary death effects,
+released shots and already spawned troops. It does not free the deployment slot.
+Replay viewers cannot activate it. Versions before 232 and armies without a
+siege reject this input; prior complete states remain unchanged. The portable
+file envelope remains version 1. See [source abilities, controls and validation](../reference/manual-siege-release/README.md).

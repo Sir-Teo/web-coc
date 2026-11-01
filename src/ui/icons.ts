@@ -1,6 +1,7 @@
 import {
   createElement,
   Circle,
+  Bomb,
   Trophy,
   Hammer,
   Axe,
@@ -71,6 +72,7 @@ import {
 } from 'lucide';
 const icons = {
   Circle,
+  Bomb,
   Pause,
   SkipForward,
   ArrowLeft,

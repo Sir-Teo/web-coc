@@ -66,7 +66,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 231;
+export const REPLAY_VERSION = 232;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -421,6 +421,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 228 ||
   version === 229 ||
   version === 230 ||
+  version === 231 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -523,6 +524,7 @@ export type ReplayAction = { step: number } & (
   | { type: 'spell'; kind: keyof SpellBook; x: number; y: number; targetHero?: HeroKind }
   | { type: 'hero'; x: number; y: number; hero?: HeroKind }
   | { type: 'ability'; hero?: HeroKind }
+  | { type: 'siege-end' }
   | { type: 'end' }
 );
 export interface ReplaySetup {
@@ -571,6 +573,9 @@ export interface ReplayPlayback {
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   const launcher = version >= 223 && s.army.trooplauncher > 0;
   return {
+    ...(version >= 232 && TROOP_KEYS.some((kind) => isSiege(kind) && s.army[kind] > 0)
+      ? { nativeSiegeManualRelease: true as const }
+      : {}),
     ...(version >= 231 && (s.army.battleblimp > 0 || s.army.loglauncher > 0)
       ? { nativeMovingSiegeFreezeClock: true as const }
       : {}),
@@ -1424,6 +1429,9 @@ export function validateReplay(value: unknown): value is ReplayData {
     last = a.step;
     if (a.type === 'end') {
       if (i !== value.actions.length - 1 || a.step !== value.steps.length) return false;
+    } else if (a.type === 'siege-end') {
+      if (value.version < 232 || !troopKeys.some((kind) => isSiege(kind) && s.army[kind] > 0))
+        return false;
     } else if (a.type === 'ability') {
       if (!s.hero && !s.heroes?.some((hero: HeroSetup) => hero.kind === a.hero)) return false;
     } else if (

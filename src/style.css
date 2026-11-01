@@ -4957,6 +4957,13 @@ h3 {
   height: 100%;
   background: #b1ee74;
 }
+.siege-release-card {
+  border-color: #b57422;
+  background: linear-gradient(#ffe8b0, #dca657);
+}
+.siege-release-card img {
+  object-fit: contain;
+}
 .hero-body {
   text-align: center;
 }

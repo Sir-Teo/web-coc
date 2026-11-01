@@ -296,3 +296,9 @@ machine and 17 HP/s drain. Historical battle inspection retains the old labels
 and facts appropriate to its rules. See [projectile bursts](../reference/flame-flinger-bursts/README.md),
 [preferred Wall pulse damage](../reference/flame-flinger-wall-pulse/README.md)
 and [shared building poison](../reference/flame-flinger-overlap/README.md).
+
+After deploying any siege machine, its army card becomes **End siege** with a
+live health bar. Tapping it destroys that machine and keeps the siege slot used.
+Already released troops, barrels, shots and burn areas continue; unspawned stock
+is lost. Blimp and Stone Slammer retain their ordinary delayed death blasts.
+This control is unavailable while watching a recording. See [manual siege ending](../reference/manual-siege-release/README.md).
