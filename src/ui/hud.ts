@@ -1,4 +1,4 @@
-import { armyFromLink, armyLink, decodeArmy } from '../game/army-share';
+import { armyFromLink, armyLink, decodeSharedArmy } from '../game/army-share';
 import { flameFlingerBurstStats } from '../game/native-flame-flinger';
 import { troopLauncherStats } from '../game/native-troop-launcher';
 import { superDragonBurstStats } from '../game/native-super-dragon';
@@ -4554,15 +4554,16 @@ export class HUD {
       })
       .join(
         '',
-      )}<div class="preset-actions">${button('army-share:current', `${icon('Upload', 16)} Share current army`, 'game-btn stone', m.canSaveArmyPreset ? '' : 'disabled')}${button('army', `${icon('Swords', 17)} Edit current army`, 'game-btn blue')}</div><section class="layout-import army-import"><h3>${icon('Download', 18)} Shared army</h3><label for="army-code">Army link</label><input id="army-code" inputmode="url" autocomplete="off" spellcheck="false" maxlength="8192" placeholder="Paste a Crown &amp; Clan army link" value="${html(this.sharedArmyCode)}"><div class="army-import-preview" aria-live="polite">${this.sharedArmyPreview()}</div></section></div>`;
+      )}<div class="preset-actions">${button('army-share:current', `${icon('Upload', 16)} Share current army`, 'game-btn stone', m.canSaveArmyPreset ? '' : 'disabled')}${button('army', `${icon('Swords', 17)} Edit current army`, 'game-btn blue')}</div><section class="layout-import army-import"><h3>${icon('Download', 18)} Shared army</h3><label for="army-code">Army link</label><input id="army-code" inputmode="url" autocomplete="off" spellcheck="false" maxlength="8192" placeholder="Paste a Crown &amp; Clan or Clash army link" value="${html(this.sharedArmyCode)}"><div class="army-import-preview" aria-live="polite">${this.sharedArmyPreview()}</div></section></div>`;
   }
   private sharedArmyPreview() {
     const code = armyFromLink(this.sharedArmyCode) ?? this.sharedArmyCode.trim(),
-      preset = code ? decodeArmy(code) : null;
+      decoded = code ? decodeSharedArmy(code) : null,
+      preset = decoded?.preset;
     if (!preset)
       return `<p class="layout-import-summary${code ? ' bad' : ''}">${code ? 'This army link is damaged or unsupported.' : 'Preview an army link here before using it.'}</p>`;
     const issue = this.model.armyPreparationIssue(preset.army, preset.spells);
-    return `<h4>${html(preset.name)}</h4><p class="layout-import-summary">${armySpace(preset.army)} troop spaces · ${spellSpace(preset.spells)} spell spaces${presetSiege(preset.army) ? ` · ${presetSiege(preset.army)} siege` : ''}</p>${this.composition(preset.army, preset.spells)}${preset.heroes?.length ? this.presetHeroes(preset) : ''}${issue ? `<p class="layout-import-summary bad">${html(issue)}</p>` : ''}${button('army-import', `${icon('Check', 16)} Use shared army`, 'game-btn green', issue ? 'disabled' : '')}`;
+    return `<h4>${html(preset.name)}</h4><p class="layout-import-summary">${armySpace(preset.army)} troop spaces · ${spellSpace(preset.spells)} spell spaces${presetSiege(preset.army) ? ` · ${presetSiege(preset.army)} siege` : ''}</p>${this.composition(preset.army, preset.spells)}${preset.heroes?.length ? this.presetHeroes(preset) : ''}${decoded!.notes.length ? `<p class="preset-empty army-import-notes">${decoded!.notes.map(html).join(' · ')}.</p>` : ''}${issue ? `<p class="layout-import-summary bad">${html(issue)}</p>` : ''}${button('army-import', `${icon('Check', 16)} Use shared army`, 'game-btn green', issue ? 'disabled' : '')}`;
   }
   private async shareArmy(slot?: number) {
     const code = this.model.armyShareCode(slot);

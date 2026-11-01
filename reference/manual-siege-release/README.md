@@ -54,3 +54,5 @@ barrels, protection bypass, stale calls and deployment-slot limits. Browser chec
 exercise actual tray clicks, portable reconstruction in Node and the browser,
 read-only replay controls, and phone/landscape/desktop layouts across all eight
 families.
+
+![End siege control on a phone](../../docs/screenshots/siege-end-phone.png)

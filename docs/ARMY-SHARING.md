@@ -7,7 +7,8 @@ browser refuses sharing or copying, a selected link appears in the Army link
 field for copying by hand. Dismissing a share sheet leaves the current draft
 alone.
 
-Open a link, or paste it into **Army link**, to preview its troop and spell
+Open a local link, or paste a local/original-game army link or raw original-game
+code into **Army link**, to preview its troop and spell
 counts, siege reserves, ordered heroes, equipment and pets. Opening a link does
 not change the army. **Use shared army** replaces the composition after the
 village's normal housing, building unlock and Super Troop checks pass. Locked or
@@ -24,8 +25,9 @@ are retained, while transient query parameters are omitted from outgoing links.
 ## Format and boundaries
 
 `src/game/army-share.ts` owns the local version-1 composition format, carried by
-`#army=1.…`. These are **Crown & Clan links**, separate from the live game's army
-codes and the pinned Cookbook's source codes. The link contains bounded UTF-8
+`#army=1.…`. Outgoing shares are **Crown & Clan links**, using a separate format from the
+live game’s army codes. Incoming original-game codes use their pinned roster
+indices through a [dedicated adapter](../reference/army-codes/README.md). The link contains bounded UTF-8
 JSON encoded as URL-safe base64. It includes a short name, known troop/spell
 counts and optional hero loadouts. No account, village balances, permanent
 research, saved layouts or battle recordings are exported. Clan Castle donations
@@ -48,3 +50,10 @@ the shared snapshot path. Browser scenarios cover real share/import buttons,
 previews before application, phone/landscape/desktop layouts, share and clipboard
 refusals, cancellation, new navigation and links received during an attack.
 Screenshots stay in ignored `output/playtest/`.
+
+Original-game imports use the pinned client's troop/spell GlobalIDs and original
+hero, equipment and pet record order. Unknown or unsupported units are rejected.
+Clan Castle troops/spells and Grand Warden ground/air mode appear as explicit
+exclusions before using the army and in the completion message; they are not
+silently applied or converted into ordinary troops. Newer original-game roster
+entries may remain unsupported until this pinned client is updated.

@@ -1,4 +1,4 @@
-import { encodeArmy, decodeArmy } from './army-share';
+import { encodeArmy, decodeSharedArmy } from './army-share';
 import { siegeSelfDestructAbility } from './native-siege-release';
 import type { RollingLogShot } from './native-log-launcher';
 import type { OvergrowthRoot } from './native-overgrowth';
@@ -4085,9 +4085,10 @@ export class GameModel {
   }
   /** Decode first, then apply the same atomic preparation and hero rules as Quick armies. */
   useSharedArmy(code: string) {
-    const preset = decodeArmy(code);
-    if (!preset || !this.prepareArmy(preset.army, preset.spells)) return false;
-    const changes = this.applyPresetHeroes(preset);
+    const decoded = decodeSharedArmy(code);
+    if (!decoded || !this.prepareArmy(decoded.preset.army, decoded.preset.spells)) return false;
+    const { preset } = decoded;
+    const changes = [...decoded.notes, ...this.applyPresetHeroes(preset)];
     this.notify(`${preset.name} is ready.${changes.length ? ` ${changes.join(' · ')}.` : ''}`);
     return true;
   }

@@ -88,5 +88,5 @@ Every button and the Clan Castle toggle are at least 44 pixels tall at phone wid
 
 Quick armies can also [share current or saved compositions as local links](ARMY-SHARING.md).
 Opening a link offers a preview before applying the receiving village’s housing,
-unlock and hero rules. These links use a separate local format from the source
-Cookbook codes described above.
+unlock and hero rules. Outgoing shares use a separate local format. The Army link field also accepts
+original-game links and source codes through the [pinned code adapter](../reference/army-codes/README.md).

@@ -157,3 +157,24 @@ for (const refused of ['share', 'clipboard'] as const) {
     await expect(field).toHaveValue('');
   });
 }
+
+test('a query layout link is consumed once while other application flags are kept', async ({
+  page,
+}) => {
+  await page.goto('/?lazyart');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  await page.locator('[data-action="skip-tutorial"]').click();
+  const code = await page.evaluate(() => window.__game.model.layoutShareCode()!);
+  const url = new URL(page.url());
+  url.searchParams.set('layout', code);
+  await page.goto(url.href);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  await page.evaluate(() => window.__game.game.loop.sleep());
+  await expect(page.locator('.layout-import-summary')).toContainText('Town Hall');
+  expect(new URL(page.url()).searchParams.has('layout')).toBe(false);
+  expect(new URL(page.url()).searchParams.has('lazyart')).toBe(true);
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  await page.evaluate(() => window.__game.game.loop.sleep());
+  await expect(page.locator('#modal-title')).toHaveCount(0);
+});

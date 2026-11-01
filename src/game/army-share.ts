@@ -1,3 +1,4 @@
+import { decodeNativeArmyCode } from './native-army-code';
 import { emptyArmy, emptySpells, type ArmyPreset, type PresetHero } from './army';
 import { TROOP_KEYS, SPELL_KEYS } from './data';
 import { isSiege } from './special-troops';
@@ -140,4 +141,17 @@ export function armyLink(base: string, code: string) {
   url.search = '';
   url.hash = `army=${encodeURIComponent(code)}`;
   return url.href;
+}
+
+/** Both local links and pinned original-game codes share one preview/apply boundary. */
+export function decodeSharedArmy(code: string) {
+  const local = decodeArmy(code);
+  if (local) return { preset: local, notes: [] as string[] };
+  const native = decodeNativeArmyCode(code);
+  if (!native) return null;
+  const notes: string[] = [];
+  if (native.castle.troops.length || native.castle.spells.length)
+    notes.push('Clan Castle troops and spells are not used here');
+  if (native.modes.length) notes.push("Grand Warden's ground/air mode is not changed by this link");
+  return { preset: native.preset, notes };
 }

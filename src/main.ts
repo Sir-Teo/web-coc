@@ -67,16 +67,22 @@ async function boot() {
     const hud = new HUD(model, scene, audio);
     // A shared layout link ("#layout=…"), opened or pasted into an open tab: offer it in the
     // layouts panel, and drop it from the address so a reload does not offer it again.
+    const consumeSharedLink = (parameter: string) => {
+      const url = new URL(location.href);
+      url.searchParams.delete(parameter);
+      url.hash = '';
+      history.replaceState(null, '', url.pathname + url.search);
+    };
     const offerLayout = () => {
       const code = layoutFromLink(location.href);
       if (!code) return;
-      history.replaceState(null, '', location.pathname + location.search);
+      consumeSharedLink('layout');
       hud.receiveLayout(code);
     };
     const offerArmy = () => {
       const code = armyFromLink(location.href);
       if (!code) return;
-      history.replaceState(null, '', location.pathname + location.search);
+      consumeSharedLink('army');
       hud.receiveArmy(code);
     };
     offerLayout();
