@@ -11,6 +11,8 @@ import {
 } from './native-mesh';
 import { hasNativeDefenseBody, nativeDefenseBody } from './native-defense-poses';
 import { nativeTrapValues } from './native-traps';
+import { nativeExportBounds, type NativeGeometryExtent } from './native-geometry-bounds';
+import { cameraShakePadding } from './camera-shake-layer';
 import { DecodedImageCache } from './decoded-image-cache';
 import { runtimeBudget } from './runtime-budget';
 import progressionSource from '../../reference/full-client/progression.json' with { type: 'json' };
@@ -115,6 +117,32 @@ function levelRow(pack: Pack, level: number) {
     levelRows.set(pack, rows);
   }
   return rows.get(level);
+}
+
+const levelExtents = new WeakMap<object, NativeGeometryExtent>();
+/** Every field may become active; include all states before skipping pose sampling. */
+function levelExtent(pack: Pack, level: Pack['levels'][number]): NativeGeometryExtent {
+  if (levelExtents.has(level)) return levelExtents.get(level);
+  let left = Infinity,
+    top = Infinity,
+    right = -Infinity,
+    bottom = -Infinity;
+  for (const ref of Object.values(level.refs)) {
+    const graph = pack.scenes[ref.scene];
+    const bounds = graph ? nativeExportBounds(graph, ref.export) : undefined;
+    if (bounds === undefined) {
+      levelExtents.set(level, undefined);
+      return undefined;
+    }
+    if (bounds === false) continue;
+    left = Math.min(left, bounds[0]);
+    top = Math.min(top, bounds[1]);
+    right = Math.max(right, bounds[2]);
+    bottom = Math.max(bottom, bounds[3]);
+  }
+  const result: NativeGeometryExtent = left === Infinity ? false : [left, top, right, bottom];
+  levelExtents.set(level, result);
+  return result;
 }
 /**
  * Whether every field of a level row resolves to a static, resource-free export in this pack:
@@ -443,11 +471,7 @@ export class VillageNativePresentation {
     const cam = (
       this.scene as unknown as {
         cameras?: {
-          main?: {
-            worldView?: { centerX: number; centerY: number; width: number; height: number };
-            zoomX?: number;
-            zoomY?: number;
-          };
+          main?: Phaser.Cameras.Scene2D.Camera & { rotation?: number };
         };
       }
     ).cameras?.main;
@@ -458,11 +482,26 @@ export class VillageNativePresentation {
     const cy = camView?.centerY ?? 0;
     const hw = (camView?.width ?? 0) / 2;
     const hh = (camView?.height ?? 0) / 2;
+    const settled =
+      cam &&
+      camView &&
+      cam.rotation === 0 &&
+      !cam.shakeEffect?.isRunning &&
+      Math.abs(cam.scrollX + cam.width / 2 - cx) < 1e-6 &&
+      Math.abs(cam.scrollY + cam.height / 2 - cy) < 1e-6 &&
+      Math.abs(cam.width / cam.zoomX - camView.width) < 1e-6 &&
+      Math.abs(cam.height / cam.zoomY - camView.height) < 1e-6;
+    const padding = settled
+      ? Math.max(1, 2 / Math.min(Math.abs(cam.zoomX), Math.abs(cam.zoomY))) +
+        cameraShakePadding(cam)
+      : 0;
     const count = buildings.length + (this.placement ? 1 : 0);
     for (let i = 0; i < count; i++) {
       const b = i < buildings.length ? buildings[i] : this.placement!.building;
       if (!hasVillageNativeArt(b.kind) || b.npc) continue;
       const size = BUILDINGS[b.kind].size;
+      const pack = this.packs.get(b.kind);
+      const level = pack ? levelRow(pack, b.level) : undefined;
       // Viewport cull before pose sampling; retain hidden views so scrolling
       // back never reallocates their RenderTextures.
       let earlyPoint: Point;
@@ -471,11 +510,20 @@ export class VillageNativePresentation {
         projectInto(earlyPoint, b.x + size / 2, b.y + size / 2);
       } else earlyPoint = iso(b.x + size / 2, b.y + size / 2);
       if (camView && b.id !== -1) {
+        // Mode variants may supply another graph. Keep the existing broad margin until
+        // their complete geometry is known; ordinary packs include every field/state.
+        const bounds =
+          settled && pack && level && !packs[sourceKind(b.kind)]?.variants
+            ? levelExtent(pack, level)
+            : undefined;
         const margin = 450;
-        if (
-          Math.abs(earlyPoint.x - cx) > hw + margin ||
-          Math.abs(earlyPoint.y - cy) > hh + margin
-        ) {
+        const outside = bounds
+          ? earlyPoint.x + bounds[2] * 1.2 < cx - hw - padding ||
+            earlyPoint.x + bounds[0] * 1.2 > cx + hw + padding ||
+            earlyPoint.y + bounds[3] * 1.2 - 32 * size < cy - hh - padding ||
+            earlyPoint.y + bounds[1] * 1.2 - 32 * size > cy + hh + padding
+          : Math.abs(earlyPoint.x - cx) > hw + margin || Math.abs(earlyPoint.y - cy) > hh + margin;
+        if (outside) {
           const entries = this.views.get(b.id);
           if (entries) {
             seen.add(b.id);
@@ -495,12 +543,10 @@ export class VillageNativePresentation {
           continue;
         }
       }
-      const pack = this.packs.get(b.kind);
       if (!pack) {
         void this.load(b.kind);
         continue;
       }
-      const level = levelRow(pack, b.level);
       if (!level) continue;
       if (!this.ready(packKey(b.kind), b.level)) {
         void this.loadLevel(b.kind, undefined, b.level);

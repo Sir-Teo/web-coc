@@ -1,10 +1,11 @@
 # Battle performance
 
-Large late-game battles (300–600 units on the biggest campaign layouts, at retina density)
-used to run at 13 fps. The work recorded here brought the worst case to a 16.7 ms median
-frame and the common large cases to a locked 60 fps, without changing a single simulation
-result: the replay, historical-witness and determinism suites pass unchanged, and the
-native-art pixel specs still match their source pixels.
+Earlier Metal measurements of large late-game battles (300–600 units on the biggest
+campaign layouts, at retina density) improved from 13 fps to a 16.7 ms median frame in the
+worst case and 60 fps in common cases. The current cloud host's throttled mobile stress
+test remains around 3 FPS under SwiftShader; smooth mobile gameplay is still an open
+finding. The measurements below distinguish those environments. Replay, historical-witness,
+determinism and source-pixel checks guard the optimizations.
 
 ## Measurements
 
@@ -2087,6 +2088,32 @@ gameplay on this workload. The captured CPU profile spreads work across simulati
 mesh presentation and rendering rather than identifying one remaining dominant function.
 Reports and profiles are generated under ignored `output/playtest/` by
 `node scripts/battle-load-benchmark.mjs --mobile --cpu=4 --army=th18 --level=half --lazyart --gl --profile`.
+
+## Building geometry culling
+
+Ordinary native building packs now use conservative bounds from every source frame,
+nested child phase and level field before sampling poses. Reflections and shears retain
+their complete transformed extents. Unknown geometry, cyclic graphs, packs with mode
+variants and unsettled or rotated cameras retain the existing 450-world-pixel margin.
+Filtering and custom camera-shake reach pad the tighter bounds. Hidden views retain their
+buffers and invalidate their render signatures so panning back restores the building.
+This changes presentation only; combat and replay versions stay unchanged.
+
+`tests/browser/village-geometry-culling.spec.ts` compares against an unculled presentation
+in desktop and phone viewports. All ten cases per viewport have zero changed RGBA bytes
+and no GL errors, including a roof visible with its origin outside the viewport, damage,
+construction, zoom, rotation, custom shake and re-entry. The first controlled view draws
+234 objects on desktop and 143 on phone, compared with 335 in the unculled reference.
+The geometry tests also sample real wall, Town Hall, mine and storage graphs.
+
+Two evolving stage-61 mobile stress runs on the same cloud host measured 3.2 FPS before
+and 3.3 FPS after (390×844, DPR 3, 4× CPU throttling, half-level TH18 army, lazy art,
+SwiftShader). Both completed without runtime errors and settled at a 195×422 backbuffer.
+Their initial troop counts differed (240 versus 226 living), so these runs do not
+establish an FPS gain. The controlled comparisons establish reduced rendering work with
+preserved pixels; the low stress frame rate remains unresolved. Reports and CPU profiles
+were saved under ignored `output/playtest/building-cull-before.*` and
+`output/playtest/building-cull-after.*`.
 
 ## Keeping it that way
 
