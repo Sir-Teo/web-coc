@@ -66,7 +66,7 @@ The guide sits beside the battle, not in its replay setup. A frozen moment is si
 
 ## Choices
 
-- **Spots off the board.** Some levels use the client's larger board. Of the 75 troop and hero spots, 10 fall past this game's 48 tiles (Bowling with Bats' Archer Queen at the client's 20, 47) and 9 inside its red boundary, which keeps 1.5 tiles round each building. A troop or hero step's spot becomes the deployable tile nearest the client's. A spell's spot is clamped to the board.
+- **Full-map spots.** New Practice battles use a 52-cell board when the source specifies `UseFullMapSize`. This retains the source targets at converted tile 51. A troop or hero spot blocked by a building still moves to the nearest deployable tile; spells retain the source point within the board. Replays through version 232 preserve their original 48-cell bounds and clamping behavior.
 - **Waits that cannot end.** The original's scripted attack always brings a step's building down, but a player's may not. A `WaitUntilDestroyed` step therefore also ends when no attacker is alive or after 60 battle seconds (`GUIDE_WAIT_LIMIT`). Without that, a step refusing deploys could hold the player until they skip.
 - **Ability timing.** `KingHealthLow` asks for the King's ability straight away. Its pinned `deploy_steps.csv` row has no health threshold or condition; a different timing rule cannot be established from that table alone.
 
@@ -108,12 +108,14 @@ The guide sits beside the battle, not in its replay setup. A frozen moment is si
 ## Withheld level readiness
 
 The [readiness report](../reference/practice/readiness.json) audits all six withheld layouts
-against the current `MAP_SIZE` and `BUILD_MIN`, using complete source building/trap footprints.
+against the legacy 48-cell `MAP_SIZE` and current `BUILD_MIN`, using complete source building/trap footprints.
 All six have `UseFullMapSize=TRUE` and extend to converted tile boundary 49, beyond this
-engine's 48-tile board. The report pins each original layout by SHA-256 and distinguishes
+legacy 48-tile board. New version-233 full-map Practice battles use 52 cells; the six
+audited layouts remain withheld pending their import and verification. The report pins
+each original layout by SHA-256 and distinguishes
 captured animation/defender rows from source special-ability coverage.
 
-| Level | Footprints beyond the current board | Additional missing defender coverage |
+| Level | Footprints beyond the legacy board | Additional missing defender coverage |
 | --- | ---: | --- |
 | Whirl Power | 1 | Balloon 5 body (`Balloon Goblin3` in the source) |
 | Angry Babies | 5 | None identified by this coverage audit |
@@ -125,14 +127,16 @@ captured animation/defender rows from source special-ability coverage.
 The report also checks guide targets across all 19 lessons. Source targets reach tile 49,
 which becomes tile 51 after this adapter's offset and needs a local board of at least 52
 cells to avoid clamping. Four currently fielded lessons (Lava & Loons, Witch Slap, Bowling
-with Bats and Electro Surgery) use the existing guide-spot clamping fallback too. The audit
-retains their original targets and exact-location flags; it does not change that compatibility
+with Bats and Electro Surgery) previously used the guide-spot clamping fallback too.
+New full-map battles retain their source targets. The audit retains their original targets
+and exact-location flags; version-232 and earlier recordings retain that compatibility
 behavior. A footprint-only expansion to 49 cells would therefore be insufficient.
 
 This is a bounds and source-coverage audit, not a complete combat-parity certification.
 The 150 existing campaign indices, their layouts and progress remain unchanged. Supporting
-the withheld levels requires a verified larger-board path through deployment, routing,
-collision, rendering and replay validation, along with the remaining defender behavior.
+the withheld levels still requires their source import and per-layout verification,
+along with the remaining defender captures and behavior. The larger-board path is now
+used by the existing 13 Practice lessons.
 
 Reproduce the report with the existing native-art Python environment:
 

@@ -4,7 +4,7 @@ import { defenderPoisonScales } from './defender-poison';
 import type { DefenderHitPoison } from './defender-hit-poison';
 import { defenderFrostScales, type DefenderFrost } from './defender-frost';
 import type { HeroKind } from './native-hero-data';
-import { MAP_SIZE } from './grid';
+import { battleMapSize } from './grid';
 import { hurtUnit } from './native-status';
 import { distance2D } from './distance';
 import { stepGarrisonDefender, type GarrisonAttack, type GarrisonShot } from './garrison-combat';
@@ -321,6 +321,9 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
             (structures ??= buildingsAtStart.filter((building) => building.kind !== 'wall')),
             0.1,
             !!battle.nativeSubtiles,
+            [],
+            false,
+            battleMapSize(battle),
           );
           defender.pathAt = 0.3;
         }
@@ -375,6 +378,9 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
           (structures ??= buildingsAtStart.filter((b) => b.kind !== 'wall')),
           stats.range,
           !!battle.nativeSubtiles,
+          [],
+          false,
+          battleMapSize(battle),
         );
         defender.pathAt = 0.3;
       }
@@ -781,6 +787,8 @@ export function stepAttackerVsDefenders(
           stats.range,
           !!battle.nativeSubtiles,
           route?.breaches ?? [],
+          false,
+          battleMapSize(battle),
         );
         unit.pathAt = 0.3;
       }
@@ -792,7 +800,7 @@ export function stepAttackerVsDefenders(
     const hit =
       next === undefined
         ? undefined
-        : (route?.wallTile?.get(Math.floor(next.y) * MAP_SIZE + Math.floor(next.x)) ??
+        : (route?.wallTile?.get(Math.floor(next.y) * battleMapSize(battle) + Math.floor(next.x)) ??
           (!route?.wallTile
             ? buildings.find(
                 (b) =>

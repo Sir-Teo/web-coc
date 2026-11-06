@@ -94,12 +94,12 @@ CHALLENGE = re.compile(r'CHALLENGE_TH(\d+)_[A-Z0-9]+')
 # defender instead of hiding secondary blockers behind the first missing animation.
 # Shifting, rescaling or substituting a layout is never allowed.
 WITHHELD = {
-    'CHALLENGE_TH8_GOWIVA': 'Balloon 5 garrison; UseFullMapSize layout exceeds the 48-tile grid',
-    'CHALLENGE_TH12_YETI': 'Lava Hound 5 garrison; UseFullMapSize layout exceeds the 48-tile grid',
-    'CHALLENGE_TH13_HYBRID': 'Ice Golem 5 garrison and defending death-freeze; UseFullMapSize layout exceeds the 48-tile grid',
-    'CHALLENGE_TH9_BABYDQW': 'UseFullMapSize layout exceeds the 48-tile grid',
-    'CHALLENGE_TH10_MINER': 'UseFullMapSize layout exceeds the 48-tile grid',
-    'CHALLENGE_TH12_DRAGBAT': 'UseFullMapSize layout exceeds the 48-tile grid',
+    'CHALLENGE_TH8_GOWIVA': 'Balloon 5 garrison; Full-map layout not yet fielded',
+    'CHALLENGE_TH12_YETI': 'Lava Hound 5 garrison; Full-map layout not yet fielded',
+    'CHALLENGE_TH13_HYBRID': 'Ice Golem 5 garrison and defending death-freeze; Full-map layout not yet fielded',
+    'CHALLENGE_TH9_BABYDQW': 'Full-map layout not yet fielded',
+    'CHALLENGE_TH10_MINER': 'Full-map layout not yet fielded',
+    'CHALLENGE_TH12_DRAGBAT': 'Full-map layout not yet fielded',
 }
 challenges = [g for g in records if CHALLENGE.fullmatch(g[0]['Name'])]
 challenges.sort(key=lambda g: (int(CHALLENGE.fullmatch(g[0]['Name']).group(1)), g[0]['Name']))
@@ -183,6 +183,7 @@ def compact_entity(b):
 runtime = dict(stages=[dict(stage=s['stage'], name=s['name'], family=s['family'],
                            dependencies=s['dependencies'],
                            alwaysUnlocked=s['nativeRows'][0].get('AlwaysUnlocked') == 'TRUE',
+                           **({'useFullMapSize': True} if s['nativeRows'][0].get('UseFullMapSize') == 'TRUE' else {}),
                            gold=s['gold'], elixir=s['elixir'], darkElixir=s['darkElixir'],
                            recommendedTownHall=s['recommendedTownHall'],
                            allianceDefenders=[r for r in s['nativeRows'] if any(k.startswith('Alliance') for k in r)],

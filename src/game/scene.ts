@@ -194,7 +194,7 @@ import { loadSweeperArt, sweeperArtLoaded, sweeperBounds } from './air-sweeper-p
 import { SWEEPER, sweeperAngle } from './air-control-stats';
 import { CAMERA_KEYS, isDefense, type SpellKind, type TroopKind } from './data';
 import { campTexture, campArt } from './camp-art';
-import { MAP_SIZE, BUILD_MIN, BUILD_MAX } from './grid';
+import { MAP_SIZE, FULL_MAP_SIZE, battleMapSize, BUILD_MIN, BUILD_MAX } from './grid';
 import { MORTAR_ART, MORTAR_ART_LEVELS, mortarTexture } from './mortar-art';
 import { preloadMortars, MortarPresentation } from './mortar-scene';
 import { loadMortarArt, mortarArtLoaded, mortarBounds } from './mortar-poses';
@@ -632,6 +632,12 @@ export const WORLD = {
   tw: 64,
   th: 32,
 };
+const FULL_MAP_WORLD = {
+  ...WORLD,
+  left: 896 - FULL_MAP_SIZE * 32,
+  width: FULL_MAP_SIZE * 64,
+  height: FULL_MAP_SIZE * 32 + 299,
+};
 export const iso = (x: number, y: number) =>
   new Phaser.Math.Vector2(WORLD.ox + (x - y) * 32, WORLD.oy + (x + y) * 16);
 /** Non-allocating `iso` for hot loops: writes into and returns `out`. */
@@ -703,7 +709,12 @@ export class VillageScene extends Phaser.Scene {
   private holdNext = 0;
   private boundary: { signature: number; edges: number[][] } = { signature: -1, edges: [] };
   /** Tile raster of the no-deploy zone, rebuilt with `boundary`. */
-  private blockedGrid = new Uint8Array(MAP_SIZE * MAP_SIZE);
+  private blockedGrid = new Uint8Array(FULL_MAP_SIZE * FULL_MAP_SIZE);
+  private terrain?: Phaser.GameObjects.Image;
+  private terrainMapSize = MAP_SIZE;
+  private get worldBounds() {
+    return battleMapSize(this.model.battle) === FULL_MAP_SIZE ? FULL_MAP_WORLD : WORLD;
+  }
   /** Presentation detail level for this frame (see RenderDetail); the simulation ignores it. */
   detailLevel = 0;
   private detailGovernor = new RenderDetail();
@@ -1059,9 +1070,11 @@ export class VillageScene extends Phaser.Scene {
         canvas.refresh();
       }
     }
-    this.add
-      .image(WORLD.ox, WORLD.height / 2, 'terrain')
-      .setDisplaySize(WORLD.width * TERRAIN_SCALE, WORLD.height * TERRAIN_SCALE)
+    const world = this.worldBounds;
+    this.terrainMapSize = battleMapSize(this.model.battle);
+    this.terrain = this.add
+      .image(world.ox, world.height / 2, 'terrain')
+      .setDisplaySize(world.width * TERRAIN_SCALE, world.height * TERRAIN_SCALE)
       .setDepth(-1000);
     this.groundMarks = this.add.graphics().setDepth(-850);
     this.campShadows = this.add.graphics().setDepth(-840);
@@ -2348,8 +2361,8 @@ export class VillageScene extends Phaser.Scene {
     return Math.min(
       this.baseZoom * 0.78,
       Math.max(
-        this.scale.canvasBounds.width / WORLD.width,
-        this.scale.canvasBounds.height / WORLD.height,
+        this.scale.canvasBounds.width / this.worldBounds.width,
+        this.scale.canvasBounds.height / this.worldBounds.height,
       ) * 0.95,
     );
   }
@@ -2413,14 +2426,15 @@ export class VillageScene extends Phaser.Scene {
     }
     const c = this.cameras.main;
     const centre = uniso(c.worldView.centerX, c.worldView.centerY);
-    const clamp = (v: number) => Math.min(MAP_SIZE - 1, Math.max(0, Math.floor(v)));
+    const clamp = (v: number) =>
+      Math.min(battleMapSize(this.model.battle) - 1, Math.max(0, Math.floor(v)));
     this.keyCursor = { x: clamp(centre.x), y: clamp(centre.y) };
     this.afterCursorMove();
     return this.keyCursor;
   }
   moveKeyCursor(dx: number, dy: number) {
     if (!this.keyCursor) return null;
-    const clamp = (v: number) => Math.min(MAP_SIZE - 1, Math.max(0, v));
+    const clamp = (v: number) => Math.min(battleMapSize(this.model.battle) - 1, Math.max(0, v));
     this.keyCursor = { x: clamp(this.keyCursor.x + dx), y: clamp(this.keyCursor.y + dy) };
     this.afterCursorMove();
     return this.keyCursor;
@@ -2619,13 +2633,14 @@ export class VillageScene extends Phaser.Scene {
       vh = c.height / c.zoomY;
     const centerX = Phaser.Math.Clamp(
         c.scrollX + c.width / 2,
-        WORLD.left + Math.min(vw / 2 - CAMERA_MARGIN, WORLD.width / 2),
-        WORLD.left + Math.max(WORLD.width - vw / 2 + CAMERA_MARGIN, WORLD.width / 2),
+        this.worldBounds.left + Math.min(vw / 2 - CAMERA_MARGIN, this.worldBounds.width / 2),
+        this.worldBounds.left +
+          Math.max(this.worldBounds.width - vw / 2 + CAMERA_MARGIN, this.worldBounds.width / 2),
       ),
       centerY = Phaser.Math.Clamp(
         c.scrollY + c.height / 2,
-        Math.min(vh / 2 - CAMERA_MARGIN, WORLD.height / 2),
-        Math.max(WORLD.height - vh / 2 + CAMERA_MARGIN, WORLD.height / 2),
+        Math.min(vh / 2 - CAMERA_MARGIN, this.worldBounds.height / 2),
+        Math.max(this.worldBounds.height - vh / 2 + CAMERA_MARGIN, this.worldBounds.height / 2),
       );
     c.centerOn(centerX, centerY);
   }
@@ -2877,9 +2892,10 @@ export class VillageScene extends Phaser.Scene {
   private battleBoundary() {
     const b = this.model.battle;
     if (!b) return [];
+    const mapSize = battleMapSize(b);
     // Numeric revision instead of joining every building id into a string per frame.
     // Stage index included: two stages can share building ids and building counts.
-    let signature = (b.index * 2654435761) | 0;
+    let signature = ((b.index * 2654435761) ^ mapSize) | 0;
     for (const v of b.buildings) {
       if (v.hp <= 0 || v.kind === 'wall' || isTrap(v.kind)) continue;
       if (!this.model.visibleBuilding(v)) continue;
@@ -2899,16 +2915,16 @@ export class VillageScene extends Phaser.Scene {
       if (v.hp <= 0 || v.kind === 'wall' || isTrap(v.kind) || concealedTesla(b, v)) continue;
       const size = BUILDINGS[v.kind].size;
       const x0 = Math.max(0, Math.floor(v.x - 2) + 1),
-        x1 = Math.min(MAP_SIZE - 1, Math.ceil(v.x + size + 1) - 1);
+        x1 = Math.min(mapSize - 1, Math.ceil(v.x + size + 1) - 1);
       const y0 = Math.max(0, Math.floor(v.y - 2) + 1),
-        y1 = Math.min(MAP_SIZE - 1, Math.ceil(v.y + size + 1) - 1);
-      for (let y = y0; y <= y1; y++) grid.fill(1, y * MAP_SIZE + x0, y * MAP_SIZE + x1 + 1);
+        y1 = Math.min(mapSize - 1, Math.ceil(v.y + size + 1) - 1);
+      for (let y = y0; y <= y1; y++) grid.fill(1, y * mapSize + x0, y * mapSize + x1 + 1);
     }
     const blocked = (x: number, y: number) =>
-      x < 1 || y < 1 || x > MAP_SIZE - 2 || y > MAP_SIZE - 2 || grid[y * MAP_SIZE + x] === 1;
+      x < 1 || y < 1 || x > mapSize - 2 || y > mapSize - 2 || grid[y * mapSize + x] === 1;
     const edges: number[][] = [];
-    for (let x = 1; x <= MAP_SIZE - 2; x++)
-      for (let y = 1; y <= MAP_SIZE - 2; y++) {
+    for (let x = 1; x <= mapSize - 2; x++)
+      for (let y = 1; y <= mapSize - 2; y++) {
         if (!blocked(x, y)) continue;
         if (!blocked(x - 1, y)) edges.push([x, y, x, y + 1]);
         if (!blocked(x + 1, y)) edges.push([x + 1, y, x + 1, y + 1]);
@@ -7083,6 +7099,14 @@ export class VillageScene extends Phaser.Scene {
     return !!gl?.isContextLost?.();
   }
   update(time: number, delta: number) {
+    const mapSize = battleMapSize(this.model.battle);
+    if (this.terrain && mapSize !== this.terrainMapSize) {
+      this.terrainMapSize = mapSize;
+      const world = this.worldBounds;
+      this.terrain
+        .setPosition(world.ox, world.height / 2)
+        .setDisplaySize(world.width * TERRAIN_SCALE, world.height * TERRAIN_SCALE);
+    }
     if (this.paused || this.contextGone()) return;
     this.updateIdleRate();
     this.renderClock = time;

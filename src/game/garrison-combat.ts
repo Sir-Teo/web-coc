@@ -1,3 +1,4 @@
+import { battleMapSize } from './grid';
 import { poisonAvoidanceTarget } from './poison-avoidance';
 import { defenderPoisonScales } from './defender-poison';
 import { defenderFrostScales } from './defender-frost';
@@ -440,6 +441,9 @@ export function stepGarrisonDefender(
           nonWallBuildings(battle),
           0.1,
           !!battle.nativeSubtiles,
+          [],
+          false,
+          battleMapSize(battle),
         );
         defender.pathAt = 0.3;
       }
@@ -486,6 +490,9 @@ export function stepGarrisonDefender(
           nonWallBuildings(battle),
           approach,
           !!battle.nativeSubtiles,
+          [],
+          false,
+          battleMapSize(battle),
         );
         defender.pathAt = 0.3;
       }

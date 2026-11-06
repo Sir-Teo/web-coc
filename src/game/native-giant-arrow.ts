@@ -1,6 +1,6 @@
 import { BUILDINGS } from './data';
 import { distance2D } from './distance';
-import { MAP_SIZE } from './grid';
+import { battleMapSize } from './grid';
 import { targetableBuilding } from './hidden-tesla';
 import { distanceTo, type Unit } from './model';
 import { nativeRow, num, text, tiles } from './native-data';
@@ -53,7 +53,7 @@ export function launchGiantArrow(
     fromY = unit.y;
   const edge = (origin: number, direction: number) =>
     direction > 0
-      ? (MAP_SIZE - origin) / direction
+      ? (battleMapSize(battle) - origin) / direction
       : direction < 0
         ? -origin / direction
         : Infinity;

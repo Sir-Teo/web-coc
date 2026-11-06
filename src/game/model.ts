@@ -273,7 +273,14 @@ import {
   type AuraSpell,
 } from './spell-effects';
 import { prepareHealerTargets, stepHealer } from './healing';
-import { MAP_SIZE, FULL_MAP_SIZE, BUILD_MIN, BUILD_MAX, type BattleMapSize } from './grid';
+import {
+  MAP_SIZE,
+  FULL_MAP_SIZE,
+  battleMapSize,
+  BUILD_MIN,
+  BUILD_MAX,
+  type BattleMapSize,
+} from './grid';
 import { wallDestinations, wallMoveIssue, type WallMove } from './wall-movement';
 import { wallRow, matchingWalls, type WallAxis, type WallResource } from './wall-selection';
 import {
@@ -1265,6 +1272,8 @@ export interface Battle {
     >
   >;
   catalog?: CampaignCatalog;
+  /** Explicit battle bounds; absent on historical recordings and home battles. */
+  boardSize?: BattleMapSize;
   scenery?: CampaignScenery[];
   troopLevels?: Army;
   spellLevels?: SpellBook;
@@ -5850,13 +5859,13 @@ export class GameModel {
     delete g.spot;
     if (step.at) {
       const at = step.at;
-      const clamp = (v: number) => Math.min(MAP_SIZE - 1, Math.max(1, v));
+      const clamp = (v: number) => Math.min(battleMapSize(b) - 1, Math.max(1, v));
       // A spell may fall anywhere; a troop or hero needs open grass, as near the spot as can be.
       let best = { x: clamp(at.x), y: clamp(at.y) };
       if (!(unit && 'spell' in unit) && this.deployBlocked(best.x, best.y)) {
         let distance = Infinity;
-        for (let x = 1; x < MAP_SIZE; x++)
-          for (let y = 1; y < MAP_SIZE; y++) {
+        for (let x = 1; x < battleMapSize(b); x++)
+          for (let y = 1; y < battleMapSize(b); y++) {
             const d = Math.hypot(x - at.x, y - at.y);
             if (d < distance && !this.deployBlocked(x, y)) {
               distance = d;
@@ -6079,8 +6088,8 @@ export class GameModel {
       !Number.isFinite(y) ||
       x < 1 ||
       y < 1 ||
-      x > MAP_SIZE - 1 ||
-      y > MAP_SIZE - 1
+      x > battleMapSize(b) - 1 ||
+      y > battleMapSize(b) - 1
     )
       return true;
     return b.buildings.some(
@@ -6277,8 +6286,8 @@ export class GameModel {
       !Number.isFinite(y) ||
       x < 0 ||
       y < 0 ||
-      x > MAP_SIZE ||
-      y > MAP_SIZE
+      x > battleMapSize(b) ||
+      y > battleMapSize(b)
     )
       return false;
     this.recordAction({
@@ -6478,7 +6487,7 @@ export class GameModel {
   private sharedWalls(b: Battle) {
     const wallTile = new Map<number, Building>();
     for (const v of b.buildings)
-      if (v.kind === 'wall' && v.hp > 0) wallTile.set(v.y * MAP_SIZE + v.x, v);
+      if (v.kind === 'wall' && v.hp > 0) wallTile.set(v.y * battleMapSize(b) + v.x, v);
     return { wallTile };
   }
   /** Version 45 roster rules share model damage, identifiers and effects with legacy combat. */
@@ -6782,7 +6791,7 @@ export class GameModel {
       if (!unitDt) continue;
       const shrunkDt = shrinkStepTime(u, b.elapsed, unitDt);
       if (u.shrink) u.shrink.timeLost += unitDt - shrunkDt;
-      if (stepAirPush(u, unitDt)) continue;
+      if (stepAirPush(u, unitDt, battleMapSize(b))) continue;
       if ((u.springUntil ?? 0) > b.elapsed) {
         u.attacking = false;
         continue;
@@ -6984,7 +6993,9 @@ export class GameModel {
           }
         }
         target =
-          (troop.wallBreaker ? breachTarget(u, knownBuildings, !!b.nativeSubtiles) : undefined) ??
+          (troop.wallBreaker
+            ? breachTarget(u, knownBuildings, !!b.nativeSubtiles, battleMapSize(b))
+            : undefined) ??
           bestPreferred ??
           best;
         if (!target) continue;
@@ -7086,13 +7097,22 @@ export class GameModel {
           u.pathAt = Math.min(Math.max(u.pathAt, 0.05), 0.15);
         } else {
           repathState.count++;
-          u.path = findPath(u, target, routeBuildings, d.range, !!b.nativeSubtiles, breaches);
+          u.path = findPath(
+            u,
+            target,
+            routeBuildings,
+            d.range,
+            !!b.nativeSubtiles,
+            breaches,
+            false,
+            battleMapSize(b),
+          );
           u.pathAt = 1.5;
         }
       }
       const next = u.path[0];
       if (next) {
-        const hit = wallTile.get(Math.floor(next.y) * MAP_SIZE + Math.floor(next.x));
+        const hit = wallTile.get(Math.floor(next.y) * battleMapSize(b) + Math.floor(next.x));
         const wall = hit && hit.hp > 0 && !passableWalls?.has(hit.id) ? hit : undefined;
         if (wall && distanceTo(u, wall) <= d.range) {
           u.attacking = true;
@@ -7134,7 +7154,9 @@ export class GameModel {
           let travel = d.speed * unitDt;
           while (travel > 0 && u.path.length) {
             const point = u.path[0];
-            const walledTile = wallTile.get(Math.floor(point.y) * MAP_SIZE + Math.floor(point.x));
+            const walledTile = wallTile.get(
+              Math.floor(point.y) * battleMapSize(b) + Math.floor(point.x),
+            );
             const walled = !!walledTile && walledTile.hp > 0;
             if (point !== next && walled) break;
             // Crowd separation can push a unit past a half-tile waypoint. Walking back to it
@@ -7187,6 +7209,7 @@ export class GameModel {
       solidBuildings,
       !!b.nativeSubtiles,
       b.separationCap ? SEPARATION_TILES_PER_SECOND * dt : undefined,
+      battleMapSize(b),
     );
     if (revealTeslas(b, this.onEffect, (u) => this.teslaDiverts(b, u))) this.changed();
     // A sprung trap only restyles itself and the HUD's live counters: a passive change, so

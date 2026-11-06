@@ -1,6 +1,6 @@
 import { BUILDINGS, isTrap } from './data';
 import { distanceSquared2D } from './distance';
-import { MAP_SIZE } from './grid';
+import { battleMapSize } from './grid';
 import { nativeGlobal } from './native-data';
 import type { Battle } from './model';
 import type { Defender } from './defenders';
@@ -52,7 +52,8 @@ export function poisonAvoidanceTarget(
       const facing = angle + (direction * Math.PI) / 8;
       const x = area.x + Math.cos(facing) * (area.radius + 0.125);
       const y = area.y + Math.sin(facing) * (area.radius + 0.125);
-      if (x < 0.5 || y < 0.5 || x > MAP_SIZE - 0.5 || y > MAP_SIZE - 0.5) continue;
+      if (x < 0.5 || y < 0.5 || x > battleMapSize(battle) - 0.5 || y > battleMapSize(battle) - 0.5)
+        continue;
       if (areas.some((cloud) => distanceSquared2D(x - cloud.x, y - cloud.y) <= cloud.radius ** 2))
         continue;
       if (

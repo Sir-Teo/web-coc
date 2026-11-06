@@ -9,7 +9,7 @@ import { damageDefenders, hurtDefender } from './defenders';
 import { distanceTo, type Unit } from './model';
 import { distance2D } from './distance';
 import type { NativeTroopContext } from './native-troops';
-import { MAP_SIZE } from './grid';
+import { battleMapSize } from './grid';
 import { meteorStaffTarget } from './native-meteor-staff';
 import { stepRevengeDeck } from './native-revenge-deck';
 
@@ -157,8 +157,8 @@ export function startEquipmentDash(ctx: NativeTroopContext, unit: Unit, ability:
   if (!ctx.battle.nativeContentExpansion || !flag(ability.row, 'ActAsPenetratingProjectile'))
     return;
   const row = ability.row,
-    dx = MAP_SIZE / 2 - unit.x,
-    dy = MAP_SIZE / 2 - unit.y,
+    dx = battleMapSize(ctx.battle) / 2 - unit.x,
+    dy = battleMapSize(ctx.battle) / 2 - unit.y,
     // Explicit operation order (see distance.ts): Math.hypot may differ by ulp
     // across browser engines, which desyncs replays.
     length = distance2D(dx, dy) || 1;
@@ -181,8 +181,8 @@ export function stepEquipmentDash(ctx: NativeTroopContext, unit: Unit, dt: numbe
     const step = Math.min(0.2, travel);
     travel -= step;
     dash.remaining -= step;
-    unit.x = Math.max(0, Math.min(MAP_SIZE, unit.x + dash.dx * step));
-    unit.y = Math.max(0, Math.min(MAP_SIZE, unit.y + dash.dy * step));
+    unit.x = Math.max(0, Math.min(battleMapSize(ctx.battle), unit.x + dash.dx * step));
+    unit.y = Math.max(0, Math.min(battleMapSize(ctx.battle), unit.y + dash.dy * step));
     for (const b of ctx.battle.buildings)
       if (
         b.hp > 0 &&
@@ -211,8 +211,8 @@ export function stepEquipmentDash(ctx: NativeTroopContext, unit: Unit, dt: numbe
     dash.remaining <= 1e-9 ||
     unit.x <= 0 ||
     unit.y <= 0 ||
-    unit.x >= MAP_SIZE ||
-    unit.y >= MAP_SIZE
+    unit.x >= battleMapSize(ctx.battle) ||
+    unit.y >= battleMapSize(ctx.battle)
   )
     delete unit.native!.dash;
   return true;

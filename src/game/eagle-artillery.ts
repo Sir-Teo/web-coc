@@ -2,7 +2,7 @@ import { groundCollision, type GroundCollision } from './subtile-path';
 import type { LateCombatContext } from './late-campaign';
 import type { Battle, Building, Unit } from './model';
 import { TROOPS } from './data';
-import { MAP_SIZE } from './grid';
+import { MAP_SIZE, battleMapSize } from './grid';
 import { spellTowerDefenseBoost } from './spell-tower';
 import { untargetable } from './spell-effects';
 import { nativeOwned } from './native-ownership';
@@ -434,7 +434,11 @@ function solidTiles(battle: Battle) {
   return groundCollision(battle, battle.buildings);
 }
 const passable = (solid: GroundCollision, x: number, y: number) =>
-  x >= 0 && y >= 0 && x < MAP_SIZE && y < MAP_SIZE && !solid.solid(x, y);
+  x >= 0 &&
+  y >= 0 &&
+  x < (solid.mapSize ?? MAP_SIZE) &&
+  y < (solid.mapSize ?? MAP_SIZE) &&
+  !solid.solid(x, y);
 
 /** Stable per-unit jitter in [0, 127], replacing the native object RNG without shared state. */
 function jitter(unitId: number, shell: string, slot: number) {
@@ -520,8 +524,8 @@ function stepPushes(battle: Battle, solid: () => GroundCollision) {
     const x = Math.trunc((start * push.startX + end * push.endX) / push.initMs),
       y = Math.trunc((start * push.startY + end * push.endY) / push.initMs);
     if (flying(u) || passable(solid(), tiles(x), tiles(y))) {
-      u.x = Math.max(0, Math.min(MAP_SIZE, tiles(x)));
-      u.y = Math.max(0, Math.min(MAP_SIZE, tiles(y)));
+      u.x = Math.max(0, Math.min(battleMapSize(battle), tiles(x)));
+      u.y = Math.max(0, Math.min(battleMapSize(battle), tiles(y)));
     } else {
       push.startX = push.endX = native(u.x);
       push.startY = push.endY = native(u.y);

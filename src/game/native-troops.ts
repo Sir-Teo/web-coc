@@ -99,7 +99,7 @@ import {
   nativeHitPoison,
   tickDefenderHitPoison,
 } from './defender-hit-poison';
-import { MAP_SIZE } from './grid';
+import { battleMapSize, type BattleMapSize } from './grid';
 import { presentBuilding, targetableBuilding } from './hidden-tesla';
 import { flag, nativeRow, num, seconds as nativeSeconds, text, tiles } from './native-data';
 import { castNativeSpell, stepNativeSpells, type NativeSpellContext } from './native-spells';
@@ -429,7 +429,9 @@ export function spawnNativeUnit(
   const battle = ctx.battle;
   const count = nativeUnitLevels(kind);
   const s = nativeUnitStats(kind, Math.max(1, Math.min(count, level)));
-  const spot = s.flying ? clampToMap(x, y) : openGround(ctx.buildings, x, y);
+  const spot = s.flying
+    ? clampToMap(x, y, battleMapSize(battle))
+    : openGround(ctx.buildings, x, y, battleMapSize(battle));
   const unit: Unit = {
     id: ctx.nextId(),
     kind,
@@ -453,14 +455,14 @@ export function spawnNativeUnit(
   ctx.effect({ type: 'spawn', x: unit.x, y: unit.y });
   return unit;
 }
-function clampToMap(x: number, y: number) {
+function clampToMap(x: number, y: number, mapSize: BattleMapSize) {
   return {
-    x: Math.max(0.5, Math.min(MAP_SIZE - 0.5, x)),
-    y: Math.max(0.5, Math.min(MAP_SIZE - 0.5, y)),
+    x: Math.max(0.5, Math.min(mapSize - 0.5, x)),
+    y: Math.max(0.5, Math.min(mapSize - 0.5, y)),
   };
 }
 /** Ground units never appear inside a standing footprint; search outward one ring at a time. */
-function openGround(buildings: Building[], x: number, y: number) {
+function openGround(buildings: Building[], x: number, y: number, mapSize: BattleMapSize) {
   const solid = (px: number, py: number) =>
     buildings.some(
       (b) =>
@@ -472,7 +474,7 @@ function openGround(buildings: Building[], x: number, y: number) {
         px < b.x + BUILDINGS[b.kind].size &&
         py < b.y + BUILDINGS[b.kind].size,
     );
-  const start = clampToMap(x, y);
+  const start = clampToMap(x, y, mapSize);
   if (!solid(start.x, start.y)) return start;
   for (let ring = 1; ring < 8; ring++)
     for (let i = 0; i < ring * 8; i++) {
@@ -480,6 +482,7 @@ function openGround(buildings: Building[], x: number, y: number) {
       const p = clampToMap(
         start.x + Math.cos(angle) * ring * 0.5,
         start.y + Math.sin(angle) * ring * 0.5,
+        mapSize,
       );
       if (!solid(p.x, p.y)) return p;
     }
@@ -569,7 +572,12 @@ function chooseTarget(ctx: NativeTroopContext, u: Unit, base: NativeUnitStats) {
     if (hall) return hall;
   }
   if (s.preferredClass === 'Wall') {
-    const breach = breachTarget(u, ctx.buildings, !!ctx.battle.nativeSubtiles);
+    const breach = breachTarget(
+      u,
+      ctx.buildings,
+      !!ctx.battle.nativeSubtiles,
+      battleMapSize(ctx.battle),
+    );
     if (breach) return breach;
   }
   const targetable = ctx.isTargetable ?? ((v: Building) => targetableBuilding(battle, v));
@@ -641,7 +649,7 @@ interface GroupWeights {
   anchors: Unit[];
 }
 const groupWeightCache = new WeakMap<Battle, GroupWeights>();
-/** Numeric cell keys; units stay within a few tiles of the 48-tile map. */
+/** Numeric cell keys; units stay within a few tiles of either supported battle board. */
 const groupCell = (cx: number, cy: number) => (cx + 1024) * 4096 + (cy + 1024);
 function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats, following: boolean) {
   // Snapshot the living units once per tick; weigh an anchor only when a follower in range
@@ -1533,6 +1541,9 @@ export function stepNativeUnit(
         routeBuildings(ctx, jumping),
         s.range,
         !!ctx.battle.nativeSubtiles,
+        [],
+        false,
+        battleMapSize(ctx.battle),
       );
       u.pathAt = 1.5;
     }
@@ -1543,7 +1554,7 @@ export function stepNativeUnit(
     // Index-only: a miss means no wall on that tile, which is nearly every waypoint.
     // The linear scan survives only for contexts built without the index (tests).
     const hit =
-      ctx.wallTile?.get(Math.floor(next.y) * MAP_SIZE + Math.floor(next.x)) ??
+      ctx.wallTile?.get(Math.floor(next.y) * battleMapSize(ctx.battle) + Math.floor(next.x)) ??
       (ctx.wallTile
         ? undefined
         : battle.buildings.find(
@@ -2554,7 +2565,9 @@ function stepRuinWitch(
   ruin.phase = 'seek';
   const consumed = (battle.consumedRubble ??= []),
     routes = battle.nativeRuinWitchRubbleRoutes ? routeBuildings(ctx, false) : undefined,
-    reaches = routes ? pathReachability(u, routes, !!battle.nativeSubtiles) : undefined;
+    reaches = routes
+      ? pathReachability(u, routes, !!battle.nativeSubtiles, battleMapSize(battle))
+      : undefined;
   let pile = battle.buildings.find((b) => b.id === ruin.rubble && !consumed.includes(b.id));
   if (reaches && pile && (buildingHidden(battle, pile) || !reaches(pile))) pile = undefined;
   if (!pile) {
@@ -2584,13 +2597,16 @@ function stepRuinWitch(
   }
   if (!u.path.length || u.pathAt <= 0) {
     u.path = routes
-      ? findPath(u, pile, routes, 1, !!battle.nativeSubtiles, [], true)
+      ? findPath(u, pile, routes, 1, !!battle.nativeSubtiles, [], true, battleMapSize(battle))
       : findPath(
           u,
           { x: pile.x, y: pile.y, level: pile.level, kind: pile.kind } as Building,
           ctx.buildings.filter((b) => b.hp > 0),
           1,
           !!ctx.battle.nativeSubtiles,
+          [],
+          false,
+          battleMapSize(ctx.battle),
         );
     u.pathAt = 1.5;
   }
@@ -2902,6 +2918,9 @@ function stepNativeHealer(
             routeBuildings(ctx, s.jumper),
             s.range,
             !!battle.nativeSubtiles,
+            [],
+            false,
+            battleMapSize(battle),
           );
           u.pathAt = 0.3;
         }

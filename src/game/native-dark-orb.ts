@@ -1,6 +1,6 @@
 import { BUILDINGS } from './data';
 import { distance2D } from './distance';
-import { MAP_SIZE } from './grid';
+import { battleMapSize } from './grid';
 import type { Unit } from './model';
 import { abilityProjectileTargets } from './native-ability-targets';
 import { nativeRow, num, seconds, text, tiles } from './native-data';
@@ -46,7 +46,7 @@ export function launchDarkOrb(
     speed = num(row, 'Speed') / 100;
   const edge = (origin: number, direction: number) =>
     direction > 0
-      ? (MAP_SIZE - origin) / direction
+      ? (battleMapSize(battle) - origin) / direction
       : direction < 0
         ? -origin / direction
         : Infinity;

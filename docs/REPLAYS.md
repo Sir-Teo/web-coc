@@ -1881,3 +1881,12 @@ released shots and already spawned troops. It does not free the deployment slot.
 Replay viewers cannot activate it. Versions before 232 and armies without a
 siege reject this input; prior complete states remain unchanged. The portable
 file envelope remains version 1. See [source abilities, controls and validation](../reference/manual-siege-release/README.md).
+
+## Version 233: full-map Practice bounds
+
+Fixed-army Practice lessons with source `UseFullMapSize` use a 52-cell board.
+Their original guide targets can reach converted tile 51. Deployment, movement,
+collision, effects and replay validation share these bounds. The board size is
+derived from version, stage and mode; it is not a trusted field in portable replay
+input. Versions 232 and earlier preserve their original geometry. Other battles
+and home saves retain their existing bounds.

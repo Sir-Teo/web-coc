@@ -70,13 +70,20 @@ preserving their immunity to the ordinary stun. This uses the spell's existing
 footprint radius; underground routes and surfaced attack timing are unchanged.
 See [source fields and replay checks](../reference/battle-drill-surface-walls/README.md).
 
-## Full-map battle infrastructure
+## Full-map Practice battles
 
-The routing and crowd helpers accept an explicit 52-cell battle board for the
-full-map Practice work. Their default remains 48; battle creation, replay versions
-and map availability have not changed yet. This is preparatory infrastructure,
-not an unlock of the withheld layouts. Home placement and save geometry remain
-unchanged.
+Replay version 233 selects a 52-cell battle board for fixed-army Practice lessons
+whose pinned source row has `UseFullMapSize=TRUE`. Source guide targets reach local
+tile 51 after the two-tile conversion. New lessons retain those targets instead of
+clamping them to tile 47. Goblin battles, ladder matches, the home village and
+recordings through version 232 retain their existing board sizes. The home save
+format and placement limits are unchanged.
+
+Deployment, spells, routes, crowd separation, secondary spawns, pushback, vortex
+movement, hero dashes and piercing effects use the battle's bounds. Keyboard input,
+the deployment raster, terrain coverage and camera limits use the same size.
+Portable replay validation derives these bounds from the version, source stage
+and fixed-army mode, rather than trusting an imported board-size field.
 
 Whole-tile and sub-tile collision caches include the board stride in their key.
 Collision closures retain that stride, so switching boards cannot change an

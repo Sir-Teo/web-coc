@@ -1,3 +1,4 @@
+import { battleMapSize } from './grid';
 import {
   characterLevel,
   defenceTroopLevel,
@@ -295,6 +296,9 @@ function walk(
       nonWallBuildings(battle),
       range,
       !!battle.nativeSubtiles,
+      [],
+      false,
+      battleMapSize(battle),
     );
     builder.pathAt = 0.3;
   }

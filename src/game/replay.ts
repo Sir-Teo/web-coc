@@ -30,7 +30,7 @@ import {
   validCampaignCatalog,
   type CampaignCatalog,
 } from './campaign-catalog';
-import { NATIVE_SCENERY, type CampaignScenery } from './native-campaign';
+import { NATIVE_CAMPAIGN, NATIVE_SCENERY, type CampaignScenery } from './native-campaign';
 import { validNpcBuilding, npcMaxLevel } from './npc-buildings';
 import {
   validCampaignResources,
@@ -44,7 +44,7 @@ import { validXbowMode } from './xbow-stats';
 import { initializeGarrison, isGarrisonBunker, type GarrisonSetup } from './garrison-release';
 import { createGarrisonReserve, MAX_GARRISON_TROOPS } from './garrison-reserve';
 import { garrisonStats, garrisonTroopVersion } from './garrison-kinds';
-import { gridSize, footprintSize, type GridVersion } from './grid';
+import { FULL_MAP_SIZE, MAP_SIZE, gridSize, footprintSize, type GridVersion } from './grid';
 import {
   BUILDINGS,
   MAX_TOWNHALL,
@@ -66,7 +66,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 232;
+export const REPLAY_VERSION = 233;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -422,6 +422,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 229 ||
   version === 230 ||
   version === 231 ||
+  version === 232 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -570,9 +571,25 @@ export interface ReplayPlayback {
   duration: number;
   complete: boolean;
 }
+/** New full-map bounds apply only to source Practice lessons with a fixed army. */
+function fullMapPractice(
+  s: Pick<ReplaySetup, 'catalog' | 'index' | 'fixedArmy' | 'practice' | 'ladder'>,
+  version: number,
+) {
+  return (
+    version >= 233 &&
+    s.catalog === 'goblin-v1' &&
+    s.fixedArmy === true &&
+    Number.isInteger(s.index) &&
+    !s.practice &&
+    !s.ladder &&
+    NATIVE_CAMPAIGN[s.index]?.useFullMapSize === true
+  );
+}
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   const launcher = version >= 223 && s.army.trooplauncher > 0;
   return {
+    ...(fullMapPractice(s, version) ? { boardSize: FULL_MAP_SIZE } : {}),
     ...(version >= 232 && TROOP_KEYS.some((kind) => isSiege(kind) && s.army[kind] > 0)
       ? { nativeSiegeManualRelease: true as const }
       : {}),
@@ -1109,6 +1126,7 @@ const counts = (v: unknown, keys: readonly string[], min: number, max: number) =
 export function validateReplay(value: unknown): value is ReplayData {
   if (!object(value) || !integer(value.version, 1, 1000000) || !object(value.initial)) return false;
   const s = value.initial;
+  const fullMapSize = fullMapPractice(s as ReplaySetup, value.version) ? FULL_MAP_SIZE : MAP_SIZE;
   // The native roster arrived with version 51; earlier recordings carry the ten original troops.
   const troopKeys =
     value.version >= 52
@@ -1199,8 +1217,8 @@ export function validateReplay(value: unknown): value is ReplayData {
           object(o) &&
           integer(o.data, 0, 1e9) &&
           Object.hasOwn(NATIVE_SCENERY, o.data) &&
-          integer(o.x, 0, 48 - NATIVE_SCENERY[o.data].size) &&
-          integer(o.y, 0, 48 - NATIVE_SCENERY[o.data].size),
+          integer(o.x, 0, fullMapSize - NATIVE_SCENERY[o.data].size) &&
+          integer(o.y, 0, fullMapSize - NATIVE_SCENERY[o.data].size),
       ))
   )
     return false;
@@ -1236,8 +1254,8 @@ export function validateReplay(value: unknown): value is ReplayData {
           !Number.isFinite(h.y) ||
           h.x < 0 ||
           h.y < 0 ||
-          h.x > gridSize(4) ||
-          h.y > gridSize(4),
+          h.x > fullMapSize ||
+          h.y > fullMapSize,
       ))
   )
     return false;
@@ -1322,7 +1340,7 @@ export function validateReplay(value: unknown): value is ReplayData {
   }
   const ids = new Set<number>();
   const gridVersion: GridVersion = value.version < 12 ? 2 : value.version < 13 ? 3 : 4;
-  const mapSize = gridSize(gridVersion);
+  const mapSize = value.version >= 233 ? fullMapSize : gridSize(gridVersion);
   for (const b of s.buildings) {
     if (!object(b) || !Object.hasOwn(BUILDINGS, b.kind)) return false;
     const d = BUILDINGS[b.kind as keyof typeof BUILDINGS];

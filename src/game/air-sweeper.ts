@@ -1,7 +1,7 @@
 import { unitHidden } from './native-status';
 import { distance2D } from './distance';
 import { BUILDINGS, TROOPS } from './data';
-import { MAP_SIZE } from './grid';
+import { MAP_SIZE, type BattleMapSize } from './grid';
 import { SWEEPER, sweeperStats } from './air-control-stats';
 import type { Battle, Building, FX, Unit } from './model';
 import { buildingsOfKind } from './building-lists';
@@ -202,12 +202,12 @@ export function stepSweepers(b: Battle, dt: number, effect: (fx: FX) => void) {
 }
 
 /** Displacement is independent of Rage and cancels attacks until the push ends. */
-export function stepAirPush(u: Unit, dt: number) {
+export function stepAirPush(u: Unit, dt: number, mapSize: BattleMapSize = MAP_SIZE) {
   const push = u.airPush;
   if (!push) return false;
   const travel = Math.min(dt, push.remaining);
-  u.x = Math.max(0, Math.min(MAP_SIZE, u.x + push.x * travel));
-  u.y = Math.max(0, Math.min(MAP_SIZE, u.y + push.y * travel));
+  u.x = Math.max(0, Math.min(mapSize, u.x + push.x * travel));
+  u.y = Math.max(0, Math.min(mapSize, u.y + push.y * travel));
   u.attacking = false;
   u.cooldown = Math.max(0, u.cooldown - travel);
   push.remaining -= travel;

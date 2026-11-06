@@ -14,7 +14,7 @@ it('keeps every native village and its source-verified opening, branches and bos
   const goblin = catalog.stages.filter((s: any) => s.family === 'goblin');
   const challenges = catalog.stages.filter((s: any) => s.family === 'challenge');
   expect(goblin).toHaveLength(90);
-  // All six withheld Challenges exceed the current board. Three also need defender
+  // All six withheld Challenges exceeded the legacy 48-cell board. Three also need defender
   // captures or behavior; the pinned readiness audit records the combined blockers.
   expect(challenges).toHaveLength(13);
   expect(Object.keys(catalog.withheld)).toHaveLength(6);

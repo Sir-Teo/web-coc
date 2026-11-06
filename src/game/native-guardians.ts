@@ -1,3 +1,4 @@
+import { battleMapSize } from './grid';
 import { nonWallBuildings } from './building-lists';
 import { defenderHitPoisonScales } from './defender-hit-poison';
 import { defenderFrostScales } from './defender-frost';
@@ -338,7 +339,16 @@ function moveToward(
 ) {
   if (!g.path.length || g.pathAt <= 0) {
     // Guardians cross their own walls like other home defenders.
-    g.path = findPath(g, goal, nonWallBuildings(battle), range);
+    g.path = findPath(
+      g,
+      goal,
+      nonWallBuildings(battle),
+      range,
+      false,
+      [],
+      false,
+      battleMapSize(battle),
+    );
     g.pathAt = 0.3;
   }
   let travel = speed * dt;

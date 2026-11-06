@@ -544,12 +544,13 @@ function searchSubtilePath(
 export function groundCollision(
   battle: { nativeSubtiles?: true; boardSize?: BattleMapSize },
   buildings: readonly Building[],
-) {
+): GroundCollision {
   const mapSize = battleMapSize(battle);
   const SIZE = mapSize * SUBTILES;
   if (battle.nativeSubtiles) {
     const solid = subtileSolid(buildings, mapSize);
     return {
+      mapSize,
       cell: (x: number, y: number) => Math.floor(y * SUBTILES) * SIZE + Math.floor(x * SUBTILES),
       solid,
     };
@@ -562,6 +563,10 @@ export function groundCollision(
         for (let y = b.y; y < b.y + size; y++) tiles.add(y * mapSize + x);
     }
   const cell = (x: number, y: number) => Math.floor(y) * mapSize + Math.floor(x);
-  return { cell, solid: (x: number, y: number) => tiles.has(cell(x, y)) };
+  return { mapSize, cell, solid: (x: number, y: number) => tiles.has(cell(x, y)) };
 }
-export type GroundCollision = ReturnType<typeof groundCollision>;
+export interface GroundCollision {
+  mapSize?: BattleMapSize;
+  cell: (x: number, y: number) => number;
+  solid: (x: number, y: number) => boolean;
+}

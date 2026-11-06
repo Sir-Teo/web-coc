@@ -1,3 +1,4 @@
+import { battleMapSize } from './grid';
 import { poisonAvoidanceTarget } from './poison-avoidance';
 import { defenderHitPoisonScales } from './defender-hit-poison';
 import { defenderFrostScales } from './defender-frost';
@@ -118,6 +119,10 @@ export function stepDefendingHeroes(battle: Battle, dt: number, effect: (fx: FX)
         escape ?? dummy,
         battle.buildings.filter((b) => b.hp > 0 && b.kind !== 'wall'),
         target ? stats.range : 0.1,
+        false,
+        [],
+        false,
+        battleMapSize(battle),
       );
       d.pathAt = 1;
     }

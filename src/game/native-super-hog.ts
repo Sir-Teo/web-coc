@@ -1,4 +1,4 @@
-import { MAP_SIZE } from './grid';
+import { battleMapSize } from './grid';
 import { distance2D } from './distance';
 import { nativeRow, num, text, tiles } from './native-data';
 import { nativeUnitStats, unitKindForName } from './native-units';
@@ -55,7 +55,7 @@ export function superHogLanding(
     x = length > 1e-9 ? dx / length : Math.SQRT1_2,
     y = length > 1e-9 ? dy / length : Math.SQRT1_2;
   return {
-    x: Math.max(0.5, Math.min(MAP_SIZE - 0.5, unit.x - x * range)),
-    y: Math.max(0.5, Math.min(MAP_SIZE - 0.5, unit.y - y * range)),
+    x: Math.max(0.5, Math.min(battleMapSize(battle) - 0.5, unit.x - x * range)),
+    y: Math.max(0.5, Math.min(battleMapSize(battle) - 0.5, unit.y - y * range)),
   };
 }

@@ -1,6 +1,6 @@
 import { distance2D } from './distance';
 import { BUILDINGS, TROOPS, type BuildingKind } from './data';
-import { MAP_SIZE } from './grid';
+import { battleMapSize } from './grid';
 import { flag, nativeGlobal, nativeRow, num, seconds, text, tiles } from './native-data';
 import { castNativeSpell, type NativeSpellCast } from './native-spells';
 import { hurtUnit, unitTriggersTraps } from './native-status';
@@ -145,7 +145,13 @@ export function fling(battle: Battle, u: Unit, x: number, y: number, distance: n
   while (travel + 0.1 <= distance + 1e-9) {
     const px = u.x + nx * (travel + 0.1),
       py = u.y + ny * (travel + 0.1);
-    if (px < 0.5 || py < 0.5 || px > MAP_SIZE - 0.5 || py > MAP_SIZE - 0.5) break;
+    if (
+      px < 0.5 ||
+      py < 0.5 ||
+      px > battleMapSize(battle) - 0.5 ||
+      py > battleMapSize(battle) - 0.5
+    )
+      break;
     let blocked = false;
     for (const s of solids) {
       if (px > s.x0 && px < s.x1 && py > s.y0 && py < s.y1) {

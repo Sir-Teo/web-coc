@@ -5,7 +5,7 @@ import raw from '../../reference/campaign/runtime.json' with { type: 'json' };
 import forged from '../../reference/campaign/generated.json' with { type: 'json' };
 import { BUILDINGS, defenseDamage, type BuildingKind } from './data';
 import { HERO_KINDS, HERO_SOURCE, heroMaxLevel } from './native-hero-data';
-import { BUILD_MIN, MAP_SIZE } from './grid';
+import { BUILD_MIN, MAP_SIZE, FULL_MAP_SIZE } from './grid';
 import { NPC_BUILDINGS, type NpcBuildingKind } from './npc-buildings';
 import type { Building } from './model';
 import { XBOW } from './xbow-stats';
@@ -23,6 +23,8 @@ export interface NativeStage {
   family?: 'goblin' | 'challenge' | 'forged';
   dependencies: number[];
   alwaysUnlocked: boolean;
+  /** Source UseFullMapSize: full-map Practice bounds, enabled by replay version. */
+  useFullMapSize?: true;
   gold: number;
   elixir: number;
   darkElixir: number;
@@ -213,6 +215,7 @@ export function nativeCampaignIssues(index: number): string[] {
   if (!stage) return ['Unknown village'];
   const npcIds = goblinMap(stage) ? NPC_IDS : {};
   const issues = new Set<string>();
+  const mapSize = stage.useFullMapSize ? FULL_MAP_SIZE : MAP_SIZE;
   if (stage.allianceDefenders.length && !resolvedCampaignGarrison(index))
     issues.add('Garrison defenders');
   for (const issue of nativeDefenseModes(stage).issues) issues.add(issue);
@@ -238,10 +241,10 @@ export function nativeCampaignIssues(index: number): string[] {
       !Number.isInteger(y) ||
       x + BUILD_MIN < 0 ||
       y + BUILD_MIN < 0 ||
-      x + BUILD_MIN + stats.size > MAP_SIZE ||
-      y + BUILD_MIN + stats.size > MAP_SIZE
+      x + BUILD_MIN + stats.size > mapSize ||
+      y + BUILD_MIN + stats.size > mapSize
     )
-      issues.add(`${stats.name} footprint outside ${MAP_SIZE}-tile board`);
+      issues.add(`${stats.name} footprint outside ${mapSize}-tile board`);
     if (
       level >
       (npc

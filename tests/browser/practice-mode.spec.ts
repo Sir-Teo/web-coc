@@ -302,3 +302,41 @@ for (const viewport of [
     expect(overlaps).toEqual({ enemy: false, destruction: false, tray: false, inside: true });
   });
 }
+
+test('full-map guide reaches the original Queen deployment beyond the old board edge', async ({
+  page,
+}) => {
+  await boot(page, 12);
+  await page.locator('.modal [data-action="close"]').tap();
+  const source = await page.evaluate(async () => {
+    const { PRACTICE_LEVELS } = await import('/src/game/practice-mode.ts');
+    const level = PRACTICE_LEVELS.find((l) => l.id === 'CHALLENGE_TH9_LAVALOON')!;
+    const step = level.steps.find((s) => s.at?.x === 51)!;
+    const m = window.__game.model;
+    m.startCampaign(level.stage! - 1);
+    m.practiceGuide = { steps: [step], index: 0, placed: 0, elapsed: 0 };
+    (m as unknown as { beginGuideStep(): void }).beginGuideStep();
+    m.changed();
+    return { at: step.at, spot: m.practiceGuide!.spot, size: m.battle!.boardSize };
+  });
+  expect(source).toEqual({ at: { x: 51, y: 29 }, spot: { x: 51, y: 29 }, size: 52 });
+  await page.waitForTimeout(500);
+  const point = await page.evaluate(() => window.__game.scene.screenFor(51, 29));
+  expect(point.x).toBeGreaterThan(0);
+  expect(point.x).toBeLessThan(390);
+  expect(point.y).toBeGreaterThan(100);
+  expect(point.y).toBeLessThan(700);
+  await page.screenshot({ path: 'output/playtest/practice-full-map-queen-390.png' });
+  await page.touchscreen.tap(point.x, point.y);
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__game.model.battle!.units.some((u) => u.hero === 'queen')),
+    )
+    .toBe(true);
+  const action = await page.evaluate(() => {
+    const m = window.__game.model;
+    m.finishBattle();
+    return m.state.raidLog![0].replay!.actions[0];
+  });
+  expect(action).toMatchObject({ type: 'hero', hero: 'queen', x: 51, y: 29 });
+});

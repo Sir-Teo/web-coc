@@ -1,6 +1,6 @@
 import { distance2D } from './distance';
 import { BUILDINGS, TROOPS, isDefense, isTrap } from './data';
-import { MAP_SIZE } from './grid';
+import { battleMapSize } from './grid';
 import { concealedTesla } from './hidden-tesla';
 import { flag, nativeRow, num, text, tiles } from './native-data';
 import {
@@ -1163,7 +1163,13 @@ export function knockback(
   while (travel + step <= distance + EPS) {
     const px = u.x + nx * (travel + step),
       py = u.y + ny * (travel + step);
-    if (px < 0.5 || py < 0.5 || px > MAP_SIZE - 0.5 || py > MAP_SIZE - 0.5) break;
+    if (
+      px < 0.5 ||
+      py < 0.5 ||
+      px > battleMapSize(ctx.battle) - 0.5 ||
+      py > battleMapSize(ctx.battle) - 0.5
+    )
+      break;
     if (
       !flying &&
       ctx.battle.buildings.some(

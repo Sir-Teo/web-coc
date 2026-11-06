@@ -1,7 +1,7 @@
 import { groundCollision, type GroundCollision } from './subtile-path';
 import { BUILDINGS, TROOPS } from './data';
 import { distance2D } from './distance';
-import { MAP_SIZE } from './grid';
+import { MAP_SIZE, type BattleMapSize } from './grid';
 import { concealedTesla } from './hidden-tesla';
 import { lateBuildingHidden, type LateCombatContext } from './late-campaign';
 import type { Battle, Building, Unit } from './model';
@@ -163,6 +163,7 @@ export function tornadoCarryPoint(
   center: { x: number; y: number },
   u: Pick<Unit, 'x' | 'y' | 'kind' | 'hero'>,
   time: number,
+  mapSize: BattleMapSize = MAP_SIZE,
 ) {
   const dx = u.x - center.x,
     dy = u.y - center.y,
@@ -178,12 +179,18 @@ export function tornadoCarryPoint(
     sin = (2 * half) / denominator,
     scale = radius / r;
   return {
-    x: Math.max(0, Math.min(MAP_SIZE, center.x + (dx * cos - dy * sin) * scale)),
-    y: Math.max(0, Math.min(MAP_SIZE, center.y + (dx * sin + dy * cos) * scale)),
+    x: Math.max(0, Math.min(mapSize, center.x + (dx * cos - dy * sin) * scale)),
+    y: Math.max(0, Math.min(mapSize, center.y + (dx * sin + dy * cos) * scale)),
   };
 }
 function carry(vortex: TornadoVortex, u: Unit, time: number, solid: GroundCollision) {
-  const { x, y } = tornadoCarryPoint(tornadoTrapStats(vortex.level), vortex, u, time);
+  const { x, y } = tornadoCarryPoint(
+    tornadoTrapStats(vortex.level),
+    vortex,
+    u,
+    time,
+    solid.mapSize,
+  );
   if (!TROOPS[u.kind].flying && solid.cell(x, y) !== solid.cell(u.x, u.y) && solid.solid(x, y))
     return;
   u.x = x;

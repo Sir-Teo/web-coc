@@ -97,7 +97,11 @@ export const spawnAngle = (defender: { id: number }, index: number, count: numbe
  */
 export function nearestPassable(collision: GroundCollision, x: number, y: number) {
   const free = (px: number, py: number) =>
-    px >= 0 && py >= 0 && px < MAP_SIZE && py < MAP_SIZE && !collision.solid(px, py);
+    px >= 0 &&
+    py >= 0 &&
+    px < (collision.mapSize ?? MAP_SIZE) &&
+    py < (collision.mapSize ?? MAP_SIZE) &&
+    !collision.solid(px, py);
   if (free(x, y)) return { x, y };
   let best: { x: number; y: number; d: number } | undefined;
   for (let sy = Math.floor(y * 2) - 6; sy <= Math.floor(y * 2) + 6; sy++)
@@ -143,7 +147,13 @@ function makePush(
       const f = i / samples;
       const px = from.x + vector.x * f,
         py = from.y + vector.y * f;
-      if (px < 0 || py < 0 || px >= MAP_SIZE || py >= MAP_SIZE || collision.solid(px, py)) {
+      if (
+        px < 0 ||
+        py < 0 ||
+        px >= (collision.mapSize ?? MAP_SIZE) ||
+        py >= (collision.mapSize ?? MAP_SIZE) ||
+        collision.solid(px, py)
+      ) {
         limit = (i - 1) / samples;
         break;
       }
