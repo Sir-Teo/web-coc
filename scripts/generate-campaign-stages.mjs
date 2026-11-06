@@ -27,12 +27,17 @@ const MARGIN = 3;
 const RINGS = 3;
 
 const runtime = JSON.parse(fs.readFileSync(RUNTIME, 'utf8'));
+// Preserve the original forged layouts and stages 104–150 when more source lessons arrive.
+// Their seed roster is a versioned input, not the current imported campaign length.
+const seedStages = runtime.stages.filter((stage) => stage.stage <= 103);
+if (seedStages.length !== 103 || seedStages.some((stage, index) => stage.stage !== index + 1))
+  throw new Error('Forged seed must retain the original 103 imported villages');
 const combat = Object.fromEntries(
   Object.entries(runtime.combat).map(([id, value]) => [Number(id), value]),
 );
 /** Levels of each entity that an imported village already places. */
 const proven = new Map();
-for (const stage of runtime.stages)
+for (const stage of seedStages)
   for (const list of [stage.buildings, stage.traps])
     for (const [id, , , level] of list) {
       if (!proven.has(id)) proven.set(id, new Set());
@@ -285,10 +290,10 @@ function village(index, count) {
   }
   const loot = 120000 + index * 22000;
   return {
-    stage: runtime.stages.length + index + 1,
+    stage: seedStages.length + index + 1,
     name: NAMES[index],
     family: 'forged',
-    dependencies: [runtime.stages.length + index],
+    dependencies: [seedStages.length + index],
     alwaysUnlocked: false,
     gold: loot,
     elixir: loot,
@@ -306,7 +311,7 @@ function village(index, count) {
   };
 }
 
-const count = CAMPAIGN_LENGTH - runtime.stages.length;
+const count = CAMPAIGN_LENGTH - seedStages.length;
 if (count > NAMES.length) throw new Error(`Only ${NAMES.length} names for ${count} villages`);
 const stages = Array.from({ length: count }, (_, index) => village(index, count));
 for (const stage of stages) {
