@@ -109,6 +109,26 @@ for (const [width, height] of [
   });
 }
 
+test('a refused share sheet copies the link and preserves the import draft', async ({ page }) => {
+  await ready(page);
+  await clipboard(page);
+  await page.locator('#army-code').fill('draft');
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, 'share', {
+      value: async () => {
+        throw new DOMException('Blocked', 'NotAllowedError');
+      },
+      configurable: true,
+    });
+  });
+  await page.locator('[data-action="army-share:current"]').click();
+  await expect(page.locator('#toast')).toContainText('Army link copied');
+  await expect(page.locator('#army-code')).toHaveValue('draft');
+  const link = await page.evaluate(() => window.__copied as string);
+  expect(decodeArmy(new URL(link).hash.slice('#army='.length))?.army.swordsman).toBe(4);
+  await page.screenshot({ path: 'output/playtest/army-share-clipboard-fallback.png' });
+});
+
 for (const refused of ['share', 'clipboard'] as const) {
   test(`refused ${refused} leaves an army link selected for copying by hand`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });

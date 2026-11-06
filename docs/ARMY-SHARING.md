@@ -3,7 +3,8 @@
 Open **Quick armies** from the Army drawer. **Share current army** shares the
 active composition; each saved slot also has **Share**. A phone's share sheet
 opens where supported, otherwise the link is copied to the clipboard. If the
-browser refuses sharing or copying, a selected link appears in the Army link
+share sheet cannot open, copying to the clipboard is tried next. If copying also
+fails, a selected link appears in the Army link
 field for copying by hand. Dismissing a share sheet leaves the current draft
 alone.
 

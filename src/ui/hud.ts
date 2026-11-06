@@ -4569,16 +4569,20 @@ export class HUD {
     const code = this.model.armyShareCode(slot);
     if (!code) return;
     const link = armyLink(location.href, code);
-    try {
-      if (navigator.share) {
+    if (navigator.share) {
+      try {
         await navigator.share({ title: 'Crown & Clan army', url: link });
         return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
       }
+    }
+    try {
       await navigator.clipboard.writeText(link);
       this.model.notify('Army link copied.');
       return;
-    } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') return;
+    } catch {
+      // A browser may refuse both APIs; retain the selectable manual-copy fallback.
     }
     this.sharedArmyCode = link;
     this.render();
