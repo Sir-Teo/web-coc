@@ -1988,6 +1988,25 @@ background work, audio lifecycle, battery saver, phone density and save recovery
 source/test typing, the production build, formatting, documentation links and content
 inventory reproduction also pass.
 
+## Sticky defense targets
+
+Single-target native defenses now validate their current target before building a full
+candidate list. Retargeting still uses the same eligibility, facing cone, hero preference,
+random selection and distance/ID tie rules. Health, invisibility and range are checked live.
+There is no target cache to invalidate and no combat or save version change.
+
+`node scripts/defense-targeting-benchmark.mjs` isolates 40 sticky defenses against 512 units
+for 400 ticks, including one target death. `--baseline=REF` loads the selected revision's
+defense implementation in memory without changing the working tree. Two warm-up runs precede
+five measured runs; compare the median and final battle hash on the same host. A November 6
+cloud run measured approximately 400 ms before and 25 ms after, with identical hashes.
+This is targeting CPU time for a synthetic workload, not total battle time or a frame-rate
+guarantee. The full-roster stage-61 simulation also retains its previous battle hash.
+
+Regression cases keep a valid target when a closer attacker arrives, then replace it after
+death, invisibility or leaving range. Existing native defense combat and replay cases retain
+their coverage of projectiles, retarget delays, bursts, facing and targeting modes.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

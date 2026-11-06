@@ -20,6 +20,7 @@ import {
 } from '../src/game/native-defense-stats';
 import { validateReplay } from '../src/game/replay';
 import { validateSave } from '../src/game/save';
+import { unitEffects } from '../src/game/native-status';
 
 type Placement = [BuildingKind, number, number, number?, Partial<Building>?];
 function arena(
@@ -191,6 +192,26 @@ describe('native defense combat', () => {
     expect(lost(giant) % expected).toBeLessThan(1e-6);
     expect(lost(giant)).toBeGreaterThanOrEqual(expected - 1e-6);
   });
+
+  for (const reason of ['dead', 'hidden', 'out of range'] as const)
+    it(`keeps a valid Monolith target over a closer arrival, then replaces it when ${reason}`, () => {
+      const m = arena([['monolith', 20, 20, 1]], { giant: 2 });
+      const first = deploy(m, 'giant', 21.5, 14)[0];
+      first.springUntil = 1e9;
+      run(m, 0.05);
+      expect(m.battle!.nativeDefenses![10].target).toBe(first.id);
+      const closer = deploy(m, 'giant', 21.5, 12)[0];
+      closer.x = 21.5;
+      closer.y = 17;
+      closer.springUntil = 1e9;
+      run(m, 0.05);
+      expect(m.battle!.nativeDefenses![10].target).toBe(first.id);
+      if (reason === 'dead') first.hp = 0;
+      else if (reason === 'hidden') unitEffects(first).invisibleUntil = 1e9;
+      else first.y = 1;
+      run(m, 0.05);
+      expect(m.battle!.nativeDefenses![10].target).toBe(closer.id);
+    });
 
   it('ricochets a Ricochet Cannon shot to a second ground unit for 70%', () => {
     const m = arena([['ricochetcannon', 20, 20, 1]], { giant: 2 });

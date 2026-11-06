@@ -19,6 +19,7 @@ ordinary development needs only `npm ci` and `npm run dev`.
 | `previous-art-release.mjs`                    | Create the in-memory previous-release fixture for worker update checks |
 | `app-icons.mjs`                               | Render the home-screen icons from `public/favicon.svg` (`--check`)     |
 | `battle-load-benchmark.mjs`, `battle-sim-benchmark.mjs` | Measure browser rendering and deterministic simulation CPU separately |
+| `defense-targeting-benchmark.mjs` | Measure sticky defense target validation; `--baseline=REF` compares a prior implementation without editing the working tree |
 | `content-inventory.py`                        | Generate/check the content inventory                                   |
 
 Do not infer that a script is unused because it is absent from `package.json`.

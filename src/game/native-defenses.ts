@@ -494,9 +494,19 @@ function stepSingle(
   stepQueue(ctx, tower, state, weapon, battleTime);
   if (state.queue?.length) return;
   if (state.ammo !== undefined && state.ammo <= 0) return;
-  const candidates = eligible(battle, tower, weapon, at).filter((u) => inCone(tower, weapon, u));
-  let target = candidates.find((u) => u.id === state.target);
+  // Sticky weapons keep the first eligible matching id. Validate it directly before
+  // allocating and sorting a candidate list; health, concealment and range remain live.
+  let target =
+    state.target === undefined
+      ? undefined
+      : battle.units.find(
+          (u) =>
+            u.id === state.target &&
+            eligibleUnit(tower, weapon, at, c, u) &&
+            inCone(tower, weapon, u),
+        );
   if (!target) {
+    const candidates = eligible(battle, tower, weapon, at).filter((u) => inCone(tower, weapon, u));
     target = weapon.randomTarget
       ? candidates.sort((a, b) => a.id - b.id)[
           Math.floor(
