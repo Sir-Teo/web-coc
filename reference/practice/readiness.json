@@ -1,0 +1,1388 @@
+{
+  "clientVersion": "18.400.21",
+  "bundle": "7f04bdfdc4124b1f49308423bb8f4aa8b137aae3",
+  "scope": "Footprints, guide targets and captured source coverage; not a combat-parity certificate.",
+  "grid": {
+    "mapSize": 48,
+    "sourceOffset": 2
+  },
+  "coverageCatalogSha256": "11522bf0524e9e3d87977b431d7920e4df5a518bc24c588476225a6742400245",
+  "sources": {
+    "csv/deploy_steps.csv": "44b3e684b62a8cd33b9de3b13d245446d02069a3485263448d52dd7c612d8774",
+    "level/challenge_th10_miner.json": "586d8256e3e0e312f9e3aa250bc96ea0eee83883c7ab5d2d49d82717559b78c0",
+    "level/challenge_th12_dragbat.json": "0408d834cb35d49afb9d2dddfef5af38befacb4d5b5812d620b619587568c4a6",
+    "level/challenge_th12_yeti.json": "5dda28a591f971f243e2da5411d9e5b4ef0918fab9d59ee2b62fd4e4609c20da",
+    "level/challenge_th13_hybrid.json": "60cab4d57544c39db0a4dbd227febd749f90b2236bb9e8f5fb642048cc173639",
+    "level/challenge_th8_gowiva.json": "46cd91aaf600acdf9796700037aa31396bdfa551672d689f2cee4dfd752143af",
+    "level/challenge_th9_babydqw.json": "70ab5cd66af8a7e5bad617d3ca8acff1ddb6e3eda4f69eeba7847f4d84f86dfa",
+    "logic/buildings.csv": "9aed5fed876e2914a22fa7fed688a651c691ab06170d60e2bda8dc9262fbccb1",
+    "logic/characters.csv": "5c3acc5b46ff9e7978f406b540264e65c93a846b69d03cd43326a9853703cb89",
+    "logic/npcs.csv": "99dfcaeb4a622f76d4ed29ce444eedef88e92b49b8e0c574b34eea74e1278d6a",
+    "logic/traps.csv": "757ca07de02b26b2071b52bb3cb495df2f0ae879731a859d3102ca3552dd528c"
+  },
+  "levels": [
+    {
+      "id": "CHALLENGE_TH10_MINER",
+      "name": "Miner Mania",
+      "sourceLayout": "level/challenge_th10_miner.json",
+      "useFullMapSize": true,
+      "minimumBoardAtCurrentOffset": {
+        "width": 47,
+        "height": 49
+      },
+      "outsideFootprints": [
+        {
+          "data": 1000071,
+          "name": "Hero Hall",
+          "level": 2,
+          "sourceId": 500000361,
+          "sourceX": 18,
+          "sourceY": 43,
+          "size": 4,
+          "convertedX": 20,
+          "convertedY": 45,
+          "right": 24,
+          "bottom": 49
+        }
+      ],
+      "defenders": []
+    },
+    {
+      "id": "CHALLENGE_TH12_DRAGBAT",
+      "name": "Flying Circus",
+      "sourceLayout": "level/challenge_th12_dragbat.json",
+      "useFullMapSize": true,
+      "minimumBoardAtCurrentOffset": {
+        "width": 49,
+        "height": 49
+      },
+      "outsideFootprints": [
+        {
+          "data": 1000004,
+          "name": "Gold Mine",
+          "level": 13,
+          "sourceId": 500000001,
+          "sourceX": 28,
+          "sourceY": 44,
+          "size": 3,
+          "convertedX": 30,
+          "convertedY": 46,
+          "right": 33,
+          "bottom": 49
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000260,
+          "sourceX": 31,
+          "sourceY": 46,
+          "size": 1,
+          "convertedX": 33,
+          "convertedY": 48,
+          "right": 34,
+          "bottom": 49
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000261,
+          "sourceX": 32,
+          "sourceY": 46,
+          "size": 1,
+          "convertedX": 34,
+          "convertedY": 48,
+          "right": 35,
+          "bottom": 49
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000262,
+          "sourceX": 33,
+          "sourceY": 46,
+          "size": 1,
+          "convertedX": 35,
+          "convertedY": 48,
+          "right": 36,
+          "bottom": 49
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000263,
+          "sourceX": 46,
+          "sourceY": 33,
+          "size": 1,
+          "convertedX": 48,
+          "convertedY": 35,
+          "right": 49,
+          "bottom": 36
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000264,
+          "sourceX": 46,
+          "sourceY": 34,
+          "size": 1,
+          "convertedX": 48,
+          "convertedY": 36,
+          "right": 49,
+          "bottom": 37
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000265,
+          "sourceX": 46,
+          "sourceY": 35,
+          "size": 1,
+          "convertedX": 48,
+          "convertedY": 37,
+          "right": 49,
+          "bottom": 38
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000266,
+          "sourceX": 46,
+          "sourceY": 36,
+          "size": 1,
+          "convertedX": 48,
+          "convertedY": 38,
+          "right": 49,
+          "bottom": 39
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000267,
+          "sourceX": 46,
+          "sourceY": 37,
+          "size": 1,
+          "convertedX": 48,
+          "convertedY": 39,
+          "right": 49,
+          "bottom": 40
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000268,
+          "sourceX": 46,
+          "sourceY": 38,
+          "size": 1,
+          "convertedX": 48,
+          "convertedY": 40,
+          "right": 49,
+          "bottom": 41
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000269,
+          "sourceX": 46,
+          "sourceY": 39,
+          "size": 1,
+          "convertedX": 48,
+          "convertedY": 41,
+          "right": 49,
+          "bottom": 42
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000270,
+          "sourceX": 46,
+          "sourceY": 40,
+          "size": 1,
+          "convertedX": 48,
+          "convertedY": 42,
+          "right": 49,
+          "bottom": 43
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000271,
+          "sourceX": 46,
+          "sourceY": 41,
+          "size": 1,
+          "convertedX": 48,
+          "convertedY": 43,
+          "right": 49,
+          "bottom": 44
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000272,
+          "sourceX": 46,
+          "sourceY": 42,
+          "size": 1,
+          "convertedX": 48,
+          "convertedY": 44,
+          "right": 49,
+          "bottom": 45
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000273,
+          "sourceX": 46,
+          "sourceY": 43,
+          "size": 1,
+          "convertedX": 48,
+          "convertedY": 45,
+          "right": 49,
+          "bottom": 46
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000274,
+          "sourceX": 46,
+          "sourceY": 44,
+          "size": 1,
+          "convertedX": 48,
+          "convertedY": 46,
+          "right": 49,
+          "bottom": 47
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000275,
+          "sourceX": 46,
+          "sourceY": 45,
+          "size": 1,
+          "convertedX": 48,
+          "convertedY": 47,
+          "right": 49,
+          "bottom": 48
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000276,
+          "sourceX": 46,
+          "sourceY": 46,
+          "size": 1,
+          "convertedX": 48,
+          "convertedY": 48,
+          "right": 49,
+          "bottom": 49
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000277,
+          "sourceX": 34,
+          "sourceY": 46,
+          "size": 1,
+          "convertedX": 36,
+          "convertedY": 48,
+          "right": 37,
+          "bottom": 49
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000278,
+          "sourceX": 35,
+          "sourceY": 46,
+          "size": 1,
+          "convertedX": 37,
+          "convertedY": 48,
+          "right": 38,
+          "bottom": 49
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000279,
+          "sourceX": 36,
+          "sourceY": 46,
+          "size": 1,
+          "convertedX": 38,
+          "convertedY": 48,
+          "right": 39,
+          "bottom": 49
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000280,
+          "sourceX": 37,
+          "sourceY": 46,
+          "size": 1,
+          "convertedX": 39,
+          "convertedY": 48,
+          "right": 40,
+          "bottom": 49
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000281,
+          "sourceX": 38,
+          "sourceY": 46,
+          "size": 1,
+          "convertedX": 40,
+          "convertedY": 48,
+          "right": 41,
+          "bottom": 49
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000282,
+          "sourceX": 39,
+          "sourceY": 46,
+          "size": 1,
+          "convertedX": 41,
+          "convertedY": 48,
+          "right": 42,
+          "bottom": 49
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000283,
+          "sourceX": 40,
+          "sourceY": 46,
+          "size": 1,
+          "convertedX": 42,
+          "convertedY": 48,
+          "right": 43,
+          "bottom": 49
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000284,
+          "sourceX": 41,
+          "sourceY": 46,
+          "size": 1,
+          "convertedX": 43,
+          "convertedY": 48,
+          "right": 44,
+          "bottom": 49
+        },
+        {
+          "data": 1000015,
+          "name": "Builders Hut",
+          "level": 1,
+          "sourceId": 500000291,
+          "sourceX": 3,
+          "sourceY": 45,
+          "size": 2,
+          "convertedX": 5,
+          "convertedY": 47,
+          "right": 7,
+          "bottom": 49
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000304,
+          "sourceX": 42,
+          "sourceY": 46,
+          "size": 1,
+          "convertedX": 44,
+          "convertedY": 48,
+          "right": 45,
+          "bottom": 49
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000305,
+          "sourceX": 43,
+          "sourceY": 46,
+          "size": 1,
+          "convertedX": 45,
+          "convertedY": 48,
+          "right": 46,
+          "bottom": 49
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000306,
+          "sourceX": 44,
+          "sourceY": 46,
+          "size": 1,
+          "convertedX": 46,
+          "convertedY": 48,
+          "right": 47,
+          "bottom": 49
+        },
+        {
+          "data": 1000010,
+          "name": "Wall",
+          "level": 13,
+          "sourceId": 500000307,
+          "sourceX": 45,
+          "sourceY": 46,
+          "size": 1,
+          "convertedX": 47,
+          "convertedY": 48,
+          "right": 48,
+          "bottom": 49
+        },
+        {
+          "data": 1000015,
+          "name": "Builders Hut",
+          "level": 1,
+          "sourceId": 500000329,
+          "sourceX": 45,
+          "sourceY": 16,
+          "size": 2,
+          "convertedX": 47,
+          "convertedY": 18,
+          "right": 49,
+          "bottom": 20
+        }
+      ],
+      "defenders": []
+    },
+    {
+      "id": "CHALLENGE_TH12_YETI",
+      "name": "Yeti Smash",
+      "sourceLayout": "level/challenge_th12_yeti.json",
+      "useFullMapSize": true,
+      "minimumBoardAtCurrentOffset": {
+        "width": 49,
+        "height": 49
+      },
+      "outsideFootprints": [
+        {
+          "data": 1000005,
+          "name": "Gold Storage",
+          "level": 13,
+          "sourceId": 500000043,
+          "sourceX": 44,
+          "sourceY": 9,
+          "size": 3,
+          "convertedX": 46,
+          "convertedY": 11,
+          "right": 49,
+          "bottom": 14
+        },
+        {
+          "data": 1000003,
+          "name": "Elixir Storage",
+          "level": 13,
+          "sourceId": 500000044,
+          "sourceX": 29,
+          "sourceY": 44,
+          "size": 3,
+          "convertedX": 31,
+          "convertedY": 46,
+          "right": 34,
+          "bottom": 49
+        },
+        {
+          "data": 1000000,
+          "name": "Army Camp",
+          "level": 10,
+          "sourceId": 500000047,
+          "sourceX": 13,
+          "sourceY": 43,
+          "size": 4,
+          "convertedX": 15,
+          "convertedY": 45,
+          "right": 19,
+          "bottom": 49
+        },
+        {
+          "data": 1000000,
+          "name": "Army Camp",
+          "level": 10,
+          "sourceId": 500000105,
+          "sourceX": 19,
+          "sourceY": 43,
+          "size": 4,
+          "convertedX": 21,
+          "convertedY": 45,
+          "right": 25,
+          "bottom": 49
+        },
+        {
+          "data": 1000024,
+          "name": "Dark Elixir Storage",
+          "level": 7,
+          "sourceId": 500000170,
+          "sourceX": 44,
+          "sourceY": 24,
+          "size": 3,
+          "convertedX": 46,
+          "convertedY": 26,
+          "right": 49,
+          "bottom": 29
+        },
+        {
+          "data": 1000000,
+          "name": "Army Camp",
+          "level": 10,
+          "sourceId": 500000172,
+          "sourceX": 24,
+          "sourceY": 43,
+          "size": 4,
+          "convertedX": 26,
+          "convertedY": 45,
+          "right": 30,
+          "bottom": 49
+        },
+        {
+          "data": 1000003,
+          "name": "Elixir Storage",
+          "level": 13,
+          "sourceId": 500000227,
+          "sourceX": 44,
+          "sourceY": 29,
+          "size": 3,
+          "convertedX": 46,
+          "convertedY": 31,
+          "right": 49,
+          "bottom": 34
+        },
+        {
+          "data": 1000005,
+          "name": "Gold Storage",
+          "level": 13,
+          "sourceId": 500000228,
+          "sourceX": 44,
+          "sourceY": 14,
+          "size": 3,
+          "convertedX": 46,
+          "convertedY": 16,
+          "right": 49,
+          "bottom": 19
+        },
+        {
+          "data": 1000005,
+          "name": "Gold Storage",
+          "level": 13,
+          "sourceId": 500000286,
+          "sourceX": 44,
+          "sourceY": 19,
+          "size": 3,
+          "convertedX": 46,
+          "convertedY": 21,
+          "right": 49,
+          "bottom": 24
+        },
+        {
+          "data": 1000008,
+          "name": "Cannon",
+          "level": 17,
+          "sourceId": 500000298,
+          "sourceX": 39,
+          "sourceY": 44,
+          "size": 3,
+          "convertedX": 41,
+          "convertedY": 46,
+          "right": 44,
+          "bottom": 49
+        },
+        {
+          "data": 1000008,
+          "name": "Cannon",
+          "level": 17,
+          "sourceId": 500000360,
+          "sourceX": 44,
+          "sourceY": 39,
+          "size": 3,
+          "convertedX": 46,
+          "convertedY": 41,
+          "right": 49,
+          "bottom": 44
+        },
+        {
+          "data": 1000059,
+          "name": "Siege Workshop",
+          "level": 3,
+          "sourceId": 500000393,
+          "sourceX": 43,
+          "sourceY": 3,
+          "size": 4,
+          "convertedX": 45,
+          "convertedY": 5,
+          "right": 49,
+          "bottom": 9
+        }
+      ],
+      "defenders": [
+        {
+          "character": "Lava Hound",
+          "level": 5,
+          "count": 1,
+          "defensiveCharacter": "Defensive Lava Hound",
+          "animation": "ADSeeker_lvl5",
+          "animationCaptured": false,
+          "combatRowRetained": true,
+          "ability": null,
+          "abilityRetained": true
+        },
+        {
+          "character": "Baby Dragon",
+          "level": 6,
+          "count": 1,
+          "defensiveCharacter": "Baby Dragon",
+          "animation": "Baby Dragon 6",
+          "animationCaptured": true,
+          "combatRowRetained": true,
+          "ability": "BabyDragonRageWhenAlone",
+          "abilityRetained": true
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH13_HYBRID",
+      "name": "Bane of the Ring",
+      "sourceLayout": "level/challenge_th13_hybrid.json",
+      "useFullMapSize": true,
+      "minimumBoardAtCurrentOffset": {
+        "width": 49,
+        "height": 49
+      },
+      "outsideFootprints": [
+        {
+          "data": 1000000,
+          "name": "Army Camp",
+          "level": 10,
+          "sourceId": 500000002,
+          "sourceX": 17,
+          "sourceY": 43,
+          "size": 4,
+          "convertedX": 19,
+          "convertedY": 45,
+          "right": 23,
+          "bottom": 49
+        },
+        {
+          "data": 1000000,
+          "name": "Army Camp",
+          "level": 10,
+          "sourceId": 500000047,
+          "sourceX": 21,
+          "sourceY": 43,
+          "size": 4,
+          "convertedX": 23,
+          "convertedY": 45,
+          "right": 27,
+          "bottom": 49
+        },
+        {
+          "data": 1000000,
+          "name": "Army Camp",
+          "level": 10,
+          "sourceId": 500000105,
+          "sourceX": 43,
+          "sourceY": 22,
+          "size": 4,
+          "convertedX": 45,
+          "convertedY": 24,
+          "right": 49,
+          "bottom": 28
+        },
+        {
+          "data": 1000000,
+          "name": "Army Camp",
+          "level": 10,
+          "sourceId": 500000172,
+          "sourceX": 43,
+          "sourceY": 16,
+          "size": 4,
+          "convertedX": 45,
+          "convertedY": 18,
+          "right": 49,
+          "bottom": 22
+        }
+      ],
+      "defenders": [
+        {
+          "character": "Ice Golem",
+          "level": 5,
+          "count": 2,
+          "defensiveCharacter": "Defensive Ice Golem",
+          "animation": "IceGolem_lvl5",
+          "animationCaptured": false,
+          "combatRowRetained": false,
+          "ability": "IceGolemOnDeathDEF",
+          "abilityRetained": false
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH8_GOWIVA",
+      "name": "Whirl Power",
+      "sourceLayout": "level/challenge_th8_gowiva.json",
+      "useFullMapSize": true,
+      "minimumBoardAtCurrentOffset": {
+        "width": 40,
+        "height": 49
+      },
+      "outsideFootprints": [
+        {
+          "data": 1000015,
+          "name": "Builders Hut",
+          "level": 1,
+          "sourceId": 500000133,
+          "sourceX": 30,
+          "sourceY": 45,
+          "size": 2,
+          "convertedX": 32,
+          "convertedY": 47,
+          "right": 34,
+          "bottom": 49
+        }
+      ],
+      "defenders": [
+        {
+          "character": "Balloon",
+          "level": 5,
+          "count": 5,
+          "defensiveCharacter": "Balloon",
+          "animation": "Balloon Goblin3",
+          "animationCaptured": false,
+          "combatRowRetained": true,
+          "ability": null,
+          "abilityRetained": true
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH9_BABYDQW",
+      "name": "Angry Babies",
+      "sourceLayout": "level/challenge_th9_babydqw.json",
+      "useFullMapSize": true,
+      "minimumBoardAtCurrentOffset": {
+        "width": 49,
+        "height": 49
+      },
+      "outsideFootprints": [
+        {
+          "data": 1000000,
+          "name": "Army Camp",
+          "level": 7,
+          "sourceId": 500000002,
+          "sourceX": 3,
+          "sourceY": 43,
+          "size": 4,
+          "convertedX": 5,
+          "convertedY": 45,
+          "right": 9,
+          "bottom": 49
+        },
+        {
+          "data": 1000015,
+          "name": "Builders Hut",
+          "level": 1,
+          "sourceId": 500000003,
+          "sourceX": 8,
+          "sourceY": 45,
+          "size": 2,
+          "convertedX": 10,
+          "convertedY": 47,
+          "right": 12,
+          "bottom": 49
+        },
+        {
+          "data": 1000015,
+          "name": "Builders Hut",
+          "level": 1,
+          "sourceId": 500000006,
+          "sourceX": 45,
+          "sourceY": 40,
+          "size": 2,
+          "convertedX": 47,
+          "convertedY": 42,
+          "right": 49,
+          "bottom": 44
+        },
+        {
+          "data": 1000000,
+          "name": "Army Camp",
+          "level": 7,
+          "sourceId": 500000160,
+          "sourceX": 43,
+          "sourceY": 3,
+          "size": 4,
+          "convertedX": 45,
+          "convertedY": 5,
+          "right": 49,
+          "bottom": 9
+        },
+        {
+          "data": 1000000,
+          "name": "Army Camp",
+          "level": 7,
+          "sourceId": 500000243,
+          "sourceX": 43,
+          "sourceY": 43,
+          "size": 4,
+          "convertedX": 45,
+          "convertedY": 45,
+          "right": 49,
+          "bottom": 49
+        }
+      ],
+      "defenders": []
+    }
+  ],
+  "guideLevels": [
+    {
+      "id": "CHALLENGE_TH4_GIANT",
+      "name": "Giant Smash",
+      "stage": 91,
+      "minimumBoardForUnclampedTargets": 40,
+      "clampedTargets": []
+    },
+    {
+      "id": "CHALLENGE_TH5_LOON",
+      "name": "Balloon Parade",
+      "stage": 92,
+      "minimumBoardForUnclampedTargets": 26,
+      "clampedTargets": []
+    },
+    {
+      "id": "CHALLENGE_TH6_GIWIWA",
+      "name": "Meat Shield",
+      "stage": 93,
+      "minimumBoardForUnclampedTargets": 39,
+      "clampedTargets": []
+    },
+    {
+      "id": "CHALLENGE_TH7_DRAGON",
+      "name": "Hot Stuff",
+      "stage": 94,
+      "minimumBoardForUnclampedTargets": 38,
+      "clampedTargets": []
+    },
+    {
+      "id": "CHALLENGE_TH7_HOG",
+      "name": "Hog Rush",
+      "stage": 95,
+      "minimumBoardForUnclampedTargets": 48,
+      "clampedTargets": []
+    },
+    {
+      "id": "CHALLENGE_TH7_MINION",
+      "name": "Air Raid",
+      "stage": 96,
+      "minimumBoardForUnclampedTargets": 48,
+      "clampedTargets": []
+    },
+    {
+      "id": "CHALLENGE_TH8_GOWIPE",
+      "name": "Heavy Hitters",
+      "stage": 97,
+      "minimumBoardForUnclampedTargets": 45,
+      "clampedTargets": []
+    },
+    {
+      "id": "CHALLENGE_TH8_GOWIVA",
+      "name": "Whirl Power",
+      "stage": null,
+      "minimumBoardForUnclampedTargets": 48,
+      "clampedTargets": []
+    },
+    {
+      "id": "CHALLENGE_TH9_LAVALOON",
+      "name": "Lava & Loons",
+      "stage": 98,
+      "minimumBoardForUnclampedTargets": 52,
+      "clampedTargets": [
+        {
+          "step": "TH9_Lavaloon_BarbarianKing_3",
+          "unit": "Barbarian King",
+          "sourceX": 46,
+          "sourceY": 24,
+          "convertedX": 48,
+          "convertedY": 26,
+          "exact": true
+        },
+        {
+          "step": "TH9_Lavaloon_ArcherQueen",
+          "unit": "Archer Queen",
+          "sourceX": 49,
+          "sourceY": 27,
+          "convertedX": 51,
+          "convertedY": 29,
+          "exact": true
+        },
+        {
+          "step": "TH9_Lavaloon_Hounds",
+          "unit": "Lava Hound",
+          "sourceX": 25,
+          "sourceY": 46,
+          "convertedX": 27,
+          "convertedY": 48,
+          "exact": false
+        },
+        {
+          "step": "TH9_Lavaloon_Hounds",
+          "unit": "Lava Hound",
+          "sourceX": 15,
+          "sourceY": 46,
+          "convertedX": 17,
+          "convertedY": 48,
+          "exact": false
+        },
+        {
+          "step": "TH9_Lavaloon_Balloons",
+          "unit": "Balloon",
+          "sourceX": 15,
+          "sourceY": 47,
+          "convertedX": 17,
+          "convertedY": 49,
+          "exact": false
+        },
+        {
+          "step": "TH9_Lavaloon_Balloons",
+          "unit": "Balloon",
+          "sourceX": 25,
+          "sourceY": 47,
+          "convertedX": 27,
+          "convertedY": 49,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH9_WITCH",
+      "name": "Witch Slap",
+      "stage": 99,
+      "minimumBoardForUnclampedTargets": 49,
+      "clampedTargets": [
+        {
+          "step": "TH9_Witch_Witches1",
+          "unit": "Witch",
+          "sourceX": 10,
+          "sourceY": 46,
+          "convertedX": 12,
+          "convertedY": 48,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH9_BABYDQW",
+      "name": "Angry Babies",
+      "stage": null,
+      "minimumBoardForUnclampedTargets": 51,
+      "clampedTargets": [
+        {
+          "step": "TH9_BabydQW_Healers",
+          "unit": "Healer",
+          "sourceX": 48,
+          "sourceY": 38,
+          "convertedX": 50,
+          "convertedY": 40,
+          "exact": true
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH10_BOBAT",
+      "name": "Bowling with Bats",
+      "stage": 100,
+      "minimumBoardForUnclampedTargets": 52,
+      "clampedTargets": [
+        {
+          "step": "TH10_Bobat_ArcherQueen",
+          "unit": "Archer Queen",
+          "sourceX": 20,
+          "sourceY": 47,
+          "convertedX": 22,
+          "convertedY": 49,
+          "exact": true
+        },
+        {
+          "step": "TH10_Bobat_Healers",
+          "unit": "Healer",
+          "sourceX": 20,
+          "sourceY": 49,
+          "convertedX": 22,
+          "convertedY": 51,
+          "exact": true
+        },
+        {
+          "step": "TH10_Bobat_Batwave",
+          "unit": "Bat Spell",
+          "sourceX": 10,
+          "sourceY": 49,
+          "convertedX": 12,
+          "convertedY": 51,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH10_MINER",
+      "name": "Miner Mania",
+      "stage": null,
+      "minimumBoardForUnclampedTargets": 51,
+      "clampedTargets": [
+        {
+          "step": "TH10_Miner_Wizards2",
+          "unit": "Wizard",
+          "sourceX": 40,
+          "sourceY": 48,
+          "convertedX": 42,
+          "convertedY": 50,
+          "exact": false
+        },
+        {
+          "step": "TH10_Miner_Wizards2",
+          "unit": null,
+          "sourceX": 48,
+          "sourceY": 40,
+          "convertedX": 50,
+          "convertedY": 42,
+          "exact": false
+        },
+        {
+          "step": "TH10_Miner_Wizards3",
+          "unit": null,
+          "sourceX": 48,
+          "sourceY": 7,
+          "convertedX": 50,
+          "convertedY": 9,
+          "exact": false
+        },
+        {
+          "step": "TH10_Miner_BarbarianKing",
+          "unit": "Barbarian King",
+          "sourceX": 48,
+          "sourceY": 30,
+          "convertedX": 50,
+          "convertedY": 32,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH11_EDRAG",
+      "name": "Electro Surgery",
+      "stage": 101,
+      "minimumBoardForUnclampedTargets": 51,
+      "clampedTargets": [
+        {
+          "step": "TH11_Edrag_FunnelEdrag1",
+          "unit": "Electro Dragon",
+          "sourceX": 37,
+          "sourceY": 47,
+          "convertedX": 39,
+          "convertedY": 49,
+          "exact": true
+        },
+        {
+          "step": "TH11_Edrag_ArcherQueen",
+          "unit": "Archer Queen",
+          "sourceX": 28,
+          "sourceY": 47,
+          "convertedX": 30,
+          "convertedY": 49,
+          "exact": true
+        },
+        {
+          "step": "TH11_Edrag_BattleBlimp",
+          "unit": "Battle Blimp",
+          "sourceX": 19,
+          "sourceY": 48,
+          "convertedX": 21,
+          "convertedY": 50,
+          "exact": true
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH11_LAVALOON",
+      "name": "Lava & More Loons",
+      "stage": 102,
+      "minimumBoardForUnclampedTargets": 43,
+      "clampedTargets": []
+    },
+    {
+      "id": "CHALLENGE_TH12_BOWIGI",
+      "name": "Bowling with Witches",
+      "stage": 103,
+      "minimumBoardForUnclampedTargets": 43,
+      "clampedTargets": []
+    },
+    {
+      "id": "CHALLENGE_TH12_DRAGBAT",
+      "name": "Flying Circus",
+      "stage": null,
+      "minimumBoardForUnclampedTargets": 51,
+      "clampedTargets": [
+        {
+          "step": "TH12_Dragbat_Balloons2",
+          "unit": "Balloon",
+          "sourceX": 11,
+          "sourceY": 47,
+          "convertedX": 13,
+          "convertedY": 49,
+          "exact": false
+        },
+        {
+          "step": "TH12_Dragbat_Balloons3",
+          "unit": "Balloon",
+          "sourceX": 48,
+          "sourceY": 35,
+          "convertedX": 50,
+          "convertedY": 37,
+          "exact": false
+        },
+        {
+          "step": "TH12_Dragbat_Balloons4",
+          "unit": "Balloon",
+          "sourceX": 48,
+          "sourceY": 16,
+          "convertedX": 50,
+          "convertedY": 18,
+          "exact": false
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH12_YETI",
+      "name": "Yeti Smash",
+      "stage": null,
+      "minimumBoardForUnclampedTargets": 52,
+      "clampedTargets": [
+        {
+          "step": "TH12_Yeti_GrandWarden",
+          "unit": "Grand Warden",
+          "sourceX": 48,
+          "sourceY": 48,
+          "convertedX": 50,
+          "convertedY": 50,
+          "exact": true
+        },
+        {
+          "step": "TH12_Yeti_Healers",
+          "unit": "Healer",
+          "sourceX": 48,
+          "sourceY": 48,
+          "convertedX": 50,
+          "convertedY": 50,
+          "exact": true
+        },
+        {
+          "step": "TH12_Yeti_Funnel_PEKKAs",
+          "unit": "PEKKA",
+          "sourceX": 49,
+          "sourceY": 10,
+          "convertedX": 51,
+          "convertedY": 12,
+          "exact": true
+        },
+        {
+          "step": "TH12_Yeti_Funnel_Wizards",
+          "unit": "Wizard",
+          "sourceX": 49,
+          "sourceY": 10,
+          "convertedX": 51,
+          "convertedY": 12,
+          "exact": false
+        },
+        {
+          "step": "TH12_Yeti_Funnel_Wizards",
+          "unit": "Wizard",
+          "sourceX": 49,
+          "sourceY": 5,
+          "convertedX": 51,
+          "convertedY": 7,
+          "exact": false
+        },
+        {
+          "step": "TH12_Yeti_Funnel_Wizards",
+          "unit": "Wizard",
+          "sourceX": 49,
+          "sourceY": 15,
+          "convertedX": 51,
+          "convertedY": 17,
+          "exact": false
+        },
+        {
+          "step": "TH12_Yeti_Yetis",
+          "unit": "Yeti",
+          "sourceX": 49,
+          "sourceY": 35,
+          "convertedX": 51,
+          "convertedY": 37,
+          "exact": true
+        },
+        {
+          "step": "TH12_Yeti_PEKKAs",
+          "unit": "PEKKA",
+          "sourceX": 49,
+          "sourceY": 26,
+          "convertedX": 51,
+          "convertedY": 28,
+          "exact": false
+        },
+        {
+          "step": "TH12_Yeti_PEKKAs",
+          "unit": "PEKKA",
+          "sourceX": 49,
+          "sourceY": 22,
+          "convertedX": 51,
+          "convertedY": 24,
+          "exact": false
+        },
+        {
+          "step": "TH12_Yeti_BarbarianKing",
+          "unit": "Barbarian King",
+          "sourceX": 49,
+          "sourceY": 30,
+          "convertedX": 51,
+          "convertedY": 32,
+          "exact": false
+        },
+        {
+          "step": "TH12_Yeti_ArcherQueen",
+          "unit": "Archer Queen",
+          "sourceX": 49,
+          "sourceY": 30,
+          "convertedX": 51,
+          "convertedY": 32,
+          "exact": false
+        },
+        {
+          "step": "TH12_Yeti_StoneSlammer",
+          "unit": "Stone Slammer",
+          "sourceX": 49,
+          "sourceY": 15,
+          "convertedX": 51,
+          "convertedY": 17,
+          "exact": true
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH13_HYBRID",
+      "name": "Bane of the Ring",
+      "stage": null,
+      "minimumBoardForUnclampedTargets": 52,
+      "clampedTargets": [
+        {
+          "step": "TH13_Hybrid_BabyDragon",
+          "unit": "Baby Dragon",
+          "sourceX": 48,
+          "sourceY": 11,
+          "convertedX": 50,
+          "convertedY": 13,
+          "exact": true
+        },
+        {
+          "step": "TH13_Hybrid_ElectroDragon",
+          "unit": "Electro Dragon",
+          "sourceX": 28,
+          "sourceY": 48,
+          "convertedX": 30,
+          "convertedY": 50,
+          "exact": true
+        },
+        {
+          "step": "TH13_Hybrid_Golem",
+          "unit": "Golem",
+          "sourceX": 48,
+          "sourceY": 37,
+          "convertedX": 50,
+          "convertedY": 39,
+          "exact": true
+        },
+        {
+          "step": "TH13_Hybrid_SiegeBarracks",
+          "unit": "Siege Barracks",
+          "sourceX": 48,
+          "sourceY": 42,
+          "convertedX": 50,
+          "convertedY": 44,
+          "exact": true
+        },
+        {
+          "step": "TH13_Hybrid_BarbarianKing",
+          "unit": "Barbarian King",
+          "sourceX": 48,
+          "sourceY": 28,
+          "convertedX": 50,
+          "convertedY": 30,
+          "exact": true
+        },
+        {
+          "step": "TH13_Hybrid_Miners",
+          "unit": "Miner",
+          "sourceX": 49,
+          "sourceY": 20,
+          "convertedX": 51,
+          "convertedY": 22,
+          "exact": false
+        },
+        {
+          "step": "TH13_Hybrid_GrandWarden",
+          "unit": "Grand Warden",
+          "sourceX": 49,
+          "sourceY": 20,
+          "convertedX": 51,
+          "convertedY": 22,
+          "exact": false
+        },
+        {
+          "step": "TH13_Hybrid_Hogs",
+          "unit": "Hog Rider",
+          "sourceX": 49,
+          "sourceY": 20,
+          "convertedX": 51,
+          "convertedY": 22,
+          "exact": false
+        },
+        {
+          "step": "TH13_Hybrid_RoyalChampion",
+          "unit": "Royal Champion",
+          "sourceX": 48,
+          "sourceY": 20,
+          "convertedX": 50,
+          "convertedY": 22,
+          "exact": false
+        }
+      ]
+    }
+  ],
+  "minimumSharedGuideBoard": 52
+}

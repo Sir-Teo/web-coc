@@ -104,3 +104,44 @@ The guide sits beside the battle, not in its replay setup. A frozen moment is si
 - retries without the guide and with it, with a trainable or unavailable Last army, confirming the level's army resets and the home army, spells and Last army stay unchanged;
 - retries a guide that ended on its first step, confirming its deployment ring is framed again;
 - checks the client's closing question after three stars, its absence after an early finish, and the retry controls at phone size.
+
+## Withheld level readiness
+
+The [readiness report](../reference/practice/readiness.json) audits all six withheld layouts
+against the current `MAP_SIZE` and `BUILD_MIN`, using complete source building/trap footprints.
+All six have `UseFullMapSize=TRUE` and extend to converted tile boundary 49, beyond this
+engine's 48-tile board. The report pins each original layout by SHA-256 and distinguishes
+captured animation/defender rows from source special-ability coverage.
+
+| Level | Footprints beyond the current board | Additional missing defender coverage |
+| --- | ---: | --- |
+| Whirl Power | 1 | Balloon 5 body (`Balloon Goblin3` in the source) |
+| Angry Babies | 5 | None identified by this coverage audit |
+| Miner Mania | 1 | None identified by this coverage audit |
+| Flying Circus | 32 | None identified by this coverage audit |
+| Yeti Smash | 12 | Lava Hound 5 body; Baby Dragon 6 is already captured |
+| Bane of the Ring | 4 | Ice Golem 5 body/defender row and `IceGolemOnDeathDEF` |
+
+The report also checks guide targets across all 19 lessons. Source targets reach tile 49,
+which becomes tile 51 after this adapter's offset and needs a local board of at least 52
+cells to avoid clamping. Four currently fielded lessons (Lava & Loons, Witch Slap, Bowling
+with Bats and Electro Surgery) use the existing guide-spot clamping fallback too. The audit
+retains their original targets and exact-location flags; it does not change that compatibility
+behavior. A footprint-only expansion to 49 cells would therefore be insufficient.
+
+This is a bounds and source-coverage audit, not a complete combat-parity certification.
+The 150 existing campaign indices, their layouts and progress remain unchanged. Supporting
+the withheld levels requires a verified larger-board path through deployment, routing,
+collision, rendering and replay validation, along with the remaining defender behavior.
+
+Reproduce the report with the existing native-art Python environment:
+
+```sh
+PYTHONPATH=scripts output/native-art-venv/bin/python scripts/audit-native-practice.py --check
+```
+
+Omit `--check` to regenerate it. Input checksums must match; a changed withheld membership
+or nonliteral grid definition requires an explicit audit update. The raw files remain under
+ignored `output/native-campaign-source/`. `tests/native-layout-bounds.test.ts` exercises the
+real Whirl Power hut overrun, all four boundaries, malformed coordinates, missing source
+stats, all 150 existing villages, original guide targets and the report's grid/coverage identity.

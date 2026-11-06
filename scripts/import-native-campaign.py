@@ -88,17 +88,15 @@ assert [g[0]['MapInstanceName'] for g in npcs] == [f'npc{i}' for i in range(1, 9
 # They carry no MapInstanceName and no MapDependencies; their Town Hall comes from the
 # record name, which is the only place the source states it.
 CHALLENGE = re.compile(r'CHALLENGE_TH(\d+)_[A-Z0-9]+')
-# Three Challenges post Clan Castle defenders at levels whose animation graphs this game has
-# never captured (Balloon 5, Lava Hound 5, Ice Golem 5). Releasing them is not possible and
-# substituting another level is not allowed, so those three stay out of the campaign entirely
-# rather than shipping as locked entries. See docs/CAMPAIGN-RULES.md.
-# Three more are drawn on the client's larger UseFullMapSize board and reach one tile past
-# this game's 48-tile simulation grid. Shifting or rescaling a layout is never allowed, so
-# they stay out too.
+# All six exceed the current board after the adapter's coordinate conversion. Three also
+# need garrison captures; Ice Golem needs its defending death-freeze behavior. Baby Dragon 6
+# is already captured. scripts/audit-native-practice.py records every source footprint and
+# defender instead of hiding secondary blockers behind the first missing animation.
+# Shifting, rescaling or substituting a layout is never allowed.
 WITHHELD = {
-    'CHALLENGE_TH8_GOWIVA': 'Balloon 5 garrison',
-    'CHALLENGE_TH12_YETI': 'Lava Hound 5 and Baby Dragon 6 garrison',
-    'CHALLENGE_TH13_HYBRID': 'Ice Golem 5 garrison',
+    'CHALLENGE_TH8_GOWIVA': 'Balloon 5 garrison; UseFullMapSize layout exceeds the 48-tile grid',
+    'CHALLENGE_TH12_YETI': 'Lava Hound 5 garrison; UseFullMapSize layout exceeds the 48-tile grid',
+    'CHALLENGE_TH13_HYBRID': 'Ice Golem 5 garrison and defending death-freeze; UseFullMapSize layout exceeds the 48-tile grid',
     'CHALLENGE_TH9_BABYDQW': 'UseFullMapSize layout exceeds the 48-tile grid',
     'CHALLENGE_TH10_MINER': 'UseFullMapSize layout exceeds the 48-tile grid',
     'CHALLENGE_TH12_DRAGBAT': 'UseFullMapSize layout exceeds the 48-tile grid',

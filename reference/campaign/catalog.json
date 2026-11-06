@@ -1,9 +1,9 @@
 {
   "bundle": "7f04bdfdc4124b1f49308423bb8f4aa8b137aae3",
   "withheld": {
-    "CHALLENGE_TH8_GOWIVA": "Balloon 5 garrison",
-    "CHALLENGE_TH12_YETI": "Lava Hound 5 and Baby Dragon 6 garrison",
-    "CHALLENGE_TH13_HYBRID": "Ice Golem 5 garrison",
+    "CHALLENGE_TH8_GOWIVA": "Balloon 5 garrison; UseFullMapSize layout exceeds the 48-tile grid",
+    "CHALLENGE_TH12_YETI": "Lava Hound 5 garrison; UseFullMapSize layout exceeds the 48-tile grid",
+    "CHALLENGE_TH13_HYBRID": "Ice Golem 5 garrison and defending death-freeze; UseFullMapSize layout exceeds the 48-tile grid",
     "CHALLENGE_TH9_BABYDQW": "UseFullMapSize layout exceeds the 48-tile grid",
     "CHALLENGE_TH10_MINER": "UseFullMapSize layout exceeds the 48-tile grid",
     "CHALLENGE_TH12_DRAGBAT": "UseFullMapSize layout exceeds the 48-tile grid"

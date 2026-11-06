@@ -5,7 +5,7 @@ import raw from '../../reference/campaign/runtime.json' with { type: 'json' };
 import forged from '../../reference/campaign/generated.json' with { type: 'json' };
 import { BUILDINGS, defenseDamage, type BuildingKind } from './data';
 import { HERO_KINDS, HERO_SOURCE, heroMaxLevel } from './native-hero-data';
-import { BUILD_MIN } from './grid';
+import { BUILD_MIN, MAP_SIZE } from './grid';
 import { NPC_BUILDINGS, type NpcBuildingKind } from './npc-buildings';
 import type { Building } from './model';
 import { XBOW } from './xbow-stats';
@@ -221,7 +221,7 @@ export function nativeCampaignIssues(index: number): string[] {
   for (const issue of lateNativeFields(placements, stage.lateStates ?? []).issues)
     issues.add(issue);
   for (const issue of defendingHeroIssues(index)) issues.add(issue);
-  for (const [id, , , level] of [...stage.buildings, ...stage.traps]) {
+  for (const [id, x, y, level] of placements) {
     const kind = KINDS[id],
       stats = source.combat[id],
       npc = npcIds[id];
@@ -229,6 +229,19 @@ export function nativeCampaignIssues(index: number): string[] {
       issues.add(stats?.name ?? `Building ${id}`);
       continue;
     }
+    if (!stats) {
+      issues.add(`Missing source stats: ${BUILDINGS[kind].name}`);
+      continue;
+    }
+    if (
+      !Number.isInteger(x) ||
+      !Number.isInteger(y) ||
+      x + BUILD_MIN < 0 ||
+      y + BUILD_MIN < 0 ||
+      x + BUILD_MIN + stats.size > MAP_SIZE ||
+      y + BUILD_MIN + stats.size > MAP_SIZE
+    )
+      issues.add(`${stats.name} footprint outside ${MAP_SIZE}-tile board`);
     if (
       level >
       (npc

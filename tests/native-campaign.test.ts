@@ -32,7 +32,6 @@ function clear(m: GameModel) {
 
 describe('native campaign adapter and progress isolation', () => {
   it('preserves every supported village tile, level, entity and native scenery identity', () => {
-    // Every native village is supported: the 90 Goblin map villages and the 16 Challenges.
     // 90 Goblin map villages, 13 playable Challenges and the 47 forged ones after them.
     expect(NATIVE_CAMPAIGN).toHaveLength(150);
     expect(playable).toEqual(Array.from({ length: 150 }, (_, i) => i));

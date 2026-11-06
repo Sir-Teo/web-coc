@@ -119,7 +119,7 @@
     "level/npc22.json": "help_opened\":false,\"bool_layout_edit_shown_erase\":false}"
   },
   "outputs": {
-    "catalog.json": "0a4e39d6cb795904e9b1007104928de172a4a86f976e282d4e754b6ba4dd4cf4",
+    "catalog.json": "72b1a9bd069ce629c385e3ddbd00f4522032869aece8257d6db76dde07ce45da",
     "layouts.jsonl": "db5064d42e1020c2efe06aee0754eddccd3628a07111872810b8f4f7b081f202",
     "npc-buildings.json": "b5842b5cd783cc4b24d879351d2927aff75aeb77e8aee9c2dab24579e52d4c2d",
     "runtime.json": "6b02678afb6db578969570e4e74555f561326a5fa193d56eea7d94ad1a81f5b2"

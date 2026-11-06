@@ -14,8 +14,8 @@ it('keeps every native village and its source-verified opening, branches and bos
   const goblin = catalog.stages.filter((s: any) => s.family === 'goblin');
   const challenges = catalog.stages.filter((s: any) => s.family === 'challenge');
   expect(goblin).toHaveLength(90);
-  // Six Challenges are withheld: three for garrison defenders this game cannot field, three
-  // for layouts drawn past the simulation grid.
+  // All six withheld Challenges exceed the current board. Three also need defender
+  // captures or behavior; the pinned readiness audit records the combined blockers.
   expect(challenges).toHaveLength(13);
   expect(Object.keys(catalog.withheld)).toHaveLength(6);
   expect(catalog.stages.map((s: any) => s.stage)).toEqual(
