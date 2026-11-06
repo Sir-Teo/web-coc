@@ -69,3 +69,19 @@ The existing one-cast-per-emergence transition removes nearby Walls while
 preserving their immunity to the ordinary stun. This uses the spell's existing
 footprint radius; underground routes and surfaced attack timing are unchanged.
 See [source fields and replay checks](../reference/battle-drill-surface-walls/README.md).
+
+## Full-map battle infrastructure
+
+The routing and crowd helpers accept an explicit 52-cell battle board for the
+full-map Practice work. Their default remains 48; battle creation, replay versions
+and map availability have not changed yet. This is preparatory infrastructure,
+not an unlock of the withheld layouts. Home placement and save geometry remain
+unchanged.
+
+Whole-tile and sub-tile collision caches include the board stride in their key.
+Collision closures retain that stride, so switching boards cannot change an
+existing movement query. Synchronous search buffers reserve capacity for the
+larger board, while each search uses its own active bounds. Goal-distance tables
+remain separately bounded for each board size. The full-map pathfinding tests
+cover routes, reachability, wall breaches, collision cell identities and crowd
+separation beyond the old edge, with intervening legacy-board calls.

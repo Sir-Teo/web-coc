@@ -1,5 +1,10 @@
 /** Forty-four buildable tiles, with a two-tile simulation border on each side. */
 export const MAP_SIZE = 48;
+/** Full-map Practice needs room for source deployment points at local tile 51. */
+export const FULL_MAP_SIZE = 52;
+export type BattleMapSize = typeof MAP_SIZE | typeof FULL_MAP_SIZE;
+export const battleMapSize = (battle?: { boardSize?: BattleMapSize } | null): BattleMapSize =>
+  battle?.boardSize === FULL_MAP_SIZE ? FULL_MAP_SIZE : MAP_SIZE;
 export const BUILD_MIN = 2;
 export const BUILD_MAX = MAP_SIZE - 2;
 export const LEGACY_MAP_SIZE = 28;

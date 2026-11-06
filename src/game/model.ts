@@ -273,7 +273,7 @@ import {
   type AuraSpell,
 } from './spell-effects';
 import { prepareHealerTargets, stepHealer } from './healing';
-import { MAP_SIZE, BUILD_MIN, BUILD_MAX } from './grid';
+import { MAP_SIZE, FULL_MAP_SIZE, BUILD_MIN, BUILD_MAX, type BattleMapSize } from './grid';
 import { wallDestinations, wallMoveIssue, type WallMove } from './wall-movement';
 import { wallRow, matchingWalls, type WallAxis, type WallResource } from './wall-selection';
 import {
@@ -8320,6 +8320,7 @@ export function distanceTo(u: { x: number; y: number }, b: Building | { x: numbe
 }
 /** Walls by tile and non-wall structures of one building list (hp is read at each use). */
 interface BreachIndex {
+  size: BattleMapSize;
   length: number;
   first: Building | undefined;
   last: Building | undefined;
@@ -8328,10 +8329,11 @@ interface BreachIndex {
   structures: Building[];
 }
 const breachIndexes = new WeakMap<readonly Building[], BreachIndex>();
-function breachIndex(buildings: Building[]): BreachIndex {
+function breachIndex(buildings: Building[], mapSize: BattleMapSize): BreachIndex {
   const known = breachIndexes.get(buildings);
   if (
     known &&
+    known.size === mapSize &&
     known.length === buildings.length &&
     known.first === buildings[0] &&
     known.last === buildings[buildings.length - 1]
@@ -8343,13 +8345,14 @@ function breachIndex(buildings: Building[]): BreachIndex {
   for (const b of buildings) {
     if (b.kind === 'wall') {
       walls.push(b);
-      const tile = b.y * MAP_SIZE + b.x;
+      const tile = b.y * mapSize + b.x;
       const list = wallTiles.get(tile);
       if (list) list.push(b);
       else wallTiles.set(tile, [b]);
     } else if (!isTrap(b.kind)) structures.push(b);
   }
   const index = {
+    size: mapSize,
     length: buildings.length,
     first: buildings[0],
     last: buildings[buildings.length - 1],
@@ -8372,8 +8375,13 @@ function standingWallAt(index: BreachIndex, tile: number) {
  * The five nearest living structures (distance, then id) are selected without sorting the
  * whole list, and their routes come from the pathfinder's memo when already searched.
  */
-export function breachTarget(u: { x: number; y: number }, buildings: Building[], subtiles = false) {
-  const index = breachIndex(buildings);
+export function breachTarget(
+  u: { x: number; y: number },
+  buildings: Building[],
+  subtiles = false,
+  mapSize: BattleMapSize = MAP_SIZE,
+) {
+  const index = breachIndex(buildings, mapSize);
   if (!index.walls.some((b) => b.hp > 0)) return undefined;
   const nearest: Building[] = [];
   const distances: number[] = [];
@@ -8397,10 +8405,19 @@ export function breachTarget(u: { x: number; y: number }, buildings: Building[],
   }
   const candidates: Building[] = [];
   for (const structure of nearest) {
-    const path = findPath(u, structure, buildings, TROOPS.wallbreaker.range, subtiles);
+    const path = findPath(
+      u,
+      structure,
+      buildings,
+      TROOPS.wallbreaker.range,
+      subtiles,
+      [],
+      false,
+      mapSize,
+    );
     let obstruction: Building | undefined;
     for (const p of path) {
-      obstruction = standingWallAt(index, Math.floor(p.y) * MAP_SIZE + Math.floor(p.x));
+      obstruction = standingWallAt(index, Math.floor(p.y) * mapSize + Math.floor(p.x));
       if (obstruction) break;
     }
     if (obstruction) candidates.push(obstruction);
@@ -8413,7 +8430,7 @@ export function breachTarget(u: { x: number; y: number }, buildings: Building[],
 // instead of allocating ~8 MAP_SIZE² arrays per call (no reentrancy: single-threaded).
 // Search state uses a generation stamp: bumping one counter replaces five full-array
 // fills per search, with identical observable behavior.
-const PATH_CELLS = MAP_SIZE * MAP_SIZE;
+const PATH_CELLS = FULL_MAP_SIZE * FULL_MAP_SIZE;
 const pathCost = new Float64Array(PATH_CELLS);
 const pathPrev = new Int16Array(PATH_CELLS);
 const pathClosed = new Uint8Array(PATH_CELLS);
@@ -8426,6 +8443,7 @@ let pathEpoch = 0;
 const pathOpen = new Int32Array(PATH_CELLS);
 /** A whole-tile collision grid for one exact building list and set of Jump Spell rings. */
 interface TileGrid {
+  size: BattleMapSize;
   key: BuildingListSnapshot;
   breaches: number[];
   blocked: Uint8Array;
@@ -8447,19 +8465,28 @@ function sameBreaches(known: number[], breaches: readonly { x: number; y: number
     if (known[i * 2] !== breaches[i].x || known[i * 2 + 1] !== breaches[i].y) return false;
   return true;
 }
-function tileGridFor(buildings: Building[], breaches: readonly { x: number; y: number }[]) {
+function tileGridFor(
+  buildings: Building[],
+  breaches: readonly { x: number; y: number }[],
+  mapSize: BattleMapSize,
+) {
   for (let i = 0; i < tileGrids.length; i++) {
     const grid = tileGrids[i];
-    if (!sameBreaches(grid.breaches, breaches) || !grid.key.matches(buildings)) continue;
+    if (
+      grid.size !== mapSize ||
+      !sameBreaches(grid.breaches, breaches) ||
+      !grid.key.matches(buildings)
+    )
+      continue;
     if (i) {
       tileGrids.splice(i, 1);
       tileGrids.unshift(grid);
     }
     return grid;
   }
-  const size = MAP_SIZE;
-  const blocked = new Uint8Array(PATH_CELLS),
-    wall = new Uint8Array(PATH_CELLS);
+  const size = mapSize;
+  const blocked = new Uint8Array(size * size),
+    wall = new Uint8Array(size * size);
   const radius = SPELLS.jump.radius;
   const breached = (x: number, y: number) =>
     breaches.some((ring) => distance2D(x + 0.5 - ring.x, y + 0.5 - ring.y) <= radius);
@@ -8475,6 +8502,7 @@ function tileGridFor(buildings: Building[], breaches: readonly { x: number; y: n
       }
   }
   const grid: TileGrid = {
+    size: mapSize,
     key: new BuildingListSnapshot(buildings),
     breaches: breaches.flatMap((ring) => [ring.x, ring.y]),
     blocked,
@@ -8490,10 +8518,11 @@ export function pathReachability(
   start: { x: number; y: number },
   buildings: Building[],
   subtiles = false,
+  mapSize: BattleMapSize = MAP_SIZE,
 ) {
   return subtiles
-    ? subtileReachability(start, buildings)
-    : gridReachability(tileGridFor(buildings, []), start, 1);
+    ? subtileReachability(start, buildings, mapSize)
+    : gridReachability(tileGridFor(buildings, [], mapSize), start, 1);
 }
 
 export function findPath(
@@ -8506,12 +8535,13 @@ export function findPath(
   breaches: readonly { x: number; y: number }[] = [],
   /** Rubble seekers need an open route rather than a wall-breaking cost. */
   blockWalls = false,
+  mapSize: BattleMapSize = MAP_SIZE,
 ): { x: number; y: number }[] {
-  if (subtiles) return findSubtilePath(start, target, buildings, range, blockWalls);
-  const grid = tileGridFor(buildings, breaches);
-  const sx = Math.max(0, Math.min(MAP_SIZE - 1, Math.floor(start.x))),
-    sy = Math.max(0, Math.min(MAP_SIZE - 1, Math.floor(start.y))),
-    first = sy * MAP_SIZE + sx;
+  if (subtiles) return findSubtilePath(start, target, buildings, range, blockWalls, mapSize);
+  const grid = tileGridFor(buildings, breaches, mapSize);
+  const sx = Math.max(0, Math.min(mapSize - 1, Math.floor(start.x))),
+    sy = Math.max(0, Math.min(mapSize - 1, Math.floor(start.y))),
+    first = sy * mapSize + sx;
   const goalSize =
     'level' in target && target.kind in BUILDINGS ? BUILDINGS[target.kind as BuildingKind].size : 0;
   // The start point matters only through its cell and whether it is already in range.
@@ -8541,7 +8571,7 @@ function searchTilePath(
   far: boolean,
   blockWalls: boolean,
 ): { x: number; y: number }[] {
-  const size = MAP_SIZE;
+  const size = grid.size;
   const blocked = grid.blocked,
     wall = grid.wall;
   const cost = pathCost;
@@ -8719,7 +8749,7 @@ export const summonedUnit = (u: Unit) => !!u.summoned || u.native?.owner !== und
 /** Version 54: the most crowd separation may move one unit in a second (tiles). */
 export const SEPARATION_TILES_PER_SECOND = 2;
 // Reused separation buckets: per (tile, layer) linked lists in insertion order.
-const SEPARATION_CELLS = MAP_SIZE * MAP_SIZE * 2;
+const SEPARATION_CELLS = FULL_MAP_SIZE * FULL_MAP_SIZE * 2;
 const separationHead = new Int32Array(SEPARATION_CELLS).fill(-1);
 const separationTail = new Int32Array(SEPARATION_CELLS).fill(-1);
 let separationNext = new Int32Array(256);
@@ -8736,7 +8766,9 @@ export function separateUnits(
   buildings: Building[],
   subtiles = false,
   maxPush?: number,
+  mapSize: BattleMapSize = MAP_SIZE,
 ) {
+  const cells = mapSize * mapSize * 2;
   // Fewer than two living units cannot push each other; skip the collision rebuild.
   let living = 0;
   for (const u of units)
@@ -8744,8 +8776,8 @@ export function separateUnits(
   if (living < 2) return;
   // Version-44 native campaign crowds use the same sub-tile building collision as routes.
   // Whole-tile battles read the route grid for the list: blocked or walled is solid.
-  const lanes = subtiles ? subtileSolid(buildings) : undefined;
-  const tiles = lanes ? undefined : tileGridFor(buildings, []);
+  const lanes = subtiles ? subtileSolid(buildings, mapSize) : undefined;
+  const tiles = lanes ? undefined : tileGridFor(buildings, [], mapSize);
   const alive: Unit[] = [];
   for (const u of units)
     if (u.hp > 0 && !u.native?.phoenixWaiting && !u.native?.phoenixEgg) alive.push(u);
@@ -8766,9 +8798,9 @@ export function separateUnits(
     radius[i] = u.kind === 'giant' ? 0.85 : 0.5;
     spent[i] = 0;
     next[i] = -1;
-    const key = (Math.floor(u.y) * MAP_SIZE + Math.floor(u.x)) * 2 + flying[i];
+    const key = (Math.floor(u.y) * mapSize + Math.floor(u.x)) * 2 + flying[i];
     // Units can stand off the grid; the old sparse map still bucketed them by that key.
-    if (key < 0 || key >= SEPARATION_CELLS || !Number.isInteger(key)) {
+    if (key < 0 || key >= cells || !Number.isInteger(key)) {
       next[i] = -2;
       continue;
     }
@@ -8781,13 +8813,13 @@ export function separateUnits(
   const free = (air: number, x: number, y: number) =>
     x >= 0.1 &&
     y >= 0.1 &&
-    x < MAP_SIZE - 0.1 &&
-    y < MAP_SIZE - 0.1 &&
+    x < mapSize - 0.1 &&
+    y < mapSize - 0.1 &&
     (air === 1 ||
       (lanes
         ? !lanes(x, y)
-        : tiles!.blocked[Math.floor(y) * MAP_SIZE + Math.floor(x)] !== 1 &&
-          tiles!.wall[Math.floor(y) * MAP_SIZE + Math.floor(x)] !== 1));
+        : tiles!.blocked[Math.floor(y) * mapSize + Math.floor(x)] !== 1 &&
+          tiles!.wall[Math.floor(y) * mapSize + Math.floor(x)] !== 1));
   for (let i = 0; i < count; i++) {
     const u = alive[i];
     const air = flying[i];
@@ -8798,8 +8830,8 @@ export function separateUnits(
         const nx = cx + ox,
           ny = cy + oy;
         // A flat index wraps at the row edges; column 0 must not neighbour the last column.
-        if (nx < 0 || nx >= MAP_SIZE || ny < 0 || ny >= MAP_SIZE) continue;
-        for (let j = separationHead[(ny * MAP_SIZE + nx) * 2 + air]; j >= 0; j = next[j]) {
+        if (nx < 0 || nx >= mapSize || ny < 0 || ny >= mapSize) continue;
+        for (let j = separationHead[(ny * mapSize + nx) * 2 + air]; j >= 0; j = next[j]) {
           const v = alive[j];
           if (v.id <= u.id) continue;
           // Neither body can move again this tick. Skip geometry work only when both

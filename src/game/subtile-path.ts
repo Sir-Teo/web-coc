@@ -1,7 +1,7 @@
 import { BUILDINGS, isTrap } from './data';
 import { distance2D } from './distance';
 import { GoalDistanceAxes } from './goal-distance-axes';
-import { MAP_SIZE } from './grid';
+import { MAP_SIZE, FULL_MAP_SIZE, battleMapSize, type BattleMapSize } from './grid';
 import type { Building } from './model';
 
 /**
@@ -15,8 +15,7 @@ import type { Building } from './model';
  * engine walls stay passable at a breaking cost, exactly as on the legacy tile grid.
  */
 export const SUBTILES = 2;
-const SIZE = MAP_SIZE * SUBTILES;
-const CELLS = SIZE * SIZE;
+const CELLS = (FULL_MAP_SIZE * SUBTILES) ** 2;
 
 /** `LogicBuilding.PassableSubtilesAtEdge`; every native campaign building except the cave uses 1. */
 export function passableSubtilesAtEdge(b: Pick<Building, 'kind' | 'npc'>) {
@@ -90,6 +89,7 @@ export const PATH_MEMO_LIMIT = 8192;
 
 /** One collision grid built for an exact building list, with the routes searched on it. */
 interface SubtileGrid {
+  size: number;
   key: BuildingListSnapshot;
   blocked: Uint8Array;
   wall: Uint8Array;
@@ -106,26 +106,30 @@ interface SubtileGrid {
  */
 const GRID_SLOTS = 6;
 const grids: SubtileGrid[] = [];
-/** 64 pairs of 96 doubles: at most 96 KiB, shared across this battle's collision grids. */
-const goalAxes = new GoalDistanceAxes(SIZE, SUBTILES);
+/** At most 64 axis pairs per board size, shared across that board's collision grids. */
+const goalAxes = new Map<BattleMapSize, GoalDistanceAxes>([
+  [MAP_SIZE, new GoalDistanceAxes(MAP_SIZE * SUBTILES, SUBTILES)],
+  [FULL_MAP_SIZE, new GoalDistanceAxes(FULL_MAP_SIZE * SUBTILES, SUBTILES)],
+]);
 /** Drop every cached grid and route (new battle or replay runner). Never needed for results. */
 export function resetSubtileGrids() {
   grids.length = 0;
-  goalAxes.clear();
+  for (const axes of goalAxes.values()) axes.clear();
 }
 /** Collision for the living, non-trap buildings the caller knows about. */
-function gridFor(buildings: readonly Building[]): SubtileGrid {
+function gridFor(buildings: readonly Building[], mapSize: BattleMapSize): SubtileGrid {
+  const SIZE = mapSize * SUBTILES;
   for (let i = 0; i < grids.length; i++) {
     const grid = grids[i];
-    if (!grid.key.matches(buildings)) continue;
+    if (grid.size !== SIZE || !grid.key.matches(buildings)) continue;
     if (i) {
       grids.splice(i, 1);
       grids.unshift(grid);
     }
     return grid;
   }
-  const blocked = new Uint8Array(CELLS),
-    wall = new Uint8Array(CELLS);
+  const blocked = new Uint8Array(SIZE * SIZE),
+    wall = new Uint8Array(SIZE * SIZE);
   for (const b of buildings) {
     if (b.hp <= 0 || isTrap(b.kind)) continue;
     const size = BUILDINGS[b.kind].size * SUBTILES;
@@ -136,6 +140,7 @@ function gridFor(buildings: readonly Building[]): SubtileGrid {
         target[y * SIZE + x] = 1;
   }
   const grid: SubtileGrid = {
+    size: SIZE,
     key: new BuildingListSnapshot(buildings),
     blocked,
     wall,
@@ -153,17 +158,18 @@ let blocked: Uint8Array = new Uint8Array(CELLS),
 export function subtileReachability(
   start: { x: number; y: number },
   buildings: readonly Building[],
+  mapSize: BattleMapSize = MAP_SIZE,
 ) {
-  return gridReachability(gridFor(buildings), start, SUBTILES);
+  return gridReachability(gridFor(buildings, mapSize), start, SUBTILES);
 }
 
 /** The whole-tile and sub-tile grids share a lazy wall-blocked region map. */
 export function gridReachability(
-  grid: { blocked: Uint8Array; wall: Uint8Array; regions?: Int32Array },
+  grid: { blocked: Uint8Array; wall: Uint8Array; regions?: Int32Array; size?: number },
   start: { x: number; y: number },
   resolution: 1 | 2,
 ) {
-  const size = MAP_SIZE * resolution,
+  const size = grid.size ?? MAP_SIZE * resolution,
     cells = size * size;
   if (!grid.regions) {
     const regions = new Int32Array(cells),
@@ -230,8 +236,9 @@ export function gridReachability(
  * Point collision for ground movement (crowd separation, pushback, vortex pulls): any
  * standing non-trap footprint sub-tile, walls included. Shares the route grid for the list.
  */
-export function subtileSolid(buildings: readonly Building[]) {
-  const grid = gridFor(buildings);
+export function subtileSolid(buildings: readonly Building[], mapSize: BattleMapSize = MAP_SIZE) {
+  const grid = gridFor(buildings, mapSize);
+  const SIZE = grid.size;
   const solidBlocked = grid.blocked,
     solidWall = grid.wall;
   return (x: number, y: number) => {
@@ -262,7 +269,7 @@ const distanceTo = (u: { x: number; y: number }, b: Building | { x: number; y: n
 };
 
 /** `LogicPathFinderNew.IsLineOfSightClearImpl`: a 4-connected sub-tile walk; walls collide. */
-function sightLine(xA: number, yA: number, xB: number, yB: number) {
+function sightLine(xA: number, yA: number, xB: number, yB: number, SIZE: number) {
   const directionX = xB > xA ? 1 : -1,
     directionY = yB > yA ? 1 : -1,
     distanceX = Math.abs(xB - xA),
@@ -283,13 +290,13 @@ function sightLine(xA: number, yA: number, xB: number, yB: number) {
 }
 
 /** `LogicPathFinderNew.IsLineOfSightClear`: the sight line and both lines one sub-tile over. */
-function lineOfSight(xA: number, yA: number, xB: number, yB: number) {
+function lineOfSight(xA: number, yA: number, xB: number, yB: number, SIZE: number) {
   const directionX = Math.sign(xB - xA),
     directionY = Math.sign(yB - yA);
   return (
-    sightLine(xA, yA, xB, yB) &&
-    sightLine(xA + directionX, yA, xB, yB - directionY) &&
-    sightLine(xA, yA + directionY, xB - directionX, yB)
+    sightLine(xA, yA, xB, yB, SIZE) &&
+    sightLine(xA + directionX, yA, xB, yB - directionY, SIZE) &&
+    sightLine(xA, yA + directionY, xB - directionX, yB, SIZE)
   );
 }
 
@@ -305,8 +312,10 @@ export function findSubtilePath(
   buildings: readonly Building[],
   range: number,
   blockWalls = false,
+  mapSize: BattleMapSize = MAP_SIZE,
 ): { x: number; y: number }[] {
-  const grid = gridFor(buildings);
+  const grid = gridFor(buildings, mapSize);
+  const SIZE = grid.size;
   blocked = grid.blocked;
   wall = grid.wall;
   const sx = Math.max(0, Math.min(SIZE - 1, Math.floor(start.x * SUBTILES))),
@@ -318,7 +327,7 @@ export function findSubtilePath(
   const key = `${first},${target.x},${target.y},${goalSize},${range},${far ? 1 : 0}${blockWalls ? ',solid' : ''}`;
   const known = grid.paths.get(key);
   if (known) return unpackPath(known);
-  const path = searchSubtilePath(first, sx, sy, target, goalSize, range, far, blockWalls);
+  const path = searchSubtilePath(first, sx, sy, target, goalSize, range, far, blockWalls, mapSize);
   if (grid.paths.size >= PATH_MEMO_LIMIT) grid.paths.clear();
   grid.paths.set(key, packPath(path));
   return path;
@@ -351,7 +360,9 @@ function searchSubtilePath(
   range: number,
   far: boolean,
   blockWalls: boolean,
+  mapSize: BattleMapSize,
 ): { x: number; y: number }[] {
+  const SIZE = mapSize * SUBTILES;
   if (epoch === 0xffffffff) {
     stamp.fill(0);
     epoch = 0;
@@ -365,7 +376,7 @@ function searchSubtilePath(
   const targetX = target.x,
     targetY = target.y;
   // Moving point targets retain the direct calculation; static building goals reuse axes.
-  const axes = goalSize ? goalAxes.get(targetX, targetY, goalSize) : undefined;
+  const axes = goalSize ? goalAxes.get(mapSize)!.get(targetX, targetY, goalSize) : undefined;
   const step = 1 / SUBTILES;
   // An approach point inside this cell is less than one step from its center and at
   // most max(0, range) from the goal. Farther centers cannot contain that endpoint.
@@ -513,7 +524,7 @@ function searchSubtilePath(
   // `LogicPathFinderNew.FindPath`: a clear sight line replaces the searched route with a single
   // straight walk to its end point, so open ground is crossed directly rather than in steps.
   const goalPoint = { x: centerX(goal), y: centerY(goal) };
-  if (goal !== first && lineOfSight(sx, sy, goal % SIZE, Math.floor(goal / SIZE)))
+  if (goal !== first && lineOfSight(sx, sy, goal % SIZE, Math.floor(goal / SIZE), SIZE))
     return [approach ?? goalPoint];
   const path = [];
   while (goal !== first && goal >= 0) {
@@ -530,9 +541,14 @@ function searchSubtilePath(
  * campaign battles use sub-tile building collision; every other battle keeps whole-tile
  * footprints. `cell` identifies the collision cell so a unit already inside one may leave it.
  */
-export function groundCollision(battle: { nativeSubtiles?: true }, buildings: readonly Building[]) {
+export function groundCollision(
+  battle: { nativeSubtiles?: true; boardSize?: BattleMapSize },
+  buildings: readonly Building[],
+) {
+  const mapSize = battleMapSize(battle);
+  const SIZE = mapSize * SUBTILES;
   if (battle.nativeSubtiles) {
-    const solid = subtileSolid(buildings);
+    const solid = subtileSolid(buildings, mapSize);
     return {
       cell: (x: number, y: number) => Math.floor(y * SUBTILES) * SIZE + Math.floor(x * SUBTILES),
       solid,
@@ -543,9 +559,9 @@ export function groundCollision(battle: { nativeSubtiles?: true }, buildings: re
     if (b.hp > 0 && !isTrap(b.kind)) {
       const size = BUILDINGS[b.kind].size;
       for (let x = b.x; x < b.x + size; x++)
-        for (let y = b.y; y < b.y + size; y++) tiles.add(y * MAP_SIZE + x);
+        for (let y = b.y; y < b.y + size; y++) tiles.add(y * mapSize + x);
     }
-  const cell = (x: number, y: number) => Math.floor(y) * MAP_SIZE + Math.floor(x);
+  const cell = (x: number, y: number) => Math.floor(y) * mapSize + Math.floor(x);
   return { cell, solid: (x: number, y: number) => tiles.has(cell(x, y)) };
 }
 export type GroundCollision = ReturnType<typeof groundCollision>;
