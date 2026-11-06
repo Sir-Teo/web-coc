@@ -2031,6 +2031,35 @@ The 400-step full-roster battle retains its pre-change hash. A final combined mo
 run still measured 3.4 FPS with no runtime errors on the same throttled software renderer;
 smooth gameplay on that workload remains unresolved.
 
+## Cull off-screen native effect views
+
+Transient particle layers now skip mesh and blend-buffer updates when every transformed leaf
+is outside the camera. On-screen origins take a constant-time path. For off-screen origins,
+the check includes scaled, rotated and nested geometry, so a trail or explosion reaching into
+the viewport still draws. Two physical pixels of padding retain filtered edges, with the
+custom camera shake reach added without consuming its random impulses. Unsettled pan/zoom
+bounds, rotated cameras and Phaser-native shake keep effects rendered. Missing camera data
+or unusable computed bounds also keep the effect rather than guessing a smaller extent.
+
+An effect leaving the viewport parks its view in the existing bounded pool. Its caller still
+owns the animation clock and particle lifetime; camera re-entry draws the current pose and
+reuses compatible views. This changes presentation only, with no simulation, save or replay
+format changes.
+
+`tests/browser/native-effect-culling.spec.ts` compares the culled output to an independent
+reference that draws every effect. Desktop and 3× phone cases reduce the fixture from 107
+rendered views to five with zero changed framebuffer bytes. Cases cover transformed and
+nested effects, disjoint filtered groups, viewport edges, leaving/re-entering, view reuse and
+camera pans, immediate pan/zoom changes and custom shake reach. Both also report CPU timings for 30 repeated update passes, without a timing
+threshold or a frame-rate claim. Reports and screenshots are under ignored
+`output/playtest/native-effect-culling-*`. The existing native Archer Tower impact test also
+retains its source emitter and reduced-motion coverage.
+
+Validation includes the full 8,760-test simulation suite, focused camera-bound and ownership
+checks, six Chromium scenarios (including Tesla replay/pointer projection), strict source/test
+types, formatting and the production offline build. This is a reduction in effect rendering
+work; the previously recorded large-map mobile stress performance remains an open finding.
+
 ## Sticky defense targets
 
 Single-target native defenses now validate their current target before building a full

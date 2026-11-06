@@ -1,6 +1,14 @@
 import type Phaser from 'phaser';
 
 type Offset = { x: number; y: number };
+const layers = new WeakMap<Phaser.Cameras.Scene2D.Camera, Set<CameraShakeLayer>>();
+
+/** Conservative world-space shake reach, without advancing or randomizing a shake. */
+export function cameraShakePadding(camera: Phaser.Cameras.Scene2D.Camera) {
+  let padding = 0;
+  for (const layer of layers.get(camera) ?? []) padding += layer.padding();
+  return padding;
+}
 
 /**
  * Add simulation-driven motion at Phaser's camera transform stage, before its inverse is built.
@@ -16,7 +24,7 @@ export class CameraShakeLayer {
   private impulses: { start: number; duration: number; amplitude: number }[] = [];
   constructor(
     private camera: Phaser.Cameras.Scene2D.Camera,
-    sample: () => Offset,
+    private sample: () => Offset,
     private now: () => number = () => performance.now(),
   ) {
     const effect = camera.shakeEffect;
@@ -28,6 +36,18 @@ export class CameraShakeLayer {
       camera.getViewMatrix(true).translate(offset.x, offset.y);
     };
     effect.preRender = this.render;
+    let registered = layers.get(camera);
+    if (!registered) layers.set(camera, (registered = new Set()));
+    registered.add(this);
+  }
+  /** Maximum current translation; callers can retain effects a shake may expose. */
+  padding() {
+    const sampled = this.sample();
+    let padding = Math.max(Math.abs(sampled.x), Math.abs(sampled.y));
+    const time = this.now();
+    for (const impulse of this.impulses)
+      if (time - impulse.start < impulse.duration) padding = Math.max(padding, impulse.amplitude);
+    return padding;
   }
   /**
    * A short random jitter of `amplitude` world pixels for `duration` ms, tapering to rest.
@@ -62,6 +82,9 @@ export class CameraShakeLayer {
   }
   destroy() {
     this.clear();
+    const registered = layers.get(this.camera);
+    registered?.delete(this);
+    if (!registered?.size) layers.delete(this.camera);
     if (this.camera.shakeEffect.preRender === this.render)
       this.camera.shakeEffect.preRender = this.original;
   }
