@@ -14,7 +14,8 @@
  * battle after warmup to isolate GPU work; --profile saves a Chrome CPU profile alongside JSON.
  * --lazyart uses production's on-demand art loading instead of the eager developer preload.
  * --mesh-batch=quad|tri compares frozen root meshes in the shared sprite or legacy triangle batch.
- * --mobile uses touch input and a 390x844, 3× viewport by default; --viewport=WxH overrides it.
+ * --mobile uses touch input, an Android user agent and a 390x844, 3× viewport by default.
+ * --agent=desktop retains desktop OS detection with touch emulation; --viewport=WxH overrides size.
  * --cpu=4 applies Chromium's 4× CPU slowdown after artwork loads. This emulates constraints,
  * not a physical phone's GPU, thermals or memory. --dpr still overrides the pixel ratio.
  * --checkpoint=2 advances exactly two simulated seconds before holding simulation through
@@ -25,10 +26,12 @@
  * run. Device/pixel budgets still apply. Use the same density and warmup for comparisons.
  * --samplers=4 caps the reported fragment texture units to test shader complexity versus extra
  * draw calls. It preserves source artwork and reports the renderer's actual sampler limit.
+ * --batch-textures=4 sets the render-node batching budget without emulating hardware limits.
  */
 import { chromium } from '@playwright/test';
 import fs from 'node:fs/promises';
 import { createHash } from 'node:crypto';
+import phaserPackage from 'phaser/package.json' with { type: 'json' };
 
 const arg = (name, fallback) =>
   process.argv.findLast((a) => a.startsWith(`--${name}=`))?.split('=')[1] ?? fallback;
@@ -38,6 +41,7 @@ const stage = Number(arg('stage', 61));
 const warmup = Number(arg('warmup', 3));
 const seconds = Number(arg('seconds', 6));
 const mobile = process.argv.includes('--mobile');
+const agent = arg('agent', mobile ? 'android' : 'desktop');
 const [width, height] = arg('viewport', mobile ? '390x844' : '1440x960')
   .split('x')
   .map(Number);
@@ -58,9 +62,12 @@ const densityArg = arg('density');
 const density = densityArg === undefined ? null : Number(densityArg);
 const samplersArg = arg('samplers');
 const samplers = samplersArg === undefined ? null : Number(samplersArg);
+const batchTexturesArg = arg('batch-textures');
+const batchTextures = batchTexturesArg === undefined ? null : Number(batchTexturesArg);
 const base = process.env.GAME_URL ?? 'http://localhost:5173';
 if (!['roster', 'mixed', 'th18'].includes(army)) throw Error('Use --army=roster, mixed or th18.');
 if (!['max', 'half'].includes(level)) throw Error('Use --level=max or half.');
+if (!['desktop', 'android'].includes(agent)) throw Error('Use --agent=desktop or android.');
 if (!['default', 'on', 'off'].includes(msaa)) throw Error('Use --msaa=default, on or off.');
 if (!['default', 'quad', 'tri'].includes(meshBatch))
   throw Error('Use --mesh-batch=default, quad or tri.');
@@ -89,6 +96,8 @@ if (density !== null && (!Number.isFinite(density) || density <= 0))
 
 if (samplers !== null && ![1, 2, 4, 8, 16, 32].includes(samplers))
   throw Error('Use --samplers=1, 2, 4, 8, 16 or 32.');
+if (batchTextures !== null && ![1, 2, 4, 8, 16, 32].includes(batchTextures))
+  throw Error('Use --batch-textures=1, 2, 4, 8, 16 or 32.');
 
 const browser = await chromium.launch(
   process.platform === 'darwin' ? { args: ['--use-angle=metal'] } : {},
@@ -98,6 +107,11 @@ const page = await browser.newPage({
   deviceScaleFactor: dpr,
   isMobile: mobile,
   hasTouch: mobile,
+  ...(agent === 'android'
+    ? {
+        userAgent: `Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${browser.version()} Mobile Safari/537.36`,
+      }
+    : {}),
 });
 // Emulate a lower fragment-sampler ceiling before Phaser discovers the GPU's limits.
 // The real context still supports every requested binding; only the renderer's budget changes.
@@ -135,6 +149,10 @@ page.on('pageerror', (e) =>
 );
 await page.goto(base + '/?devtools=1' + (lazyArt ? '&lazyart' : ''));
 await page.waitForFunction(() => window.__game?.scene.artSettled, {}, { timeout: 180000 });
+if (batchTextures !== null)
+  await page.evaluate((limit) => {
+    window.__game.game.renderer.renderNodes.setMaxParallelTextureUnits(limit);
+  }, batchTextures);
 await page
   .locator('[data-action="skip-tutorial"]')
   .click({ timeout: 5000 })
@@ -453,8 +471,22 @@ const rendering = await page.evaluate(() => {
   const { game } = window.__game,
     gl = game.renderer.gl;
   return {
+    userAgent: navigator.userAgent,
+    deviceOS: {
+      desktop: game.device.os.desktop,
+      android: game.device.os.android,
+      iOS: game.device.os.iOS,
+    },
+    autoMobileTextures: game.config.autoMobileTextures,
     antialias: gl.getContextAttributes().antialias,
     maxTextures: game.renderer.maxTextures,
+    maxParallelTextureUnits: game.renderer.renderNodes.maxParallelTextureUnits,
+    nodeTextureLimits: Object.fromEntries(
+      ['BatchHandlerQuad', 'BatchHandlerTri'].map((name) => [
+        name,
+        game.renderer.renderNodes.getNode(name).maxTexturesPerBatch,
+      ]),
+    ),
     samples: gl.getParameter(gl.SAMPLES),
     canvas: [game.canvas.width, game.canvas.height],
     fpsLimit: game.loop.fpsLimit,
@@ -463,6 +495,8 @@ const rendering = await page.evaluate(() => {
 const report = {
   environment: `Headless Chromium ${browser.version()} on ${process.platform}, ${width}×${height} at ${dpr}×; not a physical device`,
   mobile,
+  agent,
+  phaserVersion: phaserPackage.version,
   cpuRate,
   renderer,
   rendering,
@@ -475,6 +509,7 @@ const report = {
   ...(detail !== null ? { detail } : {}),
   ...(density !== null ? { density } : {}),
   ...(samplers !== null ? { samplers } : {}),
+  ...(batchTextures !== null ? { batchTextures } : {}),
   army,
   level,
   stage,

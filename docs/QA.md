@@ -119,6 +119,14 @@ battle workloads. Headless software-rendered Chromium and `--cpu=4` are diagnost
 comparisons; they do not establish performance on a physical phone. Repeat warmed
 runs without concurrent tests or builds, and report variation with the results.
 
+`--mobile` uses an Android user agent as well as touch input and a phone viewport.
+Phaser 4.2.1's default `autoMobileTextures` policy selects one texture per batch for
+Android/iOS. Touch emulation alone leaves Phaser's desktop OS detection intact;
+older `--mobile` reports therefore exercised the desktop batching policy. Use
+`--mobile --agent=desktop` to reproduce that input/OS combination. Reports include
+the user agent, Phaser version, detected OS, automatic policy and actual render-node
+limits. Keep these fields consistent when comparing runs.
+
 Add `--samplers=4` to cap the fragment texture units reported to the renderer before
 boot. This tests the tradeoff between smaller sampler shaders and more draw calls
 without changing source artwork. Supported caps are 1, 2, 4, 8, 16 and 32; the
@@ -126,3 +134,11 @@ real device may enforce a lower limit. Compare `rendering.maxTextures` as well a
 canvas and battle hashes. This benchmark control does not change the game's
 normal renderer budget. A held-state gain alone does not establish a live-battle
 improvement; repeat live runs in both orders before choosing a renderer change.
+
+Use `--batch-textures=4` to change the render-node batching budget through Phaser's
+public manager API, independently of the emulated `--samplers` hardware ceiling.
+It supports the same values and clamps to the renderer's hardware limit. Compare
+`rendering.maxParallelTextureUnits` and `rendering.nodeTextureLimits`, rather than
+assuming `rendering.maxTextures` is the batching budget. For an Android one-versus-four
+comparison, keep `--mobile --agent=android` and all checkpoint/rendering controls the
+same, changing only `--batch-textures`. Neither control changes the normal game's policy.
