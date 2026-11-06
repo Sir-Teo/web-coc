@@ -111,3 +111,10 @@ general graph capture rejects. The scoped importer verifies an opaque constant-t
 mask and compatible source loops, then clips original mesh triangles while retaining UVs,
 matrices, colors and blend groups. All 30 frames match independently masked source pixels
 exactly. Other masks retain the strict guard. See [the source and verification commands](../reference/dark-orb/README.md).
+
+## Native English fonts
+
+The [native font reference](../reference/fonts/README.md) records the original
+Supercell-Magic and CCBackBeat Light HUD families, their pinned source files and
+lossless full-glyph WOFF2 builds. Source fonts stay under `art/source/native-fonts/`;
+only the two compressed browser faces ship under `public/assets/fonts-native/`.

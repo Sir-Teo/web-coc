@@ -56,8 +56,6 @@
     "test:late-art:production": "node scripts/late-art-production-check.mjs"
   },
   "dependencies": {
-    "@fontsource/lilita-one": "^5.3.0",
-    "@fontsource/nunito-sans": "^5.3.0",
     "lucide": "^0.468.0",
     "phaser": "4.2.1"
   },

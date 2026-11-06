@@ -1,3 +1,4 @@
+import { HEADING_FONT } from '../ui/fonts';
 import { FIELD_SPELL_PROFILES, fieldSpellPresentationName } from './field-spell-effects';
 import { NativeSpellCastPresentation } from './native-spell-cast-scene';
 import { NativeRecallPresentation } from './native-recall-scene';
@@ -6480,7 +6481,7 @@ export class VillageScene extends Phaser.Scene {
       );
       const label = this.add
         .text(p.x, p.y - 38, fx.text ?? 'SPRUNG!', {
-          fontFamily: 'Trebuchet MS',
+          fontFamily: HEADING_FONT,
           fontSize: '17px',
           fontStyle: 'bold',
           color: '#ffe4a2',
@@ -6536,7 +6537,7 @@ export class VillageScene extends Phaser.Scene {
       );
       const text = this.add
         .text(p.x, p.y - 70, fx.text!, {
-          fontFamily: 'Trebuchet MS',
+          fontFamily: HEADING_FONT,
           fontStyle: 'bold',
           fontSize: '23px',
           color: fx.color === 0xffd34b ? '#ffdc5c' : '#f7adff',

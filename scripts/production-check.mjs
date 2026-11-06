@@ -1,6 +1,7 @@
 import { chromium, webkit, expect } from '@playwright/test';
 import fs from 'node:fs/promises';
 const baseURL = process.env.PRODUCTION_BASE_URL ?? 'http://127.0.0.1:4173';
+const nativeFonts = JSON.parse(await fs.readFile('reference/fonts/native.json', 'utf8')).fonts;
 const engines = { chromium, webkit };
 const selectedBrowser = process.env.PRODUCTION_BROWSER;
 if (selectedBrowser !== undefined && !Object.hasOwn(engines, selectedBrowser))
@@ -44,6 +45,31 @@ const multiGearPortraits = JSON.parse(
 const builderHutPortraits = Object.values(
   JSON.parse(await fs.readFile('reference/builder-hut/combat.json', 'utf8')).previews,
 );
+
+async function checkNativeFonts(page, cached = false) {
+  return page.evaluate(
+    async ({ fonts, cached }) => {
+      await document.fonts.ready;
+      for (const font of fonts) {
+        const face = [...document.fonts].find(
+          (entry) => entry.family.replaceAll('"', '') === font.family,
+        );
+        if (face?.status !== 'loaded') throw Error(`Native font did not load: ${font.family}`);
+        if (cached) {
+          const response = await caches.match('/' + font.path);
+          if (!response?.ok) throw Error(`Native font missing from offline cache: ${font.path}`);
+          const bytes = await response.arrayBuffer();
+          const hash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))]
+            .map((value) => value.toString(16).padStart(2, '0'))
+            .join('');
+          if (hash !== font.sha256) throw Error(`Cached native font differs: ${font.path}`);
+        }
+      }
+      return fonts.length;
+    },
+    { fonts: nativeFonts, cached },
+  );
+}
 
 async function checkRegisteredPortraits(page, portraits, label) {
   return page.evaluate(
@@ -391,6 +417,7 @@ for (const [name, engine] of Object.entries(engines)) {
   );
   expect(nativeBuilderHutPortraits).toBe(8);
   report[name] = {
+    nativeFonts: await checkNativeFonts(page),
     nativeDecorations,
     heroPortraits,
     nativeCraftedPortraits,
@@ -421,6 +448,14 @@ for (const [name, engine] of Object.entries(engines)) {
       caches: await caches.keys(),
       requests: (await (await caches.open((await caches.keys())[0])).keys()).length,
     }));
+    await page.waitForFunction(
+      async (fonts) =>
+        (
+          await Promise.all(fonts.map(async (font) => !!(await caches.match('/' + font.path))?.ok))
+        ).every(Boolean),
+      nativeFonts,
+    );
+    expect(await checkNativeFonts(page, true)).toBe(nativeFonts.length);
     await context.setOffline(true);
     await page.reload();
     await page.waitForFunction(
@@ -442,6 +477,7 @@ for (const [name, engine] of Object.entries(engines)) {
     expect(await checkRegisteredPortraits(page, multiGearPortraits, 'Multi-Gear Tower')).toBe(6);
     expect(await checkRegisteredPortraits(page, builderHutPortraits, "Builder's Hut")).toBe(8);
     report.offline = {
+      nativeFonts: await checkNativeFonts(page, true),
       nativeDecorations: 4,
       heroPortraits: rosterHeroPortraits.length,
       nativeCraftedPortraits: 12,

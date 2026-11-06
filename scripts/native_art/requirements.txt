@@ -2,3 +2,5 @@ numpy==1.26.4
 Pillow==10.2.0
 texture2ddecoder==1.0.6
 zstandard==0.25.0
+fonttools==4.61.1
+brotli==1.2.0

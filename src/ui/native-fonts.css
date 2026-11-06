@@ -1,0 +1,17 @@
+/* Complete glyph sets from pinned client 18.400.21; see reference/fonts/README.md. */
+@font-face {
+  font-family: 'Clash Headline';
+  /* Match the existing HUD's nominal sizes to the client's wider heading glyphs. */
+  size-adjust: 72%;
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('/assets/fonts-native/headline.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Clash Text';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/assets/fonts-native/text.woff2') format('woff2');
+}
