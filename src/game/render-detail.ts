@@ -13,6 +13,7 @@ export class RenderDetail {
   level = 0;
   private pressure = 0;
   private frames = 0;
+  private windowMs = 0;
   private slow = 0;
   private calm = 0;
   /** Living units above which detail drops one step, then two. */
@@ -23,13 +24,13 @@ export class RenderDetail {
   static readonly SLOW_FRAME_MS = 24;
   /** Per-frame CPU work with real headroom, below which pressure may ease. */
   static readonly CALM_MS = 11;
-  /** Frames per pressure window, and calm frames needed before easing one step. */
+  /** Normal-speed frames per pressure window, and calm frames before easing one step. */
   static readonly WINDOW = 60;
   static readonly CALM_FRAMES = 360;
   /** The loop's target frame time; the millisecond limits above are for 60 FPS. */
   private interval = 1000 / 60;
   reset() {
-    this.level = this.pressure = this.frames = this.slow = this.calm = 0;
+    this.level = this.pressure = this.frames = this.windowMs = this.slow = this.calm = 0;
   }
   /**
    * `busyMs`: CPU time of the previous frame (NaN when unknown, e.g. the first frame).
@@ -43,21 +44,35 @@ export class RenderDetail {
     const base = units > steps[1] ? 2 : units > steps[0] ? 1 : 0;
     if (interval !== this.interval) {
       this.interval = interval;
-      this.frames = this.slow = this.calm = 0;
+      this.frames = this.windowMs = this.slow = this.calm = 0;
     }
     const pace = this.interval / (1000 / 60);
     if (Number.isFinite(busyMs) && busyMs >= 0) {
       this.frames++;
+      // Sixty rendered frames can take many seconds on an overloaded phone. Keep the
+      // normal window duration at the current cap, rather than waiting for all 60.
+      // A hidden-tab gap contributes only actual frame work, bounded to a quarter
+      // second, so one stall cannot force an immediate detail reduction.
+      const observed =
+        Number.isFinite(frameMs) && frameMs > 0
+          ? frameMs <= 250
+            ? frameMs
+            : Math.min(busyMs, 250)
+          : this.interval;
+      this.windowMs += Math.max(this.interval, observed);
       const frameSlow = frameMs > RenderDetail.SLOW_FRAME_MS * pace && frameMs <= 250;
       if (busyMs > RenderDetail.SLOW_MS * pace || frameSlow) this.slow++;
       if (busyMs < RenderDetail.CALM_MS * pace && !frameSlow) this.calm++;
       else this.calm = 0;
-      if (this.frames >= RenderDetail.WINDOW) {
+      if (
+        this.frames >= RenderDetail.WINDOW ||
+        this.windowMs + 1e-6 >= RenderDetail.WINDOW * this.interval
+      ) {
         if (this.slow * 2 > this.frames) {
           this.pressure = Math.min(2, this.pressure + 1);
           this.calm = 0;
         }
-        this.frames = this.slow = 0;
+        this.frames = this.windowMs = this.slow = 0;
       }
       if (this.calm >= RenderDetail.CALM_FRAMES) {
         this.pressure = Math.max(0, this.pressure - 1);

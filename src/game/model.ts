@@ -8802,6 +8802,9 @@ export function separateUnits(
         for (let j = separationHead[(ny * MAP_SIZE + nx) * 2 + air]; j >= 0; j = next[j]) {
           const v = alive[j];
           if (v.id <= u.id) continue;
+          // Neither body can move again this tick. Skip geometry work only when both
+          // allowances are spent; an exhausted body can still push an unspent neighbor.
+          if (maxPush !== undefined && spent[i] >= maxPush && spent[j] >= maxPush) continue;
           const spacing = radius[i] + radius[j];
           const desired = spacing / 2;
           let dx = v.x - u.x,

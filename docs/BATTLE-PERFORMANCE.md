@@ -1988,6 +1988,49 @@ background work, audio lifecycle, battery saver, phone density and save recovery
 source/test typing, the production build, formatting, documentation links and content
 inventory reproduction also pass.
 
+## Faster response to sustained slow frames
+
+The detail controller closes its pressure window after the elapsed equivalent of 60 target
+frames, even when fewer frames were rendered. At 60 FPS this is about a second; at the
+30 FPS battery cap it is about two seconds. Previously, four rendered frames per second
+could leave the controller waiting 15 seconds before lowering animation detail.
+
+CPU and GPU pressure keep the existing thresholds. Long background gaps contribute only
+bounded frame work, so an isolated loading stall cannot force a reduction. Unknown frame
+intervals retain the frame-count fallback. Cap changes and scene resets clear elapsed
+pressure; recovery still requires the existing long calm streak. Simulation and replays
+are unchanged.
+
+Two alternating before/after mobile stress runs reached detail 2 earlier with the change.
+Before measured 2.9 and 3.6 FPS; after measured 3.4 FPS in both runs. This establishes faster
+controller response, not a reliable FPS improvement or acceptable phone performance.
+Screenshots and per-run reports are retained under ignored `output/playtest/detail-*`.
+
+## Skip crowd pairs that cannot move
+
+Capped crowd separation now skips a pair's geometry calculations once both units have spent
+their movement allowance for the current tick. An exhausted unit can still push an unspent
+neighbor; blocked pushes still consume no allowance. Historical uncapped separation keeps its
+existing rules. No combat version changes.
+
+`node scripts/crowd-separation-benchmark.mjs --baseline=REF` compares a prior model against
+`node scripts/crowd-separation-benchmark.mjs` without editing the working tree. It repeats
+40 deployment-overlap steps with 512 units, discards two warm-up runs and reports the median
+of five runs and a final unit-state hash. On the November 6 cloud host, dense capped crowds
+measured 180 ms before and 52 ms after; mixed air/ground crowds measured 127 ms and 45 ms.
+Spread-out crowds measured 19 ms in both, and historical uncapped crowds measured 173 ms in
+both. All four final hashes matched. These are separation-workload timings, not frame rates.
+
+An additional before-change witness retains exact full unit states over 240 steps across
+coincident and dispersed bodies, mixed layers, walls, building footprints, off-grid units,
+Phoenix exclusions, and five capped/uncapped movement budgets.
+
+Validation passed 8,755 tests across 570 files, source/test type checks, the production
+offline build and five Chromium cases for frame caps, battery saver, resizing and picking.
+The 400-step full-roster battle retains its pre-change hash. A final combined mobile stress
+run still measured 3.4 FPS with no runtime errors on the same throttled software renderer;
+smooth gameplay on that workload remains unresolved.
+
 ## Sticky defense targets
 
 Single-target native defenses now validate their current target before building a full
