@@ -1,0 +1,298 @@
+{
+  "at": "2026-11-06T19:53:19.843132+00:00",
+  "source_sha256": "636e5162745ce6551d713959fb0c4f98168f14498c15b686bb548fdf442a424e",
+  "source_tables": {
+    "characters": {
+      "path": "logic/characters.csv",
+      "sha256": "5c3acc5b46ff9e7978f406b540264e65c93a846b69d03cd43326a9853703cb89"
+    },
+    "pets": {
+      "path": "logic/pets.csv",
+      "sha256": "dc210b12a02fea73e47339e62cea0e2d50d462f736d81e7616d782533bec48ad"
+    },
+    "buildings": {
+      "path": "logic/buildings.csv",
+      "sha256": "9aed5fed876e2914a22fa7fed688a651c691ab06170d60e2bda8dc9262fbccb1"
+    },
+    "traps": {
+      "path": "logic/traps.csv",
+      "sha256": "757ca07de02b26b2071b52bb3cb495df2f0ae879731a859d3102ca3552dd528c"
+    }
+  },
+  "source_records": {
+    "Root Rider": {
+      "CantBeEjected": "TRUE"
+    },
+    "Wall Wrecker": {
+      "ProductionBuilding": "Siege Workshop",
+      "CantBeEjected": ""
+    },
+    "Log Launcher": {
+      "ProductionBuilding": "Siege Workshop",
+      "CantBeEjected": ""
+    },
+    "Flame Flinger": {
+      "ProductionBuilding": "Siege Workshop",
+      "CantBeEjected": ""
+    },
+    "Battle Drill": {
+      "ProductionBuilding": "Siege Workshop",
+      "CantBeEjected": ""
+    },
+    "LASSI": {
+      "CantBeEjected": "TRUE"
+    },
+    "Mighty Yak": {
+      "CantBeEjected": "TRUE"
+    },
+    "Unicorn": {
+      "CantBeEjected": "TRUE"
+    },
+    "Frosty": {
+      "CantBeEjected": "TRUE"
+    },
+    "Siege Workshop": {
+      "ProducesUnitsOfType": "3"
+    },
+    "Spring Trap": {
+      "AttemptEjectBeforeDamage": "TRUE",
+      "EjectWhenKilling": "TRUE",
+      "PetDamageReductionPercent": "50",
+      "HeroDamageReductionPercent": "50",
+      "SiegeDamageReductionPercent": "50"
+    }
+  },
+  "cases": [
+    {
+      "name": "ordinary_barracks_control",
+      "data_type_tag": 3,
+      "production_type": 1,
+      "source_cant_be_ejected": false,
+      "initialized_cant_be_ejected": false,
+      "initialized_category": 0,
+      "synthetic_flag_override": null,
+      "ejected": true,
+      "native_ejection_marker": true,
+      "raw_native_damage_input": 1401,
+      "raw_native_damage_result": 1401,
+      "synthetic_hitpoint_damage_input": 1401,
+      "native_damage_input_hundredths": 140100,
+      "native_damage_result_hundredths": 140100,
+      "hitpoint_damage": 1401.0
+    },
+    {
+      "name": "ordinary_dark_barracks_control",
+      "data_type_tag": 3,
+      "production_type": 2,
+      "source_cant_be_ejected": false,
+      "initialized_cant_be_ejected": false,
+      "initialized_category": 0,
+      "synthetic_flag_override": null,
+      "ejected": true,
+      "native_ejection_marker": true,
+      "raw_native_damage_input": 1401,
+      "raw_native_damage_result": 1401,
+      "synthetic_hitpoint_damage_input": 1401,
+      "native_damage_input_hundredths": 140100,
+      "native_damage_result_hundredths": 140100,
+      "hitpoint_damage": 1401.0
+    },
+    {
+      "name": "source_protected_character",
+      "data_type_tag": 3,
+      "production_type": 1,
+      "source_cant_be_ejected": true,
+      "initialized_cant_be_ejected": true,
+      "initialized_category": 0,
+      "synthetic_flag_override": null,
+      "ejected": false,
+      "native_ejection_marker": false,
+      "raw_native_damage_input": 1401,
+      "raw_native_damage_result": 1401,
+      "synthetic_hitpoint_damage_input": 1401,
+      "native_damage_input_hundredths": 140100,
+      "native_damage_result_hundredths": 140100,
+      "hitpoint_damage": 1401.0
+    },
+    {
+      "name": "source_protected_pet",
+      "data_type_tag": 72,
+      "production_type": 0,
+      "source_cant_be_ejected": true,
+      "initialized_cant_be_ejected": true,
+      "initialized_category": 0,
+      "synthetic_flag_override": null,
+      "ejected": false,
+      "native_ejection_marker": false,
+      "raw_native_damage_input": 1401,
+      "raw_native_damage_result": 700,
+      "synthetic_hitpoint_damage_input": 1401,
+      "native_damage_input_hundredths": 140100,
+      "native_damage_result_hundredths": 70050,
+      "hitpoint_damage": 700.5
+    },
+    {
+      "name": "siege_forced_protection",
+      "data_type_tag": 3,
+      "production_type": 3,
+      "source_cant_be_ejected": false,
+      "initialized_cant_be_ejected": true,
+      "initialized_category": 3,
+      "synthetic_flag_override": null,
+      "ejected": false,
+      "native_ejection_marker": false,
+      "raw_native_damage_input": 1401,
+      "raw_native_damage_result": 700,
+      "synthetic_hitpoint_damage_input": 1401,
+      "native_damage_input_hundredths": 140100,
+      "native_damage_result_hundredths": 70050,
+      "hitpoint_damage": 700.5
+    },
+    {
+      "name": "siege_category_additional_guard",
+      "data_type_tag": 3,
+      "production_type": 3,
+      "source_cant_be_ejected": false,
+      "initialized_cant_be_ejected": true,
+      "initialized_category": 3,
+      "synthetic_flag_override": false,
+      "ejected": false,
+      "native_ejection_marker": false,
+      "raw_native_damage_input": 1401,
+      "raw_native_damage_result": 700,
+      "synthetic_hitpoint_damage_input": 1401,
+      "native_damage_input_hundredths": 140100,
+      "native_damage_result_hundredths": 70050,
+      "hitpoint_damage": 700.5
+    },
+    {
+      "name": "hero_category_guard",
+      "data_type_tag": 27,
+      "production_type": 0,
+      "source_cant_be_ejected": false,
+      "initialized_cant_be_ejected": false,
+      "initialized_category": 0,
+      "synthetic_flag_override": null,
+      "ejected": false,
+      "native_ejection_marker": false,
+      "raw_native_damage_input": 1401,
+      "raw_native_damage_result": 700,
+      "synthetic_hitpoint_damage_input": 1401,
+      "native_damage_input_hundredths": 140100,
+      "native_damage_result_hundredths": 70050,
+      "hitpoint_damage": 700.5
+    },
+    {
+      "name": "air_state_guard",
+      "data_type_tag": 3,
+      "production_type": 1,
+      "source_cant_be_ejected": false,
+      "initialized_cant_be_ejected": false,
+      "initialized_category": 0,
+      "synthetic_flag_override": null,
+      "ejected": false,
+      "native_ejection_marker": false,
+      "raw_native_damage_input": 1401,
+      "raw_native_damage_result": 1401,
+      "synthetic_hitpoint_damage_input": 1401,
+      "native_damage_input_hundredths": 140100,
+      "native_damage_result_hundredths": 140100,
+      "hitpoint_damage": 1401.0
+    }
+  ],
+  "all_passed": true,
+  "image_writes": [],
+  "native_damage_unit": "hundredth of hit point; original TrapData damage conversion calls ebd9bc(value,1000)",
+  "instruction_ranges": [
+    {
+      "name": "data-postprocess",
+      "elf_rva": "0xcdfecc",
+      "bytes": 332,
+      "sha256": "f5bc25a44e71869e4db166e9eada459c649e4c411c8c0dbd2a98b56e603019f6",
+      "disassembly": "0xcdfecc: sub sp, sp, #0x30\n0xcdfed0: stp x29, x30, [sp, #0x10]\n0xcdfed4: str x19, [sp, #0x20]\n0xcdfed8: add x29, sp, #0x10\n0xcdfedc: mov x19, x0\n0xcdfee0: bl #0xcf062c\n0xcdfee4: ldr x8, [x19, #0x210]\n0xcdfee8: cbz x8, #0xcdff38\n0xcdfeec: ldr w8, [x8, #0x70]\n0xcdfef0: cmn w8, #1\n0xcdfef4: b.eq #0xcdff38\n0xcdfef8: ldr w9, [x19, #0x70]\n0xcdfefc: cmp w8, w9\n0xcdff00: b.eq #0xcdff38\n0xcdff04: mov x8, x19\n0xcdff08: adrp x0, #0x224000\n0xcdff0c: add x0, x0, #0x25b\n0xcdff10: ldr x9, [x8, #0x10]!\n0xcdff14: ldur w10, [x8, #-4]\n0xcdff18: cmp w10, #8\n0xcdff1c: csel x1, x8, x9, lt\n0xcdff20: mov x8, sp\n0xcdff24: bl #0x10c2820\n0xcdff28: mov x0, sp\n0xcdff2c: bl #0xf6be6c\n0xcdff30: mov x0, sp\n0xcdff34: bl #0x10bfc28\n0xcdff38: ldr w8, [x19, #0xd8]\n0xcdff3c: cmp w8, #3\n0xcdff40: b.ne #0xcdff6c\n0xcdff44: mov w8, #1\n0xcdff48: strb w8, [x19, #0x11f]\n0xcdff4c: mov w8, #3\n0xcdff50: mov w0, #0x6a\n0xcdff54: str w8, [x19, #0x368]\n0xcdff58: bl #0xcf7920\n0xcdff5c: ldr w8, [x0, #0x14]\n0xcdff60: cmp w8, #1\n0xcdff64: b.ge #0xcdff84\n0xcdff68: b #0xce0008\n0xcdff6c: mov w0, #0x6a\n0xcdff70: str wzr, [x19, #0x368]\n0xcdff74: bl #0xcf7920\n0xcdff78: ldr w8, [x0, #0x14]\n0xcdff7c: cmp w8, #1\n0xcdff80: b.lt #0xce0008\n0xcdff84: ldrb w10, [x19, #0x22c]\n0xcdff88: mov x9, xzr\n0xcdff8c: b #0xcdffa0\n0xcdff90: mov w10, wzr\n0xcdff94: add x9, x9, #1\n0xcdff98: cmp x9, x8\n0xcdff9c: b.eq #0xce0008\n0xcdffa0: tst w10, #0xff\n0xcdffa4: b.ne #0xce0008\n0xcdffa8: ldr x10, [x0, #8]\n0xcdffac: ldr x10, [x10, x9, lsl #3]\n0xcdffb0: ldrsw x11, [x10, #0xb8]\n0xcdffb4: ldr x10, [x10, #0xd0]\n0xcdffb8: add x10, x10, x11, lsl #3\n0xcdffbc: ldur x11, [x10, #-8]\n0xcdffc0: cbz x11, #0xcdff90\n0xcdffc4: ldr w10, [x11, #0xc]\n0xcdffc8: cmp w10, #1\n0xcdffcc: b.lt #0xcdff90\n0xcdffd0: ldr x11, [x11]\n0xcdffd4: mov x12, xzr\n0xcdffd8: ldr x13, [x11, x12, lsl #3]\n0xcdffdc: add x12, x12, #1\n0xcdffe0: cmp x12, x10\n0xcdffe4: b.hs #0xcdfff0\n0xcdffe8: cmp x13, x19\n0xcdffec: b.ne #0xcdffd8\n0xcdfff0: cmp x13, x19\n0xcdfff4: cset w10, eq\n0xcdfff8: strb w10, [x19, #0x22c]\n0xcdfffc: add x9, x9, #1\n0xce0000: cmp x9, x8\n0xce0004: b.ne #0xcdffa0\n0xce0008: ldp x29, x30, [sp, #0x10]\n0xce000c: ldr x19, [sp, #0x20]\n0xce0010: add sp, sp, #0x30\n0xce0014: ret \n"
+    },
+    {
+      "name": "ejection-primitive",
+      "elf_rva": "0xd6ebb0",
+      "bytes": 192,
+      "sha256": "c4f288f348ed781fd5e6618b2ba19b743929428950637b8809a2a0afae61223c",
+      "disassembly": "0xd6ebb0: ldrb w8, [x0, #0x180]\n0xd6ebb4: cbz w8, #0xd6ebc0\n0xd6ebb8: mov w0, wzr\n0xd6ebbc: ret \n0xd6ebc0: stp x29, x30, [sp, #-0x20]!\n0xd6ebc4: stp x20, x19, [sp, #0x10]\n0xd6ebc8: mov x29, sp\n0xd6ebcc: ldr x8, [x0, #0x18]\n0xd6ebd0: ldrb w9, [x8, #0x11f]\n0xd6ebd4: cbz w9, #0xd6ebe8\n0xd6ebd8: mov w0, wzr\n0xd6ebdc: ldp x20, x19, [sp, #0x10]\n0xd6ebe0: ldp x29, x30, [sp], #0x20\n0xd6ebe4: ret \n0xd6ebe8: ldr x9, [x8]\n0xd6ebec: mov x19, x0\n0xd6ebf0: mov x0, x8\n0xd6ebf4: mov x20, x1\n0xd6ebf8: ldr x9, [x9, #0x98]\n0xd6ebfc: blr x9\n0xd6ec00: cmp w0, #3\n0xd6ec04: b.ne #0xd6ec18\n0xd6ec08: mov w0, wzr\n0xd6ec0c: ldp x20, x19, [sp, #0x10]\n0xd6ec10: ldp x29, x30, [sp], #0x20\n0xd6ec14: ret \n0xd6ec18: mov x0, x19\n0xd6ec1c: bl #0xd74278\n0xd6ec20: tbz w0, #0, #0xd6ec34\n0xd6ec24: mov w0, wzr\n0xd6ec28: ldp x20, x19, [sp, #0x10]\n0xd6ec2c: ldp x29, x30, [sp], #0x20\n0xd6ec30: ret \n0xd6ec34: cbz x20, #0xd6ec40\n0xd6ec38: ldr d0, [x20]\n0xd6ec3c: b #0xd6ec44\n0xd6ec40: movi v0.2d, #0000000000000000\n0xd6ec44: add x8, x19, #0x174\n0xd6ec48: mov w9, #1\n0xd6ec4c: mov x0, x19\n0xd6ec50: str d0, [x8]\n0xd6ec54: strb w9, [x19, #0x17c]\n0xd6ec58: bl #0xd72334\n0xd6ec5c: bl #0xdc02bc\n0xd6ec60: mov w0, #1\n0xd6ec64: ldp x20, x19, [sp, #0x10]\n0xd6ec68: ldp x29, x30, [sp], #0x20\n0xd6ec6c: ret \n"
+    },
+    {
+      "name": "category-getter",
+      "elf_rva": "0xcdd50c",
+      "bytes": 8,
+      "sha256": "e508b0547e3ae7049729890ff2bf12bc36dc9fb6e2119ff0b3bd19f855f82013",
+      "disassembly": "0xcdd50c: ldr w0, [x0, #0x368]\n0xcdd510: ret \n"
+    }
+  ],
+  "original_relocation_vtable_bindings": {
+    "0x15e4ca8": "0xce0018",
+    "0x15e4cb0": "0xcdfecc",
+    "0x15e4d00": "0xcdd50c",
+    "0x15e8e88": "0xd6cd3c"
+  },
+  "static_chain": [
+    {
+      "elf_rva": "0xcd449c",
+      "explanation": "ProducesUnitsOfType -> BuildingData+0x358",
+      "pseudocode_sha256": "9a2bcb20d4d43e7c2a5848e5adf820e5ed72a1bfebdfe0a1a03c90166919b80b"
+    },
+    {
+      "elf_rva": "0xcf0008",
+      "explanation": "ProductionBuilding -> CombatItemData+0xf0",
+      "pseudocode_sha256": "1da076a5d7a0afdba57ffd62e86e3f1b6530f299b3d4d475a52fc58ba2f1411e"
+    },
+    {
+      "elf_rva": "0xcf062c",
+      "explanation": "ProductionBuilding+0x358 -> data+0xd8",
+      "pseudocode_sha256": "1d56466f9a133c7a73b778daacd8e39713ae705d9291fac02d6328f5b0ba56a2"
+    },
+    {
+      "elf_rva": "0xce0018",
+      "explanation": "CantBeEjected -> CharacterData+0x11f; IsTotem -> +0x22b",
+      "pseudocode_sha256": "e75c8da0965ae7c4cb38c2ed3169dd95a9013c2fdecec5cfac49a360d11dac16"
+    },
+    {
+      "elf_rva": "0xebd9bc",
+      "explanation": "Trap Damage loader calls this with1000: return input*1000/10, so damage is stored in hundredths of HP",
+      "pseudocode_sha256": "bc15ce137f1d785619e7f8341f06cb7b2712271fca7fb254a55a81a3083971fd"
+    },
+    {
+      "elf_rva": "0xd6b038",
+      "explanation": "Character constructor installs actual unit vtable at ELF0x15e8db0; slot+0xd8 is d6cd3c",
+      "pseudocode_sha256": "c7986bb88d92670b2c7c00509ccd1141909e355eb5bf7c2c041cfa2190ebcc9a"
+    },
+    {
+      "elf_rva": "0xdc0334",
+      "explanation": "Lethal trap damage with EjectWhenKilling calls d6ebb0",
+      "pseudocode_sha256": "d2904fdcc1cd1837953a77514370d224db8976a2770f7174b5f00526d1660625"
+    },
+    {
+      "elf_rva": "0xd9a9e4",
+      "explanation": "Attempt ejection before damage, otherwise apply reduced damage",
+      "pseudocode_sha256": "993528f125430f30b502315fa93ee2ef7b85700d35a4ff81142fe67ec95bf986"
+    }
+  ],
+  "modeled_fixture_boundaries": {
+    "0xcf3cd4": "Inherited data validation returns with fixture already valid",
+    "0xcf7920": "External registry getter returns explicit empty registry",
+    "0xdc02bc": "Terminal health side effect counted then returned after ejection marker was set"
+  },
+  "limitations": [
+    "Synthetic typed records, not live Android objects or end-to-end battle observations.",
+    "Original initialization, classifier and ejection instructions run unchanged between listed fixture boundaries.",
+    "No claim about unrelated target selection, movement, status stacking or absolute native clocks."
+  ],
+  "version": "18.400.22",
+  "replay_version": 238,
+  "original_apk_sha256": "8bd23251650667b3f07543fe43e0d9283376d545db64bdcf895b9f6fec829c20",
+  "interpretation": {
+    "CantBeEjected": "CharacterData+0x11f; distinct from IsTotem at +0x22b",
+    "siege_initialization": "ProductionBuilding -> BuildingData+0x358 ProducesUnitsOfType -> data+0xd8; type3 forces CantBeEjected and category3",
+    "ejection_primitive": "d6ebb0 rejects source immunity, category3, heroes and air state before writing the ejection marker",
+    "trap_order": "d9a9e4 attempts ejection before reduced damage; dc0334 retries ejection on a lethal trap hit when EjectWhenKilling is set",
+    "damage": "d3d694 applies clamped integer hero/pet/siege retained percentages in hundredth-HP units; convert back after truncation",
+    "bounds": "The browser port changes these Spring Trap rules; original target search and absolute timing remain separately unverified."
+  }
+}

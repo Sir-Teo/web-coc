@@ -1158,6 +1158,12 @@ export interface Battle {
   nativeMovingSiegeFreezeClock?: true;
   /** Version 232: a deployed siege can use its source manual self-destruct. */
   nativeSiegeManualRelease?: true;
+  /** Version 237: source Spring Trap pet damage uses the recovered integer percentage. */
+  nativeSpringPetDamage?: true;
+  /** Version 238: source ejection immunity and siege reduction in native home Spring Traps. */
+  nativeSpringEjection?: true;
+  /** Version239: source Seeking Shield/Spiky Ball bounce stop counters hold movement. */
+  nativeProjectileBouncePause?: true;
   /** Version 207: source demolition contact cues reconstruct and cover the death tone. */
   nativeWallBreakerSounds?: true;
   /** Version 206: both Wall Breaker contact splashes include ground defenders. */

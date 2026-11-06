@@ -66,7 +66,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 236;
+export const REPLAY_VERSION = 239;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -426,6 +426,9 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 233 ||
   version === 234 ||
   version === 235 ||
+  version === 236 ||
+  version === 237 ||
+  version === 238 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -591,7 +594,23 @@ function fullMapPractice(
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   const launcher = version >= 223 && s.army.trooplauncher > 0;
+  const homeSpring =
+    s.catalog !== 'goblin-v1' &&
+    s.buildings.some((building) => building.kind === 'springtrap' && !building.npc);
+  const petSpring = version >= 237 && homeSpring && s.heroes?.some((hero) => hero.pet);
   return {
+    ...(version >= 239 &&
+    s.heroes?.some((hero) =>
+      hero.items.some(
+        (item) =>
+          (hero.kind === 'king' && item.slug === 'spiky-ball') ||
+          (hero.kind === 'champion' && item.slug === 'seeking-shield'),
+      ),
+    )
+      ? { nativeProjectileBouncePause: true as const }
+      : {}),
+    ...(version >= 238 && homeSpring ? { nativeSpringEjection: true as const } : {}),
+    ...(petSpring ? { nativeSpringPetDamage: true as const } : {}),
     ...(fullMapPractice(s, version) ? { boardSize: FULL_MAP_SIZE } : {}),
     ...(version >= 232 && TROOP_KEYS.some((kind) => isSiege(kind) && s.army[kind] > 0)
       ? { nativeSiegeManualRelease: true as const }

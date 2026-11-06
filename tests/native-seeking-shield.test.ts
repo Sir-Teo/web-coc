@@ -65,7 +65,7 @@ it.each(Array.from({ length: 18 }, (_, index) => index + 1))(
         left: 3 - index,
         reach: 70,
       });
-      expect(shot.impact - shot.launched).toBeCloseTo(
+      expect(shot.impact - (shot.motionAt ?? shot.launched)).toBeCloseTo(
         Math.sqrt((shot.x - shot.fromX) ** 2 + (shot.y - shot.fromY) ** 2) / 20,
         12,
       );

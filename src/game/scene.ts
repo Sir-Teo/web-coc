@@ -7001,7 +7001,8 @@ export class VillageScene extends Phaser.Scene {
         }
         retained.add(p.id);
         const { from, to } = this.projectileAnchors(projectileEffect(p, 'projectile'));
-        const progress = Phaser.Math.Clamp((now - p.launched) / (p.impact - p.launched), 0, 1);
+        const motionAt = p.motionAt ?? p.launched;
+        const progress = Phaser.Math.Clamp((now - motionAt) / (p.impact - motionAt), 0, 1);
         this.combatEffects.poseProjectile(p.id, p.weapon, from, to, progress);
       }
     }

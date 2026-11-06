@@ -87,6 +87,7 @@ export interface NativeFlightShot {
   x: number;
   y: number;
   launched: number;
+  motionAt?: number;
   impact: number;
   fromAir?: boolean;
   toAir?: boolean;
@@ -115,10 +116,8 @@ export function nativeProjectileFlight(
     uy = length > 1e-9 ? dy / length : 0;
   const fixed = num(row.FixedTravelTime) / 1000;
   const end = fixed > 0 ? shot.launched + fixed : shot.impact;
-  const t = Math.max(
-    0,
-    Math.min(1, (elapsed - shot.launched) / Math.max(1e-3, end - shot.launched)),
-  );
+  const motionAt = shot.motionAt ?? shot.launched;
+  const t = Math.max(0, Math.min(1, (elapsed - motionAt) / Math.max(1e-3, end - motionAt)));
   // StartOffset (1/100 tile) moves the launch point toward the target, never past it.
   const offset = Math.min(num(row.StartOffset) / 100, length * 0.9);
   const start = iso(shot.fromX + ux * offset, shot.fromY + uy * offset);

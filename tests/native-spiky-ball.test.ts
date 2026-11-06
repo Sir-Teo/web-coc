@@ -61,7 +61,7 @@ it.each(Array.from({ length: 27 }, (_, index) => index + 1))(
         reach: 70,
       });
       expect(shot.native!.spikyBall!.visited).toHaveLength(index + 1);
-      expect(shot.impact - shot.launched).toBeCloseTo(
+      expect(shot.impact - (shot.motionAt ?? shot.launched)).toBeCloseTo(
         Math.sqrt((shot.x - shot.fromX) ** 2 + (shot.y - shot.fromY) ** 2) / 15,
         12,
       );

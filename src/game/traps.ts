@@ -11,6 +11,8 @@ import { SANTA_TRAP, makeSantaState, stepSanta, type SantaState } from './santa-
 import { recordSeekingMineTrail, type SeekingMineFlight } from './seeking-mine-flight';
 import { SHRINK_TRAP, makeShrinkState, stepShrink, type ShrinkState } from './shrink-trap';
 import { NATIVE_TRAP_SOURCE, fling, nativeTrapValues, stepNativeTrap } from './native-traps';
+import { isPetUnitKind } from './native-units';
+import { nativeSpringTrapOutcome } from './native-spring-trap';
 import { isLateBuilding } from './late-campaign';
 
 /** Battle-only state. A home trap is always armed when a fresh attack starts. */
@@ -340,14 +342,42 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       const springing = unitById(state.targetId);
       const target = springing && eligible(springing) ? springing : undefined;
       if (!target) continue;
-      const outcome = target.hero
-        ? { ejected: false, hp: Math.max(0, target.hp - power * 0.5) }
-        : springOutcome(TROOPS[target.kind].space, target.hp, springCapacity(trap.level), power);
+      const nativeSpring =
+        battle.nativeSpringEjection &&
+        battle.nativeRoster &&
+        !trap.npc &&
+        battle.catalog !== 'goblin-v1';
+      let damage = power;
+      if (
+        !nativeSpring &&
+        battle.nativeSpringPetDamage &&
+        battle.nativeRoster &&
+        !trap.npc &&
+        battle.catalog !== 'goblin-v1' &&
+        isPetUnitKind(target.kind)
+      ) {
+        // Native 18.400.22 d3d694 multiplies the clamped integer percent before dividing.
+        const reduction = nativeTrapValues(trap.kind, trap.level).petDamageReductionPercent;
+        damage = Math.trunc((power * Math.max(0, Math.min(100, 100 - reduction))) / 100);
+      }
+      const outcome = nativeSpring
+        ? nativeSpringTrapOutcome(target, trap.level, power)
+        : target.hero
+          ? { ejected: false, hp: Math.max(0, target.hp - power * 0.5), bounce: true }
+          : {
+              ...springOutcome(
+                TROOPS[target.kind].space,
+                target.hp,
+                springCapacity(trap.level),
+                damage,
+              ),
+              bounce: true,
+            };
       target.hp = outcome.hp;
       target.ejected = outcome.ejected;
       if (outcome.ejected)
         target.spent = true; // No death bomb from a troop flung out of the village.
-      else {
+      else if (outcome.bounce) {
         target.springUntil = battle.elapsed + SPRING_AIRTIME;
         target.attacking = false;
         target.path = [];

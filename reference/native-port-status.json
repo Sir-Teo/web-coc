@@ -1,0 +1,68 @@
+{
+  "goal": "Port recovered client behavior and usable data into the JavaScript game with traceable evidence.",
+  "recovered_client_version": "18.400.22",
+  "current_replay_version": 239,
+  "all_native_functions_ported": false,
+  "live_original_gameplay_parity_verified": false,
+  "integrated": [
+    {
+      "feature": "Spring Trap pet damage percentage",
+      "since_replay_version": 237,
+      "implementation": ["src/game/traps.ts"],
+      "reference": "reference/native-trap-reduction-18.400.22.json",
+      "tests": "tests/native-spring-pet-damage.test.ts"
+    },
+    {
+      "feature": "Spring Trap ejection protection, production type3 siege classification and integer category damage",
+      "since_replay_version": 238,
+      "implementation": [
+        "src/game/native-spring-trap.ts",
+        "src/game/traps.ts",
+        "src/game/replay.ts"
+      ],
+      "reference": "reference/native-spring-ejection-18.400.22.json",
+      "tests": "tests/native-spring-ejection.test.ts"
+    },
+    {
+      "feature": "Seeking Shield/Spiky Ball StopToTargetTime holds movement for one16ms step after a bounce, except reachable close contacts",
+      "since_replay_version": 239,
+      "implementation": [
+        "src/game/native-projectile-step.ts",
+        "src/game/projectiles.ts",
+        "src/game/native-projectile-poses.ts",
+        "src/game/native-projectile-scene.ts",
+        "src/game/scene.ts",
+        "src/game/replay.ts"
+      ],
+      "reference": "reference/native-projectile-step-18.400.22.json",
+      "tests": "tests/native-projectile-bounce-pause.test.ts",
+      "qualification": "Verified hold branch integrated into existing continuous flight model; complete native movement/arrival quantization is still separate."
+    }
+  ],
+  "existing_asset_integration": {
+    "source": "art/source/native-client-18.400.21/files",
+    "pinned_files": 9075,
+    "qualification": "Original assets and browser parsers were already present before these native behavior ports."
+  },
+  "pending": [
+    {
+      "feature": "TH17 projectile RetargetRadius/RetargetTimer",
+      "status": "Needs native replacement eligibility, radius and timer-start semantics."
+    },
+    {
+      "feature": "Simulation, pathfinding, targeting and rendering beyond these bounded rules",
+      "status": "Recovered pseudocode available; additional semantic validation and ports required."
+    },
+    {
+      "feature": "Complete native projectile position and arrival quantization",
+      "status": "Native16ms movement, fixed coordinate scales and collision-before-stop order traced; current port adds only the verified stop hold to continuous transport."
+    }
+  ],
+  "reviewed_without_rule_change": [
+    {
+      "feature": "Healing Tome ExecuteHealthPermil=-60",
+      "reason": "Recovered execute branch requires a positive value; negative percent-healing interpretation is unsupported."
+    }
+  ],
+  "native_engine_code_recovered": true
+}

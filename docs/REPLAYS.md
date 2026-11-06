@@ -1916,3 +1916,52 @@ and draw both source ground-frost phases. Earlier versions keep their previous
 history and generic ring. Damage, timing and status rules are unchanged. Both
 spell sides preload from their carried units/reserves and reconstruct after seeks.
 See the [Ice Golem reference](../reference/attacking-ice-golem/README.md#original-death-frost-recording-version-236).
+
+## Version 237: recovered Spring Trap pet damage
+
+Native home Spring Traps apply the source pet damage reduction with integer
+truncation. The recovered Android 18.400.22 helper at ELF `0xd3d694` confirms
+`damage * clamp(100 - reduction, 0, 100) / 100`: a level-13 hit applies 700
+damage to a ground pet from the source damage of 1,400. The original ARM64
+instructions passed six isolated arithmetic checks. Source hashes, offsets and
+fixture qualifications are in [the native trace](../reference/native-trap-reduction-18.400.22.json).
+
+Recordings through version 236 retain their earlier Spring Trap damage. The
+new rule is carried by the battle snapshot flag `nativeSpringPetDamage`, enabled
+when the initial native home layout contains a Spring Trap and the army carries
+a hero's pet.
+
+## Version 238: recovered Spring Trap ejection rules
+
+Native home Spring Traps respect the source `CantBeEjected` flag, including pets
+and Root Riders. The original initialization code also forces that protection
+for units whose production building has `ProducesUnitsOfType=3`: siege machines.
+These units take damage and can be defeated normally, but are not marked as
+ejected. Ground siege machines take the source 50 percent reduced hit and are
+excluded from the trap's radial throw. Heroes retain their ejection protection;
+their damage percentage now follows the original clamped integer arithmetic.
+Damage converts through the native hundredth-HP scale before truncation, so a
+synthetic 1,401-HP hit at 50 percent retains 700.5 HP of damage.
+
+The battle snapshot flag `nativeSpringEjection` enables this behavior for home
+layouts containing a Spring Trap. Earlier versions, including 237, retain their
+previous results. NPC and Goblin campaign traps keep their own rules. Original
+ARM64 fixtures, source hashes and the initialization/ejection chain are recorded
+in [the native ejection reference](../reference/native-spring-ejection-18.400.22.json).
+
+## Version 239: recovered equipment ricochet stop counter
+
+Seeking Shield and Spiky Ball consume their source `StopToTargetTime=15` after
+a bounce. Original movement executes in 16 ms steps: a leg beyond one native
+movement step holds for 16 ms, while a reachable close contact is resolved
+before consuming the stop counter. The first throw has no hold.
+
+The battle capability `nativeProjectileBouncePause` and per-shot `motionAt`
+preserve contact timestamps, stationary presentation during the hold, subsequent
+damage deadlines, and replay seeks. Native art and fallback art use the same
+movement start. Version 238 and earlier retain their previous timing.
+
+The [original ARM64 fixture reference](../reference/native-projectile-step-18.400.22.json)
+records 18 speed/distance/counter cases. This ports the verified stop branch into
+the browser's continuous flight model; complete native position and arrival
+quantization remain separate work.

@@ -54,6 +54,7 @@ interface Snapshot {
   x: number;
   y: number;
   launched: number;
+  motionAt?: number;
   impact: number;
   fromAir?: boolean;
   toAir?: boolean;
@@ -269,6 +270,7 @@ export class NativeProjectilePresentation {
       if (
         known &&
         known.launched === p.launched &&
+        known.motionAt === p.motionAt &&
         known.impact === p.impact &&
         known.spikyContinues === p.native.spikyBall?.continues &&
         known.shieldContinues === p.native.seekingShield?.continues &&
@@ -535,6 +537,7 @@ function snapshot(p: CombatProjectile, packPath: string, bowlerArt = false): Sna
     x: p.x,
     y: p.y,
     launched: p.launched,
+    ...(p.motionAt === undefined ? {} : { motionAt: p.motionAt }),
     impact: p.impact,
     fromAir: p.fromAir,
     toAir: p.toAir,

@@ -15,6 +15,7 @@ import { WIZARD_TOWER_PROJECTILES } from './wizard-tower-stats';
 import { flag, nativeRow, num } from './native-data';
 import { hurtUnit } from './native-status';
 import { healingEligible } from './friendly-unit';
+import { nativeProjectileBouncePause } from './native-projectile-step';
 
 export type Weapon =
   | 'arrow'
@@ -41,6 +42,8 @@ export interface CombatProjectile {
   fromAir?: boolean;
   toAir?: boolean;
   launched: number;
+  /** Version239: a ricochet remains at contact until its native stop counter expires. */
+  motionAt?: number;
   impact: number;
   damage: number;
   splash?: number;
@@ -184,6 +187,12 @@ export function launchProjectile(
   emit: (fx: FX) => void,
   at = battle.elapsed,
 ) {
+  const hold =
+    battle.nativeProjectileBouncePause &&
+    shot.native?.bounce &&
+    (shot.native.spikyBall || shot.native.seekingShield)
+      ? nativeProjectileBouncePause(shot.native.name, shot.fromX, shot.fromY, shot.x, shot.y)
+      : 0;
   const duration =
     shot.weapon === 'bomb'
       ? 0.33
@@ -231,7 +240,8 @@ export function launchProjectile(
       shot.defense ? `:d${(battle.nativeShotSequence = (battle.nativeShotSequence ?? 0) + 1)}` : ''
     }`,
     launched: at,
-    impact: at + duration,
+    impact: at + duration + hold,
+    ...(hold ? { motionAt: at + hold } : {}),
     ...(shot.weapon === 'xbowbolt' || nativeCannon(shot) || nativeArcherTower(shot)
       ? { flight: { x: shot.fromX, y: shot.fromY, at } }
       : {}),

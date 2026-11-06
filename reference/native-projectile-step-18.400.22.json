@@ -1,0 +1,611 @@
+{
+  "source_sha256": "636e5162745ce6551d713959fb0c4f98168f14498c15b686bb548fdf442a424e",
+  "cases": [
+    {
+      "speed_source": 1500,
+      "native_speed": 7680,
+      "step_logic": 122,
+      "distance_sublogic": 40960,
+      "initial_stop_counter": 0,
+      "held_steps": 0,
+      "hold_seconds": 0.0,
+      "contact": {
+        "age_native_units": 656,
+        "stop_counter": 0
+      },
+      "first_steps": [
+        {
+          "tick": 0,
+          "position_sublogic": 976,
+          "age": 16,
+          "stop_counter": 0
+        },
+        {
+          "tick": 1,
+          "position_sublogic": 1952,
+          "age": 32,
+          "stop_counter": 0
+        },
+        {
+          "tick": 2,
+          "position_sublogic": 2928,
+          "age": 48,
+          "stop_counter": 0
+        },
+        {
+          "tick": 3,
+          "position_sublogic": 3904,
+          "age": 64,
+          "stop_counter": 0
+        }
+      ]
+    },
+    {
+      "speed_source": 1500,
+      "native_speed": 7680,
+      "step_logic": 122,
+      "distance_sublogic": 40960,
+      "initial_stop_counter": 15,
+      "held_steps": 1,
+      "hold_seconds": 0.016,
+      "contact": {
+        "age_native_units": 672,
+        "stop_counter": 0
+      },
+      "first_steps": [
+        {
+          "tick": 0,
+          "position_sublogic": 0,
+          "age": 16,
+          "stop_counter": 0
+        },
+        {
+          "tick": 1,
+          "position_sublogic": 976,
+          "age": 32,
+          "stop_counter": 0
+        },
+        {
+          "tick": 2,
+          "position_sublogic": 1952,
+          "age": 48,
+          "stop_counter": 0
+        },
+        {
+          "tick": 3,
+          "position_sublogic": 2928,
+          "age": 64,
+          "stop_counter": 0
+        }
+      ]
+    },
+    {
+      "speed_source": 1500,
+      "native_speed": 7680,
+      "step_logic": 122,
+      "distance_sublogic": 40960,
+      "initial_stop_counter": 32,
+      "held_steps": 2,
+      "hold_seconds": 0.032,
+      "contact": {
+        "age_native_units": 688,
+        "stop_counter": 0
+      },
+      "first_steps": [
+        {
+          "tick": 0,
+          "position_sublogic": 0,
+          "age": 16,
+          "stop_counter": 16
+        },
+        {
+          "tick": 1,
+          "position_sublogic": 0,
+          "age": 32,
+          "stop_counter": 0
+        },
+        {
+          "tick": 2,
+          "position_sublogic": 976,
+          "age": 48,
+          "stop_counter": 0
+        },
+        {
+          "tick": 3,
+          "position_sublogic": 1952,
+          "age": 64,
+          "stop_counter": 0
+        }
+      ]
+    },
+    {
+      "speed_source": 1500,
+      "native_speed": 7680,
+      "step_logic": 122,
+      "distance_sublogic": 976,
+      "initial_stop_counter": 0,
+      "held_steps": 0,
+      "hold_seconds": 0.0,
+      "contact": {
+        "age_native_units": 0,
+        "stop_counter": 0
+      },
+      "first_steps": [
+        {
+          "tick": 0,
+          "position_sublogic": 0,
+          "age": 16,
+          "stop_counter": 0
+        }
+      ]
+    },
+    {
+      "speed_source": 1500,
+      "native_speed": 7680,
+      "step_logic": 122,
+      "distance_sublogic": 976,
+      "initial_stop_counter": 15,
+      "held_steps": 0,
+      "hold_seconds": 0.0,
+      "contact": {
+        "age_native_units": 0,
+        "stop_counter": 15
+      },
+      "first_steps": [
+        {
+          "tick": 0,
+          "position_sublogic": 0,
+          "age": 16,
+          "stop_counter": 15
+        }
+      ]
+    },
+    {
+      "speed_source": 1500,
+      "native_speed": 7680,
+      "step_logic": 122,
+      "distance_sublogic": 976,
+      "initial_stop_counter": 32,
+      "held_steps": 0,
+      "hold_seconds": 0.0,
+      "contact": {
+        "age_native_units": 0,
+        "stop_counter": 32
+      },
+      "first_steps": [
+        {
+          "tick": 0,
+          "position_sublogic": 0,
+          "age": 16,
+          "stop_counter": 32
+        }
+      ]
+    },
+    {
+      "speed_source": 1500,
+      "native_speed": 7680,
+      "step_logic": 122,
+      "distance_sublogic": 977,
+      "initial_stop_counter": 0,
+      "held_steps": 0,
+      "hold_seconds": 0.0,
+      "contact": {
+        "age_native_units": 16,
+        "stop_counter": 0
+      },
+      "first_steps": [
+        {
+          "tick": 0,
+          "position_sublogic": 976,
+          "age": 16,
+          "stop_counter": 0
+        },
+        {
+          "tick": 1,
+          "position_sublogic": 976,
+          "age": 32,
+          "stop_counter": 0
+        }
+      ]
+    },
+    {
+      "speed_source": 1500,
+      "native_speed": 7680,
+      "step_logic": 122,
+      "distance_sublogic": 977,
+      "initial_stop_counter": 15,
+      "held_steps": 1,
+      "hold_seconds": 0.016,
+      "contact": {
+        "age_native_units": 32,
+        "stop_counter": 0
+      },
+      "first_steps": [
+        {
+          "tick": 0,
+          "position_sublogic": 0,
+          "age": 16,
+          "stop_counter": 0
+        },
+        {
+          "tick": 1,
+          "position_sublogic": 976,
+          "age": 32,
+          "stop_counter": 0
+        },
+        {
+          "tick": 2,
+          "position_sublogic": 976,
+          "age": 48,
+          "stop_counter": 0
+        }
+      ]
+    },
+    {
+      "speed_source": 1500,
+      "native_speed": 7680,
+      "step_logic": 122,
+      "distance_sublogic": 977,
+      "initial_stop_counter": 32,
+      "held_steps": 2,
+      "hold_seconds": 0.032,
+      "contact": {
+        "age_native_units": 48,
+        "stop_counter": 0
+      },
+      "first_steps": [
+        {
+          "tick": 0,
+          "position_sublogic": 0,
+          "age": 16,
+          "stop_counter": 16
+        },
+        {
+          "tick": 1,
+          "position_sublogic": 0,
+          "age": 32,
+          "stop_counter": 0
+        },
+        {
+          "tick": 2,
+          "position_sublogic": 976,
+          "age": 48,
+          "stop_counter": 0
+        },
+        {
+          "tick": 3,
+          "position_sublogic": 976,
+          "age": 64,
+          "stop_counter": 0
+        }
+      ]
+    },
+    {
+      "speed_source": 2000,
+      "native_speed": 10240,
+      "step_logic": 163,
+      "distance_sublogic": 40960,
+      "initial_stop_counter": 0,
+      "held_steps": 0,
+      "hold_seconds": 0.0,
+      "contact": {
+        "age_native_units": 496,
+        "stop_counter": 0
+      },
+      "first_steps": [
+        {
+          "tick": 0,
+          "position_sublogic": 1304,
+          "age": 16,
+          "stop_counter": 0
+        },
+        {
+          "tick": 1,
+          "position_sublogic": 2608,
+          "age": 32,
+          "stop_counter": 0
+        },
+        {
+          "tick": 2,
+          "position_sublogic": 3912,
+          "age": 48,
+          "stop_counter": 0
+        },
+        {
+          "tick": 3,
+          "position_sublogic": 5216,
+          "age": 64,
+          "stop_counter": 0
+        }
+      ]
+    },
+    {
+      "speed_source": 2000,
+      "native_speed": 10240,
+      "step_logic": 163,
+      "distance_sublogic": 40960,
+      "initial_stop_counter": 15,
+      "held_steps": 1,
+      "hold_seconds": 0.016,
+      "contact": {
+        "age_native_units": 512,
+        "stop_counter": 0
+      },
+      "first_steps": [
+        {
+          "tick": 0,
+          "position_sublogic": 0,
+          "age": 16,
+          "stop_counter": 0
+        },
+        {
+          "tick": 1,
+          "position_sublogic": 1304,
+          "age": 32,
+          "stop_counter": 0
+        },
+        {
+          "tick": 2,
+          "position_sublogic": 2608,
+          "age": 48,
+          "stop_counter": 0
+        },
+        {
+          "tick": 3,
+          "position_sublogic": 3912,
+          "age": 64,
+          "stop_counter": 0
+        }
+      ]
+    },
+    {
+      "speed_source": 2000,
+      "native_speed": 10240,
+      "step_logic": 163,
+      "distance_sublogic": 40960,
+      "initial_stop_counter": 32,
+      "held_steps": 2,
+      "hold_seconds": 0.032,
+      "contact": {
+        "age_native_units": 528,
+        "stop_counter": 0
+      },
+      "first_steps": [
+        {
+          "tick": 0,
+          "position_sublogic": 0,
+          "age": 16,
+          "stop_counter": 16
+        },
+        {
+          "tick": 1,
+          "position_sublogic": 0,
+          "age": 32,
+          "stop_counter": 0
+        },
+        {
+          "tick": 2,
+          "position_sublogic": 1304,
+          "age": 48,
+          "stop_counter": 0
+        },
+        {
+          "tick": 3,
+          "position_sublogic": 2608,
+          "age": 64,
+          "stop_counter": 0
+        }
+      ]
+    },
+    {
+      "speed_source": 2000,
+      "native_speed": 10240,
+      "step_logic": 163,
+      "distance_sublogic": 1304,
+      "initial_stop_counter": 0,
+      "held_steps": 0,
+      "hold_seconds": 0.0,
+      "contact": {
+        "age_native_units": 0,
+        "stop_counter": 0
+      },
+      "first_steps": [
+        {
+          "tick": 0,
+          "position_sublogic": 0,
+          "age": 16,
+          "stop_counter": 0
+        }
+      ]
+    },
+    {
+      "speed_source": 2000,
+      "native_speed": 10240,
+      "step_logic": 163,
+      "distance_sublogic": 1304,
+      "initial_stop_counter": 15,
+      "held_steps": 0,
+      "hold_seconds": 0.0,
+      "contact": {
+        "age_native_units": 0,
+        "stop_counter": 15
+      },
+      "first_steps": [
+        {
+          "tick": 0,
+          "position_sublogic": 0,
+          "age": 16,
+          "stop_counter": 15
+        }
+      ]
+    },
+    {
+      "speed_source": 2000,
+      "native_speed": 10240,
+      "step_logic": 163,
+      "distance_sublogic": 1304,
+      "initial_stop_counter": 32,
+      "held_steps": 0,
+      "hold_seconds": 0.0,
+      "contact": {
+        "age_native_units": 0,
+        "stop_counter": 32
+      },
+      "first_steps": [
+        {
+          "tick": 0,
+          "position_sublogic": 0,
+          "age": 16,
+          "stop_counter": 32
+        }
+      ]
+    },
+    {
+      "speed_source": 2000,
+      "native_speed": 10240,
+      "step_logic": 163,
+      "distance_sublogic": 1305,
+      "initial_stop_counter": 0,
+      "held_steps": 0,
+      "hold_seconds": 0.0,
+      "contact": {
+        "age_native_units": 16,
+        "stop_counter": 0
+      },
+      "first_steps": [
+        {
+          "tick": 0,
+          "position_sublogic": 1304,
+          "age": 16,
+          "stop_counter": 0
+        },
+        {
+          "tick": 1,
+          "position_sublogic": 1304,
+          "age": 32,
+          "stop_counter": 0
+        }
+      ]
+    },
+    {
+      "speed_source": 2000,
+      "native_speed": 10240,
+      "step_logic": 163,
+      "distance_sublogic": 1305,
+      "initial_stop_counter": 15,
+      "held_steps": 1,
+      "hold_seconds": 0.016,
+      "contact": {
+        "age_native_units": 32,
+        "stop_counter": 0
+      },
+      "first_steps": [
+        {
+          "tick": 0,
+          "position_sublogic": 0,
+          "age": 16,
+          "stop_counter": 0
+        },
+        {
+          "tick": 1,
+          "position_sublogic": 1304,
+          "age": 32,
+          "stop_counter": 0
+        },
+        {
+          "tick": 2,
+          "position_sublogic": 1304,
+          "age": 48,
+          "stop_counter": 0
+        }
+      ]
+    },
+    {
+      "speed_source": 2000,
+      "native_speed": 10240,
+      "step_logic": 163,
+      "distance_sublogic": 1305,
+      "initial_stop_counter": 32,
+      "held_steps": 2,
+      "hold_seconds": 0.032,
+      "contact": {
+        "age_native_units": 48,
+        "stop_counter": 0
+      },
+      "first_steps": [
+        {
+          "tick": 0,
+          "position_sublogic": 0,
+          "age": 16,
+          "stop_counter": 16
+        },
+        {
+          "tick": 1,
+          "position_sublogic": 0,
+          "age": 32,
+          "stop_counter": 0
+        },
+        {
+          "tick": 2,
+          "position_sublogic": 1304,
+          "age": 48,
+          "stop_counter": 0
+        },
+        {
+          "tick": 3,
+          "position_sublogic": 1304,
+          "age": 64,
+          "stop_counter": 0
+        }
+      ]
+    }
+  ],
+  "all_passed": true,
+  "original_image_writes": [],
+  "step_seconds": 0.016,
+  "clock_proof": "Original movement uses trunc(SpeedLogic*16/1000); Speed loader scales CSV speed by512/100. The same update increments age by16.",
+  "coordinate_scale": {
+    "logic_per_tile": 512,
+    "projectile_sublogic_per_tile": 4096
+  },
+  "functions": {
+    "projectile_update": "0xd8b308",
+    "data_loader": "0xd206c8",
+    "bounce_copy": "0xd8c5bc"
+  },
+  "fixture_boundaries": {
+    "0xd71c4c": "Parent bookkeeping returns",
+    "0xd71c60": "Records original computed position without external scene/grid notification",
+    "0xd8c5bc": "Records terminal contact and marks fixture stopped"
+  },
+  "limitations": [
+    "Synthetic axis fixtures, without live Android objects or full collision effects.",
+    "The JavaScript port adds the verified hold to its existing continuous flight model; complete native position/arrival quantization is separate.",
+    "Close contacts within one native movement step reach collision before consuming the stop counter."
+  ],
+  "original_apk_sha256": "8bd23251650667b3f07543fe43e0d9283376d545db64bdcf895b9f6fec829c20",
+  "client_version": "18.400.22",
+  "replay_version": 239,
+  "source_table": {
+    "path": "logic/projectiles.csv",
+    "sha256": "71cda0e457ad88a6772f6421a22419b24d6bcf78d0ed305f09184404889a72dc"
+  },
+  "source_records": {
+    "AmazonQueen_shield": {
+      "Speed": "2000",
+      "StopToTargetTime": "15",
+      "FixedTravelTime": "0"
+    },
+    "BarbarianKingGearFootball": {
+      "Speed": "1500",
+      "StopToTargetTime": "15",
+      "FixedTravelTime": "0"
+    }
+  },
+  "focused_pseudocode": {
+    "reports/js-integration-pass5/focused-projectiles/elf-0xd8d0a0.c": "357092ab4f5bbf18c55658e9122ec955a8d11d34abbb84f679d895419e904edf",
+    "reports/js-integration-pass5/focused-projectiles/elf-0xd8d9b4.c": "ffe0f7388735fd279ee28ca464e1b0b086fce0142dd79f64f17b0f327df4df90",
+    "reports/js-integration-pass5/focused-projectiles/elf-0xd8c5bc.c": "8d7b72f226dfeeb48bb6f48c703dad2b3318549d939423efd29e20bb622b4aaf",
+    "reports/js-integration-pass5/focused-projectiles/elf-0xd8b308.c": "b985007b06751dc7b2ab77a8d6709503b7bd8819b3654d8e1a78e16d819d5a62"
+  }
+}
