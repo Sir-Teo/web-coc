@@ -1908,3 +1908,11 @@ applies the delayed ground/air Freeze. It cannot create Electro Dragon death bol
 Version 234 remains supported and rejects this newly captured roster kind. Earlier
 rosters and campaign indices are unchanged. See the [Ice Golem reference](../reference/attacking-ice-golem/README.md#defending-ice-golem-recording-version-235)
 for the source values, replay witnesses and remaining fidelity gaps.
+
+## Version 236: original Ice Golem death frost
+
+Attacking and defensive Ice Golem death spells now capture presentation histories
+and draw both source ground-frost phases. Earlier versions keep their previous
+history and generic ring. Damage, timing and status rules are unchanged. Both
+spell sides preload from their carried units/reserves and reconstruct after seeks.
+See the [Ice Golem reference](../reference/attacking-ice-golem/README.md#original-death-frost-recording-version-236).

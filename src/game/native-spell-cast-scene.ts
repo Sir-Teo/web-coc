@@ -15,7 +15,8 @@ export class NativeSpellCastPresentation {
     private name: string,
     private kind: SpellKind | undefined,
     private profiles: readonly SpellEffectProfile[],
-    private carried?: { hero: string; slug: string },
+    private carried?:
+      { hero: string; slug: string } | { troop: string; side: 'attack' | 'defense' },
   ) {
     this.layer = new NativeEffectLayer(scene, packs, `${kind ?? name}-spell`);
     // Several phases and levels share one pack. Reused phases may live in a separate existing pack.
@@ -43,10 +44,21 @@ export class NativeSpellCastPresentation {
       battle?.nativeSpellArt?.includes(this.name) &&
       ((this.kind !== undefined && battle.spells[this.kind] > 0) ||
         (carried &&
-          battle.nativeHeroes?.some(
-            (hero) =>
-              hero.kind === carried.hero && hero.items.some((item) => item.slug === carried.slug),
-          )) ||
+          ('hero' in carried
+            ? battle.nativeHeroes?.some(
+                (hero) =>
+                  hero.kind === carried.hero &&
+                  hero.items.some((item) => item.slug === carried.slug),
+              )
+            : carried.side === 'attack'
+              ? (battle.remaining[carried.troop as keyof typeof battle.remaining] ?? 0) > 0 ||
+                battle.units.some((unit) => unit.kind === carried.troop && unit.hp > 0)
+              : battle.garrisons?.some((reserve) =>
+                  reserve.troops.some((troop) => troop.kind === carried.troop && troop.count > 0),
+                ) ||
+                battle.defenders?.some(
+                  (defender) => defender.kind === carried.troop && defender.hp > 0,
+                ))) ||
         battle.nativeSpellCastHistory?.some((cast) => cast.name === this.name))
     )
       for (const effect of this.warmEffects) this.layer.duration(effect, Infinity);

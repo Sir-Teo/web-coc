@@ -28,3 +28,10 @@ Browser tests check native meshes on desktop and phone, complete Node/browser ba
 portable finished replay imports, cancellation and the normal frame memo. At grace expiration
 they require exactly one full cleanup draw, followed by a skipped unchanged frame. Neighboring
 spell and finishing-projectile checks retain their original presentation behavior.
+
+## Ice Golem death fields
+
+Recording version 236 adds both original ground-frost deployment phases for all
+nine attacking and six defensive source levels. The two packs are lazy and shared
+by each side's tiers; carried units and reserves preload them. Earlier field packs
+are unchanged. See [source and validation details](../attacking-ice-golem/README.md#original-death-frost-recording-version-236).

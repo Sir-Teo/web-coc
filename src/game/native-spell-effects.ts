@@ -5,8 +5,8 @@ export interface SpellEffectProfile {
   level: number;
   deploySeconds: number;
   resolvedRevive?: boolean;
-  PreDeployEffect: string;
-  DeployEffect: string;
+  PreDeployEffect?: string;
+  DeployEffect?: string;
   DeployEffect2?: string;
   deploy2DelaySeconds?: number;
   ChargingEffect?: string;

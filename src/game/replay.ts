@@ -66,7 +66,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 235;
+export const REPLAY_VERSION = 236;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -425,6 +425,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 232 ||
   version === 233 ||
   version === 234 ||
+  version === 235 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -936,6 +937,13 @@ export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
             ...(version >= 127 ? ['Totem Spell', 'AngrySpell'] : []),
             ...(version >= 128 ? ['Ice Block'] : []),
             ...(version >= 129 ? ['Revive'] : []),
+            ...(version >= 236 && s.army.icegolem > 0 ? ['IceGolemFreeze'] : []),
+            ...(version >= 236 &&
+            s.garrisons?.some((reserve) =>
+              reserve.troops.some((troop) => troop.kind === 'icegolem' && troop.count > 0),
+            )
+              ? ['IceGolemFreeze_DEF']
+              : []),
             ...(version >= 142 &&
             s.heroes?.some(
               (hero) =>

@@ -1139,8 +1139,11 @@ export class VillageScene extends Phaser.Scene {
           this,
           this.nativeEffectPacks,
           name,
-          config.key as SpellKind,
+          config.key in SPELLS ? (config.key as SpellKind) : undefined,
           config.levels,
+          name === 'IceGolemFreeze' || name === 'IceGolemFreeze_DEF'
+            ? { troop: 'icegolem', side: name === 'IceGolemFreeze' ? 'attack' : 'defense' }
+            : undefined,
         ),
       );
     this.jumpSpellPresentation = new JumpSpellPresentation(this, this.nativeEffectPacks);

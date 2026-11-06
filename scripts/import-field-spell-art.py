@@ -62,7 +62,8 @@ def main():
                        ('Lightning', 'lightning'), ('Earthquake', 'earthquake'),
                        ('Skeleton Spell', 'skeleton'), ('Bat Spell', 'bat'),
                        ('Totem Spell', 'totem'), ('AngrySpell', 'angry'), ('Ice Block', 'iceblock'),
-                       ('Revive', 'revive')]:
+                       ('Revive', 'revive'), ('IceGolemFreeze', 'icegolemfreeze'),
+                       ('IceGolemFreeze_DEF', 'icegolemfreezedef')]:
         profiles, current, names = [], {}, set()
         for level, row in enumerate(lib.table('logic/spells.csv')[spell], 1):
             current.update(row)
@@ -83,7 +84,7 @@ def main():
                 radius = int(current.get('RandomRadius', '0'))
                 profile['hitRadiusTiles'] = radius // 100 if radius % 100 == 0 else radius / 100
                 profile['graphicsOnlyRadius'] = current.get('RandomRadiusAffectsOnlyGfx') == 'TRUE'
-            if spell in ['Earthquake', 'Skeleton Spell', 'Bat Spell', 'AngrySpell']:
+            if spell in ['Earthquake', 'Skeleton Spell', 'Bat Spell', 'AngrySpell', 'IceGolemFreeze', 'IceGolemFreeze_DEF']:
                 profile['retainSeconds'] = round(max(
                     profile['deploySeconds'] + (profile.get('deploy2DelaySeconds', 0) if k == 'DeployEffect2' else 0) +
                     particle_tail(profile[k]) for k in ['DeployEffect', 'DeployEffect2'] if profile.get(k)), 3)

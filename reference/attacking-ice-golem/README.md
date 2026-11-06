@@ -85,8 +85,7 @@ modern executable's range, duration and timing interpretation is unverified.
 The defensive deployment's original `freeze_spell_01.ogg` cue uses its source
 80% volume and fixed 90% pitch at death. It reuses an existing audio file. The
 body, ordinary attack/death samples, blue unit status and existing spell ring are
-integrated; the defensive spell's original ground frost emitters remain a visual
-fidelity gap. Zero-damage freeze never creates Electro Dragon lightning bolts.
+integrated. Version 236 below adds the original ground frost emitters. Zero-damage freeze never creates Electro Dragon lightning bolts.
 
 `tests/ice-golem-garrison.test.ts` covers source values, split windup, hit frost,
 range boundaries, allegiance/exclusions, delayed pulse, one cast per death,
@@ -111,3 +110,28 @@ The original PNG remains at its established URL with its unchanged hash. The
 at most one 8-bit channel step (mean 0.000504); all source texels, geometry,
 colors and animation data remain exact. This is a residency reduction, with
 roughly unchanged download size and no established whole-battle FPS gain.
+
+## Original death frost, recording version 236
+
+Both `IceGolemFreeze` (nine source levels) and `IceGolemFreeze_DEF` (six source
+levels) retain their original DeployEffect/DeployEffect2 rows, particle variants,
+SC graphs and cropped source pixels in the [field spell index](../field-spells/effects.json).
+The importer adds 716,853 bytes across two lazy packs; every previous field-spell
+entry and pack remains unchanged. Each pack uses one 128×122 source atlas (62,464
+RGBA bytes before driver overhead). Carried attackers and defending reserves warm
+only their side's pack before death. Neither spell is added to the trainable spell book. Presentation flags are enabled
+only for carried Ice Golem armies or reserves; unrelated battle state is unchanged.
+
+The ordinary captured spell renderer samples both finite ground phases at their
+source deploy time. It retains their source emission/lifetime tail, hides the generic
+ring only after both phases are ready, and suppresses moving frost for reduced motion.
+Portable backward seeks reconstruct the same original meshes without changing combat.
+Version 235 and earlier retain their former presentation and history. Freeze damage,
+radius, pulse, duration and the unresolved outer-duration interpretation are unchanged.
+The shared particle projection, damping and bounce remain local rendering conventions;
+source capture does not establish modern executable particle-motion parity.
+
+`tests/ice-golem-frost-art.test.ts` samples all fifteen profiles and checks the two
+physical spell sides across the version boundary. Browser cases use a real Cannon
+kill or a real lure/Wizard kill on desktop and phone, comparing complete Node/browser
+states, pre-death readiness, replay rewinds, reduced motion and WebGL health.
