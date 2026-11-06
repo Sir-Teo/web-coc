@@ -102,3 +102,19 @@ upload useful traces or screenshots as review/CI artifacts instead of committing
 
 Historical milestone results are available in Git history. They are not evidence
 that the current revision passes. Current CI and fresh reports are the release record.
+
+## Comparable battle load measurements
+
+Use `node scripts/battle-load-benchmark.mjs --mobile --army=th18 --level=half
+--lazyart --checkpoint=2 --detail=2 --density=0.5 --warmup=8 --seconds=6 --gl`
+(on one line) to start from an exact two-second simulation checkpoint and hold
+rendering detail and canvas density during measurement. Add `--freeze` to hold the
+battle throughout measurement. Checkpoint runs report complete battle-state hashes;
+frozen runs reject any state mutation. Compare matching starting hashes, canvas
+sizes, detail levels, army levels and CPU settings. Live runs stop simulation at
+the end of the timed interval before collecting their final report.
+
+Without these controls, adaptive resolution and warmup progress can produce different
+battle workloads. Headless software-rendered Chromium and `--cpu=4` are diagnostic
+comparisons; they do not establish performance on a physical phone. Repeat warmed
+runs without concurrent tests or builds, and report variation with the results.
