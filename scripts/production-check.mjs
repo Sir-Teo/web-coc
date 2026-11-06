@@ -2,6 +2,34 @@ import { chromium, webkit, expect } from '@playwright/test';
 import fs from 'node:fs/promises';
 const baseURL = process.env.PRODUCTION_BASE_URL ?? 'http://127.0.0.1:4173';
 const nativeFonts = JSON.parse(await fs.readFile('reference/fonts/native.json', 'utf8')).fonts;
+const nativeHud = JSON.parse(await fs.readFile('reference/hud/native.json', 'utf8'));
+
+async function checkNativeHud(page, cached = false) {
+  return page.evaluate(
+    async ({ expected, cached }) => {
+      const image = document.querySelector('.campaign-map-icon');
+      if (!(image instanceof HTMLImageElement)) throw Error('Native campaign icon missing');
+      await image.decode();
+      if (image.naturalWidth !== expected.width || image.naturalHeight !== expected.height)
+        throw Error('Native campaign icon dimensions changed');
+      if (cached && !(await caches.match(image.currentSrc))?.ok)
+        throw Error('Native campaign icon missing from offline cache');
+      const canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const context = canvas.getContext('2d', { willReadFrequently: true });
+      context.drawImage(image, 0, 0);
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      const hash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', pixels))]
+        .map((byte) => byte.toString(16).padStart(2, '0'))
+        .join('');
+      // Compare browser-decoded pixels before and after offline reload; canvas
+      // premultiplication can round translucent RGB relative to the raw asset.
+      return { width: canvas.width, height: canvas.height, hash };
+    },
+    { expected: nativeHud, cached },
+  );
+}
 const engines = { chromium, webkit };
 const selectedBrowser = process.env.PRODUCTION_BROWSER;
 if (selectedBrowser !== undefined && !Object.hasOwn(engines, selectedBrowser))
@@ -418,6 +446,7 @@ for (const [name, engine] of Object.entries(engines)) {
   expect(nativeBuilderHutPortraits).toBe(8);
   report[name] = {
     nativeFonts: await checkNativeFonts(page),
+    nativeHud: await checkNativeHud(page),
     nativeDecorations,
     heroPortraits,
     nativeCraftedPortraits,
@@ -456,6 +485,11 @@ for (const [name, engine] of Object.entries(engines)) {
       nativeFonts,
     );
     expect(await checkNativeFonts(page, true)).toBe(nativeFonts.length);
+    await page.waitForFunction(async () => {
+      const image = document.querySelector('.campaign-map-icon');
+      return image instanceof HTMLImageElement && !!(await caches.match(image.currentSrc))?.ok;
+    });
+    expect(await checkNativeHud(page, true)).toEqual(report[name].nativeHud);
     await context.setOffline(true);
     await page.reload();
     await page.waitForFunction(
@@ -478,6 +512,7 @@ for (const [name, engine] of Object.entries(engines)) {
     expect(await checkRegisteredPortraits(page, builderHutPortraits, "Builder's Hut")).toBe(8);
     report.offline = {
       nativeFonts: await checkNativeFonts(page, true),
+      nativeHud: await checkNativeHud(page, true),
       nativeDecorations: 4,
       heroPortraits: rosterHeroPortraits.length,
       nativeCraftedPortraits: 12,
@@ -489,6 +524,7 @@ for (const [name, engine] of Object.entries(engines)) {
       replay: true,
       ...cachesState,
     };
+    expect(report.offline.nativeHud).toEqual(report[name].nativeHud);
     await context.setOffline(false);
   }
   await browser.close();

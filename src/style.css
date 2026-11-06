@@ -583,15 +583,13 @@ h3 {
   align-items: center;
   justify-content: center;
 }
-.attack-btn svg {
+.attack-btn .campaign-map-icon {
   position: absolute;
   top: -23px;
-  color: #fff7df;
-  stroke-width: 2.3;
-  filter: drop-shadow(0 3px 1px #754525);
-  width: 52px;
+  width: 64px;
   height: 52px;
-  transform: rotate(-8deg);
+  object-fit: contain;
+  pointer-events: none;
 }
 .attack-btn span {
   font-family: var(--heading);
@@ -2384,8 +2382,8 @@ h3 {
     border-radius: 12px;
     border-bottom-width: 5px;
   }
-  .attack-btn svg {
-    width: 34px;
+  .attack-btn .campaign-map-icon {
+    width: 42px;
     height: 34px;
     top: -16px;
   }

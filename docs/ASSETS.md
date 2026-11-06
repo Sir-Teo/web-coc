@@ -118,3 +118,10 @@ The [native font reference](../reference/fonts/README.md) records the original
 Supercell-Magic and CCBackBeat Light HUD families, their pinned source files and
 lossless full-glyph WOFF2 builds. Source fonts stay under `art/source/native-fonts/`;
 only the two compressed browser faces ship under `public/assets/fonts-native/`.
+
+## Native campaign HUD icon
+
+The Attack button uses the original campaign map from `hud_button_fight`'s
+`icon` child at its `no_stars` frame. The [HUD reference](../reference/hud/README.md)
+records its source selection, graph and pixel hashes. The static 90×74 PNG keeps
+the source colors and adds no per-frame work; labels and responsive targets remain DOM controls.
