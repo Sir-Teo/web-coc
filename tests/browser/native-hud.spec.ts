@@ -14,6 +14,17 @@ for (const width of [390, 1440]) {
     await expect
       .poll(() => image.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth))
       .toBe(90);
+    expect(
+      await attack.evaluate(async (button) => {
+        const url =
+          getComputedStyle(button).borderImageSource.match(/^url\(["']?(.*?)["']?\)$/)?.[1];
+        if (!url) return null;
+        const image = new Image();
+        image.src = url;
+        await image.decode();
+        return [image.naturalWidth, image.naturalHeight];
+      }),
+    ).toEqual([125, 123]);
     const layout = await attack.evaluate((button) => {
       const box = button.getBoundingClientRect();
       const image = button.querySelector('img')!.getBoundingClientRect();

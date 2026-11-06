@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Capture the original HUD campaign-map icon without alternate modes or text."""
+"""Capture the original HUD campaign-map icon and button without alternate modes or text."""
 import argparse
 from io import BytesIO
 import json
@@ -26,6 +26,24 @@ def coordinates(poses):
     return output
 
 
+def capture(sc, textures, id_, role, path):
+    graph = capture_graph(FrameZeroScene(sc), {role: id_}, allowed_blends=(0, 3, 4, 8))
+    xy = np.array(coordinates(nodes(graph, id_, 0, np.eye(3))))
+    low, high = np.floor(xy.min(0)).astype(int) - 2, np.ceil(xy.max(0)).astype(int) + 2
+    width, height = high - low
+    root = np.array([[1, 0, -low[0]], [0, 1, -low[1]], [0, 0, 1]])
+    rgba = compose(nodes(graph, id_, 0, root), textures, int(max(width, height)))[:height, :width]
+    alpha = rgba[:, :, 3:4]
+    rgb = np.divide(rgba[:, :, :3], alpha, out=np.zeros_like(rgba[:, :, :3]), where=alpha > 0)
+    pixels = np.round(np.clip(np.concatenate([rgb, alpha], axis=2), 0, 1) * 255).astype(np.uint8)
+    encoded = BytesIO()
+    Image.fromarray(pixels, 'RGBA').save(encoded, format='PNG')
+    png = encoded.getvalue()
+    return dict(bounds=[*map(int, low), *map(int, high)], width=int(width), height=int(height),
+                path=path, bytes=len(png), sha256=digest(png), rgbaSha256=digest(pixels.tobytes()),
+                graph=graph), png
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true')
@@ -35,28 +53,18 @@ def main():
     button = sc.clip(217)
     require(button['children'][2] == 201 and button['names'][2] == 'icon',
             'Fight icon slot changed')
+    require(button['children'][0] == 55 and button['names'][0] == '', 'Button background changed')
     require(sc.clip(201)['labels'][0] == 'no_stars', 'Campaign icon frame changed')
-    graph = capture_graph(FrameZeroScene(sc), {'campaign': 201}, allowed_blends=(0, 3, 4, 8))
-    xy = np.array(coordinates(nodes(graph, 201, 0, np.eye(3))))
-    low, high = np.floor(xy.min(0)).astype(int) - 2, np.ceil(xy.max(0)).astype(int) + 2
-    width, height = high - low
-    root = np.array([[1, 0, -low[0]], [0, 1, -low[1]], [0, 0, 1]])
     textures = {i: np.array(sc.embedded_texture(i), dtype=float) / 255
                 for i in range(len(sc.textures))}
-    rgba = compose(nodes(graph, 201, 0, root), textures, int(max(width, height)))[:height, :width]
-    alpha = rgba[:, :, 3:4]
-    rgb = np.divide(rgba[:, :, :3], alpha, out=np.zeros_like(rgba[:, :, :3]), where=alpha > 0)
-    pixels = np.round(np.clip(np.concatenate([rgb, alpha], axis=2), 0, 1) * 255).astype(np.uint8)
-    encoded = BytesIO()
-    Image.fromarray(pixels, 'RGBA').save(encoded, format='PNG')
-    png = encoded.getvalue()
-    path = 'assets/hud-native/campaign.png'
+    icon, png = capture(sc, textures, 201, 'campaign', 'assets/hud-native/campaign.png')
+    background, background_png = capture(sc, textures, 55, 'background', 'assets/hud-native/fight-button.png')
+    background = dict(childSlot=0, childName='', shapeId=55, **background)
     record = dict(bundle=BUNDLE, sources=PINS, export='hud_button_fight', exportId=217,
                   childSlot=2, childName='icon', clipId=201, frame=0, label='no_stars',
-                  bounds=[*map(int, low), *map(int, high)], width=int(width), height=int(height),
-                  path=path, bytes=len(png), sha256=digest(png), rgbaSha256=digest(pixels.tobytes()),
-                  graph=graph)
-    outputs = [(ROOT / 'public' / path, png),
+                  **icon, background=background)
+    outputs = [(ROOT / 'public' / icon['path'], png),
+               (ROOT / 'public' / background['path'], background_png),
                (ROOT / 'reference/hud/native.json', (json.dumps(record, indent=2) + '\n').encode())]
     for target, data in outputs:
         if args.check:
@@ -64,7 +72,7 @@ def main():
         else:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(data)
-    print(f'Native campaign icon: {width}×{height}, {len(png)} bytes; source pixels verified')
+    print(f'Native campaign icon and button: {len(png) + len(background_png)} bytes; source pixels verified')
 
 
 if __name__ == '__main__':

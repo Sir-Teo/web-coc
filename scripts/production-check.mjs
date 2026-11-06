@@ -9,23 +9,36 @@ async function checkNativeHud(page, cached = false) {
     async ({ expected, cached }) => {
       const image = document.querySelector('.campaign-map-icon');
       if (!(image instanceof HTMLImageElement)) throw Error('Native campaign icon missing');
-      await image.decode();
-      if (image.naturalWidth !== expected.width || image.naturalHeight !== expected.height)
-        throw Error('Native campaign icon dimensions changed');
-      if (cached && !(await caches.match(image.currentSrc))?.ok)
-        throw Error('Native campaign icon missing from offline cache');
-      const canvas = document.createElement('canvas');
-      canvas.width = image.naturalWidth;
-      canvas.height = image.naturalHeight;
-      const context = canvas.getContext('2d', { willReadFrequently: true });
-      context.drawImage(image, 0, 0);
-      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
-      const hash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', pixels))]
-        .map((byte) => byte.toString(16).padStart(2, '0'))
-        .join('');
+      const background = new Image();
+      const url = getComputedStyle(image.closest('button')).borderImageSource.match(
+        /^url\(["']?(.*?)["']?\)$/,
+      )?.[1];
+      if (!url) throw Error('Native Attack background missing from CSS');
+      background.src = url;
+      const result = {};
+      for (const [role, source, asset] of [
+        ['icon', image, expected],
+        ['background', background, expected.background],
+      ]) {
+        await source.decode();
+        if (source.naturalWidth !== asset.width || source.naturalHeight !== asset.height)
+          throw Error(`Native campaign ${role} dimensions changed`);
+        if (cached && !(await caches.match(source.currentSrc || source.src))?.ok)
+          throw Error(`Native campaign ${role} missing from offline cache`);
+        const canvas = document.createElement('canvas');
+        canvas.width = source.naturalWidth;
+        canvas.height = source.naturalHeight;
+        const context = canvas.getContext('2d', { willReadFrequently: true });
+        context.drawImage(source, 0, 0);
+        const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+        const hash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', pixels))]
+          .map((byte) => byte.toString(16).padStart(2, '0'))
+          .join('');
+        result[role] = { width: canvas.width, height: canvas.height, hash };
+      }
       // Compare browser-decoded pixels before and after offline reload; canvas
       // premultiplication can round translucent RGB relative to the raw asset.
-      return { width: canvas.width, height: canvas.height, hash };
+      return result;
     },
     { expected: nativeHud, cached },
   );
@@ -487,7 +500,17 @@ for (const [name, engine] of Object.entries(engines)) {
     expect(await checkNativeFonts(page, true)).toBe(nativeFonts.length);
     await page.waitForFunction(async () => {
       const image = document.querySelector('.campaign-map-icon');
-      return image instanceof HTMLImageElement && !!(await caches.match(image.currentSrc))?.ok;
+      const background =
+        image &&
+        getComputedStyle(image.closest('button')).borderImageSource.match(
+          /^url\(["']?(.*?)["']?\)$/,
+        )?.[1];
+      return (
+        image instanceof HTMLImageElement &&
+        !!(await caches.match(image.currentSrc))?.ok &&
+        background &&
+        !!(await caches.match(background))?.ok
+      );
     });
     expect(await checkNativeHud(page, true)).toEqual(report[name].nativeHud);
     await context.setOffline(true);

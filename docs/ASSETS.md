@@ -124,4 +124,6 @@ only the two compressed browser faces ship under `public/assets/fonts-native/`.
 The Attack button uses the original campaign map from `hud_button_fight`'s
 `icon` child at its `no_stars` frame. The [HUD reference](../reference/hud/README.md)
 records its source selection, graph and pixel hashes. The static 90×74 PNG keeps
-the source colors and adds no per-frame work; labels and responsive targets remain DOM controls.
+the source colors and adds no per-frame work. The parent's shape 55 supplies the
+125×123 button background, with local CSS border-image slices for responsive sizes.
+Labels and responsive targets remain DOM controls.
