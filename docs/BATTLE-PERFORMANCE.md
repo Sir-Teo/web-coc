@@ -2007,6 +2007,15 @@ Regression cases keep a valid target when a closer attacker arrives, then replac
 death, invisibility or leaving range. Existing native defense combat and replay cases retain
 their coverage of projectiles, retarget delays, bursts, facing and targeting modes.
 
+The same cloud host's mobile stress run (390×844, 4× CPU throttling, half-level TH18 army,
+stage 61, lazy art, SwiftShader software WebGL) completed without runtime errors but measured
+only 3.5 FPS over six seconds. This is not a physical-phone result or a before/after comparison.
+It remains an open performance finding: the targeting improvement does not establish smooth
+gameplay on this workload. The captured CPU profile spreads work across simulation, native
+mesh presentation and rendering rather than identifying one remaining dominant function.
+Reports and profiles are generated under ignored `output/playtest/` by
+`node scripts/battle-load-benchmark.mjs --mobile --cpu=4 --army=th18 --level=half --lazyart --gl --profile`.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
