@@ -2115,6 +2115,25 @@ preserved pixels; the low stress frame rate remains unresolved. Reports and CPU 
 were saved under ignored `output/playtest/building-cull-before.*` and
 `output/playtest/building-cull-after.*`.
 
+## Share identical Inferno body samples
+
+`InfernoPresentation` samples identical local tower bodies once per render pass, keyed by
+level, mode, building state and the source clip frames already used by its render signature.
+Each view retains its own position, buffers and draw objects. The sample map clears on every
+pass and on teardown; beam sampling and combat state are unchanged.
+
+`tests/browser/inferno-shared-samples.spec.ts` compares shared and independent rendering for
+all twelve tiers, both modes, five states and three clocks: all thirty framebuffer comparisons
+are byte-identical. It also checks animation, state tags, sample reuse and teardown.
+
+A focused Chromium/SwiftShader probe with 4× CPU throttling, eight level-one towers split
+between single and multi mode measured mean body-update time of 1.32 ms independently versus
+1.06 ms shared (320 samples each; medians 1.1 and 0.9 ms). Two separate presentations were
+equally warmed, advanced through matching source clocks and timed in alternating order, so
+the first repaint at a new clock could not bias one path. This isolates body updates, not
+whole-battle FPS. The mobile stress run still has substantial simulation,
+other presentation and render-submission costs.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

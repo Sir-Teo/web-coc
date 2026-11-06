@@ -65,6 +65,8 @@ export class InfernoPresentation {
   readonly troopBeams = new Map<number, NativeSceneView>();
   readonly views = new Map<number, NativeSceneView>();
   private signatures = new Map<number, string>();
+  /** Tower registration is local: identical bodies can share one immutable sample per pass. */
+  private frameSamples = new Map<string, ReturnType<typeof infernoPoses>>();
   constructor(
     private scene: Phaser.Scene,
     audio: AudioManager,
@@ -85,6 +87,7 @@ export class InfernoPresentation {
     for (const view of this.views.values()) view.destroy();
     this.views.clear();
     this.signatures.clear();
+    this.frameSamples.clear();
   }
   render(
     buildings: Building[],
@@ -93,6 +96,7 @@ export class InfernoPresentation {
     reduced: boolean,
     iso: (x: number, y: number) => { x: number; y: number },
   ) {
+    this.frameSamples.clear();
     // Nothing draws until the Inferno family (graph first) has loaded.
     if (!infernoArtLoaded()) return;
     // Hit and transition bursts play out on the presentation clock after the finish.
@@ -143,7 +147,15 @@ export class InfernoPresentation {
       if (this.signatures.get(building.id) !== signature) {
         const poses = guardRender(
           `inferno level ${building.level}`,
-          () => infernoPoses(building.level, mode, state, seconds, INFERNO_ROOT),
+          () => {
+            const key = `${building.level}:${mode}:${state}:${frames}`;
+            let sample = this.frameSamples.get(key);
+            if (!sample) {
+              sample = infernoPoses(building.level, mode, state, seconds, INFERNO_ROOT);
+              this.frameSamples.set(key, sample);
+            }
+            return sample;
+          },
           [],
         );
         view.render(poses, point.x, point.y, point.y);
