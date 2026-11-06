@@ -160,6 +160,7 @@ describe('original Tornado Trap source', () => {
       [100, 2],
       [101, 2],
       [151, 3],
+      [153, 3],
     ]);
   });
 

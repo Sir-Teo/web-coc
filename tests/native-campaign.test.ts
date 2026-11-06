@@ -32,9 +32,9 @@ function clear(m: GameModel) {
 
 describe('native campaign adapter and progress isolation', () => {
   it('preserves every supported village tile, level, entity and native scenery identity', () => {
-    // 90 Goblin map villages, 15 playable Challenges and the 47 forged ones after them.
-    expect(NATIVE_CAMPAIGN).toHaveLength(152);
-    expect(playable).toEqual(Array.from({ length: 152 }, (_, i) => i));
+    // 90 Goblin map villages, 17 playable Challenges and the 47 forged ones after them.
+    expect(NATIVE_CAMPAIGN).toHaveLength(154);
+    expect(playable).toEqual(Array.from({ length: 154 }, (_, i) => i));
     // Only the imported villages have a source layout to compare the adapter against.
     for (const originalLayout of layouts) {
       const i = originalLayout.stage - 1;
@@ -289,7 +289,7 @@ it('preserves current X-Bow and Skeleton Trap modes using exact source placement
       }
     }
   }
-  expect(xbows).toBe(150);
+  expect(xbows).toBe(154);
   expect(airTraps).toBeGreaterThan(0);
   const stage = structuredClone(NATIVE_CAMPAIGN[50]);
   const placement = stage.buildings.find(([id]) => id === 1000021)!;

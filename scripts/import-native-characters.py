@@ -74,8 +74,12 @@ PINS = {
     'sc/chr_royale_ghost_0.sctx': '08a9c99e02529b087800b62bc9de88d7d80cc316984fde94b514255c4c1b70f2',
     'sc/chr_worker.sc': 'b2e3e50390a1994fa6dec0a490392591e584aec81b49d3a1006b41e184a34cab',
     'sc/chr_worker_0.sctx': '6f01598f31076c26bdee9554497b45d97f5620e44d51bb3eb5d10e3b4756e0d7',
+    'sc/chr_balloon.sc': '7db110cf0ed98808a65550d17c240a0c10753db35958c766987f4b21afa5641d',
+    'sc/chr_balloon_0.sctx': '41aeaa3afb6e3da9f33b8c51513f8ae473a1e89c893771b289d219b9a30aa0ef',
     # The Bowler's trollBoulder_lvl3 views and shadow sample this shared buildings texture.
     'sc/buildings_6.sctx': '68d97a39c2bfbcf94f820f4091c078a9516f41dafe27744e7de26e30864d1ffc',
+    'level/challenge_th8_gowiva.json': '46cd91aaf600acdf9796700037aa31396bdfa551672d689f2cee4dfd752143af',
+    'level/challenge_th12_yeti.json': '5dda28a591f971f243e2da5411d9e5b4ef0918fab9d59ee2b62fd4e4609c20da',
     # Public layout files are absent from this client fingerprint; they carry SHA-256 pins only.
     'level/npc55.json': '1ea0d18c26f39093b1449a7bf1df9c019b8fb640807ac95758eadad3d7f2bc16',
     'level/npc66.json': 'e8a2e3cd40ef3f82e64164dd8c15fc4f943e235c37e995c0bfe89e5aa3aa28ce',
@@ -89,6 +93,7 @@ PINS = {
     'level/npc88.json': '0d95076b27684819a67b2952074495e814e81b86ab182761ce0c56213f156579',
 }
 PREFIX = 'assets/characters-native'
+PRACTICE_STAGES = {'CHALLENGE_TH8_GOWIVA': 153, 'CHALLENGE_TH12_YETI': 154}
 # One captured graph per original character file. The first group is animated by the
 # runtime now; MOMMA (pekka9) and Golden Dragon (dragonx) share already-pinned files.
 FAMILIES = {
@@ -108,10 +113,12 @@ FAMILIES = {
     'witch': dict(swf='sc/chr_witch.sc', animations=['Necromancer_lvl2']),
     'skeleton': dict(swf='sc/chr_skeleton.sc', animations=['Skeleton']),
     'bowler': dict(swf='sc/chr_bowler.sc', animations=['Troll_lvl3']),
-    'lava_hound': dict(swf='sc/chr_lava_hound.sc', animations=['ADSeeker_lvl6', 'TinyBaby_lvl1']),
+    'lava_hound': dict(swf='sc/chr_lava_hound.sc', animations=['ADSeeker_lvl6', 'TinyBaby_lvl1', 'ADSeeker_lvl5']),
     'electro_titan': dict(swf='sc/chr_electro_titan.sc', animations=['ElectroTitan_lvl2']),
     'royale_ghost': dict(swf='sc/chr_royale_ghost.sc', animations=['Prototype_Ghost']),
     'worker': dict(swf='sc/chr_worker.sc', animations=['Defending Builder']),
+    # Balloon 5 deliberately uses the source's shared Balloon Goblin3 animation.
+    'balloon': dict(swf='sc/chr_balloon.sc', animations=['Balloon Goblin3']),
 }
 # Projectile exports live in the character files above or in shared original files.
 PROJECTILES = ['Arrow_small_darkElixirFire2', 'Headhunter_Card_lvl3', 'super_gargoyle_projectile',
@@ -283,12 +290,14 @@ def build():
     require([rows[0]['MapInstanceName'] for rows in campaign] == [f'npc{i}' for i in range(1, 91)],
             'Campaign map identity differs')
     rosters, needed = [], set()
-    for rows in campaign:
+    for rows in campaign + [npcs[name] for name in PRACTICE_STAGES]:
         roster = [row for row in rows if row.get('AllianceUnitType')]
         if not roster:
             continue
         first = rows[0]
-        stage = int(first['MapInstanceName'][3:])
+        stage = PRACTICE_STAGES.get(first['Name'])
+        if stage is None:
+            stage = int(first['MapInstanceName'][3:])
         layout = json.loads(source(first['LevelFile'], PINS))
         bunkers = [dict(globalId=b['data'], name=bunker_ids[b['data']], sourceId=b['id'], level=b['lvl'] + 1,
                         x=b['x'], y=b['y'], mode=b.get('mode')) for b in layout['buildings'] if b['data'] in bunker_ids]
@@ -304,7 +313,7 @@ def build():
                                 defensiveCharacter=resolved, row=ordinal, animation=inherited['Animation']))
         rosters.append(dict(stage=stage, stageIndex=stage - 1, npc=first['Name'], layout=first['LevelFile'],
                             bunkers=bunkers, members=members))
-    require([r['stageIndex'] for r in rosters] == [56, 67, 69, 72, 73, 74, 76, 77, 83, 89], 'Garrison stages differ')
+    require([r['stageIndex'] for r in rosters] == [56, 67, 69, 72, 73, 74, 76, 77, 83, 89, 152, 153], 'Garrison stages differ')
     # Characters spawned outside rosters: Ghost Trap spawns and armed Builder's Hut defence troops.
     traps = table('logic/traps.csv')
     trap_spawners = {}

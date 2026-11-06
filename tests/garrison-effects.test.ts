@@ -8,11 +8,11 @@ import { loadCharacterArt } from '../src/game/character-art';
 // The character graphs load on demand, as the garrison art does.
 await loadCharacterArt();
 
-const setup = () => {
+const setup = (level = 8) => {
   const model = new GameModel();
   model.startBattle(0, true);
   const battle = model.battle!;
-  const defender = spawnGarrisonDefender(battle, 'balloon', 8, 1, 10, 10, 0);
+  const defender = spawnGarrisonDefender(battle, 'balloon', level, 1, 10, 10, 0);
   defender.attacks.push({ at: 1, x: 10, y: 10, targetId: 1, targetX: 11, targetY: 11 });
   return { battle, defender };
 };
@@ -101,4 +101,18 @@ it('detaches Dragon fire at the recorded mouth position and removes it on death'
   );
   battle.elapsed = 5;
   expect(garrisonImpactPoses(battle, false, iso)).toEqual([]);
+});
+
+it('Balloon 5 death emits its original red debris instead of the dark level-eight variant', () => {
+  const { battle, defender } = setup(5);
+  defender.attacks = [];
+  battle.elapsed = 2;
+  hurtDefender(battle, defender, 1000);
+  defender.deathResolved = true;
+  battle.elapsed = 2.5;
+  const poses = garrisonImpactPoses(battle, false, iso);
+  const names = new Set(poses.map((p) => p.emitter));
+  expect(names.has('Balloon_Die_bloon')).toBe(true);
+  expect(names.has('Balloon_Die_darkBloon')).toBe(false);
+  expect(garrisonImpactPoses(JSON.parse(JSON.stringify(battle)), false, iso)).toEqual(poses);
 });

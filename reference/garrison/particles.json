@@ -18,10 +18,81 @@
       "attack": "Balloon Goblin Attack",
       "hit": "Balloon Goblin Hit",
       "die": "Balloon Goblin Die",
-      "deathDamage": "Dark Balloon Exposion"
+      "deathDamage": "Dark Balloon Exposion",
+      "deathDamage5": "Balloon Exposion"
     }
   },
   "effects": {
+    "Balloon Exposion": [
+      {
+        "Name": "Balloon Exposion",
+        "ParticleEmitter": "Stone",
+        "EmitterDelayMs": "0",
+        "IsoLayer": "Objects",
+        "CameraShake": "0",
+        "CameraShakeTimeMS": "0",
+        "CameraShakeInReplay": "FALSE",
+        "AttachToParent": "FALSE",
+        "OrientToParent": "FALSE",
+        "SortInFrontOfParent": "FALSE",
+        "DestroyWhenParentDies": "FALSE",
+        "DetachAfterStart": "FALSE",
+        "Targeted": "FALSE",
+        "Looping": "FALSE",
+        "Beam": "FALSE",
+        "SpawnLimit": "8",
+        "MinLifeTime": "0",
+        "Sound": "sfx/cannon_fire3.ogg",
+        "Volume": "60",
+        "MinPitch": "85",
+        "MaxPitch": "105",
+        "SoundDelay": "0",
+        "StopSound": "FALSE",
+        "PitchIncrease": "0",
+        "FadeMusic": "FALSE",
+        "OffsetFromGunBone": "FALSE",
+        "OffsetX": "0",
+        "OffsetY": "0",
+        "OffsetZ": "0",
+        "Scale": "100",
+        "LifeTimeScale": "100",
+        "MaxInstances": "0",
+        "FadeIn": "0",
+        "FadeOut": "0"
+      },
+      {
+        "ParticleEmitter": "Grass",
+        "EmitterDelayMs": "0"
+      },
+      {
+        "ParticleEmitter": "Ring",
+        "EmitterDelayMs": "0"
+      },
+      {
+        "ParticleEmitter": "Wizard_Tower_lightFlash",
+        "EmitterDelayMs": "0"
+      },
+      {
+        "ParticleEmitter": "Explosion_3",
+        "EmitterDelayMs": "0"
+      },
+      {
+        "ParticleEmitter": "Fire_balls",
+        "EmitterDelayMs": "0"
+      },
+      {
+        "ParticleEmitter": "Smoke",
+        "EmitterDelayMs": "0"
+      },
+      {
+        "ParticleEmitter": "Balloon_Die_wood",
+        "EmitterDelayMs": "0"
+      },
+      {
+        "ParticleEmitter": "Balloon_Die_bloon",
+        "EmitterDelayMs": "0"
+      }
+    ],
     "Balloon Goblin Attack": [
       {
         "Name": "Balloon Goblin Attack",
@@ -413,6 +484,63 @@
     ]
   },
   "particles": {
+    "Balloon_Die_bloon": [
+      {
+        "Name": "Balloon_Die_bloon",
+        "ParticleCount": "15",
+        "EmissionTime": "1",
+        "MinLife": "500",
+        "MaxLife": "800",
+        "MinHorizAngle": "0",
+        "MaxHorizAngle": "360",
+        "MinVertAngle": "0",
+        "MaxVertAngle": "360",
+        "MinSpeed": "200",
+        "MaxSpeed": "800",
+        "StartX": "0",
+        "StartY": "0",
+        "StartZ": "130",
+        "TargetedEndZ": "0",
+        "Gravity": "500",
+        "OrientToMovement": "TRUE",
+        "OrientToParentType": "Disabled",
+        "BounceFromGround": "TRUE",
+        "IsIsoParticle": "FALSE",
+        "IsoLayer": "Object",
+        "ParticleSwf": "sc/buildings.sc",
+        "ParticleExportName": "balloonDebris3",
+        "AdditiveBlend": "FALSE",
+        "Inertia": "10",
+        "Slowdown": "0",
+        "StartScale": "20",
+        "EndScale": "10",
+        "MinRotate": "20",
+        "MaxRotate": "90",
+        "ParticleFadeOutTime": "250",
+        "ScaleTimeline": "TRUE",
+        "FadeInTime": "0",
+        "FadeOutTime": "0",
+        "StartAngleMin": "0",
+        "StartAngleMax": "0",
+        "ScaleRandomMin": "100",
+        "ScaleRandomMax": "100",
+        "Alpha": "100",
+        "StartRadiusMin": "0",
+        "StartRadiusMax": "0"
+      },
+      {
+        "ParticleExportName": "balloonDebris1",
+        "AdditiveBlend": "FALSE"
+      },
+      {
+        "ParticleExportName": "balloonDebris4",
+        "AdditiveBlend": "FALSE"
+      },
+      {
+        "ParticleExportName": "balloonDebris2",
+        "AdditiveBlend": "FALSE"
+      }
+    ],
     "Balloon_Die_darkBloon": [
       {
         "Name": "Balloon_Die_darkBloon",

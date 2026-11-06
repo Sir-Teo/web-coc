@@ -165,7 +165,7 @@ export function garrisonImpactPoses(
         defender.id,
         0,
         'death-damage',
-        raw.bindings.balloon.deathDamage,
+        defender.level === 5 ? raw.bindings.balloon.deathDamage5 : raw.bindings.balloon.deathDamage,
         defender.defeatedAt + garrisonStats('balloon', defender.level).deathDelay,
         defender.x,
         defender.y,

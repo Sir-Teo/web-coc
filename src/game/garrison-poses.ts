@@ -7,6 +7,7 @@ import {
   characterPose,
   rowExport,
 } from './character-poses';
+import { garrisonStats } from './garrison-kinds';
 import { characterArt, characterArts, commonDeathArt } from './character-art';
 import type { GarrisonDefender } from './defenders';
 import type { Battle } from './model';
@@ -24,13 +25,20 @@ export const dragonDeathLastTime = () => {
   return (clip.timeline.length - 1) / clip.fps;
 };
 /** Local one-based interpretation of source ActionFrame 34 in this 34-frame clip. */
-export const balloonActionTime = () => {
-  const graph = characterArt('Balloon Goblin8').graph;
-  const clip = graph.clips[graph.exports.balloon_lvl8_attack1];
+export const balloonActionTime = (level = 8) => {
+  const animation = garrisonStats('balloon', level).animation;
+  const graph = characterArt(animation).graph;
+  const clip = graph.clips[graph.exports[rowExport(animationStates(animation).attack[0], 1)]];
   return (clip.timeline.length - 1) / clip.fps;
 };
 export function balloonAttackPose(defender: GarrisonDefender, elapsed: number, reduced = false) {
-  const attack = characterAttackTime(defender, elapsed, 'Balloon Goblin8', 1, reduced);
+  const attack = characterAttackTime(
+    defender,
+    elapsed,
+    garrisonStats('balloon', defender.level).animation,
+    1,
+    reduced,
+  );
   return attack ? { name: rowExport(attack.row, 1), time: attack.time } : null;
 }
 /** Local world size; all source vertices, colors and nested timelines remain unchanged. */

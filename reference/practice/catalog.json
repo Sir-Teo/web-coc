@@ -9,6 +9,7 @@
     "level/challenge_th11_lavaloon.json": "dab1d5da5fe30fdd0ca33a4d3c49f118a50f2d07569591b51d5a2a1b633d3aaf",
     "level/challenge_th12_bowigi.json": "82999c8f11303688405afe92464e59901119b0df89d05b0dcf2913b589917ec5",
     "level/challenge_th12_dragbat.json": "0408d834cb35d49afb9d2dddfef5af38befacb4d5b5812d620b619587568c4a6",
+    "level/challenge_th12_yeti.json": "5dda28a591f971f243e2da5411d9e5b4ef0918fab9d59ee2b62fd4e4609c20da",
     "level/challenge_th4_giant.json": "a9fe72489b190d8a619bcb96edb5280a7e7279891a09dc2d7fb7af3f6b3233a3",
     "level/challenge_th5_loon.json": "71f1edb8065d043dd9c2d343891fb7bac5c1e3b9f8da67440d0fe9fc635b4805",
     "level/challenge_th6_giwiwa.json": "fafbc0d4f9944a15be65282dc045fb37b78fd002819eaf9da5a507e778e570ab",
@@ -16,6 +17,7 @@
     "level/challenge_th7_hog.json": "5157101770b43b78ec736e3ba94231a56240a2ea92cac3e100ef94d080f93986",
     "level/challenge_th7_minion.json": "4f6dea4a68666f54dddcd030feffa3631783d76a565c4d700775092207a32649",
     "level/challenge_th8_gowipe.json": "fb8748b50764f942485e84766d700fa70b54d5b8376fc52019f3778c32480200",
+    "level/challenge_th8_gowiva.json": "46cd91aaf600acdf9796700037aa31396bdfa551672d689f2cee4dfd752143af",
     "level/challenge_th9_babydqw.json": "70ab5cd66af8a7e5bad617d3ca8acff1ddb6e3eda4f69eeba7847f4d84f86dfa",
     "level/challenge_th9_lavaloon.json": "a42a19c8848a80106e84917bd0ee25d46849ea41d776d51edd68213d04dc5f63",
     "level/challenge_th9_witch.json": "607bf53b2bfe4c59a45938bdc40e542982df5444eebac0d96f9da08fd1d1c4b7",
@@ -1074,7 +1076,7 @@
       "id": "CHALLENGE_TH8_GOWIVA",
       "name": "Whirl Power",
       "townHall": 8,
-      "stage": null,
+      "stage": 153,
       "gold": 250000,
       "elixir": 250000,
       "dark": 1500,
@@ -1134,8 +1136,188 @@
           "count": 1
         }
       ],
-      "steps": [],
-      "heroFlags": []
+      "steps": [
+        {
+          "name": "TH8_Gowiva_Earthquake",
+          "text": "Four <ca9561f>Earthquake Spells</c> always destroy Walls. Use them to open up the base!",
+          "unit": "Earthquake",
+          "count": 4,
+          "at": [
+            22,
+            27
+          ],
+          "radius": 1.5,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true,
+          "exact": true
+        },
+        {
+          "name": "Wait_2500ms",
+          "forceType": true,
+          "duration": 2500
+        },
+        {
+          "name": "TH8_Gowiva_HogRider",
+          "text": "Deploy a <c54a0fe>Hog Rider</c> to lure enemy troops out from the enemy <cf70d16>Clan Castle</c>.",
+          "unit": "Hog Rider",
+          "count": 1,
+          "at": [
+            25,
+            40
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true
+        },
+        {
+          "name": "Wait_5000ms",
+          "forceType": true,
+          "duration": 5000
+        },
+        {
+          "name": "TH8_Gowiva_Archer",
+          "text": "Deploy an <c54a0fe>Archer</c> to draw <cf70d16>defending troops</c> away from the middle.",
+          "unit": "Archer",
+          "count": 1,
+          "at": [
+            28,
+            45
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true,
+          "exact": true
+        },
+        {
+          "name": "Wait_7500ms",
+          "forceType": true,
+          "duration": 7500
+        },
+        {
+          "name": "Wait_7500ms",
+          "forceType": true,
+          "duration": 7500
+        },
+        {
+          "name": "TH8_Gowiva_Poison",
+          "text": "Use <ce98714>Poison Spell</c> to slow down the <cf70d16>enemy Balloons</c>.",
+          "unit": "Poison",
+          "count": 1,
+          "at": [
+            27,
+            43
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true,
+          "exact": true
+        },
+        {
+          "name": "Wait_1000ms",
+          "forceType": true,
+          "duration": 1000
+        },
+        {
+          "name": "TH8_Gowiva_Golem",
+          "text": "Deploy a <c54a0fe>Golem</c> to distract the <cf70d16>enemy Balloons</c> while <c54a0fe>Wizards</c> wipe them out.",
+          "unit": "Golem",
+          "count": 1,
+          "at": [
+            25,
+            43
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true,
+          "exact": true
+        },
+        {
+          "name": "Wait_1000ms",
+          "forceType": true,
+          "duration": 1000
+        },
+        {
+          "name": "TH8_Gowiva_Wizards",
+          "text": "<c54a0fe>Wizards</c> can attack air troops and they deal a lot of damage.",
+          "unit": "Wizard",
+          "count": 11,
+          "at": [
+            21,
+            42
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true,
+          "exact": true
+        },
+        {
+          "name": "Wait_5000ms",
+          "forceType": true,
+          "duration": 5000
+        },
+        {
+          "name": "TH8_Gowiva_BarbarianKing",
+          "text": "Deploy the <c9916c8>Barbarian King</c>.",
+          "unit": "Barbarian King",
+          "count": 1,
+          "at": [
+            18,
+            37
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true
+        },
+        {
+          "name": "Wait_1000ms",
+          "forceType": true,
+          "duration": 1000
+        },
+        {
+          "name": "TH8_Gowiva_Valkyries",
+          "text": "Deploy <c54a0fe>Valkyries</c>. They are very strong against bases where buildings are close together.",
+          "unit": "Valkyrie",
+          "count": 14,
+          "at": [
+            18,
+            40
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true
+        },
+        {
+          "name": "Wait_2500ms",
+          "forceType": true,
+          "duration": 2500
+        },
+        {
+          "name": "TH8_Gowiva_Heal",
+          "text": "Use a <cffe346>Heal Spell</c> on your troops while they enter the base.",
+          "unit": "Healing",
+          "count": 1,
+          "at": [
+            22,
+            28
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true
+        }
+      ],
+      "heroFlags": [
+        {
+          "hero": "Barbarian King",
+          "x": 26,
+          "y": 27
+        }
+      ]
     },
     {
       "id": "CHALLENGE_TH9_LAVALOON",
@@ -3998,7 +4180,7 @@
       "id": "CHALLENGE_TH12_YETI",
       "name": "Yeti Smash",
       "townHall": 12,
-      "stage": null,
+      "stage": 154,
       "gold": 600000,
       "elixir": 600000,
       "dark": 6000,
@@ -4095,8 +4277,349 @@
           "count": 1
         }
       ],
-      "steps": [],
-      "heroFlags": []
+      "steps": [
+        {
+          "name": "TH12_Yeti_GrandWarden",
+          "text": "Start with <c9916c8>Grand Warden</c> walk. Use ground mode!",
+          "unit": "Grand Warden",
+          "count": 1,
+          "at": [
+            48,
+            48
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true,
+          "exact": true
+        },
+        {
+          "name": "Wait_1000ms",
+          "forceType": true,
+          "duration": 1000
+        },
+        {
+          "name": "TH12_Yeti_Healers",
+          "text": "Deploy <c54a0fe>Healers</c> to support the <c9916c8>Grand Warden</c>.",
+          "unit": "Healer",
+          "count": 5,
+          "at": [
+            48,
+            48
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true,
+          "exact": true
+        },
+        {
+          "name": "Wait_5000ms",
+          "forceType": true,
+          "duration": 5000
+        },
+        {
+          "name": "TH12_Yeti_Info_Warden_Walk",
+          "text": "Main objective of the <c9916c8>Grand Warden</c> is to clear the corner and destroy the <cf70d16>Inferno Tower</c>.",
+          "forceType": true,
+          "duration": 20000,
+          "show": {
+            "data": 1000027,
+            "x": 36,
+            "y": 36
+          }
+        },
+        {
+          "name": "Wait_1000ms",
+          "forceType": true,
+          "duration": 1000
+        },
+        {
+          "name": "TH12_Yeti_Funnel_PEKKAs",
+          "text": "Deploy <c54a0fe>P.E.K.K.As</c> to clear the other corner. Keep them separated from your <c9916c8>Grand Warden</c>!",
+          "unit": "PEKKA",
+          "count": 2,
+          "at": [
+            49,
+            10
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true,
+          "exact": true
+        },
+        {
+          "name": "Wait_1000ms",
+          "forceType": true,
+          "duration": 1000
+        },
+        {
+          "name": "TH12_Yeti_Funnel_Wizards",
+          "text": "Deploy some <c54a0fe>Wizards</c> for support.",
+          "unit": "Wizard",
+          "count": 1,
+          "at": [
+            49,
+            10
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true
+        },
+        {
+          "name": "Wait_7500ms",
+          "forceType": true,
+          "duration": 7500
+        },
+        {
+          "name": "Wait_7500ms",
+          "forceType": true,
+          "duration": 7500
+        },
+        {
+          "name": "Wait_7500ms",
+          "forceType": true,
+          "duration": 7500
+        },
+        {
+          "name": "Wait_7500ms",
+          "forceType": true,
+          "duration": 7500
+        },
+        {
+          "name": "TH12_Yeti_Jump",
+          "text": "Use <c85ff3b>Jump Spell</c> to gain access to the <cf70d16>Giga Tesla</c>.",
+          "unit": "Jump",
+          "count": 1,
+          "at": [
+            40,
+            27
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true,
+          "exact": true
+        },
+        {
+          "name": "TH12_Yeti_Wait_For_Warden",
+          "forceType": true,
+          "waitFor": {
+            "data": 1000012,
+            "x": 39,
+            "y": 32
+          }
+        },
+        {
+          "name": "TH12_Yeti_Yetis",
+          "text": "Deploy <c54a0fe>Yetis</c> to draw attention of the <c9916c8>Grand Warden</c>!",
+          "unit": "Yeti",
+          "count": 5,
+          "at": [
+            49,
+            35
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true,
+          "exact": true
+        },
+        {
+          "name": "Wait_1000ms",
+          "forceType": true,
+          "duration": 1000
+        },
+        {
+          "name": "TH12_Yeti_PEKKAs",
+          "text": "Deploy remaining <c54a0fe>P.E.K.K.As</c>.",
+          "unit": "PEKKA",
+          "count": 1,
+          "at": [
+            49,
+            26
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true
+        },
+        {
+          "name": "Wait_1000ms",
+          "forceType": true,
+          "duration": 1000
+        },
+        {
+          "name": "TH12_Yeti_BarbarianKing",
+          "text": "Deploy the <c9916c8>Barbarian King</c>.",
+          "unit": "Barbarian King",
+          "count": 1,
+          "at": [
+            49,
+            30
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true
+        },
+        {
+          "name": "Wait_1000ms",
+          "forceType": true,
+          "duration": 1000
+        },
+        {
+          "name": "TH12_Yeti_ArcherQueen",
+          "text": "Deploy <c9916c8>Archer Queen</c>.",
+          "unit": "Archer Queen",
+          "count": 1,
+          "at": [
+            49,
+            30
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true
+        },
+        {
+          "name": "Wait_2500ms",
+          "forceType": true,
+          "duration": 2500
+        },
+        {
+          "name": "TH12_Yeti_Rage1",
+          "text": "Use <cf07bf8>Rage Spell</c> on the entrance so that most troops will benefit from it.",
+          "unit": "Rage",
+          "count": 1,
+          "at": [
+            40,
+            28
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true
+        },
+        {
+          "name": "Wait_2500ms",
+          "forceType": true,
+          "duration": 2500
+        },
+        {
+          "name": "TH12_Yeti_Poison",
+          "text": "Use <ce98714>Poison Spell</c> to get rid of enemy Clan Castle units.",
+          "unit": "Poison",
+          "count": 1,
+          "at": [
+            34,
+            26
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true
+        },
+        {
+          "name": "Wait_2500ms",
+          "forceType": true,
+          "duration": 2500
+        },
+        {
+          "name": "TH12_Yeti_Earthquakes",
+          "text": "Use <ca9561f>Earthquake Spells</c> to open up the base and to cause some damage to buildings.",
+          "unit": "Earthquake",
+          "count": 4,
+          "at": [
+            27,
+            27
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true,
+          "exact": true
+        },
+        {
+          "name": "Wait_2500ms",
+          "forceType": true,
+          "duration": 2500
+        },
+        {
+          "name": "WardenAbility",
+          "text": "Activate your <c9916c8>Grand Warden Ability</c> to protect your troops when they need it!",
+          "unit": "Grand Warden",
+          "pause": true,
+          "ability": true
+        },
+        {
+          "name": "Wait_2500ms",
+          "forceType": true,
+          "duration": 2500
+        },
+        {
+          "name": "TH12_Yeti_StoneSlammer",
+          "text": "Deploy the <c54a0fe>Stone Slammer</c> to clear the flank. It contains eight <c54a0fe>Balloons</c>.",
+          "unit": "Stone Slammer",
+          "count": 1,
+          "at": [
+            49,
+            15
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true,
+          "exact": true
+        },
+        {
+          "name": "Wait_2500ms",
+          "forceType": true,
+          "duration": 2500
+        },
+        {
+          "name": "TH12_Yeti_Rage2",
+          "text": "Use <cf07bf8>Rage Spell</c> to clear the core quickly!",
+          "unit": "Rage",
+          "count": 1,
+          "at": [
+            30,
+            27
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true
+        },
+        {
+          "name": "Wait_5000ms",
+          "forceType": true,
+          "duration": 5000
+        },
+        {
+          "name": "TH12_Yeti_CleanUp",
+          "text": "Use remaining <c54a0fe>Wizards</c>, <cf07bf8>Haste Spell</c> and <c38eaff>Freeze Spell</c> to finish the attack.",
+          "duration": 30000
+        }
+      ],
+      "heroFlags": [
+        {
+          "hero": "Barbarian King",
+          "x": 32,
+          "y": 32
+        },
+        {
+          "hero": "Archer Queen",
+          "x": 36,
+          "y": 12
+        },
+        {
+          "hero": "Grand Warden",
+          "x": 11,
+          "y": 14
+        }
+      ]
     },
     {
       "id": "CHALLENGE_TH13_HYBRID",

@@ -344,6 +344,8 @@ test('full-map guide reaches the original Queen deployment beyond the old board 
 for (const [index, name] of [
   [150, 'Angry Babies'],
   [151, 'Flying Circus'],
+  [152, 'Whirl Power'],
+  [153, 'Yeti Smash'],
 ] as const)
   test(`appended full-map Practice: ${name} opens from its campaign card`, async ({ page }) => {
     const errors: string[] = [];
@@ -377,13 +379,121 @@ for (const [index, name] of [
     });
     await page.touchscreen.tap(first.screen.x, first.screen.y);
     await expect
-      .poll(() => page.evaluate(() => window.__game.model.battle!.units.length))
+      .poll(() =>
+        page.evaluate(
+          () =>
+            (window.__game.model as unknown as { recording: { actions: unknown[] } }).recording
+              .actions.length,
+        ),
+      )
       .toBeGreaterThan(0);
     const action = await page.evaluate(() => {
       const m = window.__game.model;
       m.finishBattle();
       return m.state.raidLog![0].replay!.actions[0];
     });
-    expect(action).toMatchObject({ ...first.spot, ...first.unit, type: 'hero' });
+    const unit = first.unit!;
+    const expected =
+      'hero' in unit
+        ? { type: 'hero', hero: unit.hero }
+        : 'spell' in unit
+          ? { type: 'spell', kind: unit.spell }
+          : { type: 'troop', kind: unit.troop };
+    expect(action).toMatchObject({ ...first.spot, ...expected });
+    expect(errors).toEqual([]);
+  });
+
+for (const [index, animation, count] of [
+  [152, 'Balloon Goblin3', 5],
+  [153, 'ADSeeker_lvl5', 2],
+] as const)
+  test(`Practice Castle releases captured level-five defenders at index ${index}`, async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await boot(page, 12);
+    await page.locator('.modal [data-action="close"]').tap();
+    await page.evaluate((index) => window.__game.model.startCampaign(index, false), index);
+    await page.waitForFunction(async (animation) => {
+      const { characterArtLoaded } = await import('/src/game/character-art.ts');
+      return characterArtLoaded(animation) && window.__game.scene.artSettled;
+    }, animation);
+    await page.evaluate((count) => {
+      const { model: m, scene } = window.__game;
+      const b = m.battle!;
+      scene.paused = true;
+      b.started = true;
+      const castle = b.buildings.find((v) => v.id === b.garrisons![0].castleId)!;
+      b.units.push({
+        id: 100000,
+        kind: 'giant',
+        x: castle.x - 1,
+        y: castle.y + 1,
+        hp: 1000000,
+        maxHp: 1000000,
+        cooldown: 0,
+        target: null,
+        path: [],
+        pathAt: 0,
+        attacking: false,
+      });
+      const troops = () =>
+        b.defenders!.filter((d) => !['hero', 'skeleton', 'guardian', 'repairer'].includes(d.kind));
+      for (let i = 0; i < 200 && troops().length < count; i++) m.step(0.05);
+      m.changed();
+      scene.sync();
+    }, count);
+    await page.waitForFunction(() => window.__game.scene.artSettled);
+    const report = await page.evaluate(async () => {
+      const { model: m, scene, game } = window.__game;
+      const { iso } = await import('/src/game/scene.ts');
+      const b = m.battle!;
+      const castle = b.buildings.find((v) => v.id === b.garrisons![0].castleId)!;
+      const p = iso(castle.x + 1.5, castle.y + 1.5);
+      scene.setZoom(0.8);
+      scene.cameras.main.centerOn(p.x, p.y + 40);
+      scene.sync();
+      scene.drawOverlay(performance.now());
+      return {
+        troops: b
+          .defenders!.filter((d) => !['hero', 'skeleton', 'guardian', 'repairer'].includes(d.kind))
+          .map((d) => ({
+            kind: d.kind,
+            level: d.level,
+            meshes: scene.garrisonPresentation.defenders.get(d.id)?.objects.length ?? 0,
+          })),
+        gl: game.renderer.gl.getError(),
+      };
+    });
+    expect(report.troops).toHaveLength(count);
+    expect(report.troops.every((d) => d.meshes > 0)).toBe(true);
+    expect(report.troops.some((d) => d.level === 5)).toBe(true);
+    expect(report.gl).toBe(0);
+    await page.screenshot({ path: `output/playtest/practice-garrison-${index}-390.png` });
+    if (index === 153) {
+      await page.evaluate(async () => {
+        const { hurtDefender } = await import('/src/game/defenders.ts');
+        const { model: m, scene } = window.__game;
+        const b = m.battle!,
+          hound = b.defenders!.find((d) => d.kind === 'lavahound')!;
+        hurtDefender(b, hound, hound.hp);
+        m.step(0.05);
+        m.changed();
+        scene.sync();
+      });
+      await page.waitForFunction(() => window.__game.scene.artSettled);
+      const pups = await page.evaluate(() => {
+        const { model: m, scene } = window.__game;
+        scene.sync();
+        scene.drawOverlay(performance.now());
+        return m
+          .battle!.defenders!.filter((d) => d.kind === 'lavapup')
+          .map((d) => scene.garrisonPresentation.defenders.get(d.id)?.objects.length ?? 0);
+      });
+      expect(pups).toHaveLength(12);
+      expect(pups.every((n) => n > 0)).toBe(true);
+      await page.screenshot({ path: 'output/playtest/practice-garrison-lava-pups-390.png' });
+    }
     expect(errors).toEqual([]);
   });

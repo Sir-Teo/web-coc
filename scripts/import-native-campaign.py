@@ -89,20 +89,22 @@ assert [g[0]['MapInstanceName'] for g in npcs] == [f'npc{i}' for i in range(1, 9
 # record name, which is the only place the source states it.
 CHALLENGE = re.compile(r'CHALLENGE_TH(\d+)_[A-Z0-9]+')
 # The legacy 48-cell audit retains all six originally withheld layouts. Full-map bounds
-# now support two with complete defender and guide coverage; append them after the frozen tail.
+# now support four with complete defender and guide coverage; append them after the frozen tail.
 EXPANSIONS = {
     'CHALLENGE_TH9_BABYDQW': 151,
     'CHALLENGE_TH12_DRAGBAT': 152,
+    'CHALLENGE_TH8_GOWIVA': 153,
+    'CHALLENGE_TH12_YETI': 154,
 }
 EXPANSION_PINS = {
     'level/challenge_th9_babydqw.json': '70ab5cd66af8a7e5bad617d3ca8acff1ddb6e3eda4f69eeba7847f4d84f86dfa',
     'level/challenge_th12_dragbat.json': '0408d834cb35d49afb9d2dddfef5af38befacb4d5b5812d620b619587568c4a6',
+    'level/challenge_th8_gowiva.json': '46cd91aaf600acdf9796700037aa31396bdfa551672d689f2cee4dfd752143af',
+    'level/challenge_th12_yeti.json': '5dda28a591f971f243e2da5411d9e5b4ef0918fab9d59ee2b62fd4e4609c20da',
 }
 expected.update(EXPANSION_PINS)
 WITHHELD = {
     'CHALLENGE_TH10_MINER': 'Guide TH10_Miner_Wait_For_Rage references absent source object 500000234',
-    'CHALLENGE_TH8_GOWIVA': 'Balloon 5 garrison body',
-    'CHALLENGE_TH12_YETI': 'Lava Hound 5 garrison body',
     'CHALLENGE_TH13_HYBRID': 'Ice Golem 5 garrison body and defending death-freeze',
 }
 challenges = [g for g in records if CHALLENGE.fullmatch(g[0]['Name'])]

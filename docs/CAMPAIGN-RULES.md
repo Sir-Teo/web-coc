@@ -1,24 +1,24 @@
 # Single-player campaign rules
 
-Updated November 6, 2026. The campaign runs **152 villages** in three families, all playable and all in one list:
+Updated November 6, 2026. The campaign runs **154 villages** in three families, all playable and all in one list:
 
 | Villages | Family     | Source                                                               |
 | -------- | ---------- | -------------------------------------------------------------------- |
 | 1–90     | Goblin map | The pinned client's `npc1`–`npc90`, complete.                        |
 | 91–103   | Challenge  | 13 of the client's 19 Practice Mode levels.                          |
 | 104–150  | Forged     | This project's own, built by `scripts/generate-campaign-stages.mjs`. |
-| 151–152 | Challenge | Angry Babies and Flying Circus, appended without renumbering existing villages. |
+| 151–154 | Challenge | Angry Babies, Flying Circus, Whirl Power and Yeti Smash, appended without renumbering existing villages. |
 
-## Challenge villages (91–103 and 151–152)
+## Challenge villages (91–103 and 151–154)
 
 The client ships 19 Challenge maps beside the Goblin map — ordinary Home Villages from Town Hall 4 to 13, each with its own layout, loot and defending heroes. They are the original's Practice Mode levels and play as such: each opens at its own Town Hall and is fought with the army it provides, not the player's (see [PRACTICE-MODE.md](PRACTICE-MODE.md)). They carry no `MapInstanceName` and no `MapDependencies`, so no star on the map opens them. Their Goblin-map GlobalIDs are read as ordinary Home buildings: a Challenge Town Hall is a Town Hall, not a Goblin Hall.
 
 Two source facts these villages introduced:
 
-- **Defending heroes.** The `npcs.csv` rows name a hero and a level but no position. The level files do give one: a `heroFlags` entry per hero (a 2×2 hero flag, naming the hero by GlobalID), which `scripts/import-native-practice.py` reads. The 10 Practice levels with defending heroes, and only those, post each hero at its flag's centre. A hero without a flag would stand round the Hero Hall, as a practice attack on your own village stands yours, clamped inside the board.
+- **Defending heroes.** The `npcs.csv` rows name a hero and a level but no position. The level files do give one: a `heroFlags` entry per hero (a 2×2 hero flag, naming the hero by GlobalID), which `scripts/import-native-practice.py` reads. The 14 Practice levels with defending heroes, and only those, post each hero at its flag's centre. A hero without a flag would stand round the Hero Hall, as a practice attack on your own village stands yours, clamped inside the board.
 - **Geared defenses and loaded X-Bows.** A Cannon, Archer Tower or Mortar marked `gear=1` with the Alt attack is geared up. An X-Bow carrying at least the ammunition this game simulates is a loaded X-Bow; a shorter load is a starting state the simulation does not represent, and still closes the village.
 
-Four Challenges remain withheld rather than shipped locked. The [pinned readiness audit](PRACTICE-MODE.md#withheld-level-readiness) finds out-of-bounds footprints in **all six** against the legacy 48-cell board after the two-tile coordinate conversion, including the three previously listed only for missing garrison captures. Balloon 5 and Lava Hound 5 need captured defender bodies; Ice Golem 5 also needs its defending death-freeze behavior. Baby Dragon 6 is already captured. Version 233 adds 52-cell bounds for source full-map Practice battles; Angry Babies and Flying Circus now retain their complete source layouts at stages 151–152. Miner Mania remains gated because its guide references missing source object `500000234`; its wait semantics require verification. The catalog records the remaining reasons. The runtime refuses footprints outside the selected board and missing source tables; it never shifts, clips or substitutes a building to make a level appear supported.
+Two Challenges remain withheld rather than shipped locked. The [pinned readiness audit](PRACTICE-MODE.md#withheld-level-readiness) finds out-of-bounds footprints in **all six** against the legacy 48-cell board after the two-tile coordinate conversion, including the three previously listed only for missing garrison captures. Balloon 5 and Lava Hound 5 now have captured defender bodies and versioned combat support, and retain their complete source Castle rosters; Ice Golem 5 also needs its defending death-freeze behavior. Baby Dragon 6 is already captured. Version 233 adds 52-cell bounds for source full-map Practice battles; Angry Babies and Flying Circus now retain their complete source layouts at stages 151–152; Whirl Power and Yeti Smash follow at 153–154. Miner Mania remains gated because its guide references missing source object `500000234`; its wait semantics require verification. The catalog records the remaining reasons. The runtime refuses footprints outside the selected board and missing source tables; it never shifts, clips or substitutes a building to make a level appear supported.
 
 ## Forged villages (104–150)
 

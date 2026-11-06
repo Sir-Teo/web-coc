@@ -9,6 +9,26 @@ from sc6 import Flat, SC6, decode_sctx, decode_ktx_astc, rasterize
 
 
 class NativeArtTests(unittest.TestCase):
+    def test_raster_precision_is_opt_in_and_preserves_source_geometry(self):
+        vertices = np.array([[0., 0., 0., 0.], [0., 2., 0., 65535.],
+                             [2., 0., 65535., 0.], [2., 2., 65535., 65535.]])
+        texture = np.array([[[1, 0, 0, 1], [0, 1, 0, 1]],
+                            [[0, 0, 1, 1], [1, 1, 1, 1]]], dtype=float)
+        original = vertices.copy()
+        def sample(shift, bits=None):
+            matrix = np.array([[1., 0., shift], [0., 1., shift], [0., 0., 1.]])
+            return np.array(rasterize([(0, vertices, matrix, (np.ones(4), np.zeros(4)))],
+                                     {0: texture}, (0, 0, 2, 2), subpixel_bits=bits))
+        # A displacement below half a 1/16-pixel grid step snaps to zero on a
+        # four-bit rasterizer. The ideal sampler still retains that displacement.
+        for shift in (.03, -.03):
+            np.testing.assert_array_equal(sample(shift, 4), sample(0))
+            self.assertFalse(np.array_equal(sample(shift), sample(0)))
+        np.testing.assert_array_equal(vertices, original)
+        for invalid in (-1, 17, 4.5, True):
+            with self.assertRaises(ValueError):
+                sample(0, invalid)
+
     def test_embedded_astc_keeps_channel_order_and_non_block_dimensions(self):
         # One ASTC void-extent block: red, half alpha; NPOT image crops its 4x4 block.
         block = struct.pack('<Q4H', 0xfffffffffffffdfc, 65535, 0, 0, 32768)

@@ -3,7 +3,7 @@ import { expect, it } from 'vitest';
 import { NATIVE_CAMPAIGN, nativeCampaignIssues } from '../src/game/native-campaign';
 import { nativeInfernoStates } from '../src/game/inferno-campaign-state';
 
-it('preserves all 194 original Infernos, including explicit false modes and full ammo', () => {
+it('preserves all 197 original Infernos, including explicit false modes and full ammo', () => {
   const originals = readFileSync('reference/campaign/layouts.jsonl', 'utf8')
     .trim()
     .split('\n')
@@ -31,7 +31,7 @@ it('preserves all 194 original Infernos, including explicit false modes and full
       else single++;
     });
   });
-  expect({ total, single, alternate }).toEqual({ total: 194, single: 86, alternate: 108 });
+  expect({ total, single, alternate }).toEqual({ total: 197, single: 87, alternate: 110 });
   expect(nativeInfernoStates(NATIVE_CAMPAIGN[58])).toHaveLength(4);
   expect(
     nativeInfernoStates(NATIVE_CAMPAIGN[58]).every((v) => !v.attackMode && v.ammunition === 1000),

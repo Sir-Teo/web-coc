@@ -70,7 +70,14 @@ export function garrisonSoundCues(battle: Battle | null): SampleCue[] {
       if (audible(defender.defeatedAt)) effect(binding.die, `${key}:die`, defender.defeatedAt);
       if (defender.kind === 'balloon' && defender.deathResolved) {
         const at = defender.defeatedAt + garrisonStats(defender.kind, defender.level).deathDelay;
-        if (audible(at)) effect(source.bindings.balloon.deathDamage, `${key}:death-damage`, at);
+        if (audible(at))
+          effect(
+            defender.level === 5
+              ? source.bindings.balloon.deathDamage5
+              : source.bindings.balloon.deathDamage,
+            `${key}:death-damage`,
+            at,
+          );
       }
     }
   }

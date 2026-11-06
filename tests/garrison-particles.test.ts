@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import particles from '../reference/garrison/particles.json';
 import art from '../reference/garrison/particle-art.json';
 import source from '../reference/garrison/particle-art-source.json';
@@ -20,8 +21,8 @@ it('resolves every garrison emitter variant to preserved original art', () => {
     }
   }
   expect([...exports].sort()).toEqual(Object.keys(art.exports).sort());
-  expect(exports.size).toBe(27);
-  expect(Object.keys(particles.particles)).toHaveLength(14);
+  expect(exports.size).toBe(31);
+  expect(Object.keys(particles.particles)).toHaveLength(15);
   expect(source.nativePlaybackVerified).toBe(false);
 });
 
@@ -31,6 +32,7 @@ it('covers every exported and nested source clip frame with an independent pixel
       readFileSync(`tests/fixtures/native-garrison-particles-mesh/${category}.json`, 'utf8'),
     );
     expect(page.width * page.height).toBeLessThanOrEqual(16_000_000);
+    expect(page.subpixel4RgbaSha256).toMatch(/^[a-f0-9]{64}$/);
     return page.cases as { export: string; frame: number; rgbaSha256: string }[];
   });
   const roots = { ...source.graph.exports };
@@ -45,4 +47,11 @@ it('covers every exported and nested source clip frame with an independent pixel
     expect(frames.map((c) => c.frame)).toEqual(source.graph.clips[id].timeline.map((_, i) => i));
     for (const frame of frames) expect(frame.rgbaSha256).toMatch(/^[a-f0-9]{64}$/);
   }
+});
+
+it('retains the original atlas bytes for cached modules with earlier export roots', () => {
+  const bytes = readFileSync('public/assets/garrison-effects-native/texture/texture-39.png');
+  expect(createHash('sha256').update(bytes).digest('hex')).toBe(
+    '57f35d02ede766c6ec5e4bb0e2318e34d5dab4f062ad0e844e00e98b68a65d20',
+  );
 });

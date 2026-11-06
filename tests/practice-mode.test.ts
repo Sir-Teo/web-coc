@@ -29,7 +29,7 @@ function village(townhall: number) {
 }
 
 describe('Practice Mode', () => {
-  it('reads the client’s 19 levels, 15 fielded levels, preserving the original stage numbers', () => {
+  it('reads the client’s 19 levels, 17 fielded levels, preserving the original stage numbers', () => {
     expect(PRACTICE_LEVELS).toHaveLength(19);
     expect(PRACTICE_TOWN_HALL).toBe(4);
     expect(PRACTICE_TEXTS).toMatchObject({
@@ -42,6 +42,8 @@ describe('Practice Mode', () => {
       ...Array.from({ length: 13 }, (_, i) => 91 + i),
       151,
       152,
+      153,
+      154,
     ]);
     for (const level of fielded) {
       const stage = NATIVE_CAMPAIGN[level.stage! - 1];

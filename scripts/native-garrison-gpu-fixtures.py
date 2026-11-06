@@ -68,7 +68,7 @@ def case_groups(native):
     return groups
 
 
-def build(native, category, cases, textures):
+def build(native, category, cases, textures, *, subpixel_bits=None):
     cell, columns = 300, 8
     width, height = cell * columns, cell * ((len(cases) + columns - 1) // columns)
     require(height <= 12000, 'Witness page exceeds GPU canvas limit')
@@ -90,7 +90,8 @@ def build(native, category, cases, textures):
             root = np.array([[scale * mirror, 0, center[0]], [0, scale, center[1]], [0, 0, 1]])
         else:
             root = np.eye(3)
-        rgba = cpu['compose'](sample(root), textures[case['family']], cell, [48/255, 65/255, 53/255])
+        rgba = cpu['compose'](sample(root), textures[case['family']], cell, [48/255, 65/255, 53/255],
+                              subpixel_bits=subpixel_bits)
         image = Image.fromarray(np.round(rgba * 255).astype(np.uint8), 'RGBA')
         x, y = index % columns * cell, index // columns * cell
         sheet.paste(image, (x, y))

@@ -6,7 +6,7 @@
     "mapSize": 48,
     "sourceOffset": 2
   },
-  "coverageCatalogSha256": "11522bf0524e9e3d87977b431d7920e4df5a518bc24c588476225a6742400245",
+  "coverageCatalogSha256": "0e35a21652a8e6fe793174a00ad5da53b5e309b90540d924bc2645be0aa65150",
   "sources": {
     "csv/deploy_steps.csv": "44b3e684b62a8cd33b9de3b13d245446d02069a3485263448d52dd7c612d8774",
     "level/challenge_th10_miner.json": "586d8256e3e0e312f9e3aa250bc96ea0eee83883c7ab5d2d49d82717559b78c0",
@@ -484,8 +484,8 @@
       "id": "CHALLENGE_TH12_YETI",
       "name": "Yeti Smash",
       "sourceLayout": "level/challenge_th12_yeti.json",
-      "stage": null,
-      "withheldReason": "Lava Hound 5 garrison body",
+      "stage": 154,
+      "withheldReason": null,
       "useFullMapSize": true,
       "minimumBoardAtCurrentOffset": {
         "width": 49,
@@ -656,7 +656,7 @@
           "count": 1,
           "defensiveCharacter": "Defensive Lava Hound",
           "animation": "ADSeeker_lvl5",
-          "animationCaptured": false,
+          "animationCaptured": true,
           "combatRowRetained": true,
           "ability": null,
           "abilityRetained": true
@@ -757,8 +757,8 @@
       "id": "CHALLENGE_TH8_GOWIVA",
       "name": "Whirl Power",
       "sourceLayout": "level/challenge_th8_gowiva.json",
-      "stage": null,
-      "withheldReason": "Balloon 5 garrison body",
+      "stage": 153,
+      "withheldReason": null,
       "useFullMapSize": true,
       "minimumBoardAtCurrentOffset": {
         "width": 40,
@@ -786,7 +786,7 @@
           "count": 5,
           "defensiveCharacter": "Balloon",
           "animation": "Balloon Goblin3",
-          "animationCaptured": false,
+          "animationCaptured": true,
           "combatRowRetained": true,
           "ability": null,
           "abilityRetained": true
@@ -927,7 +927,7 @@
     {
       "id": "CHALLENGE_TH8_GOWIVA",
       "name": "Whirl Power",
-      "stage": null,
+      "stage": 153,
       "minimumBoardForUnclampedTargets": 48,
       "clampedTargets": []
     },
@@ -1193,7 +1193,7 @@
     {
       "id": "CHALLENGE_TH12_YETI",
       "name": "Yeti Smash",
-      "stage": null,
+      "stage": 154,
       "minimumBoardForUnclampedTargets": 52,
       "clampedTargets": [
         {

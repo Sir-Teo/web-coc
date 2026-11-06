@@ -76,8 +76,13 @@ for (const witness of witnesses)
         scene.load.start();
       });
       // Upload only the bounded strip; full 9000-pixel sheets exceed some GPUs' limits.
+      const gl = game.renderer.gl;
+      const subpixelBits = gl.getParameter(gl.SUBPIXEL_BITS);
+      // SwiftShader reports a four-bit window-space raster grid. Its interpolation
+      // differs from the ideal CPU sampler even with identical source vertices/UVs.
+      const rasterSuffix = subpixelBits === 4 && reference.subpixel4RgbaSha256 ? '-subpixel4' : '';
       const original = new Image();
-      original.src = `/tests/fixtures/${reference.folder}/${reference.sourceCategory}.png`;
+      original.src = `/tests/fixtures/${reference.folder}/${reference.sourceCategory}${rasterSuffix}.png`;
       await original.decode();
       const strip = document.createElement('canvas');
       strip.width = reference.width;
@@ -116,7 +121,6 @@ for (const witness of witnesses)
         view.render(poses, c.x, c.y, 0);
         return view;
       });
-      const gl = game.renderer.gl;
       if (gl.drawingBufferWidth < reference.width || gl.drawingBufferHeight < reference.height)
         throw Error(
           `Source comparison exceeds framebuffer: ${reference.width}×${reference.height} vs ${gl.drawingBufferWidth}×${gl.drawingBufferHeight}`,
@@ -206,6 +210,8 @@ for (const witness of witnesses)
         cases,
         sourceCategory: reference.sourceCategory,
         sourceY: reference.sourceY,
+        subpixelBits,
+        rasterSuffix,
         framebuffer: { width: gl.drawingBufferWidth, height: gl.drawingBufferHeight },
         sourceImage: { width: original.naturalWidth, height: original.naturalHeight },
         referenceTexture: { width: strip.width, height: strip.height },

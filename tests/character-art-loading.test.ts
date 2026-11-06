@@ -37,7 +37,7 @@ it('an explicit full preload completes every body while retaining selected entri
   const death = art.commonDeathArt();
   await Promise.all([art.loadCharacterArt(), art.loadCharacterArt(new Set(['Dragon7']))]);
   const names = Object.keys(art.characterArts());
-  expect(names).toHaveLength(22);
+  expect(names).toHaveLength(24);
   expect(names[0]).toBe('Dragon7');
   expect(names.at(-1)).toBe('Defending Builder');
   expect(art.characterArt('Archer9')).toBe(archer);
@@ -67,4 +67,17 @@ it('extends independent projectile groups with their requested bodies and retain
   expect(art.projectileArtLoaded('trollBoulder_lvl3', 'sc/buildings.sc')).toBe(true);
   expect(art.projectileGroupArts().witch).toBe(witch);
   expect(art.characterArt('Archer9')).toBe(archer);
+});
+
+it('loads level-five Practice bodies independently with their own captured graphs', async () => {
+  const art = await import('../src/game/character-art');
+  await art.loadCharacterArt(new Set(['Balloon Goblin3', 'ADSeeker_lvl5']));
+  expect(Object.keys(art.characterArts())).toEqual(['Balloon Goblin3', 'ADSeeker_lvl5']);
+  expect(art.characterArt('Balloon Goblin3').prefix).toBe('character-balloon-goblin3');
+  const { balloonActionTime } = await import('../src/game/garrison-poses');
+  expect(balloonActionTime(5)).toBe(33 / 24);
+  expect(art.characterArt('ADSeeker_lvl5').prefix).toBe('character-adseeker-lvl5');
+  expect(art.characterArtLoaded('Balloon Goblin8')).toBe(false);
+  expect(art.characterArtLoaded('ADSeeker_lvl6')).toBe(false);
+  expect(art.projectileArtLoaded('hound_projectile', 'sc/characters.sc')).toBe(true);
 });

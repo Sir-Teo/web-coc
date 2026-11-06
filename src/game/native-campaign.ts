@@ -57,7 +57,7 @@ const source = raw as unknown as {
   >;
 };
 /**
- * The whole campaign: the client's 90 Goblin map villages, the 15 Challenges this game can
+ * The whole campaign: the client's 90 Goblin map villages, the 17 Challenges this game can
  * field, and the frozen 47-village forged tail. Source additions follow that tail. Every forged village places only
  * entities and levels an imported one already proves, so all three share the same tables.
  */

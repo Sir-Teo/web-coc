@@ -78,7 +78,7 @@ it('reports missing source tables instead of treating a known building kind as s
 });
 
 it('keeps every existing campaign village playable without renumbering', () => {
-  expect(NATIVE_CAMPAIGN).toHaveLength(152);
+  expect(NATIVE_CAMPAIGN).toHaveLength(154);
   for (const [index, stage] of NATIVE_CAMPAIGN.entries()) {
     expect(stage.stage).toBe(index + 1);
     expect(nativeCampaignIssues(index)).toEqual([]);
@@ -91,7 +91,13 @@ it('retains all six original full-map layouts and distinguishes board limits fro
     createHash('sha256').update(fs.readFileSync('reference/characters/catalog.json')).digest('hex'),
   );
   expect(audit.levels.map((level) => level.id).sort()).toEqual(
-    [...Object.keys(campaign.withheld), 'CHALLENGE_TH9_BABYDQW', 'CHALLENGE_TH12_DRAGBAT'].sort(),
+    [
+      ...Object.keys(campaign.withheld),
+      'CHALLENGE_TH9_BABYDQW',
+      'CHALLENGE_TH12_DRAGBAT',
+      'CHALLENGE_TH8_GOWIVA',
+      'CHALLENGE_TH12_YETI',
+    ].sort(),
   );
   for (const level of audit.levels) {
     expect(level.useFullMapSize).toBe(true);
@@ -101,7 +107,7 @@ it('retains all six original full-map layouts and distinguishes board limits fro
   const yeti = audit.levels.find((level) => level.id === 'CHALLENGE_TH12_YETI')!;
   expect(yeti.defenders).toEqual(
     expect.arrayContaining([
-      expect.objectContaining({ character: 'Lava Hound', animationCaptured: false }),
+      expect.objectContaining({ character: 'Lava Hound', animationCaptured: true }),
       expect.objectContaining({ character: 'Baby Dragon', animationCaptured: true }),
     ]),
   );

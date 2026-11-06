@@ -23,7 +23,7 @@ waits for it (`PauseGame`, or runs slowed by `SlowdownPercentage`) and what it f
 (`UseAbility`). A building is named by its instance id (`ObjectGID`), which the level file
 gives each building: this importer resolves it to the building's data and tile. Level files are
 read as the campaign importer pinned them (reference/campaign/provenance.json), so only the
-15 fielded levels carry their steps. The same files place each defending hero on a hero flag
+17 fielded levels carry their steps. The same files place each defending hero on a hero flag
 (`heroFlags`: the hero's GlobalID, 28000000 plus its heroes.csv row, and the flag's tile).
 
 Every source is downloaded from the pinned bundle into output/native-campaign-source and must

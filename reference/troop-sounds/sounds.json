@@ -1084,6 +1084,14 @@
       }
     },
     "balloon": {
+      "5": {
+        "name": "Balloon",
+        "row": 5,
+        "deploy": "Balloon Goblin Deploy",
+        "attack": "Balloon Goblin Attack",
+        "hit": "Balloon Goblin Hit",
+        "die": "Balloon Goblin Die"
+      },
       "8": {
         "name": "Balloon",
         "row": 8,
@@ -1190,6 +1198,14 @@
       }
     },
     "lavahound": {
+      "5": {
+        "name": "Defensive Lava Hound",
+        "row": 5,
+        "deploy": "Tiny Deploy",
+        "attack": "Tiny Attack",
+        "hit": "Tiny Hit",
+        "die": "Tiny Die"
+      },
       "6": {
         "name": "Defensive Lava Hound",
         "row": 6,

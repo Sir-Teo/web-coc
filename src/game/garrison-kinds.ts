@@ -17,7 +17,7 @@ import {
  */
 export const GARRISON_KINDS = {
   dragon: { character: 'Dragon', levels: { 5: 44, 7: 38 } },
-  balloon: { character: 'Balloon', levels: { 8: 38 } },
+  balloon: { character: 'Balloon', levels: { 5: 234, 8: 38 } },
   goblin: { character: 'Goblin', levels: { 7: 44 } },
   archer: { character: 'Archer', levels: { 9: 44 } },
   pekka: { character: 'PEKKA', levels: { 8: 44 } },
@@ -30,7 +30,7 @@ export const GARRISON_KINDS = {
   golem: { character: 'Golem', levels: { 8: 44 }, timing: 'split' },
   witch: { character: 'Witch', levels: { 4: 44 }, timing: 'split' },
   bowler: { character: 'Bowler', levels: { 4: 44 }, timing: 'split' },
-  lavahound: { character: 'Lava Hound', levels: { 6: 44 }, timing: 'split' },
+  lavahound: { character: 'Lava Hound', levels: { 5: 234, 6: 44 }, timing: 'split' },
   electrotitan: { character: 'Electro Titan', levels: { 2: 44 }, timing: 'split' },
   goldendragon: { character: 'Golden Dragon', levels: { 1: 44 }, timing: 'split' },
   momma: { character: 'MOMMA', levels: { 1: 44 }, timing: 'split' },

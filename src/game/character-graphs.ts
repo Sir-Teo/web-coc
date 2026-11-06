@@ -11,6 +11,10 @@ export const CHARACTER_LOADERS: Record<string, () => Promise<CharacterGraphEntry
     import('../../reference/garrison/balloon8.json').then((module) =>
       characterGraphEntry(module.default, 'garrison-balloon', [0]),
     ),
+  'Balloon Goblin3': () =>
+    import('../../reference/characters/balloon/balloon-goblin3.json').then((module) =>
+      characterGraphEntry(module.default, 'character-balloon-goblin3'),
+    ),
   Goblin7: () =>
     import('../../reference/characters/goblin/goblin7.json').then((module) =>
       characterGraphEntry(module.default, 'character-goblin7'),
@@ -66,6 +70,10 @@ export const CHARACTER_LOADERS: Record<string, () => Promise<CharacterGraphEntry
   ADSeeker_lvl6: () =>
     import('../../reference/characters/lava_hound/adseeker-lvl6.json').then((module) =>
       characterGraphEntry(module.default, 'character-adseeker-lvl6'),
+    ),
+  ADSeeker_lvl5: () =>
+    import('../../reference/characters/lava_hound/adseeker-lvl5.json').then((module) =>
+      characterGraphEntry(module.default, 'character-adseeker-lvl5'),
     ),
   TinyBaby_lvl1: () =>
     import('../../reference/characters/lava_hound/tinybaby-lvl1.json').then((module) =>

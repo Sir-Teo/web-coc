@@ -355,19 +355,26 @@ def screen_edge_coverage(xy, points):
     return covered
 
 
-def rasterize(draws, textures, bounds, *, screen_space_edges=False):
+def rasterize(draws, textures, bounds, *, screen_space_edges=False, subpixel_bits=None):
     """Rasterize affine bitmap quads with premultiplied bilinear sampling.
 
     Pixel centers and all fractional native transforms are retained. Straight
     alpha is restored only for PNG output, avoiding dark transparent fringes.
     """
     left, top, right, bottom = bounds
+    require(subpixel_bits is None or (type(subpixel_bits) is int and 0 <= subpixel_bits <= 16),
+            'Invalid raster subpixel precision')
     require(0 < right - left <= 512 and 0 < bottom - top <= 512, 'Sprite bounds exceed limit')
     yy, xx = np.mgrid[top:bottom, left:right]
     points = np.stack([xx + .5, yy + .5, np.ones_like(xx)], axis=-1)
     canvas = np.zeros((*xx.shape, 4), dtype=np.float64)
     for index, vertices, matrix, (mul, add) in draws:
         xy = np.column_stack([vertices[:, :2], np.ones(len(vertices))]) @ matrix.T
+        if subpixel_bits is not None:
+            # Rasterizers quantize window-space vertices before interpolation. Retain
+            # the ideal source sampler by default; capability-specific witnesses opt in.
+            grid = 2 ** subpixel_bits
+            xy[:, :2] = np.floor(xy[:, :2] * grid + .5) / grid
         uv = vertices[:, 2:] / 65535
         if len(vertices) == 4 and np.allclose(xy[0] + xy[3], xy[1] + xy[2], atol=1e-5) and np.allclose(uv[0] + uv[3], uv[1] + uv[2], atol=2 / 65535):
             # Keep the affine fast path (and its established Pumpkin pixel digest).

@@ -113,7 +113,7 @@ Balloon windup validation: all 1,387 unit tests across 126 files pass, including
 
 ## Original garrison particle art
 
-`scripts/import-native-garrison-particles.py` captures all 14 emitters referenced by the nine focused garrison effect records. The 27 original particle variants resolve explicitly to `sc/buildings.sc`: Dragon fire and sparks, Balloon cloth/wood debris, fireballs, smoke, explosion, ring, flash, grass, stones and Dragon death splats. Their 32 reachable animation clips and 62 shapes use only original texture 39. Source SHA-256 pins and fingerprint SHA-1 membership checks cover the effect table, emitter table, scene file and SCTX texture. `particles.json` preserves ordered continuation rows without inventing missing fields; `particle-art-source.json` retains original geometry/UVs and `particle-art.json` contains the losslessly packed runtime texture coordinates. The new assets live separately in `assets/garrison-effects-native`, preserving the original 44-file garrison foundation.
+`scripts/import-native-garrison-particles.py` captures all 15 emitters referenced by the ten focused garrison effect records. The 31 original particle variants resolve explicitly to `sc/buildings.sc`: Dragon fire and sparks, Balloon cloth/wood debris, fireballs, smoke, explosion, ring, flash, grass, stones and Dragon death splats. Their 36 reachable animation clips and 62 shapes use only original texture 39. Source SHA-256 pins and fingerprint SHA-1 membership checks cover the effect table, emitter table, scene file and SCTX texture. `particles.json` preserves ordered continuation rows without inventing missing fields; `particle-art-source.json` retains original geometry/UVs and `particle-art.json` contains the losslessly packed runtime texture coordinates. The new assets live separately in `assets/garrison-effects-native`, preserving the original 44-file garrison foundation.
 
 Dragon Attack emits 30 `dragonFire`, 20 `dragonFireAdd`, five `dragonSpark` and 80 `dragonFireAddStart` particles. The source attaches the effect to `attack_pivot`, then detaches after start. Direction, signed gravity, inertia, lifetime scaling, per-variant additive blending and the distinction between parent attachment and particle motion must be handled explicitly during live integration. In particular, variant continuation rows omit common fields; a runtime consumer must resolve those fields deliberately while preserving the raw source records. Balloon impact and delayed death-blast particles now use these assets live; Dragon attack and death particles are also now connected through the retained source effects. Source preservation and renderer comparison do not establish native particle-motion or attachment parity.
 
@@ -624,3 +624,26 @@ the presentation; earlier recordings retain their prior visual paths. Shot damag
 landing times and audio do not change. Existing resolved attack records supply the defender
 geometry; only attacker flights require new bounded history. See the [shared source checks and
 browser validation](../attacking-bowler/README.md#original-impact-phases-and-retained-flight-art-recording-version-161).
+
+## Practice level-five Balloon effect
+
+Balloon 5 uses the source `Balloon Exposion` death-damage effect. Balloon 8 retains
+`Dark Balloon Exposion`. The former selects `Balloon_Die_bloon` and four original
+red-cloth export roots; the latter retains its dark-cloth emitter. Both bindings
+retain their source sound rows and the 416 ms damage-event clock.
+
+The new roots reuse the original 256×698 texture and existing shape UVs exactly;
+the cached atlas stays byte-identical at its original URL. The graph retains all
+prior roots and captures the additional color transforms. There are now 2,261
+independent source-frame witnesses. Runtime tests check level-specific emitter
+selection, replay reconstruction, the original atlas hash and all enabled source
+sound bindings.
+
+Particle witnesses retain both the ideal CPU raster and an independently sampled
+four-bit window-space raster. Chromium's SwiftShader reports `SUBPIXEL_BITS=4`:
+snapping transformed vertices to its 1/16-pixel grid before UV interpolation
+explains the elixir burst's five-byte channel difference from the ideal raster.
+The browser comparison selects the four-bit PNG only when the GPU reports that
+precision. It keeps the same error thresholds, batching and context-restoration
+checks. Runtime vertices, UVs, textures and colors remain unmodified. The Python
+sampler's default stays ideal, preserving other source witnesses.

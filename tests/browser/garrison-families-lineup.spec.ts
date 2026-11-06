@@ -12,6 +12,8 @@ const FAMILIES = [
   ['superminion', 9],
   ['babydragon', 6],
   ['dragon', 5],
+  ['balloon', 5],
+  ['lavahound', 5],
 ] as const;
 
 /** State-driven lineup on clear ground: art registration, facing, shadows and effects. */
@@ -49,7 +51,7 @@ test('renders every new garrison family in idle, walk, attack and death states o
         availableLoot: loot,
         lootRoom: loot,
       },
-      44,
+      234,
     );
     const battle = model.battle!;
     battle.started = true;
@@ -149,8 +151,11 @@ test('renders every new garrison family in idle, walk, attack and death states o
       }
       scene.sync();
       scene.drawOverlay(performance.now());
-      const mid = iso(14 + 3.5 * 1.4, 30 - 3.5 * 1.4);
-      scene.cameras.main.setZoom(1.7).centerOn(mid.x, mid.y + 10);
+      const middle = (battle.defenders!.length - 1) / 2;
+      const mid = iso(14 + middle * 1.4, 30 - middle * 1.4);
+      scene.cameras.main
+        .setZoom(Math.min(1.7, 13.5 / battle.defenders!.length))
+        .centerOn(mid.x, mid.y + 10);
       scene.sync();
       scene.drawOverlay(performance.now());
       return {

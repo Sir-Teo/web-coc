@@ -16,12 +16,14 @@ it('keeps every native village and its source-verified opening, branches and bos
   expect(goblin).toHaveLength(90);
   // All six withheld Challenges exceeded the legacy 48-cell board. Three also need defender
   // captures or behavior; the pinned readiness audit records the combined blockers.
-  expect(challenges).toHaveLength(15);
-  expect(Object.keys(catalog.withheld)).toHaveLength(4);
+  expect(challenges).toHaveLength(17);
+  expect(Object.keys(catalog.withheld)).toHaveLength(2);
   expect(catalog.stages.map((s: any) => s.stage)).toEqual([
     ...Array.from({ length: 103 }, (_, i) => i + 1),
     151,
     152,
+    153,
+    154,
   ]);
   // The Challenge tail is ordered by the Town Hall its record name states.
   expect(challenges.slice(0, 13).map((s: any) => s.recommendedTownHall)).toEqual([
@@ -59,7 +61,7 @@ it('keeps every native village and its source-verified opening, branches and bos
 
 it('detects reference drift offline against the committed source manifest', () => {
   const provenance = JSON.parse(read('provenance.json'));
-  expect(Object.keys(provenance.sources)).toHaveLength(112);
+  expect(Object.keys(provenance.sources)).toHaveLength(114);
   for (const [file, sha] of Object.entries(provenance.outputs)) {
     expect(createHash('sha256').update(read(file)).digest('hex'), file).toBe(sha);
   }

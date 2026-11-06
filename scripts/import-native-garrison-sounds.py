@@ -19,7 +19,7 @@ PINS = {
 }
 BINDINGS = {
     'dragon': dict(deploy='Dragon Deploy', attack='Dragon Attack', hit='Dragon Hit', die='Dragon Die'),
-    'balloon': dict(deploy='Balloon Goblin Deploy', attack='Balloon Goblin Attack', hit='Balloon Goblin Hit', die='Balloon Goblin Die', deathDamage='Dark Balloon Exposion'),
+    'balloon': dict(deploy='Balloon Goblin Deploy', attack='Balloon Goblin Attack', hit='Balloon Goblin Hit', die='Balloon Goblin Die', deathDamage='Dark Balloon Exposion', deathDamage5='Balloon Exposion'),
 }
 
 def build():

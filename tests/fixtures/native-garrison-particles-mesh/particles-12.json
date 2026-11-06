@@ -5,8 +5,92 @@
   "cell": 300,
   "background": "#304135",
   "nativePlaybackVerified": false,
-  "rgbaSha256": "ace3924187e2476040ff4e541d5f27acaa05851831f90fc637374393cf060367",
+  "rgbaSha256": "04faf0580b9f2cef3bd4db1dee10ebbd7a2580e7da4b8a97636883790d2667bc",
   "cases": [
+    {
+      "family": "particles",
+      "export": "dragon_fireball_varC",
+      "frame": 540,
+      "controls": {},
+      "category": "source-particle-frame",
+      "time": 22.5,
+      "x": 0,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        149.20019578188658,
+        0.0,
+        2.0,
+        148.37675838917494
+      ],
+      "empty": false,
+      "rgbaSha256": "f3f82588232a39be6907e57a538fe41b69a3df0ca4688608bdcdd2866d15c3ea",
+      "rasterEmpty": false
+    },
+    {
+      "family": "particles",
+      "export": "dragon_fireball_varC",
+      "frame": 541,
+      "controls": {},
+      "category": "source-particle-frame",
+      "time": 22.541666666666668,
+      "x": 300,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        149.30810587480664,
+        0.0,
+        2.0,
+        148.30058655887842
+      ],
+      "empty": false,
+      "rgbaSha256": "14e910e396844d71891b73212387a3705527fac1e76ba159424407b2d9bfdde4",
+      "rasterEmpty": false
+    },
+    {
+      "family": "particles",
+      "export": "dragon_fireball_varC",
+      "frame": 542,
+      "controls": {},
+      "category": "source-particle-frame",
+      "time": 22.583333333333332,
+      "x": 600,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        149.42236362025142,
+        0.0,
+        2.0,
+        148.23584050312638
+      ],
+      "empty": false,
+      "rgbaSha256": "270fa7869d1a62fa3d9e73fa5d62da5ebe47b4646e6596c73c64d028feacc47d",
+      "rasterEmpty": false
+    },
+    {
+      "family": "particles",
+      "export": "dragon_fireball_varC",
+      "frame": 543,
+      "controls": {},
+      "category": "source-particle-frame",
+      "time": 22.625,
+      "x": 900,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        149.5429690182209,
+        0.0,
+        2.0,
+        148.18378975242376
+      ],
+      "empty": false,
+      "rgbaSha256": "0b4522f46600a832c4d7536a11887b733d942221578f126402cf743ccffd1c32",
+      "rasterEmpty": false
+    },
     {
       "family": "particles",
       "export": "dragon_fireball_varC",
@@ -14,7 +98,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 22.666666666666668,
-      "x": 0,
+      "x": 1200,
       "y": 0,
       "root": [
         2.0,
@@ -35,7 +119,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 22.708333333333332,
-      "x": 300,
+      "x": 1500,
       "y": 0,
       "root": [
         2.0,
@@ -56,7 +140,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 22.75,
-      "x": 600,
+      "x": 1800,
       "y": 0,
       "root": [
         2.0,
@@ -77,7 +161,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 22.791666666666668,
-      "x": 900,
+      "x": 2100,
       "y": 0,
       "root": [
         2.0,
@@ -98,8 +182,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 22.833333333333332,
-      "x": 1200,
-      "y": 0,
+      "x": 0,
+      "y": 300,
       "root": [
         2.0,
         0.0,
@@ -119,8 +203,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 22.875,
-      "x": 1500,
-      "y": 0,
+      "x": 300,
+      "y": 300,
       "root": [
         2.0,
         0.0,
@@ -140,8 +224,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.0,
-      "x": 1800,
-      "y": 0,
+      "x": 600,
+      "y": 300,
       "root": [
         1.0,
         0.0,
@@ -161,8 +245,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.041666666666666664,
-      "x": 2100,
-      "y": 0,
+      "x": 900,
+      "y": 300,
       "root": [
         1.0,
         0.0,
@@ -182,7 +266,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.08333333333333333,
-      "x": 0,
+      "x": 1200,
       "y": 300,
       "root": [
         2.0,
@@ -203,7 +287,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.125,
-      "x": 300,
+      "x": 1500,
       "y": 300,
       "root": [
         2.0,
@@ -224,7 +308,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.16666666666666666,
-      "x": 600,
+      "x": 1800,
       "y": 300,
       "root": [
         2.0,
@@ -245,7 +329,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.20833333333333334,
-      "x": 900,
+      "x": 2100,
       "y": 300,
       "root": [
         2.0,
@@ -266,8 +350,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.25,
-      "x": 1200,
-      "y": 300,
+      "x": 0,
+      "y": 600,
       "root": [
         2.0,
         0.0,
@@ -287,8 +371,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.2916666666666667,
-      "x": 1500,
-      "y": 300,
+      "x": 300,
+      "y": 600,
       "root": [
         2.0,
         0.0,
@@ -308,8 +392,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.3333333333333333,
-      "x": 1800,
-      "y": 300,
+      "x": 600,
+      "y": 600,
       "root": [
         2.0,
         0.0,
@@ -329,8 +413,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.375,
-      "x": 2100,
-      "y": 300,
+      "x": 900,
+      "y": 600,
       "root": [
         2.0,
         0.0,
@@ -350,7 +434,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.4166666666666667,
-      "x": 0,
+      "x": 1200,
       "y": 600,
       "root": [
         2.0,
@@ -371,7 +455,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.4583333333333333,
-      "x": 300,
+      "x": 1500,
       "y": 600,
       "root": [
         2.0,
@@ -392,7 +476,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.5,
-      "x": 600,
+      "x": 1800,
       "y": 600,
       "root": [
         2.0,
@@ -413,7 +497,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.5416666666666666,
-      "x": 900,
+      "x": 2100,
       "y": 600,
       "root": [
         2.0,
@@ -434,8 +518,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.5833333333333334,
-      "x": 1200,
-      "y": 600,
+      "x": 0,
+      "y": 900,
       "root": [
         1.0,
         0.0,
@@ -455,8 +539,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.625,
-      "x": 1500,
-      "y": 600,
+      "x": 300,
+      "y": 900,
       "root": [
         1.0,
         0.0,
@@ -476,8 +560,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.0,
-      "x": 1800,
-      "y": 600,
+      "x": 600,
+      "y": 900,
       "root": [
         1.0,
         0.0,
@@ -497,8 +581,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.041666666666666664,
-      "x": 2100,
-      "y": 600,
+      "x": 900,
+      "y": 900,
       "root": [
         1.0,
         0.0,
@@ -518,7 +602,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.08333333333333333,
-      "x": 0,
+      "x": 1200,
       "y": 900,
       "root": [
         2.0,
@@ -539,7 +623,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.125,
-      "x": 300,
+      "x": 1500,
       "y": 900,
       "root": [
         2.0,
@@ -560,7 +644,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.16666666666666666,
-      "x": 600,
+      "x": 1800,
       "y": 900,
       "root": [
         2.0,
@@ -581,7 +665,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.20833333333333334,
-      "x": 900,
+      "x": 2100,
       "y": 900,
       "root": [
         2.0,
@@ -602,8 +686,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.25,
-      "x": 1200,
-      "y": 900,
+      "x": 0,
+      "y": 1200,
       "root": [
         2.0,
         0.0,
@@ -623,8 +707,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.2916666666666667,
-      "x": 1500,
-      "y": 900,
+      "x": 300,
+      "y": 1200,
       "root": [
         2.0,
         0.0,
@@ -644,8 +728,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.3333333333333333,
-      "x": 1800,
-      "y": 900,
+      "x": 600,
+      "y": 1200,
       "root": [
         2.0,
         0.0,
@@ -665,8 +749,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.375,
-      "x": 2100,
-      "y": 900,
+      "x": 900,
+      "y": 1200,
       "root": [
         2.0,
         0.0,
@@ -686,7 +770,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.4166666666666667,
-      "x": 0,
+      "x": 1200,
       "y": 1200,
       "root": [
         2.0,
@@ -707,7 +791,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.4583333333333333,
-      "x": 300,
+      "x": 1500,
       "y": 1200,
       "root": [
         2.0,
@@ -728,7 +812,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.5,
-      "x": 600,
+      "x": 1800,
       "y": 1200,
       "root": [
         2.0,
@@ -749,7 +833,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.5416666666666666,
-      "x": 900,
+      "x": 2100,
       "y": 1200,
       "root": [
         2.0,
@@ -770,8 +854,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.5833333333333334,
-      "x": 1200,
-      "y": 1200,
+      "x": 0,
+      "y": 1500,
       "root": [
         1.0,
         0.0,
@@ -791,8 +875,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.625,
-      "x": 1500,
-      "y": 1200,
+      "x": 300,
+      "y": 1500,
       "root": [
         1.0,
         0.0,
@@ -812,8 +896,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.0,
-      "x": 1800,
-      "y": 1200,
+      "x": 600,
+      "y": 1500,
       "root": [
         2.0,
         0.0,
@@ -833,8 +917,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.041666666666666664,
-      "x": 2100,
-      "y": 1200,
+      "x": 900,
+      "y": 1500,
       "root": [
         2.0,
         0.0,
@@ -854,7 +938,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.08333333333333333,
-      "x": 0,
+      "x": 1200,
       "y": 1500,
       "root": [
         2.0,
@@ -875,7 +959,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.125,
-      "x": 300,
+      "x": 1500,
       "y": 1500,
       "root": [
         2.0,
@@ -896,7 +980,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.16666666666666666,
-      "x": 600,
+      "x": 1800,
       "y": 1500,
       "root": [
         2.0,
@@ -917,7 +1001,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.20833333333333334,
-      "x": 900,
+      "x": 2100,
       "y": 1500,
       "root": [
         2.0,
@@ -938,8 +1022,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.25,
-      "x": 1200,
-      "y": 1500,
+      "x": 0,
+      "y": 1800,
       "root": [
         2.0,
         0.0,
@@ -959,8 +1043,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.2916666666666667,
-      "x": 1500,
-      "y": 1500,
+      "x": 300,
+      "y": 1800,
       "root": [
         2.0,
         0.0,
@@ -980,8 +1064,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.3333333333333333,
-      "x": 1800,
-      "y": 1500,
+      "x": 600,
+      "y": 1800,
       "root": [
         2.0,
         0.0,
@@ -1001,8 +1085,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.375,
-      "x": 2100,
-      "y": 1500,
+      "x": 900,
+      "y": 1800,
       "root": [
         2.0,
         0.0,
@@ -1022,7 +1106,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.4166666666666667,
-      "x": 0,
+      "x": 1200,
       "y": 1800,
       "root": [
         2.0,
@@ -1043,7 +1127,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.4583333333333333,
-      "x": 300,
+      "x": 1500,
       "y": 1800,
       "root": [
         2.0,
@@ -1064,7 +1148,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.5,
-      "x": 600,
+      "x": 1800,
       "y": 1800,
       "root": [
         2.0,
@@ -1085,7 +1169,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.5416666666666666,
-      "x": 900,
+      "x": 2100,
       "y": 1800,
       "root": [
         2.0,
@@ -1106,8 +1190,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.5833333333333334,
-      "x": 1200,
-      "y": 1800,
+      "x": 0,
+      "y": 2100,
       "root": [
         2.0,
         0.0,
@@ -1127,8 +1211,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.625,
-      "x": 1500,
-      "y": 1800,
+      "x": 300,
+      "y": 2100,
       "root": [
         2.0,
         0.0,
@@ -1148,8 +1232,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.6666666666666666,
-      "x": 1800,
-      "y": 1800,
+      "x": 600,
+      "y": 2100,
       "root": [
         2.0,
         0.0,
@@ -1169,8 +1253,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.7083333333333334,
-      "x": 2100,
-      "y": 1800,
+      "x": 900,
+      "y": 2100,
       "root": [
         2.0,
         0.0,
@@ -1190,7 +1274,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.75,
-      "x": 0,
+      "x": 1200,
       "y": 2100,
       "root": [
         2.0,
@@ -1211,7 +1295,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.7916666666666666,
-      "x": 300,
+      "x": 1500,
       "y": 2100,
       "root": [
         2.0,
@@ -1232,7 +1316,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.8333333333333334,
-      "x": 600,
+      "x": 1800,
       "y": 2100,
       "root": [
         2.0,
@@ -1253,7 +1337,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.875,
-      "x": 900,
+      "x": 2100,
       "y": 2100,
       "root": [
         2.0,
@@ -1274,8 +1358,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.9166666666666666,
-      "x": 1200,
-      "y": 2100,
+      "x": 0,
+      "y": 2400,
       "root": [
         2.0,
         0.0,
@@ -1295,8 +1379,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.9583333333333334,
-      "x": 1500,
-      "y": 2100,
+      "x": 300,
+      "y": 2400,
       "root": [
         2.0,
         0.0,
@@ -1316,8 +1400,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.0,
-      "x": 1800,
-      "y": 2100,
+      "x": 600,
+      "y": 2400,
       "root": [
         2.0,
         0.0,
@@ -1337,8 +1421,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.0416666666666667,
-      "x": 2100,
-      "y": 2100,
+      "x": 900,
+      "y": 2400,
       "root": [
         2.0,
         0.0,
@@ -1358,7 +1442,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.0833333333333333,
-      "x": 0,
+      "x": 1200,
       "y": 2400,
       "root": [
         2.0,
@@ -1379,7 +1463,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.125,
-      "x": 300,
+      "x": 1500,
       "y": 2400,
       "root": [
         2.0,
@@ -1400,7 +1484,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.1666666666666667,
-      "x": 600,
+      "x": 1800,
       "y": 2400,
       "root": [
         2.0,
@@ -1421,7 +1505,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.2083333333333333,
-      "x": 900,
+      "x": 2100,
       "y": 2400,
       "root": [
         2.0,
@@ -1442,8 +1526,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.25,
-      "x": 1200,
-      "y": 2400,
+      "x": 0,
+      "y": 2700,
       "root": [
         2.0,
         0.0,
@@ -1463,8 +1547,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.2916666666666667,
-      "x": 1500,
-      "y": 2400,
+      "x": 300,
+      "y": 2700,
       "root": [
         2.0,
         0.0,
@@ -1484,8 +1568,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.3333333333333333,
-      "x": 1800,
-      "y": 2400,
+      "x": 600,
+      "y": 2700,
       "root": [
         2.0,
         0.0,
@@ -1505,8 +1589,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.375,
-      "x": 2100,
-      "y": 2400,
+      "x": 900,
+      "y": 2700,
       "root": [
         2.0,
         0.0,
@@ -1526,7 +1610,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.4166666666666667,
-      "x": 0,
+      "x": 1200,
       "y": 2700,
       "root": [
         2.0,
@@ -1547,7 +1631,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.4583333333333333,
-      "x": 300,
+      "x": 1500,
       "y": 2700,
       "root": [
         2.0,
@@ -1568,7 +1652,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.5,
-      "x": 600,
+      "x": 1800,
       "y": 2700,
       "root": [
         2.0,
@@ -1589,7 +1673,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.5416666666666667,
-      "x": 900,
+      "x": 2100,
       "y": 2700,
       "root": [
         2.0,
@@ -1610,8 +1694,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.5833333333333333,
-      "x": 1200,
-      "y": 2700,
+      "x": 0,
+      "y": 3000,
       "root": [
         2.0,
         0.0,
@@ -1631,8 +1715,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.625,
-      "x": 1500,
-      "y": 2700,
+      "x": 300,
+      "y": 3000,
       "root": [
         2.0,
         0.0,
@@ -1652,8 +1736,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.6666666666666667,
-      "x": 1800,
-      "y": 2700,
+      "x": 600,
+      "y": 3000,
       "root": [
         2.0,
         0.0,
@@ -1673,8 +1757,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.7083333333333333,
-      "x": 2100,
-      "y": 2700,
+      "x": 900,
+      "y": 3000,
       "root": [
         2.0,
         0.0,
@@ -1694,7 +1778,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.75,
-      "x": 0,
+      "x": 1200,
       "y": 3000,
       "root": [
         2.0,
@@ -1715,7 +1799,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.7916666666666667,
-      "x": 300,
+      "x": 1500,
       "y": 3000,
       "root": [
         2.0,
@@ -1736,7 +1820,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.8333333333333333,
-      "x": 600,
+      "x": 1800,
       "y": 3000,
       "root": [
         2.0,
@@ -1757,7 +1841,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.875,
-      "x": 900,
+      "x": 2100,
       "y": 3000,
       "root": [
         2.0,
@@ -1778,8 +1862,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.9166666666666667,
-      "x": 1200,
-      "y": 3000,
+      "x": 0,
+      "y": 3300,
       "root": [
         2.0,
         0.0,
@@ -1799,8 +1883,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.9583333333333333,
-      "x": 1500,
-      "y": 3000,
+      "x": 300,
+      "y": 3300,
       "root": [
         2.0,
         0.0,
@@ -1820,8 +1904,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 2.0,
-      "x": 1800,
-      "y": 3000,
+      "x": 600,
+      "y": 3300,
       "root": [
         2.0,
         0.0,
@@ -1841,8 +1925,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 2.0416666666666665,
-      "x": 2100,
-      "y": 3000,
+      "x": 900,
+      "y": 3300,
       "root": [
         2.0,
         0.0,
@@ -1862,7 +1946,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 2.0833333333333335,
-      "x": 0,
+      "x": 1200,
       "y": 3300,
       "root": [
         2.0,
@@ -1883,7 +1967,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 2.125,
-      "x": 300,
+      "x": 1500,
       "y": 3300,
       "root": [
         2.0,
@@ -1904,7 +1988,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 2.1666666666666665,
-      "x": 600,
+      "x": 1800,
       "y": 3300,
       "root": [
         2.0,
@@ -1925,7 +2009,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 2.2083333333333335,
-      "x": 900,
+      "x": 2100,
       "y": 3300,
       "root": [
         2.0,
@@ -1946,8 +2030,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 2.25,
-      "x": 1200,
-      "y": 3300,
+      "x": 0,
+      "y": 3600,
       "root": [
         2.0,
         0.0,
@@ -1967,8 +2051,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 2.2916666666666665,
-      "x": 1500,
-      "y": 3300,
+      "x": 300,
+      "y": 3600,
       "root": [
         2.0,
         0.0,
@@ -1988,8 +2072,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 2.3333333333333335,
-      "x": 1800,
-      "y": 3300,
+      "x": 600,
+      "y": 3600,
       "root": [
         2.0,
         0.0,
@@ -2009,8 +2093,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 2.375,
-      "x": 2100,
-      "y": 3300,
+      "x": 900,
+      "y": 3600,
       "root": [
         2.0,
         0.0,
@@ -2030,7 +2114,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 2.4166666666666665,
-      "x": 0,
+      "x": 1200,
       "y": 3600,
       "root": [
         2.0,
@@ -2051,7 +2135,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 2.4583333333333335,
-      "x": 300,
+      "x": 1500,
       "y": 3600,
       "root": [
         2.0,
@@ -2072,7 +2156,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 2.5,
-      "x": 600,
+      "x": 1800,
       "y": 3600,
       "root": [
         2.0,
@@ -2093,7 +2177,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 2.5416666666666665,
-      "x": 900,
+      "x": 2100,
       "y": 3600,
       "root": [
         2.0,
@@ -2114,8 +2198,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 2.5833333333333335,
-      "x": 1200,
-      "y": 3600,
+      "x": 0,
+      "y": 3900,
       "root": [
         2.0,
         0.0,
@@ -2135,8 +2219,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 2.625,
-      "x": 1500,
-      "y": 3600,
+      "x": 300,
+      "y": 3900,
       "root": [
         2.0,
         0.0,
@@ -2156,8 +2240,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 2.6666666666666665,
-      "x": 1800,
-      "y": 3600,
+      "x": 600,
+      "y": 3900,
       "root": [
         2.0,
         0.0,
@@ -2177,8 +2261,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 2.7083333333333335,
-      "x": 2100,
-      "y": 3600,
+      "x": 900,
+      "y": 3900,
       "root": [
         2.0,
         0.0,
@@ -2198,7 +2282,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 2.75,
-      "x": 0,
+      "x": 1200,
       "y": 3900,
       "root": [
         2.0,
@@ -2219,7 +2303,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 2.7916666666666665,
-      "x": 300,
+      "x": 1500,
       "y": 3900,
       "root": [
         2.0,
@@ -2240,7 +2324,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 2.8333333333333335,
-      "x": 600,
+      "x": 1800,
       "y": 3900,
       "root": [
         2.0,
@@ -2261,7 +2345,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 2.875,
-      "x": 900,
+      "x": 2100,
       "y": 3900,
       "root": [
         2.0,
@@ -2282,8 +2366,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 2.9166666666666665,
-      "x": 1200,
-      "y": 3900,
+      "x": 0,
+      "y": 4200,
       "root": [
         2.0,
         0.0,
@@ -2303,8 +2387,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 2.9583333333333335,
-      "x": 1500,
-      "y": 3900,
+      "x": 300,
+      "y": 4200,
       "root": [
         2.0,
         0.0,
@@ -2324,8 +2408,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 3.0,
-      "x": 1800,
-      "y": 3900,
+      "x": 600,
+      "y": 4200,
       "root": [
         2.0,
         0.0,
@@ -2345,8 +2429,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 3.0416666666666665,
-      "x": 2100,
-      "y": 3900,
+      "x": 900,
+      "y": 4200,
       "root": [
         2.0,
         0.0,
@@ -2366,7 +2450,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 3.0833333333333335,
-      "x": 0,
+      "x": 1200,
       "y": 4200,
       "root": [
         2.0,
@@ -2387,7 +2471,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.0,
-      "x": 300,
+      "x": 1500,
       "y": 4200,
       "root": [
         2.0,
@@ -2408,7 +2492,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.0,
-      "x": 600,
+      "x": 1800,
       "y": 4200,
       "root": [
         2.0,
@@ -2429,7 +2513,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.0,
-      "x": 900,
+      "x": 2100,
       "y": 4200,
       "root": [
         2.0,
@@ -2450,8 +2534,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.0,
-      "x": 1200,
-      "y": 4200,
+      "x": 0,
+      "y": 4500,
       "root": [
         2.0,
         0.0,
@@ -2471,8 +2555,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.0,
-      "x": 1500,
-      "y": 4200,
+      "x": 300,
+      "y": 4500,
       "root": [
         2.0,
         0.0,
@@ -2492,8 +2576,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.0,
-      "x": 1800,
-      "y": 4200,
+      "x": 600,
+      "y": 4500,
       "root": [
         2.0,
         0.0,
@@ -2513,8 +2597,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.0,
-      "x": 2100,
-      "y": 4200,
+      "x": 900,
+      "y": 4500,
       "root": [
         2.0,
         0.0,
@@ -2534,7 +2618,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.041666666666666664,
-      "x": 0,
+      "x": 1200,
       "y": 4500,
       "root": [
         2.0,
@@ -2555,7 +2639,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.08333333333333333,
-      "x": 300,
+      "x": 1500,
       "y": 4500,
       "root": [
         2.0,
@@ -2576,7 +2660,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.125,
-      "x": 600,
+      "x": 1800,
       "y": 4500,
       "root": [
         2.0,
@@ -2597,7 +2681,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.16666666666666666,
-      "x": 900,
+      "x": 2100,
       "y": 4500,
       "root": [
         2.0,
@@ -2618,8 +2702,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.20833333333333334,
-      "x": 1200,
-      "y": 4500,
+      "x": 0,
+      "y": 4800,
       "root": [
         2.0,
         0.0,
@@ -2639,8 +2723,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.25,
-      "x": 1500,
-      "y": 4500,
+      "x": 300,
+      "y": 4800,
       "root": [
         2.0,
         0.0,
@@ -2660,8 +2744,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.2916666666666667,
-      "x": 1800,
-      "y": 4500,
+      "x": 600,
+      "y": 4800,
       "root": [
         2.0,
         0.0,
@@ -2681,8 +2765,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.3333333333333333,
-      "x": 2100,
-      "y": 4500,
+      "x": 900,
+      "y": 4800,
       "root": [
         2.0,
         0.0,
@@ -2702,7 +2786,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.375,
-      "x": 0,
+      "x": 1200,
       "y": 4800,
       "root": [
         2.0,
@@ -2723,7 +2807,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.4166666666666667,
-      "x": 300,
+      "x": 1500,
       "y": 4800,
       "root": [
         2.0,
@@ -2744,7 +2828,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.0,
-      "x": 600,
+      "x": 1800,
       "y": 4800,
       "root": [
         1.3487457733742234,
@@ -2765,7 +2849,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.041666666666666664,
-      "x": 900,
+      "x": 2100,
       "y": 4800,
       "root": [
         1.3487457733742234,
@@ -2786,8 +2870,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.08333333333333333,
-      "x": 1200,
-      "y": 4800,
+      "x": 0,
+      "y": 5100,
       "root": [
         1.3487457733742234,
         0.0,
@@ -2807,8 +2891,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.125,
-      "x": 1500,
-      "y": 4800,
+      "x": 300,
+      "y": 5100,
       "root": [
         1.3487457733742234,
         0.0,
@@ -2828,8 +2912,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.16666666666666666,
-      "x": 1800,
-      "y": 4800,
+      "x": 600,
+      "y": 5100,
       "root": [
         1.3487457733742234,
         0.0,
@@ -2849,8 +2933,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.20833333333333334,
-      "x": 2100,
-      "y": 4800,
+      "x": 900,
+      "y": 5100,
       "root": [
         1.3487457733742234,
         0.0,
@@ -2870,7 +2954,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.25,
-      "x": 0,
+      "x": 1200,
       "y": 5100,
       "root": [
         1.3487457733742234,
@@ -2891,7 +2975,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.2916666666666667,
-      "x": 300,
+      "x": 1500,
       "y": 5100,
       "root": [
         1.3487457733742234,
@@ -2912,7 +2996,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.3333333333333333,
-      "x": 600,
+      "x": 1800,
       "y": 5100,
       "root": [
         1.3487457733742234,
@@ -2933,7 +3017,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.375,
-      "x": 900,
+      "x": 2100,
       "y": 5100,
       "root": [
         1.3487457733742234,
@@ -2954,8 +3038,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.4166666666666667,
-      "x": 1200,
-      "y": 5100,
+      "x": 0,
+      "y": 5400,
       "root": [
         1.3487457733742234,
         0.0,
@@ -2975,8 +3059,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.4583333333333333,
-      "x": 1500,
-      "y": 5100,
+      "x": 300,
+      "y": 5400,
       "root": [
         1.3487457733742234,
         0.0,
@@ -2996,8 +3080,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.5,
-      "x": 1800,
-      "y": 5100,
+      "x": 600,
+      "y": 5400,
       "root": [
         1.3487457733742234,
         0.0,
@@ -3017,8 +3101,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.5416666666666666,
-      "x": 2100,
-      "y": 5100,
+      "x": 900,
+      "y": 5400,
       "root": [
         1.3487457733742234,
         0.0,
@@ -3038,7 +3122,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.5833333333333334,
-      "x": 0,
+      "x": 1200,
       "y": 5400,
       "root": [
         1.3487457733742234,
@@ -3059,7 +3143,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.625,
-      "x": 300,
+      "x": 1500,
       "y": 5400,
       "root": [
         1.3487457733742234,
@@ -3080,7 +3164,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.6666666666666666,
-      "x": 600,
+      "x": 1800,
       "y": 5400,
       "root": [
         1.3487457733742234,
@@ -3101,7 +3185,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.7083333333333334,
-      "x": 900,
+      "x": 2100,
       "y": 5400,
       "root": [
         1.3487457733742234,
@@ -3122,8 +3206,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.75,
-      "x": 1200,
-      "y": 5400,
+      "x": 0,
+      "y": 5700,
       "root": [
         1.3487457733742234,
         0.0,
@@ -3143,8 +3227,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.7916666666666666,
-      "x": 1500,
-      "y": 5400,
+      "x": 300,
+      "y": 5700,
       "root": [
         1.3487457733742234,
         0.0,
@@ -3164,8 +3248,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.8333333333333334,
-      "x": 1800,
-      "y": 5400,
+      "x": 600,
+      "y": 5700,
       "root": [
         1.3487457733742234,
         0.0,
@@ -3185,8 +3269,8 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.875,
-      "x": 2100,
-      "y": 5400,
+      "x": 900,
+      "y": 5700,
       "root": [
         1.3487457733742234,
         0.0,
@@ -3206,7 +3290,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.9166666666666666,
-      "x": 0,
+      "x": 1200,
       "y": 5700,
       "root": [
         1.3487457733742234,
@@ -3227,7 +3311,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.9583333333333334,
-      "x": 300,
+      "x": 1500,
       "y": 5700,
       "root": [
         1.3487457733742234,
@@ -3248,7 +3332,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 1.0,
-      "x": 600,
+      "x": 1800,
       "y": 5700,
       "root": [
         1.3487457733742234,
@@ -3269,7 +3353,7 @@
       "controls": {},
       "category": "source-particle-frame",
       "time": 0.0,
-      "x": 900,
+      "x": 2100,
       "y": 5700,
       "root": [
         2.0,
@@ -3282,90 +3366,7 @@
       "empty": false,
       "rgbaSha256": "201e804ebb57bdab51428549573e7bb2fdb34aa4dfc2055130b3d166a58e4b81",
       "rasterEmpty": false
-    },
-    {
-      "family": "particles",
-      "export": "witness_clip_17349",
-      "frame": 1,
-      "controls": {},
-      "category": "source-particle-frame",
-      "time": 0.041666666666666664,
-      "x": 1200,
-      "y": 5700,
-      "root": [
-        2.0,
-        0.0,
-        150.0,
-        0.0,
-        2.0,
-        150.0
-      ],
-      "empty": false,
-      "rgbaSha256": "62e22aec922bf4a00c999687b3bf9dd15ba4cf56b412345e47f2f7ac1da365f9",
-      "rasterEmpty": false
-    },
-    {
-      "family": "particles",
-      "export": "witness_clip_17349",
-      "frame": 2,
-      "controls": {},
-      "category": "source-particle-frame",
-      "time": 0.08333333333333333,
-      "x": 1500,
-      "y": 5700,
-      "root": [
-        2.0,
-        0.0,
-        150.0,
-        0.0,
-        2.0,
-        150.0
-      ],
-      "empty": false,
-      "rgbaSha256": "c1d8924dcde591a8ce7ac44a0e45a915d754a54e0cfa67cdac409a9e9c528fb4",
-      "rasterEmpty": false
-    },
-    {
-      "family": "particles",
-      "export": "witness_clip_17349",
-      "frame": 3,
-      "controls": {},
-      "category": "source-particle-frame",
-      "time": 0.125,
-      "x": 1800,
-      "y": 5700,
-      "root": [
-        2.0,
-        0.0,
-        150.0,
-        0.0,
-        2.0,
-        150.0
-      ],
-      "empty": false,
-      "rgbaSha256": "9c8e849ec2a36fc5e3fa2ffa8388574cab6f0ea16f36c20f1fe3c6e34cd286f0",
-      "rasterEmpty": false
-    },
-    {
-      "family": "particles",
-      "export": "witness_clip_17349",
-      "frame": 4,
-      "controls": {},
-      "category": "source-particle-frame",
-      "time": 0.16666666666666666,
-      "x": 2100,
-      "y": 5700,
-      "root": [
-        2.0,
-        0.0,
-        150.0,
-        0.0,
-        2.0,
-        150.0
-      ],
-      "empty": false,
-      "rgbaSha256": "62e57bb9ecda1a7ca3672ead113a1a14f15c5ea6264d6fe54e5552449d18e0c6",
-      "rasterEmpty": false
     }
-  ]
+  ],
+  "subpixel4RgbaSha256": "212fad889e7bd7b88472f45f7a633ee2e2e7b9335187685f9dfd1b5311a953d5"
 }

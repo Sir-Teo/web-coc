@@ -1890,3 +1890,11 @@ collision, effects and replay validation share these bounds. The board size is
 derived from version, stage and mode; it is not a trusted field in portable replay
 input. Versions 232 and earlier preserve their original geometry. Other battles
 and home saves retain their existing bounds.
+
+## Version 234: captured Practice garrison levels
+
+Balloon 5 and Lava Hound 5 are accepted in garrison snapshots from version 234.
+Their original body graphs are loaded by the source animation name. Combat reads
+their own inherited source rows, including the defensive Hound's twelve-Pup death
+wave. Older recordings reject these newly admitted levels and retain their existing
+Balloon 8 and Lava Hound 6 behavior.

@@ -680,6 +680,80 @@
           "graph": "pekka/momma"
         }
       ]
+    },
+    {
+      "stage": 153,
+      "stageIndex": 152,
+      "npc": "CHALLENGE_TH8_GOWIVA",
+      "layout": "level/challenge_th8_gowiva.json",
+      "bunkers": [
+        {
+          "globalId": 1000014,
+          "name": "Clan Castle",
+          "sourceId": 500000004,
+          "level": 4,
+          "x": 20,
+          "y": 23,
+          "mode": 0
+        }
+      ],
+      "members": [
+        {
+          "character": "Balloon",
+          "sourceLevel": 5,
+          "count": 5,
+          "defensiveCharacter": "Balloon",
+          "row": 5,
+          "animation": "Balloon Goblin3",
+          "swf": [
+            "sc/chr_balloon.sc"
+          ],
+          "graph": "balloon/balloon-goblin3"
+        }
+      ]
+    },
+    {
+      "stage": 154,
+      "stageIndex": 153,
+      "npc": "CHALLENGE_TH12_YETI",
+      "layout": "level/challenge_th12_yeti.json",
+      "bunkers": [
+        {
+          "globalId": 1000014,
+          "name": "Clan Castle",
+          "sourceId": 500000004,
+          "level": 8,
+          "x": 27,
+          "y": 23,
+          "mode": 0
+        }
+      ],
+      "members": [
+        {
+          "character": "Lava Hound",
+          "sourceLevel": 5,
+          "count": 1,
+          "defensiveCharacter": "Defensive Lava Hound",
+          "row": 5,
+          "animation": "ADSeeker_lvl5",
+          "swf": [
+            "sc/chr_lava_hound.sc"
+          ],
+          "graph": "lava_hound/adseeker-lvl5"
+        },
+        {
+          "character": "Baby Dragon",
+          "sourceLevel": 6,
+          "count": 1,
+          "defensiveCharacter": "Baby Dragon",
+          "row": 6,
+          "animation": "Baby Dragon 6",
+          "swf": [
+            "sc/chr_baby_dragon.sc"
+          ],
+          "graph": "baby_dragon/baby-dragon-6"
+        }
+      ]
     }
   ],
   "characters": {
@@ -7808,6 +7882,80 @@
     ]
   },
   "animations": {
+    "ADSeeker_lvl5": {
+      "columns": [
+        "Name",
+        "HasDirections",
+        "VariationWeight",
+        "ExportName",
+        "Looping",
+        "StopToLast",
+        "Scale",
+        "SWF"
+      ],
+      "types": [
+        "String",
+        "boolean",
+        "int",
+        "String",
+        "boolean",
+        "boolean",
+        "int",
+        "String"
+      ],
+      "rows": [
+        {
+          "Name": "walk",
+          "HasDirections": "TRUE",
+          "VariationWeight": "",
+          "ExportName": "Stone_Gargoyle5_fly",
+          "Looping": "TRUE",
+          "StopToLast": "TRUE",
+          "Scale": "100",
+          "SWF": "sc/chr_lava_hound.sc"
+        },
+        {
+          "Name": "idle",
+          "HasDirections": "TRUE",
+          "VariationWeight": "1",
+          "ExportName": "Stone_Gargoyle5_fly",
+          "Looping": "TRUE",
+          "StopToLast": "TRUE",
+          "Scale": "100",
+          "SWF": "sc/chr_lava_hound.sc"
+        },
+        {
+          "Name": "attack",
+          "HasDirections": "TRUE",
+          "VariationWeight": "1",
+          "ExportName": "Stone_Gargoyle5_fly",
+          "Looping": "FALSE",
+          "StopToLast": "TRUE",
+          "Scale": "100",
+          "SWF": "sc/chr_lava_hound.sc"
+        },
+        {
+          "Name": "celebrate",
+          "HasDirections": "FALSE",
+          "VariationWeight": "4",
+          "ExportName": "Stone_Gargoyle5_fly_1",
+          "Looping": "TRUE",
+          "StopToLast": "TRUE",
+          "Scale": "100",
+          "SWF": "sc/chr_lava_hound.sc"
+        },
+        {
+          "Name": "die",
+          "HasDirections": "FALSE",
+          "VariationWeight": "1",
+          "ExportName": "barbarian_death_1",
+          "Looping": "TRUE",
+          "StopToLast": "TRUE",
+          "Scale": "",
+          "SWF": ""
+        }
+      ]
+    },
     "ADSeeker_lvl6": {
       "columns": [
         "Name",
@@ -8029,6 +8177,73 @@
           "StopToLast": "TRUE",
           "Scale": "120",
           "SWF": ""
+        }
+      ]
+    },
+    "Balloon Goblin3": {
+      "columns": [
+        "Name",
+        "HasDirections",
+        "ActionFrame",
+        "ExportName",
+        "Looping",
+        "StopToLast",
+        "SWF"
+      ],
+      "types": [
+        "String",
+        "boolean",
+        "int",
+        "String",
+        "boolean",
+        "boolean",
+        "String"
+      ],
+      "rows": [
+        {
+          "Name": "walk",
+          "HasDirections": "FALSE",
+          "ActionFrame": "",
+          "ExportName": "balloon3_idle1",
+          "Looping": "TRUE",
+          "StopToLast": "TRUE",
+          "SWF": "sc/chr_balloon.sc"
+        },
+        {
+          "Name": "idle",
+          "HasDirections": "FALSE",
+          "ActionFrame": "",
+          "ExportName": "balloon3_idle1",
+          "Looping": "TRUE",
+          "StopToLast": "TRUE",
+          "SWF": "sc/chr_balloon.sc"
+        },
+        {
+          "Name": "attack",
+          "HasDirections": "FALSE",
+          "ActionFrame": "34",
+          "ExportName": "balloon3_attack1",
+          "Looping": "FALSE",
+          "StopToLast": "TRUE",
+          "SWF": "sc/chr_balloon.sc"
+        },
+        {
+          "Name": "celebrate",
+          "HasDirections": "FALSE",
+          "ActionFrame": "",
+          "ExportName": "balloon3_idle1",
+          "Looping": "TRUE",
+          "StopToLast": "TRUE",
+          "SWF": "sc/chr_balloon.sc"
+        },
+        {
+          "Name": "die",
+          "HasDirections": "FALSE",
+          "ActionFrame": "",
+          "ExportName": "balloon3_die1",
+          "Looping": "FALSE",
+          "StopToLast": "TRUE",
+          "SWF": "sc/chr_balloon.sc"
         }
       ]
     },
@@ -10904,6 +11119,15 @@
         "tinybaby_lvl1_fly_3"
       ]
     },
+    "lava_hound/adseeker-lvl5": {
+      "swf": "sc/chr_lava_hound.sc",
+      "animation": "ADSeeker_lvl5",
+      "exports": [
+        "Stone_Gargoyle5_fly_1",
+        "Stone_Gargoyle5_fly_2",
+        "Stone_Gargoyle5_fly_3"
+      ]
+    },
     "electro_titan/electrotitan-lvl2": {
       "swf": "sc/chr_electro_titan.sc",
       "animation": "ElectroTitan_lvl2",
@@ -10950,6 +11174,15 @@
         "worker_battle_build1_1",
         "worker_battle_build1_2",
         "worker_battle_build1_3"
+      ]
+    },
+    "balloon/balloon-goblin3": {
+      "swf": "sc/chr_balloon.sc",
+      "animation": "Balloon Goblin3",
+      "exports": [
+        "balloon3_idle1",
+        "balloon3_attack1",
+        "balloon3_die1"
       ]
     },
     "projectiles/buildings": {

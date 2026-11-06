@@ -275,7 +275,9 @@ it('resolves every later family at its pinned source row and splits the attack t
     ],
   ] as const;
   for (const [kind, character, values] of table) {
-    const level = Number(Object.keys(GARRISON_KINDS[kind].levels)[0]);
+    const level = Number(
+      Object.entries(GARRISON_KINDS[kind].levels).find(([, version]) => version === 44)![0],
+    );
     expect(garrisonStats(kind, level), kind).toMatchObject({ character, split: true, ...values });
     expect(garrisonTroopVersion(kind, level)).toBe(44);
   }

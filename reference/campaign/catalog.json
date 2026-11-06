@@ -2,8 +2,6 @@
   "bundle": "7f04bdfdc4124b1f49308423bb8f4aa8b137aae3",
   "withheld": {
     "CHALLENGE_TH10_MINER": "Guide TH10_Miner_Wait_For_Rage references absent source object 500000234",
-    "CHALLENGE_TH8_GOWIVA": "Balloon 5 garrison body",
-    "CHALLENGE_TH12_YETI": "Lava Hound 5 garrison body",
     "CHALLENGE_TH13_HYBRID": "Ice Golem 5 garrison body and defending death-freeze"
   },
   "stages": [
@@ -4286,6 +4284,310 @@
         },
         {
           "DeploySteps": "TH12_Dragbat_Freeze2"
+        }
+      ]
+    },
+    {
+      "stage": 153,
+      "id": "CHALLENGE_TH8_GOWIVA",
+      "name": "Whirl Power",
+      "family": "challenge",
+      "dependencies": [],
+      "gold": 250000,
+      "elixir": 250000,
+      "darkElixir": 1500,
+      "recommendedTownHall": 8,
+      "nativeRows": [
+        {
+          "Name": "CHALLENGE_TH8_GOWIVA",
+          "TID": "TID_CHALLENGE_TH8_GOWIVA",
+          "Type": "TUTORIAL",
+          "TutorialUnlockTHLevel": "8",
+          "TutorialTHLevel": "8",
+          "LevelFile": "level/challenge_th8_gowiva.json",
+          "Gold": "250000",
+          "Elixir": "250000",
+          "DarkElixir": "1500",
+          "AllianceName": "Clashers",
+          "AllianceBadge": "1526736218",
+          "SinglePlayer": "TRUE",
+          "AllianceUnitType": "Balloon",
+          "AllianceUnitLevel": "5",
+          "AllianceUnitCount": "5",
+          "FixedArmyUnitType": "Golem",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH8_Gowiva_Earthquake",
+          "UseFullMapSize": "TRUE",
+          "DefendingHero": "Barbarian King",
+          "DefendingHeroLevel": "10",
+          "VillageBackground": "60000000"
+        },
+        {
+          "FixedArmyUnitType": "Valkyrie",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "15",
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "FixedArmyUnitType": "Wizard",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "11",
+          "DeploySteps": "TH8_Gowiva_HogRider"
+        },
+        {
+          "FixedArmyUnitType": "Hog Rider",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "Wait_5000ms"
+        },
+        {
+          "FixedArmyUnitType": "Archer",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH8_Gowiva_Archer"
+        },
+        {
+          "FixedArmyUnitType": "Healing",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "Wait_7500ms"
+        },
+        {
+          "FixedArmyUnitType": "Poison",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "Wait_7500ms"
+        },
+        {
+          "FixedArmyUnitType": "Earthquake",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "4",
+          "DeploySteps": "TH8_Gowiva_Poison"
+        },
+        {
+          "FixedArmyUnitType": "Barbarian King",
+          "FixedArmyUnitLevel": "10",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH8_Gowiva_Golem"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH8_Gowiva_Wizards"
+        },
+        {
+          "DeploySteps": "Wait_5000ms"
+        },
+        {
+          "DeploySteps": "TH8_Gowiva_BarbarianKing"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH8_Gowiva_Valkyries"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH8_Gowiva_Heal"
+        }
+      ]
+    },
+    {
+      "stage": 154,
+      "id": "CHALLENGE_TH12_YETI",
+      "name": "Yeti Smash",
+      "family": "challenge",
+      "dependencies": [],
+      "gold": 600000,
+      "elixir": 600000,
+      "darkElixir": 6000,
+      "recommendedTownHall": 12,
+      "nativeRows": [
+        {
+          "Name": "CHALLENGE_TH12_YETI",
+          "TID": "TID_CHALLENGE_TH12_YETI",
+          "Type": "TUTORIAL",
+          "TutorialUnlockTHLevel": "12",
+          "TutorialTHLevel": "12",
+          "LevelFile": "level/challenge_th12_yeti.json",
+          "Gold": "600000",
+          "Elixir": "600000",
+          "DarkElixir": "6000",
+          "SinglePlayer": "TRUE",
+          "AllianceUnitType": "Lava Hound",
+          "AllianceUnitLevel": "5",
+          "AllianceUnitCount": "1",
+          "FixedArmyUnitType": "Barbarian King",
+          "FixedArmyUnitLevel": "65",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH12_Yeti_GrandWarden",
+          "UseFullMapSize": "TRUE",
+          "DefendingHero": "Barbarian King",
+          "DefendingHeroLevel": "65",
+          "VillageBackground": "60000000"
+        },
+        {
+          "AllianceUnitType": "Baby Dragon",
+          "AllianceUnitLevel": "6",
+          "AllianceUnitCount": "1",
+          "FixedArmyUnitType": "Archer Queen",
+          "FixedArmyUnitLevel": "65",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "Wait_1000ms",
+          "DefendingHero": "Archer Queen",
+          "DefendingHeroLevel": "65"
+        },
+        {
+          "FixedArmyUnitType": "Grand Warden",
+          "FixedArmyUnitLevel": "40",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH12_Yeti_Healers",
+          "DefendingHero": "Grand Warden",
+          "DefendingHeroLevel": "40"
+        },
+        {
+          "FixedArmyUnitType": "Healer",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "5",
+          "DeploySteps": "Wait_5000ms"
+        },
+        {
+          "FixedArmyUnitType": "PEKKA",
+          "FixedArmyUnitLevel": "8",
+          "FixedArmyUnitCountOrStage": "4",
+          "DeploySteps": "TH12_Yeti_Info_Warden_Walk"
+        },
+        {
+          "FixedArmyUnitType": "Yeti",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "5",
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "FixedArmyUnitType": "Wizard",
+          "FixedArmyUnitLevel": "9",
+          "FixedArmyUnitCountOrStage": "5",
+          "DeploySteps": "TH12_Yeti_Funnel_PEKKAs"
+        },
+        {
+          "FixedArmyUnitType": "Stone Slammer",
+          "FixedArmyUnitLevel": "3",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "FixedArmyUnitType": "Balloon",
+          "FixedArmyUnitLevel": "8",
+          "FixedArmyUnitCountOrStage": "8",
+          "FixedArmyUnitAlliance": "TRUE",
+          "DeploySteps": "TH12_Yeti_Funnel_Wizards"
+        },
+        {
+          "FixedArmyUnitType": "Earthquake",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "4",
+          "DeploySteps": "Wait_7500ms"
+        },
+        {
+          "FixedArmyUnitType": "Jump",
+          "FixedArmyUnitLevel": "3",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "Wait_7500ms"
+        },
+        {
+          "FixedArmyUnitType": "Poison",
+          "FixedArmyUnitLevel": "6",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "Wait_7500ms"
+        },
+        {
+          "FixedArmyUnitType": "Rage",
+          "FixedArmyUnitLevel": "6",
+          "FixedArmyUnitCountOrStage": "2",
+          "DeploySteps": "Wait_7500ms"
+        },
+        {
+          "FixedArmyUnitType": "Haste",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH12_Yeti_Jump"
+        },
+        {
+          "FixedArmyUnitType": "Freeze",
+          "FixedArmyUnitLevel": "7",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH12_Yeti_Wait_For_Warden"
+        },
+        {
+          "DeploySteps": "TH12_Yeti_Yetis"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH12_Yeti_PEKKAs"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH12_Yeti_BarbarianKing"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH12_Yeti_ArcherQueen"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH12_Yeti_Rage1"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH12_Yeti_Poison"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH12_Yeti_Earthquakes"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "WardenAbility"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH12_Yeti_StoneSlammer"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH12_Yeti_Rage2"
+        },
+        {
+          "DeploySteps": "Wait_5000ms"
+        },
+        {
+          "DeploySteps": "TH12_Yeti_CleanUp"
         }
       ]
     }

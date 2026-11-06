@@ -4,6 +4,7 @@
 This captures source art; native emission/attachment equations are not inferred.
 """
 import argparse
+import copy
 import hashlib
 import json
 import runpy
@@ -49,6 +50,8 @@ def build():
     used = {t for shapes in graph['shapes'].values() for t, _ in shapes}
     require(used == {39}, 'Particle texture membership changed')
     original = decode_sctx(blobs['sc/buildings_39.sctx'])
+    # New Balloon roots reuse the exact existing atlas and UVs. The compatibility test
+    # guards its bytes; any future atlas repack must retain this URL and use a new one.
     assets, textures, runtime = crop_textures(graph, {39: original}, 'assets/garrison-effects-native/texture')
     documents = {
         'reference/garrison/particles.json': dict(sources=PINS, bindings=bindings, effects=effects, particles=particles),
@@ -79,6 +82,11 @@ def build():
             pixels = np.array(sheet.crop((x, y, x + cell, y + cell)))[:, :, :3]
             case['rasterEmpty'] = bool(np.all(pixels == [48, 65, 53]))
         images[folder + name + '.png'] = sheet
+        fixed, fixed_manifest = witness['build'](
+            {'worlds': {'particles': {'graph': witness_graph}}}, name, copy.deepcopy(batch),
+            {'particles': {39: np.array(original) / 255}}, subpixel_bits=4)
+        manifest['subpixel4RgbaSha256'] = fixed_manifest['rgbaSha256']
+        images[folder + name + '-subpixel4.png'] = fixed
         documents[folder + name + '.json'] = manifest
         index.append(dict(category=name, cases=len(batch), width=manifest['width'], height=manifest['height']))
     documents[folder + 'index.json'] = index

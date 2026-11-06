@@ -11,7 +11,7 @@ import type { Army, SpellBook } from './model';
 /**
  * Practice Mode: the client's single-player Practice levels, each fought with the army it
  * provides instead of the player's own (logic/npcs.csv, imported by
- * scripts/import-native-practice.py). The villages are campaign stages 91 to 103, 151 and 152. See
+ * scripts/import-native-practice.py). The villages are campaign stages 91 to 103 and 151 to 154. See
  * docs/PRACTICE-MODE.md.
  */
 export interface PracticeLevel {

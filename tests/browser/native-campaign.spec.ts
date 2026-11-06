@@ -24,9 +24,9 @@ for (const viewport of [
     });
     await page.locator('.attack-btn').click();
     // The Goblin map, the Challenges the client ships and the forged tail after them.
-    await expect(page.locator('.campaign-card')).toHaveCount(152);
+    await expect(page.locator('.campaign-card')).toHaveCount(154);
     // Only the forged tail is marked as the project's own.
-    await expect(page.locator('.campaign-summary')).toContainText('152 villages · 47 fan-made');
+    await expect(page.locator('.campaign-summary')).toContainText('154 villages · 47 fan-made');
     await expect(page.locator('.campaign-fan-made')).toHaveCount(47);
     await expect(page.locator('#campaign-stage-102 .campaign-fan-made')).toHaveCount(0);
     await expect(page.locator('#campaign-stage-103 .campaign-fan-made')).toHaveCount(1);

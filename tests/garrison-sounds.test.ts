@@ -28,6 +28,8 @@ it('ships all seven original Ogg files unchanged and binds the source character 
     });
   }
   expect(source.bindings.balloon.deathDamage).toBe('Dark Balloon Exposion');
+  const five = Object.assign({}, ...native.characters.Balloon.slice(0, 5));
+  expect(source.bindings.balloon.deathDamage5).toBe(five.DieDamageEffect);
 });
 
 it('reconstructs unique pitch-stable cues and the delayed Balloon blast without changing combat state', () => {

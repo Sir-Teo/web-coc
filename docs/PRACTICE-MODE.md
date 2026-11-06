@@ -6,7 +6,7 @@ The original's Practice Mode is a set of single-player villages for Town Halls 4
 - "No Trophies are won or lost, and there is also no time limit. Every level contains a set amount of loot that can be won once, just like in the Single Player Campaign."
 - "Players can play Practice levels relevant to Town Halls up their Town Hall level."
 
-The game fields 15 of the client's 19 lessons: the original stages 91–103 plus Angry Babies (151) and Flying Circus (152). The additions preserve every existing index and the 47 forged layouts. Four remain withheld as [CAMPAIGN-RULES.md](CAMPAIGN-RULES.md) explains.
+The game fields 17 of the client's 19 lessons: the original stages 91–103 plus Angry Babies (151), Flying Circus (152), Whirl Power (153) and Yeti Smash (154). The additions preserve every existing index and the 47 forged layouts. Two remain withheld as [CAMPAIGN-RULES.md](CAMPAIGN-RULES.md) explains.
 
 ## Source
 
@@ -32,7 +32,7 @@ For example, Giant Smash (Town Hall 4) brings 13 Giants, 2 Wall Breakers and 11 
 - **Cards.** The campaign card is labelled "PRACTICE" and says what the level brings ("Fought with its own army: 26 troops. Yours stays home."). The scout page lists the army, troop by troop, under "Army provided". The section picker calls the part of the list "Practice".
 - **Starter Challenges.** Their two Practice tasks ("Win 3x/9x total Stars from Practice Levels") now count the best stars on each level (see [STARTER-CHALLENGES.md](STARTER-CHALLENGES.md)).
 
-- **Defending heroes.** Ten levels defend with heroes, from Hot Stuff's level 5 King to Bowling with Witches' King, Queen and Warden. Each stands guard on the hero flag its level file places (Hog Rush's King at the client's 17, 24, so at 20, 27 here), not round the Hero Hall.
+- **Defending heroes.** Fourteen levels defend with heroes, from Hot Stuff's level 5 King to Bowling with Witches' King, Queen and Warden. Each stands guard on the hero flag its level file places (Hog Rush's King at the client's 17, 24, so at 20, 27 here), not round the Hero Hall.
 
 A battle fought this way is marked `fixedArmy` in its replay setup. Its army and levels are recorded as fought, so the replay plays back the level's army. A replay may carry `fixedArmy` only for a campaign village, not with `practice` (your own village) or a ladder match.
 
@@ -40,7 +40,7 @@ A battle fought this way is marked `fixedArmy` in its replay setup. Its army and
 
 The wiki says: "At the first attempt at each Practice Mode level, a player will be given a tutorial which is a step-by-step guide to performing the attack; players will be told when and where to deploy each unit, or when to perform a certain action such as activating a hero ability. This tutorial can be skipped and subsequently re-triggered again if the player so desires."
 
-The client stores each level's guide as the record's `DeploySteps` column, in order. These are names of rows in `csv/deploy_steps.csv`, which the importer adds to the catalog with each step's words. All 15 fielded levels have their source guides. Giant Smash has seven:
+The client stores each level's guide as the record's `DeploySteps` column, in order. These are names of rows in `csv/deploy_steps.csv`, which the importer adds to the catalog with each step's words. All 17 fielded levels have their source guides. Giant Smash has seven:
 
 1. "Deploy a Giant to shield the Wall Breakers." (one Giant, on the marked spot)
 2. Half a second's wait.
@@ -71,7 +71,7 @@ The guide sits beside the battle, not in its replay setup. A frozen moment is si
 - **Ability timing.** `KingHealthLow` asks for the King's ability straight away. Its pinned `deploy_steps.csv` row has no health threshold or condition; a different timing rule cannot be established from that table alone.
 
 - **Clan Castle units.** Four levels send units in the Clan Castle: Bowling with Bats, Electro Surgery, Lava & More Loons and Bowling with Witches. This game's attacks have no Clan Castle to release them (siege machines carry nothing), so they join the army's tray. A kind's level is the army's own, ahead of the castle's (Bowling with Bats sends P.E.K.K.A 6 in the army and P.E.K.K.A 8 in the castle).
-- **Withheld levels.** The four withheld Challenges stay out, for the reasons in [CAMPAIGN-RULES.md](CAMPAIGN-RULES.md). Their armies are in the catalog all the same.
+- **Withheld levels.** The two withheld Challenges stay out, for the reasons in [CAMPAIGN-RULES.md](CAMPAIGN-RULES.md). Their armies are in the catalog all the same.
 
 ## Tests
 
@@ -85,7 +85,7 @@ The guide sits beside the battle, not in its replay setup. A frozen moment is si
 
 `tests/practice-mode.test.ts` checks:
 
-- the 19 levels and the 15 fielded as stages 91–103 and 151–152, each with a known army;
+- the 19 levels and the 17 fielded as stages 91–103 and 151–154, each with a known army;
 - Giant Smash's, Hot Stuff's and Bowling with Bats' armies, levels, heroes and Clan Castle units;
 - the Town Hall gate;
 - a battle fought with the level's army while the camps' army and Last army stay put, with loot and stars recorded;
@@ -110,18 +110,18 @@ The guide sits beside the battle, not in its replay setup. A frozen moment is si
 The [readiness report](../reference/practice/readiness.json) audits the six originally withheld layouts
 against the legacy 48-cell `MAP_SIZE` and current `BUILD_MIN`, using complete source building/trap footprints.
 All six have `UseFullMapSize=TRUE` and extend to converted tile boundary 49, beyond this
-legacy 48-tile board. New version-233 full-map Practice battles use 52 cells; Angry Babies and Flying Circus are now fielded at stages 151–152. Four audited layouts
-remain withheld for the recorded defender or guide blockers. The report pins
+legacy 48-tile board. New version-233 full-map Practice battles use 52 cells. Four audited layouts are now fielded at stages 151–154. Two remain withheld for the
+recorded defender or guide blockers. The report pins
 each original layout by SHA-256 and distinguishes
 captured animation/defender rows from source special-ability coverage.
 
 | Level | Footprints beyond the legacy board | Additional missing defender coverage |
 | --- | ---: | --- |
-| Whirl Power | 1 | Balloon 5 body (`Balloon Goblin3` in the source) |
+| Whirl Power | 1 | Body and roster supported at stage 153 (`Balloon Goblin3` in the source) |
 | Angry Babies | 5 | None identified by this coverage audit |
 | Miner Mania | 1 | Guide waits for absent object `500000234`; native missing-target semantics need verification |
 | Flying Circus | 32 | None identified by this coverage audit |
-| Yeti Smash | 12 | Lava Hound 5 body; Baby Dragon 6 is already captured |
+| Yeti Smash | 12 | Lava Hound 5 and Baby Dragon 6 supported at stage 154 |
 | Bane of the Ring | 4 | Ice Golem 5 body/defender row and `IceGolemOnDeathDEF` |
 
 The report also checks guide targets across all 19 lessons. Source targets reach tile 49,
@@ -136,7 +136,7 @@ This is a bounds and source-coverage audit, not a complete combat-parity certifi
 The 150 existing campaign indices, their layouts and progress remain unchanged. Supporting
 the withheld levels still requires their source import and per-layout verification,
 along with the remaining defender captures and behavior. The larger-board path is now
-used by all 15 fielded Practice lessons.
+used by all 17 fielded Practice lessons.
 
 Reproduce the report with the existing native-art Python environment:
 
@@ -148,4 +148,4 @@ Omit `--check` to regenerate it. Input checksums must match; a changed withheld 
 or nonliteral grid definition requires an explicit audit update. The raw files remain under
 ignored `output/native-campaign-source/`. `tests/native-layout-bounds.test.ts` exercises the
 real Whirl Power hut overrun, all four boundaries, malformed coordinates, missing source
-stats, all 152 villages, original guide targets and the report's grid/coverage identity.
+stats, all 154 villages, original guide targets and the report's grid/coverage identity.
