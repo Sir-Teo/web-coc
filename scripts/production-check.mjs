@@ -19,7 +19,15 @@ async function checkNativeHud(page, cached = false) {
       for (const [role, source, asset] of [
         ['icon', image, expected],
         ['background', background, expected.background],
+        ...expected.controls.map((asset) => [
+          asset.role,
+          document.querySelector(
+            asset.role === 'shop' ? '.native-shop-icon' : '.native-settings-art',
+          ),
+          asset,
+        ]),
       ]) {
+        if (!(source instanceof HTMLImageElement)) throw Error(`Native HUD ${role} missing`);
         await source.decode();
         if (source.naturalWidth !== asset.width || source.naturalHeight !== asset.height)
           throw Error(`Native campaign ${role} dimensions changed`);
@@ -508,6 +516,13 @@ for (const [name, engine] of Object.entries(engines)) {
       return (
         image instanceof HTMLImageElement &&
         !!(await caches.match(image.currentSrc))?.ok &&
+        (
+          await Promise.all(
+            [...document.querySelectorAll('.native-shop-icon,.native-settings-art')].map(
+              async (icon) => !!(await caches.match(icon.currentSrc))?.ok,
+            ),
+          )
+        ).every(Boolean) &&
         background &&
         !!(await caches.match(background))?.ok
       );

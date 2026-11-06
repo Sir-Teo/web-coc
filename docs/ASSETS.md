@@ -127,3 +127,7 @@ records its source selection, graph and pixel hashes. The static 90×74 PNG keep
 the source colors and adds no per-frame work. The parent's shape 55 supplies the
 125×123 button background, with local CSS border-image slices for responsive sizes.
 Labels and responsive targets remain DOM controls.
+
+The same reference also pins `sc/ui.sc` and records the normal Shop coins/hammer
+and Settings plate/gears selections from `ui_bottom_right`. Separate notification
+badges are excluded; existing button actions and touch targets are retained.

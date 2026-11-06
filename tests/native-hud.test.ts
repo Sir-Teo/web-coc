@@ -23,7 +23,33 @@ it('retains the pinned original campaign map pose and decoded RGBA pixels', asyn
     '',
     55,
   ]);
-  for (const asset of [hud, hud.background]) {
+  expect(hud.controls.map((c) => [c.role, c.export, c.exportId, c.selection, c.frame])).toEqual([
+    [
+      'shop',
+      'ui_bottom_right',
+      23287,
+      [
+        { clip: 23287, slot: 2, name: 'button_shop', child: 23270 },
+        { clip: 23270, slot: 1, name: '', child: 21791 },
+      ],
+      0,
+    ],
+    [
+      'settings',
+      'ui_bottom_right',
+      23287,
+      [
+        { clip: 23287, slot: 0, name: 'button_settings', child: 22639 },
+        { clip: 22639, slot: 0, name: '', child: 22637 },
+      ],
+      0,
+    ],
+  ]);
+  for (const control of hud.controls) {
+    expect(control.source).toBe('sc/ui.sc');
+    expect(Object.keys(control.graph.shapes).length).toBe(control.role === 'shop' ? 1 : 2);
+  }
+  for (const asset of [hud, hud.background, ...hud.controls]) {
     const png = readFileSync(new URL('../public/' + asset.path, import.meta.url));
     expect(png.length).toBe(asset.bytes);
     expect(hash(png)).toBe(asset.sha256);

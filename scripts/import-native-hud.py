@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Capture the original HUD campaign-map icon and button without alternate modes or text."""
+"""Capture original HUD controls without alternate modes, notification badges or text."""
 import argparse
 from io import BytesIO
 import json
@@ -11,7 +11,20 @@ from native_art.scene_graph import capture_graph
 from native_art.static_scene import FrameZeroScene
 from native_art.multiply_scene import nodes, compose
 
-PINS = {'sc/hud.sc': '05c4a1f5892e7d97e6e4a4c46eb24bbd14db5b9e9ca0fc8a30f5ec1cf2a373da'}
+PINS = {
+    'sc/hud.sc': '05c4a1f5892e7d97e6e4a4c46eb24bbd14db5b9e9ca0fc8a30f5ec1cf2a373da',
+    'sc/ui.sc': '200abb4f7e79b0cc78b829e891b644d21653168ec4892dc864cb6d81c30109b0',
+}
+
+
+class EmbeddedTextures(dict):
+    """Decode only the embedded sheets reachable from the selected control graphics."""
+    def __init__(self, sc):
+        self.sc = sc
+
+    def __missing__(self, index):
+        self[index] = np.array(self.sc.embedded_texture(index), dtype=float) / 255
+        return self[index]
 
 
 def coordinates(poses):
@@ -64,15 +77,36 @@ def main():
                   childSlot=2, childName='icon', clipId=201, frame=0, label='no_stars',
                   **icon, background=background)
     outputs = [(ROOT / 'public' / icon['path'], png),
-               (ROOT / 'public' / background['path'], background_png),
-               (ROOT / 'reference/hud/native.json', (json.dumps(record, indent=2) + '\n').encode())]
+               (ROOT / 'public' / background['path'], background_png)]
+    ui = SC6(source('sc/ui.sc', PINS), max_decompressed_bytes=512 * 1024 * 1024)
+    require(ui.exports['ui_bottom_right'] == 23287, 'UI controls root changed')
+    ui_textures = EmbeddedTextures(ui)
+    controls = []
+    for role, selection in [
+        ('shop', [(23287, 2, 'button_shop', 23270), (23270, 1, '', 21791)]),
+        ('settings', [(23287, 0, 'button_settings', 22639), (22639, 0, '', 22637)]),
+    ]:
+        for parent, slot, name, child in selection:
+            clip = ui.clip(parent)
+            require(clip['children'][slot] == child and clip['names'][slot] == name,
+                    f'Original {role} selection changed')
+            require(any(p[0] == slot for p in clip['frames'][0]), f'{role} absent from frame zero')
+        require(ui.clip(23270)['labels'][0] == 'Normal', 'Normal shop mode changed')
+        asset, data = capture(ui, ui_textures, selection[-1][3], role, f'assets/hud-native/{role}.png')
+        controls.append(dict(role=role, source='sc/ui.sc', export='ui_bottom_right', exportId=23287,
+                             selection=[dict(clip=parent, slot=slot, name=name, child=child)
+                                        for parent, slot, name, child in selection],
+                             frame=0, **asset))
+        outputs.append((ROOT / 'public' / asset['path'], data))
+    record['controls'] = controls
+    outputs.append((ROOT / 'reference/hud/native.json', (json.dumps(record, indent=2) + '\n').encode()))
     for target, data in outputs:
         if args.check:
             require(target.read_bytes() == data, f'Native HUD output differs: {target}')
         else:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(data)
-    print(f'Native campaign icon and button: {len(png) + len(background_png)} bytes; source pixels verified')
+    print(f'Native HUD: {sum(len(data) for path, data in outputs[:-1])} image bytes; source pixels verified')
 
 
 if __name__ == '__main__':

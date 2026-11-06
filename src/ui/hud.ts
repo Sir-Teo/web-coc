@@ -2882,7 +2882,7 @@ export class HUD {
    )
    .join('')}</div>
  <nav class="left-tools" aria-label="Village activities"><button class="square-btn" data-action="campaign" aria-label="Campaign map">${icon('Map', 29)}${NATIVE_CAMPAIGN.some((_, i) => !s.nativeCampaign?.stars[i] && this.model.campaignOpen(i) && !campaignPending(i)) ? '<span class="notification">!</span>' : ''}</button><button class="square-btn" data-action="achievements" aria-label="Achievements${this.awardsReady ? `, ${this.awardsReady} ready to claim` : ''}">${icon('Trophy', 27)}<span class="tool-label">Awards</span>${this.awardsReady ? `<span class="notification">${this.awardsReady}</span>` : ''}</button><button class="square-btn" data-action="edit" aria-label="Edit village layout">${icon('Pencil', 25)}<span class="tool-label">Edit</span></button><button class="square-btn" data-action="battle-log" aria-label="Battle log">${icon('ScrollText', 27)}<span class="tool-label">Log</span></button></nav>
- <div class="right-tools"><button class="square-btn small" data-action="settings" aria-label="Settings">${icon('Settings', 24)}</button><div class="camera-tools"><button data-action="zoom-in" aria-label="Zoom in">${icon('Plus', 20)}</button><button data-action="recenter" aria-label="Center village">${icon('LocateFixed', 18)}</button><button data-action="zoom-out" aria-label="Zoom out">${icon('Minus', 20)}</button></div></div>
+ <div class="right-tools"><button class="square-btn small native-settings-btn" data-action="settings" aria-label="Settings"><img class="native-settings-art" src="/assets/hud-native/settings.png" width="67" height="69" alt="" draggable="false"></button><div class="camera-tools"><button data-action="zoom-in" aria-label="Zoom in">${icon('Plus', 20)}</button><button data-action="recenter" aria-label="Center village">${icon('LocateFixed', 18)}</button><button data-action="zoom-out" aria-label="Zoom out">${icon('Minus', 20)}</button></div></div>
  <div class="village-caption"><span class="caption-line"></span> HOME VILLAGE <span class="caption-line"></span><small>Town Hall Level ${m.townhallLevel}</small></div>
  <div class="bottom-left"><button class="attack-btn" data-action="campaign"><img class="campaign-map-icon" src="/assets/hud-native/campaign.png" width="90" height="74" alt="" draggable="false"><span>Attack!</span><small>SINGLE PLAYER</small></button></div>
  <div class="bottom-center">${
@@ -2900,7 +2900,7 @@ export class HUD {
        }<button class="train-add" data-action="army" aria-label="Train troops">${icon('Plus', 24)}<small>Train</small></button></div>`
      : ''
  }</div>
- <div class="bottom-right"><button class="collect-btn" data-action="collect">${coin}<span>Collect</span></button><button class="shop-btn ${this.drawerPanel === 'shop' ? 'open' : ''}" data-action="shop">${icon('ShoppingBasket', 38)}<span>Shop</span></button></div>
+ <div class="bottom-right"><button class="collect-btn" data-action="collect">${coin}<span>Collect</span></button><button class="shop-btn ${this.drawerPanel === 'shop' ? 'open' : ''}" data-action="shop"><img class="native-shop-icon" src="/assets/hud-native/shop.png" width="104" height="83" alt="" draggable="false"><span>Shop</span></button></div>
  ${this.coach()}
  <div class="control-hint">Drag to explore <span>·</span> Scroll to zoom <span>·</span> Click a building</div>`;
   }

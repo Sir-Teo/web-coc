@@ -508,6 +508,19 @@ h3 {
   display: grid;
   gap: 14px;
 }
+.right-tools .native-settings-btn {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.native-settings-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
 .camera-tools {
   pointer-events: auto;
   display: flex;
@@ -780,9 +793,10 @@ h3 {
   gap: 5px;
   text-shadow: 0 2px #4e762b;
 }
-.shop-btn svg {
-  color: #fff9d5;
-  filter: drop-shadow(0 2px #557532);
+.shop-btn .native-shop-icon {
+  width: 48px;
+  height: 38px;
+  object-fit: contain;
 }
 .shop-btn > span:not(.new-badge) {
   font-family: var(--heading);
@@ -2403,9 +2417,9 @@ h3 {
     border-bottom-width: 5px;
     gap: 3px;
   }
-  .shop-btn svg {
+  .shop-btn .native-shop-icon {
     height: 27px;
-    width: 27px;
+    width: 34px;
   }
   .shop-btn > span:not(.new-badge) {
     font-size: 22px;
