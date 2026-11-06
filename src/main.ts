@@ -20,6 +20,7 @@ import { layoutFromLink } from './game/layout-share';
 import { HUD } from './ui/hud';
 import { developerToolsEnabled } from './dev/access';
 import { configureDisplay, displaySize } from './game/display';
+import { correctCappedClock } from './game/capped-clock';
 import { recordBootResources, registerOfflineSupport } from './offline';
 import { decodeLoadedImages } from './game/image-decode';
 import { watchSystemMotion } from './ui/motion';
@@ -100,7 +101,12 @@ async function boot() {
         mode: Phaser.Scale.NONE,
         ...displaySize(window.innerWidth, window.innerHeight, 1),
       },
-      callbacks: { postBoot: configureDisplay },
+      callbacks: {
+        postBoot: (game) => {
+          correctCappedClock(game.loop);
+          configureDisplay(game);
+        },
+      },
       // The artwork already carries smooth alpha edges. Multisampling the entire canvas adds
       // a large resolve/bandwidth cost, especially on mobile GPUs; retain linear texture filtering.
       render: { pixelArt: false, antialias: true, antialiasGL: false },

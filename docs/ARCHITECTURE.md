@@ -98,6 +98,12 @@ fewer pixels at 2×, with the same CSS geometry and world zoom.
 
 `frame-pacing.ts` owns idle, dialog and battery frame-rate policy. The scene applies changes
 outside Phaser's step, coalesces pending changes and cancels an obsolete idle cap on input.
+`capped-clock.ts` installs a per-loop correction before Phaser starts: Phaser 4.2.1
+retains a limiter remainder after delivering it, so subsequent callbacks must subtract
+that already-consumed time. Switching to uncapped rendering preserves pending time;
+clock resets clear the accounting. Scheduling, smoothing and callback timestamps stay
+with Phaser. Browser regression cases compare elapsed time against an uncapped Phaser
+clock at 60/90/144 Hz and irregular refresh, across 15/30/60 FPS caps and cap changes.
 Simulation still advances at 20 Hz. Unit cases cover activity, reduced motion, live raids,
 replays and dialogs; phone browser cases cover density resets, taps and rotation.
 
