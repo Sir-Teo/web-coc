@@ -118,3 +118,11 @@ Without these controls, adaptive resolution and warmup progress can produce diff
 battle workloads. Headless software-rendered Chromium and `--cpu=4` are diagnostic
 comparisons; they do not establish performance on a physical phone. Repeat warmed
 runs without concurrent tests or builds, and report variation with the results.
+
+Add `--samplers=4` to cap the fragment texture units reported to the renderer before
+boot. This tests the tradeoff between smaller sampler shaders and more draw calls
+without changing source artwork. Supported caps are 1, 2, 4, 8, 16 and 32; the
+real device may enforce a lower limit. Compare `rendering.maxTextures` as well as
+canvas and battle hashes. This benchmark control does not change the game's
+normal renderer budget. A held-state gain alone does not establish a live-battle
+improvement; repeat live runs in both orders before choosing a renderer change.

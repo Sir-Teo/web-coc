@@ -23,6 +23,8 @@
  * --detail=0|1|2 holds the rendering detail level instead of using the adaptive governor.
  * --density=0.5 fixes the canvas density ceiling and disables adaptive resolution for this
  * run. Device/pixel budgets still apply. Use the same density and warmup for comparisons.
+ * --samplers=4 caps the reported fragment texture units to test shader complexity versus extra
+ * draw calls. It preserves source artwork and reports the renderer's actual sampler limit.
  */
 import { chromium } from '@playwright/test';
 import fs from 'node:fs/promises';
@@ -54,6 +56,8 @@ const detailArg = arg('detail');
 const detail = detailArg === undefined ? null : Number(detailArg);
 const densityArg = arg('density');
 const density = densityArg === undefined ? null : Number(densityArg);
+const samplersArg = arg('samplers');
+const samplers = samplersArg === undefined ? null : Number(samplersArg);
 const base = process.env.GAME_URL ?? 'http://localhost:5173';
 if (!['roster', 'mixed', 'th18'].includes(army)) throw Error('Use --army=roster, mixed or th18.');
 if (!['max', 'half'].includes(level)) throw Error('Use --level=max or half.');
@@ -83,6 +87,9 @@ if (detail !== null && (!Number.isInteger(detail) || detail < 0 || detail > 2))
 if (density !== null && (!Number.isFinite(density) || density <= 0))
   throw Error('Use a positive --density such as 0.5, 1 or 2.');
 
+if (samplers !== null && ![1, 2, 4, 8, 16, 32].includes(samplers))
+  throw Error('Use --samplers=1, 2, 4, 8, 16 or 32.');
+
 const browser = await chromium.launch(
   process.platform === 'darwin' ? { args: ['--use-angle=metal'] } : {},
 );
@@ -92,6 +99,19 @@ const page = await browser.newPage({
   isMobile: mobile,
   hasTouch: mobile,
 });
+// Emulate a lower fragment-sampler ceiling before Phaser discovers the GPU's limits.
+// The real context still supports every requested binding; only the renderer's budget changes.
+if (samplers !== null)
+  await page.addInitScript((limit) => {
+    for (const Context of [window.WebGLRenderingContext, window.WebGL2RenderingContext]) {
+      if (!Context) continue;
+      const read = Context.prototype.getParameter;
+      Context.prototype.getParameter = function (parameter) {
+        const actual = read.call(this, parameter);
+        return parameter === this.MAX_TEXTURE_IMAGE_UNITS ? Math.min(actual, limit) : actual;
+      };
+    }
+  }, samplers);
 // Compare context multisampling without changing texture filtering or production settings.
 if (msaa !== 'default')
   await page.addInitScript((enabled) => {
@@ -434,6 +454,7 @@ const rendering = await page.evaluate(() => {
     gl = game.renderer.gl;
   return {
     antialias: gl.getContextAttributes().antialias,
+    maxTextures: game.renderer.maxTextures,
     samples: gl.getParameter(gl.SAMPLES),
     canvas: [game.canvas.width, game.canvas.height],
     fpsLimit: game.loop.fpsLimit,
@@ -453,6 +474,7 @@ const report = {
     : {}),
   ...(detail !== null ? { detail } : {}),
   ...(density !== null ? { density } : {}),
+  ...(samplers !== null ? { samplers } : {}),
   army,
   level,
   stage,
