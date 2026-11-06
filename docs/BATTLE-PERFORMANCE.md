@@ -2134,6 +2134,23 @@ the first repaint at a new clock could not bias one path. This isolates body upd
 whole-battle FPS. The mobile stress run still has substantial simulation,
 other presentation and render-submission costs.
 
+## Ice Golem texture residency
+
+The defending level-five Ice Golem now packs its original sampling regions into a
+1056×3785 page instead of the 2014×2944 source layout. Decoded RGBA storage falls from
+23,716,864 to 15,987,840 bytes: 32.6%, or 7.37 MiB. The original texture URL and pixels
+remain available for cached older modules; the runtime selects the compact page. Download
+size stays roughly 3 MB. This measures texture storage; a whole-battle FPS gain has not
+been established.
+
+The atlas test checks both complete-image hashes, every copied source region and each
+vertex's unchanged geometry and translated UVs. The browser comparison draws all 294
+source root frames and their reflections: 588 cases. Against the original layout, the
+largest channel difference is one 8-bit step and the mean is 0.000504 steps on Chromium
+SwiftShader. Changing normalized UV denominators can change the final interpolation's
+rounding while retaining exactly the same source texels. Both phone and desktop replay
+checks cover actual body loading and defensive Freeze after the change.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

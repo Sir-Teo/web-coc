@@ -100,3 +100,14 @@ all source entity arrays. The importer refuses to substitute a building. The
 readiness audit now records missing wait targets across all nineteen lessons;
 Miner Mania independently references absent object `500000234`. Native handling
 of these missing targets requires verification before either guide can ship.
+
+### Compact defending body texture
+
+The runtime page is 1056×3785 instead of 2014×2944, preserving every sampled
+original RGBA region and changing only the corresponding UV offsets. It uses
+15,987,840 bytes of decoded texture storage instead of 23,716,864 (32.6% less).
+The original PNG remains at its established URL with its unchanged hash. The
+588-frame/reflection browser comparison against that original page differs by
+at most one 8-bit channel step (mean 0.000504); all source texels, geometry,
+colors and animation data remain exact. This is a residency reduction, with
+roughly unchanged download size and no established whole-battle FPS gain.

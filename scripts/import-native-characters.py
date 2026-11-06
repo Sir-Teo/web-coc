@@ -424,7 +424,7 @@ def build():
         images = {t: decoded['sc/' + sc.textures[t]['external']] for t in used}
         assets, textures, runtime = crop_textures(
             graph, images, f'{PREFIX}/{key}/texture',
-            compact=key in ('dragon/dragon5', 'dragon/golden-dragon'))
+            compact=key in ('dragon/dragon5', 'dragon/golden-dragon', 'ice_golem/icegolem-lvl5'))
         outputs.update(assets)
         arrays = {t: np.array(image) for t, image in images.items()}
         shadows = shadow_shapes(graph, arrays, names) if animation else {}

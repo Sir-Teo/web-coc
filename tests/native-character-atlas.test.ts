@@ -5,6 +5,7 @@ import evidence from '../reference/characters/art.json';
 import dragon5 from '../reference/characters/dragon/dragon5.json';
 import golden from '../reference/characters/dragon/golden-dragon.json';
 import dragon7 from '../reference/garrison/dragon7.json';
+import icegolem from '../reference/characters/ice_golem/icegolem-lvl5.json';
 import { nativeMeshTexture } from '../src/game/native-mesh';
 
 const hash = (data: Buffer) => createHash('sha256').update(data).digest('hex');
@@ -12,6 +13,7 @@ const hash = (data: Buffer) => createHash('sha256').update(data).digest('hex');
 for (const [name, runtime, bytes] of [
   ['dragon/dragon5', dragon5, 13_329_792],
   ['dragon/golden-dragon', golden, 15_955_328],
+  ['ice_golem/icegolem-lvl5', icegolem, 15_987_840],
 ] as const)
   it(`${name} packs exact source sampling regions and retains the legacy atlas`, async () => {
     const source = evidence.worlds[name];
