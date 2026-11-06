@@ -31,6 +31,7 @@ export const GARRISON_KINDS = {
   witch: { character: 'Witch', levels: { 4: 44 }, timing: 'split' },
   bowler: { character: 'Bowler', levels: { 4: 44 }, timing: 'split' },
   lavahound: { character: 'Lava Hound', levels: { 5: 234, 6: 44 }, timing: 'split' },
+  icegolem: { character: 'Ice Golem', levels: { 5: 235 }, timing: 'split' },
   electrotitan: { character: 'Electro Titan', levels: { 2: 44 }, timing: 'split' },
   goldendragon: { character: 'Golden Dragon', levels: { 1: 44 }, timing: 'split' },
   momma: { character: 'MOMMA', levels: { 1: 44 }, timing: 'split' },
@@ -290,7 +291,26 @@ export function garrisonDeathSpell(stats: GarrisonStats) {
   if (!stats.ability) return undefined;
   const ability = specialAbility(stats.ability.name, stats.ability.level);
   if (!ability.SelfSpell || !sourceFlag(ability, 'ActiveOnDeath')) return undefined;
+  // Ice Golem's zero-damage defensive freeze is a native spell, never a lightning bolt.
+  const spell = spellLevel(ability.SelfSpell, sourceNumber(ability, 'SelfSpellLevel'));
+  if (sourceNumber(spell, 'FreezeTimeMS') > 0 && !sourceNumber(spell, 'Damage')) return undefined;
   return spellHits(ability.SelfSpell, sourceNumber(ability, 'SelfSpellLevel'));
+}
+/** Defensive Ice Golem selects its own on-death spell through DefensiveTroop substitution. */
+export function garrisonDeathFreeze(stats: GarrisonStats) {
+  if (!stats.ability) return undefined;
+  const ability = specialAbility(stats.ability.name, stats.ability.level);
+  if (!ability.SelfSpell || !sourceFlag(ability, 'ActiveOnDeath')) return undefined;
+  const level = sourceNumber(ability, 'SelfSpellLevel');
+  const row = spellLevel(ability.SelfSpell, level);
+  if (sourceNumber(row, 'FreezeTimeMS') <= 0) return undefined;
+  return {
+    name: ability.SelfSpell,
+    level,
+    duration: sourceNumber(row, 'FreezeTimeMS') / 1000,
+    outerDuration: sourceNumber(row, 'FreezeOuterTimeMS') / 1000,
+    radius: sourceNumber(row, 'Radius') / 100,
+  };
 }
 /** Electro Titan: a constant `AuraSpell` at `AuraSpellLevel` around the living character. */
 export function garrisonAura(stats: GarrisonStats) {

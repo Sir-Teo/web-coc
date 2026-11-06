@@ -13,8 +13,18 @@ import { effectCue } from './troop-sounds';
 import { garrisonPreAttackEnabled } from './garrison-pre-attack';
 
 type Event =
-  'deploy' | 'preAttack' | 'attack' | 'hit' | 'die' | 'chain' | 'bounce' | 'projectileHit';
-type Binding = { name: string; row: number } & Partial<Record<Event, string>>;
+  | 'deploy'
+  | 'preAttack'
+  | 'attack'
+  | 'hit'
+  | 'die'
+  | 'chain'
+  | 'bounce'
+  | 'projectileHit'
+  | 'deathSpell';
+type Binding = { name: string; row: number; deathSpellDelay?: number } & Partial<
+  Record<Event, string>
+>;
 const bindings = source.garrisons as Record<string, Record<string, Binding>>;
 const EVENTS: readonly Event[] = [
   'deploy',
@@ -25,6 +35,7 @@ const EVENTS: readonly Event[] = [
   'chain',
   'bounce',
   'projectileHit',
+  'deathSpell',
 ];
 const bowlerImpactsEnabled = (battle: Battle, kind: GarrisonKind) =>
   kind === 'bowler' && !!battle.nativeGarrisonBowlerImpacts;
@@ -75,7 +86,10 @@ export function nativeGarrisonSoundCues(battle: Battle, defender: GarrisonDefend
       push('hit', `chain-hit:${ordinal}:${jumpIndex}`, jump.at);
     }
   }
-  if (defender.defeatedAt !== undefined) push('die', 'die', defender.defeatedAt);
+  if (defender.defeatedAt !== undefined) {
+    push('die', 'die', defender.defeatedAt);
+    push('deathSpell', 'death-spell', defender.defeatedAt + (binding.deathSpellDelay ?? 0));
+  }
   return cues;
 }
 

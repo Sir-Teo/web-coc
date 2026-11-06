@@ -19,8 +19,8 @@ function arena() {
 }
 
 it('captures every enabled source VisualLevel and defensive substitution', () => {
-  expect(Object.keys(source.garrisons)).toHaveLength(21);
-  expect(Object.values(source.garrisons).flatMap((levels) => Object.keys(levels))).toHaveLength(24);
+  expect(Object.keys(source.garrisons)).toHaveLength(22);
+  expect(Object.values(source.garrisons).flatMap((levels) => Object.keys(levels))).toHaveLength(25);
   for (const [kind, entry] of Object.entries(GARRISON_KINDS))
     for (const level of Object.keys(entry.levels).map(Number)) {
       const stats = garrisonStats(kind as keyof typeof GARRISON_KINDS, level),
@@ -71,6 +71,10 @@ for (const kind of Object.keys(GARRISON_KINDS) as (keyof typeof GARRISON_KINDS)[
           : [];
       });
     expect(expected.length).toBeGreaterThan(0);
+    if (kind === 'icegolem')
+      expected.push(
+        effectCue('IceGolem Freeze deploy lvl5_DEF', `garrison:${d.id}:death-spell`, 2),
+      );
     const cues = garrisonSoundCues(b);
     expect(cues).toEqual(expected);
     expect(new Set(cues.map((cue) => cue.key)).size).toBe(cues.length);

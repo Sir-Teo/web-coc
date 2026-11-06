@@ -114,10 +114,10 @@ it('retains all six original full-map layouts and distinguishes board limits fro
   const hybrid = audit.levels.find((level) => level.id === 'CHALLENGE_TH13_HYBRID')!;
   expect(hybrid.defenders[0]).toMatchObject({
     character: 'Ice Golem',
-    animationCaptured: false,
-    combatRowRetained: false,
+    animationCaptured: true,
+    combatRowRetained: true,
     ability: 'IceGolemOnDeathDEF',
-    abilityRetained: false,
+    abilityRetained: true,
   });
 });
 
@@ -145,4 +145,23 @@ it('retains source guide targets beyond the board, including legacy clamped fiel
     convertedY: 29,
     exact: true,
   });
+});
+
+it('records both absent source wait targets without inventing substitute buildings', () => {
+  expect(
+    audit.guideLevels
+      .filter((level) => level.missingWaitTargets.length)
+      .map((level) => ({ id: level.id, stage: level.stage, waits: level.missingWaitTargets })),
+  ).toEqual([
+    {
+      id: 'CHALLENGE_TH10_MINER',
+      stage: null,
+      waits: [{ step: 'TH10_Miner_Wait_For_Rage', sourceId: 500000234 }],
+    },
+    {
+      id: 'CHALLENGE_TH13_HYBRID',
+      stage: null,
+      waits: [{ step: 'TH13_Hybrid_Wait_For_Queen', sourceId: 500000108 }],
+    },
+  ]);
 });

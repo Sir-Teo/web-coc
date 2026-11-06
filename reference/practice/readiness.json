@@ -6,15 +6,28 @@
     "mapSize": 48,
     "sourceOffset": 2
   },
-  "coverageCatalogSha256": "0e35a21652a8e6fe793174a00ad5da53b5e309b90540d924bc2645be0aa65150",
+  "coverageCatalogSha256": "3fc08471cd584988308ca076d324d47f44e61779b0fac50d6949507c32b98c82",
   "sources": {
     "csv/deploy_steps.csv": "44b3e684b62a8cd33b9de3b13d245446d02069a3485263448d52dd7c612d8774",
+    "level/challenge_th10_bobat.json": "5b7299cdb8ea754ab8a2b71f4465399ea53ce51dbaadf037f6d7f0a4bb8e14e8",
     "level/challenge_th10_miner.json": "586d8256e3e0e312f9e3aa250bc96ea0eee83883c7ab5d2d49d82717559b78c0",
+    "level/challenge_th11_edrag.json": "61211573fc5a6a7e886365aee7cdf086920f4086cb0dcd854de25827a880fcad",
+    "level/challenge_th11_lavaloon.json": "dab1d5da5fe30fdd0ca33a4d3c49f118a50f2d07569591b51d5a2a1b633d3aaf",
+    "level/challenge_th12_bowigi.json": "82999c8f11303688405afe92464e59901119b0df89d05b0dcf2913b589917ec5",
     "level/challenge_th12_dragbat.json": "0408d834cb35d49afb9d2dddfef5af38befacb4d5b5812d620b619587568c4a6",
     "level/challenge_th12_yeti.json": "5dda28a591f971f243e2da5411d9e5b4ef0918fab9d59ee2b62fd4e4609c20da",
     "level/challenge_th13_hybrid.json": "60cab4d57544c39db0a4dbd227febd749f90b2236bb9e8f5fb642048cc173639",
+    "level/challenge_th4_giant.json": "a9fe72489b190d8a619bcb96edb5280a7e7279891a09dc2d7fb7af3f6b3233a3",
+    "level/challenge_th5_loon.json": "71f1edb8065d043dd9c2d343891fb7bac5c1e3b9f8da67440d0fe9fc635b4805",
+    "level/challenge_th6_giwiwa.json": "fafbc0d4f9944a15be65282dc045fb37b78fd002819eaf9da5a507e778e570ab",
+    "level/challenge_th7_dragon.json": "1cd05abadf7cbde036a5f0bb5163715b38a3e630c06a0f5fe0f58972920589a4",
+    "level/challenge_th7_hog.json": "5157101770b43b78ec736e3ba94231a56240a2ea92cac3e100ef94d080f93986",
+    "level/challenge_th7_minion.json": "4f6dea4a68666f54dddcd030feffa3631783d76a565c4d700775092207a32649",
+    "level/challenge_th8_gowipe.json": "fb8748b50764f942485e84766d700fa70b54d5b8376fc52019f3778c32480200",
     "level/challenge_th8_gowiva.json": "46cd91aaf600acdf9796700037aa31396bdfa551672d689f2cee4dfd752143af",
     "level/challenge_th9_babydqw.json": "70ab5cd66af8a7e5bad617d3ca8acff1ddb6e3eda4f69eeba7847f4d84f86dfa",
+    "level/challenge_th9_lavaloon.json": "a42a19c8848a80106e84917bd0ee25d46849ea41d776d51edd68213d04dc5f63",
+    "level/challenge_th9_witch.json": "607bf53b2bfe4c59a45938bdc40e542982df5444eebac0d96f9da08fd1d1c4b7",
     "logic/buildings.csv": "9aed5fed876e2914a22fa7fed688a651c691ab06170d60e2bda8dc9262fbccb1",
     "logic/characters.csv": "5c3acc5b46ff9e7978f406b540264e65c93a846b69d03cd43326a9853703cb89",
     "logic/npcs.csv": "99dfcaeb4a622f76d4ed29ce444eedef88e92b49b8e0c574b34eea74e1278d6a",
@@ -679,7 +692,7 @@
       "name": "Bane of the Ring",
       "sourceLayout": "level/challenge_th13_hybrid.json",
       "stage": null,
-      "withheldReason": "Ice Golem 5 garrison body and defending death-freeze",
+      "withheldReason": "Guide TH13_Hybrid_Wait_For_Queen references absent source object 500000108",
       "useFullMapSize": true,
       "minimumBoardAtCurrentOffset": {
         "width": 49,
@@ -746,10 +759,10 @@
           "count": 2,
           "defensiveCharacter": "Defensive Ice Golem",
           "animation": "IceGolem_lvl5",
-          "animationCaptured": false,
-          "combatRowRetained": false,
+          "animationCaptured": true,
+          "combatRowRetained": true,
           "ability": "IceGolemOnDeathDEF",
-          "abilityRetained": false
+          "abilityRetained": true
         }
       ]
     },
@@ -880,56 +893,64 @@
       "name": "Giant Smash",
       "stage": 91,
       "minimumBoardForUnclampedTargets": 40,
-      "clampedTargets": []
+      "clampedTargets": [],
+      "missingWaitTargets": []
     },
     {
       "id": "CHALLENGE_TH5_LOON",
       "name": "Balloon Parade",
       "stage": 92,
       "minimumBoardForUnclampedTargets": 26,
-      "clampedTargets": []
+      "clampedTargets": [],
+      "missingWaitTargets": []
     },
     {
       "id": "CHALLENGE_TH6_GIWIWA",
       "name": "Meat Shield",
       "stage": 93,
       "minimumBoardForUnclampedTargets": 39,
-      "clampedTargets": []
+      "clampedTargets": [],
+      "missingWaitTargets": []
     },
     {
       "id": "CHALLENGE_TH7_DRAGON",
       "name": "Hot Stuff",
       "stage": 94,
       "minimumBoardForUnclampedTargets": 38,
-      "clampedTargets": []
+      "clampedTargets": [],
+      "missingWaitTargets": []
     },
     {
       "id": "CHALLENGE_TH7_HOG",
       "name": "Hog Rush",
       "stage": 95,
       "minimumBoardForUnclampedTargets": 48,
-      "clampedTargets": []
+      "clampedTargets": [],
+      "missingWaitTargets": []
     },
     {
       "id": "CHALLENGE_TH7_MINION",
       "name": "Air Raid",
       "stage": 96,
       "minimumBoardForUnclampedTargets": 48,
-      "clampedTargets": []
+      "clampedTargets": [],
+      "missingWaitTargets": []
     },
     {
       "id": "CHALLENGE_TH8_GOWIPE",
       "name": "Heavy Hitters",
       "stage": 97,
       "minimumBoardForUnclampedTargets": 45,
-      "clampedTargets": []
+      "clampedTargets": [],
+      "missingWaitTargets": []
     },
     {
       "id": "CHALLENGE_TH8_GOWIVA",
       "name": "Whirl Power",
       "stage": 153,
       "minimumBoardForUnclampedTargets": 48,
-      "clampedTargets": []
+      "clampedTargets": [],
+      "missingWaitTargets": []
     },
     {
       "id": "CHALLENGE_TH9_LAVALOON",
@@ -991,7 +1012,8 @@
           "convertedY": 49,
           "exact": false
         }
-      ]
+      ],
+      "missingWaitTargets": []
     },
     {
       "id": "CHALLENGE_TH9_WITCH",
@@ -1008,7 +1030,8 @@
           "convertedY": 48,
           "exact": false
         }
-      ]
+      ],
+      "missingWaitTargets": []
     },
     {
       "id": "CHALLENGE_TH9_BABYDQW",
@@ -1025,7 +1048,8 @@
           "convertedY": 40,
           "exact": true
         }
-      ]
+      ],
+      "missingWaitTargets": []
     },
     {
       "id": "CHALLENGE_TH10_BOBAT",
@@ -1060,7 +1084,8 @@
           "convertedY": 51,
           "exact": false
         }
-      ]
+      ],
+      "missingWaitTargets": []
     },
     {
       "id": "CHALLENGE_TH10_MINER",
@@ -1104,6 +1129,12 @@
           "convertedY": 32,
           "exact": false
         }
+      ],
+      "missingWaitTargets": [
+        {
+          "step": "TH10_Miner_Wait_For_Rage",
+          "sourceId": 500000234
+        }
       ]
     },
     {
@@ -1139,21 +1170,24 @@
           "convertedY": 50,
           "exact": true
         }
-      ]
+      ],
+      "missingWaitTargets": []
     },
     {
       "id": "CHALLENGE_TH11_LAVALOON",
       "name": "Lava & More Loons",
       "stage": 102,
       "minimumBoardForUnclampedTargets": 43,
-      "clampedTargets": []
+      "clampedTargets": [],
+      "missingWaitTargets": []
     },
     {
       "id": "CHALLENGE_TH12_BOWIGI",
       "name": "Bowling with Witches",
       "stage": 103,
       "minimumBoardForUnclampedTargets": 43,
-      "clampedTargets": []
+      "clampedTargets": [],
+      "missingWaitTargets": []
     },
     {
       "id": "CHALLENGE_TH12_DRAGBAT",
@@ -1188,7 +1222,8 @@
           "convertedY": 18,
           "exact": false
         }
-      ]
+      ],
+      "missingWaitTargets": []
     },
     {
       "id": "CHALLENGE_TH12_YETI",
@@ -1304,7 +1339,8 @@
           "convertedY": 17,
           "exact": true
         }
-      ]
+      ],
+      "missingWaitTargets": []
     },
     {
       "id": "CHALLENGE_TH13_HYBRID",
@@ -1392,6 +1428,12 @@
           "convertedX": 50,
           "convertedY": 22,
           "exact": false
+        }
+      ],
+      "missingWaitTargets": [
+        {
+          "step": "TH13_Hybrid_Wait_For_Queen",
+          "sourceId": 500000108
         }
       ]
     }

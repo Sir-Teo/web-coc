@@ -9,6 +9,7 @@ import { nonWallBuildings } from './building-lists';
 import { distance2D, distanceSquared2D } from './distance';
 import {
   garrisonLongShots,
+  garrisonDeathFreeze,
   garrisonPoisonOnHit,
   garrisonStats,
   garrisonStealth,
@@ -35,6 +36,7 @@ import {
 // Late campaign Spell Tower Rage (neutral without version 44 late state).
 import { defenderRageStats } from './native-rage';
 import { untargetable } from './spell-effects';
+import { castNativeSpell } from './native-spells';
 
 export interface GarrisonAttack {
   at: number;
@@ -311,6 +313,13 @@ export function stepGarrisonDefender(
     stopGarrisonPreAttack(battle, defender);
     delete defender.avoidingPoison;
     if (defender.defeatedAt !== undefined) {
+      const freeze = garrisonDeathFreeze(stats);
+      if (freeze && !defender.deathSpellCast) {
+        castNativeSpell(battle, freeze.name, freeze.level, 'defense', defender.x, defender.y, {
+          at: defender.defeatedAt,
+        });
+        defender.deathSpellCast = true;
+      }
       if (stats.secondary) spawnSecondaries(battle, defender, stats, spawnGarrisonDefender);
       if (stats.summon) killPendingSummons(battle, defender);
       if (stats.ability && !defender.bolts) {

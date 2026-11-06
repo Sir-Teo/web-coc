@@ -37,7 +37,7 @@ it('an explicit full preload completes every body while retaining selected entri
   const death = art.commonDeathArt();
   await Promise.all([art.loadCharacterArt(), art.loadCharacterArt(new Set(['Dragon7']))]);
   const names = Object.keys(art.characterArts());
-  expect(names).toHaveLength(24);
+  expect(names).toHaveLength(25);
   expect(names[0]).toBe('Dragon7');
   expect(names.at(-1)).toBe('Defending Builder');
   expect(art.characterArt('Archer9')).toBe(archer);

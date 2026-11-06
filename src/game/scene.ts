@@ -356,6 +356,7 @@ const NATIVE_SPELL_COLOR: Record<string, number> = {
   FireSpiritBurn: 0xff8a3c,
   ElectroDragonDie: 0x8fd8ff,
   IceGolemFreeze: 0x9fe3ff,
+  IceGolemFreeze_DEF: 0x9fe3ff,
 };
 // The painted surround covers the full supported zoom-out view beyond the playable grid.
 const TERRAIN_SCALE = 1.35;

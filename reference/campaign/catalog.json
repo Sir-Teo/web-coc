@@ -2,7 +2,7 @@
   "bundle": "7f04bdfdc4124b1f49308423bb8f4aa8b137aae3",
   "withheld": {
     "CHALLENGE_TH10_MINER": "Guide TH10_Miner_Wait_For_Rage references absent source object 500000234",
-    "CHALLENGE_TH13_HYBRID": "Ice Golem 5 garrison body and defending death-freeze"
+    "CHALLENGE_TH13_HYBRID": "Guide TH13_Hybrid_Wait_For_Queen references absent source object 500000108"
   },
   "stages": [
     {

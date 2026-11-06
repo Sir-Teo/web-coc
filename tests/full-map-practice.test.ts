@@ -28,10 +28,14 @@ function recording() {
 }
 
 it('takes full-map bounds from pinned source Practice metadata only in the new replay era', () => {
-  expect(REPLAY_VERSION).toBe(234);
+  expect(REPLAY_VERSION).toBeGreaterThanOrEqual(233);
   const { initial } = recording();
   expect(NATIVE_CAMPAIGN.filter((s) => s.useFullMapSize)).toHaveLength(17);
   expect(replayBattle(initial).boardSize).toBe(52);
+  for (const version of [233, 234, REPLAY_VERSION]) {
+    expect(compatibleReplayVersion(version)).toBe(true);
+    expect(replayBattle(initial, version).boardSize).toBe(52);
+  }
   for (const version of [44, 51, 232]) {
     expect(compatibleReplayVersion(version)).toBe(true);
     expect(replayBattle(initial, version).boardSize).toBeUndefined();

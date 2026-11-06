@@ -60,3 +60,43 @@ maximum research show 4 s and 9 s respectively, with a 7.5-tile radius and a two
 `Radius`; the native `FreezeOuterTimeMS` field is not modeled. This
 information update changes no spell or combat behavior. Chromium and WebKit checks cover
 source values, researched tiers, scrolling and controls at three viewport sizes.
+
+## Defending Ice Golem, recording version 235
+
+Portable Clan Castle rosters now admit Ice Golem level five. Its pinned
+`DefensiveTroop` substitution resolves **Defensive Ice Golem**, not the attacking
+row: 3,400 HP, 80 damage per two-second period, a 1.5-second fresh windup and
+0.5-second recovery. Existing garrison hit frost applies the source two-second,
+50% slow. The source `IceGolem_lvl5` block uses the original level-three exports
+at Scale 115; the captured graph retains all three directions, both attack
+variants, idle/walk timelines and original texture regions. The common original
+death clip remains shared. Previous character assets are unchanged.
+
+`IceGolemOnDeathDEF` level five casts `IceGolemFreeze_DEF` level five once at the
+recorded death point. It uses the existing native defensive spell adapter:
+DeployTimeMS 0 + ChargingTimeMS 300 + HitTimeMS 400, then a single pulse freezes
+eligible ground/air attackers for three seconds inside 5.5 tiles. Dead, ejected,
+recalled, unborn and burrowed units retain the adapter's exclusions. Friendly
+buildings and defenders are not frozen. The attacking spell's seven seconds and
+7.5 tiles are not used. `FreezeOuterTimeMS=2475` is retained in the source but
+remains unmodelled, as in the existing attacking spell implementation. The exact
+modern executable's range, duration and timing interpretation is unverified.
+
+The defensive deployment's original `freeze_spell_01.ogg` cue uses its source
+80% volume and fixed 90% pitch at death. It reuses an existing audio file. The
+body, ordinary attack/death samples, blue unit status and existing spell ring are
+integrated; the defensive spell's original ground frost emitters remain a visual
+fidelity gap. Zero-damage freeze never creates Electro Dragon lightning bolts.
+
+`tests/ice-golem-garrison.test.ts` covers source values, split windup, hit frost,
+range boundaries, allegiance/exclusions, delayed pulse, one cast per death,
+version gating and a real lure/kill/freeze/thaw recording in both seek directions.
+Character source tests verify all retained geometry, timelines, UV regions and
+pixels. Sound checks include the extra native death-spell cue.
+
+Bane of the Ring remains withheld. Its pinned source guide
+`TH13_Hybrid_Wait_For_Queen` waits for object `500000108`, which is absent from
+all source entity arrays. The importer refuses to substitute a building. The
+readiness audit now records missing wait targets across all nineteen lessons;
+Miner Mania independently references absent object `500000234`. Native handling
+of these missing targets requires verification before either guide can ship.

@@ -141,7 +141,7 @@ def garrison_roster():
     for key, character, levels in re.findall(
             r"^\s+(\w+): \{ character: '([^']+)', levels: \{([^}]+)\}", body.group(1), re.M):
         roster[key] = (character, [int(level) for level in re.findall(r'(\d+):', levels)])
-    require(len(roster) == 21, 'Garrison roster changed; review sound coverage')
+    require(len(roster) == 22, 'Garrison roster changed; review sound coverage')
     return roster
 
 
@@ -234,6 +234,13 @@ def build():
             if key in ('electrodragon', 'bowler'):
                 events['preAttack'] = 'PreAttackEffect'
             binding = entries([row], events)
+            if key == 'icegolem':
+                abilities = records(source('logic/special_abilities.csv', pins))
+                ability = list(inherited(abilities[row['SpecialAbilities']]))[int(row['SpecialAbilitiesLevel']) - 1]
+                require(ability.get('ActiveOnDeath') == 'TRUE', 'Ice Golem death ability changed')
+                spell = list(inherited(spells_table[ability['SelfSpell']]))[int(ability['SelfSpellLevel']) - 1]
+                binding.update(entries([spell], {'deathSpell': 'DeployEffect'}))
+                binding['deathSpellDelay'] = int(spell.get('DeployTimeMS', 0)) / 1000
             if key == 'bowler':
                 projectile = row.get('Projectile')
                 require(projectile in projectiles, f'Missing defending Bowler projectile: {projectile}')
@@ -266,7 +273,7 @@ def build():
         target = f'{AUDIO}/{path.split("/")[-1]}'
         files[ROOT / 'public' / target] = blob
         sounds[path] = dict(path=target, bytes=len(blob), sha256=pins[path])
-    sources = {p: pins[p] for p in ['logic/characters.csv', 'logic/heroes.csv', 'logic/pets.csv', 'logic/spells.csv',
+    sources = {p: pins[p] for p in ['logic/characters.csv', 'logic/heroes.csv', 'logic/pets.csv', 'logic/spells.csv', 'logic/special_abilities.csv',
                                     'logic/effects.csv', 'logic/projectiles.csv', *sounds]}
     catalog = dict(clientVersion='18.400.21', bundle=BUNDLE, baseUrl=BASE, sources=sources,
                    troops=troops, garrisons=garrisons, spells=spells, destroyed=DESTROYED,

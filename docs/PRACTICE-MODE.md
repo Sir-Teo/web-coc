@@ -115,14 +115,14 @@ recorded defender or guide blockers. The report pins
 each original layout by SHA-256 and distinguishes
 captured animation/defender rows from source special-ability coverage.
 
-| Level | Footprints beyond the legacy board | Additional missing defender coverage |
+| Level | Footprints beyond the legacy board | Coverage and blockers |
 | --- | ---: | --- |
 | Whirl Power | 1 | Body and roster supported at stage 153 (`Balloon Goblin3` in the source) |
 | Angry Babies | 5 | None identified by this coverage audit |
 | Miner Mania | 1 | Guide waits for absent object `500000234`; native missing-target semantics need verification |
 | Flying Circus | 32 | None identified by this coverage audit |
 | Yeti Smash | 12 | Lava Hound 5 and Baby Dragon 6 supported at stage 154 |
-| Bane of the Ring | 4 | Ice Golem 5 body/defender row and `IceGolemOnDeathDEF` |
+| Bane of the Ring | 4 | Ice Golem 5 supported from version 235; guide waits for absent object `500000108` |
 
 The report also checks guide targets across all 19 lessons. Source targets reach tile 49,
 which becomes tile 51 after this adapter's offset and needs a local board of at least 52

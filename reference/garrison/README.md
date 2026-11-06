@@ -647,3 +647,14 @@ The browser comparison selects the four-bit PNG only when the GPU reports that
 precision. It keeps the same error thresholds, batching and context-restoration
 checks. Runtime vertices, UVs, textures and colors remain unmodified. The Python
 sampler's default stays ideal, preserving other source witnesses.
+
+## Version 235: Ice Golem defender
+
+Ice Golem five is available to portable rosters with its original captured body,
+defensive substitution, split melee timer, hit frost and defensive death-freeze.
+See the [Ice Golem reference](../attacking-ice-golem/README.md#defending-ice-golem-recording-version-235)
+for source values, verification and remaining spell-art/outer-duration gaps.
+Bane of the Ring remains withheld because its guide waits for absent source object
+`500000108`; the updated readiness report distinguishes that issue from the
+completed defender capture. Current campaign indices and all earlier rosters stay
+unchanged, and version 234 remains accepted.

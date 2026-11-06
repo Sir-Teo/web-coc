@@ -65,11 +65,18 @@ def build():
     guide_levels = []
     for lesson in practice['levels']:
         outside, maximum = [], 0
+        raw, _ = json.JSONDecoder().raw_decode(read(npcs[lesson['id']][0]['LevelFile']).decode('utf-8'))
+        objects = {entity['id'] for key in ('buildings', 'traps') for entity in raw.get(key, [])}
+        missing_waits = []
         for entry in npcs[lesson['id']]:
             step = entry.get('DeploySteps')
             if not step:
                 continue
             for point in guide_steps[step]:
+                if point.get('WaitUntilDestroyed') == 'TRUE' and point.get('ObjectGID'):
+                    target = int(point['ObjectGID'])
+                    if target not in objects:
+                        missing_waits.append(dict(step=step, sourceId=target))
                 if 'PosX' not in point:
                     continue
                 x, y = int(point['PosX']) + offset, int(point['PosY']) + offset
@@ -81,7 +88,7 @@ def build():
                                         exact=point.get('ForceExactLocation') == 'TRUE'))
         guide_levels.append(dict(id=lesson['id'], name=lesson['name'], stage=lesson['stage'],
                                  minimumBoardForUnclampedTargets=maximum,
-                                 clampedTargets=outside))
+                                 clampedTargets=outside, missingWaitTargets=missing_waits))
     levels = []
     audited = [name for name, rows in npcs.items() if rows[0].get('LevelFile') in LEVEL_PINS]
     stage_ids = {stage['id']: stage['stage'] for stage in campaign['stages']}

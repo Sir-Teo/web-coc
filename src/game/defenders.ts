@@ -112,6 +112,8 @@ export interface GarrisonDefender extends DefenderState {
   /** Electro Dragon: the chain lightning in progress and the death bolts. */
   chain?: GarrisonChain;
   bolts?: GarrisonBolt[];
+  /** Version 235: Ice Golem's native defensive death spell has been cast once. */
+  deathSpellCast?: true;
   /** Witch summon cycle. */
   summon?: GarrisonSummonState;
   /** Electro Titan: aura pulses already applied. */

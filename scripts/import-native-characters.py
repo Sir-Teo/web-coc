@@ -75,6 +75,8 @@ PINS = {
     'sc/chr_worker.sc': 'b2e3e50390a1994fa6dec0a490392591e584aec81b49d3a1006b41e184a34cab',
     'sc/chr_worker_0.sctx': '6f01598f31076c26bdee9554497b45d97f5620e44d51bb3eb5d10e3b4756e0d7',
     'sc/chr_balloon.sc': '7db110cf0ed98808a65550d17c240a0c10753db35958c766987f4b21afa5641d',
+    'sc/chr_ice_golem.sc': 'aae9869e0a8f98f442654dc3f594e6d2c5852b5d06214437267fad94becd332e',
+    'sc/chr_ice_golem_0.sctx': 'f01346919404bc618c91740457362ca6d32f4ec1156727d47ba84647412ee5aa',
     'sc/chr_balloon_0.sctx': '41aeaa3afb6e3da9f33b8c51513f8ae473a1e89c893771b289d219b9a30aa0ef',
     # The Bowler's trollBoulder_lvl3 views and shadow sample this shared buildings texture.
     'sc/buildings_6.sctx': '68d97a39c2bfbcf94f820f4091c078a9516f41dafe27744e7de26e30864d1ffc',
@@ -94,6 +96,8 @@ PINS = {
 }
 PREFIX = 'assets/characters-native'
 PRACTICE_STAGES = {'CHALLENGE_TH8_GOWIVA': 153, 'CHALLENGE_TH12_YETI': 154}
+# Portable defender coverage; its Practice guide waits for an absent source object.
+EXTRA_CHARACTERS = ['Ice Golem']
 # One captured graph per original character file. The first group is animated by the
 # runtime now; MOMMA (pekka9) and Golden Dragon (dragonx) share already-pinned files.
 FAMILIES = {
@@ -119,6 +123,7 @@ FAMILIES = {
     'worker': dict(swf='sc/chr_worker.sc', animations=['Defending Builder']),
     # Balloon 5 deliberately uses the source's shared Balloon Goblin3 animation.
     'balloon': dict(swf='sc/chr_balloon.sc', animations=['Balloon Goblin3']),
+    'ice_golem': dict(swf='sc/chr_ice_golem.sc', animations=['IceGolem_lvl5']),
 }
 # Projectile exports live in the character files above or in shared original files.
 PROJECTILES = ['Arrow_small_darkElixirFire2', 'Headhunter_Card_lvl3', 'super_gargoyle_projectile',
@@ -343,6 +348,7 @@ def build():
         else:
             require(len(rows) == 1 and set(rows[0]) == {'Name', 'NumberValue'}, f'Unexpected {name} cells')
             repair_globals[name] = int(rows[0]['NumberValue'])
+    needed.update(EXTRA_CHARACTERS)
     # Summoned, secondary and defensive rows that later garrison families will need.
     for name in list(needed):
         for row in inherited_levels(characters[name]):

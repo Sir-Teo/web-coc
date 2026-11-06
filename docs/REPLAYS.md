@@ -1898,3 +1898,13 @@ Their original body graphs are loaded by the source animation name. Combat reads
 their own inherited source rows, including the defensive Hound's twelve-Pup death
 wave. Older recordings reject these newly admitted levels and retain their existing
 Balloon 8 and Lava Hound 6 behavior.
+
+## Version 235: defending Ice Golem five
+
+Portable garrisons admit Ice Golem five with the captured `IceGolem_lvl5` body,
+`Defensive Ice Golem` row, existing hit frost and `IceGolemOnDeathDEF` death spell.
+The defender marks its native defensive spell cast once; the existing spell engine
+applies the delayed ground/air Freeze. It cannot create Electro Dragon death bolts.
+Version 234 remains supported and rejects this newly captured roster kind. Earlier
+rosters and campaign indices are unchanged. See the [Ice Golem reference](../reference/attacking-ice-golem/README.md#defending-ice-golem-recording-version-235)
+for the source values, replay witnesses and remaining fidelity gaps.

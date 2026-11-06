@@ -105,7 +105,7 @@ EXPANSION_PINS = {
 expected.update(EXPANSION_PINS)
 WITHHELD = {
     'CHALLENGE_TH10_MINER': 'Guide TH10_Miner_Wait_For_Rage references absent source object 500000234',
-    'CHALLENGE_TH13_HYBRID': 'Ice Golem 5 garrison body and defending death-freeze',
+    'CHALLENGE_TH13_HYBRID': 'Guide TH13_Hybrid_Wait_For_Queen references absent source object 500000108',
 }
 challenges = [g for g in records if CHALLENGE.fullmatch(g[0]['Name'])]
 challenges.sort(key=lambda g: (int(CHALLENGE.fullmatch(g[0]['Name']).group(1)), g[0]['Name']))

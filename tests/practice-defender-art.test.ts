@@ -4,12 +4,14 @@ import { expect, it } from 'vitest';
 import evidence from '../reference/characters/art.json';
 import balloon from '../reference/characters/balloon/balloon-goblin3.json';
 import hound from '../reference/characters/lava_hound/adseeker-lvl5.json';
+import icegolem from '../reference/characters/ice_golem/icegolem-lvl5.json';
 import type { NativeMeshGraph } from '../src/game/native-mesh';
 
 const hash = (data: Buffer) => createHash('sha256').update(data).digest('hex');
 for (const [name, value] of [
   ['balloon/balloon-goblin3', balloon],
   ['lava_hound/adseeker-lvl5', hound],
+  ['ice_golem/icegolem-lvl5', icegolem],
 ] as const)
   it(`${name} retains source timelines, geometry and every sampling region`, async () => {
     const source = evidence.worlds[name];

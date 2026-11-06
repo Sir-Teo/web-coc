@@ -55,6 +55,10 @@ export const CHARACTER_LOADERS: Record<string, () => Promise<CharacterGraphEntry
     import('../../reference/characters/golem/golem-lvl6.json').then((module) =>
       characterGraphEntry(module.default, 'character-golem-lvl6'),
     ),
+  IceGolem_lvl5: () =>
+    import('../../reference/characters/ice_golem/icegolem-lvl5.json').then((module) =>
+      characterGraphEntry(module.default, 'character-icegolem-lvl5'),
+    ),
   Necromancer_lvl2: () =>
     import('../../reference/characters/witch/necromancer-lvl2.json').then((module) =>
       characterGraphEntry(module.default, 'character-necromancer-lvl2'),

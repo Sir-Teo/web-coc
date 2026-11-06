@@ -7,6 +7,7 @@
     "logic/heroes.csv": "658c9721fb0fd5488b69ca3555ef5597d521f28dde95af051a2a98ccbdd65197",
     "logic/pets.csv": "dc210b12a02fea73e47339e62cea0e2d50d462f736d81e7616d782533bec48ad",
     "logic/spells.csv": "385159e00327e6a1567cd91f1585b4ed0717d3f4475f0823398243482598289d",
+    "logic/special_abilities.csv": "c978dd90ff2335e60d988f3476d78bec72672e8c074344d149096e89951181eb",
     "logic/effects.csv": "5c6d5b67d6407345123b8d55872ed77ee6697b466d20d1fa21e25a723c511e9f",
     "logic/projectiles.csv": "71cda0e457ad88a6772f6421a22419b24d6bcf78d0ed305f09184404889a72dc",
     "sfx/Ability_DarkOrb_Attack.ogg": "b4442a86b2d829063934145510aa6707ca2a2bb1bb56158705c492747caff390",
@@ -1195,6 +1196,17 @@
         "attack": "Headhunter_attack",
         "hit": "Headhunter Hit",
         "die": "Headhunter Die"
+      }
+    },
+    "icegolem": {
+      "5": {
+        "name": "Defensive Ice Golem",
+        "row": 5,
+        "deploy": "Icegolem Deploy",
+        "hit": "ps_chr_icegolem_hit",
+        "die": "Giant Die",
+        "deathSpell": "IceGolem Freeze deploy lvl5_DEF",
+        "deathSpellDelay": 0.0
       }
     },
     "lavahound": {
@@ -3061,6 +3073,15 @@
         "volume": 0.8,
         "minPitch": 0.95,
         "maxPitch": 0.95,
+        "delay": 0.0
+      }
+    ],
+    "IceGolem Freeze deploy lvl5_DEF": [
+      {
+        "sound": "sfx/freeze_spell_01.ogg",
+        "volume": 0.8,
+        "minPitch": 0.9,
+        "maxPitch": 0.9,
         "delay": 0.0
       }
     ],
