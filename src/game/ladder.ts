@@ -53,6 +53,8 @@ let playable: number[] | null = null;
 function ladderVillages() {
   return (playable ??= NATIVE_CAMPAIGN.flatMap((stage, index) =>
     (stage.family ?? 'goblin') !== 'forged' &&
+    // Full-map additions use Practice's 52-cell board; ladder retains its 48-cell era.
+    stage.stage <= 150 &&
     stage.recommendedTownHall !== null &&
     !nativeCampaignIssues(index).length
       ? [index]

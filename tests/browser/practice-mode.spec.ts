@@ -340,3 +340,50 @@ test('full-map guide reaches the original Queen deployment beyond the old board 
   });
   expect(action).toMatchObject({ type: 'hero', hero: 'queen', x: 51, y: 29 });
 });
+
+for (const [index, name] of [
+  [150, 'Angry Babies'],
+  [151, 'Flying Circus'],
+] as const)
+  test(`appended full-map Practice: ${name} opens from its campaign card`, async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await boot(page, 12);
+    const card = page.locator(`#campaign-stage-${index}`);
+    await card.scrollIntoViewIfNeeded();
+    await expect(card).toContainText(name);
+    await card.locator(`[data-action="campaign-scout:${index}"]`).tap();
+    await expect(page.locator('.campaign-scout')).toContainText('Army provided');
+    await page.locator(`.campaign-scout [data-action="attack:${index}"]`).tap();
+    await expect.poll(() => page.evaluate(() => window.__game.model.battle?.boardSize)).toBe(52);
+    await expect(page.locator('.practice-guide')).toBeVisible();
+    await page.waitForFunction(() => window.__game.scene.artSettled);
+    await page.waitForTimeout(500);
+    expect(
+      await page.evaluate(() => ({
+        fixed: window.__game.model.battle!.fixedArmy,
+        steps: window.__game.model.practiceGuide!.steps.length,
+      })),
+    ).toMatchObject({ fixed: true });
+    await page.screenshot({ path: `output/playtest/practice-appended-${index}-390.png` });
+    const first = await page.evaluate(() => {
+      const m = window.__game.model;
+      const spot = m.practiceGuide!.spot!;
+      return {
+        spot,
+        unit: m.guideStep!.unit,
+        screen: window.__game.scene.screenFor(spot.x, spot.y),
+      };
+    });
+    await page.touchscreen.tap(first.screen.x, first.screen.y);
+    await expect
+      .poll(() => page.evaluate(() => window.__game.model.battle!.units.length))
+      .toBeGreaterThan(0);
+    const action = await page.evaluate(() => {
+      const m = window.__game.model;
+      m.finishBattle();
+      return m.state.raidLog![0].replay!.actions[0];
+    });
+    expect(action).toMatchObject({ ...first.spot, ...first.unit, type: 'hero' });
+    expect(errors).toEqual([]);
+  });

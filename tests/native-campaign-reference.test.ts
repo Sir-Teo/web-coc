@@ -16,17 +16,22 @@ it('keeps every native village and its source-verified opening, branches and bos
   expect(goblin).toHaveLength(90);
   // All six withheld Challenges exceeded the legacy 48-cell board. Three also need defender
   // captures or behavior; the pinned readiness audit records the combined blockers.
-  expect(challenges).toHaveLength(13);
-  expect(Object.keys(catalog.withheld)).toHaveLength(6);
-  expect(catalog.stages.map((s: any) => s.stage)).toEqual(
-    Array.from({ length: 103 }, (_, i) => i + 1),
-  );
+  expect(challenges).toHaveLength(15);
+  expect(Object.keys(catalog.withheld)).toHaveLength(4);
+  expect(catalog.stages.map((s: any) => s.stage)).toEqual([
+    ...Array.from({ length: 103 }, (_, i) => i + 1),
+    151,
+    152,
+  ]);
   // The Challenge tail is ordered by the Town Hall its record name states.
-  expect(challenges.map((s: any) => s.recommendedTownHall)).toEqual([
-    ...challenges.map((s: any) => s.recommendedTownHall).sort((a: number, b: number) => a - b),
+  expect(challenges.slice(0, 13).map((s: any) => s.recommendedTownHall)).toEqual([
+    ...challenges
+      .slice(0, 13)
+      .map((s: any) => s.recommendedTownHall)
+      .sort((a: number, b: number) => a - b),
   ]);
   expect(challenges[0].name).toBe('Giant Smash');
-  expect(challenges.at(-1).name).toBe('Bowling with Witches');
+  expect(challenges[12].name).toBe('Bowling with Witches');
   expect(layouts.map((s) => s.stage)).toEqual(catalog.stages.map((s: any) => s.stage));
   expect(catalog.stages.slice(0, 4).map((s: any) => [s.name, s.gold, s.elixir])).toEqual([
     ['Payback', 500, 500],
@@ -54,7 +59,7 @@ it('keeps every native village and its source-verified opening, branches and bos
 
 it('detects reference drift offline against the committed source manifest', () => {
   const provenance = JSON.parse(read('provenance.json'));
-  expect(Object.keys(provenance.sources)).toHaveLength(110);
+  expect(Object.keys(provenance.sources)).toHaveLength(112);
   for (const [file, sha] of Object.entries(provenance.outputs)) {
     expect(createHash('sha256').update(read(file)).digest('hex'), file).toBe(sha);
   }

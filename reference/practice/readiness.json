@@ -25,6 +25,8 @@
       "id": "CHALLENGE_TH10_MINER",
       "name": "Miner Mania",
       "sourceLayout": "level/challenge_th10_miner.json",
+      "stage": null,
+      "withheldReason": "Guide TH10_Miner_Wait_For_Rage references absent source object 500000234",
       "useFullMapSize": true,
       "minimumBoardAtCurrentOffset": {
         "width": 47,
@@ -51,6 +53,8 @@
       "id": "CHALLENGE_TH12_DRAGBAT",
       "name": "Flying Circus",
       "sourceLayout": "level/challenge_th12_dragbat.json",
+      "stage": 152,
+      "withheldReason": null,
       "useFullMapSize": true,
       "minimumBoardAtCurrentOffset": {
         "width": 49,
@@ -480,6 +484,8 @@
       "id": "CHALLENGE_TH12_YETI",
       "name": "Yeti Smash",
       "sourceLayout": "level/challenge_th12_yeti.json",
+      "stage": null,
+      "withheldReason": "Lava Hound 5 garrison body",
       "useFullMapSize": true,
       "minimumBoardAtCurrentOffset": {
         "width": 49,
@@ -672,6 +678,8 @@
       "id": "CHALLENGE_TH13_HYBRID",
       "name": "Bane of the Ring",
       "sourceLayout": "level/challenge_th13_hybrid.json",
+      "stage": null,
+      "withheldReason": "Ice Golem 5 garrison body and defending death-freeze",
       "useFullMapSize": true,
       "minimumBoardAtCurrentOffset": {
         "width": 49,
@@ -749,6 +757,8 @@
       "id": "CHALLENGE_TH8_GOWIVA",
       "name": "Whirl Power",
       "sourceLayout": "level/challenge_th8_gowiva.json",
+      "stage": null,
+      "withheldReason": "Balloon 5 garrison body",
       "useFullMapSize": true,
       "minimumBoardAtCurrentOffset": {
         "width": 40,
@@ -787,6 +797,8 @@
       "id": "CHALLENGE_TH9_BABYDQW",
       "name": "Angry Babies",
       "sourceLayout": "level/challenge_th9_babydqw.json",
+      "stage": 151,
+      "withheldReason": null,
       "useFullMapSize": true,
       "minimumBoardAtCurrentOffset": {
         "width": 49,
@@ -1001,7 +1013,7 @@
     {
       "id": "CHALLENGE_TH9_BABYDQW",
       "name": "Angry Babies",
-      "stage": null,
+      "stage": 151,
       "minimumBoardForUnclampedTargets": 51,
       "clampedTargets": [
         {
@@ -1146,7 +1158,7 @@
     {
       "id": "CHALLENGE_TH12_DRAGBAT",
       "name": "Flying Circus",
-      "stage": null,
+      "stage": 152,
       "minimumBoardForUnclampedTargets": 51,
       "clampedTargets": [
         {

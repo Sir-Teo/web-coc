@@ -148,8 +148,8 @@ describe('original Tornado Trap source', () => {
         TornadoOuterForcePercent: '65',
       });
     expect(tornadoCombat.siegeForceTier).toBe(1);
-    const placements = campaign.stages.flatMap((stage, index) =>
-      stage.traps.filter((p) => p[0] === 12000016).map((p) => [index, p[3]]),
+    const placements = campaign.stages.flatMap((stage) =>
+      stage.traps.filter((p) => p[0] === 12000016).map((p) => [stage.stage - 1, p[3]]),
     );
     expect(placements).toEqual([
       ...Array(4).fill([66, 1]),
@@ -159,6 +159,7 @@ describe('original Tornado Trap source', () => {
       // Two more on the Challenge villages the same client ships.
       [100, 2],
       [101, 2],
+      [151, 3],
     ]);
   });
 
@@ -222,12 +223,14 @@ describe('original Tornado Trap source', () => {
     ];
     // Duplicate texture pages consolidate into shared files: the directory
     // holds the unique locally-referenced entries.
-    const expected = [...new Set(
-      references
-        .map((v) => v.path)
-        .filter((p) => p.startsWith('assets/buildings/tornado-trap-native/'))
-        .map((p) => p.replace('assets/buildings/tornado-trap-native/', '')),
-    )];
+    const expected = [
+      ...new Set(
+        references
+          .map((v) => v.path)
+          .filter((p) => p.startsWith('assets/buildings/tornado-trap-native/'))
+          .map((p) => p.replace('assets/buildings/tornado-trap-native/', '')),
+      ),
+    ];
     expect(await files('assets/buildings/tornado-trap-native')).toEqual(expected.sort());
     for (const preview of Object.values(tornadoNative.previews)) {
       const { data, info } = await sharp(`public/${preview.path}`)
@@ -290,8 +293,8 @@ describe('original Goblin Freeze Trap source', () => {
     });
     expect(freezeCombat.spell).not.toHaveProperty('Damage');
     expect(freezeCombat.triggerFps).toBe(24);
-    const placements = campaign.stages.flatMap((stage, index) =>
-      stage.traps.filter((p) => p[0] === 12000018).map((p) => [index, p[3]]),
+    const placements = campaign.stages.flatMap((stage) =>
+      stage.traps.filter((p) => p[0] === 12000018).map((p) => [stage.stage - 1, p[3]]),
     );
     expect(placements).toEqual([...Array(12).fill([64, 1]), ...Array(10).fill([81, 1])]);
   });

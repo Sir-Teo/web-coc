@@ -88,25 +88,31 @@ assert [g[0]['MapInstanceName'] for g in npcs] == [f'npc{i}' for i in range(1, 9
 # They carry no MapInstanceName and no MapDependencies; their Town Hall comes from the
 # record name, which is the only place the source states it.
 CHALLENGE = re.compile(r'CHALLENGE_TH(\d+)_[A-Z0-9]+')
-# All six exceed the current board after the adapter's coordinate conversion. Three also
-# need garrison captures; Ice Golem needs its defending death-freeze behavior. Baby Dragon 6
-# is already captured. scripts/audit-native-practice.py records every source footprint and
-# defender instead of hiding secondary blockers behind the first missing animation.
-# Shifting, rescaling or substituting a layout is never allowed.
+# The legacy 48-cell audit retains all six originally withheld layouts. Full-map bounds
+# now support two with complete defender and guide coverage; append them after the frozen tail.
+EXPANSIONS = {
+    'CHALLENGE_TH9_BABYDQW': 151,
+    'CHALLENGE_TH12_DRAGBAT': 152,
+}
+EXPANSION_PINS = {
+    'level/challenge_th9_babydqw.json': '70ab5cd66af8a7e5bad617d3ca8acff1ddb6e3eda4f69eeba7847f4d84f86dfa',
+    'level/challenge_th12_dragbat.json': '0408d834cb35d49afb9d2dddfef5af38befacb4d5b5812d620b619587568c4a6',
+}
+expected.update(EXPANSION_PINS)
 WITHHELD = {
-    'CHALLENGE_TH8_GOWIVA': 'Balloon 5 garrison; Full-map layout not yet fielded',
-    'CHALLENGE_TH12_YETI': 'Lava Hound 5 garrison; Full-map layout not yet fielded',
-    'CHALLENGE_TH13_HYBRID': 'Ice Golem 5 garrison and defending death-freeze; Full-map layout not yet fielded',
-    'CHALLENGE_TH9_BABYDQW': 'Full-map layout not yet fielded',
-    'CHALLENGE_TH10_MINER': 'Full-map layout not yet fielded',
-    'CHALLENGE_TH12_DRAGBAT': 'Full-map layout not yet fielded',
+    'CHALLENGE_TH10_MINER': 'Guide TH10_Miner_Wait_For_Rage references absent source object 500000234',
+    'CHALLENGE_TH8_GOWIVA': 'Balloon 5 garrison body',
+    'CHALLENGE_TH12_YETI': 'Lava Hound 5 garrison body',
+    'CHALLENGE_TH13_HYBRID': 'Ice Golem 5 garrison body and defending death-freeze',
 }
 challenges = [g for g in records if CHALLENGE.fullmatch(g[0]['Name'])]
 challenges.sort(key=lambda g: (int(CHALLENGE.fullmatch(g[0]['Name']).group(1)), g[0]['Name']))
 assert len(challenges) == 19
 assert set(WITHHELD) <= {g[0]['Name'] for g in challenges}
-challenges = [g for g in challenges if g[0]['Name'] not in WITHHELD]
-villages = npcs + challenges
+expansions = sorted([g for g in challenges if g[0]['Name'] in EXPANSIONS], key=lambda g: EXPANSIONS[g[0]['Name']])
+challenges = [g for g in challenges if g[0]['Name'] not in WITHHELD and g[0]['Name'] not in EXPANSIONS]
+assert len(challenges) == 13
+villages = npcs + challenges + expansions
 paths = ['logic/npcs.csv', 'logic/buildings.csv', 'logic/traps.csv',
          'localization/texts.csv', 'localization/texts_patch.csv']
 paths += [g[0]['LevelFile'] for g in villages]
@@ -114,8 +120,8 @@ paths += ['logic/obstacles.csv', 'logic/decos.csv']
 with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
     sources = dict(zip(paths, (digest(data) for data in pool.map(read_source, paths))))
 translations = {r['TID']: r['EN'] for path in paths[3:5] for r in table(path) if r.get('EN')}
-ids = {g[0]['Name']: i + 1 for i, g in enumerate(villages)}
-layouts = [dict(stage=i + 1, **layout(g[0]['LevelFile'])) for i, g in enumerate(villages)]
+ids = {g[0]['Name']: EXPANSIONS.get(g[0]['Name'], i + 1) for i, g in enumerate(villages)}
+layouts = [dict(stage=ids[g[0]['Name']], **layout(g[0]['LevelFile'])) for g in villages]
 used = {b['data'] for v in layouts for key in ['buildings', 'traps'] for b in v[key]}
 entities = {}
 for path in paths[1:3]:
@@ -129,7 +135,7 @@ stages = []
 for i, group in enumerate(villages):
     row = group[0]
     challenge = CHALLENGE.fullmatch(row['Name'])
-    stages.append(dict(stage=i + 1, id=row['Name'], name=translations[row['TID']],
+    stages.append(dict(stage=ids[row['Name']], id=row['Name'], name=translations[row['TID']],
                        family='challenge' if challenge else 'goblin',
                        dependencies=[ids[r['MapDependencies']] for r in group if 'MapDependencies' in r],
                        gold=int(row.get('Gold', 0)), elixir=int(row.get('Elixir', 0)),
@@ -223,6 +229,6 @@ for name, content in outputs.items():
     else:
         target.write_text(content)
 print(f'{"Verified" if args.check else "Wrote"} {len(villages)} villages '
-      f'({len(npcs)} Goblin map, {len(challenges)} Challenge, {len(WITHHELD)} withheld), '
+      f'({len(npcs)} Goblin map, {len(challenges) + len(expansions)} Challenge, {len(WITHHELD)} withheld), '
       f'{len(used)} building/trap types, '
       f'{sum(len(v["buildings"]) for v in layouts)} building placements; {len(sources)} pinned sources.')

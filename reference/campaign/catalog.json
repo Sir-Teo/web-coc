@@ -1,12 +1,10 @@
 {
   "bundle": "7f04bdfdc4124b1f49308423bb8f4aa8b137aae3",
   "withheld": {
-    "CHALLENGE_TH8_GOWIVA": "Balloon 5 garrison; Full-map layout not yet fielded",
-    "CHALLENGE_TH12_YETI": "Lava Hound 5 garrison; Full-map layout not yet fielded",
-    "CHALLENGE_TH13_HYBRID": "Ice Golem 5 garrison and defending death-freeze; Full-map layout not yet fielded",
-    "CHALLENGE_TH9_BABYDQW": "Full-map layout not yet fielded",
-    "CHALLENGE_TH10_MINER": "Full-map layout not yet fielded",
-    "CHALLENGE_TH12_DRAGBAT": "Full-map layout not yet fielded"
+    "CHALLENGE_TH10_MINER": "Guide TH10_Miner_Wait_For_Rage references absent source object 500000234",
+    "CHALLENGE_TH8_GOWIVA": "Balloon 5 garrison body",
+    "CHALLENGE_TH12_YETI": "Lava Hound 5 garrison body",
+    "CHALLENGE_TH13_HYBRID": "Ice Golem 5 garrison body and defending death-freeze"
   },
   "stages": [
     {
@@ -4028,6 +4026,268 @@
           "DeploySteps": "TH12_Bowigi_CleanUp"
         }
       ]
+    },
+    {
+      "stage": 151,
+      "id": "CHALLENGE_TH9_BABYDQW",
+      "name": "Angry Babies",
+      "family": "challenge",
+      "dependencies": [],
+      "gold": 300000,
+      "elixir": 300000,
+      "darkElixir": 3000,
+      "recommendedTownHall": 9,
+      "nativeRows": [
+        {
+          "Name": "CHALLENGE_TH9_BABYDQW",
+          "TID": "TID_CHALLENGE_TH9_BABYDQW",
+          "Type": "TUTORIAL",
+          "TutorialUnlockTHLevel": "9",
+          "TutorialTHLevel": "9",
+          "LevelFile": "level/challenge_th9_babydqw.json",
+          "Gold": "300000",
+          "Elixir": "300000",
+          "DarkElixir": "3000",
+          "SinglePlayer": "TRUE",
+          "FixedArmyUnitType": "Healer",
+          "FixedArmyUnitLevel": "4",
+          "FixedArmyUnitCountOrStage": "5",
+          "DeploySteps": "TH9_BabydQW_ArcherQueen",
+          "UseFullMapSize": "TRUE",
+          "DefendingHero": "Barbarian King",
+          "DefendingHeroLevel": "30",
+          "VillageBackground": "60000000"
+        },
+        {
+          "FixedArmyUnitType": "Baby Dragon",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "14",
+          "DeploySteps": "TH9_BabydQW_Healers",
+          "DefendingHero": "Archer Queen",
+          "DefendingHeroLevel": "30"
+        },
+        {
+          "FixedArmyUnitType": "Barbarian King",
+          "FixedArmyUnitLevel": "30",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "Wait_7500ms"
+        },
+        {
+          "FixedArmyUnitType": "Archer Queen",
+          "FixedArmyUnitLevel": "30",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH9_BabydQW_Info_Wait"
+        },
+        {
+          "FixedArmyUnitType": "Jump",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH9_BabydQW_Wait_For_WallBreakers"
+        },
+        {
+          "FixedArmyUnitType": "Rage",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "2",
+          "DeploySteps": "TH9_BabydQW_WallBreakers"
+        },
+        {
+          "FixedArmyUnitType": "Healing",
+          "FixedArmyUnitLevel": "6",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH9_BabydQW_Wait_For_Poison"
+        },
+        {
+          "FixedArmyUnitType": "Poison",
+          "FixedArmyUnitLevel": "3",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH9_BabydQW_Poison"
+        },
+        {
+          "FixedArmyUnitType": "Wall Breaker",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "5",
+          "DeploySteps": "TH9_BabydQW_Rage"
+        },
+        {
+          "DeploySteps": "TH9_BabydQW_Wait_For_King"
+        },
+        {
+          "DeploySteps": "TH9_BabydQW_BarbarianKing"
+        },
+        {
+          "DeploySteps": "TH9_BabydQW_Wait_For_Jump"
+        },
+        {
+          "DeploySteps": "TH9_BabydQW_Jump"
+        },
+        {
+          "DeploySteps": "TH9_BabydQW_Wait_For_BabyDragons"
+        },
+        {
+          "DeploySteps": "TH9_BabydQW_BabyDragons"
+        },
+        {
+          "DeploySteps": "TH9_BabydQW_Spells"
+        }
+      ]
+    },
+    {
+      "stage": 152,
+      "id": "CHALLENGE_TH12_DRAGBAT",
+      "name": "Flying Circus",
+      "family": "challenge",
+      "dependencies": [],
+      "gold": 600000,
+      "elixir": 600000,
+      "darkElixir": 6000,
+      "recommendedTownHall": 12,
+      "nativeRows": [
+        {
+          "Name": "CHALLENGE_TH12_DRAGBAT",
+          "TID": "TID_CHALLENGE_TH12_DRAGBAT",
+          "Type": "TUTORIAL",
+          "TutorialUnlockTHLevel": "12",
+          "TutorialTHLevel": "12",
+          "LevelFile": "level/challenge_th12_dragbat.json",
+          "Gold": "600000",
+          "Elixir": "600000",
+          "DarkElixir": "6000",
+          "SinglePlayer": "TRUE",
+          "FixedArmyUnitType": "Barbarian King",
+          "FixedArmyUnitLevel": "65",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH12_Dragbat_BarbarianKing",
+          "UseFullMapSize": "TRUE",
+          "DefendingHero": "Barbarian King",
+          "DefendingHeroLevel": "65",
+          "VillageBackground": "60000000"
+        },
+        {
+          "FixedArmyUnitType": "Archer Queen",
+          "FixedArmyUnitLevel": "65",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "Wait_1000ms",
+          "DefendingHero": "Archer Queen",
+          "DefendingHeroLevel": "65"
+        },
+        {
+          "FixedArmyUnitType": "Grand Warden",
+          "FixedArmyUnitLevel": "40",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH12_Dragbat_ArcherQueen",
+          "DefendingHero": "Grand Warden",
+          "DefendingHeroLevel": "40"
+        },
+        {
+          "FixedArmyUnitType": "Dragon",
+          "FixedArmyUnitLevel": "7",
+          "FixedArmyUnitCountOrStage": "10",
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "FixedArmyUnitType": "Balloon",
+          "FixedArmyUnitLevel": "8",
+          "FixedArmyUnitCountOrStage": "10",
+          "DeploySteps": "TH12_Dragbat_Balloons1"
+        },
+        {
+          "FixedArmyUnitType": "Ice Golem",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "2",
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "FixedArmyUnitType": "Bat Spell",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "9",
+          "DeploySteps": "TH12_Dragbat_SpawnBats1"
+        },
+        {
+          "FixedArmyUnitType": "Freeze",
+          "FixedArmyUnitLevel": "7",
+          "FixedArmyUnitCountOrStage": "2",
+          "DeploySteps": "TH12_Dragbat_Wait_For_IceGolems"
+        },
+        {
+          "FixedArmyUnitType": "Rage",
+          "FixedArmyUnitLevel": "6",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH12_Dragbat_IceGolems"
+        },
+        {
+          "FixedArmyUnitType": "Stone Slammer",
+          "FixedArmyUnitLevel": "3",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH12_Dragbat_Wait_For_Dragons"
+        },
+        {
+          "FixedArmyUnitType": "Balloon",
+          "FixedArmyUnitLevel": "8",
+          "FixedArmyUnitCountOrStage": "8",
+          "FixedArmyUnitAlliance": "TRUE",
+          "DeploySteps": "TH12_Dragbat_Balloons2"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH12_Dragbat_Balloons3"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH12_Dragbat_Balloons4"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH12_Dragbat_StoneSlammer"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH12_Dragbat_Dragons"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH12_Dragbat_Balloons5"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH12_Dragbat_GrandWarden"
+        },
+        {
+          "DeploySteps": "Wait_7500ms"
+        },
+        {
+          "DeploySteps": "TH12_Dragbat_Rage"
+        },
+        {
+          "DeploySteps": "TH12_Dragbat_Wait_For_Bats"
+        },
+        {
+          "DeploySteps": "TH12_Dragbat_SpawnBats2"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH12_Dragbat_Freeze1"
+        },
+        {
+          "DeploySteps": "Wait_5000ms"
+        },
+        {
+          "DeploySteps": "TH12_Dragbat_Freeze2"
+        }
+      ]
     }
   ],
   "entities": {
@@ -4114,6 +4374,12 @@
       "Width": "3",
       "Height": "3",
       "TID": "TID_BUILDING_MINI_SPELL_FACTORY"
+    },
+    "1000059": {
+      "Name": "Siege Workshop",
+      "Width": "4",
+      "Height": "4",
+      "TID": "TID_SIEGE_WORKSHOP"
     },
     "1000071": {
       "Name": "Hero Hall",

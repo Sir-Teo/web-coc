@@ -57,14 +57,14 @@ const source = raw as unknown as {
   >;
 };
 /**
- * The whole campaign: the client's 90 Goblin map villages, the 13 Challenges this game can
- * field, and the forged tail that carries it to 150. Every forged village places only
+ * The whole campaign: the client's 90 Goblin map villages, the 15 Challenges this game can
+ * field, and the frozen 47-village forged tail. Source additions follow that tail. Every forged village places only
  * entities and levels an imported one already proves, so all three share the same tables.
  */
 export const NATIVE_CAMPAIGN: NativeStage[] = [
   ...source.stages,
   ...(forged as unknown as { stages: NativeStage[] }).stages,
-];
+].sort((a, b) => a.stage - b.stage);
 export const NATIVE_SCENERY = source.scenery;
 export const NATIVE_COMBAT = source.combat;
 const KINDS: Record<number, BuildingKind> = {

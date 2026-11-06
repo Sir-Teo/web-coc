@@ -8,6 +8,7 @@
     "level/challenge_th11_edrag.json": "61211573fc5a6a7e886365aee7cdf086920f4086cb0dcd854de25827a880fcad",
     "level/challenge_th11_lavaloon.json": "dab1d5da5fe30fdd0ca33a4d3c49f118a50f2d07569591b51d5a2a1b633d3aaf",
     "level/challenge_th12_bowigi.json": "82999c8f11303688405afe92464e59901119b0df89d05b0dcf2913b589917ec5",
+    "level/challenge_th12_dragbat.json": "0408d834cb35d49afb9d2dddfef5af38befacb4d5b5812d620b619587568c4a6",
     "level/challenge_th4_giant.json": "a9fe72489b190d8a619bcb96edb5280a7e7279891a09dc2d7fb7af3f6b3233a3",
     "level/challenge_th5_loon.json": "71f1edb8065d043dd9c2d343891fb7bac5c1e3b9f8da67440d0fe9fc635b4805",
     "level/challenge_th6_giwiwa.json": "fafbc0d4f9944a15be65282dc045fb37b78fd002819eaf9da5a507e778e570ab",
@@ -15,6 +16,7 @@
     "level/challenge_th7_hog.json": "5157101770b43b78ec736e3ba94231a56240a2ea92cac3e100ef94d080f93986",
     "level/challenge_th7_minion.json": "4f6dea4a68666f54dddcd030feffa3631783d76a565c4d700775092207a32649",
     "level/challenge_th8_gowipe.json": "fb8748b50764f942485e84766d700fa70b54d5b8376fc52019f3778c32480200",
+    "level/challenge_th9_babydqw.json": "70ab5cd66af8a7e5bad617d3ca8acff1ddb6e3eda4f69eeba7847f4d84f86dfa",
     "level/challenge_th9_lavaloon.json": "a42a19c8848a80106e84917bd0ee25d46849ea41d776d51edd68213d04dc5f63",
     "level/challenge_th9_witch.json": "607bf53b2bfe4c59a45938bdc40e542982df5444eebac0d96f9da08fd1d1c4b7",
     "localization/texts.csv": "affdf43926df044cb3c09d833b07365aa01ea99985771afa5fa0dd926f36c569",
@@ -1737,7 +1739,7 @@
       "id": "CHALLENGE_TH9_BABYDQW",
       "name": "Angry Babies",
       "townHall": 9,
-      "stage": null,
+      "stage": 151,
       "gold": 300000,
       "elixir": 300000,
       "dark": 3000,
@@ -1797,8 +1799,200 @@
           "count": 5
         }
       ],
-      "steps": [],
-      "heroFlags": []
+      "steps": [
+        {
+          "name": "TH9_BabydQW_ArcherQueen",
+          "text": "Deploy the <c9916c8>Archer Queen</c> to start clearing a path into the village.",
+          "unit": "Archer Queen",
+          "count": 1,
+          "at": [
+            45,
+            38
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true,
+          "exact": true
+        },
+        {
+          "name": "TH9_BabydQW_Healers",
+          "text": "Deploy <c54a0fe>Healers</c> to support the <c9916c8>Archer Queen</c>.",
+          "unit": "Healer",
+          "count": 5,
+          "at": [
+            48,
+            38
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true,
+          "exact": true
+        },
+        {
+          "name": "Wait_7500ms",
+          "forceType": true,
+          "duration": 7500
+        },
+        {
+          "name": "TH9_BabydQW_Info_Wait",
+          "text": "Wait patiently until <c9916c8>Archer Queen</c> destroys <cf70d16>Bomb Tower</c>.",
+          "forceType": true,
+          "duration": 25000,
+          "show": {
+            "data": 1000032,
+            "x": 28,
+            "y": 23
+          }
+        },
+        {
+          "name": "TH9_BabydQW_Wait_For_WallBreakers",
+          "forceType": true,
+          "waitFor": {
+            "data": 1000009,
+            "x": 39,
+            "y": 22
+          }
+        },
+        {
+          "name": "TH9_BabydQW_WallBreakers",
+          "text": "Deploy <c54a0fe>Wall Breakers</c> to save some time.",
+          "unit": "Wall Breaker",
+          "count": 5,
+          "at": [
+            43,
+            29
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true,
+          "exact": true
+        },
+        {
+          "name": "TH9_BabydQW_Wait_For_Poison",
+          "forceType": true,
+          "waitFor": {
+            "data": 1000032,
+            "x": 28,
+            "y": 23
+          }
+        },
+        {
+          "name": "TH9_BabydQW_Poison",
+          "text": "Use <ce98714>Poison Spell</c> to slow down <cf70d16>Enemy Heroes</c>.",
+          "unit": "Poison",
+          "count": 1,
+          "at": [
+            30,
+            25
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true,
+          "exact": true
+        },
+        {
+          "name": "TH9_BabydQW_Rage",
+          "text": "Use <cf07bf8>Rage Spell</c> to boost both <c9916c8>Archer Queen</c> and <c54a0fe>Healers</c>.",
+          "unit": "Rage",
+          "count": 1,
+          "at": [
+            36,
+            25
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true,
+          "exact": true
+        },
+        {
+          "name": "TH9_BabydQW_Wait_For_King",
+          "forceType": true,
+          "waitFor": {
+            "data": 1000019,
+            "x": 29,
+            "y": 17
+          }
+        },
+        {
+          "name": "TH9_BabydQW_BarbarianKing",
+          "text": "Deploy <c9916c8>Barbarian King</c> to clear the corner.",
+          "unit": "Barbarian King",
+          "count": 1,
+          "at": [
+            45,
+            2
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true
+        },
+        {
+          "name": "TH9_BabydQW_Wait_For_Jump",
+          "forceType": true,
+          "waitFor": {
+            "data": 1000020,
+            "x": 32,
+            "y": 8
+          }
+        },
+        {
+          "name": "TH9_BabydQW_Jump",
+          "text": "Use <c85ff3b>Jump Spell</c> so that <c9916c8>Barbarian King</c> can join the action!",
+          "unit": "Jump",
+          "count": 1,
+          "at": [
+            32,
+            13
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true
+        },
+        {
+          "name": "TH9_BabydQW_Wait_For_BabyDragons",
+          "forceType": true,
+          "waitFor": {
+            "data": 1000012,
+            "x": 24,
+            "y": 14
+          }
+        },
+        {
+          "name": "TH9_BabydQW_BabyDragons",
+          "text": "Most <cf70d16>Air Defenses</c> are destroyed. Time to deploy <c54a0fe>Baby Dragons</c>!",
+          "unit": "Baby Dragon",
+          "count": 14,
+          "at": [
+            10,
+            5
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true
+        },
+        {
+          "name": "TH9_BabydQW_Spells",
+          "text": "Use remaining <cf07bf8>Rage Spell</c> and <cffe346>Heal Spell</c> to complete the attack.",
+          "duration": 10000
+        }
+      ],
+      "heroFlags": [
+        {
+          "hero": "Barbarian King",
+          "x": 24,
+          "y": 26
+        },
+        {
+          "hero": "Archer Queen",
+          "x": 25,
+          "y": 19
+        }
+      ]
     },
     {
       "id": "CHALLENGE_TH10_BOBAT",
@@ -3413,7 +3607,7 @@
       "id": "CHALLENGE_TH12_DRAGBAT",
       "name": "Flying Circus",
       "townHall": 12,
-      "stage": null,
+      "stage": 152,
       "gold": 600000,
       "elixir": 600000,
       "dark": 6000,
@@ -3486,8 +3680,319 @@
           "castle": true
         }
       ],
-      "steps": [],
-      "heroFlags": []
+      "steps": [
+        {
+          "name": "TH12_Dragbat_BarbarianKing",
+          "text": "Deploy the <c9916c8>Barbarian King</c>.",
+          "unit": "Barbarian King",
+          "count": 1,
+          "at": [
+            20,
+            1
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true,
+          "exact": true
+        },
+        {
+          "name": "Wait_1000ms",
+          "forceType": true,
+          "duration": 1000
+        },
+        {
+          "name": "TH12_Dragbat_ArcherQueen",
+          "text": "Deploy <c9916c8>Archer Queen</c>.",
+          "unit": "Archer Queen",
+          "count": 1,
+          "at": [
+            20,
+            1
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true,
+          "exact": true
+        },
+        {
+          "name": "Wait_2500ms",
+          "forceType": true,
+          "duration": 2500
+        },
+        {
+          "name": "TH12_Dragbat_Balloons1",
+          "text": "Snipe the <cf70d16>Archer Tower</c> with some <c54a0fe>Balloons</c>.",
+          "unit": "Balloon",
+          "count": 2,
+          "at": [
+            2,
+            16
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true
+        },
+        {
+          "name": "Wait_1000ms",
+          "forceType": true,
+          "duration": 1000
+        },
+        {
+          "name": "TH12_Dragbat_SpawnBats1",
+          "text": "Use <c9916c8>Bat Spells</c> to get rid of <cf70d16>Eagle Artillery</c> and <cf70d16>Single Inferno Tower</c>.",
+          "unit": "Bat Spell",
+          "count": 5,
+          "at": [
+            17,
+            16
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true,
+          "exact": true
+        },
+        {
+          "name": "TH12_Dragbat_Wait_For_IceGolems",
+          "forceType": true,
+          "waitFor": {
+            "data": 1000004,
+            "x": 3,
+            "y": 18
+          }
+        },
+        {
+          "name": "TH12_Dragbat_IceGolems",
+          "text": "Deploy <c54a0fe>Ice Golems</c> to shield <c9916c8>Archer Queen</c>.",
+          "unit": "Ice Golem",
+          "count": 2,
+          "at": [
+            2,
+            23
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true,
+          "forceLocation": true
+        },
+        {
+          "name": "TH12_Dragbat_Wait_For_Dragons",
+          "forceType": true,
+          "waitFor": {
+            "data": 1000012,
+            "x": 15,
+            "y": 24
+          }
+        },
+        {
+          "name": "TH12_Dragbat_Balloons2",
+          "text": "Snipe the <cf70d16>Archer Tower</c> with some <c54a0fe>Balloons</c>.",
+          "unit": "Balloon",
+          "count": 1,
+          "at": [
+            11,
+            47
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true
+        },
+        {
+          "name": "Wait_2500ms",
+          "forceType": true,
+          "duration": 2500
+        },
+        {
+          "name": "TH12_Dragbat_Balloons3",
+          "text": "Snipe the <cf70d16>Archer Tower</c> with some <c54a0fe>Balloons</c>.",
+          "unit": "Balloon",
+          "count": 2,
+          "at": [
+            48,
+            35
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true
+        },
+        {
+          "name": "Wait_2500ms",
+          "forceType": true,
+          "duration": 2500
+        },
+        {
+          "name": "TH12_Dragbat_Balloons4",
+          "text": "Snipe the <cf70d16>Archer Tower</c> with some <c54a0fe>Balloons</c>.",
+          "unit": "Balloon",
+          "count": 3,
+          "at": [
+            48,
+            16
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true
+        },
+        {
+          "name": "Wait_2500ms",
+          "forceType": true,
+          "duration": 2500
+        },
+        {
+          "name": "TH12_Dragbat_StoneSlammer",
+          "text": "Deploy <c54a0fe>Stone Slammer</c> to destroy <cf70d16>Multi Inferno Tower</c>.",
+          "unit": "Stone Slammer",
+          "count": 1,
+          "at": [
+            40,
+            2
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true
+        },
+        {
+          "name": "Wait_2500ms",
+          "forceType": true,
+          "duration": 2500
+        },
+        {
+          "name": "TH12_Dragbat_Dragons",
+          "text": "Deploy <c54a0fe>Dragons</c> in a line.",
+          "unit": "Dragon",
+          "count": 2,
+          "at": [
+            1,
+            34
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true
+        },
+        {
+          "name": "Wait_1000ms",
+          "forceType": true,
+          "duration": 1000
+        },
+        {
+          "name": "TH12_Dragbat_Balloons5",
+          "text": "Deploy remaining <c54a0fe>Balloons</c>.",
+          "unit": "Balloon",
+          "count": 2,
+          "at": [
+            2,
+            38
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true
+        },
+        {
+          "name": "Wait_1000ms",
+          "forceType": true,
+          "duration": 1000
+        },
+        {
+          "name": "TH12_Dragbat_GrandWarden",
+          "text": "Now deploy your <c9916c8>Grand Warden</c>. Use flight mode!",
+          "unit": "Grand Warden",
+          "count": 1,
+          "at": [
+            2,
+            39
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true
+        },
+        {
+          "name": "Wait_7500ms",
+          "forceType": true,
+          "duration": 7500
+        },
+        {
+          "name": "TH12_Dragbat_Rage",
+          "text": "Using <cf07bf8>Rage Spells</c> will help you take down tough targets.",
+          "unit": "Rage",
+          "count": 1,
+          "at": [
+            18,
+            35
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true
+        },
+        {
+          "name": "TH12_Dragbat_Wait_For_Bats",
+          "forceType": true,
+          "waitFor": {
+            "data": 1000027,
+            "x": 34,
+            "y": 15
+          }
+        },
+        {
+          "name": "TH12_Dragbat_SpawnBats2",
+          "text": "Use <c9916c8>Bat Spells</c> to destroy the remaining <cf70d16>Wizard Tower</c>.",
+          "unit": "Bat Spell",
+          "count": 4,
+          "at": [
+            42,
+            23
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true
+        },
+        {
+          "name": "Wait_1000ms",
+          "forceType": true,
+          "duration": 1000
+        },
+        {
+          "name": "TH12_Dragbat_Freeze1",
+          "text": "Use <c38eaff>Freeze Spell</c> to keep the <c54a0fe>Bats</c> alive. Aim for both <cf70d16>Wizard Tower</c> and <cf70d16>Air Defense</c>!",
+          "unit": "Freeze",
+          "count": 1,
+          "at": [
+            39,
+            25
+          ],
+          "radius": 2.0,
+          "pause": true,
+          "forceType": true
+        },
+        {
+          "name": "Wait_5000ms",
+          "forceType": true,
+          "duration": 5000
+        },
+        {
+          "name": "TH12_Dragbat_Freeze2",
+          "text": "Use remaining <c38eaff>Freeze Spell</c> and <c9916c8>Grand Warden Ability</c> to ensure that the <cf70d16>Town Hall</c> falls.",
+          "duration": 15000
+        }
+      ],
+      "heroFlags": [
+        {
+          "hero": "Barbarian King",
+          "x": 22,
+          "y": 25
+        },
+        {
+          "hero": "Archer Queen",
+          "x": 18,
+          "y": 31
+        },
+        {
+          "hero": "Grand Warden",
+          "x": 9,
+          "y": 24
+        }
+      ]
     },
     {
       "id": "CHALLENGE_TH12_YETI",

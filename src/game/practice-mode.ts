@@ -11,7 +11,7 @@ import type { Army, SpellBook } from './model';
 /**
  * Practice Mode: the client's single-player Practice levels, each fought with the army it
  * provides instead of the player's own (logic/npcs.csv, imported by
- * scripts/import-native-practice.py). The villages are campaign stages 91 to 103. See
+ * scripts/import-native-practice.py). The villages are campaign stages 91 to 103, 151 and 152. See
  * docs/PRACTICE-MODE.md.
  */
 export interface PracticeLevel {
@@ -19,7 +19,7 @@ export interface PracticeLevel {
   name: string;
   /** The Town Hall that opens the level. */
   townHall: number;
-  /** Its campaign stage, or null for the six Challenges this game withholds. */
+  /** Its campaign stage, or null for the withheld Challenges this game withholds. */
   stage: number | null;
   gold: number;
   elixir: number;
@@ -177,7 +177,7 @@ function level(row: (typeof catalog.levels)[number]): PracticeLevel {
     })),
   };
 }
-/** All 19 Practice levels, by Town Hall, the six withheld ones included (stage null). */
+/** All 19 Practice levels, by Town Hall, the withheld ones included (stage null). */
 export const PRACTICE_LEVELS: readonly PracticeLevel[] = catalog.levels.map(level);
 /** The Practice level a campaign village is, by its index on the Goblin map, if any. */
 export const practiceLevelAt = (index: number) =>

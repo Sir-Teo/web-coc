@@ -6,6 +6,7 @@ import campaign from '../reference/campaign/catalog.json';
 import { BUILD_MIN, MAP_SIZE } from '../src/game/grid';
 import {
   NATIVE_CAMPAIGN,
+  NATIVE_COMBAT,
   nativeBuildings,
   nativeCampaignIssues,
 } from '../src/game/native-campaign';
@@ -59,33 +60,38 @@ it('accepts exact board edges and refuses each overrun or invalid coordinate', (
 });
 
 it('reports missing source tables instead of treating a known building kind as supported', () => {
-  // Workshop is registered, but no currently fielded campaign imports its source combat row.
-  withPlacement(
-    3,
-    3,
-    (index) => {
-      expect(nativeCampaignIssues(index).join()).toContain('Missing source stats');
-      expect(() => nativeBuildings(index)).toThrow('Missing source stats');
-    },
-    1000059,
-  );
+  const stats = NATIVE_COMBAT[1000059];
+  delete NATIVE_COMBAT[1000059];
+  try {
+    withPlacement(
+      3,
+      3,
+      (index) => {
+        expect(nativeCampaignIssues(index).join()).toContain('Missing source stats');
+        expect(() => nativeBuildings(index)).toThrow('Missing source stats');
+      },
+      1000059,
+    );
+  } finally {
+    NATIVE_COMBAT[1000059] = stats;
+  }
 });
 
 it('keeps every existing campaign village playable without renumbering', () => {
-  expect(NATIVE_CAMPAIGN).toHaveLength(150);
+  expect(NATIVE_CAMPAIGN).toHaveLength(152);
   for (const [index, stage] of NATIVE_CAMPAIGN.entries()) {
     expect(stage.stage).toBe(index + 1);
     expect(nativeCampaignIssues(index)).toEqual([]);
   }
 });
 
-it('retains every withheld layout and distinguishes board limits from missing source coverage', () => {
+it('retains all six original full-map layouts and distinguishes board limits from missing source coverage', () => {
   expect(audit.grid).toEqual({ mapSize: MAP_SIZE, sourceOffset: BUILD_MIN });
   expect(audit.coverageCatalogSha256).toBe(
     createHash('sha256').update(fs.readFileSync('reference/characters/catalog.json')).digest('hex'),
   );
   expect(audit.levels.map((level) => level.id).sort()).toEqual(
-    Object.keys(campaign.withheld).sort(),
+    [...Object.keys(campaign.withheld), 'CHALLENGE_TH9_BABYDQW', 'CHALLENGE_TH12_DRAGBAT'].sort(),
   );
   for (const level of audit.levels) {
     expect(level.useFullMapSize).toBe(true);
@@ -109,14 +115,16 @@ it('retains every withheld layout and distinguishes board limits from missing so
   });
 });
 
-it('retains source guide targets beyond the board, including currently clamped fielded lessons', () => {
+it('retains source guide targets beyond the board, including legacy clamped fielded lessons', () => {
   expect(audit.guideLevels).toHaveLength(19);
   expect(audit.minimumSharedGuideBoard).toBe(52);
   const yeti = audit.guideLevels.find((level) => level.id === 'CHALLENGE_TH12_YETI')!;
   expect(yeti.clampedTargets).toEqual(
     expect.arrayContaining([expect.objectContaining({ sourceX: 49, convertedX: 51, exact: true })]),
   );
-  const fielded = audit.guideLevels.filter((level) => level.stage && level.clampedTargets.length);
+  const fielded = audit.guideLevels.filter(
+    (level) => level.stage && level.stage <= 103 && level.clampedTargets.length,
+  );
   expect(fielded.map((level) => level.name)).toEqual([
     'Lava & Loons',
     'Witch Slap',

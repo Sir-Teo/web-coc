@@ -32,13 +32,14 @@ function clear(m: GameModel) {
 
 describe('native campaign adapter and progress isolation', () => {
   it('preserves every supported village tile, level, entity and native scenery identity', () => {
-    // 90 Goblin map villages, 13 playable Challenges and the 47 forged ones after them.
-    expect(NATIVE_CAMPAIGN).toHaveLength(150);
-    expect(playable).toEqual(Array.from({ length: 150 }, (_, i) => i));
+    // 90 Goblin map villages, 15 playable Challenges and the 47 forged ones after them.
+    expect(NATIVE_CAMPAIGN).toHaveLength(152);
+    expect(playable).toEqual(Array.from({ length: 152 }, (_, i) => i));
     // Only the imported villages have a source layout to compare the adapter against.
-    for (const i of playable.filter((index) => index < layouts.length)) {
+    for (const originalLayout of layouts) {
+      const i = originalLayout.stage - 1;
       const b = nativeBuildings(i),
-        original = [...layouts[i].buildings, ...layouts[i].traps];
+        original = [...originalLayout.buildings, ...originalLayout.traps];
       expect(b.length).toBe(original.length);
       for (const [j, v] of b.entries()) {
         expect([v.x, v.y, v.level]).toEqual([
@@ -47,11 +48,15 @@ describe('native campaign adapter and progress isolation', () => {
           (original[j].lvl ?? 0) + 1,
         ]);
         expect(v.hp).toBe(v.maxHp);
-        expect(v.x + BUILDINGS[v.kind].size).toBeLessThanOrEqual(48);
-        expect(v.y + BUILDINGS[v.kind].size).toBeLessThanOrEqual(48);
+        expect(v.x + BUILDINGS[v.kind].size).toBeLessThanOrEqual(
+          NATIVE_CAMPAIGN[i].useFullMapSize ? 52 : 48,
+        );
+        expect(v.y + BUILDINGS[v.kind].size).toBeLessThanOrEqual(
+          NATIVE_CAMPAIGN[i].useFullMapSize ? 52 : 48,
+        );
       }
       expect(nativeScenery(i).map((o) => [o.data, o.x - 2, o.y - 2])).toEqual(
-        [...layouts[i].obstacles, ...layouts[i].decos].map((o) => [o.data, o.x, o.y]),
+        [...originalLayout.obstacles, ...originalLayout.decos].map((o) => [o.data, o.x, o.y]),
       );
     }
     expect(nativeBuildings(0).map((b) => [b.npc, b.x, b.y, b.hp])).toEqual([
@@ -268,8 +273,8 @@ describe('native campaign adapter and progress isolation', () => {
 it('preserves current X-Bow and Skeleton Trap modes using exact source placements', () => {
   let xbows = 0,
     airTraps = 0;
-  for (const [index, layout] of layouts.entries()) {
-    const { modes } = nativeDefenseModes(NATIVE_CAMPAIGN[index]);
+  for (const layout of layouts) {
+    const { modes } = nativeDefenseModes(NATIVE_CAMPAIGN[layout.stage - 1]);
     for (const original of [...layout.buildings, ...layout.traps]) {
       const key = `${original.data}:${original.x}:${original.y}:${(original.lvl ?? 0) + 1}`;
       if (original.data === 1000021) {
@@ -284,7 +289,7 @@ it('preserves current X-Bow and Skeleton Trap modes using exact source placement
       }
     }
   }
-  expect(xbows).toBe(144);
+  expect(xbows).toBe(150);
   expect(airTraps).toBeGreaterThan(0);
   const stage = structuredClone(NATIVE_CAMPAIGN[50]);
   const placement = stage.buildings.find(([id]) => id === 1000021)!;

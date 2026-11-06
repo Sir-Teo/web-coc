@@ -29,7 +29,7 @@ function village(townhall: number) {
 }
 
 describe('Practice Mode', () => {
-  it('reads the client’s 19 levels, the 13 this game fields being campaign stages 91 to 103', () => {
+  it('reads the client’s 19 levels, 15 fielded levels, preserving the original stage numbers', () => {
     expect(PRACTICE_LEVELS).toHaveLength(19);
     expect(PRACTICE_TOWN_HALL).toBe(4);
     expect(PRACTICE_TEXTS).toMatchObject({
@@ -38,9 +38,11 @@ describe('Practice Mode', () => {
       repeatQuestion: 'You did perfectly! Would you like to practice without deployment steps?',
     });
     const fielded = PRACTICE_LEVELS.filter((level) => level.stage);
-    expect(fielded.map((level) => level.stage)).toEqual(
-      Array.from({ length: 13 }, (_, i) => 91 + i),
-    );
+    expect(fielded.map((level) => level.stage).sort((a, b) => a! - b!)).toEqual([
+      ...Array.from({ length: 13 }, (_, i) => 91 + i),
+      151,
+      152,
+    ]);
     for (const level of fielded) {
       const stage = NATIVE_CAMPAIGN[level.stage! - 1];
       expect(stage.family).toBe('challenge');

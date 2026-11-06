@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audit every withheld Practice layout without changing its coordinates or enabling it.
+"""Audit the six originally withheld full-map Practice layouts against legacy geometry.
 
 The report covers board bounds and captured source coverage, not complete combat parity.
 Source level files are absent from the fingerprint and have their own SHA-256 pins below.
@@ -83,7 +83,9 @@ def build():
                                  minimumBoardForUnclampedTargets=maximum,
                                  clampedTargets=outside))
     levels = []
-    for name in sorted(campaign['withheld']):
+    audited = [name for name, rows in npcs.items() if rows[0].get('LevelFile') in LEVEL_PINS]
+    stage_ids = {stage['id']: stage['stage'] for stage in campaign['stages']}
+    for name in sorted(audited):
         rows = npcs[name]
         row = rows[0]
         path = row['LevelFile']
@@ -133,11 +135,12 @@ def build():
                                   ability=ability,
                                   abilityRetained=not ability or ability in coverage['specialAbilities']))
         levels.append(dict(id=name, name=names[name], sourceLayout=path,
+                           stage=stage_ids.get(name), withheldReason=campaign['withheld'].get(name),
                            useFullMapSize=row.get('UseFullMapSize') == 'TRUE',
                            minimumBoardAtCurrentOffset=dict(width=width, height=height),
                            outsideFootprints=outside, defenders=defenders))
     if {entry['sourceLayout'] for entry in levels} != set(LEVEL_PINS):
-        raise ValueError('Withheld level membership changed; update the audit explicitly')
+        raise ValueError('Original full-map audit membership changed; update the audit explicitly')
     return dict(clientVersion='18.400.21', bundle=BUNDLE,
                 scope='Footprints, guide targets and captured source coverage; not a combat-parity certificate.',
                 grid=dict(mapSize=board, sourceOffset=offset),
@@ -158,7 +161,7 @@ def main():
             raise SystemExit('Practice readiness audit differs')
     else:
         TARGET.write_text(encoded)
-    print(f'{"Verified" if args.check else "Wrote"} {len(result["levels"])} withheld layouts, '
+    print(f'{"Verified" if args.check else "Wrote"} {len(result["levels"])} original full-map layouts, '
           f'{len(result["guideLevels"])} guide audits; minimum unclamped guide board '
           f'{result["minimumSharedGuideBoard"]}')
 

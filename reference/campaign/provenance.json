@@ -112,6 +112,8 @@
     "level/challenge_th11_edrag.json": "61211573fc5a6a7e886365aee7cdf086920f4086cb0dcd854de25827a880fcad",
     "level/challenge_th11_lavaloon.json": "dab1d5da5fe30fdd0ca33a4d3c49f118a50f2d07569591b51d5a2a1b633d3aaf",
     "level/challenge_th12_bowigi.json": "82999c8f11303688405afe92464e59901119b0df89d05b0dcf2913b589917ec5",
+    "level/challenge_th9_babydqw.json": "70ab5cd66af8a7e5bad617d3ca8acff1ddb6e3eda4f69eeba7847f4d84f86dfa",
+    "level/challenge_th12_dragbat.json": "0408d834cb35d49afb9d2dddfef5af38befacb4d5b5812d620b619587568c4a6",
     "logic/obstacles.csv": "d79e96e2a973402f1a6b24f5e41c2de9ce2e8143479318a346ba2e299268044f",
     "logic/decos.csv": "b60242541efc630279e7ca2b9d91b66ef752eb054d15f561e53d389886eb8173"
   },
@@ -119,9 +121,9 @@
     "level/npc22.json": "help_opened\":false,\"bool_layout_edit_shown_erase\":false}"
   },
   "outputs": {
-    "catalog.json": "8be97c4a6134cf9a50c5984c1ec8a78b58a230a198d14b5d4f955f688cd48ba5",
-    "layouts.jsonl": "db5064d42e1020c2efe06aee0754eddccd3628a07111872810b8f4f7b081f202",
+    "catalog.json": "830c514d3904778a8edb9fb3d94bbd454ae1384c7f84ff40d58498cdccfac2bd",
+    "layouts.jsonl": "57a4ed91479fcef005574ea14d0b004230f0cec8c361a143dfeaad2b94d1f822",
     "npc-buildings.json": "b5842b5cd783cc4b24d879351d2927aff75aeb77e8aee9c2dab24579e52d4c2d",
-    "runtime.json": "f19231d0cfeea0a8ecb1d8b7f5baca3e72e8472a99c9621776553694fa97cd05"
+    "runtime.json": "e79ea76a1f4f971550a9679d805011feccc272e0bb8f7882a13f4e95bb618919"
   }
 }

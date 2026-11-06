@@ -18,14 +18,14 @@ import { migrateSave, validateSave } from '../src/game/save';
 const family = (name: 'goblin' | 'challenge' | 'forged') =>
   NATIVE_CAMPAIGN.filter((stage) => (stage.family ?? 'goblin') === name);
 
-it('runs 150 villages: the Goblin map, the playable Challenges and the forged tail', () => {
-  expect(NATIVE_CAMPAIGN).toHaveLength(150);
+it('runs 152 villages: the Goblin map, the playable Challenges and the forged tail', () => {
+  expect(NATIVE_CAMPAIGN).toHaveLength(152);
   expect(family('goblin')).toHaveLength(90);
-  expect(family('challenge')).toHaveLength(13);
+  expect(family('challenge')).toHaveLength(15);
   expect(family('forged')).toHaveLength(47);
   // Stage numbers are the campaign's own order, unbroken across the three families.
-  expect(NATIVE_CAMPAIGN.map((s) => s.stage)).toEqual(Array.from({ length: 150 }, (_, i) => i + 1));
-  expect(new Set(NATIVE_CAMPAIGN.map((s) => s.name)).size).toBe(150);
+  expect(NATIVE_CAMPAIGN.map((s) => s.stage)).toEqual(Array.from({ length: 152 }, (_, i) => i + 1));
+  expect(new Set(NATIVE_CAMPAIGN.map((s) => s.name)).size).toBe(152);
   // Goblin identities (Goblin Hall, Goblin Hut, Tutorial Cannon) belong to the Goblin map only.
   expect(family('goblin').every(goblinMap)).toBe(true);
   expect(family('challenge').some(goblinMap)).toBe(false);
@@ -40,8 +40,8 @@ it('keeps every village playable, inside the board and reachable in order', () =
       expect(b.x, stage.name).toBeGreaterThanOrEqual(BUILD_MIN);
       expect(b.y, stage.name).toBeGreaterThanOrEqual(BUILD_MIN);
       // A campaign layout may use the whole board, not only the home village's build area.
-      expect(b.x + size, stage.name).toBeLessThanOrEqual(MAP_SIZE);
-      expect(b.y + size, stage.name).toBeLessThanOrEqual(MAP_SIZE);
+      expect(b.x + size, stage.name).toBeLessThanOrEqual(stage.useFullMapSize ? 52 : MAP_SIZE);
+      expect(b.y + size, stage.name).toBeLessThanOrEqual(stage.useFullMapSize ? 52 : MAP_SIZE);
     }
     // Every dependency points at a village earlier in the campaign.
     for (const dependency of stage.dependencies) expect(dependency).toBeLessThan(stage.stage);
@@ -113,7 +113,7 @@ it('extends a village saved before the campaign grew, keeping its stars and loot
   const migrated = migrateSave(old);
   expect(validateSave(migrated)).toBe(true);
   const progress = (migrated as typeof old).nativeCampaign!;
-  expect(progress.stars).toHaveLength(150);
+  expect(progress.stars).toHaveLength(152);
   expect(progress.stars[3]).toBe(2);
   expect(progress.remaining[3]).toEqual({ gold: 1, elixir: 2, dark: 0 });
   expect(progress.remaining[149]).toEqual({

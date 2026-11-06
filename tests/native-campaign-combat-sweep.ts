@@ -1,3 +1,4 @@
+import { battleMapSize } from '../src/game/grid';
 import { describe, expect, it } from 'vitest';
 import { GameModel } from '../src/game/model';
 import { emptyArmy, emptySpells } from '../src/game/army';
@@ -61,7 +62,8 @@ export function nativeCombatSweep(army: (typeof armies)[number]) {
           maxY = Math.max(...b.buildings.map((v) => v.y + BUILDINGS[v.kind].size));
         // One drop point outside each side of the base. A layout that reaches the board edge has
         // no room on that side, so only the sides that are actually free are used.
-        const tile = (value: number) => Math.min(47, Math.max(1, Math.round(value)));
+        const mapSize = battleMapSize(b);
+        const tile = (value: number) => Math.min(mapSize - 1, Math.max(1, Math.round(value)));
         const points = (
           [
             [minX - 2, (minY + maxY) / 2],
@@ -74,14 +76,20 @@ export function nativeCombatSweep(army: (typeof armies)[number]) {
           .filter(([x, y]) => !m.deployBlocked(x, y));
         // A village drawn to the board's edge leaves no room beside it; scan for anywhere legal.
         if (!points.length)
-          for (let x = 1; x < 48 && !points.length; x++)
-            for (let y = 1; y < 48 && !points.length; y++)
+          for (let x = 1; x < mapSize && !points.length; x++)
+            for (let y = 1; y < mapSize && !points.length; y++)
               if (!m.deployBlocked(x, y)) points.push([x, y] as const);
         expect(
           points.length,
           `${NATIVE_CAMPAIGN[index].name} has no free drop point`,
         ).toBeGreaterThan(0);
         let deployed = 0;
+        // Practice supplies heroes too. Leaving them in hand keeps a Healer-only battle
+        // open correctly: the player still has offensive deployments available.
+        for (const hero of b.nativeHeroes ?? []) {
+          const [x, y] = points[deployed++ % points.length];
+          expect(m.deployNativeHero(hero.kind, x, y), `${hero.kind} at ${x},${y}`).toBe(true);
+        }
         for (const k of TROOP_KEYS) {
           m.activeTroop = k;
           const count = b.remaining[k];
@@ -90,6 +98,15 @@ export function nativeCombatSweep(army: (typeof armies)[number]) {
             expect(m.deploy(x, y), `${k} at ${x},${y}`).toBe(true);
           }
         }
+        // Spend the provided spells that can continue fighting after the deployed army dies.
+        // Support spells can remain unused without keeping the battle open.
+        if (drill)
+          for (const kind of ['lightning', 'earthquake', 'skeleton', 'bat'] as const) {
+            const count = b.spells[kind];
+            m.activeSpell = kind;
+            for (let i = 0; i < count; i++)
+              expect(m.castSpell((minX + maxX) / 2, (minY + maxY) / 2), kind).toBe(true);
+          }
         // Campaign raids have no timer: a lone survivor chipping through a village out of every
         // remaining defense's reach can need half an hour. The cap only guards against stalls,
         // and a battle that ends earlier leaves the loop immediately. A stalemate also ends it:

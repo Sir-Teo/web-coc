@@ -30,7 +30,7 @@ function recording() {
 it('takes full-map bounds from pinned source Practice metadata only in the new replay era', () => {
   expect(REPLAY_VERSION).toBe(233);
   const { initial } = recording();
-  expect(NATIVE_CAMPAIGN.filter((s) => s.useFullMapSize)).toHaveLength(13);
+  expect(NATIVE_CAMPAIGN.filter((s) => s.useFullMapSize)).toHaveLength(15);
   expect(replayBattle(initial).boardSize).toBe(52);
   for (const version of [44, 51, 232]) {
     expect(compatibleReplayVersion(version)).toBe(true);

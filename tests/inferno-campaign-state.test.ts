@@ -3,7 +3,7 @@ import { expect, it } from 'vitest';
 import { NATIVE_CAMPAIGN, nativeCampaignIssues } from '../src/game/native-campaign';
 import { nativeInfernoStates } from '../src/game/inferno-campaign-state';
 
-it('preserves all 191 original Infernos, including explicit false modes and full ammo', () => {
+it('preserves all 194 original Infernos, including explicit false modes and full ammo', () => {
   const originals = readFileSync('reference/campaign/layouts.jsonl', 'utf8')
     .trim()
     .split('\n')
@@ -12,8 +12,9 @@ it('preserves all 191 original Infernos, including explicit false modes and full
     single = 0,
     alternate = 0;
   // Only the imported villages have a source layout to compare against.
-  NATIVE_CAMPAIGN.slice(0, originals.length).forEach((stage, i) => {
-    const raw = originals[i].buildings.filter((b) => b.data === 1000027);
+  originals.forEach((layout) => {
+    const stage = NATIVE_CAMPAIGN[layout.stage - 1];
+    const raw = layout.buildings.filter((b) => b.data === 1000027);
     expect(stage.infernoStates).toEqual(raw);
     const parsed = nativeInfernoStates(stage);
     parsed.forEach((state, index) => {
@@ -30,7 +31,7 @@ it('preserves all 191 original Infernos, including explicit false modes and full
       else single++;
     });
   });
-  expect({ total, single, alternate }).toEqual({ total: 191, single: 85, alternate: 106 });
+  expect({ total, single, alternate }).toEqual({ total: 194, single: 86, alternate: 108 });
   expect(nativeInfernoStates(NATIVE_CAMPAIGN[58])).toHaveLength(4);
   expect(
     nativeInfernoStates(NATIVE_CAMPAIGN[58]).every((v) => !v.attackMode && v.ammunition === 1000),
