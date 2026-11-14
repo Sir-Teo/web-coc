@@ -8,6 +8,7 @@ import { createServer } from 'vite';
 import inspector from 'node:inspector/promises';
 import fs from 'node:fs/promises';
 import { createHash } from 'node:crypto';
+import { recordTrajectory } from './battle-sim-trajectory.mjs';
 const arg = (name, fallback) =>
   process.argv.find((value) => value.startsWith(`--${name}=`))?.split('=')[1] ?? fallback;
 const warmup = Number(arg('warmup', 0)),
@@ -96,70 +97,78 @@ try {
   const simulate = (m) => {
     for (let i = 0; i < 400; i++) m.step(0.05);
   };
-  for (let i = 0; i < warmup; i++) simulate(makeBattle());
-  const session = process.argv.includes('--profile') ? new inspector.Session() : null;
-  if (session) {
-    session.connect();
-    await session.post('Profiler.enable');
-  }
-  const results = [];
-  for (let run = 0; run < runs; run++) {
-    const m = makeBattle(),
-      times = [],
-      activeTimes = [];
-    // Keep the profile on the final measured battle, with setup outside the sample.
-    if (session && run === runs - 1) await session.post('Profiler.start');
-    const cpuStart = process.threadCpuUsage?.();
-    for (let i = 0; i < 400; i++) {
-      const active = !m.battle.finished;
-      const start = performance.now();
-      m.step(0.05);
-      const duration = performance.now() - start;
-      times.push(duration);
-      if (active) activeTimes.push(duration);
+  if (process.argv.includes('--verify-only')) {
+    if (process.argv.includes('--profile') || warmup !== 0 || runs !== 1)
+      throw Error(
+        '--verify-only is an untimed separate run; do not combine with profiling or timing runs',
+      );
+    console.log(JSON.stringify({ ...recordTrajectory(makeBattle()), scenario: army }, null, 2));
+  } else {
+    for (let i = 0; i < warmup; i++) simulate(makeBattle());
+    const session = process.argv.includes('--profile') ? new inspector.Session() : null;
+    if (session) {
+      session.connect();
+      await session.post('Profiler.enable');
     }
-    const cpu = cpuStart ? process.threadCpuUsage(cpuStart) : undefined,
-      sorted = times.slice().sort((a, b) => a - b);
-    results.push({
-      steps: times.length,
-      activeSteps: activeTimes.length,
-      battleSeconds: m.battle.elapsed,
-      profiled: !!session && run === runs - 1,
-      medianActiveMs: activeTimes.sort((a, b) => a - b)[Math.floor(activeTimes.length / 2)] ?? 0,
-      totalMs: times.reduce((a, b) => a + b, 0),
-      ...(cpu ? { threadCpuMs: (cpu.user + cpu.system) / 1000 } : {}),
-      medianMs: sorted[200],
-      p95Ms: sorted[380],
-      hash: createHash('sha256').update(JSON.stringify(m.battle)).digest('hex'),
-      living: m.battle.units.filter((u) => u.hp > 0).length,
-    });
+    const results = [];
+    for (let run = 0; run < runs; run++) {
+      const m = makeBattle(),
+        times = [],
+        activeTimes = [];
+      // Keep the profile on the final measured battle, with setup outside the sample.
+      if (session && run === runs - 1) await session.post('Profiler.start');
+      const cpuStart = process.threadCpuUsage?.();
+      for (let i = 0; i < 400; i++) {
+        const active = !m.battle.finished;
+        const start = performance.now();
+        m.step(0.05);
+        const duration = performance.now() - start;
+        times.push(duration);
+        if (active) activeTimes.push(duration);
+      }
+      const cpu = cpuStart ? process.threadCpuUsage(cpuStart) : undefined,
+        sorted = times.slice().sort((a, b) => a - b);
+      results.push({
+        steps: times.length,
+        activeSteps: activeTimes.length,
+        battleSeconds: m.battle.elapsed,
+        profiled: !!session && run === runs - 1,
+        medianActiveMs: activeTimes.sort((a, b) => a - b)[Math.floor(activeTimes.length / 2)] ?? 0,
+        totalMs: times.reduce((a, b) => a + b, 0),
+        ...(cpu ? { threadCpuMs: (cpu.user + cpu.system) / 1000 } : {}),
+        medianMs: sorted[200],
+        p95Ms: sorted[380],
+        hash: createHash('sha256').update(JSON.stringify(m.battle)).digest('hex'),
+        living: m.battle.units.filter((u) => u.hp > 0).length,
+      });
+    }
+    await fs.mkdir('output/playtest', { recursive: true });
+    if (session) {
+      const { profile } = await session.post('Profiler.stop');
+      session.disconnect();
+      await fs.writeFile('output/playtest/battle-sim.cpuprofile', JSON.stringify(profile));
+    }
+    if (results.some((run) => run.hash !== results[0].hash))
+      throw Error('Repeated battles produced different hashes.');
+    const report = {
+      scenario: `stage 61, ${army === 'roster' ? 'full roster' : 'TH18 army'}, half levels`,
+      warmup,
+      ...results[results.length - 1],
+      ...(runs > 1
+        ? {
+            runs: results,
+            meanTotalMs: results.reduce((n, r) => n + r.totalMs, 0) / runs,
+            ...(results[0].threadCpuMs === undefined
+              ? {}
+              : {
+                  meanThreadCpuMs: results.reduce((n, r) => n + r.threadCpuMs, 0) / runs,
+                }),
+          }
+        : {}),
+    };
+    await fs.writeFile('output/playtest/battle-sim.json', JSON.stringify(report, null, 2));
+    console.log(JSON.stringify(report, null, 2));
   }
-  await fs.mkdir('output/playtest', { recursive: true });
-  if (session) {
-    const { profile } = await session.post('Profiler.stop');
-    session.disconnect();
-    await fs.writeFile('output/playtest/battle-sim.cpuprofile', JSON.stringify(profile));
-  }
-  if (results.some((run) => run.hash !== results[0].hash))
-    throw Error('Repeated battles produced different hashes.');
-  const report = {
-    scenario: `stage 61, ${army === 'roster' ? 'full roster' : 'TH18 army'}, half levels`,
-    warmup,
-    ...results[results.length - 1],
-    ...(runs > 1
-      ? {
-          runs: results,
-          meanTotalMs: results.reduce((n, r) => n + r.totalMs, 0) / runs,
-          ...(results[0].threadCpuMs === undefined
-            ? {}
-            : {
-                meanThreadCpuMs: results.reduce((n, r) => n + r.threadCpuMs, 0) / runs,
-              }),
-        }
-      : {}),
-  };
-  await fs.writeFile('output/playtest/battle-sim.json', JSON.stringify(report, null, 2));
-  console.log(JSON.stringify(report, null, 2));
 } finally {
   await server.close();
 }
