@@ -50,11 +50,24 @@ function loopFor(graph: NativeMeshGraph, id: number, ancestors?: Set<number>): L
   let warmup = period;
   let valid = true;
   ancestors.add(id);
-  const slots = new Set(clip.timeline.flatMap((frame) => clip.frames[frame].map((p) => p[0])));
-  for (const slot of slots) {
+  // Only slots present in every frame have an independent clock. Repeated timeline
+  // entries use the same placement list, so inspect each distinct frame once instead of
+  // rescanning the timeline and searching its placements separately for every slot.
+  const frames = new Set(clip.timeline);
+  const counts = new Map<number, number>();
+  const seen = new Set<number>();
+  for (const frame of frames) {
+    seen.clear();
+    for (const [slot] of clip.frames[frame]) {
+      if (seen.has(slot)) continue;
+      seen.add(slot);
+      counts.set(slot, (counts.get(slot) ?? 0) + 1);
+    }
+  }
+  for (const [slot, count] of counts) {
     // A removed child's clock resets on placement. Its bounded ages already repeat with
     // the parent, once the first source loop's initial-age clamp has passed.
-    if (!clip.timeline.every((frame) => clip.frames[frame].some((p) => p[0] === slot))) continue;
+    if (count !== frames.size) continue;
     const childId = clip.children[slot];
     if (graph.shapes[childId]) continue;
     const child = graph.clips[childId];

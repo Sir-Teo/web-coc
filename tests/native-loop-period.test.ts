@@ -124,3 +124,29 @@ it('leaves controlled cycles to the original sampler rather than recursing in me
   expect(b).not.toBe(a);
   expect(() => nativeScenePosesShared(source, 'test', 8)).toThrow('Recursive native scene');
 });
+
+it('counts each distinct placement frame once, even with repeats and duplicate slots', () => {
+  const source = graph();
+  // Slot 1 occurs twice in frame 0 but is missing from frame 2. It must not be mistaken
+  // for a continuous child; slot 0 stays continuous throughout the repeated timeline.
+  source.clips[1].frames[0].push([1, 0, 0]);
+  source.clips[1].timeline = [0, 0, 1, 2, 2, 3, 4, 5];
+  for (const seconds of [0, 8, 16, 24, 32, 1000])
+    expect(nativeScenePosesShared(source, 'test', seconds)).toEqual(
+      nativeScenePoses(source, 'test', seconds),
+    );
+});
+
+it('does not analyze a child missing from the first distinct frame', () => {
+  const source = graph();
+  source.clips[1].frames[0] = [[1, 0, 0]];
+  source.clips[1].timeline = [0, 0, 1, 2, 3, 4, 5];
+  // Neither child is continuous. A fractional child FPS cannot affect the root period.
+  source.clips[2].fps = 1.5;
+  const first = nativeScenePosesShared(source, 'test', 7);
+  expect(nativeScenePosesShared(source, 'test', 14)).toBe(first);
+  for (const seconds of [0, 7, 14, 21, 1000])
+    expect(nativeScenePosesShared(source, 'test', seconds)).toEqual(
+      nativeScenePoses(source, 'test', seconds),
+    );
+});
