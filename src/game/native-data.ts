@@ -33,11 +33,11 @@ interface CombatTables {
 const combat = source as unknown as CombatTables &
   Record<NativeTable, Record<string, Record<string, string>[]>>;
 
-const cache = new Map<string, readonly NativeRow[]>();
+const cache: Partial<Record<NativeTable, Map<string, readonly NativeRow[]>>> = {};
 export const hasNative = (table: NativeTable, name: string) => Object.hasOwn(combat[table], name);
 export function nativeLevels(table: NativeTable, name: string): readonly NativeRow[] {
-  const key = `${table}/${name}`;
-  let rows = cache.get(key);
+  const tableCache = (cache[table] ??= new Map<string, readonly NativeRow[]>());
+  let rows = tableCache.get(name);
   if (!rows) {
     const declared = combat[table][name];
     if (!declared) throw Error(`Missing native ${table} record: ${name}`);
@@ -45,7 +45,7 @@ export function nativeLevels(table: NativeTable, name: string): readonly NativeR
     rows = Object.freeze(
       declared.map((row) => Object.freeze((inherited = { ...inherited, ...row }))),
     );
-    cache.set(key, rows);
+    tableCache.set(name, rows);
   }
   return rows;
 }
