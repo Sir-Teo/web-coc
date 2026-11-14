@@ -21,6 +21,19 @@ export function summarize(pairs) {
     logRatioStandardError: se, percentReduction: 100 * (1 - Math.exp(mean)) };
 }
 
+/** Explicit practical noise budget, not a statistical significance test. */
+export function calibrationFailure(summary, budget) {
+  if (!Number.isFinite(budget.maxFactor) || budget.maxFactor < 1 ||
+      !Number.isFinite(budget.maxLogSE) || budget.maxLogSE < 0)
+    throw Error('Declare finite --max-aa-factor >= 1 and --max-aa-log-se >= 0');
+  if (summary.geometricRatioBOverA < 1 / budget.maxFactor ||
+      summary.geometricRatioBOverA > budget.maxFactor)
+    return 'A/A mean ratio exceeds declared multiplicative drift budget';
+  if (summary.logRatioStandardError > budget.maxLogSE)
+    return 'A/A log-ratio standard error exceeds declared variability budget';
+  return null;
+}
+
 export function validateReport(report) {
   const runs = Array.isArray(report.runs) ? report.runs : [report];
   if (!runs.length || runs.some(r => r.profiled || !Number.isFinite(r.totalMs) || r.totalMs <= 0 ||
@@ -28,7 +41,12 @@ export function validateReport(report) {
     throw Error('Invalid, empty or profiled timing report');
   if (runs.some(r => r.hash !== runs[0].hash || r.activeSteps !== runs[0].activeSteps))
     throw Error('Within-process deterministic result mismatch');
-  return { totalMs: runs.reduce((n, r) => n + r.totalMs, 0) / runs.length,
+  const cpu = runs.map(r => r.threadCpuMs);
+  if (cpu.some(v => v !== undefined) && cpu.some(v => !Number.isFinite(v) || v <= 0))
+    throw Error('Thread CPU metric must be positive for every run or absent for all');
+  return { ...(cpu[0] === undefined ? {} : {
+    threadCpuMs: cpu.reduce((n, value) => n + value, 0) / cpu.length }),
+    totalMs: runs.reduce((n, r) => n + r.totalMs, 0) / runs.length,
     hash: runs[0].hash, activeSteps: runs[0].activeSteps };
 }
 
@@ -47,13 +65,18 @@ async function main() {
     if (!match) throw Error('Arguments must be --name=value');
     return [match[1], match[2]];
   }));
-  if (Object.keys(opts).some(k => !['baseline', 'candidate', 'pairs', 'warmup', 'runs', 'army', 'output'].includes(k)))
+  if (Object.keys(opts).some(k => !['baseline', 'candidate', 'pairs', 'warmup', 'runs', 'army', 'output', 'max-aa-factor', 'max-aa-log-se'].includes(k)))
     throw Error('Unknown option');
   if (!opts.baseline || !opts.candidate) throw Error('Supply --baseline=PATH --candidate=PATH');
   const pairs = Number(opts.pairs ?? 6), warmup = Number(opts.warmup ?? 3), runs = Number(opts.runs ?? 3);
   if (!Number.isInteger(pairs) || pairs < 2 || pairs % 2 ||
       !Number.isInteger(warmup) || warmup < 0 || !Number.isInteger(runs) || runs < 1)
     throw Error('Use even --pairs >= 2, integer --warmup >= 0 and --runs >= 1');
+  const calibrationBudget = {
+    maxFactor: Number(opts['max-aa-factor']), maxLogSE: Number(opts['max-aa-log-se']),
+  };
+  // Validate explicit thresholds before touching checkouts or launching children.
+  calibrationFailure({ geometricRatioBOverA: 1, logRatioStandardError: 0 }, calibrationBudget);
   const army = opts.army ?? 'th18';
   if (!['th18', 'roster'].includes(army)) throw Error('Invalid army');
   const roots = { a: fs.realpathSync(opts.baseline), b: fs.realpathSync(opts.candidate) };
@@ -61,18 +84,18 @@ async function main() {
   if (identities.a.harnessSha256 !== identities.b.harnessSha256)
     throw Error('Harness differs: reconcile measurement code before comparing');
   const output = path.resolve(opts.output ?? 'output/playtest/battle-sim-comparison.json');
-  const report = { protocol: 1, startedAt: new Date().toISOString(), node: process.version,
+  const report = { protocol: 2, status: 'running', startedAt: new Date().toISOString(), node: process.version,
     platform: process.platform, arch: process.arch, cpu: os.cpus()[0]?.model,
-    settings: { pairs, warmup, runs, army }, identities, observations: [], summaries: {},
-    caveat: 'Descriptive CPU simulation measurements, not browser FPS, native parity, or proof of causality. A/A is a diagnostic, not a pass/fail correction.' };
+    settings: { pairs, warmup, runs, army, calibrationBudget }, identities, observations: [], summaries: {},
+    caveat: 'Descriptive CPU simulation measurements, not browser FPS, native parity, or proof of causality. A/A gates use declared practical budgets, not statistical significance or a correction; passing does not establish a speedup.' };
   fs.mkdirSync(path.dirname(output), { recursive: true });
   const save = () => fs.writeFileSync(output, JSON.stringify(report, null, 2) + '\n');
   save();
   for (const phase of ['aa-before', 'ab', 'aa-after']) {
-    const measured = [];
+    const measured = [], measuredCpu = [];
     for (let pair = 0; pair < pairs; pair++) {
       const order = pair % 2 ? ['b', 'a'] : ['a', 'b'];
-      const values = {};
+      const values = {}, cpuValues = {};
       for (const label of order) {
         const variant = phase === 'ab' ? label : 'a';
         const root = roots[variant];
@@ -84,16 +107,30 @@ async function main() {
         if (report.observations.length && value.hash !== report.observations[0].value.hash)
           throw Error('Cross-process/variant battle hash mismatch; comparison invalid');
         values[label] = value.totalMs;
+        cpuValues[label] = value.threadCpuMs;
         report.observations.push({ phase, pair, label, variant, value, raw });
         save();
       }
       measured.push(values);
+      if (cpuValues.a !== undefined && cpuValues.b !== undefined) measuredCpu.push(cpuValues);
     }
-    report.summaries[phase] = summarize(measured);
+    report.summaries[phase] = { ...summarize(measured),
+      ...(measuredCpu.length === pairs ? { threadCpu: summarize(measuredCpu) } : {}) };
     save();
+    if (phase !== 'ab') {
+      const reason = calibrationFailure(report.summaries[phase], calibrationBudget);
+      if (reason) {
+        report.status = 'calibration-rejected';
+        report.stoppedAt = new Date().toISOString();
+        report.calibrationRejection = { phase, reason };
+        save();
+        throw Error(`${phase}: ${reason}; no validated performance conclusion`);
+      }
+    }
   }
   if (JSON.stringify(identities) !== JSON.stringify({ a: identity(roots.a), b: identity(roots.b) }))
     throw Error('Checkout changed during measurements; report incomplete');
+  report.status = 'completed';
   report.completedAt = new Date().toISOString();
   save();
   console.log(JSON.stringify(report.summaries, null, 2));
