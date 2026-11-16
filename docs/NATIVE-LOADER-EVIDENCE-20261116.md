@@ -61,3 +61,29 @@ replays rerun successfully.
 This public file records findings, not a standalone reproducible binary test
 suite. Application-wide checks were not rerun for this documentation-only change;
 the evidence-specific checks above are the verification performed.
+
+## Alternative-entry and initialization follow-up
+
+An independent raw-field review checked all original file-backed executable
+aligned immediate B/BL/B.cond/CB/TB encodings targeting the 17 selected route
+instructions and the writer entry. There are 29 syntactic edges: 26 to the
+main dispatcher entry and three already-known route branches. No additional
+direct interior entrance appeared in this narrowly defined scan.
+
+No selected-address match appeared among 15,167 standard RELA addends, exact ADR
+references or eight-byte-aligned absolute qwords in file-backed PT_LOAD bytes.
+These tests do not exclude computed, encoded, unaligned, symbol-resolved or
+runtime-modified references and do not prove dead code.
+
+The conventional ELF metadata supplies a positive anchor: DT_INIT is absent;
+DT_INIT_ARRAY has one zero-valued file cell at `0x676898`, with a unique
+symbol-zero RELATIVE relocation adding `0x60e5e8`. If applied normally and
+unchanged, it nominates image-bias+`0x60e5e8` as an initializer. This is not an
+observed invocation. Sixteen original prefix words were authenticated; raw
+stack-save/allocation and TPIDR_EL0 register fields were independently checked,
+without executing the prefix or inventing TLS values.
+
+The next native step is justified state/context provenance from this metadata
+anchor, not an assumed selector. The new private evidence archive was freshly
+retrieved and passed full-byte SHA256, ZIP integrity and every manifest check.
+No production or replay changes accompany this follow-up.
