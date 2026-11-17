@@ -50,7 +50,13 @@ integers, so this preserves weights and first-in-unit-order ties. The full-scan 
 also checks clustered, sparse and radius-boundary layouts as cells are reused.
 
 Native attackers construct defender traits and route callbacks directly for their active
-mechanics, preserving callback override order without temporary spread objects. A native
+mechanics, preserving callback override order without temporary spread objects. The legacy
+phase likewise projects only range, rate, healing, damage and speed instead of copying full
+stat rows. Its native windup traits copy only defender-fight fields, and it prepares those
+traits and routing callbacks only for a live defender candidate or a stale defender target.
+Candidate checks stay inside the unit loop so births and deaths remain visible immediately;
+stale targets keep the shared route cleanup. `tests/legacy-defender-transition.test.ts`
+checks these transitions across historical and current replay rules. A native
 attack windup with no committed target advances its clocks and clears the same cast state
 before returning; it skips defender-interruption setup until it has a target.
 

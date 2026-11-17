@@ -232,6 +232,9 @@ import { stepXbow } from './xbow';
 import {
   stepDefenders,
   stepAttackerVsDefenders,
+  hasDefenderCandidates,
+  type DefenderFightTraits,
+  type DefenderRoute,
   damageDefenders,
   type Defender,
 } from './defenders';
@@ -6923,53 +6926,60 @@ export class GameModel {
         stepLegacyAttackWindup(native!, u, unitDt, actionDt * poison.attack, damage)
       )
         continue;
-      const d = { ...base, heal, damage, speed };
+      // The legacy phase reads only these combat values, not the full display/stat row.
+      const d = { range: base.range, rate: base.rate, heal, damage, speed };
       if (troop.healer) {
         stepHealer(b, u, d, unitDt, this.onEffect, actionDt * poison.attack);
         continue;
       }
-      if (
-        stepAttackerVsDefenders(
-          b,
-          u,
-          d,
-          unitDt,
-          solidBuildings,
-          (target, power) => this.damage(target, power),
-          this.onEffect,
-          legacyAttack
-            ? {
-                ...troop,
-                airTargets: !!(
-                  (b.nativeDragonWindup && u.kind === 'dragon') ||
-                  (b.nativeWizardWindup && u.kind === 'wizard')
-                ),
-                nativeBuildingAttack: (target: Building) =>
-                  beginLegacyAttackWindup(native!, u, { building: target }),
-              }
-            : undefined,
-          isTargetableLive,
-          {
-            buildings: routeBuildings,
-            ...(legacyAttack
-              ? {
-                  enterRange: () => {
-                    const target = b.defenders?.find(
-                      (defender) => defender.id === u.defenderTarget,
-                    );
-                    if (target) beginLegacyAttackWindup(native!, u, { defender: target });
-                  },
-                  attackReady: () => false,
-                }
-              : {}),
-            wallTile,
-            passableWalls,
-            budget: repathState,
-            breaches,
-          },
+      // Keep stale-target cleanup, but avoid preparing defender callbacks when no fight
+      // is possible. Defenders can spawn or die during this loop, so eligibility stays live.
+      if (u.defenderTarget !== undefined || hasDefenderCandidates(b)) {
+        let traits: DefenderFightTraits | undefined;
+        const route: DefenderRoute = {
+          buildings: routeBuildings,
+          wallTile,
+          passableWalls,
+          budget: repathState,
+          breaches,
+        };
+        if (legacyAttack) {
+          traits = {
+            prefersDefenses: troop.prefersDefenses,
+            prefersResources: troop.prefersResources,
+            healer: troop.healer,
+            wallBreaker: troop.wallBreaker,
+            flying: troop.flying,
+            splash: troop.splash,
+            airTargets: !!(
+              (b.nativeDragonWindup && u.kind === 'dragon') ||
+              (b.nativeWizardWindup && u.kind === 'wizard')
+            ),
+            nativeBuildingAttack: (target) =>
+              beginLegacyAttackWindup(native!, u, { building: target }),
+          };
+          route.enterRange = () => {
+            const target = b.defenders?.find((defender) => defender.id === u.defenderTarget);
+            if (target) beginLegacyAttackWindup(native!, u, { defender: target });
+          };
+          route.attackReady = () => false;
+        }
+        if (
+          stepAttackerVsDefenders(
+            b,
+            u,
+            d,
+            unitDt,
+            solidBuildings,
+            (target, power) => this.damage(target, power),
+            this.onEffect,
+            traits,
+            isTargetableLive,
+            route,
+          )
         )
-      )
-        continue;
+          continue;
+      }
       let target = typeof u.target === 'number' ? buildingById.get(u.target) : undefined;
       if (!target || !isTargetableLive(target)) target = undefined;
       if (!target) {
