@@ -80,8 +80,10 @@ instead of 33,600 (4,200/hour, with room for 200,000). After 48 hours it is full
 
 Upgrade downtime is excluded, Resource Potions apply only during their overlap with
 productive time, and existing above-capacity saved amounts remain intact. Loading the
-same timestamp twice cannot award the interval twice. Collection still respects the
-village's resource storage capacity; this changes home accrual, not replay combat rules.
+same timestamp twice cannot award the interval twice. [Backward clock corrections](ARCHITECTURE.md#application-flow)
+also retain the saved home-time watermark: a previously credited interval stays credited
+while the wall clock catches up. Collection still respects the village's resource storage
+capacity; this changes home accrual, not replay combat rules.
 
 The rates and capacities remain the unchanged [pinned progression rows](../reference/full-client/progression.json).
 Supercell's [maintenance guidance](https://sc-clashofclans.zendesk.com/hc/en-us/articles/49529092773147-Maintenance-Breaks)

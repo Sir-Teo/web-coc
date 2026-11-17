@@ -17,6 +17,13 @@ economy up to wall time, so production and upgrade deadlines retain their offlin
 Hiding still forces a save and stops audio. Page exit clears the economy listener; HUD
 destruction clears its own timer and listener.
 
+Home catch-up uses the persisted `lastTick` as a logical-time watermark. A backward
+wall-clock correction or reload at an earlier timestamp keeps that watermark and the
+model clock, so previously credited production cannot be earned again. Production and
+timers resume when wall time passes it. Fresh villages initialize at the supplied clock.
+This is a local offline-clock policy: a saved future timestamp remains authoritative
+until the wall clock catches up, not evidence of the native client's server-time rules.
+
 | Area              | Entry points                                                | Responsibility                                                     |
 | ----------------- | ----------------------------------------------------------- | ------------------------------------------------------------------ |
 | Simulation        | `src/game/model.ts`, `data.ts`                              | Village state, economy, commands and deterministic combat          |

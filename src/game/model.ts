@@ -1555,7 +1555,7 @@ export class GameModel {
   revision = 0;
   clock = Date.now();
   constructor(saved?: Save, now = Date.now()) {
-    this.state = saved ?? initialSave();
+    this.state = saved ?? initialSave(now);
     expandArmyRoster(this.state);
     this.migrateLegacyEquipment();
     // Saves from before victories were counted apart from attempts: every village holding a
@@ -2581,6 +2581,9 @@ export class GameModel {
     // A non-finite time would poison the clock and every timer derived from it, turning a
     // caller's missing timestamp into an upgrade that can never complete.
     if (!Number.isFinite(now)) throw new Error(`Invalid clock time: ${now}`);
+    // A local wall-clock correction must not rewind already committed home progress.
+    // Keep the saved watermark so returning to the same timestamp cannot earn it again.
+    now = Math.max(now, this.state.lastTick);
     this.clock = now;
     // Home production accrues during raids but stays silent: the battle HUD
     // shows raid state, and flagging it would resync the whole scene every
@@ -8310,7 +8313,7 @@ export function makeBuilding(
     cooldown: 0,
   };
 }
-export function initialSave(): Save {
+export function initialSave(now = Date.now()): Save {
   let id = 1;
   const b: Building[] = [];
   const add = (k: BuildingKind, x: number, y: number, l = 1) =>
@@ -8370,7 +8373,7 @@ export function initialSave(): Save {
     spells: emptySpells(),
     spellQueue: [],
     stars: Array(12).fill(0),
-    lastTick: Date.now(),
+    lastTick: now,
     nextId: id,
     tutorial: false,
     settings: { sound: true, music: false, reducedMotion: false },

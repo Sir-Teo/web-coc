@@ -214,3 +214,11 @@ completion caps and corrected post-upgrade income. Fresh hash-checked helper-cat
 reproduction, an independent work-budget oracle and integration regressions validate
 this home behavior. Live target/layout provenance and native scheduling remain unknown;
 this change adds no native execution or gameplay-parity claim.
+
+A subsequent home-clock regression showed a level-12 mine crediting the same hour twice
+after a backward local-clock correction: 8,400 instead of the pinned 4,200. Home time
+now retains the saved watermark, including on reload. An independent covered-minute
+ledger checks all three collector families against their pinned rates, alongside
+upgrade/boost and clock-injection regressions. This is explicitly a local offline-clock
+policy, not newly observed native server-time behavior. Native target/layout provenance
+remains unresolved and private binary evidence is unchanged.
