@@ -133,3 +133,16 @@ A separate unchanged-file-state calculation associates the target-source address
 ELF import relocation named `dlsym`; independent binutils metadata and raw instruction fields
 agree. Actual runtime data and binding remain unknown, so this is not a live-callee or
 execution result. Detailed binary evidence stays private and no production rules change.
+
+## Conditional lower-loop checkpoint (2026-11-17)
+
+The [continuation checkpoint](NATIVE-REA-CONTINUATION-20261117.md) connects the tested-byte
+handler to repetition, an updated-byte zero exit and the unsigned 500-byte bound. Under
+explicit successful-access, stable-memory and disjoint-frame conditions, the stopped call
+retains the original offset argument and the earlier captured unknown target.
+
+Two independent static models agree on 1,505 paired fixtures; 128,000 byte operand pairs
+validate the composed full-register and predicate effects. Offsets and zero positions are
+hypothetical verifier inputs. These results do not establish runtime mappings, actual byte
+contents, an alias-case continuation, a live callee or native execution. Detailed evidence
+is privately backed up; public changes are documentation only.

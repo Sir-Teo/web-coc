@@ -141,14 +141,48 @@ Seven interpretation controls check sign/increment, the zero test, store width, 
 alias distinctions and an identity offset. Binary bytes, detailed formulas, models and
 results remain in the private continuation archive. Public changes are documentation only.
 
+## Conditional lower-loop control
+
+The byte-testing handler is now connected through the flattened dispatcher to its next
+iteration and the stopped indirect-call boundary. Under successful accesses, stable code
+and context, no external mutation, and a whole payload interval disjoint from the modeled
+local frame, each visited byte is updated in place and its updated low byte is tested.
+A zero result reaches the call boundary immediately. A nonzero result increments the
+working offset and repeats the same tested-byte handler while the unsigned offset remains
+below 500; reaching 500 also reaches the call boundary. The separate, previously synthetic
+handler without a byte test is not visited by these conditional paths.
+
+The call argument uses the original starting offset, rather than the final working offset.
+Its target is a reload of the earlier captured unknown qword. That preservation depends on
+the memory conditions: a payload write into a captured local or a control/pointer local
+falls outside this continuation proof. Changing only the original source does not itself
+establish that its captured copy changes. No actual stack/image relationship, memory access,
+byte contents, trip count, callee identity or target execution is established.
+
+Independent LLVM-text and raw-instruction control models agree on 1,505 paired fixtures.
+These cover every permitted starting offset with an immediate updated-byte zero exit and
+an all-nonzero path to the bound, every possible next-byte zero exit, and six longer
+interior-zero paths. Offsets are hypothetical verifier seeds after the retained symbolic
+prefix; zero positions are explicit predicate assumptions. The byte values themselves
+remain symbolic. Separately, all 128,000 offset/byte operand pairs validate the full
+32-bit register postcondition and low-byte predicate used in composing the byte blocks.
+The control instructions are interpreted individually; the verified byte blocks are
+summarized, not represented as native instruction execution.
+
+Exact PC lists, loop-local endpoint effects, call arguments, unchanged captured storage,
+modular frame-alias conditions and deliberately corrupted conclusion controls are checked.
+The inherited private archive, complete manifest and unchanged input sources are verified
+again. Detailed scripts, traces and original binary evidence remain private; public changes
+contain documentation only.
+
 ## Next original-binary work
 
-The restore, metadata comparison, inherited replay, bounded pre-call trace and first-byte
-storage analysis are complete for their stated scopes. Continue the lower path with its
-symbolic updated-byte zero predicate, explicit memory state and alias conditions before
-connecting it to any later call. Alternatively establish actual runtime input and binding
-provenance behind the loaded target. Preserve unknown memory/TLS values and do not invent
-a callee, return value or executable-address property from the conditional import association.
+The restore, metadata comparison, inherited replay, byte storage analysis and conditional
+lower-loop control are complete for their stated scopes. Establish actual runtime input,
+stack/image layout and binding provenance behind the loaded target, or model alias cases
+without carrying over the disjoint-frame conclusion. The continuation stops before the
+indirect call. Preserve unknown memory/TLS values and do not invent a callee, return value
+or executable-address property from the conditional import association.
 
 Keep selector `0x06e13e43` conditional. Do not force it into the model or turn successful
 synthetic routes into observed initialization, recovered runtime keys or gameplay equivalence.
