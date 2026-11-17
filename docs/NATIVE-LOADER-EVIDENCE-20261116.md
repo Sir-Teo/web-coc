@@ -121,3 +121,15 @@ Independent static interpreters agree on 604 paired fixtures and all full PC lis
 Unknown inputs remain symbolic. The call is not executed, and callee identity, actual live
 paths and gameplay parity remain unverified. All binary evidence stays private; public
 changes contain this sanitized documentation only.
+
+## Lower-byte and conditional import checkpoint (2026-11-17)
+
+The [continuation checkpoint](NATIVE-REA-CONTINUATION-20261117.md) records an independently
+checked symbolic byte update, its zero predicate and explicit source-versus-captured-local
+alias controls. All 128,000 guarded byte operand pairs and 31,512 storage controls agree.
+These do not establish real stack/image aliases or survival through the full lower loop.
+
+A separate unchanged-file-state calculation associates the target-source address with an
+ELF import relocation named `dlsym`; independent binutils metadata and raw instruction fields
+agree. Actual runtime data and binding remain unknown, so this is not a live-callee or
+execution result. Detailed binary evidence stays private and no production rules change.

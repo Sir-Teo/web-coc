@@ -114,13 +114,41 @@ limit is not treated as a runtime hang or a proven loop. Private evidence includ
 models, traces, assumptions, corrections and inherited archive. No native code was executed,
 no original-image bytes were changed, and no production or replay behavior changes follow.
 
+## Lower-byte update, alias limits and a file-state import association
+
+The inherited private archive and all 1,239 manifest entries were freshly verified.
+Two separately decoded byte-block models replay the matching 957-position conditional
+prefix. They agree on the first handler's in-place one-byte arithmetic update and its
+test of the written byte. A later handler has the same byte update under an explicitly
+synthetic entry fixture; reachability of that entry is not newly proved.
+
+All 128,000 operand pairs in the stated unsigned-offset/byte domain agree. Storage checks
+pass 1,512 aligned hypothetical captured-local alias controls, 6,000 disjoint-capture controls
+and 24,000 source-only alias controls. These show why overwriting the original source and
+overwriting the local captured target are different hypotheses. If the byte destination
+overlaps the captured local, its corresponding byte can change; when it overlaps only the
+original source, the earlier captured copy can remain unchanged. These are conditional
+storage effects, not observed mappings, native executions or proof of a whole loop or call.
+
+A separate unchanged-file-state hypothesis computes a target-source address associated
+with the standard ELF import relocation named `dlsym`. Independent binutils metadata,
+raw immediate/ADR fields and file arithmetic agree. The source words and slot are writable;
+unchanged runtime data, normal binding and its survival are not established. The main trace
+continues to retain unknown runtime values. No live callee, symbol resolution, string,
+ABI signature, return value or gameplay parity is inferred from that import-record link.
+
+Seven interpretation controls check sign/increment, the zero test, store width, source/local
+alias distinctions and an identity offset. Binary bytes, detailed formulas, models and
+results remain in the private continuation archive. Public changes are documentation only.
+
 ## Next original-binary work
 
-The restore, metadata comparison, inherited replay and bounded table-exit pre-call trace
-are complete for the supplied backup. Continue the lower unsigned branch with an explicit
-symbolic byte-memory and alias model, or establish the runtime input and identity behind the
-loaded call-target value. Preserve unknown memory/TLS values; do not invent a callee, signature,
-return value or executable-address property merely because the static path reaches a call.
+The restore, metadata comparison, inherited replay, bounded pre-call trace and first-byte
+storage analysis are complete for their stated scopes. Continue the lower path with its
+symbolic updated-byte zero predicate, explicit memory state and alias conditions before
+connecting it to any later call. Alternatively establish actual runtime input and binding
+provenance behind the loaded target. Preserve unknown memory/TLS values and do not invent
+a callee, return value or executable-address property from the conditional import association.
 
 Keep selector `0x06e13e43` conditional. Do not force it into the model or turn successful
 synthetic routes into observed initialization, recovered runtime keys or gameplay equivalence.
