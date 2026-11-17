@@ -17,10 +17,16 @@ export const FACILITY_LEVELS = {
   barracks: rows('Barracks'),
   laboratory: rows('Laboratory'),
   spellfactory: housed('Spell Factory'),
+  darkbarracks: native.buildings.darkbarracks.levels,
+  darkspellfactory: native.buildings.darkspellfactory.levels,
 };
 
 export function facilityProgression(kind: BuildingKind, level: number) {
-  return kind === 'barracks' || kind === 'laboratory' || kind === 'spellfactory'
+  return kind === 'barracks' ||
+    kind === 'laboratory' ||
+    kind === 'spellfactory' ||
+    kind === 'darkbarracks' ||
+    kind === 'darkspellfactory'
     ? FACILITY_LEVELS[kind][level - 1]
     : undefined;
 }
