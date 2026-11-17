@@ -108,3 +108,16 @@ The first-table zero case is an explicit condition; nonzero seeded indices are h
 Captured paths establish no pointer invocation. Actual inputs, live memory accesses, later
 consumers and gameplay parity remain unverified. Full binary evidence stays private, and no
 production or replay behavior changes accompany this checkpoint.
+
+## Table-exit pre-call provenance (2026-11-17)
+
+The [continuation checkpoint](NATIVE-REA-CONTINUATION-20261117.md) extends the memory-dependent
+exit into a third-table scan. Under explicit nonzero-entry and unsigned higher-branch
+conditions, the modeled target of a stopped indirect call is the earlier loaded qword,
+rather than its computed address. The lower branch stops before a symbolic byte read.
+
+Independent static interpreters agree on 604 paired fixtures and all full PC lists;
+8,232 arithmetic vectors and seven deliberately corrupted report controls pass their checks.
+Unknown inputs remain symbolic. The call is not executed, and callee identity, actual live
+paths and gameplay parity remain unverified. All binary evidence stays private; public
+changes contain this sanitized documentation only.

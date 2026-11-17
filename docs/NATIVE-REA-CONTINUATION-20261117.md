@@ -84,12 +84,43 @@ Actual table contents, readable computed addresses, loaded values, runtime trip 
 later consumers remain unverified. Successful accesses and intact local state are assumptions.
 No native ARM64 code was executed and no original-image bytes were modified.
 
+## Table-exit pre-call provenance
+
+The saved private checkpoint and its complete 623-entry manifest were freshly verified
+before extending the trace. The table-exit computed address and the qword read from it
+remain separate symbolic values stored in different locals; neither is supplied a runtime
+value. This continuation reaches another 150-entry table scan. A zero test advances its
+counter instead of ending that scan. A nonzero test derives a value from a fresh reread,
+then reaches an unsigned comparison with 500.
+
+Explicit predicate fixtures cover both sides of that comparison. The lower branch stops
+before its first symbolic byte read. Under the nonzero-entry and unsigned-at-least-500
+conditions, the higher branch reaches an indirect-call boundary whose target register holds
+the earlier loaded qword, rather than its computed address. The model stops before the call:
+no invocation, executable target, callee identity, ABI signature or return value is established.
+The first argument register is zero and the second holds a separately computed address;
+these register facts do not identify a function. Earlier table zero cases are explicit
+conditions; nonzero seeded indices remain hypothetical, and bound cases stop at their guard.
+
+Two static interpreters agree on 604 paired fixtures and all 580,450 PC positions, including
+repeated prefixes. A separate arithmetic interpreter checks 8,232 address, derived-value and
+argument vectors. Seven corrupted report interpretations are rejected, including target/address
+confusion, a fabricated loaded value, a stale reread, a swapped unsigned predicate and a claim
+of execution. These are static verifier counts, not native observations or coverage percentages.
+
+Concrete register-width handling and newly reached instruction decoding were corrected before
+the complete paired run. Exploratory probes are labeled separately; an exploration-budget
+limit is not treated as a runtime hang or a proven loop. Private evidence includes the full
+models, traces, assumptions, corrections and inherited archive. No native code was executed,
+no original-image bytes were changed, and no production or replay behavior changes follow.
+
 ## Next original-binary work
 
-The restore, metadata comparison and inherited replay steps are complete for the supplied
-backup. Continue the table-exit memory-dependent trace with explicit address and read
-identities. Establish the provenance of any later indirect-call target before describing
-it as invoked or callable; preserve unknown memory/TLS inputs and possible aliasing.
+The restore, metadata comparison, inherited replay and bounded table-exit pre-call trace
+are complete for the supplied backup. Continue the lower unsigned branch with an explicit
+symbolic byte-memory and alias model, or establish the runtime input and identity behind the
+loaded call-target value. Preserve unknown memory/TLS values; do not invent a callee, signature,
+return value or executable-address property merely because the static path reaches a call.
 
 Keep selector `0x06e13e43` conditional. Do not force it into the model or turn successful
 synthetic routes into observed initialization, recovered runtime keys or gameplay equivalence.
