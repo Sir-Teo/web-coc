@@ -2616,7 +2616,6 @@ export class GameModel {
       if (result === 'ready' && !inBattle) this.notify(`${helperName(kind)} is ready to work!`);
     }
     const elapsedHomeSeconds = Math.max(0, now - this.state.lastTick) / 1000;
-    const dt = Math.min(elapsedHomeSeconds, 8 * 3600);
     for (const b of this.state.buildings) {
       // Audited building health is derived from its level. Preserve the damage fraction
       // when loading prototype saves; recorded battle snapshots remain untouched.
@@ -2641,10 +2640,10 @@ export class GameModel {
         b.maxHp = hp;
         structural = changed = true;
       }
-      const productionInterval = b.kind === 'darkdrill' ? elapsedHomeSeconds : dt;
+      // Each collector stops at its own source capacity, including after a long absence.
       const productionSeconds = b.upgradeEnd
-        ? Math.max(0, Math.min(productionInterval, (now - b.upgradeEnd) / 1000))
-        : productionInterval;
+        ? Math.max(0, Math.min(elapsedHomeSeconds, (now - b.upgradeEnd) / 1000))
+        : elapsedHomeSeconds;
       if (b.upgradeEnd && b.upgradeEnd <= now) {
         const xp = completionXp(b.upgradeStart, b.upgradeEnd);
         if (b.improving === 'weapon') b.weaponLevel = (b.weaponLevel ?? 1) + 1;

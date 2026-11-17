@@ -188,3 +188,22 @@ Keep selector `0x06e13e43` conditional. Do not force it into the model or turn s
 synthetic routes into observed initialization, recovered runtime keys or gameplay equivalence.
 Loaded/transformed-target provenance still requires evidence. No pinned game data, replay
 rules, native client bytes or private backup identifiers accompany this public checkpoint.
+
+## Runtime-evidence review and game-fidelity follow-up
+
+A fresh inventory found retained file bytes and static-model artifacts, but no captured
+process maps, live registers, target-slot snapshot or connected Android runtime. The
+available host is x86-64 and has no Android bridge or ARM64 runner on its command path.
+This inventory is scoped to the supplied task workspace and available tools; it does
+not establish that runtime evidence does not exist elsewhere.
+
+The unchanged-file `dlsym` import association still cannot establish a live call target.
+Resolving it requires authenticated runtime module identity, its load bias and mappings,
+the relevant registers/source qwords, and captured-local contents at the call boundary.
+Likewise a real stack/image alias conclusion requires observed addresses. Further
+conditional traces would not supply those missing observations, so this pass adds none.
+
+The concrete follow-up fixes [offline collector catch-up](TOWNHALL-TIERS.md#offline-collector-catch-up-november-17-2026):
+Gold Mines and Elixir Collectors now credit all elapsed productive time up to their
+pinned capacity. This is a home-economy correction with regression tests, not new native
+execution evidence. Private binaries and detailed inventories remain outside the repo.

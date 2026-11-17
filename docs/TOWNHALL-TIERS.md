@@ -68,7 +68,28 @@ That capacity is what makes the ladder work rather than merely what limits it: e
 
 Because storage now holds the original allowance, a prototype-sized purse would overflow it several times over, so a new village is granted the original's own opening amounts — 750 gold, 750 elixir and the 250 gems this game already gave — with its mines and collectors still holding produce to collect. Raid loot is capped by the room left at home, which is the original rule and now actually binds.
 
-Gold Mines, Elixir Collectors and Dark Elixir Drills produce at the original hourly rate and hold the original capacity at every level (`src/game/collector-production.ts`); the simulation, Info panel and fill artwork read the same rows. Produce a save earned under the old prototype curve above the new capacity is kept until collected rather than clipped.
+Gold Mines, Elixir Collectors and Dark Elixir Drills produce at the original hourly rate and hold the original capacity at every level (`src/game/collector-production.ts`); the simulation, Info panel and fill artwork read the same rows. Produce earned under the old prototype curve above the new capacity is kept until collected rather than clipped.
+
+### Offline collector catch-up (November 17, 2026)
+
+All three collector families now credit the full elapsed productive interval, stopping
+at their own pinned internal capacity. Gold Mines and Elixir Collectors previously
+inherited a prototype eight-hour cap that Dark Elixir Drills had already outgrown.
+For example, a level-12 mine or collector returning after 24 hours now holds 100,800
+instead of 33,600 (4,200/hour, with room for 200,000). After 48 hours it is full.
+
+Upgrade downtime is excluded, Resource Potions apply only during their overlap with
+productive time, and existing above-capacity saved amounts remain intact. Loading the
+same timestamp twice cannot award the interval twice. Collection still respects the
+village's resource storage capacity; this changes home accrual, not replay combat rules.
+
+The rates and capacities remain the unchanged [pinned progression rows](../reference/full-client/progression.json).
+Supercell's [maintenance guidance](https://sc-clashofclans.zendesk.com/hc/en-us/articles/49529092773147-Maintenance-Breaks)
+confirms collectors continue working during player absence in maintenance; its
+[April 2020 update](https://supercell.com/en/games/clashofclans/blog/game-updates/spring-update-sp2/)
+also explicitly links collector fill time to internal capacity. Those sources support
+continuous capacity-limited production; they do not establish native executable timing
+or all live economy behavior.
 
 Builder's Huts are sold the way the original sells them: all five are available from Town Hall 1, and each costs gems rather than gold — the second free, then 500, 1,000 and 2,000. `WORKER_COST_2ND` through `WORKER_COST_5TH` are pinned from the client's own globals table, as are the starting grants.
 
