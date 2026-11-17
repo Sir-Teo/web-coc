@@ -95,3 +95,16 @@ static ELF initializer audit and fifteen synthetic tests, including an independe
 binutils metadata check. The original wrapper and private bundles were not restored
 in that continuation. This adds preparation and a recovery plan, not new original-byte
 findings, native execution evidence or gameplay parity.
+
+## Restored second-table continuation (2026-11-17)
+
+The [continuation checkpoint](NATIVE-REA-CONTINUATION-20261117.md) now records independent
+restoration checks and a new bounded static result. The second table includes a computed-address
+qword read before its table write, unlike the first table's direct additive rewrite. Two
+separate interpreters agree on all 302 explicit case/index fixtures and all full PC lists;
+3,750 arithmetic substitutions agree with the independently checked address formula.
+
+The first-table zero case is an explicit condition; nonzero seeded indices are hypothetical.
+Captured paths establish no pointer invocation. Actual inputs, live memory accesses, later
+consumers and gameplay parity remain unverified. Full binary evidence stays private, and no
+production or replay behavior changes accompany this checkpoint.

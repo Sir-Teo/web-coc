@@ -1,18 +1,22 @@
 # Native REA continuation checkpoint — 2026-11-17
 
-This checkpoint adds restore-time static inspection tooling. It makes no new finding
-about execution of the original client, the initializer's live inputs, protected code,
+This checkpoint records verified restoration of a private backup, independent initializer
+metadata checks and a bounded symbolic continuation of the original initializer. It does
+not establish native execution, the initializer's live inputs, recovered protected code
 or gameplay parity. The prior [loader checkpoint](NATIVE-LOADER-EVIDENCE-20261116.md)
-remains the source of the conditional original-binary findings.
+provides the earlier conditional anchors; the second-table result is recorded below.
 
 ## Source recovery status
 
-The available checkout does not contain the original wrapper or the latest private
-analysis bundles. Conversation history records successful private Library backups,
-but this task has no Library search/read tools and its Library browser is signed out.
-No private archive was retrieved, no manifest was reverified, and no original-image
-SHA256 was freshly checked in this continuation. Exact backup references and source
-bytes are required before the next original-instruction trace.
+The specified private table-loop archive and its original wrapper are restored. Its supplied ZIP SHA256,
+ZIP integrity and all twenty manifest entries were independently verified. The wrapper's
+retained SHA256 matches; the inherited replay and its 302 raw-field fixtures pass again.
+The generic audit below and independent binutils decoding agree on the published initializer
+metadata. This verifies the restored inputs against the retained backup, not a fresh signed
+APK, actual loaded image, initializer invocation or gameplay behavior.
+
+Private binaries and full instruction traces remain outside this public repository. The
+new evidence and replay scripts are retained in a separate private continuation archive.
 
 ## Prepared independent metadata audit
 
@@ -57,17 +61,37 @@ source cell, DT_INIT, alignment, executable ranges and CLI outcomes. Binutils `r
 independently decodes the synthetic header, dynamic initializer entries and relative
 relocation. This is tool validation, not renewed native-client authentication or REA coverage.
 
+## Conditional second-table continuation
+
+Starting from the original entry, with the first table's first test explicitly constrained
+zero, the second phase includes a computed-address qword read before rewriting its current
+table cell. It preserves the distinction between the tested entry, a fresh reread, the
+computed address and the loaded value. The loaded qword is what the modeled table write
+stores; this differs from the earlier table's direct additive rewrite.
+
+Both independent static interpreters agree on 302 explicit case/index fixtures: zero and
+nonzero cases for indices 0 through 150. Index zero retains its initialized counter; the
+other indices are hypothetical seeds before the bound check, not observed reachable states.
+All complete PC lists agree (257,305 positions including repeated prefixes), and 3,750
+edge/random arithmetic substitutions agree with the independently checked address formula.
+These are fixture counts, not distinct recovered instructions or a native coverage percentage.
+
+For an in-range nonzero test, the modeled write is followed by a counter increment and a
+fresh test of the next cell. A zero test exits without rewriting that cell; the bound exits
+without an additional table test. The captured continuations contain no pointer invocation
+and stop at an unknown next-cell comparison or a later unresolved load-address boundary.
+Actual table contents, readable computed addresses, loaded values, runtime trip count and
+later consumers remain unverified. Successful accesses and intact local state are assumptions.
+No native ARM64 code was executed and no original-image bytes were modified.
+
 ## Next original-binary work
 
-1. Restore the latest private evidence archive and original wrapper. Verify the retained
-   full-file hashes, archive integrity and manifest entries, preserving original bytes.
-2. Run the metadata audit and independently compare the original file with `readelf`.
-   Reconcile discrepancies before treating `0x60e5e8` as the conditional metadata anchor.
-3. Start a bounded original-byte prefix trace from that anchor. Preserve unknown TLS,
-   indirect-call results and memory inputs symbolically. Establish the provenance of
-   state/context fields before connecting them to a candidate slot writer.
-4. Keep the selector `0x06e13e43` conditional. Do not force it into the model or turn
-   successful synthetic routes into observed initialization, recovered runtime keys or
-   gameplay equivalence. Loaded/transformed-target provenance still requires evidence.
+The restore, metadata comparison and inherited replay steps are complete for the supplied
+backup. Continue the table-exit memory-dependent trace with explicit address and read
+identities. Establish the provenance of any later indirect-call target before describing
+it as invoked or callable; preserve unknown memory/TLS inputs and possible aliasing.
 
-No pinned game data, replay rules or native client bytes accompany this checkpoint.
+Keep selector `0x06e13e43` conditional. Do not force it into the model or turn successful
+synthetic routes into observed initialization, recovered runtime keys or gameplay equivalence.
+Loaded/transformed-target provenance still requires evidence. No pinned game data, replay
+rules, native client bytes or private backup identifiers accompany this public checkpoint.
