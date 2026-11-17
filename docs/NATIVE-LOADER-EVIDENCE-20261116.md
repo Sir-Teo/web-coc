@@ -87,3 +87,11 @@ The next native step is justified state/context provenance from this metadata
 anchor, not an assumed selector. The new private evidence archive was freshly
 retrieved and passed full-byte SHA256, ZIP integrity and every manifest check.
 No production or replay changes accompany this follow-up.
+
+## Continuation tooling (2026-11-17)
+
+The [continuation checkpoint](NATIVE-REA-CONTINUATION-20261117.md) adds a hash-checked
+static ELF initializer audit and fifteen synthetic tests, including an independent
+binutils metadata check. The original wrapper and private bundles were not restored
+in that continuation. This adds preparation and a recovery plan, not new original-byte
+findings, native execution evidence or gameplay parity.

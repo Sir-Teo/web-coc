@@ -2151,6 +2151,49 @@ SwiftShader. Changing normalized UV denominators can change the final interpolat
 rounding while retaining exactly the same source texels. Both phone and desktop replay
 checks cover actual body loading and defensive Freeze after the change.
 
+## Legacy combat preparation (2026-11-17)
+
+The legacy unit phase projects five combat values (range, rate, healing, damage and
+speed) instead of copying a full stat row. When native windup traits are required,
+it constructs only defender-fight fields and the applicable callbacks. An empty
+defender phase skips that setup, while stale defender targets still enter the shared
+cleanup path. Eligibility stays live within the unit loop, preserving births and deaths.
+No combat/save version, game data, rendering code or pinned native data changed.
+
+Twenty new transition tests cover absent, empty, fallen, future and newly born defenders
+across replay versions 44, 191, 192 and the current version. The affected combat, healing
+and replay selection passes 433 tests. The full `npm run check` passes 8,956 tests across
+590 files, source/test typing, documentation links and the production build.
+
+Baseline `f4c50a6` and local candidate `47a0201` match all 401 serialized battle checkpoints
+in each of the standard stage-61 TH18 and full-roster scenarios (802 total). The remote
+candidate `b8cc63e` has the same source tree, `cad6210e648620a4bf40ebd9e6b52e168d75775a`.
+These compare web variants, not native Android execution or gameplay equivalence.
+
+Serial Node 24.22.1 fresh-process runs used the existing comparison protocol with six
+pairs per phase, three warmups and three battles per process. The prespecified A/A
+budgets were factor 1.05 and log-ratio standard error 0.03; both workloads completed
+and passed both A/A gates. Ratios below are candidate/baseline in A/B and the second
+baseline observation/first baseline observation in A/A.
+
+| Workload    | A/A before | A/B ratio | A/B log-ratio SE | A/A after |
+| ----------- | ---------: | --------: | ---------------: | --------: |
+| TH18        |     0.9731 |    0.9781 |           0.0312 |    1.0368 |
+| Full roster |     0.9854 |    0.9712 |           0.0057 |    1.0174 |
+
+The descriptive A/B reductions are 2.2% and 2.9%. Baseline drift is material at this
+scale, particularly for TH18; this single experiment does not establish a repeatable
+overall simulation gain. No browser FPS, physical-device or native-parity claim follows.
+The source change removes copies and callback preparation; independent replication is
+needed before attributing a small timing difference to it. Raw observations, complete
+trajectories and original exploratory profiles are preserved in the private continuation
+archive; ignored local copies use `output/playtest/legacy-combat-*`.
+
+Browser validation could not start in this cloud environment. The bundled Playwright
+Chromium was absent; system Chromium failed its process-singleton socket creation with
+`Operation not permitted`, including the elevated launch. No candidate browser smoke,
+framebuffer comparison or real-device measurement is claimed.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
