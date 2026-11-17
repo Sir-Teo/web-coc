@@ -1,3 +1,4 @@
+import { advanceBoostedHelper } from './helper-potion-timing';
 import { encodeArmy, decodeSharedArmy } from './army-share';
 import { siegeSelfDestructAbility } from './native-siege-release';
 import type { RollingLogShot } from './native-log-launcher';
@@ -2600,17 +2601,45 @@ export class GameModel {
       this.state.obstacleGrowth ??= initialObstacleGrowth(this.obstacles, now);
       structural = changed = true;
     }
-    // Potions run their timers' extra speed before any timer completes this tick.
+    // Shared potion/helper jobs advance together before any timer completes this tick.
+    const helperResults = new Map<HelperKind, ReturnType<typeof advanceHelper>>();
     for (const kind of ['builders', 'laboratory', 'pets'] as const) {
       const boost = this.state.boosts?.[kind];
       const effect = MAGIC_ITEMS[boostItem(kind)].effect as { multiplier: number };
-      if (boost && advanceBoost(boost, effect.multiplier, this.boostTimers(kind), now))
+      const helperKind =
+        kind === 'builders' ? 'builder' : kind === 'laboratory' ? 'lab' : undefined;
+      const helper = helperKind && this.state.helpers?.[helperKind];
+      let sharedTarget: HelperTarget | undefined;
+      const target = helper?.job?.target;
+      const sameCategory =
+        target && (kind === 'builders' ? !('research' in target) : 'research' in target);
+      if (
+        sameCategory &&
+        boost &&
+        Math.min(now, boost.end) > boost.applied &&
+        helper?.job &&
+        this.helperTimer(helper.job.target)
+      ) {
+        sharedTarget = helper.job.target;
+        helperResults.set(
+          helperKind!,
+          advanceBoostedHelper(helperKind!, helper, boost, effect.multiplier, now, (target) =>
+            this.helperTimer(target),
+          ),
+        );
+      }
+      if (
+        boost &&
+        advanceBoost(boost, effect.multiplier, this.boostTimers(kind, sharedTarget), now)
+      )
         changed = true;
     }
-    // Helpers run their jobs' timers before any timer completes this tick.
+    // Helpers without a shared potion retain their ordinary work/rest integration.
     for (const kind of HELPER_KINDS) {
       const h = this.state.helpers?.[kind];
-      const result = h && advanceHelper(kind, h, now, (target) => this.helperTimer(target));
+      const result = helperResults.has(kind)
+        ? helperResults.get(kind)
+        : h && advanceHelper(kind, h, now, (target) => this.helperTimer(target));
       if (result) changed = true;
       if (result === 'state' || result === 'ready') structural = true;
       if (result === 'ready' && !inBattle) this.notify(`${helperName(kind)} is ready to work!`);
@@ -4897,7 +4926,10 @@ export class GameModel {
     return boost && boost.end > this.clock ? (boost.end - this.clock) / 1000 : 0;
   }
   /** The running timers a potion speeds up. */
-  private boostTimers(kind: 'builders' | 'laboratory' | 'pets'): BoostTimer[] {
+  private boostTimers(
+    kind: 'builders' | 'laboratory' | 'pets',
+    shared?: HelperTarget,
+  ): BoostTimer[] {
     const timer = (t: { upgradeStart?: number; upgradeEnd?: number }): BoostTimer => ({
       get end() {
         return t.upgradeEnd ?? 0;
@@ -4914,11 +4946,32 @@ export class GameModel {
       },
       move: (ms) => (r.end -= ms),
     });
-    if (kind === 'laboratory') return this.state.research ? [ending(this.state.research)] : [];
+    if (kind === 'laboratory')
+      return this.state.research && !shared ? [ending(this.state.research)] : [];
     if (kind === 'pets') return this.state.pets?.research ? [ending(this.state.pets.research)] : [];
     return [
-      ...this.state.buildings.filter((b) => b.upgradeEnd !== undefined).map(timer),
-      ...HERO_KINDS.map((k) => this.heroProgress(k))
+      ...this.state.buildings
+        .filter(
+          (b) =>
+            b.upgradeEnd !== undefined &&
+            !(
+              shared &&
+              'building' in shared &&
+              shared.building === b.id &&
+              shared.level === b.level
+            ),
+        )
+        .map(timer),
+      ...HERO_KINDS.filter(
+        (kind) =>
+          !(
+            shared &&
+            'hero' in shared &&
+            shared.hero === kind &&
+            shared.level === this.heroProgress(kind)?.level
+          ),
+      )
+        .map((k) => this.heroProgress(k))
         .filter((h) => h?.upgradeEnd !== undefined)
         .map((h) => timer(h!)),
     ];

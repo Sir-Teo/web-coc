@@ -34,6 +34,35 @@ The pinned client gives the caps and percentages but not the formula that combin
 
 The rest timing and the work stopping when a job completes follow the client's text and tables; the pinned client does not state what the live game does when a job finishes mid-hour, so that case is this game's reading.
 
+## Concurrent potions and helpers (November 17, 2026)
+
+Shared upgrade/research jobs now advance on one clock, including offline intervals.
+The total work rate is the ordinary rate plus the potion's extra rate plus the helper's
+extra rate. A 10× Builder Potion and level-4 Apprentice therefore give 14×, so seven
+hours of remaining work finish in 30 minutes. The previous sequential calculation
+could report 8.4 minutes in one offline tick while frequent ticks approached 30 minutes.
+
+The integrator splits time at potion and helper work/rest boundaries, caps both progress
+streams at the same completion instant, and retains the existing helper cooldown and
+recurrence rules. Other builders/heroes still receive their potion once. Completing a
+collector upgrade credits only income after that corrected instant. JSON restoration
+continues from both stored progress cursors without awarding the same interval twice.
+
+Supercell's [June 2024 patch notes](https://supercell.com/en/games/clashofclans/blog/release-notes/june-update-full-patch-notes/)
+state that Builder Potions do not affect the Apprentice. The pinned Research Potion
+text likewise excludes the Lab Assistant; the [helper catalog](../reference/helpers/README.md)
+supplies the helpers' extra rates and work windows. The catalog was freshly reproduced
+from its hash-checked client tables. These support additive progress; they do not prove
+native scheduling or the live game's millisecond rounding. Local completion rounds up
+to a millisecond, and the final capped extra progress is attributed in proportion to
+each active extra rate for the helper's saved-time counter.
+
+`tests/helper-potion-timing.test.ts` compares 378 staggered-window cases with an independent
+remaining-work oracle and checks recurring jobs across potion expiry and multiple days.
+`tests/helper-potion-overlap.test.ts` covers building, hero and research integration,
+post-upgrade production, unaffected timers, XP and repeated JSON restoration. Combat,
+replay rules, save schema and pinned data are unchanged.
+
 ## Interface
 
 The hut's building card has a **Helpers** button, with a badge when a rested helper has a job it could take. The panel shows each helper's status, its working time, cooldown, speed and total saved time, the jobs it can take with the time each would save, the recurrence toggle and the gem button for its next level. A disabled button says why. The Alchemist's card shows her caps and bonus, and once she is rested, the source and target resources, an amount slider that starts at the most she can take, the output and the storage warning. On phones the stats stay in one row and each control is at least 40 px tall. `tests/browser/helper-hut.spec.ts` unlocks and assigns the Apprentice at 390 px and 1440 px.

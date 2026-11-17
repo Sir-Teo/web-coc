@@ -207,3 +207,10 @@ The concrete follow-up fixes [offline collector catch-up](TOWNHALL-TIERS.md#offl
 Gold Mines and Elixir Collectors now credit all elapsed productive time up to their
 pinned capacity. This is a home-economy correction with regression tests, not new native
 execution evidence. Private binaries and detailed inventories remain outside the repo.
+
+The next practical correction fixes [concurrent helper/potion timing](HELPERS.md#concurrent-potions-and-helpers-november-17-2026).
+One offline tick now uses the same additive work budget as frequent ticks, with shared
+completion caps and corrected post-upgrade income. Fresh hash-checked helper-catalog
+reproduction, an independent work-budget oracle and integration regressions validate
+this home behavior. Live target/layout provenance and native scheduling remain unknown;
+this change adds no native execution or gameplay-parity claim.

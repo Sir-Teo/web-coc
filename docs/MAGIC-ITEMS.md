@@ -54,6 +54,10 @@ Hammers and Super Potions cover their costs without changing the village's store
 
 Items come from Hero's Journey and the [Trader](TRADER.md)'s weekly Gem deals; there are no Clan Games or Season Challenges.
 
+Shared potion/helper jobs use a [single chronological integrator](HELPERS.md#concurrent-potions-and-helpers-november-17-2026)
+so offline completion cannot combine separately capped savings into an earlier finish.
+Other timers retain their ordinary potion rates and each interval is applied once.
+
 ## Tests
 
 `tests/magic-items.test.ts` checks the 21 rows against the wiki's limits and sell prices, the potions' rates, the client's descriptions and the icon sizes; overflow sales and selling; Runes on room, full and missing storages; which Book finishes which upgrade and when the Book of Everything stands in; Hammers keeping the builder rule, refusing walls and running research, and spending nothing; Hammer and Super Potion observers seeing completed actions and real balances, normal payments and callbacks after Hammer success or refusal; ring counts, upgrades with every builder busy, capped and unfinished walls, and change callbacks observing the spent ring with unchanged resources; Builder Potion timers finishing at the boosted rate offline; potions extending; doubled production; battles fielding Town Hall maximum troop, spell and King levels under the Power and Hero Potions, and a Hero Potion kept without heroes; a shoveled obstacle moving onto the edge but not onto other things; and save validation of items and boosts. `tests/browser/magic-items.spec.ts` uses a Rune, sells a Wall Ring and drinks a Builder Potion from the Town Hall's item list at phone size (44-pixel buttons), finishes and then raises a Gold Mine with a Book and a Hammer from its card, and shovels an obstacle from its card and moves it with a tap. The Super Potion phone case boosts with zero dark elixir, trains the boosted troop and reloads with its boost, army and consumed potion intact. The wall-upgrade browser suite also uses a Ring with every builder busy, keeps gold and elixir upgrades disabled, and checks the result after reloading.
