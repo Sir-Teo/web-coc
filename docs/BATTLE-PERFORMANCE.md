@@ -2351,6 +2351,59 @@ uploads and model stepping all appeared in the sampled stacks. The harness also
 rejected an unreachable wall-time deadline, and a regular timed run without a
 checkpoint completed successfully.
 
+## Full-roster matched-clock follow-up (2026-11-18)
+
+The first matched-clock comparison of `07091ffe` and `110e6e8a` favored the
+baseline in two roster pairs. The follow-up kept the same stage-61 half-level
+roster and the two-to-3.5-second window. It fixed detail at 2 and canvas density
+at 0.5, with a 195×422 backbuffer, 4× CPU throttling, lazy art and Chromium 155
+SwiftShader. Start and end state hashes matched in every run.
+
+| Pair | Order | Baseline wall time (s) | Current wall time (s) |
+| --- | --- | ---: | ---: |
+| 1 | Baseline then current | 7.74 | 6.27 |
+| 2 | Current then baseline | 7.23 | 7.54 |
+| 3 | Current then baseline | 6.49 | 6.52 |
+| 4 | Baseline then current | 6.22 | 5.59 |
+
+Pair 3 coincided with a separate type check and dev-server startup. Omitting it,
+the baseline range was 6.22–7.74 seconds and the current range was 5.59–7.54.
+The earlier baseline advantage did not repeat.
+
+One additional profiled run per revision took 8.01 and 9.16 seconds. Both
+submitted eight benchmark frames. Inclusive samples in `supportAttackers`
+fell from 191 to 77 ms. Self samples in native mesh and scene view rendering
+rose from 172 to 274 ms and from 188 to 261 ms, respectively. Draws averaged
+1,593 and 1,620 per frame. The pair sampled different rendering work and
+supports investigating rendering variance. It does not establish a causal
+slowdown or identify an original-client behavior discrepancy.
+
+A retained TH18 profile had 263 ms of sampled full-page upload time below
+`ShapeAtlas.flush`. The new full-roster profiles sampled 18 and 27 ms in that
+flush stack. A trial cropped dirty regions to a temporary canvas before GPU
+upload. A 128×128 texture probe confirmed three partial uploads and identical
+complete texture hashes after each. Frozen TH18 and roster battle captures
+at two seconds also matched their baseline canvas pixels and state hashes.
+
+The direct subrectangle approach used WebGL 2 source selection. The measured
+Phaser context was WebGL 1, so the active trial cropped through a canvas and
+uploaded that canvas to the existing texture. [WebGL 2 subrectangle upload rules](https://registry.khronos.org/webgl/specs/latest/2.0/#PIXEL_STORE_PARAMETERS_FOR_UPLOADS_FROM_TEXIMAGESOURCE)
+
+The active trial used the same browser and fixed rendering controls and
+extended the window to four battle seconds. Each workload ran in
+baseline/trial/trial/baseline order. All start and end hashes matched and the
+browser reported zero errors.
+
+| Stage-61 workload | Full-page wall time (s) | Partial-upload wall time (s) |
+| --- | ---: | ---: |
+| Full roster | 8.29, 8.89 | 7.21, 10.70 |
+| TH18 | 3.38, 3.56 | 3.16, 3.12 |
+
+The partial upload had a small directional TH18 result and inconsistent
+full-roster results. The production branch retains full-page uploads.
+Whole-battle gains, physical-phone performance and original Android runtime
+parity remain unverified.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
