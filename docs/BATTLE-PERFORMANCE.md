@@ -2194,6 +2194,44 @@ Chromium was absent; system Chromium failed its process-singleton socket creatio
 `Operation not permitted`, including the elevated launch. No candidate browser smoke,
 framebuffer comparison or real-device measurement is claimed.
 
+## Skip exhausted crowd buckets (2026-11-18)
+
+Capped separation counts the bodies with movement remaining in each original tile and flight
+layer. An exhausted unit can skip a bucket when every occupant is also exhausted. It still
+pushes neighbors with allowance left. The remaining pairs follow the original visit order,
+and a blocked push leaves the allowance intact. The distance used to calculate overlap
+can also be reused for push strength. Coincident bodies still get their deterministic direction.
+
+Use `node scripts/crowd-separation-benchmark.mjs --baseline=ce931355` and
+`node scripts/crowd-separation-benchmark.mjs` to reproduce the isolated measurement. Four fresh Node 24
+processes ran in baseline/candidate/candidate/baseline order on the same Linux host. Each process
+reported a median of five runs after two warm-ups. Unit-state SHA-256 values agreed in all
+four workloads.
+
+| Workload | Baseline medians (ms) | Candidate medians (ms) |
+| --- | ---: | ---: |
+| Dense capped | 44.60, 46.57 | 8.63, 8.72 |
+| Mixed air and ground | 33.91, 31.94 | 7.64, 7.44 |
+| Spread out | 11.17, 10.37 | 9.06, 8.90 |
+| Historical uncapped | 128.27, 121.54 | 116.54, 115.71 |
+
+The existing 240-state separation witness passed. The battle trajectory diagnostic matched
+all 401 full-state hashes for TH18 and all 401 for the roster. A fixed-seed, reduced-motion
+Chromium/SwiftShader capture at two simulated seconds on stage 61 matched all 329,160 canvas
+pixels at 390×844. It used 211 half-level TH18 troops and fixed detail 0 and density 1.
+Default-motion captures differed by 28–32 pixels between revisions and by 34 pixels between
+baseline runs. All browser captures had identical serialized battle state. Live FPS
+and Android runtime parity remain unverified.
+
+The TH18 whole-battle benchmark used two fresh-process pairs per phase, with two warm-ups
+and two timed runs per process. Both A/A controls passed the 1.08 drift factor and 0.04
+log-ratio standard error budgets. Baseline wall-time drift was +5.36% before and −4.39% after.
+The candidate measured +0.26% wall time and +1.26% main-thread CPU time, within observed
+baseline drift. The whole-battle benchmark did not resolve a performance change.
+
+Validation passed all 8,982 tests across 594 files, source/test type checking, documentation
+links, and the production build including WebP conversion and offline cache generation.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
