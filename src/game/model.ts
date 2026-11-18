@@ -8846,6 +8846,8 @@ export const SEPARATION_TILES_PER_SECOND = 2;
 const SEPARATION_CELLS = FULL_MAP_SIZE * FULL_MAP_SIZE * 2;
 const separationHead = new Int32Array(SEPARATION_CELLS).fill(-1);
 const separationTail = new Int32Array(SEPARATION_CELLS).fill(-1);
+const separationUnspent = new Int32Array(SEPARATION_CELLS);
+let separationBucket = new Int32Array(256);
 let separationNext = new Int32Array(256);
 let separationSpent = new Float64Array(256);
 const separationTouched: number[] = [];
@@ -8878,10 +8880,12 @@ export function separateUnits(
   const count = alive.length;
   if (separationNext.length < count) {
     separationNext = new Int32Array(count * 2);
+    separationBucket = new Int32Array(count * 2);
     separationSpent = new Float64Array(count * 2);
   }
   const next = separationNext,
-    spent = separationSpent;
+    spent = separationSpent,
+    bucket = separationBucket;
   // Air and ground share no space, so they never push each other around: each (tile, layer)
   // keeps its own list, in the same order the shared tile list used to hold them.
   const flying = new Uint8Array(count);
@@ -8895,9 +8899,12 @@ export function separateUnits(
     const key = (Math.floor(u.y) * mapSize + Math.floor(u.x)) * 2 + flying[i];
     // Units can stand off the grid; the old sparse map still bucketed them by that key.
     if (key < 0 || key >= cells || !Number.isInteger(key)) {
+      bucket[i] = -1;
       next[i] = -2;
       continue;
     }
+    bucket[i] = key;
+    separationUnspent[key]++;
     if (separationHead[key] < 0) {
       separationHead[key] = i;
       separationTouched.push(key);
@@ -8925,7 +8932,11 @@ export function separateUnits(
           ny = cy + oy;
         // A flat index wraps at the row edges; column 0 must not neighbour the last column.
         if (nx < 0 || nx >= mapSize || ny < 0 || ny >= mapSize) continue;
-        for (let j = separationHead[(ny * mapSize + nx) * 2 + air]; j >= 0; j = next[j]) {
+        const key = (ny * mapSize + nx) * 2 + air;
+        // Buckets retain their initial membership even after pushes move a unit.
+        // An exhausted unit still visits buckets that contain a movable neighbor.
+        if (maxPush !== undefined && spent[i] >= maxPush && separationUnspent[key] === 0) continue;
+        for (let j = separationHead[key]; j >= 0; j = next[j]) {
           const v = alive[j];
           if (v.id <= u.id) continue;
           // Neither body can move again this tick. Skip geometry work only when both
@@ -8935,15 +8946,16 @@ export function separateUnits(
           const desired = spacing / 2;
           let dx = v.x - u.x,
             dy = v.y - u.y;
-          let distance = distance2D(dx, dy);
-          if (distance >= desired) continue;
+          const overlapDistance = distance2D(dx, dy);
+          if (overlapDistance >= desired) continue;
+          let distance = overlapDistance;
           if (distance < 0.0001) {
             const angle = ((u.id * 127 + v.id * 31) % 628) / 100;
             dx = Math.cos(angle);
             dy = Math.sin(angle);
             distance = 1;
           }
-          const push = Math.min(0.07, (desired - distance2D(v.x - u.x, v.y - u.y)) * 0.25);
+          const push = Math.min(0.07, (desired - overlapDistance) * 0.25);
           if (maxPush === undefined) {
             const px = (dx / distance) * push,
               py = (dy / distance) * push;
@@ -8965,6 +8977,7 @@ export function separateUnits(
               u.x -= px;
               u.y -= py;
               spent[i] += pushU;
+              if (spent[i] >= maxPush && bucket[i] >= 0) separationUnspent[bucket[i]]--;
             }
           }
           const pushV = Math.min(push, maxPush - spent[j]);
@@ -8975,6 +8988,7 @@ export function separateUnits(
               v.x += px;
               v.y += py;
               spent[j] += pushV;
+              if (spent[j] >= maxPush) separationUnspent[key]--;
             }
           }
         }
@@ -8983,6 +8997,7 @@ export function separateUnits(
   for (const key of separationTouched) {
     separationHead[key] = -1;
     separationTail[key] = -1;
+    separationUnspent[key] = 0;
   }
   separationTouched.length = 0;
 }
