@@ -263,6 +263,28 @@ let epoch = 0;
 /** Heap storage reused across searches (synchronous, no reentrancy). */
 const openHeap = new Int32Array(CELLS);
 
+/** Board adjacency depends only on the stride, never on the current collision grid. */
+function searchGeometry(size: number) {
+  // The largest board has 104 sub-tiles per side and 10,816 total cells.
+  const x = new Uint8Array(size * size);
+  const y = new Uint8Array(size * size);
+  const neighbors = new Int16Array(size * size * 4);
+  for (let row = 0; row < size; row++)
+    for (let col = 0; col < size; col++) {
+      const cell = row * size + col;
+      x[cell] = col;
+      y[cell] = row;
+      const offset = cell * 4;
+      neighbors[offset] = col + 1 < size ? cell + 1 : -1;
+      neighbors[offset + 1] = col > 0 ? cell - 1 : -1;
+      neighbors[offset + 2] = row + 1 < size ? cell + size : -1;
+      neighbors[offset + 3] = row > 0 ? cell - size : -1;
+    }
+  return { x, y, neighbors };
+}
+const homeSearchGeometry = searchGeometry(MAP_SIZE * SUBTILES);
+const fullSearchGeometry = searchGeometry(FULL_MAP_SIZE * SUBTILES);
+
 const distanceTo = (u: { x: number; y: number }, b: Building | { x: number; y: number }) => {
   const s = 'kind' in b && b.kind in BUILDINGS ? BUILDINGS[(b as Building).kind].size : 0;
   return distance2D(Math.max(b.x - u.x, 0, u.x - b.x - s), Math.max(b.y - u.y, 0, u.y - b.y - s));
@@ -363,6 +385,11 @@ function searchSubtilePath(
   mapSize: BattleMapSize,
 ): { x: number; y: number }[] {
   const SIZE = mapSize * SUBTILES;
+  const {
+    x: columns,
+    y: rows,
+    neighbors,
+  } = mapSize === MAP_SIZE ? homeSearchGeometry : fullSearchGeometry;
   if (epoch === 0xffffffff) {
     stamp.fill(0);
     epoch = 0;
@@ -432,17 +459,18 @@ function searchSubtilePath(
       heap[at] = last;
       position[last] = at;
     }
-    const x = current % SIZE,
-      y = Math.floor(current / SIZE),
-      hx = (x + 0.5) / SUBTILES,
-      hy = (y + 0.5) / SUBTILES;
     // heuristic[current] is distGoal(hx, hy), computed when the node was queued.
     if (heuristic[current] <= range) {
-      if (current === first && far) approach = { x: hx, y: hy };
+      if (current === first && far)
+        approach = { x: (sx + 0.5) / SUBTILES, y: (sy + 0.5) / SUBTILES };
       goal = current;
       break;
     }
     if (range < 0.5 && heuristic[current] <= approachLimit && !blocked[current]) {
+      const x = columns[current],
+        y = rows[current],
+        hx = (x + 0.5) / SUBTILES,
+        hy = (y + 0.5) / SUBTILES;
       const s = goalSize;
       const tx = Math.max(targetX, Math.min(hx, targetX + s));
       const ty = Math.max(targetY, Math.min(hy, targetY + s));
@@ -463,15 +491,10 @@ function searchSubtilePath(
     }
     const base = cost[current];
     // Neighbours in the original DIRS order: +x, -x, +y, -y.
+    const offset = current * 4;
     for (let d = 0; d < 4; d++) {
-      let nx = x,
-        ny = y;
-      if (d === 0) nx++;
-      else if (d === 1) nx--;
-      else if (d === 2) ny++;
-      else ny--;
-      if (nx < 0 || ny < 0 || nx >= SIZE || ny >= SIZE) continue;
-      const n = ny * SIZE + nx;
+      const n = neighbors[offset + d];
+      if (n < 0) continue;
       if (blocked[n] || (blockWalls && wall[n])) continue;
       if (stamp[n] !== generation) {
         stamp[n] = generation;
@@ -486,6 +509,8 @@ function searchSubtilePath(
         prev[n] = current;
         // queue(n): score, then insert or decrease-key with a sift up.
         if (Number.isNaN(heuristic[n])) {
+          const nx = columns[n],
+            ny = rows[n];
           if (axes) heuristic[n] = Math.sqrt(axes.x[nx] + axes.y[ny]);
           else {
             const cx = (nx + 0.5) / SUBTILES,
