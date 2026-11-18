@@ -38,6 +38,79 @@ Run these in separate terminals from the candidate repository directory:
 npm run dev -- --host 127.0.0.1 --port 5176 --strictPort
 ```
 
+## Bounded headless check
+
+Use this first on a shared workstation. Chromium stays headless and the
+series makes no desktop interactions. Choose the specific model substring
+from the verified headless renderer. If that probe used an installed Chrome,
+set `PLAYWRIGHT_CHROMIUM` to that executable before running the series.
+A successful check is a Mac or desktop
+browser measurement under the recorded conditions. The mobile viewport
+and Android user agent can exercise the mobile renderer policy on that
+workstation.
+
+Start the two local servers above, set `GPU_MODEL` in the shell, and run
+this from the candidate checkout. The series runs one TH18 sample per
+revision, using the same script and the same 2-to-3-second battle window.
+It waits at most 120 seconds per invocation before requesting Chromium
+shutdown. The 30-second limit applies to the live measurement itself.
+A skipped or failed run leaves the pair incomplete.
+
+```sh
+set -e
+: "${GPU_MODEL:?Set GPU_MODEL to the verified Chromium renderer model substring}"
+mkdir -p output/playtest
+evidence=$(mktemp -d output/playtest/headless-hardware-XXXXXX)
+git -C ../web-coc-hardware-base rev-parse HEAD > "$evidence/baseline-revision.txt"
+git rev-parse HEAD > "$evidence/candidate-revision.txt"
+git hash-object scripts/battle-load-benchmark.mjs scripts/battle-browser-gpu.mjs \
+  > "$evidence/harness-file-ids.txt"
+for variant in baseline candidate; do
+  port=5175
+  if [ "$variant" = candidate ]; then port=5176; fi
+  GAME_URL="http://127.0.0.1:$port" node scripts/battle-load-benchmark.mjs \
+    "--expect-gpu=$GPU_MODEL" --mobile --lazyart --gl --army=th18 --level=half \
+    --stage=61 --checkpoint=2 --until=3 --detail=2 --density=1 --warmup=2 \
+    --seconds=30 --deadline=120 "--report=$evidence/$variant.json" \
+    > "$evidence/$variant.stdout" 2> "$evidence/$variant.stderr"
+done
+node --input-type=module - "$evidence" <<'JS'
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+const [baseline, candidate] = ['baseline', 'candidate'].map((name) =>
+  JSON.parse(readFileSync(`${process.argv[2]}/${name}.json`, 'utf8')),
+);
+for (const run of [baseline, candidate]) {
+  assert.equal(run.headed, false);
+  assert.equal(run.profiled, false);
+  assert.equal(run.gpu.unmasked, true);
+  assert(run.gpu.expectedModel);
+  assert.equal(run.errors.length, 0);
+  assert.equal(run.before.elapsed, 2);
+  assert.equal(run.after.elapsed, 3);
+  assert.equal(run.cpuRate, 1);
+  for (const state of [run.before, run.after]) {
+    assert.match(state.stateSha256, /^[0-9a-f]{64}$/);
+    assert.deepEqual(state.canvas, [390, 844]);
+    assert.equal(state.detail, 2);
+  }
+}
+for (const field of ['environment', 'gpu', 'viewport', 'setup', 'deployed', 'rendering']) {
+  assert.deepEqual(baseline[field], candidate[field], field);
+}
+assert.equal(baseline.before.stateSha256, candidate.before.stateSha256);
+assert.equal(baseline.after.stateSha256, candidate.after.stateSha256);
+console.log('Headless pair matched its workload and renderer.');
+JS
+```
+
+This short pair checks feasibility and workload identity. A performance
+conclusion requires repetitions and A/A controls as described below.
+Use the same browser mode for every repetition and record when the
+workstation was also doing other work.
+
+## Headed confirmation
+
 Run the series in Bash from the candidate directory. Set `gpu_model` to the
 specific model substring shown by Chromium. The fixed 390×844 backbuffer at
 detail 2 keeps adaptive quality from changing the measured workload. CPU
@@ -142,4 +215,7 @@ Chromium X-Bow fixture covered 12 source cases at DPR 2. Single-texture
 batching and graphics context restoration changed zero pixels, and the
 fixture reported zero GL errors. The largest per-case mean maximum-channel
 error against the reconstructed reference was 0.612 on the 8-bit scale.
-No hardware timing was collected in the cloud.
+Two bounded headless TH18 smoke runs also matched their start and end
+state hashes and rendering metadata on SwiftShader. A three-second
+startup deadline closed Chromium and produced no timing report. Mac
+hardware timing and headed confirmation were outside these cloud checks.

@@ -33,6 +33,7 @@
  * reduced motion and seeded visual randomness. It requires --freeze and --checkpoint.
  * --swiftshader selects software WebGL. PLAYWRIGHT_CHROMIUM can specify a system executable.
  * --headed opens a visible browser. --expect-gpu="model" checks the unmasked WebGL renderer.
+ * --deadline=120 caps startup, warmup and measurement before browser shutdown.
  * --report=path.json keeps this run's report and optional CPU profile at a unique destination.
  */
 import { chromium } from '@playwright/test';
@@ -65,6 +66,8 @@ const capture = capturePath !== undefined;
 const swiftshader = process.argv.includes('--swiftshader');
 const headed = process.argv.includes('--headed');
 const expectedGpu = arg('expect-gpu')?.trim();
+const deadlineArg = arg('deadline');
+const deadline = deadlineArg === undefined ? undefined : Number(deadlineArg);
 const reportPath = arg('report', 'output/playtest/battle-load.json');
 const msaa = arg('msaa', 'default');
 const profile = process.argv.includes('--profile');
@@ -139,15 +142,38 @@ if (process.argv.includes('--expect-gpu') || expectedGpu === '')
 if (process.argv.includes('--report') || !reportPath.toLowerCase().endsWith('.json'))
   throw Error('Use --report=path.json.');
 
+if (
+  process.argv.includes('--deadline') ||
+  (deadline !== undefined &&
+    (!Number.isFinite(deadline) || deadline <= 0 || deadline * 1000 > 2_147_483_647))
+)
+  throw Error('Use --deadline with a positive run limit in seconds.');
+
+const launchStarted = performance.now();
 const browser = await chromium.launch({
   executablePath: process.env.PLAYWRIGHT_CHROMIUM,
   headless: !headed,
+  ...(deadline === undefined ? {} : { timeout: Math.min(30000, deadline * 1000) }),
   args: swiftshader
     ? ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']
     : process.platform === 'darwin'
       ? ['--use-angle=metal']
       : [],
 });
+let deadlineReached = false;
+const deadlineMessage = `Benchmark exceeded its ${deadline} s run deadline.`;
+const watchdog =
+  deadline === undefined
+    ? undefined
+    : setTimeout(
+        () => {
+          deadlineReached = true;
+          process.exitCode = 1;
+          console.error(deadlineMessage);
+          void browser.close({ reason: deadlineMessage }).catch(() => {});
+        },
+        Math.max(1, deadline * 1000 - (performance.now() - launchStarted)),
+      ).unref();
 const page = await browser.newPage({
   viewport: { width, height },
   deviceScaleFactor: dpr,
@@ -216,6 +242,7 @@ const gpu = await page.evaluate(() => {
 if (expectedGpu !== undefined) {
   const failure = gpuExpectationFailure(gpu, expectedGpu);
   if (failure) {
+    clearTimeout(watchdog);
     await browser.close();
     throw Error(failure);
   }
@@ -612,6 +639,7 @@ const report = {
   profiled: profile,
   warmupSeconds: warmup,
   wallLimitSeconds: seconds,
+  ...(deadline === undefined ? {} : { runDeadlineSeconds: deadline }),
   viewport: { width, height, dpr },
   renderer: gpu.renderer,
   gpu: { ...gpu, ...(expectedGpu !== undefined ? { expectedModel: expectedGpu } : {}) },
@@ -638,8 +666,10 @@ const report = {
   after,
   errors: errors.slice(0, 8),
 };
+if (deadlineReached) throw Error(deadlineMessage);
 await fs.writeFile(reportPath, JSON.stringify(report, null, 2));
 console.log(JSON.stringify(report, null, 2));
+clearTimeout(watchdog);
 await browser.close();
 if (errors.length) process.exitCode = 1;
 if (freeze && checkpoint !== undefined && before.stateSha256 !== after.stateSha256)
