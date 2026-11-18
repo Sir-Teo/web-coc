@@ -105,6 +105,9 @@ that the current revision passes. Current CI and fresh reports are the release r
 
 ## Comparable battle load measurements
 
+Use the [hardware browser and native reference protocol](HARDWARE-BATTLE-PROTOCOL.md)
+for GPU-checked cross-revision runs and the retained source-reference checks.
+
 Use `node scripts/battle-load-benchmark.mjs --mobile --army=th18 --level=half
 --lazyart --checkpoint=2 --detail=2 --density=0.5 --warmup=8 --seconds=6 --gl`
 (on one line) to start from an exact two-second simulation checkpoint and hold

@@ -32,11 +32,14 @@
  * --capture=path.png records the frozen checkpoint canvas and its decoded RGBA hash with
  * reduced motion and seeded visual randomness. It requires --freeze and --checkpoint.
  * --swiftshader selects software WebGL. PLAYWRIGHT_CHROMIUM can specify a system executable.
+ * --headed opens a visible browser. --expect-gpu="model" checks the unmasked WebGL renderer.
+ * --report=path.json keeps this run's report and optional CPU profile at a unique destination.
  */
 import { chromium } from '@playwright/test';
 import fs from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { dirname } from 'node:path';
+import { gpuExpectationFailure } from './battle-browser-gpu.mjs';
 import phaserPackage from 'phaser/package.json' with { type: 'json' };
 
 const arg = (name, fallback) => {
@@ -60,6 +63,9 @@ const freeze = process.argv.includes('--freeze');
 const capturePath = arg('capture');
 const capture = capturePath !== undefined;
 const swiftshader = process.argv.includes('--swiftshader');
+const headed = process.argv.includes('--headed');
+const expectedGpu = arg('expect-gpu')?.trim();
+const reportPath = arg('report', 'output/playtest/battle-load.json');
 const msaa = arg('msaa', 'default');
 const profile = process.argv.includes('--profile');
 const lazyArt = process.argv.includes('--lazyart');
@@ -128,8 +134,14 @@ if (samplers !== null && ![1, 2, 4, 8, 16, 32].includes(samplers))
 if (batchTextures !== null && ![1, 2, 4, 8, 16, 32].includes(batchTextures))
   throw Error('Use --batch-textures=1, 2, 4, 8, 16 or 32.');
 
+if (process.argv.includes('--expect-gpu') || expectedGpu === '')
+  throw Error('Pass the expected GPU model as --expect-gpu="model".');
+if (process.argv.includes('--report') || !reportPath.toLowerCase().endsWith('.json'))
+  throw Error('Use --report=path.json.');
+
 const browser = await chromium.launch({
   executablePath: process.env.PLAYWRIGHT_CHROMIUM,
+  headless: !headed,
   args: swiftshader
     ? ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']
     : process.platform === 'darwin'
@@ -191,11 +203,23 @@ await page
   .locator('[data-action="skip-tutorial"]')
   .click({ timeout: 5000 })
   .catch(() => {});
-const renderer = await page.evaluate(() => {
+const gpu = await page.evaluate(() => {
   const gl = window.__game.game.renderer.gl;
   const d = gl.getExtension('WEBGL_debug_renderer_info');
-  return d ? gl.getParameter(d.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+  return {
+    renderer: d ? gl.getParameter(d.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
+    vendor: d ? gl.getParameter(d.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR),
+    webglVersion: gl.getParameter(gl.VERSION),
+    unmasked: !!d,
+  };
 });
+if (expectedGpu !== undefined) {
+  const failure = gpuExpectationFailure(gpu, expectedGpu);
+  if (failure) {
+    await browser.close();
+    throw Error(failure);
+  }
+}
 const setup = await page.evaluate(
   async ({ army, stage, level, detail, density, capture }) => {
     const { developedSave } = await import('/tests/fixtures/developed-village.ts');
@@ -530,10 +554,10 @@ const frames = await page.evaluate(
   { seconds, checkpoint, until },
 );
 const after = await census();
-await fs.mkdir('output/playtest', { recursive: true });
+await fs.mkdir(dirname(reportPath), { recursive: true });
 if (profile) {
   const { profile } = await client.send('Profiler.stop');
-  await fs.writeFile('output/playtest/battle-load.cpuprofile', JSON.stringify(profile));
+  await fs.writeFile(reportPath.replace(/\.json$/i, '.cpuprofile'), JSON.stringify(profile));
 }
 const rendering = await page.evaluate(() => {
   const { game } = window.__game,
@@ -579,12 +603,18 @@ if (capture) {
   };
 }
 const report = {
-  environment: `Headless Chromium ${browser.version()} on ${process.platform}, ${width}×${height} at ${dpr}×; not a physical device`,
+  environment: `${headed ? 'Headed' : 'Headless'} Chromium ${browser.version()} on ${process.platform}/${process.arch}, ${width}×${height} at ${dpr}×`,
+  headed,
   mobile,
   agent,
   phaserVersion: phaserPackage.version,
   cpuRate,
-  renderer,
+  profiled: profile,
+  warmupSeconds: warmup,
+  wallLimitSeconds: seconds,
+  viewport: { width, height, dpr },
+  renderer: gpu.renderer,
+  gpu: { ...gpu, ...(expectedGpu !== undefined ? { expectedModel: expectedGpu } : {}) },
   rendering,
   ...(canvasCapture ? { capture: canvasCapture } : {}),
   freeze,
@@ -608,8 +638,7 @@ const report = {
   after,
   errors: errors.slice(0, 8),
 };
-await fs.mkdir('output/playtest', { recursive: true });
-await fs.writeFile('output/playtest/battle-load.json', JSON.stringify(report, null, 2));
+await fs.writeFile(reportPath, JSON.stringify(report, null, 2));
 console.log(JSON.stringify(report, null, 2));
 await browser.close();
 if (errors.length) process.exitCode = 1;
