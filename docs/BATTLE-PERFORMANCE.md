@@ -2404,6 +2404,47 @@ full-roster results. The production branch retains full-page uploads.
 Whole-battle gains, physical-phone performance and original Android runtime
 parity remain unverified.
 
+## Group-following live comparison (2026-11-18)
+
+The retained projectile oracle covers axis-aligned synthetic positions and
+hold counters. Its unobserved off-axis, moving-target and collision cases
+prevent a grounded change to the production flight rules. The follow-up used
+the matched live benchmark on group-following work sampled in the full-roster
+CPU profiles.
+
+The trial reused a snapshot cell's ordered neighboring cells and their total
+housing. A candidate whose upper bound cannot beat an earlier anchor can skip
+its exact housing scan. Those skipped weights are left uncached, so later
+followers still compute them when needed. Measured weights use snapshot indices.
+The trial was compared with `b04fceec`.
+
+Under system Chromium, all three group fixtures passed, covering full-scan
+winner agreement, the first follower's snapshot time and snapshot lifecycle.
+All 60 targeted Apprentice Warden and Furnace aura tests passed, as did test
+type checking. Both TH18 and roster matched all 401 serialized battle-state
+checkpoints. Fixed-seed reduced-motion roster captures at five simulated
+seconds had identical state hashes and all 329,160 canvas pixels.
+
+The live runs used stage 61, the half-level full roster, a two-to-five-second
+battle window, detail 2, a fixed 195×422 backbuffer and lazy art. Chromium 155
+used SwiftShader and an Android user agent. CPU throttling was disabled for
+this follow-up. Start and end state hashes matched across all runs.
+
+| Pair order | Baseline wall time (s) | Trial wall time (s) |
+| --- | ---: | ---: |
+| Baseline then trial | 3.90 | 3.95 |
+| Trial then baseline | 4.02 | 4.00 |
+| Trial then baseline | 4.04 | 4.16 |
+| Baseline then trial | 3.99 | 3.88 |
+
+Mean wall times were 3.99 and 4.00 seconds. The live trials ranged from 4.7 to
+6.0 FPS on this software renderer. One profiled pair sampled 112 and 63 ms
+inclusive in the group anchor function. That pair took 4.14 and 3.24 seconds
+and submitted 16 and 15 frames, respectively. The overlap across the eight
+unprofiled runs is the basis for the performance decision. The trial remains
+local. Physical-phone performance and original Android runtime parity remain
+unverified.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
