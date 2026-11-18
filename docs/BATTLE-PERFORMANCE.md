@@ -2232,6 +2232,56 @@ baseline drift. The whole-battle benchmark did not resolve a performance change.
 Validation passed all 8,982 tests across 594 files, source/test type checking, documentation
 links, and the production build including WebP conversion and offline cache generation.
 
+## Sub-tile route search profile (2026-11-18)
+
+Stage 61 was profiled with the half-level TH18 and full-roster armies in Node 24.
+Sub-tile A* was one of the larger named costs in both profiles and appeared in the
+Chromium stage-61 mobile stress profile. The browser run used a 390×844 viewport,
+DPR 3, lazy art, 4× CPU throttling and SwiftShader. It measured 2.3 FPS during the
+profiled interval without runtime errors. The Android user agent and software renderer
+limit this observation to the cloud setup.
+
+Two separate trials began at `e561a2b9`. The first initialized heap nodes directly on
+insertion. Its isolated times overlapped the baseline. The first whole-roster A/A
+calibration exceeded the declared 0.04 variability budget, so it stopped before A/B.
+
+The second trial precomputed column, row and cardinal neighbor indices on the 48- and
+52-tile boards. It kept collision, wall costs, neighbor order, stable heap ties and
+approach/sight-line calculations in the search. Both tables occupy 200,320 bytes.
+An isolated cold-cache sweep used 184 routes per workload across stages 33, 61 and 85,
+four deployment points, and ranges 0.4 and 3. Fixed point goals offset both building
+coordinates by 0.125. Four fresh processes ran in baseline/candidate/candidate/baseline
+order, each with three warm-ups and five timed repeats. Route hashes matched.
+
+| Workload | Baseline medians (ms) | Board geometry medians (ms) |
+| --- | ---: | ---: |
+| Building targets | 45.27, 47.09 | 42.45, 40.97 |
+| Point targets | 51.45, 53.51 | 51.80, 46.02 |
+
+All 63 targeted path, collision and replay tests passed, along with source and test type
+checking and the production build. TH18 and roster each matched all 401 serialized
+battle-state hashes. A reduced-motion, fixed-seed browser capture at two simulated seconds
+matched all 329,160 pixels against the baseline. This validates the web comparison against
+the existing route and battle witnesses. Original Android runtime parity remains unverified.
+
+The board-geometry full-roster timing stopped during its four-pair A/A calibration.
+Baseline drift was 9.09%, above the 8% drift limit, and log-ratio standard error was 0.123,
+above the 0.04 limit.
+
+Eight unprofiled live stage-61 runs used the half-level TH18 army, a two-second starting
+checkpoint, 4× CPU throttling, lazy art, and Chromium 155 with SwiftShader. Every run started
+with 211 living units and the same serialized state, used detail 2, and ended at a 195×422
+backbuffer without errors. Six-second windows were run in both baseline/candidate/candidate/
+baseline and candidate/baseline/baseline/candidate order.
+
+| Sequence | Baseline FPS | Board geometry FPS |
+| --- | ---: | ---: |
+| Baseline first | 2.5, 2.2 | 3.3, 3.2 |
+| Candidate first | 3.1, 3.6 | 3.2, 3.2 |
+
+The second sequence overlapped the baseline and candidate FPS ranges. Whole-battle
+responsiveness and physical-phone FPS gains remain unverified.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
