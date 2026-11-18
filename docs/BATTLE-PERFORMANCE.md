@@ -2282,6 +2282,40 @@ baseline and candidate/baseline/baseline/candidate order.
 The second sequence overlapped the baseline and candidate FPS ranges. Whole-battle
 responsiveness and physical-phone FPS gains remain unverified.
 
+## Support spell pulse work (2026-11-18)
+
+The stage-61 full-roster Node CPU profile at `07091ffe` attributed about 86 ms of
+samples to `supportAttackers`. Support pulses now evaluate their fixed table fields
+once. Extra-health auras find the greatest capacity and expiry in one pass over the
+live sources. The source record, consumed health, target tests, tick clocks and
+capability gates retain their existing values.
+
+The isolated check pulsed level-4 Apprentice Aura and level-18 Life Gem Aura over
+320 ground units for 240 intervals. The Life Gem center alternated every 20 intervals
+to exercise overlap and expiry. Fresh processes ran in baseline/candidate/candidate/
+baseline order. Each median used seven timed runs after four warm-ups. The baseline
+medians were 133.64 and 143.55 ms. The candidate medians were 77.55 and 74.11 ms.
+Full serialized state hashes agreed. This measures spell work in a synthetic crowd.
+
+All 114 targeted tests across six files passed, including the retained Furnace
+health, overlapping aura, depletion and replay witnesses. TH18 and full roster each
+matched all 401 serialized battle-state hashes. A fixed-seed, reduced-motion
+full-roster SwiftShader capture at two simulated seconds matched all 329,160 canvas
+pixels. Both builds reached the same 572 living units and reported zero browser
+errors in the capture. Type checks and the production build passed.
+
+The full-roster Node timing run pinned the process to one core and used four
+baseline pairs. Wall-time log-ratio standard error was 0.046 against the declared
+0.04 budget. The run stopped at calibration before candidate timing.
+
+Four live SwiftShader runs started from the same two-second roster state and used
+a 390×844 Android viewport, DPR 3, 4× CPU throttling and lazy art. Six-second
+samples ran in baseline/candidate/candidate/baseline order. Baseline FPS was
+1.0 and 0.7, and candidate FPS was 0.8 and 0.7. All runs had 572 living units at
+the start, detail 2, a 195×422 final backbuffer and zero reported runtime errors.
+Whole-battle responsiveness, physical-phone FPS, and original Android runtime
+parity remain unverified.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
