@@ -114,6 +114,27 @@ frozen runs reject any state mutation. Compare matching starting hashes, canvas
 sizes, detail levels, army levels and CPU settings. Live runs stop simulation at
 the end of the timed interval before collecting their final report.
 
+Add `--until=3.5 --seconds=45` to time the same live simulation work in each run.
+The benchmark stops on the frame that submits the requested battle-clock step.
+`--seconds` is the deadline in this mode, and a run that misses the end clock fails.
+Compare both state hashes before comparing wall times. Checkpoint reports also
+include `frames.simulatedSecondsPerSecond`, the battle clock advanced per elapsed
+wall second. Use the same render settings and benchmark script across revisions.
+
+For a repeatable frozen canvas sample, run:
+
+```sh
+node scripts/battle-load-benchmark.mjs --mobile --army=th18 --level=half \
+  --checkpoint=2 --freeze --dpr=1 --detail=0 --density=1 --warmup=1 --seconds=1 \
+  --capture=output/playtest/th18-checkpoint.png
+```
+
+Capture mode uses reduced motion and a fixed seed for transient visuals. Compare
+`before.stateSha256`, `capture.rgbaSha256` and capture dimensions with the same
+browser, renderer and settings. The hash covers decoded canvas screenshot pixels.
+Set `PLAYWRIGHT_CHROMIUM` to a system browser executable when needed, and pass
+`--swiftshader` to select software WebGL.
+
 Without these controls, adaptive resolution and warmup progress can produce different
 battle workloads. Headless software-rendered Chromium and `--cpu=4` are diagnostic
 comparisons; they do not establish performance on a physical phone. Repeat warmed

@@ -2316,6 +2316,41 @@ the start, detail 2, a 195×422 final backbuffer and zero reported runtime error
 Whole-battle responsiveness, physical-phone FPS, and original Android runtime
 parity remain unverified.
 
+## Frozen captures and equal-clock live runs (2026-11-18)
+
+The browser benchmark now records a decoded canvas RGBA hash at a frozen,
+reduced-motion checkpoint, with seeded transient visuals. It also measures live
+wall time from an exact start to an exact end battle clock and reports simulated
+seconds advanced per wall second. Equal state hashes at both ends make the fixed
+window useful for comparing simulation work. Frame counts can still differ as
+rendering follows the browser's own cadence.
+
+Frozen tests at two seconds on the same game revision reproduced all 329,160
+pixels per capture in two worktrees for both TH18 (211 living) and the full roster
+(572 living). Each capture also matched the battle state before and after the
+frozen sample. The full-roster capture agreed with the earlier experimental
+capture script.
+
+The live comparison reused the same harness for `07091ffe` and `110e6e8a`.
+Stage 61 started at two battle seconds and stopped at 3.5. Each workload used
+baseline/candidate/candidate/baseline order at 4× CPU throttling under
+Chromium/SwiftShader. Every run matched its workload's start and end state
+hashes and reported zero browser errors.
+
+| Stage-61 workload | Baseline elapsed wall time (s) | Candidate elapsed wall time (s) |
+| --- | ---: | ---: |
+| TH18 | 3.61, 2.63 | 2.23, 3.23 |
+| Full roster | 5.42, 6.00 | 6.79, 6.49 |
+
+TH18 times overlapped. The two short roster samples per revision favored the
+baseline in this environment. The measurements leave whole-battle gains and
+physical-phone responsiveness unresolved.
+
+A separate profiled TH18 run reached four battle seconds. Rendering, texture
+uploads and model stepping all appeared in the sampled stacks. The harness also
+rejected an unreachable wall-time deadline, and a regular timed run without a
+checkpoint completed successfully.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

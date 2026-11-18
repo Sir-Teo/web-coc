@@ -21,20 +21,28 @@
  * --checkpoint=2 advances exactly two simulated seconds before holding simulation through
  * artwork/GPU warmup; it resumes at measurement start unless --freeze is set. Reports include
  * complete battle-state hashes. Checkpoints must be multiples of the 50-ms simulation step.
+ * --until=4 measures a live checkpoint run through a fixed end battle clock. --seconds
+ * becomes the wall-time limit. Compare the start and end state hashes before comparing timings.
  * --detail=0|1|2 holds the rendering detail level instead of using the adaptive governor.
  * --density=0.5 fixes the canvas density ceiling and disables adaptive resolution for this
  * run. Device/pixel budgets still apply. Use the same density and warmup for comparisons.
  * --samplers=4 caps the reported fragment texture units to test shader complexity versus extra
  * draw calls. It preserves source artwork and reports the renderer's actual sampler limit.
  * --batch-textures=4 sets the render-node batching budget without emulating hardware limits.
+ * --capture=path.png records the frozen checkpoint canvas and its decoded RGBA hash with
+ * reduced motion and seeded visual randomness. It requires --freeze and --checkpoint.
+ * --swiftshader selects software WebGL. PLAYWRIGHT_CHROMIUM can specify a system executable.
  */
 import { chromium } from '@playwright/test';
 import fs from 'node:fs/promises';
 import { createHash } from 'node:crypto';
+import { dirname } from 'node:path';
 import phaserPackage from 'phaser/package.json' with { type: 'json' };
 
-const arg = (name, fallback) =>
-  process.argv.findLast((a) => a.startsWith(`--${name}=`))?.split('=')[1] ?? fallback;
+const arg = (name, fallback) => {
+  const option = `--${name}=`;
+  return process.argv.findLast((a) => a.startsWith(option))?.slice(option.length) ?? fallback;
+};
 const army = arg('army', 'roster');
 const level = arg('level', 'max');
 const stage = Number(arg('stage', 61));
@@ -49,6 +57,9 @@ const dpr = Number(arg('dpr', mobile ? 3 : 2));
 const cpuRate = Number(arg('cpu', 1));
 const gl = process.argv.includes('--gl');
 const freeze = process.argv.includes('--freeze');
+const capturePath = arg('capture');
+const capture = capturePath !== undefined;
+const swiftshader = process.argv.includes('--swiftshader');
 const msaa = arg('msaa', 'default');
 const profile = process.argv.includes('--profile');
 const lazyArt = process.argv.includes('--lazyart');
@@ -56,6 +67,8 @@ const meshBatch = arg('mesh-batch', 'default');
 const checkpointArg = arg('checkpoint');
 const checkpoint = checkpointArg === undefined ? undefined : Number(checkpointArg);
 const checkpointSteps = checkpoint === undefined ? null : Math.round(checkpoint * 20);
+const untilArg = arg('until');
+const until = untilArg === undefined ? undefined : Number(untilArg);
 const detailArg = arg('detail');
 const detail = detailArg === undefined ? null : Number(detailArg);
 const densityArg = arg('density');
@@ -89,6 +102,22 @@ if (
     Math.abs(checkpoint * 20 - checkpointSteps) > 1e-9)
 )
   throw Error('Use a nonnegative --checkpoint in multiples of 0.05 seconds.');
+if (
+  process.argv.includes('--until') ||
+  (until !== undefined &&
+    (checkpoint === undefined ||
+      freeze ||
+      !Number.isFinite(until) ||
+      until <= checkpoint ||
+      !Number.isSafeInteger(Math.round(until * 20)) ||
+      Math.abs(until * 20 - Math.round(until * 20)) > 1e-9))
+)
+  throw Error('Use --until at a 0.05-second step after --checkpoint in a live run.');
+if (
+  process.argv.includes('--capture') ||
+  (capture && (!capturePath.toLowerCase().endsWith('.png') || !freeze || checkpoint === undefined))
+)
+  throw Error('Use --capture=path.png with --freeze and --checkpoint.');
 if (detail !== null && (!Number.isInteger(detail) || detail < 0 || detail > 2))
   throw Error('Use --detail=0, 1 or 2.');
 if (density !== null && (!Number.isFinite(density) || density <= 0))
@@ -99,9 +128,14 @@ if (samplers !== null && ![1, 2, 4, 8, 16, 32].includes(samplers))
 if (batchTextures !== null && ![1, 2, 4, 8, 16, 32].includes(batchTextures))
   throw Error('Use --batch-textures=1, 2, 4, 8, 16 or 32.');
 
-const browser = await chromium.launch(
-  process.platform === 'darwin' ? { args: ['--use-angle=metal'] } : {},
-);
+const browser = await chromium.launch({
+  executablePath: process.env.PLAYWRIGHT_CHROMIUM,
+  args: swiftshader
+    ? ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']
+    : process.platform === 'darwin'
+      ? ['--use-angle=metal']
+      : [],
+});
 const page = await browser.newPage({
   viewport: { width, height },
   deviceScaleFactor: dpr,
@@ -163,7 +197,7 @@ const renderer = await page.evaluate(() => {
   return d ? gl.getParameter(d.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
 });
 const setup = await page.evaluate(
-  async ({ army, stage, level, detail, density }) => {
+  async ({ army, stage, level, detail, density, capture }) => {
     const { developedSave } = await import('/tests/fixtures/developed-village.ts');
     const { TROOP_KEYS, maxTroopLevel, BUILDINGS } = await import('/src/game/data.ts');
     const { emptyArmy, emptySpells } = await import('/src/game/army.ts');
@@ -187,6 +221,7 @@ const setup = await page.evaluate(
     const { settings, tutorial } = m.state;
     m.state = developedSave();
     m.state.settings = { ...settings, sound: false, music: false };
+    if (capture) m.state.settings.reducedMotion = true;
     m.state.tutorial = tutorial;
     m.state.spells = emptySpells();
     m.state.king = undefined;
@@ -244,7 +279,7 @@ const setup = await page.evaluate(
       walls: b.buildings.filter((v) => v.kind === 'wall').length,
     };
   },
-  { army, stage, level, detail, density },
+  { army, stage, level, detail, density, capture },
 );
 await page.waitForFunction(
   () => window.__game && !window.__game.scene.lateAssetsPending(),
@@ -253,19 +288,33 @@ await page.waitForFunction(
 );
 await page.waitForTimeout(1500);
 const deployed = await page.evaluate(
-  async ({ checkpointSteps, freeze }) => {
+  async ({ checkpointSteps, freeze, capture, until }) => {
     const { TROOP_KEYS } = await import('/src/game/data.ts');
     const { battleMapSize } = await import('/src/game/grid.ts');
     const { model: m, scene } = window.__game;
     const b = m.battle;
     const originalStep = m.step;
+    if (capture) {
+      // Match transient effects across runs. The live benchmark uses regular randomness.
+      let seed = 1;
+      Math.random = () => {
+        seed = (Math.imul(1664525, seed) + 1013904223) >>> 0;
+        return seed / 4294967296;
+      };
+    }
     if (checkpointSteps !== null) {
       // Hold before the first deployment: no browser frame can advance this model while
       // its per-level artwork loads or the renderer warms up.
       const hold = () => {};
       m.step = hold;
       window.__benchStartMeasurement = () => {
-        if (!freeze) m.step = originalStep;
+        if (!freeze)
+          m.step =
+            until === undefined
+              ? originalStep
+              : (dt) => {
+                  if (b.elapsed < until - 1e-8) originalStep.call(m, dt);
+                };
         scene.tick = 0;
         scene.interpolation.capture(b);
       };
@@ -320,7 +369,7 @@ const deployed = await page.evaluate(
     scene.resetCamera();
     return b.units.length;
   },
-  { checkpointSteps, freeze },
+  { checkpointSteps, freeze, capture, until },
 );
 const client = profile || cpuRate !== 1 ? await page.context().newCDPSession(page) : null;
 if (cpuRate !== 1) await client.send('Emulation.setCPUThrottlingRate', { rate: cpuRate });
@@ -336,6 +385,7 @@ await page.evaluate((gl) => {
     step(t, d);
     window.__busy.push(performance.now() - s);
     window.__frameTimes.push(s);
+    window.__benchOnFrame?.();
   };
   if (gl) {
     const ctx = game.renderer.gl;
@@ -415,14 +465,16 @@ if (profile) {
   await client.send('Profiler.start');
 }
 const frames = await page.evaluate(
-  (seconds) =>
+  ({ seconds, checkpoint, until }) =>
     new Promise((resolve) => {
       window.__benchStartMeasurement?.();
       window.__busy.length = 0;
       window.__frameTimes.length = 0;
       if (window.__gl) for (const k of Object.keys(window.__gl)) window.__gl[k] = 0;
       const start = performance.now();
-      setTimeout(() => {
+      const finish = () => {
+        clearTimeout(timeout);
+        window.__benchOnFrame = undefined;
         const battleElapsed = window.__benchFinishMeasurement?.();
         const elapsed = performance.now() - start;
         const q = (list, p) =>
@@ -437,7 +489,15 @@ const frames = await page.evaluate(
         const busy = window.__busy.slice().sort((a, b) => a - b);
         const n = busy.length;
         resolve({
-          ...(battleElapsed === undefined ? {} : { battleElapsed }),
+          ...(battleElapsed === undefined
+            ? {}
+            : {
+                battleElapsed,
+                simulatedSecondsPerSecond: +(
+                  ((battleElapsed - checkpoint) * 1000) /
+                  elapsed
+                ).toFixed(3),
+              }),
           frames: n,
           seconds: +(elapsed / 1000).toFixed(2),
           meanFps: +((n * 1000) / elapsed).toFixed(1),
@@ -457,9 +517,17 @@ const frames = await page.evaluate(
               }
             : {}),
         });
-      }, seconds * 1000);
+      };
+      const timeout = setTimeout(finish, seconds * 1000);
+      if (until !== undefined) {
+        const battle = window.__game.model.battle;
+        // Sample through the callback that submitted the final rendered frame.
+        window.__benchOnFrame = () => {
+          if (battle.finished || battle.elapsed >= until - 1e-8) finish();
+        };
+      }
     }),
-  seconds,
+  { seconds, checkpoint, until },
 );
 const after = await census();
 await fs.mkdir('output/playtest', { recursive: true });
@@ -492,6 +560,24 @@ const rendering = await page.evaluate(() => {
     fpsLimit: game.loop.fpsLimit,
   };
 });
+let canvasCapture;
+if (capture) {
+  const { default: sharp } = await import('sharp');
+  await fs.mkdir(dirname(capturePath), { recursive: true });
+  const png = await page
+    .locator('canvas')
+    .first()
+    .screenshot({ path: capturePath, timeout: 30000 });
+  const { data, info } = await sharp(png).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  canvasCapture = {
+    path: capturePath,
+    width: info.width,
+    height: info.height,
+    rgbaSha256: createHash('sha256').update(data).digest('hex'),
+    reducedMotion: true,
+    seed: 1,
+  };
+}
 const report = {
   environment: `Headless Chromium ${browser.version()} on ${process.platform}, ${width}×${height} at ${dpr}×; not a physical device`,
   mobile,
@@ -500,12 +586,14 @@ const report = {
   cpuRate,
   renderer,
   rendering,
+  ...(canvasCapture ? { capture: canvasCapture } : {}),
   freeze,
   lazyArt,
   meshBatch,
   ...(checkpoint !== undefined
     ? { checkpoint: { seconds: checkpoint, steps: checkpointSteps } }
     : {}),
+  ...(until !== undefined ? { until } : {}),
   ...(detail !== null ? { detail } : {}),
   ...(density !== null ? { density } : {}),
   ...(samplers !== null ? { samplers } : {}),
@@ -529,5 +617,7 @@ if (freeze && checkpoint !== undefined && before.stateSha256 !== after.stateSha2
   throw Error('The frozen benchmark changed its battle state.');
 if (checkpoint !== undefined && frames.battleElapsed !== after.elapsed)
   throw Error('The checkpoint benchmark advanced after its timed sample.');
+if (until !== undefined && Math.abs(after.elapsed - until) > 1e-8)
+  throw Error(`The live run stopped at ${after.elapsed} s before reaching ${until} s.`);
 if (density !== null && JSON.stringify(before.canvas) !== JSON.stringify(after.canvas))
   throw Error('The fixed-density benchmark changed its canvas size.');
