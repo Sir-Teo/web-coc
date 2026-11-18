@@ -560,7 +560,6 @@ function supportAttackers(
   const damage = num(row, 'Damage');
   const heroScale = num(row, 'HeroDamageMultiplier', 100) / 100;
   const boostTime = seconds(row, 'BoostTimeMS');
-  const poison = num(row, 'PoisonDPS') > 0;
   const jump = seconds(row, 'JumpBoostMS');
   const invisible = seconds(row, 'InvisibilityTime');
   const shieldTime = seconds(row, 'ShieldTime');
@@ -568,13 +567,14 @@ function supportAttackers(
   const immortal = seconds(row, 'ImmortalTime');
   const given = text(row, 'GiveSpecialAbility');
   const overgrowth = flag(row, 'Overgrowth');
-  const groundOnly =
-    text(row, 'TargetInfoString').includes('TYPE_GROUND') &&
-    !text(row, 'TargetInfoString').includes('AIR');
+  const targetInfo = text(row, 'TargetInfoString');
+  const groundOnly = targetInfo.includes('TYPE_GROUND') && !targetInfo.includes('AIR');
+  const poison = num(row, 'PoisonDPS') > 0;
+  const boostsAttackers = boostTime > 0 && !poison && given !== 'AngrySpellAnger';
   const freezeFriendly = given === 'IceBlockSpell' ? seconds(row, 'FreezeTimeMS') : 0;
   if (!(
     damage < 0 ||
-    (boostTime > 0 && !poison && given !== 'AngrySpellAnger') ||
+    boostsAttackers ||
     jump ||
     (invisible && !overgrowth) ||
     (shieldTime && !overgrowth) ||
@@ -583,15 +583,18 @@ function supportAttackers(
     given
   ))
     return;
+  const immuneSieges = flag(row, 'ImmunitySiegeMachines');
+  const excludesOwner = flag(row, 'DoesNotAffectOwner');
+  const extraHealthCap = num(row, 'ExtraHealthMax');
   for (const u of battle.units) {
     if (!liveAttacker(u, at) || isTotem(u)) continue;
-    if (u.native?.siege && flag(row, 'ImmunitySiegeMachines')) continue;
-    if (flag(row, 'DoesNotAffectOwner') && u.id === cast.owner) continue;
+    if (u.native?.siege && immuneSieges) continue;
+    if (excludesOwner && u.id === cast.owner) continue;
     if (distance2D(u.x - x, u.y - y) > radius + 1e-9) continue;
     const flying = !!TROOPS[u.kind].flying;
     if (damage < 0 && !(groundOnly && flying) && !u.native?.noHealing)
       healUnit(battle, u, -damage * (u.hero ? heroScale : 1));
-    if (boostTime > 0 && !poison && given !== 'AngrySpellAnger') {
+    if (boostsAttackers) {
       const scale = u.hero ? 0.5 : 1;
       const hero = !!u.hero || isHeroUnitKind(u.kind);
       const stats =
@@ -642,8 +645,10 @@ function supportAttackers(
     }
     if (extraPermil > 0) {
       const e = unitEffects(u);
-      const cap = num(row, 'ExtraHealthMax');
-      const amount = Math.min(cap > 0 ? cap : Infinity, (u.maxHp * extraPermil) / 1000);
+      const amount = Math.min(
+        extraHealthCap > 0 ? extraHealthCap : Infinity,
+        (u.maxHp * extraPermil) / 1000,
+      );
       const until = at + (cast.interval || 0.3) + 1e-6;
       const previous = e.extraHp && e.extraHp.until >= at - 1e-9 ? e.extraHp : undefined;
       if (battle.nativeHeroPassives) {
@@ -653,11 +658,16 @@ function supportAttackers(
           Object.entries(previous?.sources ?? {}).filter(([, source]) => source.until >= at - 1e-9),
         );
         sources[cast.id] = { until, capacity: amount };
-        const capacity = Math.max(...Object.values(sources).map((source) => source.capacity));
+        let capacity = amount;
+        let expires = until;
+        for (const source of Object.values(sources)) {
+          capacity = Math.max(capacity, source.capacity);
+          expires = Math.max(expires, source.until);
+        }
         e.extraHp = {
           sources,
           capacity,
-          until: Math.max(...Object.values(sources).map((source) => source.until)),
+          until: expires,
           amount: previous
             ? Math.max(0, previous.amount + capacity - (previous.capacity ?? capacity))
             : capacity,
