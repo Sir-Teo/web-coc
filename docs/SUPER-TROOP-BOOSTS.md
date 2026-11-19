@@ -46,6 +46,13 @@ errors use the same check. A missing or expired Super Minion boost now says
 Clock expiry refreshes the controls while retaining prepared troops. Ordinary
 facility requirements continue to name their correct Barracks or Dark Barracks.
 
+The Army panel lets players cancel an active boost after confirming that it
+will remove that type's prepared troops. Cancellation frees the boost slot,
+clears that type from the camps and queue, and returns neither Dark Elixir nor
+the Super Potion. The cancellation rule appears in [Supercell's June 2023
+patch notes](https://supercell.com/en/games/clashofclans/blog/release-notes/patch-notes-june-2023-2/)
+and the [retained Super Troop reference](../reference/official-wiki/spells-siege-super/super-troops.md).
+
 Saved boost deadlines and prepared troops remain intact. New training requires
 the corrected research level, including when an older boost was activated one
 level early. Already prepared troops can still deploy. Combat research levels,

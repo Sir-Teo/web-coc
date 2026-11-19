@@ -3902,6 +3902,23 @@ export class GameModel {
     this.countAchievements('activate_super_licence');
     this.changed();
   }
+  cancelSuperBoost(kind: TroopKind, expectedEnd: number) {
+    const boosts = this.state.superBoosts;
+    if (
+      this.battle ||
+      !superOriginal(kind) ||
+      !boosts ||
+      boosts[kind] !== expectedEnd ||
+      expectedEnd <= this.clock
+    )
+      return false;
+    delete boosts[kind];
+    this.state.army[kind] = 0;
+    this.state.queue = this.state.queue.filter((item) => item.kind !== kind);
+    this.notify(`${TROOPS[kind].name} boost canceled.`);
+    this.changed();
+    return true;
+  }
   /** The first missing training requirement, shared by controls and preparation commands. */
   troopTrainingIssue(kind: TroopKind): { label: string; message: string } | null {
     const original = superOriginal(kind),

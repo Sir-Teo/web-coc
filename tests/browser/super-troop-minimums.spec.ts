@@ -93,5 +93,17 @@ for (const c of [
       });
       await tile.locator(`[data-action="train:${c.kind}"]`).click();
       await expect(tile.locator(`[data-army-count="troop:${c.kind}"]`)).toHaveText('1');
+      if (c.width === 390 && method === 'dark') {
+        await tile.getByRole('button', { name: 'Cancel boost' }).click();
+        await expect(tile).toContainText('without a refund');
+        await tile.getByRole('button', { name: 'Keep boost' }).click();
+        await expect(tile.locator(`[data-army-count="troop:${c.kind}"]`)).toHaveText('1');
+        await tile.getByRole('button', { name: 'Cancel boost' }).click();
+        await page.screenshot({ path: 'output/playtest/super-boost-cancel.png' });
+        await tile.getByRole('button', { name: 'Confirm cancellation' }).click();
+        await expect(tile.locator(`[data-army-count="troop:${c.kind}"]`)).toHaveText('0');
+        await expect(tile.locator(`[data-action="train:${c.kind}"]`)).toBeDisabled();
+        expect(await page.evaluate(() => window.__game.model.state.dark)).toBe(75000);
+      }
       expect(errors).toEqual([]);
     });

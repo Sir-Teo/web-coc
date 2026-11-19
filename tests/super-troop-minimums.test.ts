@@ -99,3 +99,27 @@ it('retains old boost deadlines and prepared troops while blocking new below-min
   expect(m.deploy(1, 1)).toBe(true);
   expect(m.battle!.units.find((u) => u.kind === 'superminion')).toBeDefined();
 });
+
+it('cancels one active boost without a refund and clears only its prepared troops', () => {
+  const m = village('minion', 8);
+  m.state.troopLevels!.balloon = 8;
+  m.state.troopLevels!.goblin = 7;
+  m.boostSuperTroop('superminion');
+  m.boostSuperTroop('rocketballoon');
+  m.train('superminion');
+  const end = m.state.superBoosts!.superminion!;
+  m.state.army.rocketballoon = 1;
+  m.state.queue.push({ kind: 'superminion', end }, { kind: 'swordsman', end });
+  const dark = m.state.dark;
+  expect(m.cancelSuperBoost('superminion', end + 1)).toBe(false);
+  expect(m.state.army.superminion).toBe(1);
+  expect(m.cancelSuperBoost('superminion', end)).toBe(true);
+  expect(m.cancelSuperBoost('superminion', end)).toBe(false);
+  expect(m.state.dark).toBe(dark);
+  expect(m.state.army.superminion).toBe(0);
+  expect(m.state.army.rocketballoon).toBe(1);
+  expect(m.state.queue).toEqual([{ kind: 'swordsman', end }]);
+  expect(m.troopUnlocked('superminion')).toBe(false);
+  m.boostSuperTroop('sneakygoblin');
+  expect(m.troopUnlocked('sneakygoblin')).toBe(true);
+});
