@@ -1167,6 +1167,7 @@ export interface Battle {
   /** Version 238: source ejection immunity and siege reduction in native home Spring Traps. */
   nativeSpringEjection?: true;
   nativeAirBombFixedAim?: true;
+  nativeAirBombSplashEligibility?: true;
   /** Version239: source Seeking Shield/Spiky Ball bounce stop counters hold movement. */
   nativeProjectileBouncePause?: true;
   /** Version 207: source demolition contact cues reconstruct and cover the death tone. */

@@ -186,13 +186,13 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       x: trap.x + BUILDINGS[trap.kind].size / 2,
       y: trap.y + BUILDINGS[trap.kind].size / 2,
     };
-    const eligible = (u: Unit) =>
+    const canHit = (u: Unit) =>
       u.hp > 0 &&
-      unitTriggersTraps(u) &&
       (trap.npc !== 'shrink-trap' || (!u.ejected && (u.spawnedAt ?? 0) <= battle.elapsed)) &&
       (u.hero ? 25 : TROOPS[u.kind].space) >= (d.minHousing ?? 0) &&
       (!d.springCapacity || (u.springUntil ?? 0) <= battle.elapsed) &&
       (mode === 'both' || !!TROOPS[u.kind].flying === (mode === 'air'));
+    const eligible = (u: Unit) => canHit(u) && unitTriggersTraps(u);
     if (!state) {
       // Min-scan with the old sort's winner (spring housing, distance, id).
       let pick: Unit | undefined;
@@ -389,8 +389,13 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       }
       effect({ type: 'spring', x: target.x, y: target.y });
     } else {
+      // Spell Bats cannot trigger traps but can be caught in an Air Bomb's splash.
+      const splashEligible =
+        battle.nativeAirBombSplashEligibility && trap.kind === 'airbomb' && !trap.npc
+          ? (u: Unit) => canHit(u) && !u.native?.burrowed
+          : eligible;
       for (const u of battle.units)
-        if (eligible(u) && distance2D(u.x - state.x, u.y - state.y) <= d.radius) {
+        if (splashEligible(u) && distance2D(u.x - state.x, u.y - state.y) <= d.radius) {
           hurtUnit(battle, u, power, battle.elapsed, undefined, true);
           // Version 45: bombs push small troops (Pushback / PushbackHousingLimit).
           if (

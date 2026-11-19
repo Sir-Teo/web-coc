@@ -12,6 +12,7 @@ import {
   type TroopKind,
 } from '../src/game/data';
 import { GameModel, makeBuilding, type Unit } from '../src/game/model';
+import { initialNativeState } from '../src/game/native-troops';
 import { validateSave } from '../src/game/save';
 import { REPLAY_VERSION, compatibleReplayVersion, replayBattle } from '../src/game/replay';
 import { stepTraps } from '../src/game/traps';
@@ -215,9 +216,45 @@ for (const kind of ['bomb', 'giantbomb', 'airbomb'] as const)
       expect(u.hp).toBe(u.maxHp - expected[kind].damage[level - 1]);
     }
   });
-it.each([239, REPLAY_VERSION])('Air Bomb impact follows replay %i targeting rules', (version) => {
-  const { b: template, u, trap, center } = arena('airbomb', 1, 'balloon');
-  expect(compatibleReplayVersion(version)).toBe(true);
+it.each([239, 240, REPLAY_VERSION])(
+  'Air Bomb impact follows replay %i targeting rules',
+  (version) => {
+    const { b: template, u, trap, center } = arena('airbomb', 1, 'balloon');
+    expect(compatibleReplayVersion(version)).toBe(true);
+    const b = replayBattle(
+      {
+        index: 0,
+        practice: true,
+        buildings: [trap],
+        army: emptyArmy(),
+        spells: emptySpells(),
+        troopLevels: template.troopLevels,
+        nextId: 9004,
+      },
+      version,
+    );
+    const aim = { x: center + 0.5, y: center + 0.5 };
+    Object.assign(u, aim);
+    const bystander = { ...u, id: 9003, x: aim.x + 3, path: [] };
+    b.started = true;
+    b.units = [u, bystander];
+    b.elapsed = 0.05;
+    stepTraps(b, 0.05, () => {});
+    u.x = aim.x + 4;
+    b.elapsed += trapStats('airbomb', 1)!.delay;
+    stepTraps(b, 0.05, () => {});
+    const fixed = version >= 240;
+    expect(b.traps[trap.id]).toMatchObject({ resolved: true, x: fixed ? aim.x : u.x, y: aim.y });
+    expect(u.hp).toBe(fixed ? u.maxHp : u.maxHp - 100);
+    expect(bystander.hp).toBe(bystander.maxHp - 100);
+  },
+);
+
+it.each([
+  { version: 240, splashDamage: 0 },
+  { version: REPLAY_VERSION, splashDamage: 100 },
+])('Air Bomb trigger and splash eligibility in replay $version', ({ version, splashDamage }) => {
+  const { b: template, u: balloon, trap } = arena('airbomb', 1, 'balloon');
   const b = replayBattle(
     {
       index: 0,
@@ -226,24 +263,34 @@ it.each([239, REPLAY_VERSION])('Air Bomb impact follows replay %i targeting rule
       army: emptyArmy(),
       spells: emptySpells(),
       troopLevels: template.troopLevels,
-      nextId: 9004,
+      nextId: 9006,
     },
     version,
   );
-  const aim = { x: center + 0.5, y: center + 0.5 };
-  Object.assign(u, aim);
-  const bystander = { ...u, id: 9003, x: aim.x + 3, path: [] };
+  const bat: Unit = {
+    ...balloon,
+    id: 9003,
+    kind: 'spellbat',
+    native: initialNativeState('spellbat', 1),
+  };
+  const outside = { ...bat, id: 9004, x: bat.x + 3.1 };
+  const ground: Unit = { ...bat, id: 9005, kind: 'spellskeleton' };
   b.started = true;
-  b.units = [u, bystander];
+  b.units = [bat, outside, ground];
   b.elapsed = 0.05;
   stepTraps(b, 0.05, () => {});
-  u.x = aim.x + 4;
+  expect(b.traps[trap.id]).toBeUndefined();
+
+  b.units.push(balloon);
+  b.elapsed += 0.05;
+  stepTraps(b, 0.05, () => {});
+  expect(b.traps[trap.id]?.targetId).toBe(balloon.id);
   b.elapsed += trapStats('airbomb', 1)!.delay;
   stepTraps(b, 0.05, () => {});
-  const fixed = version >= 240;
-  expect(b.traps[trap.id]).toMatchObject({ resolved: true, x: fixed ? aim.x : u.x, y: aim.y });
-  expect(u.hp).toBe(fixed ? u.maxHp : u.maxHp - 100);
-  expect(bystander.hp).toBe(bystander.maxHp - 100);
+  expect(balloon.hp).toBe(balloon.maxHp - 100);
+  expect(bat.hp).toBe(bat.maxHp - splashDamage);
+  expect(outside.hp).toBe(outside.maxHp);
+  expect(ground.hp).toBe(ground.maxHp);
 });
 
 it('Giant Bomb radius grows at levels 2 and 4', () => {

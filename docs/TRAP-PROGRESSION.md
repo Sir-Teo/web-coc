@@ -50,6 +50,8 @@ TH1–8 counts: **0, 0, 0, 0, 0, 1, 2, 3**. Level ceilings: **0, 0, 0, 0, 0, 2, 
 
 TH1–8 counts: **0, 0, 0, 0, 2, 2, 2, 4**. Level ceilings: **0, 0, 0, 0, 2, 2, 3, 3**. Trigger radius is 4 tiles and air splash is 3 tiles. The pinned 18.400.21 combat tables link Air Bomb to `AirTrapBalloon`, whose `DontTrackTarget` flag is enabled. Home Air Bombs in web replay version 240 snapshot the target position at activation. Earlier replays retain their original tracking behavior. The web model still uses its local 0.9-second delay. Native launch timing and travel speed remain unverified.
 
+From web replay version 241, a Home Air Bomb can damage Bats inside its splash radius after another air troop triggers it. The pinned Spell Bat row has `TriggersTraps=FALSE`, and the [retained Air Bomb notes](../reference/official-wiki/defenses/air-bomb.md) describe damage to Bats. Those notes also describe homing, which differs from the pinned projectile flag. This change covers splash eligibility only.
+
 ## Spring Trap
 
 | Level | Capacity | Damage to oversized troops | Gold | Time |
