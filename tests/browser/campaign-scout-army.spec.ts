@@ -30,12 +30,24 @@ test('training from a campaign scout returns to the same opponent and visible ac
   expect(await offset()).toBe(before);
   await expect(prepare).toBeInViewport();
   await expect(prepare).toBeFocused();
+  await scout.evaluate((element) => {
+    document.addEventListener(
+      'click',
+      () => {
+        document.body.dataset.scoutReturnOffset = String(element.scrollTop);
+      },
+      { capture: true, once: true },
+    );
+  });
   await prepare.tap();
+  const secondOffset = Number(await page.locator('body').getAttribute('data-scout-return-offset'));
+  expect(secondOffset).toBeGreaterThan(0);
   await page.locator('[data-action="train:swordsman"]').tap();
   await page.locator('[data-action="close-drawer"]').tap();
   await expect(scout.getByRole('heading', { name: 'Payback' })).toBeVisible();
   const attack = scout.getByRole('button', { name: 'Attack', exact: true });
-  expect(await offset()).toBe(before);
+  const maxScroll = await scout.evaluate((element) => element.scrollHeight - element.clientHeight);
+  expect(await offset()).toBe(Math.min(secondOffset, maxScroll));
   await expect(attack).toBeInViewport();
   await expect(attack).toBeFocused();
   await attack.tap();
