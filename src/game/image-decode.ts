@@ -1,5 +1,17 @@
 import Phaser from 'phaser';
 
+const RECOVERABLE_BOOT_IMAGE_WAIT_MS = 8000;
+const recoverableBootImages = new WeakSet<Phaser.Loader.File>();
+
+/** Only boot images with an independent fallback and a late loader may time out. */
+export function markRecoverableBootImage(file: Phaser.Loader.File) {
+  recoverableBootImages.add(file);
+}
+
+export function isRecoverableBootImage(file: Phaser.Loader.File) {
+  return recoverableBootImages.has(file);
+}
+
 interface ElementImageFile {
   state: number;
   src: string;
@@ -31,14 +43,23 @@ export function decodeLoadedImages() {
     this.data = image;
     if (this.crossOrigin !== undefined) image.crossOrigin = this.crossOrigin;
     image.decoding = 'async';
+    const file = this as unknown as Phaser.Loader.File;
+    let settled = false;
+    const finish = (success: boolean) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (success) this.state = Phaser.Loader.FILE_LOADED;
+      this.loader?.nextFile(file, success);
+    };
+    const timer = isRecoverableBootImage(file)
+      ? setTimeout(() => {
+          image.removeAttribute('src');
+          finish(false);
+        }, RECOVERABLE_BOOT_IMAGE_WAIT_MS)
+      : undefined;
     image.src = this.src;
-    image.decode().then(
-      () => {
-        this.state = Phaser.Loader.FILE_LOADED;
-        this.loader.nextFile(this as unknown as Phaser.Loader.File, true);
-      },
-      // decode() rejects for a failed request and for an undecodable file alike.
-      () => this.loader.nextFile(this as unknown as Phaser.Loader.File, false),
-    );
+    // decode() rejects for a failed request and for an undecodable file alike.
+    void image.decode().then(() => finish(true), () => finish(false));
   };
 }

@@ -1,3 +1,4 @@
+import { isRecoverableBootImage, markRecoverableBootImage } from './image-decode';
 import { HEADING_FONT } from '../ui/fonts';
 import { FIELD_SPELL_PROFILES, fieldSpellPresentationName } from './field-spell-effects';
 import { NativeSpellCastPresentation } from './native-spell-cast-scene';
@@ -909,6 +910,9 @@ export class VillageScene extends Phaser.Scene {
       1,
       ...home.filter((b) => b.kind === 'archertower').map((b) => b.level),
     ]);
+    for (const file of this.load.list)
+      if (/^archer-tower-(body|resident):mesh:/.test(file.key))
+        markRecoverableBootImage(file);
     preloadArcherTowerProjectiles(this);
     // Per-level fallback sprites: Level 1 and the home village's own levels load now; any other
     // level loads when something first draws it (see deferredTexture), as Level 1 meanwhile.
@@ -979,7 +983,7 @@ export class VillageScene extends Phaser.Scene {
       if (bar) bar.style.width = `${Math.round(p * 100)}%`;
     };
     const onLoadError = (file: Phaser.Loader.File) => {
-      const retrying = this.deferFailedBootFamily(file);
+      const retrying = this.deferFailedBootFamily(file) || isRecoverableBootImage(file);
       const label = document.querySelector('#load-label');
       if (label)
         label.textContent = retrying
