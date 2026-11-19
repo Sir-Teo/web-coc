@@ -172,3 +172,54 @@ test('native flag time, retained meshes, pointer selection and destruction follo
     }),
   ).toEqual({ afterDeath: { buildings: 1, bases: 2 }, afterReturn: { buildings: 0, bases: 0 } });
 });
+
+test.describe('Goblin targets on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  test('Payback targets stay visible while Goblin art is unavailable', async ({ page }, info) => {
+    const pack = '**/assets/buildings/goblin-native/**';
+    await page.route(pack, (route) =>
+      route.fulfill({ status: 503, body: 'Goblin art unavailable' }),
+    );
+    await page.goto('/?lazyart');
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    await page.locator('[data-action="skip-tutorial"]').tap();
+    await page.locator('.attack-btn').tap();
+    await page.locator('[data-action="attack:0"]').tap();
+    await expect(page.locator('.prep-banner')).toBeVisible();
+    await page.waitForFunction(() => !window.__game.scene.battleArtPending());
+
+    const targets = () =>
+      page.evaluate(() => {
+        const { model, scene } = window.__game;
+        return model
+          .battle!.buildings.filter((b) => b.npc === 'goblin-townhall' || b.npc === 'goblin-hut')
+          .map((b) => {
+            const sprite = scene.sprites.get(b.id)!;
+            return {
+              kind: b.kind,
+              texture: sprite.texture.key,
+              alpha: sprite.alpha,
+              visible: sprite.visible,
+            };
+          });
+      });
+    const fallback = await targets();
+    expect(fallback.length).toBeGreaterThan(0);
+    expect(fallback).toEqual(
+      fallback.map(({ kind }) => ({ kind, texture: kind, alpha: 1, visible: true })),
+    );
+    await page.screenshot({ path: info.outputPath('payback-goblin-fallback.png') });
+
+    await page.unroute(pack);
+    await page.evaluate(() => window.dispatchEvent(new Event('online')));
+    await expect.poll(targets, { timeout: 20000 }).toEqual(
+      fallback.map(({ kind }) => ({
+        kind,
+        texture: kind === 'townhall' ? 'goblin-townhall-native' : 'goblin-hut-native',
+        alpha: 0,
+        visible: true,
+      })),
+    );
+  });
+});

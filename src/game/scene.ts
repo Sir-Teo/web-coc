@@ -2059,6 +2059,7 @@ export class VillageScene extends Phaser.Scene {
    * then the fallback sprite stays visible: the native view has nothing to draw with.
    */
   private familyArtReady(b: Building) {
+    if (isGoblinBuilding(b.npc)) return this.goblinBuildingPresentation.artReady;
     const family = this.deferredFamilies.find((f) => f.draws(b));
     return !family || this.loadedFamilies.has(family);
   }
@@ -3968,7 +3969,10 @@ export class VillageScene extends Phaser.Scene {
         .setFlipX(false)
         .setDisplaySize(width, (width * im.height) / im.width);
     }
-    // A deferred family's sheet (Santa, Pumpkin) draws nothing until it arrives.
+    // A first offline raid can use the already loaded village portraits for Goblin targets.
+    if (npcVisual && isGoblinBuilding(npc) && !this.textures.exists(npcVisual.texture))
+      return this.styleBuilding(im, kind, 1);
+    // Other deferred NPC sheets (Santa, Pumpkin) draw nothing until they arrive.
     if (npcVisual)
       return im
         .setTexture(this.textures.exists(npcVisual.texture) ? npcVisual.texture : '__DEFAULT')

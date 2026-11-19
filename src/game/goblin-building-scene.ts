@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { Building } from './model';
-import { NativeMeshView, preloadNativeMeshes } from './native-mesh-scene';
+import { NativeMeshView, nativeMeshesReady, preloadNativeMeshes } from './native-mesh-scene';
 import {
   GOBLIN_BUILDING_GRAPH,
   goblinBuildingPoses,
@@ -21,6 +21,9 @@ export class GoblinBuildingPresentation {
   private signatures = new Map<number, string>();
   private baseSignatures = new Map<number, string>();
   constructor(private scene: Phaser.Scene) {}
+  get artReady() {
+    return nativeMeshesReady(this.scene, GOBLIN_BUILDING_GRAPH, 'goblin-building');
+  }
   clear() {
     for (const view of [...this.buildings.values(), ...this.bases.values()]) view.destroy();
     this.buildings.clear();
@@ -39,8 +42,9 @@ export class GoblinBuildingPresentation {
   ) {
     const wanted = new Set<number>(),
       alive = new Set<number>();
+    let ready: boolean | undefined;
     for (const b of buildings) {
-      if (!isGoblinBuilding(b.npc)) continue;
+      if (!isGoblinBuilding(b.npc) || !(ready ??= this.artReady)) continue;
       wanted.add(b.id);
       const kind = b.npc,
         art = GOBLIN_BUILDING_ART[kind],
