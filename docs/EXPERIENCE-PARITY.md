@@ -13,7 +13,7 @@ Native animations are connected to the current village and battle renderer. The 
 A three-part audit (village and economy, combat and army, campaign and UX) compared this build with the pinned client and the live game. It corrected rows below that had fallen behind the code, and changed these behaviors:
 
 - A Builder's Hut bought with gems is finished on placement and needs no free builder; the client's hut build time is zero.
-- Clearing a tree or rock needs a free builder and holds it until the obstacle is gone.
+- The obstacle audit initially required a free builder. The current village follows the February 2025 [obstacle removal rule](OBSTACLES.md), which lets villagers clear obstacles independently.
 - The equipment screen says the Star Bonus pays ore. The first coach step now points to Payback. The Settings footer credits Supercell's assets. The fake online dot beside the chief's name is gone. The campaign labels its 47 generated villages as fan-made.
 
 The audit's open findings are recorded in the table below: tutorial, localization, music, and gems and XP. Since then chief XP follows the client's own curve and the live game's award rules, the client's achievements replace the invented quests, and the client's music replaces the synthesized tones. Frozen trophies are answered by [ladder matches](LADDER.md), an invented local stand-in for multiplayer.

@@ -2,7 +2,7 @@
 
 Tapping the builder counter at the top of the village ("2/2 Builders") opens the builder menu, as in the original. It lists:
 
-- **Upgrades in progress:** each building under construction or upgrade, each obstacle being cleared and each hero being upgraded, soonest first, with its time left counting down. A building's row selects it and shows its card (with Finish); a hero's opens the Hero Hall.
+- **Upgrades in progress:** each building under construction or upgrade and each hero being upgraded, soonest first, with its time left counting down. A building's row selects it and shows its card (with Finish); a hero's opens the Hero Hall.
 - **Suggested upgrades:** the five cheapest upgrades and new buildings the village can pay for now.
 - **Other upgrades:** everything else it could start, cheapest first, with prices it cannot yet meet in red. Tapping one still shows the building, where its Upgrade offers the missing resources for gems (see [Gem purchases](GEM-PURCHASES.md)).
 

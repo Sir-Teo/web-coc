@@ -1707,10 +1707,6 @@ export class GameModel {
     const o = this.obstacles.find((o) => o.id === id);
     if (!o || o.removeEnd) return false;
     const d = OBSTACLES[o.kind];
-    if (this.busy >= this.builders) {
-      this.notify('All builders are busy.');
-      return false;
-    }
     if (this.state[d.resource] < d.cost) {
       this.lacking(d.resource, d.cost, `Not enough ${d.resource}.`, () => {
         this.removeObstacle(id);
@@ -2557,13 +2553,11 @@ export class GameModel {
     return this.state.buildings.filter((b) => b.kind === 'builder' && !b.constructing).length;
   }
   /**
-   * Timed builder reservations. Resource wall upgrades need a free builder and finish immediately;
-   * clearing an obstacle holds a builder until it is gone.
+   * Timed builder reservations. Resource wall upgrades need a free builder and finish immediately.
    */
   get busy() {
     return (
       this.state.buildings.filter((b) => b.upgradeEnd && b.kind !== 'wall').length +
-      this.obstacles.filter((o) => o.removeEnd !== undefined).length +
       Number(!!this.state.king?.upgradeEnd) +
       Object.values(this.state.heroes ?? {}).filter((hero) => hero?.upgradeEnd).length
     );

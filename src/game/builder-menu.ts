@@ -2,7 +2,6 @@ import catalog from '../../reference/builder-menu/catalog.json' with { type: 'js
 import { BUILDINGS, buildPrice, needsBuilder, type BuildingKind } from './data';
 import { isMergedKind } from './native-merges';
 import { HERO_SOURCE, type HeroKind } from './native-hero-data';
-import { OBSTACLES } from './obstacles';
 import type { GameModel } from './model';
 
 /**
@@ -12,10 +11,10 @@ import type { GameModel } from './model';
  * _EXTRA_SUGGESTION). See docs/BUILDER-MENU.md.
  */
 export interface BuilderJob {
-  /** A building's id, or an obstacle's negated id; heroes have none. */
+  /** A building's id. Hero upgrades have no building id. */
   id?: number;
   name: string;
-  /** What the work brings: the next level, or "Clearing". */
+  /** Construction or the next upgrade level. */
   detail: string;
   end: number;
 }
@@ -44,9 +43,6 @@ export function builderMenu(m: GameModel) {
         detail: b.constructing ? 'Construction' : `Level ${b.level + 1}`,
         end: b.upgradeEnd,
       });
-  for (const o of m.obstacles)
-    if (o.removeEnd !== undefined)
-      jobs.push({ id: -o.id, name: OBSTACLES[o.kind].name, detail: 'Clearing', end: o.removeEnd });
   const heroes: [HeroKind, { level: number; upgradeEnd?: number } | undefined][] = [
     ['king', m.state.king],
     ...(Object.entries(m.state.heroes ?? {}) as [

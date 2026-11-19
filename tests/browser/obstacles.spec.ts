@@ -1,5 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 
+test.use({ hasTouch: true });
+
 async function selectTree(page: Page, id: number) {
   await expect(page.locator('#loading')).toBeHidden();
   const point = await page.evaluate(async (id) => {
@@ -18,7 +20,7 @@ async function selectTree(page: Page, id: number) {
       name: OBSTACLES[o.kind].name,
     };
   }, id);
-  await page.mouse.click(point.x, point.y);
+  await page.touchscreen.tap(point.x, point.y);
   // The client's own name for the kind (Tree, Bush, Trunk, Mushroom).
   await expect(page.locator('.obstacle-context h2')).toHaveText(point.name);
   await expect
@@ -42,7 +44,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('phone obstacle removal holds a builder, cancels, reloads and frees buildable ground', async ({
+test('phone obstacle removal works with all Builders busy, refunds and survives reload', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -55,15 +57,9 @@ test('phone obstacle removal holds a builder, cancels, reloads and frees buildab
     return { id: o.id, x: o.x, y: o.y, elixir: m.state.elixir };
   });
   await selectTree(page, setup.id);
-  await expect(page.locator('.obstacle-context')).toContainText('Needs a free builder');
-  // Both builders are busy, so clearing waits until one is free.
-  await expect(page.locator(`[data-action="obstacle-remove:${setup.id}"]`)).toBeDisabled();
-  await page.evaluate(() => {
-    const m = window.__game.model;
-    delete m.state.buildings[0].upgradeEnd;
-    m.changed();
-  });
-  await page.locator(`[data-action="obstacle-remove:${setup.id}"]`).click();
+  const remove = page.locator(`[data-action="obstacle-remove:${setup.id}"]`);
+  await expect(remove).toBeEnabled();
+  await remove.tap();
   expect(await page.evaluate(() => window.__game.model.busy)).toBe(2);
   expect(await page.evaluate(() => window.__game.model.state.elixir)).toBe(setup.elixir - 2000);
   await page.locator(`[data-action="obstacle-cancel:${setup.id}"]`).click();
@@ -75,6 +71,7 @@ test('phone obstacle removal holds a builder, cancels, reloads and frees buildab
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   await selectTree(page, setup.id);
   await expect(page.locator('[data-obstacle-time]')).toBeVisible();
+  expect(await page.evaluate(() => window.__game.model.busy)).toBe(2);
   await expect(page.locator(`[data-action="obstacle-finish:${setup.id}"]`)).toBeInViewport({
     ratio: 1,
   });
@@ -86,7 +83,7 @@ test('phone obstacle removal holds a builder, cancels, reloads and frees buildab
   expect(await page.evaluate((id) => window.__game.scene.obstacleSprites.has(id), setup.id)).toBe(
     false,
   );
-  expect(await page.evaluate(() => window.__game.model.busy)).toBe(1);
+  expect(await page.evaluate(() => window.__game.model.busy)).toBe(2);
   await page.evaluate(() => {
     const m = window.__game.model;
     for (const b of m.state.buildings) delete b.upgradeEnd;

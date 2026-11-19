@@ -3298,7 +3298,7 @@ export class HUD {
       const o = m.selectedObstacle;
       if (!o) return '';
       const d = OBSTACLES[o.kind];
-      return `<div class="building-context obstacle-context" data-anchor="${-o.id}"><img class="context-art" src="/${d.art.path}" alt=""><div class="context-info"><small>OBSTACLE</small><h2>${d.name}</h2><span>${d.size}×${d.size} tiles · Needs a free builder</span></div><div class="context-actions">${o.removeEnd ? button(`obstacle-finish:${o.id}`, `<small data-obstacle-time="${o.id}">${time((o.removeEnd - m.clock) / 1000)}</small><span>Finish ${gem} ${m.finishCost({ upgradeEnd: o.removeEnd } as Building)}</span>`) + button(`obstacle-cancel:${o.id}`, `${icon('X', 18)} Cancel`, 'game-btn stone') : button(`obstacle-remove:${o.id}`, `<span>${icon('Axe', 18)} Remove</span><small>${resource(d.resource)} ${n(d.cost)} · ${d.seconds}s</small>`, 'game-btn green', m.state[d.resource] < d.cost || m.busy >= m.builders ? 'disabled' : '')}${o.removeEnd ? '' : o.movable ? button(`obstacle-move:${o.id}`, `${icon('Move', 18)} Move`, 'game-btn blue') : m.magicItemCount('shovel-of-obstacles') ? button(`obstacle-shovel:${o.id}`, `${icon('Move', 18)} Shovel`, 'game-btn blue', 'aria-label="Make movable with a Shovel of Obstacles"') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close obstacle">${icon('X', 18)}</button></div>`;
+      return `<div class="building-context obstacle-context" data-anchor="${-o.id}"><img class="context-art" src="/${d.art.path}" alt=""><div class="context-info"><small>OBSTACLE</small><h2>${d.name}</h2><span>${d.size}×${d.size} tiles</span></div><div class="context-actions">${o.removeEnd ? button(`obstacle-finish:${o.id}`, `<small data-obstacle-time="${o.id}">${time((o.removeEnd - m.clock) / 1000)}</small><span>Finish ${gem} ${m.finishCost({ upgradeEnd: o.removeEnd } as Building)}</span>`) + button(`obstacle-cancel:${o.id}`, `${icon('X', 18)} Cancel`, 'game-btn stone') : button(`obstacle-remove:${o.id}`, `<span>${icon('Axe', 18)} Remove</span><small>${resource(d.resource)} ${n(d.cost)} · ${d.seconds}s</small>`, 'game-btn green', m.state[d.resource] < d.cost ? 'disabled' : '')}${o.removeEnd ? '' : o.movable ? button(`obstacle-move:${o.id}`, `${icon('Move', 18)} Move`, 'game-btn blue') : m.magicItemCount('shovel-of-obstacles') ? button(`obstacle-shovel:${o.id}`, `${icon('Move', 18)} Shovel`, 'game-btn blue', 'aria-label="Make movable with a Shovel of Obstacles"') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close obstacle">${icon('X', 18)}</button></div>`;
     }
     const rotate =
       b.kind === 'inferno' && !b.constructing
@@ -3794,7 +3794,7 @@ export class HUD {
           .map(
             (j) =>
               `<li>${button(
-                j.id === undefined ? 'heroes' : j.id < 0 ? 'close' : `select-building:${j.id}`,
+                j.id === undefined ? 'heroes' : `select-building:${j.id}`,
                 `${icon('Hammer', 18)}<span><b>${html(j.name)}</b><small>${html(j.detail)}</small></span><em data-boost-end="${j.end}">${time(Math.max(0, j.end - m.clock) / 1000)}</em>`,
                 'builder-option working',
               )}</li>`,

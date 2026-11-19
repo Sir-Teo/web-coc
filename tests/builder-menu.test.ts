@@ -21,17 +21,18 @@ describe('builder menu', () => {
     });
   });
 
-  it('lists the work under way, soonest first', () => {
+  it('lists builder jobs soonest first, excluding villager work', () => {
     const m = village();
     const cannon = m.state.buildings.find((b) => b.kind === 'cannon')!;
     m.upgrade(cannon.id);
+    const mine = m.state.buildings.find((b) => b.kind === 'goldmine')!;
+    mine.upgradeEnd = m.clock + 1000;
     const tree = m.obstacles[0];
     m.state.elixir = 100_000;
     m.removeObstacle(tree.id);
     const { jobs } = builderMenu(m);
-    expect(jobs.map((j) => j.id)).toEqual([-tree.id, cannon.id]);
+    expect(jobs.map((j) => j.id)).toEqual([mine.id, cannon.id]);
     expect(jobs[1]).toMatchObject({ name: 'Cannon', detail: `Level ${cannon.level + 1}` });
-    expect(jobs[0].detail).toBe('Clearing');
   });
 
   it('suggests the cheapest affordable upgrades and groups buildings of a kind and level', () => {
