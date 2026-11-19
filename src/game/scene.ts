@@ -1106,7 +1106,9 @@ export class VillageScene extends Phaser.Scene {
     this.bombTowerPresentation = new BombTowerPresentation(this, this.audio);
     this.wizardTowerPresentation = new WizardTowerPresentation(this, this.audio);
     this.sweeperPresentation = new SweeperPresentation(this, this.audio);
-    this.mortarPresentation = new MortarPresentation(this, this.audio);
+    this.mortarPresentation = new MortarPresentation(this, this.audio, () =>
+      this.loadedFamilies.has(MORTAR_FAMILY),
+    );
     this.nativeEffectPacks = new NativeArtPacks<NativeArtPack>(this);
     this.garrisonPresentation = new GarrisonPresentation(this, this.audio, this.nativeEffectPacks);
     this.castlePresentation = new CastlePresentation(this);
@@ -4147,7 +4149,7 @@ export class VillageScene extends Phaser.Scene {
       im.setCrop().setPosition(p.x, p.y).setAlpha(0).setData('nativeCannonRuin', true);
       return;
     }
-    if (b.kind === 'mortar') {
+    if (b.kind === 'mortar' && this.familyArtReady(b)) {
       im.setCrop().setPosition(p.x, p.y).setAlpha(0).setData('nativeMortarRuin', true);
       return;
     }

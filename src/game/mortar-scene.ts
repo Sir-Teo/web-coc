@@ -53,6 +53,7 @@ export class MortarPresentation {
   constructor(
     private scene: Phaser.Scene,
     audio: AudioManager,
+    private readonly artReady: () => boolean,
   ) {
     this.fx = new NativeEffectViews(scene, 'mortar', 'nativeMortarEffect');
     this.effects = this.fx.views;
@@ -85,8 +86,9 @@ export class MortarPresentation {
     reduced: boolean,
     iso: (x: number, y: number) => { x: number; y: number },
   ) {
-    // Nothing draws until the Mortar family (graph first) has loaded.
     if (!mortarArtLoaded()) return [];
+    // The graph stays loaded across eviction. Native views need the resident art too.
+    const art = this.artReady();
     const live = presentationLive(battle);
     // After the finish, shells in flight and bursts keep sampling on the presentation clock.
     if (battle) elapsed = presentationTime(battle);
@@ -102,29 +104,32 @@ export class MortarPresentation {
       point: { x: number; y: number },
     ) => {
       if (cueAudible(at, elapsed)) cues.push(...mortarSoundCues(id, event, index, name, at));
-      for (const fx of mortarEffectPoses(id, event, index, name, at, elapsed, point, reduced))
-        this.fx.show(fx);
+      if (art)
+        for (const fx of mortarEffectPoses(id, event, index, name, at, elapsed, point, reduced))
+          this.fx.show(fx);
     };
     const camera = this.scene.cameras.main;
     const zoom = quantizedDensity(Math.max(1, camera.zoomX, camera.zoomY));
     for (const tower of buildings) {
       if (tower.kind !== 'mortar') continue;
       wanted.add(tower.id);
-      const p = iso(tower.x + 1.5, tower.y + 1.5),
-        pose = mortarPose(tower, battle);
-      let view = this.towers.get(tower.id);
-      if (!view) this.towers.set(tower.id, (view = new NativeSceneView(this.scene, 'mortar')));
-      const signature = `${tower.level}:${pose.state}:${pose.turret}:${p.x}:${p.y}:${zoom}`;
-      if (this.signatures.get(tower.id) !== signature) {
-        view.render(
-          guardRender(`Mortar level ${tower.level}`, () => mortarPoses(tower.level, pose), []),
-          p.x,
-          p.y,
-          p.y + (pose.state === 'ruin' ? -2 : 0),
-        );
-        for (const object of view.objects)
-          object.setData('nativeMortar', { id: tower.id, level: tower.level, ...pose });
-        this.signatures.set(tower.id, signature);
+      const p = iso(tower.x + 1.5, tower.y + 1.5);
+      if (art) {
+        const pose = mortarPose(tower, battle);
+        let view = this.towers.get(tower.id);
+        if (!view) this.towers.set(tower.id, (view = new NativeSceneView(this.scene, 'mortar')));
+        const signature = `${tower.level}:${pose.state}:${pose.turret}:${p.x}:${p.y}:${zoom}`;
+        if (this.signatures.get(tower.id) !== signature) {
+          view.render(
+            guardRender(`Mortar level ${tower.level}`, () => mortarPoses(tower.level, pose), []),
+            p.x,
+            p.y,
+            p.y + (pose.state === 'ruin' ? -2 : 0),
+          );
+          for (const object of view.objects)
+            object.setData('nativeMortar', { id: tower.id, level: tower.level, ...pose });
+          this.signatures.set(tower.id, signature);
+        }
       }
       if (battle && live) {
         const history = battle.mortars?.[tower.id];
@@ -137,7 +142,7 @@ export class MortarPresentation {
             shot.launched,
             iso(shot.fromX, shot.fromY),
           );
-          if (!reduced) {
+          if (art && !reduced) {
             for (const fx of mortarTrailPoses(shot, elapsed, iso)) this.fx.show(fx);
             if (
               elapsed >= shot.launched &&
@@ -187,7 +192,7 @@ export class MortarPresentation {
         effect(e.id, `home-${e.kind}`, e.index, mortarHandlingEffect(e.kind), e.at, iso(e.x, e.y));
     }
     for (const [id, view] of this.towers)
-      if (!wanted.has(id)) {
+      if (!art || !wanted.has(id)) {
         view.destroy();
         this.towers.delete(id);
         this.signatures.delete(id);
