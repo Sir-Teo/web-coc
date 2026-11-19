@@ -145,3 +145,43 @@ test('lifting a second finger does not interrupt held troop training', async ({
   await page.locator(portrait).tap();
   await expect.poll(() => barbarians(page)).toBe(stopped + 1);
 });
+
+for (const [width, height] of [
+  [844, 390],
+  [390, 843],
+]) {
+  test(`resizing the Army drawer to ${width}×${height} ends the old hold`, async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(browserName !== 'chromium', 'Native touch injection requires CDP.');
+    await openArmy(page);
+    const box = (await page.locator(portrait).boundingBox())!;
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: box.x + box.width / 2, y: box.y + box.height / 2, id: 1 }],
+    });
+    await expect.poll(() => barbarians(page)).toBeGreaterThan(0);
+
+    await page.evaluate(() => {
+      window.addEventListener(
+        'resize',
+        () => {
+          document.body.dataset.armyResized = 'true';
+        },
+        { once: true },
+      );
+    });
+    await page.setViewportSize({ width, height });
+    await expect(page.locator('body')).toHaveAttribute('data-army-resized', 'true');
+    const afterResize = await barbarians(page);
+    await page.waitForTimeout(500);
+    expect(await barbarians(page)).toBe(afterResize);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    expect(await barbarians(page)).toBe(afterResize);
+
+    await page.locator(portrait).tap();
+    expect(await barbarians(page)).toBe(afterResize + 1);
+  });
+}

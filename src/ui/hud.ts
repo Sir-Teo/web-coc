@@ -780,6 +780,7 @@ export class HUD {
   /** Hold-to-repeat on Add and Remove: a short delay, then steady repeats until release. */
   private repeatTimer?: ReturnType<typeof setTimeout>;
   private repeatPointer: number | null = null;
+  private resizedRepeatPointer: number | null = null;
   private repeatedClick = false;
   private startRepeat(control: HTMLElement, pointerId: number) {
     this.stopRepeat();
@@ -858,6 +859,10 @@ export class HUD {
     this.root.addEventListener(
       'click',
       (e) => {
+        if (e instanceof PointerEvent && e.pointerId === this.resizedRepeatPointer) {
+          this.resizedRepeatPointer = null;
+          return;
+        }
         // An army portrait (data-add) adds as its tile's Add button does.
         const target = (e.target as HTMLElement).closest<HTMLElement>('[data-action], [data-add]');
         // A hold that already repeated its action has done the work of this click.
@@ -880,6 +885,7 @@ export class HUD {
     this.root.addEventListener(
       'pointerdown',
       (e) => {
+        if (e.pointerId === this.resizedRepeatPointer) this.resizedRepeatPointer = null;
         const target = e.target as HTMLElement;
         if (
           target.closest('[data-action], [data-add]') ||
@@ -938,6 +944,11 @@ export class HUD {
     window.addEventListener(
       'resize',
       () => {
+        if (this.repeatPointer !== null) {
+          // Releasing a held touch over the resized control can still dispatch a click.
+          this.resizedRepeatPointer = this.repeatPointer;
+          this.stopRepeat();
+        }
         this.safeInsets = null;
         // The card's size and the HUD floor are measured again on the next frame.
         this.anchorCard = null;

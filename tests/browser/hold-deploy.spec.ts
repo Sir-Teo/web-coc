@@ -379,3 +379,86 @@ test.describe('phone campaign preparation', () => {
     await expect.poll(() => page.evaluate(() => window.__game.model.state.army.swordsman)).toBe(1);
   });
 });
+
+test.describe('phone viewport changes during raids', () => {
+  test.use({ hasTouch: true, isMobile: true });
+
+  test('rotation keeps the raid framed and cancels a stale deployment hold', async ({
+    page,
+    browserName,
+  }, info) => {
+    test.skip(browserName !== 'chromium', 'Uses Chromium touch injection');
+    await startDeployment(page, 5);
+    await page.evaluate(() => {
+      const { model, scene } = window.__game;
+      model.battle!.spells.heal = model.battle!.carried.heal = 2;
+      model.state.settings.battleSpeed = 1;
+      scene.setZoom(scene.baseZoom * 1.4);
+      model.changed();
+    });
+    const stock = () =>
+      page.evaluate(() => {
+        const b = window.__game.model.battle!;
+        return { troops: b.remaining.swordsman, spells: b.spells.heal };
+      });
+    const framing = () =>
+      page.evaluate(() => {
+        const { scene } = window.__game;
+        const camera = scene.cameras.main;
+        return {
+          x: camera.scrollX + camera.width / 2,
+          y: camera.scrollY + camera.height / 2,
+          zoom: scene.viewZoom,
+        };
+      });
+    const rotate = async (width: number, height: number) => {
+      await page.setViewportSize({ width, height });
+      await page.waitForFunction(
+        ({ width, height }) => {
+          const rect = window.__game.game.canvas.getBoundingClientRect();
+          const { cameraViewport, cameras } = window.__game.scene;
+          return (
+            rect.width === width &&
+            rect.height === height &&
+            cameraViewport.width === cameras.main.width &&
+            cameraViewport.height === cameras.main.height
+          );
+        },
+        { width, height },
+      );
+      await expect(page.locator('[data-action="troop:swordsman"]')).toBeInViewport();
+      await expect(page.locator('[data-action="spell:heal"]')).toBeInViewport();
+    };
+    const initial = await stock();
+    const portrait = await framing();
+    await rotate(844, 390);
+    const landscape = await framing();
+    expect(landscape.x).toBeCloseTo(portrait.x, 0);
+    expect(landscape.y).toBeCloseTo(portrait.y, 0);
+    expect(await stock()).toEqual(initial);
+    await page.screenshot({ path: info.outputPath('raid-landscape.png'), animations: 'disabled' });
+
+    const point = await grassPoint(page);
+    const touch = { x: Math.round(point.x), y: Math.round(point.y), id: 1 };
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [touch] });
+    await expect.poll(async () => (await stock()).troops).toBeLessThan(initial.troops);
+    await rotate(390, 844);
+    const afterResize = await stock();
+    await page.waitForTimeout(550);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    expect(await stock()).toEqual(afterResize);
+    const back = await framing();
+    expect(back.x).toBeCloseTo(portrait.x, 0);
+    expect(back.y).toBeCloseTo(portrait.y, 0);
+    expect(back.zoom).toBeCloseTo(portrait.zoom, 2);
+
+    await page.locator('[data-action="troop:swordsman"]').tap();
+    const target = await grassPoint(page);
+    await page.touchscreen.tap(target.x, target.y);
+    expect(await stock()).toEqual({ ...afterResize, troops: afterResize.troops - 1 });
+    await page.locator('[data-action="spell:heal"]').tap();
+    await page.touchscreen.tap(target.x, target.y);
+    expect(await stock()).toEqual({ troops: afterResize.troops - 1, spells: initial.spells - 1 });
+  });
+});
