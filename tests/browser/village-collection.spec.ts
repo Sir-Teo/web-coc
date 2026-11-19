@@ -47,3 +47,89 @@ test('the building card collects only from the selected mine', async ({ page }, 
   await page.locator('.collect-btn').tap();
   expect(await balances()).toEqual({ gold: 20, elixir: 18, stored: [0, 0, 0] });
 });
+
+test('full Gold Storage leaves legacy mine overflow available after an upgrade', async ({
+  page,
+}, info) => {
+  await page.clock.setFixedTime(Date.now());
+  await page.goto('/');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  await page.locator('[data-action="skip-tutorial"]').tap();
+  const fixture = await page.evaluate(async () => {
+    const { collectorProduction } = await import('/src/game/collector-production.ts');
+    const m = window.__game.model;
+    m.townhall!.level = 5;
+    const mine = m.state.buildings.find((b) => b.kind === 'goldmine')!;
+    const storage = m.state.buildings.find((b) => b.kind === 'goldstorage')!;
+    mine.level = storage.level = 1;
+    const overflow = collectorProduction('goldmine', 1).capacity + 500;
+    const cap = m.resourceCap('gold');
+    mine.stored = overflow;
+    m.state.gold = cap - 7;
+    m.state.elixir = m.upgradeCost(storage);
+    m.addMagicItem('book-of-building');
+    m.selected = mine.id;
+    m.changed();
+    return {
+      mine: mine.id,
+      storage: storage.id,
+      overflow,
+      cap,
+      collected: m.state.stats.collected,
+    };
+  });
+  const read = () =>
+    page.evaluate(({ mine, storage }) => {
+      const m = window.__game.model;
+      return {
+        gold: m.state.gold,
+        cap: m.resourceCap('gold'),
+        stored: m.state.buildings.find((b) => b.id === mine)!.stored,
+        level: m.state.buildings.find((b) => b.id === storage)!.level,
+        collected: m.state.stats.collected,
+      };
+    }, fixture);
+  const collect = page.locator(`[data-action="collect-building:${fixture.mine}"]`);
+  await collect.tap();
+  const full = {
+    gold: fixture.cap,
+    cap: fixture.cap,
+    stored: fixture.overflow - 7,
+    level: 1,
+    collected: fixture.collected + 7,
+  };
+  expect(await read()).toEqual(full);
+  await collect.tap();
+  expect(await read()).toEqual(full);
+  await page.screenshot({ path: info.outputPath('full-gold-storage.png'), animations: 'disabled' });
+
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  expect(await read()).toEqual(full);
+  await page.locator('.status-chips [data-action="builders"]').tap();
+  await page.locator('[data-action="builder-option:goldstorage,1"]').tap();
+  await page.locator(`[data-action="upgrade:${fixture.storage}"]`).tap();
+  expect(await read()).toEqual(full);
+  await page.locator(`[data-action="book-building:${fixture.storage}"]`).tap();
+  const upgraded = await read();
+  expect(upgraded).toEqual({ ...full, level: 2, cap: expect.any(Number) });
+  expect(upgraded.cap - full.cap).toBeGreaterThanOrEqual(full.stored);
+
+  await page.evaluate((id) => {
+    const m = window.__game.model;
+    m.selected = id;
+    m.changed();
+  }, fixture.mine);
+  await collect.tap();
+  const drained = {
+    ...upgraded,
+    gold: full.gold + full.stored,
+    stored: 0,
+    collected: fixture.collected + fixture.overflow,
+  };
+  expect(await read()).toEqual(drained);
+  await collect.tap();
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  expect(await read()).toEqual(drained);
+});

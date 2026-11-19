@@ -72,6 +72,9 @@ test('a shared layout link opens in the layouts panel, copies into a slot and re
   await page.getByRole('button', { name: 'Redo', exact: true }).click();
   expect(await positions()).toEqual(shared.want);
   await page.screenshot({ path: `output/playtest/layout-restore-edit-390-${browserName}.png` });
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  expect(await positions()).toEqual(shared.want);
 });
 
 test('a layout link opened in a new tab offers the layout once the village loads', async ({
