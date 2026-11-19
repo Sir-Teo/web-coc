@@ -21,12 +21,13 @@ The same import reads the Town Hall upgrade boost: `TH_UPGRADE_STAR_BONUS_BOOST_
 ## Rules
 
 - **Banking.** With a Clan Castle built, collecting the Star Bonus puts its Gold, Elixir and Dark Elixir in the Treasury, up to its room. As the wiki describes for a full Treasury, whatever does not fit is lost. Ore still goes to the Blacksmith. A village without a Clan Castle has no Treasury, so the bonus pays into its storages as before; this is the game's own rule, since the original always has a castle, even if only as a ruin.
+- **Payout.** An eligible ladder result that completes a Star Bonus automatically banks its rewards during settlement, following [Supercell’s Star Bonus description](https://support.supercell.com/clash-of-clans/en/articles/about-multiplayer-and-trophies-3.html). Campaign and previously saved ready bonuses can still be claimed from the Star Bonus card. The league reward tables and cooldown use the existing project rules.
 - **Collecting.** Collect moves every resource at once. What a full storage cannot take stays in the Treasury, as the wiki states. Collected resources count toward "Resources collected", and collected Gold counts toward Clan War Wealth (see [ACHIEVEMENTS.md](ACHIEVEMENTS.md)).
 - **Size.** The Treasury follows the Town Hall alone. Clan Perks raise it in the original, but this village has no clan.
 - **Town Hall boost.** Finishing a Town Hall upgrade to level 4 or higher multiplies the Star Bonus by four for that level's hours, counted from when the upgrade finished. The boost covers resources and ore, as the wiki says. The Star Bonus card shows the boost and the time it has left, and the reward it shows includes it. A later upgrade's boost never shortens one already running.
 - **Saves.** `treasury` holds the three amounts, which must be whole and not negative. `starBonus.boostUntil` holds when the boost ends.
 
-Not included: Clan War, Clan War League and Clan Games deposits, Clan Perk sizes, and the 3% an attacker steals from the Treasury, because nobody attacks this village. The Star Bonus is also still claimed with its Collect button rather than paid out when the fifth star is scored.
+Not included: Clan War, Clan War League and Clan Games deposits, Clan Perk sizes, and the 3% an attacker steals from the Treasury, because nobody attacks this village.
 
 ## Tests
 

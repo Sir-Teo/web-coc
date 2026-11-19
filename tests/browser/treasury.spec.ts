@@ -71,3 +71,29 @@ for (const [width, height] of [
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
   });
+
+test('a completed ladder Star Bonus is visible in the Treasury without a claim', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  await page.locator('[data-action="skip-tutorial"]').click();
+  await page.evaluate(async () => {
+    const { makeBuilding } = await import('/src/game/model.ts');
+    const { model: m } = window.__game;
+    m.townhall!.level = 8;
+    const castle = makeBuilding(m.state.nextId++, 'clancastle', 22, 4, 2);
+    m.state.buildings.push(castle);
+    m.state.starBonus = { stars: 4, readyAt: 0 };
+    m.startLadder();
+    for (const building of m.battle!.buildings) m.damage(building, building.hp);
+    m.finishBattle();
+    m.returnHome();
+    m.selected = castle.id;
+    m.changed();
+  });
+  await page.locator('.building-context [data-action="treasury"]').click();
+  await expect(page.locator('[data-treasury="gold"]')).toContainText('350,000 /');
+  await expect(page.locator('[data-action="treasury-collect"]')).toBeEnabled();
+});

@@ -4338,6 +4338,11 @@ export class GameModel {
    */
   collectStarBonus() {
     if (this.battle || !this.starBonusReady) return false;
+    const taken = this.bankStarBonus();
+    this.changed();
+    return taken;
+  }
+  private bankStarBonus() {
     const reward = this.starBonusPayout;
     const bonus = (this.state.starBonus ??= emptyStarBonus());
     const taken: Partial<Record<string, number>> = {};
@@ -4376,7 +4381,6 @@ export class GameModel {
     this.notify(
       `${this.league.name} Star Bonus ${castle ? 'banked in the Treasury' : 'collected'}.`,
     );
-    this.changed();
     return taken;
   }
   /**
@@ -7817,6 +7821,8 @@ export class GameModel {
       if (b.stars > 0) {
         const bonus = (this.state.starBonus ??= emptyStarBonus());
         bonus.stars += b.stars;
+        // A completed ladder bonus pays out with the battle result.
+        if (b.ladder && this.starBonusReady) this.bankStarBonus();
       }
     }
     b.result = {

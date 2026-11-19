@@ -4,6 +4,7 @@ import { GameModel, makeBuilding } from '../src/game/model';
 import { validateSave } from '../src/game/save';
 import {
   STAR_BONUS_STARS,
+  STAR_BONUS_COOLDOWN,
   TOWN_HALL_BOOST_MULTIPLIER,
   starBonusReward,
   townHallBoostHours,
@@ -123,4 +124,26 @@ describe('Treasury', () => {
     );
     expect(validateSave({ ...m.state, treasury: { gold: 5, elixir: 0, dark: 0 } })).toBe(true);
   });
+});
+
+it('banks a completed ladder Star Bonus when the battle settles, exactly once', () => {
+  const m = village(8);
+  m.state.starBonus = { stars: STAR_BONUS_STARS - 1, readyAt: 0 };
+  m.startLadder();
+  expect(m.battle?.ladder).toBeDefined();
+  for (const building of m.battle!.buildings) m.damage(building, building.hp);
+  m.finishBattle();
+
+  const reward = starBonusReward(m.state.trophies);
+  expect(m.treasury).toEqual({ gold: reward.gold, elixir: reward.elixir, dark: reward.dark });
+  expect(m.starBonus.stars).toBe(m.battle!.result!.stars - 1);
+  expect(m.starBonus.readyAt).toBe(m.clock + STAR_BONUS_COOLDOWN);
+  expect(m.ores.shiny).toBe(reward.shiny);
+  expect(m.state.gold).toBe(0);
+
+  const banked = JSON.stringify(m.treasury);
+  m.finishBattle();
+  m.returnHome();
+  expect(m.collectStarBonus()).toBe(false);
+  expect(JSON.stringify(m.treasury)).toBe(banked);
 });
