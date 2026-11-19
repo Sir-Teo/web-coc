@@ -802,7 +802,7 @@ const BASE_BUILDINGS: Record<LegacyBuildingKind, BuildingDef> = {
   airbomb: {
     name: 'Air Bomb',
     description:
-      'A concealed balloon bomb that tracks an air troop and bursts among nearby flyers. Ground troops never trigger it.',
+      'A concealed balloon bomb that aims where an air troop triggers it and bursts among nearby flyers. Ground troops never trigger it.',
     size: 1,
     width: 44,
     hp: 1,

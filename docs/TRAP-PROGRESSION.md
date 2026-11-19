@@ -48,7 +48,7 @@ TH1–8 counts: **0, 0, 0, 0, 0, 1, 2, 3**. Level ceilings: **0, 0, 0, 0, 0, 2, 
 | 5 (legacy) | 208 | 550,000 | 8h |
 | 6 (legacy) | 232 | 800,000 | 12h |
 
-TH1–8 counts: **0, 0, 0, 0, 2, 2, 2, 4**. Level ceilings: **0, 0, 0, 0, 2, 2, 3, 3**. Trigger radius is 4 tiles and air splash is 3 tiles. The existing homing flight uses a local 0.9-second duration; this is not a verified native projectile-speed model.
+TH1–8 counts: **0, 0, 0, 0, 2, 2, 2, 4**. Level ceilings: **0, 0, 0, 0, 2, 2, 3, 3**. Trigger radius is 4 tiles and air splash is 3 tiles. The pinned 18.400.21 combat tables link Air Bomb to `AirTrapBalloon`, whose `DontTrackTarget` flag is enabled. Home Air Bombs in web replay version 240 snapshot the target position at activation. Earlier replays retain their original tracking behavior. The web model still uses its local 0.9-second delay. Native launch timing and travel speed remain unverified.
 
 ## Spring Trap
 

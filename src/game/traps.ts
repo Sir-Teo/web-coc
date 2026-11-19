@@ -20,6 +20,7 @@ export interface TrapState {
   activatedAt: number;
   resolved: boolean;
   targetId: number;
+  impact?: { x: number; y: number };
   x: number;
   y: number;
   spawned?: number;
@@ -225,6 +226,9 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       };
       if (trap.npc === 'santa-trap') state.santa = makeSantaState(state, trap.id, battle.seed);
       if (trap.npc === 'shrink-trap') state.shrink = makeShrinkState(state);
+      // The pinned AirTrapBalloon projectile has DontTrackTarget enabled.
+      if (battle.nativeAirBombFixedAim && trap.kind === 'airbomb' && !trap.npc)
+        state.impact = { x: target.x, y: target.y };
       if (d.homingSpeed) state.mine = { trail: [], nextTrail: 0 };
       // Springs resolve immediately and provide their own label and sound below.
       if (!d.springCapacity && trap.npc !== 'santa-trap' && trap.npc !== 'shrink-trap')
@@ -326,7 +330,7 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
     }
     if (d.targets === 'air') {
       if (battle.elapsed + 1e-9 < state.activatedAt + d.delay) continue;
-      const target = unitById(state.targetId);
+      const target = state.impact ?? unitById(state.targetId);
       if (target) {
         const remaining = Math.max(dt, state.activatedAt + d.delay - battle.elapsed + dt);
         const fraction = Math.min(1, dt / remaining);

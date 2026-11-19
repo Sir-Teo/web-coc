@@ -68,6 +68,8 @@ for (const [kind, cost, upgrade, seconds, th, damage, nextDamage] of [
       m.changed();
     }, upgrade);
     await expect(button).toBeEnabled();
+    if (kind === 'airbomb')
+      await expect(page.getByText(/aims where an air troop triggers it/)).toBeVisible();
     if (kind === 'giantbomb') {
       const radius = page.locator('.info-table tr').filter({ hasText: 'Blast radius' });
       await expect(radius.locator('td').nth(1)).toHaveText('3 tiles');
