@@ -747,17 +747,18 @@ const RECALL_CARD_ART = {
   superrider: 'assets/recall-cards/superrider.png',
 } as const;
 type RepeatAttack = Pick<Battle, 'index' | 'catalog'> & { ladder: boolean };
+type BattleLogReturn = { scroll: number; focus: FocusMark | null; launcher: FocusMark | null };
 
 export class HUD {
   private recallCardImages = new Map<string, HTMLImageElement>();
   private root: HTMLElement;
   private panel: Panel = null;
   private drawerPanel: Drawer = null;
-  private campaignArmyReturn?: {
-    panel: 'campaign' | 'campaign-scout';
-    focus: FocusMark | null;
-  };
+  private armyReturn?:
+    | { panel: 'campaign' | 'campaign-scout'; focus: FocusMark | null }
+    | ({ panel: 'battle-log' } & BattleLogReturn);
   private repeatAttack?: RepeatAttack;
+  private replayLogReturn?: BattleLogReturn;
   private tab = 'All';
   /** The decoration whose Stash the context card is asking to confirm. */
   private stashConfirm: number | null = null;
@@ -1316,12 +1317,14 @@ export class HUD {
       return;
     }
     if (fromCampaign) this.rememberCampaign();
-    this.campaignArmyReturn = fromCampaign
+    this.armyReturn = fromCampaign
       ? {
           panel: this.panel === 'campaign-scout' ? 'campaign-scout' : 'campaign',
           focus: this.focusBefore,
         }
-      : undefined;
+      : drawer === 'army' && this.panel === 'battle-log'
+        ? { panel: 'battle-log', ...this.captureBattleLogReturn() }
+        : undefined;
     this.repeatAttack = repeatAttack;
     // Remember the launcher (the Train or Shop button) so closing the sheet can return to it.
     if (!this.drawerPanel)
@@ -1333,14 +1336,30 @@ export class HUD {
     this.render();
   }
   private closeDrawer() {
-    const campaign = this.drawerPanel === 'army' ? this.campaignArmyReturn : undefined;
-    this.campaignArmyReturn = undefined;
+    const previous = this.drawerPanel === 'army' ? this.armyReturn : undefined;
+    this.armyReturn = undefined;
     this.repeatAttack = undefined;
     this.drawerPanel = null;
-    if (campaign && !this.model.battle) {
-      this.show(campaign.panel);
-      this.focusBefore = campaign.focus;
-    } else this.render();
+    if (!previous || this.model.battle) this.render();
+    else if (previous.panel === 'battle-log') this.returnToBattleLog(previous);
+    else {
+      this.show(previous.panel);
+      this.focusBefore = previous.focus;
+    }
+  }
+  private captureBattleLogReturn(): BattleLogReturn {
+    return {
+      scroll: this.modalEl.querySelector('.battle-log-body')?.scrollTop ?? 0,
+      focus: focusMark(this.actionSource ?? document.activeElement),
+      launcher: this.focusBefore,
+    };
+  }
+  private returnToBattleLog(previous: BattleLogReturn) {
+    this.show('battle-log');
+    this.focusBefore = previous.launcher;
+    const log = this.modalEl.querySelector('.battle-log-body');
+    if (log) log.scrollTop = previous.scroll;
+    restoreFocusMark(previous.focus);
   }
   private restoreFocus() {
     restoreFocusMark(this.focusBefore);
@@ -1962,12 +1981,7 @@ export class HUD {
         break;
       case 'campaign-scout':
         this.scoutLogReturn =
-          this.panel === 'battle-log'
-            ? {
-                scroll: this.modalEl.querySelector('.battle-log-body')?.scrollTop ?? 0,
-                focus: focusMark(this.actionSource ?? document.activeElement),
-              }
-            : undefined;
+          this.panel === 'battle-log' ? this.captureBattleLogReturn() : undefined;
         this.scoutedStage = Math.max(0, Math.min(NATIVE_CAMPAIGN.length - 1, Number(arg) || 0));
         this.show('campaign-scout');
         break;
@@ -1975,10 +1989,7 @@ export class HUD {
         const previous = this.scoutLogReturn;
         if (!previous) break;
         this.scoutLogReturn = undefined;
-        this.show('battle-log');
-        const log = this.modalEl.querySelector('.battle-log-body');
-        if (log) log.scrollTop = previous.scroll;
-        restoreFocusMark(previous.focus);
+        this.returnToBattleLog(previous);
         break;
       }
       case 'campaign-continue':
@@ -2114,6 +2125,8 @@ export class HUD {
         break;
       case 'replay':
         if (m.startReplay(Number(arg))) {
+          this.replayLogReturn =
+            this.panel === 'battle-log' ? this.captureBattleLogReturn() : undefined;
           clearTimeout(this.toastTimer);
           document.querySelector('#toast')?.classList.remove('show');
           this.panel = null;
@@ -2155,13 +2168,16 @@ export class HUD {
         break;
       case 'replay-exit': {
         const raid = m.goblinRaid;
+        const previous = this.replayLogReturn;
+        this.replayLogReturn = undefined;
         m.returnHome();
         this.resultShown = false;
         // The opening raid hands back to the coach; other replays return to the log.
         if (raid) {
           this.panel = null;
           this.render();
-        } else this.show('battle-log');
+        } else if (previous) this.returnToBattleLog(previous);
+        else this.show('battle-log');
         break;
       }
       case 'goblin-raid':
@@ -2171,6 +2187,10 @@ export class HUD {
         this.render();
         break;
       case 'ladder':
+        if (!m.armyReady && this.panel === 'battle-log') {
+          this.showDrawer('army');
+          break;
+        }
         m.startLadder();
         if (m.battle) {
           this.panel = null;
@@ -2543,6 +2563,7 @@ export class HUD {
       const replay = parseReplayFile(await file.text());
       if (!this.model.openReplay(replay))
         throw Error('Finish your current attack before opening a replay.');
+      this.replayLogReturn = undefined;
       this.panel = null;
       this.drawerPanel = null;
       this.resultShown = false;
@@ -4992,7 +5013,7 @@ export class HUD {
                   )
                   .join(
                     '',
-                  )}${r.ladder ? button('ladder', `${icon('Swords', 15)} Next ladder match`, 'game-btn stone', this.model.armyReady ? '' : 'disabled') : r.practice || r.catalog === 'goblin-v1' ? button(retryAction, `${icon('Swords', 15)} ${retryLabel}`, 'game-btn stone', retryReady ? '' : 'disabled') : ''}</article>`;
+                  )}${r.ladder ? button('ladder', `${icon('Swords', 15)} ${this.model.armyReady ? 'Next ladder match' : 'Prepare army for Ladder'}`, 'game-btn stone') : r.practice || r.catalog === 'goblin-v1' ? button(retryAction, `${icon('Swords', 15)} ${retryLabel}`, 'game-btn stone', retryReady ? '' : 'disabled') : ''}</article>`;
             })
             .join('')
         : `<div class="empty-log">${icon('ScrollText', 48)}<h2>Your story starts here</h2><p>Complete a campaign or practice attack to record its result and the army you deployed.</p>${button('practice', 'Practice your defense', 'game-btn blue', this.model.armyReady ? '' : 'disabled')}</div>`
@@ -5428,7 +5449,7 @@ export class HUD {
   }
   /** The stage a scouting preview shows. */
   private scoutedStage = 0;
-  private scoutLogReturn?: { scroll: number; focus: FocusMark | null };
+  private scoutLogReturn?: BattleLogReturn;
   /**
    * An enlarged look at a campaign village before attacking: its layout, the defenses on show
    * (hidden Teslas and traps stay hidden, as in battle), the loot left and the suggested tier.

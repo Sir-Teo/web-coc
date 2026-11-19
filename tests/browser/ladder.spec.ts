@@ -302,3 +302,81 @@ test.describe('phone Ladder results', () => {
     expect(await page.evaluate(() => window.__game.model.state.trophies)).toBe(0);
   });
 });
+
+test.describe('phone Ladder rematch from the Battle Log', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('empty-army preparation keeps the offer and returns to the originating record', async ({
+    page,
+  }, info) => {
+    await page.goto('/?lazyart');
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    await page.locator('[data-action="skip-tutorial"]').tap();
+    await page.evaluate(async () => {
+      const { emptyArmy } = await import('/src/game/army.ts');
+      const m = window.__game.model;
+      m.state.trophies = 800;
+      for (let i = 0; i < 4; i++) {
+        m.state.army = { ...emptyArmy(), swordsman: 1 };
+        m.startLadder();
+        m.activeTroop = 'swordsman';
+        if (!m.deploy(2, 2)) throw Error('Ladder fixture deployment refused');
+        m.finishBattle();
+        m.returnHome();
+      }
+    });
+    const read = () =>
+      page.evaluate(() => {
+        const m = window.__game.model;
+        return {
+          offer: m.ladderPreview,
+          seed: m.state.ladderSeed,
+          trophies: m.state.trophies,
+          troops: m.state.army.swordsman,
+          records: m.state.raidLog?.map((record) => record.id),
+          battle: m.battle ? { index: m.battle.index, stakes: m.battle.ladder } : null,
+        };
+      });
+    const before = await read();
+    expect(before.troops).toBe(0);
+    await page.locator('[data-action="battle-log"]').tap();
+    const log = page.locator('.battle-log-body');
+    const rematch = log.locator('.raid-record').last().locator('[data-action="ladder"]');
+    await rematch.scrollIntoViewIfNeeded();
+    const scroll = await log.evaluate((el) => el.scrollTop);
+    expect(scroll).toBeGreaterThan(0);
+    await expect(rematch).toBeEnabled();
+    await rematch.tap();
+    await expect(page.locator('.drawer-sheet')).toBeVisible();
+    expect(await read()).toEqual(before);
+    await page.locator('[data-action="close-drawer"]').tap();
+    await expect(rematch).toBeFocused();
+    expect(await log.evaluate((el) => el.scrollTop)).toBeCloseTo(scroll, 0);
+    expect(await read()).toEqual(before);
+
+    await rematch.tap();
+    await page.locator('[data-action="train:swordsman"]').tap();
+    await page.locator('[data-action="close-drawer"]').tap();
+    await expect(rematch).toContainText('Next ladder match');
+    await expect(rematch).toBeFocused();
+    expect(await read()).toEqual({ ...before, troops: 1 });
+    await page.screenshot({ path: info.outputPath('ladder-rematch-log.png') });
+    await rematch.tap();
+    await expect(page.locator('.battle-clock')).toContainText('SCOUTING');
+    await expect(page.locator('.ladder-stake')).toContainText(`Win +${before.offer.match.win}`);
+    expect(await read()).toMatchObject({
+      seed: before.seed! + 1,
+      trophies: before.trophies,
+      troops: 1,
+      records: before.records,
+      battle: { index: before.offer.index, stakes: before.offer.match },
+    });
+    await page.locator('.end-battle[data-action="home"]').tap();
+    expect(await read()).toMatchObject({
+      trophies: before.trophies,
+      troops: 1,
+      records: before.records,
+      battle: null,
+    });
+  });
+});

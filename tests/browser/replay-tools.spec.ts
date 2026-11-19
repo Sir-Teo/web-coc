@@ -359,3 +359,34 @@ test.describe('replay navigation with touch', () => {
     await expect(page.getByRole('button', { name: 'Watch replay' })).toBeVisible();
   });
 });
+
+test.describe('phone replay history navigation', () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  test('returning from playback restores the record in a scrolled Battle Log', async ({ page }) => {
+    await page.evaluate(() => {
+      const m = window.__game.model;
+      for (let i = 0; i < 3; i++) {
+        m.startBattle(0, true);
+        m.activeTroop = 'giant';
+        if (!m.deploy(1.2, 13)) throw Error('Practice fixture deployment refused');
+        m.step(0.05);
+        m.finishBattle();
+        m.returnHome();
+      }
+    });
+    const log = page.locator('.battle-log-body');
+    await expect(log.locator('.raid-record')).toHaveCount(4);
+    const watch = log.locator('.raid-record').last().getByRole('button', { name: 'Watch replay' });
+    await watch.scrollIntoViewIfNeeded();
+    const scroll = await log.evaluate((el) => el.scrollTop);
+    expect(scroll).toBeGreaterThan(0);
+    await watch.tap();
+    await expect(page.getByRole('slider', { name: 'Replay position' })).toBeVisible();
+    await page.getByRole('button', { name: 'Back to log' }).tap();
+    await expect(log).toBeVisible();
+    expect(await log.evaluate((el) => el.scrollTop)).toBeCloseTo(scroll, 0);
+    await expect(watch).toBeFocused();
+    await expect(log.locator('.raid-record')).toHaveCount(4);
+  });
+});
