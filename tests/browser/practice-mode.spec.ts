@@ -87,6 +87,47 @@ test('a Practice level attacks with its own army and leaves the camps alone', as
   expect(spent).toEqual({ left: 11, home: 0 });
 });
 
+test('the Battle Log can retry a fixed-army Practice level with empty camps', async ({
+  page,
+}, info) => {
+  await boot(page, 4);
+  await page.locator(`.campaign-list [data-action="attack:${GIANT_SMASH}"]`).tap();
+  await expect(page.locator('.practice-guide')).toBeVisible();
+  const point = await page.evaluate(() => {
+    const { model, scene } = window.__game;
+    const { x, y } = model.practiceGuide!.spot!;
+    return scene.screenFor(x + 0.4, y);
+  });
+  await page.touchscreen.tap(point.x, point.y);
+  await expect.poll(() => page.evaluate(() => window.__game.model.battle!.units.length)).toBe(1);
+  await page.locator('[data-action="surrender"]').tap();
+  await page.locator('[data-action="end"]').tap();
+  await page.locator('.result-modal [data-action="home"]').tap();
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  await page.locator('[data-action="battle-log"]').tap();
+  const record = page.locator('.raid-record').first();
+  await expect(record.getByRole('heading', { name: 'Giant Smash' })).toBeVisible();
+  await expect(record.getByRole('button', { name: 'Watch replay' })).toBeEnabled();
+  const retry = record.getByRole('button', { name: 'Attack village' });
+  await expect(retry).toBeEnabled();
+  await retry.tap();
+  await expect(page.locator('[data-action="troop:giant"]')).toBeVisible();
+  expect(
+    await page.evaluate(() => {
+      const m = window.__game.model;
+      return {
+        index: m.battle?.index,
+        fixed: m.battle?.fixedArmy,
+        giants: m.battle?.remaining.giant,
+        homeArmy: m.armySize,
+        records: m.state.raidLog!.length,
+      };
+    }),
+  ).toEqual({ index: GIANT_SMASH, fixed: true, giants: 13, homeArmy: 0, records: 1 });
+  await page.screenshot({ path: info.outputPath('practice-retry-from-log.png') });
+});
+
 test('below its Town Hall a Practice level is locked and says when it opens', async ({ page }) => {
   await boot(page, 3);
   const card = page.locator(`#campaign-stage-${GIANT_SMASH}`);
