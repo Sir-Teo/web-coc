@@ -2417,6 +2417,10 @@ function stepSummons(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: n
     : battle.nativeWitchRecall && (u.kind === 'witch' || u.kind === 'superwitch')
       ? (state.summonerId ?? u.id)
       : u.id;
+  const interval =
+    battle.nativeWitchSummonCadence && u.kind === 'witch'
+      ? s.summonCooldown
+      : s.summonCooldown + s.summonTime;
   while (state.summonAt <= at + 1e-9 && u.hp > 0) {
     let alive = 0;
     for (const member of battle.units)
@@ -2464,7 +2468,7 @@ function stepSummons(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: n
         );
     }
     state.summoned = lifetime + count;
-    state.summonAt += s.summonCooldown + s.summonTime;
+    state.summonAt += interval;
   }
 }
 

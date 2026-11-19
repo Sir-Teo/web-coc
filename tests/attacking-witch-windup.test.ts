@@ -230,8 +230,8 @@ for (const superTroop of [false, true]) {
   });
   it(`${kind} preserves summon stock and cadence across the attack boundary`, () => {
     const old = attackingWitchBattle(1, 165, 11.4, superTroop),
-      current = attackingWitchBattle(1, undefined, 11.4, superTroop);
-    for (const r of [old, current]) r.until(10);
+      withWindup = attackingWitchBattle(1, 252, 11.4, superTroop);
+    for (const r of [old, withWindup]) r.until(10);
     const stock = (r) => ({
       summoned: r.unit.native!.summoned,
       summonAt: r.unit.native!.summonAt,
@@ -239,8 +239,8 @@ for (const superTroop of [false, true]) {
         .filter((u) => u.native?.owner === r.unit.id)
         .map((u) => ({ kind: u.kind, level: u.level, spawnedAt: u.spawnedAt })),
     });
-    expect(current.unit.native!.summoned).toBeGreaterThan(0);
-    expect(stock(current)).toEqual(stock(old));
+    expect(withWindup.unit.native!.summoned).toBeGreaterThan(0);
+    expect(stock(withWindup)).toEqual(stock(old));
   });
   it(`${kind} version 165 retains immediate building release`, () => {
     const r = attackingWitchBattle(1, 165, 11.4, superTroop);

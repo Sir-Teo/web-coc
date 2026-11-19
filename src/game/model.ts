@@ -1014,6 +1014,8 @@ export interface Battle {
   nativeGarrisonSounds?: true;
   /** Version 148: recalled Witch/Super Witch casters retain their summon ownership and cadence. */
   nativeWitchRecall?: true;
+  /** Version 253: regular Witch waves include their wind-up within the summon interval. */
+  nativeWitchSummonCadence?: true;
   /** Version 149: deployed Furnace, Siege Barracks and Druid age from their actual birth. */
   nativeLifecycleBirth?: true;
   /** Version 150: Furnace's fixed degeneration consumes live life-aura health first. */
