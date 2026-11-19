@@ -106,6 +106,7 @@ export const HERO_UNIT_SOURCE = {
   archerqueen: 'Archer Queen',
   minionprince: 'Minion Prince',
   grandwarden: 'Grand Warden',
+  grandwardenair: 'Grand Warden',
   royalchampion: 'Royal Champion',
   dragonduke: 'Dragon Duke',
 } as const;
@@ -146,6 +147,7 @@ const SOURCE: Record<string, string> = {
 const UNIT_TABLE = (kind: string): NativeTable =>
   isHeroUnitKind(kind) ? 'heroes' : isPetUnitKind(kind) ? 'pets' : 'characters';
 const KIND_BY_NAME = new Map(Object.entries(SOURCE).map(([kind, name]) => [name, kind]));
+KIND_BY_NAME.set(HERO_UNIT_SOURCE.grandwarden, 'grandwarden');
 export const unitKindForName = (name: string) => KIND_BY_NAME.get(name);
 export const isSpawnKind = (kind: string): kind is SpawnKind => Object.hasOwn(SPAWN_SOURCE, kind);
 export const nativeUnitLevels = (kind: string) =>
@@ -299,11 +301,11 @@ function computeUnitStats(kind: string, level: number): NativeUnitStats {
     dps: Math.max(0, dps),
     heal: Math.max(0, -dps) * rate,
     rate,
-    range: tiles(row, 'AttackRange'),
+    range: tiles(row, kind === 'grandwardenair' ? 'AltAttackRange' : 'AttackRange'),
     speed: num(row, 'Speed') / 100,
     housing: num(row, 'HousingSpace'),
     splash: tiles(row, 'DamageRadius'),
-    flying: flag(row, 'IsFlying'),
+    flying: flag(row, kind === 'grandwardenair' ? 'AltModeFlying' : 'IsFlying'),
     airTargets: flag(row, 'AirTargets'),
     groundTargets: flag(row, 'GroundTargets'),
     jumper: flag(row, 'IsJumper'),

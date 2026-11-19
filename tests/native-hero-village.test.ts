@@ -17,6 +17,8 @@ import {
   petUpgradeQuote,
 } from '../src/game/native-hero-data';
 import { gearFromLegacy } from '../src/game/native-hero-village';
+import { validateReplay } from '../src/game/replay';
+import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import { validateSave } from '../src/game/save';
 
 function village(townhall: number, hall: number, extra: ReturnType<typeof makeBuilding>[] = []) {
@@ -165,7 +167,9 @@ describe('complete hero roster in the village', () => {
     expect(m.battleHero('king')?.pet).toMatchObject({ kind: 'owl', level: 1 });
     m.finishBattle();
     const duringUpgrade = m.state.raidLog![0].replay!;
-    expect(duringUpgrade.initial.heroes?.find((hero) => hero.kind === 'queen')?.pet).toBeUndefined();
+    expect(
+      duringUpgrade.initial.heroes?.find((hero) => hero.kind === 'queen')?.pet,
+    ).toBeUndefined();
     m.returnHome();
 
     m.tick(m.state.pets!.research!.end + 1);
@@ -176,5 +180,56 @@ describe('complete hero roster in the village', () => {
     });
     expect(m.openReplay(duringUpgrade)).toBe(true);
     expect(m.battleHero('queen')?.pet).toBeUndefined();
+  });
+  it('uses the pinned Warden alternate layer and range in battle and portable replays', () => {
+    const m = village(11, 5);
+    m.townhall!.x = m.townhall!.y = 36;
+    m.state.buildings.push(makeBuilding(21, 'camp', 28, 28, 4));
+    m.state.army.archer = 0;
+    m.state.buildings.push(makeBuilding(20, 'airdefense', 12, 10, 8));
+    expect(m.setHeroLineup(['warden'])).toBe(true);
+    expect(m.wardenMode).toBe('ground');
+    m.toggleWardenMode();
+    m.saveArmyPreset(0, 'Air Warden');
+    const code = m.armyShareCode(0);
+    m.toggleWardenMode();
+    expect(m.wardenMode).toBe('ground');
+    expect(code).toBeTruthy();
+    expect(m.useSharedArmy(code!)).toBe(true);
+    expect(m.wardenMode).toBe('air');
+    expect(validateSave(m.state)).toBe(true);
+    m.startBattle(0, true);
+    expect(m.deployNativeHero('warden', 6.9, 11.5)).toBe(true);
+    const air = m.battle!.units[0];
+    expect(air.kind).toBe('grandwardenair');
+    expect(m.unitStats(air)).toMatchObject({ flying: true, range: 6.5 });
+    m.step(0.05);
+    const at = m.battle!.elapsed;
+    const snapshot = JSON.parse(JSON.stringify(m.battle));
+    expect(m.battle!.projectiles?.some((shot) => shot.targetId === air.id && shot.toAir)).toBe(
+      true,
+    );
+    m.step(0.05);
+    m.finishBattle();
+    const data = m.state.raidLog![0].replay!;
+    expect(data.initial.heroes?.[0].wardenAir).toBe(true);
+    const viewer = new GameModel();
+    expect(viewer.openReplay(parseReplayFile(JSON.stringify(makeReplayFile(data))))).toBe(true);
+    for (const time of [at, 0, at]) {
+      viewer.seekReplay(time);
+      while (viewer.replay!.seeking) viewer.step(0.05);
+      if (time === at) expect(JSON.parse(JSON.stringify(viewer.battle))).toEqual(snapshot);
+    }
+    expect(validateReplay({ ...data, version: 248 })).toBe(false);
+    const older = structuredClone(data);
+    older.version = 248;
+    delete older.initial.heroes![0].wardenAir;
+    expect(viewer.openReplay(older)).toBe(true);
+    viewer.seekReplay(at);
+    while (viewer.replay!.seeking) viewer.step(0.05);
+    const ground = viewer.battle!.units[0];
+    expect(ground.kind).toBe('grandwarden');
+    expect(viewer.unitStats(ground)).toMatchObject({ range: 7, wallJumper: true });
+    expect(viewer.battle!.projectiles?.some((shot) => shot.targetId === ground.id)).toBe(false);
   });
 });

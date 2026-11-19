@@ -132,7 +132,7 @@ const center = (b: Building) => {
   const half = EAGLE_ARTILLERY.size / 2;
   return { x: native(b.x + half), y: native(b.y + half) };
 };
-const flying = (u: Unit) => !u.hero && !!TROOPS[u.kind].flying;
+const flying = (u: Unit) => (!u.hero || u.kind === 'grandwardenair') && !!TROOPS[u.kind].flying;
 const available = (u: Unit, at: number) =>
   u.hp > 0 && !u.ejected && (u.spawnedAt ?? 0) <= at + 1e-9;
 

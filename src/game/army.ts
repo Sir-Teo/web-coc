@@ -2,13 +2,14 @@ import { isSiege } from './special-troops';
 import { TROOPS, SPELLS, TROOP_KEYS, SPELL_KEYS, LATE_TROOP_KEYS } from './data';
 import { EXTRA_TROOP_KINDS } from './extra-troops';
 import type { Army, SpellBook, Save } from './model';
-import type { HeroKind, PetKind } from './native-hero-data';
+import type { HeroKind, PetKind, WardenMode } from './native-hero-data';
 
 /** A hero a Quick army attacks with: its two items and its pet, as they were saved. */
 export interface PresetHero {
   kind: HeroKind;
   items: string[];
   pet?: PetKind;
+  wardenMode?: WardenMode;
 }
 export interface ArmyPreset {
   name: string;

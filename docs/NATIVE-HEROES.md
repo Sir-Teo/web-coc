@@ -2351,3 +2351,20 @@ retain existing fallback/retry behavior. The carried item warms its complete pac
 before the first periodic cast. Source histories preserve version 141 combat and RNG across all
 27 item levels; older recordings retain their former feedback and request no new optional assets.
 See [source rows, origin conventions, asset sizes and validation](../reference/meteor-staff/README.md#version-142-original-presentation).
+
+## Grand Warden attack mode
+
+The Hero Hall's Grand Warden card sets Ground or Air mode for the home army.
+Quick armies and local army links carry an explicit selection. Existing saves
+default to Ground. The pinned 18.400.21 row sets `IsJumper` for the ground body,
+`AltModeFlying` for the air body, ranges of 7 and 6.5 tiles, and attacks against
+both target layers. The Air body uses the existing air movement and defense
+eligibility paths. The same Warden atlas is shown at air height.
+
+Replay version 249 records Air mode on the attacking Hero setup. Ground
+deployments retain the historical snapshot, including all older recordings.
+Defending Wardens and fixed-army Practice setups use their own settings.
+The pinned army-code parser retains numeric mode values. Applying those values
+from an original-game link requires a labeled native witness for their mapping.
+See the [pinned Warden data](../reference/official-wiki/heroes-pets/grand-warden.json)
+and [Supercell's Home Village and Challenge mode notes](https://supercell.com/en/games/clashofclans/blog/release-notes/welcome-to-clash-anytime-update/).

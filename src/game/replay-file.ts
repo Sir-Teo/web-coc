@@ -76,6 +76,7 @@ export function makeReplayFile(replay: ReplayData): ReplayFile {
                 level: hero.level,
                 items: hero.items.map((item) => ({ slug: item.slug, level: item.level })),
                 ...(hero.pet ? { pet: { kind: hero.pet.kind, level: hero.pet.level } } : {}),
+                ...(hero.wardenAir ? { wardenAir: true as const } : {}),
               })),
             }
           : {}),

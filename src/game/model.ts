@@ -538,8 +538,8 @@ import {
 } from './recalled-split-troops';
 import {
   heroOf,
+  heroBattleUnitKind,
   heroTroopStats,
-  heroUnitKind,
   petOwner,
   petTroopStats,
   petUnitKind,
@@ -734,6 +734,7 @@ export interface Save {
   troopLevels?: Record<TroopKind, number>;
   spellLevels?: Record<SpellKind, number>;
   research?: { kind: ResearchKind; end: number };
+  wardenMode?: 'ground' | 'air';
   lastArmy?: Army;
   lastSpells?: SpellBook;
   layouts?: Layout[];
@@ -4157,6 +4158,7 @@ export class GameModel {
       kind,
       items: (gear.loadouts[kind] ?? []).filter((slug) => gear.levels[slug] !== undefined),
       ...(pets.assigned[kind] ? { pet: pets.assigned[kind] } : {}),
+      ...(kind === 'warden' ? { wardenMode: this.wardenMode } : {}),
     }));
     return {
       name: name.slice(0, 32),
@@ -4216,7 +4218,12 @@ export class GameModel {
       const pet = hero.pet && pets.levels[hero.pet] !== undefined ? hero.pet : undefined;
       if (hero.pet && !pet) changes.push(`${PET_DISPLAY[hero.pet]} is not researched yet`);
       else if (pet && !this.petHouse) changes.push(`${PET_DISPLAY[pet]} needs a Pet House`);
-      lineup.push({ kind: hero.kind, items, ...(pet ? { pet } : {}) });
+      lineup.push({
+        kind: hero.kind,
+        items,
+        ...(pet ? { pet } : {}),
+        ...(hero.wardenMode ? { wardenMode: hero.wardenMode } : {}),
+      });
     }
     return { lineup, changes };
   }
@@ -4233,6 +4240,8 @@ export class GameModel {
     if (!preset.heroes?.length) return [];
     const { lineup, changes } = this.presetHeroPlan(preset);
     if (lineup.length) this.state.heroLineup = lineup.map((hero) => hero.kind);
+    const wardenMode = lineup.find((hero) => hero.kind === 'warden')?.wardenMode;
+    if (wardenMode) this.state.wardenMode = wardenMode;
     if (this.blacksmith) {
       const gear = structuredClone(this.gear);
       for (const hero of lineup) if (hero.items.length) gear.loadouts[hero.kind] = [...hero.items];
@@ -5595,6 +5604,14 @@ export class GameModel {
     this.changed();
     return true;
   }
+  get wardenMode() {
+    return this.state.wardenMode ?? 'ground';
+  }
+  toggleWardenMode() {
+    if (this.battle || !this.heroProgress('warden')) return;
+    this.state.wardenMode = this.wardenMode === 'ground' ? 'air' : 'ground';
+    this.changed();
+  }
   /** Snapshot the ready lineup, equipment and pets for battle setup and artwork prefetch. */
   heroSetups(): HeroSetup[] {
     const gear = this.gear;
@@ -5614,6 +5631,7 @@ export class GameModel {
         return {
           kind,
           level: this.battleHeroLevel(kind),
+          ...(kind === 'warden' && this.wardenMode === 'air' ? { wardenAir: true as const } : {}),
           items,
           ...(pet && level ? { pet: { kind: pet, level } } : {}),
         };
@@ -5644,9 +5662,10 @@ export class GameModel {
       recordWakeSpace(b, heroWakeSpace());
       if (b.nativeMonolithHousing !== undefined) b.nativeMonolithHousing += 25;
     }
+    const unitKind = heroBattleUnitKind(hero);
     b.units.push({
       id: hero.unitId,
-      kind: heroUnitKind(kind),
+      kind: unitKind,
       hero: kind,
       level: hero.level,
       x,
@@ -5659,7 +5678,7 @@ export class GameModel {
       pathAt: 0,
       attacking: false,
       spawnedAt: b.elapsed,
-      native: initialNativeState(heroUnitKind(kind), hero.level),
+      native: initialNativeState(unitKind, hero.level),
     });
     if (b.nativeSnakeBraceletRecall && hero.recalledDamageTaken !== undefined) {
       b.units.at(-1)!.native!.damageTaken = hero.recalledDamageTaken;

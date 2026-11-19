@@ -95,7 +95,7 @@ export type ScattershotUnitState = Record<string, never>;
 
 const isScattershot = (b: Building) => b.kind === 'scattershot';
 const native = (tiles: number) => Math.floor((tiles + NATIVE_OFFSET) * SCATTERSHOT_NATIVE_TILE);
-const flying = (u: Unit) => !u.hero && !!TROOPS[u.kind].flying;
+const flying = (u: Unit) => (!u.hero || u.kind === 'grandwardenair') && !!TROOPS[u.kind].flying;
 const available = (u: Unit, at: number) =>
   u.hp > 0 && !u.ejected && (u.spawnedAt ?? 0) <= at + 1e-9;
 const centerTiles = (b: Building) => ({
@@ -322,7 +322,10 @@ function stepProjectiles(battle: Battle, state: ScattershotBattleState, at: numb
       const d = Math.sqrt(d2);
       const cos = (ux * impact.dirX + uy * impact.dirY) / d;
       if (cos < Math.cos(half) - 1e-12) continue;
-      const falloff = Math.min(1, Math.max(0, (d - SCATTERSHOT.coneMinRadius) / Math.max(1e-9, span)));
+      const falloff = Math.min(
+        1,
+        Math.max(0, (d - SCATTERSHOT.coneMinRadius) / Math.max(1e-9, span)),
+      );
       damageUnit(u, p.spellDamage + (p.spellMinDamage - p.spellDamage) * falloff, at);
       impact.shardHits++;
     }

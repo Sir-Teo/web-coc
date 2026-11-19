@@ -65,7 +65,9 @@ function validPresetHeroes(heroes: unknown) {
         h.items.length <= 2 &&
         new Set(h.items).size === h.items.length &&
         h.items.every((slug: unknown) => validItem(slug) && itemHero(slug) === h.kind) &&
-        (h.pet === undefined || validPet(h.pet)),
+        (h.pet === undefined || validPet(h.pet)) &&
+        (h.wardenMode === undefined ||
+          (h.kind === 'warden' && (h.wardenMode === 'ground' || h.wardenMode === 'air'))),
     )
   );
 }
@@ -195,6 +197,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
     ) ||
     (s.settings.manualHeroAbilities !== undefined &&
       typeof s.settings.manualHeroAbilities !== 'boolean') ||
+    (s.wardenMode !== undefined && s.wardenMode !== 'ground' && s.wardenMode !== 'air') ||
     (s.settings.fullMotion !== undefined && typeof s.settings.fullMotion !== 'boolean') ||
     (s.settings.batterySaver !== undefined && typeof s.settings.batterySaver !== 'boolean') ||
     (s.settings.haptics !== undefined && typeof s.settings.haptics !== 'boolean') ||

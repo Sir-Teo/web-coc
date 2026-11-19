@@ -35,6 +35,8 @@ export const heroPortraitImage = (kind: HeroKind) =>
     ? '/assets/characters/king-v1/portrait.webp'
     : `/assets/characters/hero-redesign-v1/${kind}/portrait.webp`;
 /** Battle unit kinds for heroes (their stats come from heroes.csv). */
+export type WardenMode = 'ground' | 'air';
+
 export const HERO_UNIT = {
   king: 'barbarianking',
   queen: 'archerqueen',

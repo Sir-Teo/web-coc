@@ -28,7 +28,12 @@ export interface HeroSetup {
   level: number;
   items: HeroItemSetup[];
   pet?: { kind: PetKind; level: number };
+  /** Only the alternate mode needs a battle snapshot field. */
+  wardenAir?: true;
 }
+export const heroBattleUnitKind = (hero: HeroSetup) =>
+  hero.kind === 'warden' && hero.wardenAir ? ('grandwardenair' as const) : heroUnitKind(hero.kind);
+
 export interface NativeBattleHero extends HeroSetup {
   /** Version 97: the pet's Hero-death boost is spent for this raid, including later Revive. */
   petHeroDeathUsed?: true;
@@ -67,7 +72,7 @@ export interface NativeBattleHero extends HeroSetup {
   auraResume?: { unitId: number; at: number };
 }
 
-export const heroUnitKind = (kind: HeroKind) => HERO_UNIT[kind] as UnitKind;
+export const heroUnitKind = (kind: HeroKind) => HERO_UNIT[kind];
 export const petUnitKind = (kind: PetKind) => PET_UNIT[kind] as UnitKind;
 export const heroOf = (battle: Battle, unit: Pick<Unit, 'id'>) =>
   battle.nativeHeroes?.find((hero) => hero.unitId === unit.id);
@@ -95,7 +100,7 @@ export function heroStatsFor(
   townhall: number,
   preserveHitDamage = true,
 ): NativeUnitStats {
-  const base = nativeUnitStats(heroUnitKind(hero.kind), hero.level);
+  const base = nativeUnitStats(heroBattleUnitKind(hero), hero.level);
   const bonus = itemBonuses(hero);
   const scale = heroTownHallScale(hero.kind, townhall);
   const rate = base.rate / (1 + bonus.attackSpeed);
@@ -178,7 +183,7 @@ export const petStatsFor = (pet: { kind: PetKind; level: number }) =>
 export function heroTroopStats(hero: HeroSetup, townhall: number, preserveHitDamage = true) {
   const stats = heroStatsFor(hero, townhall, preserveHitDamage);
   return {
-    ...spawnStatsAt(heroUnitKind(hero.kind) as never, hero.level),
+    ...spawnStatsAt(heroBattleUnitKind(hero), hero.level),
     hp: stats.hp,
     damage: stats.damage,
     rate: stats.rate,

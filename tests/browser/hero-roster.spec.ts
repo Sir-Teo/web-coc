@@ -145,6 +145,37 @@ test('pets research once, finish with gems, assign and move between heroes', asy
 test.describe('phone attack preparation', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
+  test('Warden mode persists from preparation to a phone-sized attack', async ({ page }) => {
+    await boot(page);
+    await develop(page);
+    await heroes(page);
+    const warden = page.locator('[data-hero="warden"]');
+    await warden.locator('[data-action="hero-lineup:warden"]').tap();
+    const mode = warden.locator('[data-action="warden-mode"]');
+    await expect(mode).toHaveText('Ground mode');
+    await mode.tap();
+    await expect(mode).toHaveText('Air mode');
+    await page.screenshot({ path: 'output/playtest/warden-air-preparation-phone.png' });
+    await page.reload();
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    await heroes(page);
+    await expect(mode).toHaveText('Air mode');
+    await page.locator('.modal [data-action="close"]').tap();
+    const closeDrawer = page.locator('[data-action="close-drawer"]');
+    if (await closeDrawer.isVisible()) await closeDrawer.tap();
+    await page.locator('.attack-btn').tap();
+    await page.locator('[data-action="attack:0"]').tap();
+    await expect(page.locator('[data-action="hero-select:warden"]')).toBeVisible();
+    const deployed = await page.evaluate(() => {
+      const { model } = window.__game;
+      if (!model.deployNativeHero('warden', 2, 13)) throw Error('Warden deployment failed');
+      const unit = model.battle!.units[0];
+      return { kind: unit.kind, range: model.unitStats(unit).range };
+    });
+    expect(deployed).toEqual({ kind: 'grandwardenair', range: 6.5 });
+    await page.screenshot({ path: 'output/playtest/warden-air-battle-phone.png' });
+  });
+
   test('an assigned pet sits out an attack during research and returns after completion', async ({
     page,
   }) => {

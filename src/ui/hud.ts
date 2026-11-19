@@ -1723,6 +1723,9 @@ export class HUD {
         if (arg && (HERO_KINDS as string[]).includes(arg)) m.finishRosterHero(arg as HeroKind);
         else m.finishHero();
         break;
+      case 'warden-mode':
+        m.toggleWardenMode();
+        break;
       case 'hero-lineup': {
         if (!(HERO_KINDS as string[]).includes(arg)) break;
         const kind = arg as HeroKind;
@@ -4004,6 +4007,7 @@ export class HUD {
         kind,
         level: progress.level,
         items: loadout.slice(0, 2).map((slug) => ({ slug, level: gear.levels[slug] })),
+        ...(kind === 'warden' && m.wardenMode === 'air' ? { wardenAir: true as const } : {}),
       };
     const native = heroStatsFor(setup, m.townhallLevel),
       heal = heroAbilityHeal(setup, m.townhallLevel);
@@ -4060,6 +4064,7 @@ export class HUD {
         ? `<p>Cancel this upgrade and recover ${n(cancellation.refund)} ${cancellation.resource === 'dark' ? 'dark elixir' : cancellation.resource}?</p><div class="confirm-actions">${button('hero-cancel-keep', 'Keep upgrading', 'game-btn stone')}${button(`hero-cancel-confirm:${kind}`, 'Confirm cancellation', 'game-btn red')}</div>`
         : button(`hero-cancel-request:${kind}`, 'Cancel upgrade', 'game-btn stone');
     return `<section class="hero-section" data-hero="${kind}"><article class="hero-overview"><div class="hero-portrait"><img src="${isKing ? hudAsset('king') : heroPortrait(kind)}" alt="${name}"></div><div><span class="eyebrow">HERO HALL ${hall.level}${inLineup ? ` · SLOT ${m.heroLineup.indexOf(kind) + 1} OF ${nativeHeroSlots(hall.level)}` : ' · BENCHED'}</span><h2>${name}</h2><p>Level ${progress.level} / ${max} · ${progress.upgradeEnd ? 'Upgrading' : inLineup ? 'In battle lineup' : 'Benched'}${petStatus ? ` · ${petStatus}` : ''}</p></div></article>
+      ${kind === 'warden' ? button('warden-mode', m.wardenMode === 'air' ? 'Air mode' : 'Ground mode', 'game-btn stone', `aria-label="Grand Warden mode: ${m.wardenMode}"`) : ''}
       ${`<div class="hero-stat-grid">${stat('Hitpoints', native.hp, upcoming?.hp)}${stat('Damage per second', native.dps, upcoming?.dps)}${stat('Damage per hit', native.damage, upcoming?.damage)}${stat('Attack interval', native.rate, undefined, 's')}${stat('Attack range', native.range, undefined, native.range === 1 ? ' tile' : ' tiles')}${stat('Movement', native.speed, undefined, ' tiles/s')}</div>
       ${scale < 1 ? `<p class="hero-scaling">Town Hall ${m.townhallLevel} strength: ${scale * 100}% health, damage and recovery. Full strength at Town Hall 6.</p>` : ''}
       <p class="hero-stats-note">Stats include the equipped items below.</p>
@@ -4677,6 +4682,7 @@ export class HUD {
     const heroes = preset
       .heroes!.map((hero) => {
         const extras = [
+          ...(hero.wardenMode ? [hero.wardenMode === 'air' ? 'Air mode' : 'Ground mode'] : []),
           ...hero.items.map((slug) => nativeItemName(slug)),
           ...(hero.pet ? [PET_DISPLAY[hero.pet as keyof typeof PET_DISPLAY] ?? hero.pet] : []),
         ];

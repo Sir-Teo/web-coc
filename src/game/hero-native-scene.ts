@@ -73,6 +73,7 @@ const KEYS: Record<string, string> = Object.fromEntries(
   [
     ...Object.entries(HERO_UNIT),
     ...Object.entries(PET_UNIT),
+    ['warden', 'grandwardenair'],
     ['phoenixegg', 'phoenixegg'],
     ['booger', 'booger'],
   ].map(([key, unit]) => [unit, key]),

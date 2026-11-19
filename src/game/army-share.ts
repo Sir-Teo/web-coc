@@ -69,7 +69,9 @@ function composition(value: unknown): Composition | null {
         hero.items.length > 2 ||
         new Set(hero.items).size !== hero.items.length ||
         !hero.items.every((slug) => validItem(slug) && itemHero(slug) === hero.kind) ||
-        (hero.pet !== undefined && (!validPet(hero.pet) || pets.has(hero.pet)))
+        (hero.pet !== undefined && (!validPet(hero.pet) || pets.has(hero.pet))) ||
+        (hero.wardenMode !== undefined &&
+          (hero.kind !== 'warden' || (hero.wardenMode !== 'ground' && hero.wardenMode !== 'air')))
       )
         return null;
       seen.add(hero.kind);
@@ -78,6 +80,7 @@ function composition(value: unknown): Composition | null {
         kind: hero.kind,
         items: [...hero.items],
         ...(hero.pet ? { pet: hero.pet } : {}),
+        ...(hero.wardenMode ? { wardenMode: hero.wardenMode } : {}),
       } as PresetHero);
     }
     result.heroes = heroes;
