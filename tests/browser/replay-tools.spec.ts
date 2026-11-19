@@ -35,6 +35,8 @@ test('playback targets stay reachable at narrow portrait and landscape sizes', a
   for (const [width, height] of [
     [320, 740],
     [390, 844],
+    [568, 320],
+    [650, 390],
     [701, 390],
     [844, 390],
   ]) {
@@ -65,7 +67,7 @@ test('playback targets stay reachable at narrow portrait and landscape sizes', a
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
     const box = (await controls.boundingBox())!;
     expect(box.y).toBeGreaterThan(120);
-    expect(box.height).toBeLessThanOrEqual(height <= 550 ? 136 : 190);
+    expect(box.height).toBeLessThanOrEqual(height <= 450 ? 100 : 190);
     await page.screenshot({
       path: `output/playtest/replay-controls-${width}-${test.info().project.name}.png`,
     });
