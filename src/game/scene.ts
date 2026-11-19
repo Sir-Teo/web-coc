@@ -292,6 +292,7 @@ const DOT_RADIUS = 8;
 const NO_CUES: SampleCue[] = [];
 const ZERO = Object.freeze({ x: 0, y: 0 });
 const LOADING_LATE_ART = 'Loading village art…';
+const OFFLINE_LATE_ART = 'Reconnect to download this village’s art.';
 /** Press and hold: the first troop drops after this still press, the stream then speeds up. */
 export const HOLD_DEPLOY_DELAY_MS = 260;
 const HOLD_DEPLOY_FIRST_MS = 180;
@@ -1706,12 +1707,13 @@ export class VillageScene extends Phaser.Scene {
     };
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, onShutdown);
     slow = setTimeout(() => {
-      if (!shutdown && this.lateArtLoading) this.model.notify(LOADING_LATE_ART);
+      if (!shutdown && this.lateArtLoading) this.model.notify(this.battleArtWaitMessage());
     }, 400);
     const settle = () => {
       clearTimeout(slow);
       // Withdraw a loading notice that is still showing; later messages stay.
-      if (document.querySelector('#toast')?.textContent === LOADING_LATE_ART) this.model.notify('');
+      const message = document.querySelector('#toast')?.textContent;
+      if (message === LOADING_LATE_ART || message === OFFLINE_LATE_ART) this.model.notify('');
     };
     // Ordinary garrisons draw through GarrisonPresentation; their first battle does not
     // need the multi-megabyte late-building presentation graph. Recorded workers can still
@@ -1838,7 +1840,8 @@ export class VillageScene extends Phaser.Scene {
       retryAt: performance.now() + artRetryDelay(attempts),
       module,
     };
-    if (attempts === 1)
+    if (module && this.model.battle && !navigator.onLine) this.model.notify(OFFLINE_LATE_ART);
+    else if (attempts === 1)
       this.model.notify('Some village art could not load. It will retry automatically.');
   }
   /** Texture keys the late campaign bundle added (see loadLateAssets). */
@@ -2156,6 +2159,9 @@ export class VillageScene extends Phaser.Scene {
   /** Any art the current battle waits for: late campaign families or deferred defenses. */
   private battleArtPending() {
     return this.lateAssetsPending() || (!!this.model.battle && this.deferredArtPending());
+  }
+  private battleArtWaitMessage() {
+    return this.lateArtFailure?.module && !navigator.onLine ? OFFLINE_LATE_ART : LOADING_LATE_ART;
   }
   /**
    * Loads deferred families in one loader batch, after any batch already running. Their samples
@@ -2626,7 +2632,7 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     if (this.model.battle) {
-      if (this.battleArtPending()) return void this.model.notify(LOADING_LATE_ART);
+      if (this.battleArtPending()) return void this.model.notify(this.battleArtWaitMessage());
       if (this.model.activeSpell) {
         if (this.model.castSpell(x + 0.5, y + 0.5)) this.castFeedback();
         return;
@@ -2813,7 +2819,7 @@ export class VillageScene extends Phaser.Scene {
     }
     if (this.model.battle) {
       if (this.battleArtPending()) {
-        this.model.notify(LOADING_LATE_ART);
+        this.model.notify(this.battleArtWaitMessage());
         return;
       }
       const reviveHero =

@@ -12,7 +12,11 @@ try {
   const { GameModel, initialSave } = await modules.ssrLoadModule('/src/game/model.ts');
   const { developedSave } = await modules.ssrLoadModule('/tests/fixtures/developed-village.ts');
   const { validateSave } = await modules.ssrLoadModule('/src/game/save.ts');
-  fixtures = { starter: initialSave(), developed: developedSave() };
+  const { freshNativeCampaign } = await modules.ssrLoadModule('/src/game/native-campaign.ts');
+  const late = developedSave();
+  late.nativeCampaign = freshNativeCampaign();
+  late.nativeCampaign.stars.fill(1, 0, 63);
+  fixtures = { starter: initialSave(), developed: developedSave(), late };
   for (const [name, fixture] of Object.entries(fixtures)) {
     fixture.tutorial = true;
     fixture.settings.sound = false;
@@ -73,28 +77,89 @@ try {
         const home = await snapshot();
         expect(home.army.swordsman).toBe(JSON.parse(save).army.swordsman);
         expect(home.buildings.some((building) => building.type === 'mortar')).toBe(
-          name === 'developed',
+          name !== 'starter',
         );
-        await page.locator('.attack-btn').tap();
-        await page.locator('[data-action="attack:0"]').tap();
-        await expect(page.locator('.prep-banner')).toBeVisible();
-        await expect(page.locator('.battle-enemy h2')).toHaveText('Payback');
+        const enter = async (index, title) => {
+          await page.locator('.attack-btn').tap();
+          await page.locator(`[data-action="attack:${index}"]`).tap();
+          await expect(page.locator('.prep-banner')).toBeVisible();
+          await expect(page.locator('.battle-enemy h2')).toHaveText(title);
+        };
         const troop = page.locator('[data-action="troop:swordsman"]');
-        await troop.tap();
-        // Try visible canvas points via touch. The red boundary excludes some candidates.
-        for (const y of [390, 340, 440, 290, 490, 240])
-          for (const x of [195, 130, 260, 65, 325]) {
-            if ((await snapshot()).battle.units) break;
-            if (
-              !(await page.evaluate(
-                ([x, y]) => document.elementFromPoint(x, y)?.tagName === 'CANVAS',
-                [x, y],
-              ))
+        const deploy = async () => {
+          await troop.tap();
+          // Try visible canvas points via touch. The red boundary excludes some candidates.
+          for (const y of [390, 340, 440, 290, 490, 240])
+            for (const x of [195, 130, 260, 65, 325]) {
+              if ((await snapshot()).battle.remaining.swordsman < home.army.swordsman) return;
+              if (
+                !(await page.evaluate(
+                  ([x, y]) => document.elementFromPoint(x, y)?.tagName === 'CANVAS',
+                  [x, y],
+                ))
+              )
+                continue;
+              await page.touchscreen.tap(x, y);
+              await page.waitForTimeout(400);
+            }
+        };
+        if (name === 'late') {
+          const lateGraphCached = await page.evaluate(async () => {
+            for (const cache of await caches.keys())
+              if (
+                (await (await caches.open(cache)).keys()).some((request) =>
+                  new URL(request.url).pathname.includes('/late-campaign-scene-'),
+                )
+              )
+                return true;
+            return false;
+          });
+          expect(lateGraphCached).toBe(false);
+          await enter(63, 'Bowling Alley');
+          await expect
+            .poll(() => [...misses].some((path) => path.includes('/late-campaign-scene-')))
+            .toBe(true);
+          await troop.tap();
+          await page.touchscreen.tap(195, 390);
+          await expect(page.locator('#toast')).toContainText(
+            'Reconnect to download this village’s art',
+          );
+          expect((await snapshot()).battle).toMatchObject({ scouting: true, units: 0 });
+          await page.locator('.end-battle[data-action="home"]').tap();
+          expect((await snapshot()).army).toEqual(home.army);
+          expect((await snapshot()).resources).toEqual(home.resources);
+          await page.locator('[data-action="battle-log"]').tap();
+          await expect(page.locator('.raid-record')).toHaveCount(0);
+          await page.getByRole('button', { name: 'Close dialog' }).tap();
+
+          await enter(63, 'Bowling Alley');
+          const lateArt = page.waitForResponse(
+            (response) => response.url().includes('/late-campaign-scene-') && response.ok(),
+          );
+          await context.setOffline(false);
+          await lateArt;
+          await expect
+            .poll(
+              async () => {
+                await deploy();
+                return (await snapshot()).battle.remaining.swordsman;
+              },
+              {
+                timeout: 25000,
+              },
             )
-              continue;
-            await page.touchscreen.tap(x, y);
-            await page.waitForTimeout(80);
-          }
+            .toBe(home.army.swordsman - 1);
+          await expect(page.locator('.battle-enemy h2')).toHaveText('Bowling Alley');
+          await expect(troop.locator('.troop-count')).toHaveText(`x${home.army.swordsman - 1}`);
+          expect(errors).toEqual([]);
+          console.log(
+            'late: uncached Bowling Alley explained offline scouting, left at no cost, and deployed after reconnect',
+          );
+          continue;
+        }
+
+        await enter(0, 'Payback');
+        await deploy();
         if (!(await snapshot()).battle.units)
           throw Error(
             `No offline deployment on ${name}. Toast: ${await page.locator('#toast').textContent()}`,
