@@ -5606,7 +5606,7 @@ export class GameModel {
           .slice(0, 2)
           .map((slug) => ({ slug, level: gear.levels[slug] }));
         const pet = pets.assigned[kind];
-        const level = pet ? this.battlePetLevel(pet) : undefined;
+        const level = pet && pets.research?.kind !== pet ? this.battlePetLevel(pet) : undefined;
         return {
           kind,
           level: this.battleHeroLevel(kind),

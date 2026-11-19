@@ -156,9 +156,25 @@ describe('complete hero roster in the village', () => {
     expect(m.researchPet('owl')).toBe(false);
     expect(m.assignPet('king', 'lassi')).toBe(true);
     expect(m.assignPet('queen', 'lassi')).toBe(true);
-    expect(m.petProgress.assigned).toEqual({ queen: 'lassi' });
+    expect(m.assignPet('king', 'owl')).toBe(true);
+    expect(m.petProgress.assigned).toEqual({ king: 'owl', queen: 'lassi' });
     expect(validateSave(m.state)).toBe(true);
+
+    m.startCampaign(0);
+    expect(m.battleHero('queen')?.pet).toBeUndefined();
+    expect(m.battleHero('king')?.pet).toMatchObject({ kind: 'owl', level: 1 });
+    m.finishBattle();
+    const duringUpgrade = m.state.raidLog![0].replay!;
+    expect(duringUpgrade.initial.heroes?.find((hero) => hero.kind === 'queen')?.pet).toBeUndefined();
+    m.returnHome();
+
     m.tick(m.state.pets!.research!.end + 1);
     expect(m.petProgress.levels.lassi).toBe(2);
+    expect(m.heroSetups().find((hero) => hero.kind === 'queen')?.pet).toEqual({
+      kind: 'lassi',
+      level: 2,
+    });
+    expect(m.openReplay(duringUpgrade)).toBe(true);
+    expect(m.battleHero('queen')?.pet).toBeUndefined();
   });
 });

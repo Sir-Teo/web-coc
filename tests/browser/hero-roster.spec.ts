@@ -142,6 +142,43 @@ test('pets research once, finish with gems, assign and move between heroes', asy
   expect(errors).toEqual([]);
 });
 
+test.describe('phone attack preparation', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('an assigned pet sits out an attack during research and returns after completion', async ({
+    page,
+  }) => {
+    await boot(page);
+    await develop(page);
+    await heroes(page);
+    await page.locator('[data-action="pets"]').first().tap();
+    await page.locator('[data-action="pet-assign:lassi,king"]').tap();
+    await page.locator('[data-action="pet-research:lassi"]').tap();
+    await expect(page.locator('[data-pet-timer]')).toBeVisible();
+    await page.screenshot({ path: 'output/playtest/upgrading-pet-phone.png' });
+    await page.locator('.modal [data-action="close"]').tap();
+    const closeArmy = page.locator('[data-action="close-drawer"]');
+    if (await closeArmy.isVisible()) await closeArmy.tap();
+
+    const attack = async () => {
+      await page.locator('.attack-btn').tap();
+      await page.locator('[data-action="attack:0"]').tap();
+      await expect(page.locator('.prep-banner')).toBeVisible();
+      return page.evaluate(() => window.__game.model.battleHero('king')!.pet ?? null);
+    };
+    expect(await attack()).toBeNull();
+    await page.locator('[data-action="home"]').tap();
+    expect(await page.evaluate(() => window.__game.model.petProgress.assigned.king)).toBe('lassi');
+
+    await heroes(page);
+    await page.locator('[data-action="pets"]').first().tap();
+    await page.locator('[data-action="pet-finish"]').tap();
+    await page.locator('.modal [data-action="close"]').tap();
+    if (await closeArmy.isVisible()) await closeArmy.tap();
+    expect(await attack()).toEqual({ kind: 'lassi', level: 2 });
+  });
+});
+
 test('native forge equips, upgrades with ore or gems, and sells epics', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));

@@ -3994,7 +3994,11 @@ export class HUD {
       };
     const native = heroStatsFor(setup, m.townhallLevel),
       heal = heroAbilityHeal(setup, m.townhallLevel);
-    const pet = m.petProgress.assigned[kind];
+    const pets = m.petProgress;
+    const pet = pets.assigned[kind];
+    const petStatus = pet
+      ? `${PET_DISPLAY[pet]}${pets.research?.kind === pet ? ' (unavailable while upgrading)' : ''}`
+      : '';
     // The King keeps its original upgrade record; the other five use the native quote.
     const isKing = kind === 'king';
     const max = isKing ? m.heroMaxLevel : m.heroLevelMax(kind);
@@ -4042,7 +4046,7 @@ export class HUD {
       : this.heroCancelConfirm === kind
         ? `<p>Cancel this upgrade and recover ${n(cancellation.refund)} ${cancellation.resource === 'dark' ? 'dark elixir' : cancellation.resource}?</p><div class="confirm-actions">${button('hero-cancel-keep', 'Keep upgrading', 'game-btn stone')}${button(`hero-cancel-confirm:${kind}`, 'Confirm cancellation', 'game-btn red')}</div>`
         : button(`hero-cancel-request:${kind}`, 'Cancel upgrade', 'game-btn stone');
-    return `<section class="hero-section" data-hero="${kind}"><article class="hero-overview"><div class="hero-portrait"><img src="${isKing ? hudAsset('king') : heroPortrait(kind)}" alt="${name}"></div><div><span class="eyebrow">HERO HALL ${hall.level}${inLineup ? ` · SLOT ${m.heroLineup.indexOf(kind) + 1} OF ${nativeHeroSlots(hall.level)}` : ' · BENCHED'}</span><h2>${name}</h2><p>Level ${progress.level} / ${max} · ${progress.upgradeEnd ? 'Upgrading' : inLineup ? 'In battle lineup' : 'Benched'}${pet ? ` · ${PET_DISPLAY[pet as keyof typeof PET_DISPLAY] ?? pet}` : ''}</p></div></article>
+    return `<section class="hero-section" data-hero="${kind}"><article class="hero-overview"><div class="hero-portrait"><img src="${isKing ? hudAsset('king') : heroPortrait(kind)}" alt="${name}"></div><div><span class="eyebrow">HERO HALL ${hall.level}${inLineup ? ` · SLOT ${m.heroLineup.indexOf(kind) + 1} OF ${nativeHeroSlots(hall.level)}` : ' · BENCHED'}</span><h2>${name}</h2><p>Level ${progress.level} / ${max} · ${progress.upgradeEnd ? 'Upgrading' : inLineup ? 'In battle lineup' : 'Benched'}${petStatus ? ` · ${petStatus}` : ''}</p></div></article>
       ${`<div class="hero-stat-grid">${stat('Hitpoints', native.hp, upcoming?.hp)}${stat('Damage per second', native.dps, upcoming?.dps)}${stat('Damage per hit', native.damage, upcoming?.damage)}${stat('Attack interval', native.rate, undefined, 's')}${stat('Attack range', native.range, undefined, native.range === 1 ? ' tile' : ' tiles')}${stat('Movement', native.speed, undefined, ' tiles/s')}</div>
       ${scale < 1 ? `<p class="hero-scaling">Town Hall ${m.townhallLevel} strength: ${scale * 100}% health, damage and recovery. Full strength at Town Hall 6.</p>` : ''}
       <p class="hero-stats-note">Stats include the equipped items below.</p>
@@ -4058,7 +4062,7 @@ export class HUD {
               .join('')}</div>`
           : ''
       }`}
-      <p class="hero-stats-note">Pet: ${pet ? (PET_DISPLAY[pet as keyof typeof PET_DISPLAY] ?? pet) : 'none'} · ${button('pets', 'Manage pets', 'replay-link')}</p>
+      <p class="hero-stats-note">Pet: ${petStatus || 'none'} · ${button('pets', 'Manage pets', 'replay-link')}</p>
       <div class="hero-upgrade"><p>${resource('dark')} <b data-resource="dark">${n(m.state.dark)}</b> dark elixir · ${resource('elixir')} <b data-resource="elixir">${n(m.state.elixir)}</b> elixir</p>${progress.upgradeEnd ? `<p>Upgrade completes in <b data-hero-timer="${kind}">${time((progress.upgradeEnd - m.clock) / 1000)}</b></p>${button(`hero-finish:${kind}`, `Finish ${gem} <span data-hero-gems="${kind}">${m.finishCost({ upgradeEnd: progress.upgradeEnd } as Building)}</span>`, 'game-btn green')}${m.booksFor({ hero: kind }).length ? button(`book-hero:${kind}`, `${icon('BookOpen', 17)} ${MAGIC_ITEMS[m.booksFor({ hero: kind })[0]].name}`, 'game-btn blue') : ''}${cancelUpgrade}` : capped ? `<p class="max-level">${isKing && m.townhallLevel < 7 ? 'Hero upgrades unlock at Town Hall 7' : missing.length ? `Upgrade to ${missing.join(' and ')}` : 'Maximum hero level'}</p>` : `${button(`hero-upgrade:${kind}`, upgradeCostText, 'game-btn green', upgradeDisabled ? 'disabled' : '')}${m.magicItemCount('hammer-of-heroes') ? button(`hammer-hero:${kind}`, `${icon('Hammer', 17)} Hammer of Heroes`, 'game-btn blue', m.busy >= m.builders ? 'disabled' : '') : ''}<p>${upgradeSecondsText} · Requires one free builder</p>`}</div>
       ${inLineup ? '' : `<div class="hero-upgrade">${m.heroLineup.length >= nativeHeroSlots(hall.level) ? button(`hero-lineup:${kind}`, `Swap in for ${HERO_SOURCE[m.heroLineup[m.heroLineup.length - 1]]}`, 'game-btn blue') : button(`hero-lineup:${kind}`, 'Add to lineup', 'game-btn blue')}</div>`}</section>`;
   }
@@ -4102,7 +4106,7 @@ export class HUD {
           quote = !capped && !research ? petUpgradeQuote(kind, level) : null;
         const assigned = Object.entries(pets.assigned).find(([, p]) => p === kind)?.[0];
         return `<section class="hero-section" data-pet="${kind}"><article class="hero-overview"><div class="hero-portrait"><img src="${PET_PORTRAIT[kind]}" alt="${PET_DISPLAY[kind]}"></div><div><span class="eyebrow">PET HOUSE ${house.level}</span><h2>${PET_DISPLAY[kind]}</h2><p>Level ${level} / ${max}${level >= max ? ' · Max' : capped ? ` · Pet House cap ${cap}` : ''} · ${assigned ? HERO_SOURCE[assigned as HeroKind] : 'Unassigned'}</p></div></article>
-        <div class="hero-upgrade">${research?.kind === kind ? `<p>Upgrade completes in <b data-pet-timer>${time((research.end - m.clock) / 1000)}</b></p>${button('pet-finish', `Finish ${gem} <span data-pet-gems>${m.finishCost({ upgradeEnd: research.end } as Building)}</span>`, 'game-btn green')}${m.booksFor({ pet: true }).length ? button('book-pet', `${icon('BookOpen', 17)} ${MAGIC_ITEMS[m.booksFor({ pet: true })[0]].name}`, 'game-btn blue') : ''}` : capped ? `<p class="max-level">${level >= max ? 'Maximum pet level' : `Upgrade the Pet House for higher levels`}</p>` : quote ? `${button(`pet-research:${kind}`, `${resource(quote.resource as 'dark' | 'elixir' | 'gold')} ${n(quote.cost)} · Research to ${quote.level}`, 'game-btn green', research || m.state[quote.resource as 'dark' | 'elixir' | 'gold'] < quote.cost || !!m.battle ? 'disabled' : '')}${m.magicItemCount('hammer-of-heroes') ? button(`hammer-pet:${kind}`, `${icon('Hammer', 17)} Hammer of Heroes`, 'game-btn blue', m.battle ? 'disabled' : '') : ''}<p>${time(quote.seconds)} · One research at a time</p>` : ''}</div>
+        <div class="hero-upgrade">${research?.kind === kind ? `<p>Unavailable for attacks. Upgrade completes in <b data-pet-timer>${time((research.end - m.clock) / 1000)}</b></p>${button('pet-finish', `Finish ${gem} <span data-pet-gems>${m.finishCost({ upgradeEnd: research.end } as Building)}</span>`, 'game-btn green')}${m.booksFor({ pet: true }).length ? button('book-pet', `${icon('BookOpen', 17)} ${MAGIC_ITEMS[m.booksFor({ pet: true })[0]].name}`, 'game-btn blue') : ''}` : capped ? `<p class="max-level">${level >= max ? 'Maximum pet level' : `Upgrade the Pet House for higher levels`}</p>` : quote ? `${button(`pet-research:${kind}`, `${resource(quote.resource as 'dark' | 'elixir' | 'gold')} ${n(quote.cost)} · Research to ${quote.level}`, 'game-btn green', research || m.state[quote.resource as 'dark' | 'elixir' | 'gold'] < quote.cost || !!m.battle ? 'disabled' : '')}${m.magicItemCount('hammer-of-heroes') ? button(`hammer-pet:${kind}`, `${icon('Hammer', 17)} Hammer of Heroes`, 'game-btn blue', m.battle ? 'disabled' : '') : ''}<p>${time(quote.seconds)} · One research at a time</p>` : ''}</div>
         <div class="hero-upgrade"><p>Assigned to</p><div>${heroButtons(kind, assigned)}</div></div></section>`;
       }).join('')}
     </div>`;
