@@ -26,7 +26,10 @@ const controls = (page: Page, selector: string) =>
     };
   }, selector);
 
-test('phone windows fit the screen and their controls take a finger', async ({ page }) => {
+test('phone windows fit the screen and their controls take a finger', async ({
+  page,
+  browserName,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await boot(page);
   // The Laboratory's two columns of cards stay on screen.
@@ -39,7 +42,28 @@ test('phone windows fit the screen and their controls take a finger', async ({ p
   const backup = await controls(page, '.save-section .game-btn');
   expect(backup.count).toBeGreaterThanOrEqual(3);
   expect(backup.beyond).toBe(0);
-  await expect(page.locator('[data-action="import"]')).toBeInViewport();
+  if (browserName === 'chromium') {
+    const touch = await page.context().newCDPSession(page);
+    try {
+      await touch.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x: 180, y: 750 }],
+      });
+      for (const y of [700, 620, 540, 460, 380, 300, 220, 150])
+        await touch.send('Input.dispatchTouchEvent', {
+          type: 'touchMove',
+          touchPoints: [{ x: 180, y }],
+        });
+      await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      const importButton = page.getByRole('button', { name: 'Import backup' });
+      await expect(importButton).toBeInViewport();
+      const chooser = page.waitForEvent('filechooser');
+      await importButton.tap();
+      expect((await chooser).isMultiple()).toBe(false);
+    } finally {
+      await touch.detach();
+    }
+  }
   test.skip(!(await coarsePointer(page)), 'This engine does not emulate a coarse pointer.');
   expect((await controls(page, '.modal .game-btn')).shortest).toBeGreaterThanOrEqual(44);
   await page.evaluate(() => window.__game.hud.show('research'));

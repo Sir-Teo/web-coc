@@ -688,6 +688,7 @@ type LiveRefs = {
   armyCounts: HTMLElement[];
   starBonusButton: HTMLButtonElement | null;
   queue: HTMLElement | null;
+  replayStatus: HTMLElement | null;
   replayTime: HTMLElement | null;
   replayProgress: HTMLInputElement | null;
   battleTimer: HTMLElement | null;
@@ -1032,7 +1033,7 @@ export class HUD {
             time.textContent = `${clock(Number(t.value))} / ${clock(this.model.replay.duration)}`;
           t.setAttribute('aria-valuetext', clock(Number(t.value)));
           const status = document.querySelector('.replay-status strong');
-          if (status) status.textContent = 'Replay paused';
+          if (status) status.textContent = this.replayStatusText();
         }
         if (t.id.startsWith('preset-name-')) {
           const slot = Number(t.id.slice('preset-name-'.length));
@@ -3795,6 +3796,14 @@ export class HUD {
   }
 
   // ----------------------------------------------------------------- drawer
+  private replayStatusText() {
+    const r = this.model.replay!;
+    if (this.scene.replayNeedsConnection()) return 'Reconnect to load replay art';
+    if (r.seeking) return 'Seeking…';
+    if (r.complete) return 'Replay complete';
+    return r.paused ? 'Replay paused' : 'Watching replay';
+  }
+
   private replayControls() {
     const r = this.model.replay!;
     // The opening raid is something to watch, not study: status, speed and the way home.
@@ -3804,7 +3813,7 @@ export class HUD {
       <div class="replay-buttons"><div class="replay-speeds" role="group" aria-label="Playback speed">${[1, 2, 4].map((speed) => button(`replay-speed:${speed}`, `${speed}×`, `game-btn ${r.speed === speed ? 'green' : 'stone'}`, `aria-pressed="${r.speed === speed}"`)).join('')}</div>${button('replay-exit', `${icon('House', 17)} Back to village`, `game-btn ${r.complete ? 'green' : 'stone'}`)}</div>
     </section>`;
     return `<section class="replay-controls replay-transport" aria-label="Replay playback">
-      <div class="replay-status"><strong>${r.seeking ? 'Seeking…' : r.complete ? 'Replay complete' : r.paused ? 'Replay paused' : 'Watching replay'}</strong><span id="replay-time">${clock(r.time)} / ${clock(r.duration)}</span></div>
+      <div class="replay-status"><strong aria-live="polite">${this.replayStatusText()}</strong><span id="replay-time">${clock(r.time)} / ${clock(r.duration)}</span></div>
       <input id="replay-progress" data-action="replay-position" type="range" aria-label="Replay position" aria-valuetext="${clock(r.time)}" min="0" max="${r.duration || 1}" step="any" value="${r.seeking ? r.seekTarget : r.time}" ${r.seeking || !r.duration ? 'disabled' : ''}><div class="replay-shortcuts">${button('replay-jump:-10', '−10s', 'replay-link', r.seeking ? 'disabled' : '')}${button('replay-jump:10', '+10s', 'replay-link', r.seeking ? 'disabled' : '')}${button('replay-skip', `${icon('SkipForward', 17)}<span class="replay-control-label">First deployment</span>`, 'replay-link', `${r.seeking ? 'disabled ' : ''}aria-label="First deployment" title="Jump to first deployment"`)}${button('replay-export', `${icon('Download', 17)}<span class="replay-control-label">Export replay</span>`, 'replay-link', 'aria-label="Export replay" title="Export replay"')}</div>
       <div class="replay-buttons">${button('replay-pause', `${icon(r.paused ? 'Play' : 'Pause', 17)}<span class="replay-control-label">${r.paused ? 'Play' : 'Pause'}</span>`, 'game-btn blue', `${r.complete || r.seeking ? 'disabled ' : ''}aria-label="${r.paused ? 'Play' : 'Pause'}" title="${r.paused ? 'Play' : 'Pause'}"`)}${button('replay-restart', `${icon('RotateCcw', 17)}<span class="replay-control-label">Restart</span>`, 'game-btn stone', 'aria-label="Restart" title="Restart replay"')}<div class="replay-speeds" role="group" aria-label="Playback speed">${[1, 2, 4].map((speed) => button(`replay-speed:${speed}`, `${speed}×`, `game-btn ${r.speed === speed ? 'green' : 'stone'}`, `aria-pressed="${r.speed === speed}"`)).join('')}</div>${button('replay-exit', `${icon('ArrowLeft', 17)}<span class="replay-control-label">Back to log</span>`, 'game-btn stone', 'aria-label="Back to log" title="Back to log"')}</div>
     </section>`;
@@ -5854,6 +5863,7 @@ export class HUD {
       armyCounts: all('[data-army-count]'),
       starBonusButton: one<HTMLButtonElement>('.star-bonus [data-action="star-bonus"]'),
       queue: one('[data-queue]'),
+      replayStatus: one('.replay-transport .replay-status strong'),
       replayTime: one('#replay-time'),
       replayProgress: one<HTMLInputElement>('#replay-progress'),
       battleTimer: one('#battle-timer'),
@@ -6086,9 +6096,14 @@ export class HUD {
       if (nextEnd !== Infinity) setText(refs.queue, time((nextEnd - m.clock) / 1000));
     }
     const replay = m.replay;
+    if (replay && refs.replayStatus) setText(refs.replayStatus, this.replayStatusText());
     // Leave the slider to the pointer while scrubbing (and briefly after a value
     // change); focus alone must not freeze the clock once playback resumes.
-    if (replay && this.replayScrubPointer === null && performance.now() - this.replayInputAt > 300) {
+    if (
+      replay &&
+      this.replayScrubPointer === null &&
+      performance.now() - this.replayInputAt > 300
+    ) {
       const value = replay.seeking ? replay.seekTarget : replay.time;
       setText(refs.replayTime, `${clock(value)} / ${clock(replay.duration)}`);
       const progress = refs.replayProgress;

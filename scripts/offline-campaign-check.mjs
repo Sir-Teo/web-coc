@@ -16,7 +16,17 @@ try {
   const late = developedSave();
   late.nativeCampaign = freshNativeCampaign();
   late.nativeCampaign.stars.fill(1, 0, 63);
-  fixtures = { starter: initialSave(), developed: developedSave(), late };
+  const recorded = new GameModel(structuredClone(late));
+  const { deploySpots } = await modules.ssrLoadModule('/tests/fixtures/late-defense-battle.ts');
+  recorded.startCampaign(63);
+  recorded.activeTroop = 'swordsman';
+  const [spot] = deploySpots(recorded, 24, 46, 1);
+  if (!recorded.deploy(spot.x, spot.y)) throw Error('Late replay fixture failed to deploy');
+  for (let i = 0; i < 100; i++) recorded.step(0.05);
+  recorded.finishBattle();
+  if (!recorded.state.raidLog?.[0]?.replay) throw Error('Missing late replay fixture');
+  recorded.returnHome();
+  fixtures = { starter: initialSave(), developed: developedSave(), late, replay: recorded.state };
   for (const [name, fixture] of Object.entries(fixtures)) {
     fixture.tutorial = true;
     fixture.settings.sound = false;
@@ -103,6 +113,60 @@ try {
               await page.waitForTimeout(400);
             }
         };
+        if (name === 'replay') {
+          const result = JSON.parse(save).raidLog[0].result;
+          const campaignProgress = () =>
+            page.evaluate(
+              () => JSON.parse(localStorage.getItem('crown-clan-save-v1')).nativeCampaign,
+            );
+          const progress = await campaignProgress();
+          expect(progress).toBeDefined();
+          await page.locator('[data-action="battle-log"]').tap();
+          const record = page.locator('.raid-record').filter({ hasText: 'Bowling Alley' });
+          const watch = record.getByRole('button', { name: 'Watch replay' });
+          const watchAction = await watch.getAttribute('data-action');
+          await watch.tap();
+          await expect
+            .poll(() => [...misses].some((path) => path.includes('/late-campaign-scene-')))
+            .toBe(true);
+          const status = page.locator('.replay-status strong');
+          await expect(status).toHaveText('Reconnect to load replay art');
+          // Wait out the transient toast; the replay controls must still explain the hold.
+          await expect(page.locator('#toast.show')).toHaveCount(0, { timeout: 12000 });
+          await expect(status).toHaveText('Reconnect to load replay art');
+          await page.screenshot({ path: 'output/offline-battle-log-blocked.png' });
+          const back = page.getByRole('button', { name: 'Back to log' });
+          await back.tap();
+          await expect(watch).toHaveAttribute('data-action', watchAction);
+          await expect(watch).toBeFocused();
+          await expect(page.locator('.raid-record')).toHaveCount(1);
+
+          await watch.tap();
+          const lateArt = page.waitForResponse(
+            (response) => response.url().includes('/late-campaign-scene-') && response.ok(),
+          );
+          await context.setOffline(false);
+          await lateArt;
+          await expect(page.locator('.replay-status')).toContainText('Replay complete', {
+            timeout: 45000,
+          });
+          expect((await snapshot()).battle.result).toEqual(result);
+          await page.screenshot({ path: 'output/offline-battle-log-replay.png' });
+          await back.tap();
+          await expect(watch).toHaveAttribute('data-action', watchAction);
+          await reload();
+          expect((await snapshot()).resources).toEqual(home.resources);
+          expect((await snapshot()).army).toEqual(home.army);
+          expect(await campaignProgress()).toEqual(progress);
+          await page.locator('[data-action="battle-log"]').tap();
+          await expect(page.locator('.raid-record')).toHaveCount(1);
+          await expect(watch).toHaveAttribute('data-action', watchAction);
+          expect(errors).toEqual([]);
+          console.log(
+            'replay: an uncached recording returned to the same log entry and played on reconnect',
+          );
+          continue;
+        }
         if (name === 'late') {
           const lateGraphCached = await page.evaluate(async () => {
             for (const cache of await caches.keys())

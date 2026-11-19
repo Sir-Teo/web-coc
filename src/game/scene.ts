@@ -2160,6 +2160,14 @@ export class VillageScene extends Phaser.Scene {
   private battleArtPending() {
     return this.lateAssetsPending() || (!!this.model.battle && this.deferredArtPending());
   }
+  replayNeedsConnection() {
+    return (
+      !!this.model.replay &&
+      !navigator.onLine &&
+      !!this.lateArtFailure?.module &&
+      this.lateAssetsPending()
+    );
+  }
   private battleArtWaitMessage() {
     return this.lateArtFailure?.module && !navigator.onLine ? OFFLINE_LATE_ART : LOADING_LATE_ART;
   }
