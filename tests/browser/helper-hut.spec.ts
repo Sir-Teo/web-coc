@@ -107,3 +107,80 @@ test('the Alchemist converts Gold into Elixir at phone width', async ({ page }) 
   expect(state.gold).toBe(500_000);
   expect(state.elixir).toBe(505_000);
 });
+
+test('a Book of Building ends a recurring Apprentice assignment through reload', async ({
+  browser,
+}, info) => {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    hasTouch: true,
+    isMobile: true,
+  });
+  const page = await context.newPage();
+  try {
+    await page.clock.setFixedTime(Date.now());
+    await page.goto(info.project.use.baseURL!);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    await page.locator('[data-action="skip-tutorial"]').tap();
+    const cannon = await page.evaluate(async () => {
+      const { makeBuilding } = await import('/src/game/model.ts');
+      const m = window.__game.model;
+      m.townhall!.level = 10;
+      m.state.gold = 20_000_000;
+      m.state.obstacles = [];
+      const hut = makeBuilding(m.state.nextId++, 'helperhut', 24, 14);
+      const defense = makeBuilding(m.state.nextId++, 'cannon', 28, 14, 12);
+      m.state.buildings.push(hut, defense);
+      m.state.helpers = { builder: { level: 1 } };
+      m.addMagicItem('book-of-building');
+      m.upgrade(defense.id);
+      m.selected = hut.id;
+      m.changed();
+      return defense.id;
+    });
+    const read = () =>
+      page.evaluate((id) => {
+        const m = window.__game.model;
+        const building = m.state.buildings.find((b) => b.id === id)!;
+        return {
+          level: building.level,
+          end: building.upgradeEnd,
+          helper: m.helper('builder'),
+          count: m.magicItemCount('book-of-building'),
+          gold: m.state.gold,
+          gems: m.state.gems,
+          busy: m.busy,
+        };
+      }, cannon);
+    await page.locator('.building-context [data-action="helpers"]').tap();
+    await page.locator('[data-action="helper-repeat:builder"]').tap();
+    await page.locator('[data-action^="helper-assign:builder."]').tap();
+    const assigned = await read();
+    expect(assigned.helper?.job).toMatchObject({ repeat: true, target: { building: cannon } });
+    expect(assigned).toMatchObject({ level: 12, count: 1, busy: 1 });
+    await page.screenshot({
+      path: info.outputPath('apprentice-recurring.png'),
+      animations: 'disabled',
+    });
+    await page.getByRole('button', { name: 'Close dialog' }).tap();
+    await page.locator('.status-chips [data-action="builders"]').tap();
+    await page.locator(`.working[data-action="select-building:${cannon}"]`).tap();
+    await page.locator(`[data-action="book-building:${cannon}"]`).tap();
+    const done = await read();
+    expect(done).toMatchObject({
+      level: 13,
+      count: 0,
+      busy: 0,
+      gold: assigned.gold,
+      gems: assigned.gems,
+    });
+    expect(done.end).toBeUndefined();
+    expect(done.helper?.job).toBeUndefined();
+    expect(done.helper?.readyAt).toBe(assigned.helper?.readyAt);
+    await page.reload();
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    expect(await read()).toEqual(done);
+  } finally {
+    await context.close();
+  }
+});
