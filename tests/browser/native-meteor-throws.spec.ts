@@ -300,3 +300,38 @@ test('the thrown Meteormite keeps Angry targeting after a portable replay seek',
     animations: 'disabled',
   });
 });
+
+test('a merged Meteor Golem keeps the halves’ shared Angry deadline', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/?lazyart');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  await page.locator('[data-action="skip-tutorial"]').click();
+  const result = await page.evaluate(async () => {
+    const { nativeMeteorAngryMerge } = await import('/tests/fixtures/native-meteor-throws.ts');
+    const { iso } = await import('/src/game/scene.ts');
+    const { model, scene } = window.__game;
+    const r = nativeMeteorAngryMerge();
+    scene.paused = true;
+    model.battle = r.model.battle;
+    model.changed();
+    scene.sync();
+    const point = iso(r.merged.x, r.merged.y);
+    scene.cameras.main.centerOn(point.x, point.y);
+    scene.cameras.main.preRender();
+    scene.drawOverlay(0);
+    return {
+      id: r.merged.id,
+      expected: r.deadline,
+      actual: r.merged.native?.angryUntil,
+      at: r.mergedAt,
+    };
+  });
+  expect(result.actual).toBe(result.expected);
+  expect(result.actual).toBeGreaterThan(result.at);
+  await page.waitForFunction((id) => {
+    const { scene } = window.__game;
+    scene.drawOverlay(0);
+    return scene.troopNativePresentation.drewUnit(id);
+  }, result.id);
+  await page.screenshot({ path: 'output/playtest/angry-meteor-merge.png', animations: 'disabled' });
+});

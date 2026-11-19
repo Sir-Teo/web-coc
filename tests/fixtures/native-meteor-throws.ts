@@ -126,3 +126,49 @@ export function nativeMeteorThrowRecording(
     data: JSON.parse(JSON.stringify(model.state.raidLog![0].replay!)) as ReplayData,
   };
 }
+
+/** Two idle halves receive the same live Angry field before they can merge. */
+export function nativeMeteorAngryMerge(version = REPLAY_VERSION) {
+  const model = new GameModel();
+  model.state.obstacles = [];
+  model.state.buildings = [makeBuilding(1, 'townhall', 36, 36)];
+  model.state.nextId = 1000;
+  model.state.army = { ...emptyArmy(), meteorgolem: 1 };
+  model.state.spells = { ...emptySpells(), angry: 1 };
+  model.startBattle(0, true);
+  const data = (model as unknown as { recording: ReplayData }).recording;
+  const battle = (model.battle = replayBattle(data.initial, version));
+  for (const id of [900, 901]) {
+    battle.units.push({
+      id,
+      kind: 'meteormite',
+      level: 1,
+      x: 10,
+      y: 10,
+      hp: 1000,
+      maxHp: 1000,
+      cooldown: 0,
+      target: null,
+      path: [],
+      pathAt: 0,
+      attacking: false,
+      native: { lastAttackAt: 0 },
+    });
+  }
+  model.activeSpell = 'angry';
+  if (!model.castSpell(10, 10)) throw Error('Angry input failed');
+  for (let step = 0; step < 40; step++) model.step(0.05);
+  const [first, second] = battle.units;
+  const deadline = first.native?.angryUntil;
+  if (!deadline || second.native?.angryUntil !== deadline)
+    throw Error('Halves did not receive the same Angry deadline');
+  let merged;
+  for (let step = 0; step < 40 && !merged; step++) {
+    model.step(0.05);
+    merged = battle.units.find((unit) => unit.kind === 'meteorgolem');
+  }
+  if (!merged || battle.elapsed >= deadline) throw Error('Angry merge did not occur before expiry');
+  const mergedAt = battle.elapsed;
+  model.step(0.2);
+  return { model, merged, deadline, mergedAt };
+}

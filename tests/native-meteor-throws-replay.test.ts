@@ -1,7 +1,10 @@
 import { expect, it } from 'vitest';
 import { GameModel } from '../src/game/model';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
-import { nativeMeteorThrowRecording } from './fixtures/native-meteor-throws';
+import {
+  nativeMeteorAngryMerge,
+  nativeMeteorThrowRecording,
+} from './fixtures/native-meteor-throws';
 
 it.each([
   [1, false],
@@ -36,3 +39,11 @@ it.each([244, 245])(
     }
   },
 );
+
+it('preserves the shared Angry deadline through merges only in the new replay rules', () => {
+  const legacy = nativeMeteorAngryMerge(245);
+  const current = nativeMeteorAngryMerge(246);
+  expect(legacy.merged.native?.angryUntil).not.toBe(legacy.deadline);
+  expect(current.merged.native?.angryUntil).toBe(current.deadline);
+  expect(current.merged.native?.effects?.immortalUntil).toBeCloseTo(current.mergedAt + 1);
+});

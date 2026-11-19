@@ -39,9 +39,12 @@ original pool behavior.
 Version 245 preserves a Meteor Golem's active Angry Spell deadline when its
 thrown Meteormite lands. Landing inside a field that already applied to the
 parent keeps that deadline. The [August 2026 update](https://supercell.com/en/games/clashofclans/blog/release-notes/august-update-3/)
-documents continuity through throws. The separate merge behavior still needs
-evidence for overlapping deadlines. Version 244 and earlier keep their
-historical behavior.
+documents continuity through throws. Version 244 and earlier keep their historical throw behavior.
+
+Version 246 also preserves a shared active Angry deadline when two Meteormites
+merge. The existing field does not restart that deadline on the merged unit.
+Mixed or unequal deadlines still need native evidence. Version 245 and earlier
+retain their historical merge behavior.
 
 ## Persistence and limits
 

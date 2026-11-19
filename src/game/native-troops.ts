@@ -2018,6 +2018,20 @@ function stepMerge(
     battle.elapsed,
   );
   merged.hp = Math.min(merged.maxHp, hp);
+  const angryUntil = state.angryUntil ?? 0;
+  if (
+    battle.nativeMeteorMergeAnger &&
+    angryUntil > battle.elapsed &&
+    angryUntil === partner.native?.angryUntil
+  ) {
+    (merged.native ??= {}).angryUntil = angryUntil;
+    for (const cast of battle.nativeSpells ?? [])
+      if (
+        cast.name === 'AngrySpell' &&
+        (cast.touched?.includes(u.id) || cast.touched?.includes(partner.id))
+      )
+        cast.touched?.push(merged.id);
+  }
   unitEffects(merged).immortalUntil = battle.elapsed + MERGE_INVULNERABLE_SECONDS;
   return true;
 }

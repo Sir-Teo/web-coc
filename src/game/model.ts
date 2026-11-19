@@ -941,6 +941,7 @@ export interface Battle {
   /** Version 108: source Meteor Golem throws split against defenders and retain clone lifetimes. */
   nativeMeteorThrows?: true;
   nativeMeteorThrowAnger?: true;
+  nativeMeteorMergeAnger?: true;
   /** Version 109: Electro Dragon source charge, mixed-target lightning and captured effects. */
   nativeElectroDragon?: true;
   /** Version 110: Super Wizard branches once from the primary to nine secondary targets. */
