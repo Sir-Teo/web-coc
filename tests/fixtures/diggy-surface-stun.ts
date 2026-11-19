@@ -1,3 +1,4 @@
+import { heroDefenderBattle } from './hero-defender-attacks';
 import { emptyArmy, emptySpells } from '../../src/game/army';
 import { GameModel, makeBuilding } from '../../src/game/model';
 import { replayBattle, REPLAY_VERSION, type ReplayData } from '../../src/game/replay';
@@ -73,4 +74,21 @@ export function diggyStunRecording(level = 1, version = REPLAY_VERSION) {
     attacks,
     cannonShots,
   };
+}
+
+/** A deployed Queen and Diggy approach a ground Hero in the replay's original village. */
+export function diggyDefenderStunRecording() {
+  const { model, recording } = heroDefenderBattle('queen', 1);
+  recording.initial.heroes![0].pet = { kind: 'diggy', level: 1 };
+  recording.initial.defendingHeroes = [{ kind: 'king', level: 95, x: 8, y: 6.5 }];
+  const battle = (model.battle = replayBattle(recording.initial));
+  if (!model.deployNativeHero('queen', 5, 6.5)) throw Error('Diggy deployment failed');
+  const target = battle.defenders!.find((d) => d.kind === 'hero')!;
+  for (let step = 0; step < 120 && !target.stunnedUntil; step++) model.step(0.05);
+  if (!target.stunnedUntil) throw Error('Diggy did not stun the defending Hero');
+  const at = battle.elapsed;
+  const until = target.stunnedUntil;
+  model.step(0.05);
+  model.finishBattle();
+  return { at, until, targetId: target.id, data: model.state.raidLog![0].replay! };
 }

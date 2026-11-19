@@ -900,6 +900,7 @@ export interface Battle {
   nativeMonolithDefenderDamage?: true;
   /** Version 90: Diggy stuns a defense on emergence and burrows on leaving building range. */
   nativeDiggySurfaceStun?: true;
+  nativeDiggyDefenderStun?: true;
   /** Version 91: Diggy follows its living Hero's eligible target, including Walls. */
   nativeDiggyMasterTarget?: true;
   /** Version 92: Invisibility conceals offensive building targets and defending units. */

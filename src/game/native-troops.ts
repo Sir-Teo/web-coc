@@ -70,6 +70,7 @@ import {
   damageDefenders,
   hurtDefender,
   hasDefenderCandidates,
+  isGarrisonDefender,
   stepAttackerVsDefenders,
   type DefenderFightTraits,
   type DefenderRoute,
@@ -355,22 +356,30 @@ function surfaceUndergroundUnit(
   unit: Unit,
   at: number,
   target?: Building,
+  defender?: Defender,
 ) {
   const state = unit.native!;
-  if (
-    !state.surfaced &&
-    ctx.battle.nativeDiggySurfaceStun &&
-    unit.kind === 'diggy' &&
-    target &&
-    activeAsDefense(ctx.battle, target)
-  ) {
-    const s = statsFor(ctx.battle, unit);
-    const row = nativeRow('abilities', s.ability, s.abilityLevel);
-    const until = at + nativeSeconds(row, 'StunTargetOnActivateTime');
-    const e = buildingEffects(ctx.battle, target);
-    e.stunUntil = Math.max(e.stunUntil ?? 0, until);
-    ctx.battle.defenseStuns[target.id] = Math.max(ctx.battle.defenseStuns[target.id] ?? 0, until);
-    delete ctx.battle.defenseTargets[target.id];
+  if (!state.surfaced && ctx.battle.nativeDiggySurfaceStun && unit.kind === 'diggy') {
+    const defenseTarget = target && activeAsDefense(ctx.battle, target);
+    const defenderTarget =
+      ctx.battle.nativeDiggyDefenderStun &&
+      defender?.mode === 'ground' &&
+      (defender.kind === 'hero' || isGarrisonDefender(defender));
+    if (defenseTarget || defenderTarget) {
+      const s = statsFor(ctx.battle, unit);
+      const row = nativeRow('abilities', s.ability, s.abilityLevel);
+      const until = at + nativeSeconds(row, 'StunTargetOnActivateTime');
+      if (defenseTarget) {
+        const e = buildingEffects(ctx.battle, target);
+        e.stunUntil = Math.max(e.stunUntil ?? 0, until);
+        ctx.battle.defenseStuns[target.id] = Math.max(
+          ctx.battle.defenseStuns[target.id] ?? 0,
+          until,
+        );
+        delete ctx.battle.defenseTargets[target.id];
+      }
+      if (defenderTarget) defender.stunnedUntil = Math.max(defender.stunnedUntil ?? 0, until);
+    }
   }
   if (!state.surfaced && unit.kind === 'battledrill') {
     const row = nativeRow('abilities', 'BattleDrillStunOnSurface');
@@ -1349,7 +1358,8 @@ export function stepNativeUnit(
       breaches: ctx.breaches,
     };
     if (jumpingChase) route.jumpWalls = true;
-    if (undergroundChase) route.enterRange = () => surfaceUndergroundUnit(ctx, u, at);
+    if (undergroundChase)
+      route.enterRange = (target) => surfaceUndergroundUnit(ctx, u, at, undefined, target);
     if (miteJump || electromite) {
       route.targetAcquired = () => {
         state.targetAt = at;

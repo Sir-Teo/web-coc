@@ -116,3 +116,34 @@ for (const { level, width } of [
     expect(errors).toEqual([]);
   });
 }
+
+test('Diggy stuns a defending ground Hero in a portable replay', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/?lazyart');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  await page.locator('[data-action="skip-tutorial"]').click();
+  const result = await page.evaluate(async () => {
+    const { diggyDefenderStunRecording } = await import('/tests/fixtures/diggy-surface-stun.ts');
+    const { makeReplayFile, parseReplayFile } = await import('/src/game/replay-file.ts');
+    const { model, scene } = window.__game;
+    const { iso } = await import('/src/game/scene.ts');
+    const r = diggyDefenderStunRecording();
+    scene.paused = true;
+    if (!model.openReplay(parseReplayFile(JSON.stringify(makeReplayFile(r.data)))))
+      throw Error('Diggy defending Hero replay rejected');
+    model.seekReplay(r.at);
+    while (model.replay.seeking) model.step(0.05);
+    model.changed();
+    scene.sync();
+    const target = model.battle.defenders.find((d) => d.id === r.targetId);
+    const point = iso(target.x, target.y);
+    scene.cameras.main.setZoom(1.4).centerOn(point.x, point.y);
+    scene.cameras.main.preRender();
+    scene.drawOverlay(0);
+    return { actual: target.stunnedUntil, expected: r.until, frozen: target.frozenUntil };
+  });
+  expect(result.actual).toBe(result.expected);
+  expect(result.frozen).toBeUndefined();
+  await page.waitForFunction(() => !window.__game.scene.battleArtPending());
+  await page.screenshot({ path: 'output/playtest/diggy-hero-stun.png', animations: 'disabled' });
+});

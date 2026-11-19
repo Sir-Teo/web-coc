@@ -457,7 +457,7 @@ export interface DefenderRoute {
   budget?: { count: number; limit: number };
   breaches?: readonly { x: number; y: number }[];
   /** Prepare native targetability before a unit can strike its chosen defender. */
-  enterRange?(): void;
+  enterRange?(target: Defender): void;
   /** Source attack delay can begin when a new defender is acquired, before the chase. */
   targetAcquired?(id: number): void;
   attackReady?(): boolean;
@@ -673,7 +673,7 @@ export function stepAttackerVsDefenders(
     unit.attacking = true;
     if (troop.nativeDamageRamp)
       recordInfernoDragonTransition(battle, unit, troop.nativeDamageRamp, target.id, true);
-    route?.enterRange?.();
+    route?.enterRange?.(target);
     if (
       unit.cooldown <= (troop.nativeRampingCadence ? 1e-9 : 0) &&
       (route?.attackReady?.() ?? true)

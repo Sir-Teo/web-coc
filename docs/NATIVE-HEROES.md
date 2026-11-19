@@ -557,6 +557,16 @@ through portable backward seeks. `tests/browser/monolith-defender-damage.spec.ts
 native Monolith projectiles, post-Recall damage, frost, reduced motion and historical playback
 on desktop and phone.
 
+## Version 247 Diggy stun against defending units
+
+Diggy can stun a targeted ground Hero or Clan Castle troop when it surfaces.
+[Supercell's October 2025 Ranked update](https://supercell.com/en/games/clashofclans/blog/release-notes/get-ready-for-ranked-update/)
+explicitly includes those two defender families. It takes precedence over the
+retained community description of building-only stun. The pinned ability
+still supplies the duration; later hits during the same emergence do not
+refresh it. Version 246 and earlier retain the historical defender behavior.
+Other defender families still need direct verification.
+
 ## Version 90 Diggy's Stunning Surprise
 
 Diggy now stuns its building target once when it surfaces, using the pinned

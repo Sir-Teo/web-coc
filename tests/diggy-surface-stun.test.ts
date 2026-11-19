@@ -1,7 +1,8 @@
 import { expect, it } from 'vitest';
+import { replayBattle } from '../src/game/replay';
 import { GameModel, makeBuilding, type Unit } from '../src/game/model';
 import { heroDefenderBattle } from './fixtures/hero-defender-attacks';
-import { diggyStunRecording } from './fixtures/diggy-surface-stun';
+import { diggyDefenderStunRecording, diggyStunRecording } from './fixtures/diggy-surface-stun';
 import { defendingHero } from '../src/game/defending-heroes';
 import { spawnGarrisonDefender } from '../src/game/garrison-combat';
 import { createGuardian } from '../src/game/native-guardians';
@@ -17,7 +18,9 @@ import {
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 
 function arena(level = 1, version?: number, kind: Unit['kind'] = 'diggy') {
-  const { battle } = heroDefenderBattle('queen', 1, [], version);
+  const { recording } = heroDefenderBattle('queen', 1, [], version);
+  recording.initial.heroes![0].pet = { kind: 'diggy', level };
+  const battle = replayBattle(recording.initial, version);
   battle.defenders = [];
   const cannon = makeBuilding(2, 'cannon', 8, 5, 21);
   battle.buildings.push(cannon);
@@ -159,14 +162,18 @@ it.each([
   expect(ctx.buildingsById.get(th.id)).toBe(th);
 });
 
-it.each([false, true])('does not stun a defending air=%s Hero on surfacing', (air) => {
-  const { battle, unit, step } = arena();
+it.each([
+  [246, false, undefined],
+  [247, false, 2],
+  [247, true, undefined],
+] as const)('replay %i Diggy emergence against an air=%s Hero', (version, air, until) => {
+  const { battle, unit, step } = arena(1, version);
   const enemy = defendingHero({ kind: air ? 'prince' : 'king', level: 1, x: 7.6, y: 6.5 }, 0);
   enemy.alerted = true;
   battle.defenders = [enemy];
   unit.defenderTarget = enemy.id;
   step();
-  expect(enemy.stunnedUntil).toBeUndefined();
+  expect(enemy.stunnedUntil).toBe(until);
   expect(enemy.frozenUntil).toBeUndefined();
 });
 
@@ -176,8 +183,12 @@ it('does not grant the Diggy stun to an ordinary Miner', () => {
   expect(battle.defenseStuns[cannon.id]).toBeUndefined();
 });
 
-it.each(['garrison', 'guardian'] as const)('does not stun an actual %s defender', (kind) => {
-  const { battle, unit, step } = arena();
+it.each([
+  [246, 'garrison', undefined],
+  [247, 'garrison', 2],
+  [247, 'guardian', undefined],
+] as const)('replay %i Diggy emergence against a %s defender', (version, kind, until) => {
+  const { battle, unit, step } = arena(1, version);
   let enemy: Defender;
   if (kind === 'garrison') enemy = spawnGarrisonDefender(battle, 'archer', 9, 2, 7.6, 6.5, 0);
   else {
@@ -193,7 +204,9 @@ it.each(['garrison', 'guardian'] as const)('does not stun an actual %s defender'
   step();
   expect(enemy.hp).toBeLessThan(enemy.maxHp);
   expect(unit.native?.surfaced).toBe(true);
-  expect(enemy.stunnedUntil).toBeUndefined();
+  expect(enemy.stunnedUntil).toBe(until);
+  step(0.25);
+  expect(enemy.stunnedUntil).toBe(until);
 });
 
 it('preserves version 89 defense activity and its previous building exposure', () => {
@@ -220,3 +233,19 @@ it.each([1, 10])(
     }
   },
 );
+
+it('reconstructs a defending Hero stun through portable playback', () => {
+  const r = diggyDefenderStunRecording();
+  expect(r.until - r.at).toBeCloseTo(2);
+  for (const version of [246, r.data.version]) {
+    const model = new GameModel();
+    expect(
+      model.openReplay(parseReplayFile(JSON.stringify(makeReplayFile({ ...r.data, version })))),
+    ).toBe(true);
+    model.seekReplay(r.at);
+    while (model.replay!.seeking) model.step(0.05);
+    expect(model.battle!.defenders!.find((d) => d.id === r.targetId)?.stunnedUntil).toBe(
+      version === 246 ? undefined : r.until,
+    );
+  }
+});
