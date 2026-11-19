@@ -904,6 +904,7 @@ export class HUD {
     document.addEventListener('pointerup', releaseAction, { signal });
     document.addEventListener('pointercancel', releaseAction, { signal });
     const cancelActions = () => {
+      finishScrub();
       this.stopRepeat();
       this.pressedActions.clear();
       this.cancelDrawerDrag?.();

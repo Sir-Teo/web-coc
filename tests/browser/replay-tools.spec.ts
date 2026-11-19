@@ -235,3 +235,24 @@ test('downloads a recording, opens it without replacing the village, and rejects
   await expect(page.locator('.raid-record')).toHaveCount(1);
   expect(errors).toEqual([]);
 });
+
+test('phone replay controls refresh when the window blurs during a scrub', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Watch replay' }).click();
+  const range = page.getByRole('slider', { name: 'Replay position' });
+  await expect(range).toBeEnabled();
+  await range.dispatchEvent('pointerdown', {
+    pointerId: 31,
+    pointerType: 'touch',
+    isPrimary: true,
+  });
+  const speed = page.locator('[data-action="replay-speed:4"]');
+  await speed.dispatchEvent('click');
+  await expect(speed).toHaveAttribute('aria-pressed', 'false');
+
+  await page.evaluate(() => window.dispatchEvent(new Event('blur')));
+  await expect(speed).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.replay-status')).toContainText('Replay paused');
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
+});
