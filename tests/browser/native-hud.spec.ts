@@ -34,6 +34,9 @@ for (const width of [390, 1440]) {
       });
       expect(fits).toBe(true);
     }
+    // The Settings texture has asymmetric source bounds. Keep its proportions inside
+    // the responsive button, including when the button has a square touch target.
+    await expect(page.locator('.native-settings-art')).toHaveCSS('object-fit', 'contain');
     const image = attack.locator('img');
     await expect
       .poll(() => image.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth))
