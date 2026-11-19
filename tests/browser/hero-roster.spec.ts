@@ -590,6 +590,70 @@ test.describe('phone pet upgrade items', () => {
 test.describe('phone Hero Hall lineup', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
+  test('an upgrade completed while away restores the selected hero to the next raid', async ({
+    page,
+  }, info) => {
+    const now = Date.now();
+    await page.clock.setFixedTime(now);
+    await boot(page);
+    await develop(page);
+    const before = await page.evaluate(() => {
+      const { model: m } = window.__game;
+      const lineup = ['prince', 'king', 'queen'] as const;
+      if (!m.setHeroLineup([...lineup])) throw Error('Lineup setup failed');
+      return { lineup, level: m.heroProgress('king')!.level };
+    });
+    await heroes(page);
+    await page.locator('[data-action="hero-upgrade:king"]').tap();
+    const read = () =>
+      page.evaluate(() => {
+        const { model: m } = window.__game;
+        const king = m.heroProgress('king')!;
+        return { lineup: m.heroLineup, level: king.level, end: king.upgradeEnd };
+      });
+    const researching = await read();
+    expect(researching).toMatchObject(before);
+    expect(researching.end).toBeGreaterThan(now);
+
+    // Load a new document after the deadline. The original document never ticks past it.
+    await page.reload();
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    expect(await read()).toEqual(researching);
+    await expect(
+      page.locator('.army-tray').getByRole('button', {
+        name: `Barbarian King, level ${before.level}, upgrading`,
+        exact: true,
+      }),
+    ).toBeVisible();
+    await page.goto('about:blank');
+    await page.clock.setFixedTime(researching.end! + 1);
+    await page.goto('/');
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    const completed = { ...before, level: before.level + 1, end: undefined };
+    expect(await read()).toEqual(completed);
+    await expect(
+      page.locator('.army-tray').getByRole('button', {
+        name: `Barbarian King, level ${completed.level}`,
+        exact: true,
+      }),
+    ).toBeVisible();
+    await heroes(page);
+    await expect(page.locator('[data-hero="king"]')).toContainText('In battle lineup');
+    await expect(page.locator('[data-hero="king"]')).toContainText('SLOT 2 OF 3');
+    await page.screenshot({ path: info.outputPath('hero-hall-after-offline-upgrade.png') });
+
+    await page.reload();
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    expect(await read()).toEqual(completed);
+    await page.locator('.attack-btn').tap();
+    await page.locator('[data-action="attack:0"]').tap();
+    await expect(page.locator('.prep-banner')).toBeVisible();
+    const roster = await page.evaluate(() => window.__game.model.battle!.nativeHeroes!);
+    expect(roster.map((hero) => hero.kind)).toEqual(before.lineup);
+    expect(roster.find((hero) => hero.kind === 'king')!.level).toBe(completed.level);
+    await page.screenshot({ path: info.outputPath('raid-after-offline-upgrade.png') });
+  });
+
   test('swapping in a ready hero fills an unavailable battle slot first', async ({ page }) => {
     await boot(page);
     await develop(page);
