@@ -5265,7 +5265,7 @@ export class HUD {
     const unlocked = spell ? m.spellUnlocked(kind) : m.troopUnlocked(kind);
     const requiredLab = m.researchLaboratory(kind);
     const gated = !unlocked || !m.laboratory || m.laboratory.level < requiredLab;
-    const researchResource = !spell && troopFacility(kind) === 'darkbarracks' ? 'dark' : 'elixir';
+    const researchResource = m.researchResource(kind);
     const label = max
       ? '★ Fully researched'
       : !unlocked

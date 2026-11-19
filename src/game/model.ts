@@ -2258,6 +2258,12 @@ export class GameModel {
       ? (spellProgression(kind, this.spellLevel(kind) + 1)?.cost ?? 0)
       : researchCost(kind, this.troopLevel(kind));
   }
+  researchResource(kind: ResearchKind): 'dark' | 'elixir' {
+    const dark = isSpellKind(kind)
+      ? spellFactory(kind) === 'darkspellfactory'
+      : troopFacility(kind) === 'darkbarracks';
+    return dark ? 'dark' : 'elixir';
+  }
   researchSeconds(kind: ResearchKind) {
     return isSpellKind(kind)
       ? (spellProgression(kind, this.spellLevel(kind) + 1)?.seconds ?? 0)
@@ -2315,11 +2321,7 @@ export class GameModel {
     const spell = isSpellKind(kind);
     const name = spell ? SPELLS[kind].name : TROOPS[kind].name;
     const cost = this.researchCost(kind);
-    const researchResource = (
-      spell ? spellFactory(kind) === 'darkspellfactory' : troopFacility(kind) === 'darkbarracks'
-    )
-      ? 'dark'
-      : 'elixir';
+    const researchResource = this.researchResource(kind);
     if (this.state[researchResource] < cost)
       return this.lacking(
         researchResource,

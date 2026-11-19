@@ -143,3 +143,44 @@ for (const viewport of [
     }
   });
 }
+
+test.describe('phone Dark Spell research', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('Poison research displays and checks the same Dark Elixir it charges', async ({ page }) => {
+    await boot(page);
+    const cost = await page.evaluate(async () => {
+      const { makeBuilding } = await import('/src/game/model.ts');
+      const { model: m, hud } = window.__game;
+      m.townhall!.level = 8;
+      m.laboratory!.level = 6;
+      m.state.buildings.push(makeBuilding(m.state.nextId++, 'darkspellfactory', 38, 30, 1));
+      m.state.dark = 0;
+      m.state.elixir = 1_000_000;
+      m.changed();
+      hud.show('research');
+      return m.researchCost('poison');
+    });
+    expect(cost).toBeGreaterThan(0);
+    const research = page.locator('[data-action="research-start:poison"]');
+    await expect(research).toHaveAccessibleName(/Dark elixir/);
+    await expect(research).toBeDisabled();
+
+    await page.evaluate((amount) => {
+      const { model } = window.__game;
+      model.state.elixir = 0;
+      model.state.dark = amount;
+      model.changed();
+    }, cost);
+    await expect(research).toBeEnabled();
+    await research.tap();
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const { state } = window.__game.model;
+          return { kind: state.research?.kind, dark: state.dark, elixir: state.elixir };
+        }),
+      )
+      .toEqual({ kind: 'poison', dark: 0, elixir: 0 });
+  });
+});

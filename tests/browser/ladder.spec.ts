@@ -171,6 +171,119 @@ test.describe('phone Ladder results', () => {
     });
   }
 
+  test('a Ladder promotion and Star Bonus survive reload with one payout and a playable replay', async ({
+    page,
+  }) => {
+    await openLadder(page, 1399);
+    const initial = await page.evaluate(async () => {
+      const { makeBuilding } = await import('/src/game/model.ts');
+      const { emptyArmy } = await import('/src/game/army.ts');
+      const { TROOP_KEYS, maxTroopLevel } = await import('/src/game/data.ts');
+      const { STAR_BONUS_STARS } = await import('/src/game/leagues.ts');
+      const { model: m, game } = window.__game;
+      game.loop.sleep();
+      m.returnHome();
+      m.state.ladderSeed = 0;
+      m.townhall!.level = 6;
+      m.state.buildings.push(makeBuilding(m.state.nextId++, 'clancastle', 37, 35, 1));
+      m.state.treasury = { gold: 0, elixir: 0, dark: 0 };
+      m.state.starBonus = { stars: STAR_BONUS_STARS - 1, readyAt: 0 };
+      m.state.army = { ...emptyArmy(), dragon: 20 };
+      m.state.troopLevels = Object.fromEntries(
+        TROOP_KEYS.map((kind) => [kind, kind === 'dragon' ? maxTroopLevel(kind) : 1]),
+      );
+      const expected = m.ladderPreview;
+      m.startLadder();
+      return { expected, treasuryCapacity: m.treasuryCapacity, homeGold: m.state.gold };
+    });
+    await expect(page.locator('.ladder-stake')).toContainText(`Win +${initial.expected.match.win}`);
+    await expect(page.locator('.ladder-stake')).toContainText(
+      `Defeat −${initial.expected.match.loss}`,
+    );
+    const outcome = await page.evaluate(async () => {
+      const { BUILDINGS } = await import('/src/game/data.ts');
+      const { validateSave } = await import('/src/game/save.ts');
+      const { starBonusReward, STAR_BONUS_COOLDOWN } = await import('/src/game/leagues.ts');
+      const { model: m } = window.__game;
+      const battle = m.battle!;
+      const hall = battle.buildings.find((b) => b.kind === 'townhall')!;
+      const middle = BUILDINGS[hall.kind].size / 2;
+      const points: { x: number; y: number; gap: number }[] = [];
+      for (let x = 1.5; x < 47; x++)
+        for (let y = 1.5; y < 47; y++) {
+          if (!m.deployBlocked(x, y))
+            points.push({ x, y, gap: Math.hypot(x - hall.x - middle, y - hall.y - middle) });
+        }
+      const point = points.sort((a, b) => a.gap - b.gap)[0];
+      m.activeTroop = 'dragon';
+      if (m.deployMany(point.x, point.y, 20) !== 20) throw Error('Required a legal deployment');
+      for (let i = 0; i < 1200 && battle.stars === 0 && !battle.finished; i++) m.step(0.05);
+      if (!battle.stars) throw Error('The fixture raid did not earn a star');
+      m.finishBattle();
+      if (!validateSave(m.state)) throw Error('The promotion fixture did not produce a valid save');
+      return {
+        reward: starBonusReward(m.state.trophies),
+        oldReward: starBonusReward(1399),
+        stars: battle.stars,
+        result: battle.result,
+        next: m.ladderPreview,
+        readyAt: m.clock + STAR_BONUS_COOLDOWN,
+        replay: m.state.raidLog![0].replay,
+      };
+    });
+    const trophies = 1399 + Math.round((initial.expected.match.win * outcome.stars) / 3);
+    expect(outcome.result?.trophies).toBe(trophies - 1399);
+    expect(outcome.reward.gold).toBeGreaterThan(outcome.oldReward.gold);
+    expect(outcome.replay).toBeDefined();
+    const paid = () =>
+      page.evaluate(() => {
+        const { model: m } = window.__game;
+        return {
+          trophies: m.state.trophies,
+          gold: m.state.gold,
+          treasury: m.treasury,
+          bonus: m.starBonus,
+          raids: m.state.stats.raids,
+          records: m.state.raidLog?.length,
+          ready: m.starBonusReady,
+        };
+      });
+    const payout = {
+      trophies,
+      gold: initial.homeGold,
+      raids: 1,
+      records: 1,
+      ready: false,
+      treasury: {
+        gold: Math.min(initial.treasuryCapacity.gold, outcome.reward.gold),
+        elixir: Math.min(initial.treasuryCapacity.elixir, outcome.reward.elixir),
+        dark: Math.min(initial.treasuryCapacity.dark, outcome.reward.dark),
+      },
+      bonus: { stars: outcome.stars - 1, readyAt: outcome.readyAt },
+    };
+    expect(await paid()).toEqual(payout);
+    await page.locator('.result-modal [data-action="home"]').tap();
+    await page.reload();
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    expect(await paid()).toEqual(payout);
+    await page.locator('.attack-btn').tap();
+    await expect(page.locator('.campaign-summary [data-action="ladder"]')).toContainText(
+      `+${outcome.next.match.win} / −${outcome.next.match.loss}`,
+    );
+    await page.locator('.modal [data-action="close"]').tap();
+    await page.locator('[data-action="battle-log"]').tap();
+    await page.getByRole('button', { name: 'Watch replay' }).tap();
+    await expect(page.getByRole('slider', { name: 'Replay position' })).toBeVisible();
+    await page.evaluate(() => {
+      const { model } = window.__game;
+      model.seekReplay(model.replay!.duration);
+    });
+    await expect
+      .poll(() => page.evaluate(() => window.__game.model.battle?.result?.stars))
+      .toBe(outcome.stars);
+    expect(await paid()).toEqual(payout);
+  });
+
   test('a Ladder loss reports only the trophies actually deducted at the floor', async ({
     page,
   }) => {
