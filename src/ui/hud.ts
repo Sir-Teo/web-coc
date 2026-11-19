@@ -2736,6 +2736,7 @@ export class HUD {
     return true;
   }
   private keydown(e: KeyboardEvent) {
+    if (this.root.inert) return;
     // Results are modal even though they do not set this.panel.
     const result = !!this.model.battle?.finished && !this.model.replay;
     if (e.key === 'Escape' && !this.panel && !result && this.scene.keyCursor) {

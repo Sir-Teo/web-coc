@@ -309,6 +309,7 @@ const RELOAD_GUARD_MS = 120_000;
 const CONTEXT_RELOAD_KEY = 'crown-clan:context-reload';
 /** Longest the loading screen waits, after the preload, for the home village's native art. */
 const HOME_ART_WAIT_MS = 2500;
+const TERRAIN_RETRY_OFFER_MS = 8000;
 /** Stands in for the late campaign presentation until its art has loaded. */
 const INERT_LATE_CAMPAIGN = {
   handles: () => false,
@@ -979,21 +980,56 @@ export class VillageScene extends Phaser.Scene {
       const bar = document.querySelector<HTMLElement>('#load-progress');
       if (bar) bar.style.width = `${Math.round(p * 100)}%`;
     };
+    const terrainWaiting = setTimeout(() => {
+      if (!this.textures.exists('terrain')) this.offerTerrainRetry(false);
+    }, TERRAIN_RETRY_OFFER_MS);
+    const terrainLoaded = () => {
+      clearTimeout(terrainWaiting);
+      const retry = document.querySelector('#retry-terrain');
+      if (!retry) return;
+      retry.remove();
+      const label = document.querySelector('#load-label');
+      if (label) label.textContent = 'Preparing your village…';
+    };
     const onLoadError = (file: Phaser.Loader.File) => {
+      if (file.key === 'terrain') {
+        clearTimeout(terrainWaiting);
+        this.offerTerrainRetry(true);
+        return;
+      }
       const retrying = this.deferFailedBootFamily(file) || isRecoverableBootImage(file);
       const label = document.querySelector('#load-label');
-      if (label)
+      if (label && !document.querySelector('#retry-terrain'))
         label.textContent = retrying
           ? 'Some village art could not load. It will retry automatically.'
           : 'An asset could not load. Please refresh to retry.';
     };
     this.load.on('progress', onProgress);
     this.load.on('loaderror', onLoadError);
+    this.load.once('filecomplete-image-terrain', terrainLoaded);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      clearTimeout(terrainWaiting);
+      this.load.off('filecomplete-image-terrain', terrainLoaded);
       this.bootFamilyFiles.clear();
       this.load.off('progress', onProgress);
       this.load.off('loaderror', onLoadError);
     });
+  }
+  private offerTerrainRetry(failed: boolean) {
+    const loading = document.querySelector('#loading');
+    if (!loading) return;
+    const label = loading.querySelector('#load-label');
+    if (label)
+      label.textContent = failed
+        ? 'Your village terrain could not load. Try again when the connection is available.'
+        : 'Your village terrain is taking longer to load. You can wait or try again.';
+    if (loading.querySelector('#retry-terrain')) return;
+    const retry = document.createElement('button');
+    retry.id = 'retry-terrain';
+    retry.className = 'game-btn stone';
+    retry.textContent = 'Try again';
+    retry.onclick = () => window.location.reload();
+    loading.append(retry);
   }
   private deferFailedBootFamily(file: Phaser.Loader.File) {
     const family = this.bootFamilyFiles.get(file);
@@ -1047,6 +1083,10 @@ export class VillageScene extends Phaser.Scene {
     ]);
   }
   create() {
+    if (!this.textures.exists('terrain')) {
+      this.offerTerrainRetry(true);
+      return;
+    }
     const bootFamilies = ART_FAMILIES.filter((family) => !this.deferredFamilies.includes(family));
     for (const family of bootFamilies) {
       this.trackBootFamilyTextures(family);
@@ -1482,6 +1522,9 @@ export class VillageScene extends Phaser.Scene {
       const loading = document.querySelector('#loading');
       if (loading && !loading.classList.contains('loaded')) {
         loading.classList.add('loaded');
+        document.querySelectorAll<HTMLElement>('#game, #ui').forEach((element) => {
+          element.inert = false;
+        });
         setTimeout(() => loading.remove(), 500);
       }
       void this.loadHeavyArt();
@@ -7126,6 +7169,7 @@ export class VillageScene extends Phaser.Scene {
     return !!gl?.isContextLost?.();
   }
   update(time: number, delta: number) {
+    if (!this.ready) return;
     const mapSize = battleMapSize(this.model.battle);
     if (this.terrain && mapSize !== this.terrainMapSize) {
       this.terrainMapSize = mapSize;

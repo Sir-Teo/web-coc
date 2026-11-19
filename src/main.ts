@@ -144,7 +144,13 @@ async function boot() {
     let lastAttemptedRevision = -1;
     const persist = async (force = false) => {
       const revision = model.revision;
-      if (!ownsSession || lastSavedRevision === revision || savesInFlight.has(revision)) return;
+      if (
+        !scene.ready ||
+        !ownsSession ||
+        lastSavedRevision === revision ||
+        savesInFlight.has(revision)
+      )
+        return;
       // A hidden tab can be discarded before a queued transaction finishes.
       // Forced saves must reach saveGame's synchronous backup immediately.
       if (!force && savesInFlight.size) return;
@@ -186,6 +192,7 @@ async function boot() {
     let lastBattlePhase = battlePhase();
     const screenAwake = new ScreenAwake();
     const stopEconomyTimer = visibleInterval(() => {
+      if (!scene.ready) return;
       model.tick(Date.now());
       const phase = battlePhase();
       const settled = phase !== lastBattlePhase && phase !== 'active';
@@ -201,13 +208,13 @@ async function boot() {
       cancelAudioGesture();
       audio.samples.stopAll();
       stopEconomyTimer();
-      model.tick(Date.now());
-      // A raid in progress has already spent its troops; settle it before the state is stored.
-      model.suspendBattle();
-      // saveGame writes its local backup synchronously before yielding to IndexedDB.
-      // Unconditional: a concurrent persist's sync write holds the pre-settle state,
-      // and loadSave picks the newer lastTick on next boot.
-      void saveGame(model.state);
+      if (scene.ready) {
+        model.tick(Date.now());
+        // A raid in progress has already spent its troops; settle it before the state is stored.
+        model.suspendBattle();
+        // saveGame writes its backup synchronously, superseding any pre-settlement write.
+        void saveGame(model.state);
+      }
       ownsSession = false;
       releaseSession();
     });
@@ -216,7 +223,7 @@ async function boot() {
       if (event.persisted) window.location.reload();
     });
     document.addEventListener('visibilitychange', () => {
-      if (!ownsSession) return;
+      if (!ownsSession || !scene.ready) return;
       if (document.hidden) {
         audio.samples.stopAll();
         void persist(true);
