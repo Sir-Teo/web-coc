@@ -753,7 +753,10 @@ export class HUD {
   private root: HTMLElement;
   private panel: Panel = null;
   private drawerPanel: Drawer = null;
-  private campaignArmyReturn?: { focus: FocusMark | null };
+  private campaignArmyReturn?: {
+    panel: 'campaign' | 'campaign-scout';
+    focus: FocusMark | null;
+  };
   private repeatAttack?: RepeatAttack;
   private tab = 'All';
   /** The decoration whose Stash the context card is asking to confirm. */
@@ -1271,7 +1274,12 @@ export class HUD {
       return;
     }
     if (fromCampaign) this.rememberCampaign();
-    this.campaignArmyReturn = fromCampaign ? { focus: this.focusBefore } : undefined;
+    this.campaignArmyReturn = fromCampaign
+      ? {
+          panel: this.panel === 'campaign-scout' ? 'campaign-scout' : 'campaign',
+          focus: this.focusBefore,
+        }
+      : undefined;
     this.repeatAttack = repeatAttack;
     // Remember the launcher (the Train or Shop button) so closing the sheet can return to it.
     if (!this.drawerPanel)
@@ -1288,7 +1296,7 @@ export class HUD {
     this.repeatAttack = undefined;
     this.drawerPanel = null;
     if (campaign && !this.model.battle) {
-      this.show('campaign');
+      this.show(campaign.panel);
       this.focusBefore = campaign.focus;
     } else this.render();
   }
@@ -2292,7 +2300,7 @@ export class HUD {
       case 'attack': {
         const index = Number(arg);
         if (
-          this.panel === 'campaign' &&
+          (this.panel === 'campaign' || this.panel === 'campaign-scout') &&
           !m.armyReady &&
           m.campaignOpen(index) &&
           !campaignPending(index) &&
@@ -5374,7 +5382,12 @@ export class HUD {
         counts.set(name, (counts.get(name) ?? 0) + 1);
       }
     const defenses = [...counts].sort((a, b) => b[1] - a[1]);
-    return `<div class="modal-body campaign-scout"><img class="campaign-scout-map" src="${campaignMapSource(i)}" alt="${html(v.name)} base layout" width="320" height="320"><div class="campaign-scout-info"><span class="eyebrow">STAGE ${v.stage}${v.family === 'forged' ? ' · FAN-MADE' : ''}${v.recommendedTownHall ? ` · SUGGESTED TOWN HALL ${v.recommendedTownHall}` : ''}</span><h2>${html(v.name)}</h2><p class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</p>${drill ? this.practiceArmy(drill, !(m.state.nativeCampaign?.stars[i] ?? 0)) : ''}<h3>Defenses on show</h3>${defenses.length ? `<ul class="campaign-scout-defenses">${defenses.map(([name, count]) => `<li><b>${count}×</b> ${html(name)}</li>`).join('')}</ul>` : '<p>No defenses in sight.</p>'}<p class="campaign-scout-note">Traps and hidden defenses are not shown until they trigger.</p><div class="confirm-actions">${button('campaign', 'Back to campaign', 'game-btn stone')}${drill?.steps.length && !locked && (m.state.nativeCampaign?.stars[i] ?? 0) ? button(`attack-guided:${i}`, `${icon('Info', 17)} Guided attack`, 'game-btn blue') : ''}${button(`attack:${i}`, locked ? 'Locked' : `Attack ${icon('ArrowRight', 17)}`, 'game-btn orange', locked ? 'disabled' : '')}</div></div></div>`;
+    const attackLabel = locked
+      ? 'Locked'
+      : !drill && !m.armyReady
+        ? 'Prepare army'
+        : `Attack ${icon('ArrowRight', 17)}`;
+    return `<div class="modal-body campaign-scout"><img class="campaign-scout-map" src="${campaignMapSource(i)}" alt="${html(v.name)} base layout" width="320" height="320"><div class="campaign-scout-info"><span class="eyebrow">STAGE ${v.stage}${v.family === 'forged' ? ' · FAN-MADE' : ''}${v.recommendedTownHall ? ` · SUGGESTED TOWN HALL ${v.recommendedTownHall}` : ''}</span><h2>${html(v.name)}</h2><p class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</p>${drill ? this.practiceArmy(drill, !(m.state.nativeCampaign?.stars[i] ?? 0)) : ''}<h3>Defenses on show</h3>${defenses.length ? `<ul class="campaign-scout-defenses">${defenses.map(([name, count]) => `<li><b>${count}×</b> ${html(name)}</li>`).join('')}</ul>` : '<p>No defenses in sight.</p>'}<p class="campaign-scout-note">Traps and hidden defenses are not shown until they trigger.</p><div class="confirm-actions">${button('campaign', 'Back to campaign', 'game-btn stone')}${drill?.steps.length && !locked && (m.state.nativeCampaign?.stars[i] ?? 0) ? button(`attack-guided:${i}`, `${icon('Info', 17)} Guided attack`, 'game-btn blue') : ''}${button(`attack:${i}`, attackLabel, 'game-btn orange', locked ? 'disabled' : '')}</div></div></div>`;
   }
   /** Campaign list filter and position; kept between visits. */
   private campaignFilter: 'all' | 'open' | 'stars' | 'done' = 'all';
