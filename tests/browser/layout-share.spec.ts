@@ -252,3 +252,52 @@ test.describe('older layouts on touch', () => {
     expect(await snapshot()).toEqual(before);
   });
 });
+
+test.describe('shared layouts during a raid', () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  test('a shared layout can wait at home without blocking live deployment', async ({ page }) => {
+    await page.goto('/?lazyart');
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    await page.locator('[data-action="skip-tutorial"]').tap();
+    const code = await page.evaluate(() => window.__game.model.layoutShareCode()!);
+    await page.locator('.attack-btn').tap();
+    await page.locator('[data-action="attack:0"]').tap();
+    await expect(page.locator('.prep-banner')).toBeVisible();
+    await page.waitForFunction(() => !window.__game.scene.battleArtPending());
+
+    await page.evaluate((code) => {
+      location.hash = `layout=${code}`;
+    }, code);
+    await expect.poll(() => new URL(page.url()).hash).toBe('');
+    await expect(page.locator('.modal')).toHaveCount(0);
+    await expect(page.locator('#toast')).toContainText('Shared layout ready');
+    const troop = page.locator('[data-action="troop:swordsman"]');
+    await troop.tap();
+    const spot = await page.evaluate(() => {
+      const { model, scene, game } = window.__game;
+      for (let x = 1.5; x < 44; x++)
+        for (let y = 1.5; y < 44; y++) {
+          if (model.deployBlocked(x, y)) continue;
+          const p = scene.screenFor(x, y);
+          if (
+            p.y > innerHeight * 0.3 &&
+            p.y < innerHeight * 0.6 &&
+            document.elementFromPoint(p.x, p.y) === game.canvas
+          )
+            return p;
+        }
+      throw Error('No visible deployment point');
+    });
+    const count = Number((await troop.locator('.troop-count').textContent())?.slice(1));
+    await page.touchscreen.tap(spot.x, spot.y);
+    await expect(troop.locator('.troop-count')).toHaveText(`x${count - 1}`);
+    await page.locator('[data-action="surrender"]').tap();
+    await page.locator('[data-action="end"]').tap();
+    await page.locator('.result-modal [data-action="home"]').tap();
+    await page.getByRole('button', { name: 'Edit village layout' }).tap();
+    await page.locator('[data-action="layouts"]').tap();
+    await expect(page.locator('#layout-code')).toHaveValue(code);
+    expect(await page.evaluate(() => window.__game.model.state.layouts ?? [])).toEqual([]);
+  });
+});

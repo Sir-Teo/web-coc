@@ -739,6 +739,7 @@ export class VillageScene extends Phaser.Scene {
   uiBlocked = false;
   ready = false;
   onReady = () => {};
+  onReveal = () => {};
   /** Download of the home village's native building art, started in `preload`. */
   private homeArt: Promise<void> = Promise.resolve();
   onSelect = () => {};
@@ -1525,6 +1526,7 @@ export class VillageScene extends Phaser.Scene {
         document.querySelectorAll<HTMLElement>('#game, #ui').forEach((element) => {
           element.inert = false;
         });
+        this.onReveal();
         setTimeout(() => loading.remove(), 500);
       }
       void this.loadHeavyArt();

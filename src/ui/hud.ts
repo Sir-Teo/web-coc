@@ -5368,6 +5368,10 @@ export class HUD {
   /** A layout link the page was opened with: offer it in the layouts panel. */
   receiveLayout(code: string) {
     this.layoutCode = code;
+    if (this.model.battle) {
+      this.model.notify('Shared layout ready. Return home and open Layouts to use it.');
+      return;
+    }
     this.show('layouts');
   }
   private researchCard(kind: ResearchKind) {

@@ -86,10 +86,16 @@ async function boot() {
       consumeSharedLink('army');
       hud.receiveArmy(code);
     };
-    offerLayout();
-    offerArmy();
-    window.addEventListener('hashchange', offerLayout);
-    window.addEventListener('hashchange', offerArmy);
+    const offerSharedLinks = () => {
+      offerLayout();
+      offerArmy();
+    };
+    scene.onReveal = () => {
+      // Keep the URL intact until the preview can be shown and focused. A terrain retry
+      // reloads this address and must still have the original link.
+      offerSharedLinks();
+      window.addEventListener('hashchange', offerSharedLinks);
+    };
     const game = new Phaser.Game({
       type: Phaser.WEBGL,
       parent: 'game',
