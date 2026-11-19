@@ -243,6 +243,59 @@ test.describe('battle map multitouch', () => {
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     expect(await remaining()).toBe(start - 1);
   });
+
+  test('a second finger on a troop card cannot redirect a map hold', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(browserName !== 'chromium', 'Uses Chromium touch injection');
+    await startDeployment(page, 5);
+    const point = await grassPoint(page);
+    const card = page.locator('[data-action="troop:archer"]');
+    await expect(card).toBeVisible();
+    const first = { id: 1, x: Math.round(point.x), y: Math.round(point.y) };
+    const cdp = await page.context().newCDPSession(page);
+    const remaining = () => page.evaluate(() => window.__game.model.battle!.remaining);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [first] });
+    await expect.poll(async () => (await remaining()).swordsman).toBeLessThan(40);
+    const box = (await card.boundingBox())!;
+    await page.evaluate(() => {
+      document.addEventListener(
+        'pointerdown',
+        (event) => {
+          const target = event.target as Element;
+          if (
+            event.isTrusted &&
+            event.pointerType === 'touch' &&
+            !event.isPrimary &&
+            target.closest('[data-action="troop:archer"]')
+          )
+            document.body.setAttribute('data-second-touch', 'seen');
+        },
+        { capture: true },
+      );
+    });
+    const second = {
+      id: 2,
+      x: Math.round(box.x + box.width / 2),
+      y: Math.round(box.y + box.height / 2),
+    };
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [first, second],
+    });
+    await expect(page.locator('body')).toHaveAttribute('data-second-touch', 'seen');
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [second] });
+    await page.waitForTimeout(650);
+    expect((await remaining()).archer).toBe(5);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    expect((await remaining()).archer).toBe(5);
+
+    await card.tap();
+    await expect(card).toHaveClass(/selected/);
+    await page.touchscreen.tap(point.x, point.y);
+    expect((await remaining()).archer).toBe(4);
+  });
 });
 
 test('switching troop cards starts a fresh deployment tap', async ({ page }) => {

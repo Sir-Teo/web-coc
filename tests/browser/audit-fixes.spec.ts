@@ -876,3 +876,46 @@ test('browser history settles a live raid once and reopens its recording', async
     contentType: 'application/json',
   });
 });
+
+test('an unsuccessful import undo keeps the previous village available for retry', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const { before, backup } = await page.evaluate(() => {
+    const state = structuredClone(window.__game.model.state);
+    const before = state.gold;
+    state.gold = 1234;
+    return { before, backup: JSON.stringify(state) };
+  });
+  await page.locator('#import-file').setInputFiles({
+    name: 'village.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(backup),
+  });
+  await page.locator('[data-action="import-confirm"]').click();
+  await expect(page.locator('#toast')).toContainText('Undo it from Settings');
+  await page.evaluate(() => {
+    // Block both stores until this document is reloaded.
+    const deny = () => {
+      throw new DOMException('Storage unavailable', 'QuotaExceededError');
+    };
+    Storage.prototype.setItem = deny;
+    IDBObjectStore.prototype.put = deny;
+    window.__game.hud.show('settings');
+  });
+  await page.locator('[data-action="import-undo"]').click();
+  await expect(page.locator('#toast')).toContainText('session only');
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  expect(await page.evaluate(() => window.__game.model.state.gold)).toBe(1234);
+  await page.evaluate(() => window.__game.hud.show('settings'));
+  const undo = page.locator('[data-action="import-undo"]');
+  await expect(undo).toBeVisible();
+  await undo.click();
+  await expect(page.locator('#toast')).toContainText('previous village is back');
+  await expect
+    .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('crown-clan-save-v1')!).gold))
+    .toBe(before);
+  await page.evaluate(() => window.__game.hud.show('settings'));
+  await expect(undo).toHaveCount(0);
+});

@@ -1,6 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
 
 async function boot(page: Page, maxDensity?: number) {
+  // Dev modules can fill Chromium's default resource timing buffer before either helper loads.
+  await page.addInitScript(() => performance.setResourceTimingBufferSize(4096));
   await page.goto('/?lazyart');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();

@@ -2361,8 +2361,9 @@ export class HUD {
       case 'import-undo': {
         const replaced = replacedVillage();
         if (!replaced || m.battle) break;
-        forgetReplacedVillage();
-        void this.applyVillage(replaced.state, 'Your previous village is back.');
+        void this.applyVillage(replaced.state, 'Your previous village is back.').then((saved) => {
+          if (saved && replacedVillage()?.at === replaced.at) forgetReplacedVillage();
+        });
         break;
       }
       case 'layout-undo':
@@ -2483,6 +2484,7 @@ export class HUD {
         'Village restored for this session only: it could not be saved in this browser. Export it from Settings to keep it.',
       );
     else if (!this.showMapUpgrade()) this.toast(done);
+    return saved;
   }
   /**
    * Keyboard map access: M toggles a tile cursor that arrows (or WASD) move and Enter or Space
