@@ -1537,7 +1537,20 @@ export class GameModel {
   activeHero = false;
   /** Version 46 battles select which hero the next deployment places. */
   activeHeroKind: HeroKind | null = null;
-  activeTroop: DeployTroopKind = 'swordsman';
+  private initialTroop: DeployTroopKind = 'swordsman';
+  private troopSelection?: DeployTroopKind;
+  get activeTroop() {
+    return this.troopSelection ?? this.initialTroop;
+  }
+  set activeTroop(kind: DeployTroopKind) {
+    this.troopSelection = kind;
+  }
+  get troopSelected() {
+    return this.troopSelection !== undefined;
+  }
+  get deploymentSelected() {
+    return this.troopSelected || !!this.activeSpell || !!this.activeHeroKind || this.activeHero;
+  }
   /** When set, tapping the battlefield casts this spell instead of deploying. */
   activeSpell: SpellKind | null = null;
   /**
@@ -6256,7 +6269,8 @@ export class GameModel {
           actions: [],
         }
       : null;
-    this.activeTroop = TROOP_KEYS.find((k) => initial.army[k] > 0) ?? 'swordsman';
+    this.initialTroop = TROOP_KEYS.find((k) => initial.army[k] > 0) ?? 'swordsman';
+    this.troopSelection = practice || drill ? this.initialTroop : undefined;
     this.activeSpell = null;
     this.activeHero = false;
     this.activeHeroKind = null;

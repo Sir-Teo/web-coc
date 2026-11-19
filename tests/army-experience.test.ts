@@ -5,6 +5,23 @@ import { emptyArmy, emptySpells } from '../src/game/army';
 import { validateSave, migrateSave } from '../src/game/save';
 
 describe('instant army preparation', () => {
+  it('starts each ordinary attack with no troop selected', () => {
+    const m = new GameModel(developedSave());
+    m.startCampaign(0);
+    expect(m.troopSelected).toBe(false);
+    expect(m.deploymentSelected).toBe(false);
+    m.activeTroop = 'giant';
+    expect(m.deploymentSelected).toBe(true);
+    m.returnHome();
+    m.startCampaign(0);
+    expect(m.troopSelected).toBe(false);
+    expect(m.deploymentSelected).toBe(false);
+    m.activeSpell = 'heal';
+    expect(m.deploymentSelected).toBe(true);
+    m.activeSpell = null;
+    expect(m.deploymentSelected).toBe(false);
+  });
+
   it('prepares troops and spells without elixir or waiting', () => {
     const m = new GameModel(developedSave());
     m.clearArmy();

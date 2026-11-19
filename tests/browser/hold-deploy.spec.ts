@@ -157,3 +157,31 @@ test('a press begun while graphics are lost cannot deploy after restoration', as
   expect(await remaining()).toBe(start - 1);
   expect(errors).toEqual([]);
 });
+
+test.describe('unarmed campaign scouting on touch', () => {
+  test.use({ hasTouch: true, isMobile: true });
+
+  test('a scouting tap spends no troop until the player selects a card', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    await page.locator('[data-action="skip-tutorial"]').tap();
+    await page.locator('.attack-btn').tap();
+    await page.locator('[data-action="attack:0"]').tap();
+    await page.waitForFunction(() => !window.__game.scene.battleArtPending());
+    const point = await grassPoint(page);
+    const remaining = () => page.evaluate(() => window.__game.model.battle!.remaining.swordsman);
+    const initial = await remaining();
+
+    await page.touchscreen.tap(point.x, point.y);
+    expect(await remaining()).toBe(initial);
+    await expect(page.locator('.prep-banner')).toBeVisible();
+    await expect(page.locator('.army-tray .selected')).toHaveCount(0);
+    await expect(page.locator('.deploy-label')).toHaveText('Select a troop, hero or spell');
+    await page.screenshot({ path: 'output/playtest/unarmed-scouting-phone.png' });
+
+    await page.locator('[data-action="troop:swordsman"]').tap();
+    await expect(page.locator('[data-action="troop:swordsman"]')).toHaveClass(/selected/);
+    await page.touchscreen.tap(point.x, point.y);
+    expect(await remaining()).toBe(initial - 1);
+  });
+});

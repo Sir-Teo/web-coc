@@ -2564,7 +2564,8 @@ export class VillageScene extends Phaser.Scene {
         if (this.model.castSpell(x + 0.5, y + 0.5)) this.castFeedback();
         return;
       }
-      if (this.model.deploy(x + 0.5, y + 0.5)) this.deployFeedback();
+      if (this.model.deploymentSelected && this.model.deploy(x + 0.5, y + 0.5))
+        this.deployFeedback();
       return;
     }
     const { building, obstacle, decoration } = this.occupant(x, y);
@@ -2653,24 +2654,11 @@ export class VillageScene extends Phaser.Scene {
   private classifyDrag(p: Phaser.Input.Pointer): 'pan' | 'deploy' | 'drag-building' | 'drag-wall' {
     if (this.model.wallMove) return this.wallDragOffset ? 'drag-wall' : 'pan';
     if (this.model.editing && this.down?.id != null) return 'drag-building';
-    const b = this.model.battle;
-    if (
-      b &&
-      !this.model.replay &&
-      !b.finished &&
-      !this.model.placement &&
-      !this.model.activeSpell &&
-      !this.battleArtPending()
-    ) {
+    if (this.canHoldDeploy()) {
       // A deliberate press then drag paints troops; a quick flick still pans.
       const deliberate = performance.now() - (this.down?.t ?? 0) >= 160;
       const grid = this.gridAtPointer(p);
-      if (
-        deliberate &&
-        this.model.troopRemaining(this.model.activeTroop) > 0 &&
-        !this.model.deployBlocked(grid.x, grid.y)
-      )
-        return 'deploy';
+      if (deliberate && !this.model.deployBlocked(grid.x, grid.y)) return 'deploy';
     }
     return 'pan';
   }
@@ -2685,6 +2673,7 @@ export class VillageScene extends Phaser.Scene {
       !this.model.activeSpell &&
       !this.model.activeHero &&
       !this.model.activeHeroKind &&
+      this.model.troopSelected &&
       this.model.troopRemaining(this.model.activeTroop) > 0 &&
       !this.battleArtPending()
     );
@@ -2785,6 +2774,7 @@ export class VillageScene extends Phaser.Scene {
         );
         return;
       }
+      if (!this.model.deploymentSelected) return;
       // A second tap on the same spot commits a full squad, the way rapid taps do in Clash.
       const now = performance.now();
       const repeat =

@@ -139,3 +139,17 @@ Settings has a Vibration switch, stored as `settings.haptics` (absent means on).
 Settings → Export village, and a replay's Export, used to download a JSON file. On a phone that file lands in a Files or Downloads folder, far from where players send things. `src/ui/share-file.ts` takes the file text and, on a touch screen whose browser reports that it can share the file, opens the system share sheet: Messages, AirDrop or cloud storage, for example. Closing the sheet exports nothing, so the village export shows no "exported" toast and no download follows. A mouse still downloads, as does any browser that will not share the file type. Chrome on Android shares no JSON, so it downloads as before. The share call happens within the tap's user activation.
 
 `tests/browser/share-file.spec.ts` replaces `navigator.share` and `navigator.canShare`. On a phone it checks that the village backup and a replay are handed to the sheet with their file names and type, that the village file restores through `parseSaveFile`, and that nothing downloads. It also covers closing the sheet, a browser that will not share JSON, and a desktop mouse. When the share sheet is never chosen, the two sharing cases fail. Existing download, import and recovery specs still pass.
+
+## Select before deploying
+
+Campaign and ladder scouting require a deliberate card or keyboard selection
+before a map tap, hold, drag or keyboard cursor can deploy a troop. The tray
+starts with a selection prompt. Scouting a defense still opens its range.
+Selecting a spell or Hero allows that action directly. Starting another attack
+clears the troop selection again. Practice keeps its existing guided and
+local setup behavior. Selections remain outside recorded battle state.
+
+The phone regression checks that tapping open grass leaves the first troop
+in reserve until the player selects its card.
+[Supercell's troop selection rule](https://supercell.com/en/games/clashofclans/blog/news/upcoming-quality-of-life-improvements/)
+documents the opening selection requirement.

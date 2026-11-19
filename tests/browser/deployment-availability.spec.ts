@@ -94,17 +94,21 @@ test('unused siege reserves stay disabled after one machine deploys, across fast
   await expect(blimp).toBeEnabled();
   await wrecker.click();
   expect(await page.evaluate(() => window.__game.model.deploy(10, 8))).toBe(true);
+  const endSiege = page.getByRole('button', { name: 'End Wall Wrecker', exact: true });
   for (let refresh = 0; refresh < 2; refresh++) {
     if (refresh) await page.evaluate(() => window.__game.model.changed());
-    await expect(wrecker).toBeDisabled();
+    await expect(endSiege).toBeEnabled();
     await expect(blimp).toBeDisabled();
-    await expect(wrecker.locator('.troop-count')).toHaveText('x1');
     await expect(blimp.locator('.troop-count')).toHaveText('x1');
-    await expect(wrecker).toHaveClass(/empty/);
     await expect(blimp).toHaveAttribute('aria-label', /siege machine already deployed/);
     await expect(blimp).toHaveAttribute('aria-label', /1 in reserve/);
-    await expect(page.locator('.deploy-label')).toContainText('Only one siege machine per attack');
   }
+  await endSiege.click();
+  await expect(wrecker).toBeDisabled();
+  await expect(wrecker.locator('.troop-count')).toHaveText('x1');
+  await expect(wrecker).toHaveClass(/empty/);
+  await expect(blimp).toBeDisabled();
+  await expect(page.locator('.deploy-label')).toContainText('Only one siege machine per attack');
   expect(await page.evaluate(() => window.__game.model.deploy(12, 8))).toBe(false);
   expect(await page.evaluate(() => window.__game.model.battle.remaining.wallwrecker)).toBe(1);
   await page.screenshot({ path: `output/playtest/deployment-siege-reserves-${browserName}.png` });

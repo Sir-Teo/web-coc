@@ -3606,7 +3606,7 @@ export class HUD {
               k,
               b.remaining[k],
               `troop:${k}`,
-              !m.activeHero && !m.activeHeroKind && !m.activeSpell && m.activeTroop === k,
+              m.troopSelected && !m.activeHero && !m.activeHeroKind && !m.activeSpell && m.activeTroop === k,
             ),
           )
           .join('')}${SPLIT_HOG_KINDS.filter((kind) => b.recalledSplits?.[kind] !== undefined)
@@ -3615,7 +3615,7 @@ export class HUD {
               kind,
               m.troopRemaining(kind),
               `troop:${kind}`,
-              !m.activeHero && !m.activeHeroKind && !m.activeSpell && m.activeTroop === kind,
+              m.troopSelected && !m.activeHero && !m.activeHeroKind && !m.activeSpell && m.activeTroop === kind,
             ),
           )
           .join('')}${
@@ -3649,6 +3649,7 @@ export class HUD {
     if (m.activeHeroKind) return this.nativeDeploymentHint(m.activeHeroKind);
     if (m.activeHero) return this.kingDeploymentHint();
     if (m.activeSpell) return `Tap anywhere to cast ${SPELLS[m.activeSpell].name}`;
+    if (!m.troopSelected) return 'Select a troop, hero or spell';
     if (isSplitHog(m.activeTroop))
       return `${TROOPS[m.activeTroop].name} · ${m.troopRemaining(m.activeTroop) ? 'Recalled · Tap, hold or drag to redeploy' : 'All redeployed'}`;
     if (m.deployedSiege?.kind === m.activeTroop)
@@ -5803,7 +5804,7 @@ export class HUD {
         const siegeBlocked = !!troop && this.siegeUnavailable(troop);
         const unavailable = count === 0 || siegeBlocked;
         const selected = troop
-          ? !m.activeHero && !m.activeHeroKind && !m.activeSpell && m.activeTroop === troop
+          ? m.troopSelected && !m.activeHero && !m.activeHeroKind && !m.activeSpell && m.activeTroop === troop
           : m.activeSpell === spell;
         setText(el.querySelector('.troop-count'), `x${count}`);
         if (el.classList.contains('empty') !== unavailable) el.classList.toggle('empty');
