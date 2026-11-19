@@ -4228,7 +4228,8 @@ export class GameModel {
     const lineup: PresetHero[] = [];
     for (const hero of preset.heroes ?? []) {
       const name = HERO_SOURCE[hero.kind];
-      if (!this.heroProgress(hero.kind)) {
+      const progress = this.heroProgress(hero.kind);
+      if (!progress) {
         changes.push(`${name} is not in this village`);
         continue;
       }
@@ -4236,6 +4237,7 @@ export class GameModel {
         changes.push(`No Hero Hall slot for ${name}`);
         continue;
       }
+      if (progress.upgradeEnd) changes.push(`${name} is unavailable while upgrading`);
       const items = hero.items.filter(
         (slug) =>
           validItem(slug) && itemHero(slug) === hero.kind && gear.levels[slug] !== undefined,

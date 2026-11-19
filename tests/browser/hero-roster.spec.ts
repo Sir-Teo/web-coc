@@ -684,3 +684,136 @@ test.describe('phone Hero Hall lineup', () => {
     ).toEqual(lineup);
   });
 });
+
+test.describe('phone Quick Army hero readiness', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('loading a preset keeps an upgrading hero and pet assigned for the next raid', async ({
+    page,
+  }, info) => {
+    await page.clock.setFixedTime(Date.now());
+    await boot(page);
+    await develop(page);
+    await page.evaluate(async () => {
+      const { emptyArmy } = await import('/src/game/army.ts');
+      const m = window.__game.model;
+      m.state.army = { ...emptyArmy(), swordsman: 2 };
+      if (!m.setHeroLineup(['king', 'queen', 'prince']) || !m.assignPet('king', 'lassi'))
+        throw Error('Preset fixture lineup failed');
+    });
+    const presets = async () => {
+      await page.locator('.train-add').tap();
+      await page.locator('[data-action="army-presets"]').tap();
+    };
+    await presets();
+    await page.locator('[data-action="preset-save:0"]').tap();
+    await page.locator('.modal [data-action="close"]').tap();
+    await page.locator('[data-action="heroes"]').tap();
+    await page.locator('[data-action="hero-upgrade:king"]').tap();
+    const research = await page.evaluate(() => {
+      const m = window.__game.model;
+      if (!m.setHeroLineup(['queen', 'king', 'prince']) || !m.assignPet('queen', 'lassi'))
+        throw Error('Could not change the active lineup');
+      const { level, upgradeEnd } = m.heroProgress('king')!;
+      return { level, upgradeEnd, saved: JSON.stringify(m.state.armyPresets?.[0]) };
+    });
+    expect(research.upgradeEnd).toBeDefined();
+    await page.locator('.modal [data-action="close"]').tap();
+    await page.locator('[data-action="army-presets"]').tap();
+    const card = page.locator('.preset-card').first();
+    await expect(card).toContainText('Barbarian King is unavailable while upgrading');
+    await expect(card).toContainText('L.A.S.S.I');
+    await card.locator('[data-action="preset-load:0"]').tap();
+    await page.screenshot({ path: info.outputPath('preset-upgrading-hero.png') });
+
+    const read = () =>
+      page.evaluate(() => {
+        const m = window.__game.model;
+        const { level, upgradeEnd } = m.heroProgress('king')!;
+        return {
+          level,
+          upgradeEnd,
+          lineup: m.heroLineup,
+          assigned: m.petProgress.assigned,
+          saved: JSON.stringify(m.state.armyPresets?.[0]),
+          ready: m.armyReady,
+        };
+      });
+    const upgrading = {
+      ...research,
+      lineup: ['king', 'queen', 'prince'],
+      assigned: { king: 'lassi' },
+      ready: true,
+    };
+    expect(await read()).toEqual(upgrading);
+    const raid = async () => {
+      await page.locator('.attack-btn').tap();
+      await page.locator('[data-action="attack:0"]').tap();
+      await expect(page.locator('.prep-banner')).toBeVisible();
+    };
+    await page.reload();
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    expect(await read()).toEqual(upgrading);
+    await raid();
+    const roster = () => page.evaluate(() => window.__game.model.battle!.nativeHeroes!);
+    expect((await roster()).map((hero) => hero.kind)).toEqual(['queen', 'prince']);
+    expect((await roster())[0].pet).toBeUndefined();
+    await page.locator('.end-battle[data-action="home"]').tap();
+
+    await page.goto('about:blank');
+    await page.clock.setFixedTime(research.upgradeEnd! + 1);
+    await page.goto('/');
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    expect(await read()).toEqual({
+      ...upgrading,
+      level: research.level + 1,
+      upgradeEnd: undefined,
+    });
+    await raid();
+    expect(await roster()).toMatchObject([
+      { kind: 'king', level: research.level + 1, pet: { kind: 'lassi', level: 1 } },
+      { kind: 'queen' },
+      { kind: 'prince' },
+    ]);
+    await page.waitForFunction(() => !window.__game.scene.battleArtPending());
+    await page.locator('[data-action="hero-select:king"]').tap();
+    const spot = await page.evaluate(() => {
+      const { model, scene, game } = window.__game;
+      for (let x = 1.5; x < 44; x++)
+        for (let y = 1.5; y < 44; y++) {
+          if (model.deployBlocked(x, y)) continue;
+          const point = scene.screenFor(x, y);
+          if (
+            point.y > innerHeight * 0.3 &&
+            point.y < innerHeight * 0.6 &&
+            document.elementFromPoint(point.x, point.y) === game.canvas
+          )
+            return point;
+        }
+      throw Error('No open grass visible for hero deployment');
+    });
+    await page.touchscreen.tap(spot.x, spot.y);
+    const deployed = await page.evaluate(() => {
+      const { model } = window.__game;
+      const king = model.battleHero('king')!;
+      return [king.unitId, king.petId].map(
+        (id) => model.battle!.units.find((unit) => unit.id === id)?.level,
+      );
+    });
+    expect(deployed).toEqual([research.level + 1, 1]);
+
+    await page.locator('[data-action="surrender"]').tap();
+    await page.locator('[data-action="end"]').tap();
+    await page.locator('.result-modal [data-action="home"]').tap();
+    await page.reload();
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    await page.locator('[data-action="battle-log"]').tap();
+    await page.getByRole('button', { name: 'Watch replay' }).tap();
+    await expect(page.getByRole('slider', { name: 'Replay position' })).toBeVisible();
+    expect(await roster()).toMatchObject([
+      { kind: 'king', level: research.level + 1, pet: { kind: 'lassi', level: 1 } },
+      { kind: 'queen' },
+      { kind: 'prince' },
+    ]);
+  });
+});
