@@ -757,7 +757,11 @@ export class HUD {
   onSharedPreviewShown: (kind: 'layout' | 'army') => void = () => {};
   private drawerPanel: Drawer = null;
   private armyReturn?:
-    | { panel: 'campaign' | 'campaign-scout'; focus: FocusMark | null }
+    | {
+        panel: 'campaign' | 'campaign-scout';
+        focus: FocusMark | null;
+        launcher: FocusMark | null;
+      }
     | ({ panel: 'battle-log' } & BattleLogReturn);
   private repeatAttack?: RepeatAttack;
   private replayLogReturn?: BattleLogReturn;
@@ -1332,6 +1336,7 @@ export class HUD {
       ? {
           panel: this.panel === 'campaign-scout' ? 'campaign-scout' : 'campaign',
           focus: this.focusBefore,
+          launcher: focusMark(this.actionSource ?? document.activeElement),
         }
       : drawer === 'army' && this.panel === 'battle-log'
         ? { panel: 'battle-log', ...this.captureBattleLogReturn() }
@@ -1356,6 +1361,7 @@ export class HUD {
     else {
       this.show(previous.panel);
       this.focusBefore = previous.focus;
+      restoreFocusMark(previous.launcher);
     }
   }
   private captureBattleLogReturn(): BattleLogReturn {

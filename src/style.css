@@ -1245,6 +1245,7 @@ h3 {
   gap: 5px;
 }
 .campaign-list {
+  /* Use actual row heights during scroll restoration after Army preparation. */
   display: grid;
   gap: 12px;
 }
@@ -1258,10 +1259,6 @@ h3 {
   background: linear-gradient(110deg, #e2e8be, #fff5d8 65%);
   padding: 15px;
   position: relative;
-}
-.campaign-list > .campaign-card {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 124px;
 }
 .campaign-card.locked {
   background: linear-gradient(110deg, #dedbcc, #e9e2ce);
@@ -4821,6 +4818,11 @@ h3 {
 .campaign-summary .game-btn small {
   margin-left: 4px;
   opacity: 0.85;
+}
+@media (orientation: landscape) and (max-height: 450px) {
+  .campaign-modal .campaign-summary .game-btn {
+    flex-basis: auto;
+  }
 }
 .ladder-stake {
   display: flex;

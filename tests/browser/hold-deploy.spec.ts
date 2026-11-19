@@ -371,50 +371,98 @@ test.describe('phone campaign preparation', () => {
     expect(await page.evaluate(() => window.__game.model.battle)).toBeNull();
   });
 
-  test('an empty army can be prepared directly from the campaign map', async ({ page }) => {
-    await page.goto('/?lazyart');
-    await page.waitForFunction(() => window.__game?.scene.artSettled);
-    await page.locator('[data-action="skip-tutorial"]').tap();
-    await page.locator('.train-add').tap();
-    const clear = page.locator('[data-action="clear-army"]');
-    if (await clear.isEnabled()) await clear.tap();
-    await page.locator('[data-action="close-drawer"]').tap();
-    await page.locator('.attack-btn').tap();
-    const prepare = page.getByRole('button', { name: 'Prepare army', exact: true });
-    await expect(prepare).toBeVisible();
-    const list = page.locator('.campaign-list');
-    const priorScroll = await list.evaluate((element) => {
-      element.scrollTop = 500;
-      return element.scrollTop;
+  for (const viewport of [
+    { width: 390, height: 650 },
+    { width: 390, height: 844 },
+    { width: 668, height: 390 },
+  ]) {
+    test(`an empty army can be prepared directly from the campaign map at ${viewport.width}×${viewport.height}`, async ({
+      page,
+      browserName,
+    }) => {
+      test.skip(browserName !== 'chromium', 'Uses Chromium touch injection');
+      await page.setViewportSize(viewport);
+      await page.goto('/?lazyart');
+      await page.waitForFunction(() => window.__game?.scene.artSettled);
+      await page.locator('[data-action="skip-tutorial"]').tap();
+      await page.locator('.train-add').tap();
+      const clear = page.locator('[data-action="clear-army"]');
+      if (await clear.isEnabled()) await clear.tap();
+      await page.locator('[data-action="close-drawer"]').tap();
+      await page.locator('.attack-btn').tap();
+      const prepare = page.getByRole('button', { name: 'Prepare army', exact: true });
+      await expect(prepare).toBeVisible();
+      const list = page.locator('.campaign-list');
+      const priorScroll = await list.evaluate((element) => {
+        element.scrollTop = 500;
+        return element.scrollTop;
+      });
+      expect(priorScroll).toBe(500);
+      await prepare.tap();
+      const train = page.locator('[data-action="train:swordsman"]').first();
+      await expect(train).toBeEnabled();
+      await page.keyboard.press('Escape');
+      await expect(list).toBeVisible();
+      const offset = () =>
+        list.evaluate(async (element) => {
+          await new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+          );
+          return element.scrollTop;
+        });
+      expect(await offset()).toBe(priorScroll);
+      await expect(prepare).toBeFocused();
+      const bounds = (await list.boundingBox())!;
+      const x = Math.round(bounds.x + bounds.width * 0.45);
+      const y = Math.round(Math.min(bounds.y + bounds.height, viewport.height) - 15);
+      const travel = Math.min(60, Math.round(bounds.height / 2));
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x, y }],
+      });
+      for (let step = 1; step <= 6; step++)
+        await cdp.send('Input.dispatchTouchEvent', {
+          type: 'touchMove',
+          touchPoints: [{ x, y: Math.round(y - (travel * step) / 6) }],
+        });
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await expect.poll(offset).toBeGreaterThan(priorScroll);
+      // Capture the actual return point after the trusted swipe, including any momentum.
+      const returning = list.evaluate(
+        (element) =>
+          new Promise<number>((resolve) => {
+            document
+              .querySelector('[data-action="campaign-army"]')!
+              .addEventListener('click', () => resolve(element.scrollTop), { once: true });
+          }),
+      );
+      await prepare.tap();
+      const returnOffset = await returning;
+      await train.tap();
+      await page.locator('[data-action="close-drawer"]').tap();
+      await expect(list).toBeVisible();
+      expect(await offset()).toBe(returnOffset);
+      await expect(prepare).toHaveCount(0);
+      await expect(page.locator('.campaign-modal [data-action="close"]')).toBeFocused();
+      await page.locator('[data-action="attack:0"]').tap();
+      await page.waitForFunction(() => !window.__game.scene.battleArtPending());
+      await page.locator('[data-action="troop:swordsman"]').tap();
+      const point = await grassPoint(page);
+      await page.touchscreen.tap(point.x, point.y);
+      await expect
+        .poll(() => page.evaluate(() => window.__game.model.battle?.remaining.swordsman))
+        .toBe(0);
+      await page.locator('[data-action="surrender"]').tap();
+      await page.locator('[data-action="end"]').tap();
+      await page.locator('.result-modal [data-action="home"]').tap();
+      await page.locator('.train-add').tap();
+      await page.locator('[data-action="retrain"]').tap();
+      await expect
+        .poll(() => page.evaluate(() => window.__game.model.state.army.swordsman))
+        .toBe(1);
     });
-    expect(priorScroll).toBeGreaterThan(0);
-    await prepare.tap();
-    const train = page.locator('[data-action="train:swordsman"]').first();
-    await expect(train).toBeEnabled();
-    await page.keyboard.press('Escape');
-    await expect(list).toBeVisible();
-    expect(await list.evaluate((element) => element.scrollTop)).toBe(priorScroll);
-    await prepare.tap();
-    await train.tap();
-    await page.locator('[data-action="close-drawer"]').tap();
-    await expect(list).toBeVisible();
-    expect(await list.evaluate((element) => element.scrollTop)).toBe(priorScroll);
-    await expect(prepare).toHaveCount(0);
-    await page.locator('[data-action="attack:0"]').tap();
-    await page.waitForFunction(() => !window.__game.scene.battleArtPending());
-    await page.locator('[data-action="troop:swordsman"]').tap();
-    const point = await grassPoint(page);
-    await page.touchscreen.tap(point.x, point.y);
-    await expect
-      .poll(() => page.evaluate(() => window.__game.model.battle?.remaining.swordsman))
-      .toBe(0);
-    await page.locator('[data-action="surrender"]').tap();
-    await page.locator('[data-action="end"]').tap();
-    await page.locator('.result-modal [data-action="home"]').tap();
-    await page.locator('.train-add').tap();
-    await page.locator('[data-action="retrain"]').tap();
-    await expect.poll(() => page.evaluate(() => window.__game.model.state.army.swordsman)).toBe(1);
-  });
+  }
 });
 
 test.describe('phone viewport changes during raids', () => {
@@ -531,7 +579,7 @@ test.describe('full deployment tray on touch', () => {
         };
       });
     const tray = page.locator('.deploy-tray .army-tray');
-    expect(await tray.locator('.troop-card').count()).toBeGreaterThan(20);
+    await expect.poll(() => tray.locator('.troop-card').count()).toBeGreaterThan(20);
     const cdp = await page.context().newCDPSession(page);
     const swipe = async () => {
       const box = (await tray.boundingBox())!;
