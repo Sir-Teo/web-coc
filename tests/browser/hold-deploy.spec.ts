@@ -213,3 +213,33 @@ test('a rapid second map tap deploys four troops with one tray refresh', async (
   await expect(page.locator('[data-action="troop:swordsman"] .troop-count')).toHaveText('x35');
   await page.screenshot({ path: 'output/playtest/rapid-deployment-phone.png' });
 });
+
+test.describe('battle map multitouch', () => {
+  test.use({ hasTouch: true, isMobile: true });
+
+  test('two fingers touching the battle map never spend a troop as a tap', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(browserName !== 'chromium', 'Uses Chromium touch injection');
+    await startDeployment(page);
+    const point = await grassPoint(page);
+    const first = { id: 1, x: Math.round(point.x), y: Math.round(point.y) };
+    const second = { id: 2, x: first.x + 12, y: first.y };
+    const remaining = () => page.evaluate(() => window.__game.model.battle!.remaining.swordsman);
+    const start = await remaining();
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [first] });
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [first, second],
+    });
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [second] });
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    expect(await remaining()).toBe(start);
+
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [first] });
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    expect(await remaining()).toBe(start - 1);
+  });
+});

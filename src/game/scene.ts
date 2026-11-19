@@ -1277,6 +1277,14 @@ export class VillageScene extends Phaser.Scene {
       // which clears the pan's samples so it ends without momentum.
       this.fling.stop();
       if (this.uiBlocked || this.contextGone()) return;
+      if (
+        p.wasTouch &&
+        this.input.manager.pointers.some((other) => other !== p && other.isDown && other.wasTouch)
+      ) {
+        // The second contact consumes the tap even if both fingers lift before moving.
+        cancelGesture();
+        return;
+      }
       // Pointer input takes over from the keyboard map cursor.
       if (this.keyCursor) this.toggleKeyCursor(false);
       this.audio.unlock();
