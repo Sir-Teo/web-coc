@@ -5,6 +5,40 @@ import { emptyArmy, emptySpells } from '../src/game/army';
 import { validateSave, migrateSave } from '../src/game/save';
 
 describe('instant army preparation', () => {
+  it('publishes once per rapid deployment while recording each placement in order', () => {
+    function start() {
+      const model = new GameModel();
+      model.state.army = { ...emptyArmy(), swordsman: 6 };
+      model.startCampaign(0);
+      model.activeTroop = 'swordsman';
+      return model;
+    }
+    const burst = start();
+    const sequential = start();
+    const notices: { passive: boolean; remaining: number }[] = [];
+    burst.onChange = (passive) =>
+      notices.push({ passive, remaining: burst.battle!.remaining.swordsman });
+    for (const count of [4, 2, 0]) {
+      expect(burst.deployMany(2, 13, 4)).toBe(count);
+      for (let i = 0; i < count; i++) {
+        const radius = i === 0 ? 0 : 0.55;
+        const angle = (i / 4) * Math.PI * 2;
+        expect(sequential.deploy(2 + Math.cos(angle) * radius, 13 + Math.sin(angle) * radius)).toBe(
+          true,
+        );
+      }
+    }
+    expect(notices).toEqual([
+      { passive: false, remaining: 2 },
+      { passive: true, remaining: 0 },
+    ]);
+    expect(burst.battle).toEqual(sequential.battle);
+    expect(burst.state.army).toEqual(sequential.state.army);
+    burst.finishBattle();
+    sequential.finishBattle();
+    expect(burst.state.raidLog![0].replay).toEqual(sequential.state.raidLog![0].replay);
+  });
+
   it('starts each ordinary attack with no troop selected', () => {
     const m = new GameModel(developedSave());
     m.startCampaign(0);

@@ -6308,9 +6308,13 @@ export class GameModel {
    * deploy of a battle also starts the fight (banner, clock, buttons) and
    * still needs a full render.
    */
+  private deploymentBatch: { starting: boolean } | undefined;
   private deployChanged(starting: boolean) {
-    if (starting) this.changed();
-    else this.changed(true);
+    if (this.deploymentBatch) {
+      this.deploymentBatch.starting ||= starting;
+      return;
+    }
+    this.changed(!starting);
   }
   deploy(x: number, y: number) {
     if (this.replay) return false;
@@ -6422,14 +6426,21 @@ export class GameModel {
   /** Drops `count` troops in a small ring, the way a drag-deploy does in Clash. */
   deployMany(x: number, y: number, count: number) {
     let placed = 0;
-    for (let i = 0; i < count; i++) {
-      const angle = (i / Math.max(1, count)) * Math.PI * 2;
-      const radius = i === 0 ? 0 : 0.55;
-      if (this.deploy(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius)) placed++;
-      else if (this.deploy(x, y)) placed++;
-      else break;
+    const parent = this.deploymentBatch;
+    const batch = (this.deploymentBatch = { starting: false });
+    try {
+      for (let i = 0; i < count; i++) {
+        const angle = (i / Math.max(1, count)) * Math.PI * 2;
+        const radius = i === 0 ? 0 : 0.55;
+        if (this.deploy(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius)) placed++;
+        else if (this.deploy(x, y)) placed++;
+        else break;
+      }
+      return placed;
+    } finally {
+      this.deploymentBatch = parent;
+      if (placed) this.deployChanged(batch.starting);
     }
-    return placed;
   }
   canReviveHero(kind: HeroKind) {
     const b = this.battle,

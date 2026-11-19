@@ -185,3 +185,31 @@ test.describe('unarmed campaign scouting on touch', () => {
     expect(await remaining()).toBe(initial - 1);
   });
 });
+
+test('a rapid second map tap deploys four troops with one tray refresh', async ({ page }) => {
+  await startDeployment(page);
+  const point = await grassPoint(page);
+  await page.evaluate(() => {
+    const { model, scene } = window.__game;
+    scene.paused = true;
+    const original = model.onChange;
+    window.__deploymentPasses = 0;
+    model.onChange = (passive) => {
+      if (passive) window.__deploymentPasses++;
+      original(passive);
+    };
+  });
+  await page.mouse.click(point.x, point.y);
+  await page.mouse.click(point.x, point.y);
+  const state = await page.evaluate(() => {
+    const m = window.__game.model;
+    return {
+      units: m.battle!.units.length,
+      remaining: m.battle!.remaining.swordsman,
+      passes: window.__deploymentPasses,
+    };
+  });
+  expect(state).toEqual({ units: 5, remaining: 35, passes: 1 });
+  await expect(page.locator('[data-action="troop:swordsman"] .troop-count')).toHaveText('x35');
+  await page.screenshot({ path: 'output/playtest/rapid-deployment-phone.png' });
+});

@@ -2496,3 +2496,20 @@ same 340-building, 75-card workload. Five baseline run medians ranged from
 3.61 ms. The candidate's slowest batch ranged from 5.73 to 8.13 ms per action,
 versus 7.70 to 11.03 ms for baseline. These are synchronous edit and HUD
 redraw timings with the scene paused.
+
+## Rapid troop deployment
+
+A four-troop deployment from a rapid second tap now publishes one HUD update
+after placing the troops. Each deployment still records its own action and
+emits its own effect. The model check compares the complete battle and replay
+with the same four placements performed individually, including a partial
+batch when reserves run out.
+
+Run `PLAYWRIGHT_CHROMIUM=/usr/bin/chromium node scripts/rapid-deployment-benchmark.mjs`
+with Vite on port 5176 or set `GAME_URL`. In a 390 × 844 Chromium 155
+SwiftShader session, four baseline runs had median costs of 0.154–0.258 ms
+per four-troop batch, versus 0.054–0.067 ms in three candidate runs.
+Each measured run placed 1,248 troops through 312 batches. HUD notifications
+fell from 1,248 to 312, and the final units, reserves and next-ID hash matched
+across all runs. The benchmark pauses simulation and suppresses effects to
+isolate the synchronous deployment and HUD cost.
