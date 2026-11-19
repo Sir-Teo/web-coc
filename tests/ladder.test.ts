@@ -160,3 +160,28 @@ describe('ladder matches', () => {
     expect(validateSave(seed)).toBe(false);
   });
 });
+
+it('settles a ladder fight that started at the end of scouting even without a deployment', () => {
+  const model = new GameModel();
+  const trophies = model.state.trophies;
+  model.startLadder();
+  model.suspendBattle();
+  expect(model.state.stats.raids).toBe(0);
+  expect(model.state.trophies).toBe(trophies);
+
+  model.startLadder();
+  const loss = model.battle!.ladder!.loss;
+  for (let i = 0; i < 30; i++) model.step(1);
+  expect(model.battle?.started).toBe(true);
+  expect(model.battle?.units).toHaveLength(0);
+  const checkpoint = model.settledState();
+  expect(checkpoint.stats.raids).toBe(1);
+  expect(checkpoint.trophies).toBe(trophies - loss);
+  expect(checkpoint.raidLog).toHaveLength(1);
+  expect(validateReplay(checkpoint.raidLog![0].replay)).toBe(true);
+  expect(model.state.trophies).toBe(trophies);
+
+  model.suspendBattle();
+  model.suspendBattle();
+  expect(model.state).toEqual(checkpoint);
+});

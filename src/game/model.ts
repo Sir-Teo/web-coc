@@ -8027,8 +8027,9 @@ export class GameModel {
       SPELL_KEYS.some((k) => b.spells[k] < b.carried[k]) ||
       b.hero?.unitId != null ||
       b.nativeHeroes?.some((hero) => hero.unitId != null || hero.deployed);
-    // Nothing was committed yet, so scouting costs the player nothing.
-    if (!b.finished && spent) this.finishBattle();
+    // Scouting costs nothing. A Ladder fight can also start when its countdown
+    // ends, at which point leaving must settle the same result as surrender.
+    if (!b.finished && (spent || (b.ladder && b.started))) this.finishBattle();
     this.battle = null;
     this.recording = null;
     this.selected = null;

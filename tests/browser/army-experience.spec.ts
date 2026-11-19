@@ -356,10 +356,12 @@ test('editing a scrolled Army catalog on a phone keeps its position without forc
 test.describe('repeat raid preparation on touch', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-  for (const action of ['continue', 'cancel'] as const) {
-    test(`a Last Army that no longer fits allows the player to ${action} from preparation`, async ({
-      page,
-    }) => {
+  for (const action of ['continue', 'cancel', 'reload'] as const) {
+    const title =
+      action === 'reload'
+        ? 'a completed adjusted retry survives an immediate reload after returning home'
+        : `a Last Army that no longer fits allows the player to ${action} from preparation`;
+    test(title, async ({ page }) => {
       const completed = await page.evaluate(async () => {
         const { emptyArmy } = await import('/src/game/army.ts');
         const { freshNativeCampaign } = await import('/src/game/native-campaign.ts');
@@ -411,7 +413,7 @@ test.describe('repeat raid preparation on touch', () => {
       expect(await read()).toEqual(expected);
       await page.locator('[data-action="remove-troop:swordsman"]').tap();
       await page.locator('[data-action="train:archer"]').tap();
-      if (action === 'continue') await retry.tap();
+      if (action !== 'cancel') await retry.tap();
       else {
         await page.locator('[data-action="close-drawer"]').tap();
         await page.locator('.train-add').tap();
@@ -421,13 +423,58 @@ test.describe('repeat raid preparation on touch', () => {
         ...expected,
         swordsman: 3,
         archer: 1,
-        battle: action === 'continue' ? { index: completed.index, started: false } : null,
+        battle: action === 'cancel' ? null : { index: completed.index, started: false },
       });
       if (action === 'continue') {
         await page.locator('[data-action="home"]').tap();
         expect(await read()).toEqual({ ...expected, swordsman: 3, archer: 1 });
       }
       expect(await page.evaluate(() => window.__game.model.state.lastArmy!.swordsman)).toBe(5);
+      if (action !== 'reload') return;
+
+      await page.evaluate(() => {
+        const { model: m } = window.__game;
+        m.activeTroop = 'archer';
+        for (const [x, y] of [
+          [2, 2],
+          [2, 45],
+          [45, 2],
+          [45, 45],
+        ]) {
+          if (!m.deployBlocked(x, y) && m.deploy(x, y)) return;
+        }
+        throw Error('Required one legal deployment for the adjusted retry');
+      });
+      await page.locator('[data-action="surrender"]').tap();
+      await page.locator('[data-action="end"]').tap();
+      const settled = () =>
+        page.evaluate(() => {
+          const { state } = window.__game.model;
+          const record = state.raidLog![0];
+          return {
+            lastArmy: state.lastArmy,
+            stats: state.stats,
+            gold: state.gold,
+            campaign: state.nativeCampaign,
+            retry: record,
+            ids: state.raidLog!.map((raid) => raid.id),
+          };
+        });
+      const result = await settled();
+      expect(result.lastArmy).toMatchObject({ swordsman: 3, archer: 1 });
+      expect(result.retry.deployed.archer).toBe(1);
+      expect(result.retry.replay).toBeDefined();
+      expect(result.stats.raids).toBe(completed.raids + 1);
+      expect(result.ids).toHaveLength(completed.records + 1);
+      expect(new Set(result.ids).size).toBe(completed.records + 1);
+      await page.locator('.result-modal [data-action="home"]').tap();
+      await page.reload();
+      await page.waitForFunction(() => window.__game?.scene.artSettled);
+      expect(await settled()).toEqual(result);
+      await page.locator('[data-action="battle-log"]').tap();
+      await page.getByRole('button', { name: 'Watch replay' }).first().tap();
+      await expect(page.getByRole('slider', { name: 'Replay position' })).toBeVisible();
+      expect(await settled()).toEqual(result);
     });
   }
 });

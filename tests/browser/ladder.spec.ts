@@ -38,3 +38,53 @@ for (const viewport of [
     await page.screenshot({ path: `output/playtest/ladder-result-${viewport.width}.png` });
   });
 }
+
+test.describe('phone Ladder recovery', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('reloading after scouting expires settles the started Ladder match once', async ({
+    page,
+  }) => {
+    await page.goto('/?lazyart');
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    await page.locator('[data-action="skip-tutorial"]').tap();
+    const ladder = page.locator('.campaign-summary [data-action="ladder"]');
+    await page.locator('.attack-btn').tap();
+    await ladder.tap();
+    await expect(page.locator('.battle-clock')).toContainText('SCOUTING');
+    const before = await page.evaluate(() => {
+      const { model } = window.__game;
+      return { trophies: model.state.trophies, raids: model.state.stats.raids };
+    });
+    await page.locator('[data-action="home"]').tap();
+    expect(await page.evaluate(() => window.__game.model.state.trophies)).toBe(before.trophies);
+
+    await page.locator('.attack-btn').tap();
+    await ladder.tap();
+    const loss = await page.evaluate(() => {
+      const { model, game } = window.__game;
+      game.loop.sleep();
+      for (let i = 0; i < 30 && !model.battle!.started; i++) model.step(1);
+      if (!model.battle!.started) throw Error('Ladder scouting did not expire');
+      return model.battle!.ladder!.loss;
+    });
+    await expect(page.locator('[data-action="surrender"]')).toBeVisible();
+    await page.reload();
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    const result = () =>
+      page.evaluate(() => {
+        const { state } = window.__game.model;
+        return {
+          trophies: state.trophies,
+          raids: state.stats.raids,
+          records: state.raidLog?.length,
+        };
+      });
+    const settled = { trophies: before.trophies - loss, raids: before.raids + 1, records: 1 };
+    expect(await result()).toEqual(settled);
+    await page.locator('[data-action="battle-log"]').tap();
+    await page.getByRole('button', { name: 'Watch replay' }).tap();
+    await expect(page.getByRole('slider', { name: 'Replay position' })).toBeVisible();
+    expect(await result()).toEqual(settled);
+  });
+});
