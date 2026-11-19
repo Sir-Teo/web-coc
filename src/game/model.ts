@@ -3047,9 +3047,10 @@ export class GameModel {
     if (delta < 0) return true;
     if (anchor.level >= this.maxLevel('wall')) return false;
     const funds = Math.max(this.state.gold, anchor.level >= 4 ? this.state.elixir : 0);
+    const cost = this.upgradeCost(anchor);
     return (
       count <= matchingWalls(this.state.buildings, anchor.id).length &&
-      count * this.upgradeCost(anchor) <= funds
+      (count * cost <= funds || count * wallRings(cost) <= this.magicItemCount('wall-ring'))
     );
   }
   adjustWallSelection(delta: number) {
@@ -3061,26 +3062,32 @@ export class GameModel {
     this.changed();
     return true;
   }
-  wallUpgradeQuote(ids: readonly number[], resource: WallResource) {
+  private wallUpgradeTargets(ids: readonly number[]) {
     const selected = ids.map((id) => this.state.buildings.find((b) => b.id === id));
-    const valid =
-      ids.length > 0 &&
-      new Set(ids).size === ids.length &&
-      selected.every((b) => b?.kind === 'wall') &&
-      (resource === 'gold' || resource === 'elixir');
-    const walls = valid
-      ? (selected as Building[]).filter(
-          (b) => !b.constructing && !b.upgradeEnd && b.level < this.maxLevel('wall'),
-        )
-      : [];
+    if (
+      !ids.length ||
+      new Set(ids).size !== ids.length ||
+      !selected.every((b): b is Building => b?.kind === 'wall')
+    )
+      return null;
+    const cap = this.maxLevel('wall');
+    return {
+      selected,
+      walls: selected.filter((b) => !b.constructing && !b.upgradeEnd && b.level < cap),
+    };
+  }
+  wallUpgradeQuote(ids: readonly number[], resource: WallResource) {
+    const targets =
+      resource === 'gold' || resource === 'elixir' ? this.wallUpgradeTargets(ids) : null;
+    const walls = targets?.walls ?? [];
     const cost = walls.reduce((total, b) => total + this.upgradeCost(b), 0);
     const issue = this.battle
       ? 'Return home to upgrade walls.'
-      : !valid
+      : !targets
         ? 'Select walls in your village.'
         : !walls.length
           ? 'These walls are at the maximum for your Town Hall.'
-          : resource === 'elixir' && selected.some((b) => b!.level < 4)
+          : resource === 'elixir' && targets.selected.some((b) => b.level < 4)
             ? 'Elixir upgrades start at wall level 4 → 5. Upgrade lower-level walls with gold first.'
             : this.busy >= this.builders
               ? 'A free builder is needed for instant wall upgrades.'
@@ -4781,20 +4788,31 @@ export class GameModel {
   }
   /** Wall Rings one wall's next level takes: one per million of its cost. */
   wallRingsFor(id: number) {
-    const b = this.state.buildings.find((v) => v.id === id && v.kind === 'wall');
-    return b && !b.constructing && !b.upgradeEnd && b.level < this.maxLevel('wall')
-      ? wallRings(this.upgradeCost(b))
-      : undefined;
+    return this.wallRingQuote([id])?.rings;
   }
-  /** Wall Rings finish one eligible wall without needing a builder or spending resources. */
+  wallRingQuote(ids: readonly number[]) {
+    const walls = this.wallUpgradeTargets(ids)?.walls;
+    if (!walls?.length) return null;
+    return {
+      walls,
+      rings: walls.reduce((total, wall) => total + wallRings(this.upgradeCost(wall)), 0),
+    };
+  }
   useWallRing(id: number) {
-    const rings = this.wallRingsFor(id),
+    return this.useWallRings([id]);
+  }
+  /** Wall Rings upgrade all eligible selected walls without reserving a builder. */
+  useWallRings(ids: readonly number[]) {
+    if (this.battle) return false;
+    const quote = this.wallRingQuote(ids),
       held = this.magicItemCount('wall-ring');
-    if (this.battle || rings === undefined || !held) return false;
-    if (held < rings) return (this.notify(`This wall takes ${rings} Wall Rings.`), false);
-    const wall = this.state.buildings.find((b) => b.id === id)!;
-    this.spendItem('wall-ring', rings);
-    return this.finishWallUpgrades([wall]);
+    if (!quote || !held) return false;
+    if (held < quote.rings) {
+      this.notify(`This upgrade takes ${quote.rings} Wall Rings.`);
+      return false;
+    }
+    this.spendItem('wall-ring', quote.rings);
+    return this.finishWallUpgrades(quote.walls);
   }
   /** Super Potion: boosts a troop into its Super Troop with the usual rules, free. */
   useSuperPotion(kind: TroopKind) {

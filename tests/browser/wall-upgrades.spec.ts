@@ -324,3 +324,39 @@ test('phone Wall Ring upgrades work with every builder busy while resource upgra
     }, before.id),
   ).toEqual({ level: 5, rings: 0 });
 });
+
+test('Wall Rings fund a multi-wall upgrade on a phone with no free builders', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => {
+    const m = window.__game.model;
+    m.state.gold = m.state.elixir = 0;
+    for (const b of m.state.buildings.filter((b) => b.kind === 'cannon')) {
+      b.upgradeStart = m.clock;
+      b.upgradeEnd = m.clock + 3600000;
+    }
+    m.addMagicItem('wall-ring', 2);
+    m.changed();
+  });
+  await selectWall(page);
+  await page.getByRole('button', { name: 'Add 1 wall', exact: true }).tap();
+  await expect(page.locator('.wall-context h2')).toHaveText('2 Walls');
+  const ids = await page.evaluate(() => window.__game.model.selectedWalls.map((wall) => wall.id));
+  await expect(page.locator('[data-action="wall-upgrade:gold"]')).toBeDisabled();
+  const rings = page.getByRole('button', { name: 'Upgrade with 2 Wall Rings' });
+  await expect(rings).toBeEnabled();
+  await page.screenshot({ path: 'output/playtest/wall-ring-batch.png' });
+  await rings.tap();
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  expect(
+    await page.evaluate((ids) => {
+      const m = window.__game.model;
+      return {
+        levels: ids.map((id) => m.state.buildings.find((b) => b.id === id)!.level),
+        rings: m.magicItemCount('wall-ring'),
+        gold: m.state.gold,
+        elixir: m.state.elixir,
+      };
+    }, ids),
+  ).toEqual({ levels: [3, 3], rings: 0, gold: 0, elixir: 0 });
+});

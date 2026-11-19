@@ -9,6 +9,8 @@ Wall selection now supports connected straight rows and groups of same-level wal
 - [Supercell’s June 26, 2022 announcement](https://supercell.com/en/games/clashofclans/blog/news/home-village-changes-2/) unlocks elixir Wall upgrades at TH5. The modern Wall table starts elixir at destination level 5, so each selected piece must already be at least level 4. This supersedes the wiki’s stale row-upgrade prose. Mixed rows containing a lower-level wall offer gold until that wall reaches level 4.
 - Supercell's [August 30, 2026 update](https://supercell.com/en/games/clashofclans/blog/release-notes/august-update-3/) specifically removes the free-builder requirement for **Wall Rings**. It does not make ordinary gold/elixir upgrades builder-free. The [Wall Ring action](MAGIC-ITEMS.md) follows that exception and works with every builder occupied.
 
+- [Supercell's March 2025 update](https://supercell.com/en/games/clashofclans/blog/release-notes/welcome-to-clash-anytime-update/) includes Wall Ring inventory in the Wall Upgrader's selection budget. Rings can fund a same-level selection and pay the full ring price for a batch, including eligible pieces of a connected row. Each wall's charge is rounded separately.
+
 Sources checked September 11, 2026; the community wall pages were available through indexed excerpts. Current prices and health read [the native Wall rows](../src/game/wall-stats.ts), with count limits in [the tier catalog](TOWNHALL-TIERS.md); new placement is free. The initial eight-level audit is preserved in [Wall progression](WALL-PROGRESSION.md). Eight original level sprites are documented in [WALL-ART.md](WALL-ART.md).
 
 ## Purchase and selection rules

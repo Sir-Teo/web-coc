@@ -1601,6 +1601,9 @@ export class HUD {
       case 'wall-ring':
         m.useWallRing(Number(arg));
         break;
+      case 'wall-ring-group':
+        m.useWallRings(m.selectedWalls.map((wall) => wall.id));
+        break;
       case 'super-potion':
         m.useSuperPotion(arg as TroopKind);
         this.render();
@@ -3378,14 +3381,16 @@ export class HUD {
       <div class="wall-move-actions">${button('cancel', `${icon('X', 18)} Cancel`, 'game-btn stone')}${button('wall-rotate', `${icon('RotateCw', 18)} Rotate`, 'game-btn blue', 'aria-label="Rotate wall row 90 degrees"')}${button('wall-place', `${icon('Check', 18)} Place`, 'game-btn green', issue ? 'disabled' : '')}</div>
     </section>`;
   }
-  /** One wall's Wall Ring upgrade, when rings are held. */
+  /** The selected walls' Wall Ring upgrade, when rings are held. */
   private ringButton(walls: readonly Building[]) {
     const m = this.model,
       held = m.magicItemCount('wall-ring');
-    const rings = walls.length === 1 ? m.wallRingsFor(walls[0].id) : undefined;
-    if (m.editing || !held || rings === undefined) return '';
+    if (m.editing || !held) return '';
+    const quote = m.wallRingQuote(walls.map((wall) => wall.id));
+    if (!quote) return '';
+    const { rings } = quote;
     return button(
-      `wall-ring:${walls[0].id}`,
+      walls.length === 1 ? `wall-ring:${walls[0].id}` : 'wall-ring-group',
       `<span>${icon('Circle', 18)} Ring</span><small>${rings} of ${held} Wall Rings</small>`,
       'game-btn blue',
       `${held < rings ? 'disabled' : ''} aria-label="Upgrade with ${rings} Wall ${rings === 1 ? 'Ring' : 'Rings'}"`,
@@ -3423,7 +3428,7 @@ export class HUD {
         ? `Requires Town Hall ${requiredTownHall('wall', low + 1)} for the next level.`
         : 'Maximum wall level reached.'
       : m.busy >= m.builders
-        ? 'A free builder is needed. Walls finish instantly.'
+        ? 'Gold and Elixir upgrades need a free builder.'
         : gold.skipped
           ? `${gold.walls.length} of ${walls.length} walls can upgrade; capped or unfinished walls stay as they are.`
           : 'Instant upgrade · Requires one free builder';

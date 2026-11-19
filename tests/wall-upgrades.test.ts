@@ -61,6 +61,29 @@ describe('wall selection and instant upgrades', () => {
     expect(m.selectedWalls).toEqual([]);
   });
 
+  it('selects and upgrades multiple walls with Wall Rings and busy builders', () => {
+    const m = village();
+    const walls = m.state.buildings.filter((b) => b.kind === 'wall');
+    const anchor = walls[0];
+    m.selected = anchor.id;
+    m.state.gold = m.state.elixir = 0;
+    for (const cannon of m.state.buildings.filter((b) => b.kind === 'cannon'))
+      cannon.upgradeEnd = m.clock + 3600000;
+    m.addMagicItem('wall-ring', 2);
+    expect(m.adjustWallSelection(1)).toBe(true);
+    expect(m.adjustWallSelection(1)).toBe(false);
+    const ids = m.selectedWalls.map((wall) => wall.id);
+    expect(m.busy).toBe(m.builders);
+    expect(m.useWallRings([...ids, ids[0]])).toBe(false);
+    expect(m.useWallRings([...ids, m.townhall!.id])).toBe(false);
+    expect(m.useWallRings([...ids, walls.find((b) => !ids.includes(b.id))!.id])).toBe(false);
+    expect(m.magicItemCount('wall-ring')).toBe(2);
+    expect(m.useWallRings(ids)).toBe(true);
+    expect(m.selectedWalls.map((wall) => wall.level)).toEqual([3, 3]);
+    expect(m.magicItemCount('wall-ring')).toBe(0);
+    expect(m.state.gold + m.state.elixir).toBe(0);
+  });
+
   it('charges a whole mixed row once, upgrades eligible pieces, and persists without a timer', () => {
     const m = village();
     const walls = m.state.buildings.filter((b) => b.kind === 'wall').slice(0, 3);
