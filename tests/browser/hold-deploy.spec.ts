@@ -329,12 +329,23 @@ test.describe('phone campaign preparation', () => {
     await page.locator('.attack-btn').tap();
     const prepare = page.getByRole('button', { name: 'Prepare army', exact: true });
     await expect(prepare).toBeVisible();
+    const list = page.locator('.campaign-list');
+    const priorScroll = await list.evaluate((element) => {
+      element.scrollTop = 500;
+      return element.scrollTop;
+    });
+    expect(priorScroll).toBeGreaterThan(0);
     await prepare.tap();
     const train = page.locator('[data-action="train:swordsman"]').first();
     await expect(train).toBeEnabled();
+    await page.keyboard.press('Escape');
+    await expect(list).toBeVisible();
+    expect(await list.evaluate((element) => element.scrollTop)).toBe(priorScroll);
+    await prepare.tap();
     await train.tap();
     await page.locator('[data-action="close-drawer"]').tap();
-    await page.locator('.attack-btn').tap();
+    await expect(list).toBeVisible();
+    expect(await list.evaluate((element) => element.scrollTop)).toBe(priorScroll);
     await expect(prepare).toHaveCount(0);
     await page.locator('[data-action="attack:0"]').tap();
     await page.waitForFunction(() => !window.__game.scene.battleArtPending());

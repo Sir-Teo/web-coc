@@ -750,6 +750,7 @@ export class HUD {
   private root: HTMLElement;
   private panel: Panel = null;
   private drawerPanel: Drawer = null;
+  private campaignArmyReturn?: { focus: FocusMark | null };
   private tab = 'All';
   /** The decoration whose Stash the context card is asking to confirm. */
   private stashConfirm: number | null = null;
@@ -1260,15 +1261,30 @@ export class HUD {
     }
     this.restoreFocus();
   }
-  private showDrawer(drawer: Drawer) {
+  private showDrawer(drawer: Drawer, fromCampaign = false) {
+    if (this.drawerPanel === drawer) {
+      this.closeDrawer();
+      return;
+    }
+    if (fromCampaign) this.rememberCampaign();
+    this.campaignArmyReturn = fromCampaign ? { focus: this.focusBefore } : undefined;
     // Remember the launcher (the Train or Shop button) so closing the sheet can return to it.
     if (!this.drawerPanel)
       this.drawerLauncher = focusMark(this.actionSource ?? document.activeElement);
-    this.drawerPanel = this.drawerPanel === drawer ? null : drawer;
+    this.drawerPanel = drawer;
     this.panel = null;
     this.drawerBefore = null;
     if (this.drawerPanel) this.model.cancel();
     this.render();
+  }
+  private closeDrawer() {
+    const campaign = this.drawerPanel === 'army' ? this.campaignArmyReturn : undefined;
+    this.campaignArmyReturn = undefined;
+    this.drawerPanel = null;
+    if (campaign && !this.model.battle) {
+      this.show('campaign');
+      this.focusBefore = campaign.focus;
+    } else this.render();
   }
   private restoreFocus() {
     restoreFocusMark(this.focusBefore);
@@ -1538,8 +1554,7 @@ export class HUD {
         m.finishObstacleRemoval(Number(arg));
         break;
       case 'close-drawer':
-        this.drawerPanel = null;
-        this.render();
+        this.closeDrawer();
         break;
       case 'heroes':
         this.show('heroes');
@@ -1834,6 +1849,9 @@ export class HUD {
         break;
       case 'army':
         this.showDrawer('army');
+        break;
+      case 'campaign-army':
+        this.showDrawer('army', true);
         break;
       case 'builders':
         this.show('builders');
@@ -2596,8 +2614,7 @@ export class HUD {
       if (this.panel) {
         this.closePanel();
       } else if (this.drawerPanel) {
-        this.drawerPanel = null;
-        this.render();
+        this.closeDrawer();
       } else if (this.model.wallMove) this.model.cancel();
       else if (this.model.editing) this.action('edit-done');
       else this.model.cancel();
@@ -5341,7 +5358,7 @@ export class HUD {
     const armyReady = this.model.armyReady;
     const prepare = armyReady
       ? ''
-      : button('army', `${icon('Tent', 17)} Prepare army`, 'game-btn green');
+      : button('campaign-army', `${icon('Tent', 17)} Prepare army`, 'game-btn green');
     return `<div class="campaign-summary">${prepare}${button('practice', `${icon('ShieldCheck', 17)} Practice your defense`, 'game-btn blue', armyReady ? '' : 'disabled')}${button('ladder', `${icon('Trophy', 17)} Ladder match <small>+${ladder.win} / −${ladder.loss}</small>`, 'game-btn orange', `${armyReady ? '' : 'disabled'} aria-label="Ladder match: win up to ${ladder.win} trophies, lose ${ladder.loss}"`)}${icon('Map', 23)} <span>${NATIVE_CAMPAIGN.length} villages · ${forged} fan-made</span><b>${stars.reduce((a, b) => a + b, 0)} / ${NATIVE_CAMPAIGN.length * 3} ${icon('Star', 17)}</b></div><div class="campaign-nav">${next === null ? '' : button('campaign-continue', `${icon('ArrowRight', 17)} Continue · ${html(NATIVE_CAMPAIGN[next].name)}`, 'game-btn orange')}<select id="campaign-filter" aria-label="Show villages">${option('all', 'All villages')}${option('open', 'Not yet won')}${option('stars', 'Missing stars')}${option('done', 'Three stars')}</select><select id="campaign-section" aria-label="Jump to">${'<option value="">Jump to…</option>'}${sections.map(([family, i]) => `<option value="${i}">${sectionName[family]} · ${NATIVE_CAMPAIGN[i].stage}+</option>`).join('')}</select></div><p class="campaign-rules">Campaign villages: no time limit · no trophy changes · loot does not replenish</p><div class="modal-body campaign-list">${NATIVE_CAMPAIGN.map(
       (v, i) => {
         if (!shown(i)) return '';
