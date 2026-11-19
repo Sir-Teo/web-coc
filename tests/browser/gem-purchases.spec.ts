@@ -66,3 +66,71 @@ test('declining the offer keeps the gems, and a short gem balance cannot buy', a
   await expect(page.locator('#modal-title')).toBeHidden();
   expect(await page.evaluate(() => window.__game.model.shortfall)).toBeNull();
 });
+
+test('a Builder suggestion charges its displayed gems once and persists one upgrade', async ({
+  page,
+}, info) => {
+  await page.goto('/?lazyart');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  await page.locator('[data-action="skip-tutorial"]').tap();
+  const target = await page.evaluate(() => {
+    const m = window.__game.model;
+    m.townhall!.level = 5;
+    m.state.gold = 100;
+    m.state.gems = 500;
+    const [cannon, ...others] = m.state.buildings.filter((b) => b.kind === 'cannon');
+    cannon.level = 1;
+    for (const other of others) other.level = 2;
+    m.changed();
+    return { id: cannon.id, missing: m.upgradeCost(cannon) - m.state.gold };
+  });
+  const read = () =>
+    page.evaluate((id) => {
+      const m = window.__game.model;
+      const cannon = m.state.buildings.find((b) => b.id === id)!;
+      return {
+        gold: m.state.gold,
+        gems: m.state.gems,
+        end: cannon.upgradeEnd,
+        level: cannon.level,
+        busy: m.busy,
+      };
+    }, target.id);
+  const counter = page.locator('.status-chips [data-action="builders"]');
+  const offer = () => page.locator('.shortfall-body');
+  const openOffer = async () => {
+    await counter.tap();
+    await page.locator('[data-action="builder-option:cannon,1"]').tap();
+    const id = await page.evaluate(() => window.__game.model.selected);
+    await page.locator(`[data-action="upgrade:${id}"]`).tap();
+    await expect(offer()).toBeVisible();
+    return id;
+  };
+  const before = await read();
+  await openOffer();
+  await expect(offer()).toContainText(`Buy the missing ${target.missing.toLocaleString()} Gold?`);
+  await offer().getByRole('button', { name: 'Cancel' }).tap();
+  await expect(offer()).toHaveCount(0);
+  expect(await read()).toEqual(before);
+
+  expect(await openOffer()).toBe(target.id);
+  const buy = offer().locator('[data-action="shortfall-buy"]');
+  const displayed = Number((await buy.innerText()).replaceAll(',', '').trim());
+  expect(displayed).toBeGreaterThan(0);
+  const box = (await buy.boundingBox())!;
+  await page.screenshot({ path: info.outputPath('builder-shortfall.png'), animations: 'disabled' });
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  await page.touchscreen.tap(x, y);
+  await page.touchscreen.tap(x, y);
+  await expect(offer()).toHaveCount(0);
+  const started = await read();
+  expect(started).toMatchObject({ gems: before.gems - displayed, gold: 0, level: 1, busy: 1 });
+  expect(started.end).toBeDefined();
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  expect(await read()).toEqual(started);
+  await counter.tap();
+  await expect(page.locator('.builder-menu .working')).toHaveCount(1);
+  await expect(page.locator(`.working[data-action="select-building:${target.id}"]`)).toBeVisible();
+});

@@ -248,3 +248,55 @@ test('trees grow at home during an attack and appear only when returning home', 
     ),
   ).toBe(true);
 });
+
+test('phone tree clearing can open the in-game Elixir shortfall offer', async ({ page }, info) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForFunction(() => window.__game.scene.cameras.main.width === 390);
+  await page.clock.setFixedTime(await page.evaluate(() => Date.now()));
+  const fixture = await page.evaluate(() => {
+    const m = window.__game.model;
+    m.state.elixir = 750;
+    m.state.gems = 500;
+    m.changed();
+    return { id: m.obstacles.find((o) => o.x === 24)!.id, busy: m.busy };
+  });
+  const read = () =>
+    page.evaluate((id) => {
+      const m = window.__game.model;
+      const tree = m.obstacles.find((o) => o.id === id);
+      return {
+        elixir: m.state.elixir,
+        gems: m.state.gems,
+        busy: m.busy,
+        end: tree?.removeEnd,
+        present: !!tree,
+      };
+    }, fixture.id);
+  await selectTree(page, fixture.id);
+  const remove = page.locator(`[data-action="obstacle-remove:${fixture.id}"]`);
+  await expect(remove).toBeEnabled();
+  await remove.tap();
+  const offer = page.locator('.shortfall-body');
+  await expect(offer).toContainText('Buy the missing 1,250 Elixir?');
+  const buy = offer.locator('[data-action="shortfall-buy"]');
+  const gems = Number((await buy.innerText()).trim());
+  expect(gems).toBeGreaterThan(0);
+  await page.screenshot({ path: info.outputPath('tree-shortfall.png'), animations: 'disabled' });
+  await buy.tap();
+  const clearing = await read();
+  expect(clearing).toMatchObject({
+    elixir: 0,
+    gems: 500 - gems,
+    busy: fixture.busy,
+    present: true,
+  });
+  expect(clearing.end).toBeDefined();
+  await page.reload();
+  await page.waitForFunction(() => window.__game.scene.artSettled);
+  expect(await read()).toEqual(clearing);
+  await page.goto('about:blank');
+  await page.clock.setFixedTime(clearing.end! + 1);
+  await page.goto('/');
+  await page.waitForFunction(() => window.__game.scene.artSettled);
+  expect(await read()).toMatchObject({ elixir: 0, busy: fixture.busy, present: false });
+});
