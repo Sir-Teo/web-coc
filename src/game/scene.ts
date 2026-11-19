@@ -703,7 +703,15 @@ export class VillageScene extends Phaser.Scene {
   private renderedReplay: GameModel['replay'] = null;
   private lastRevision = -1;
   private cannonArtSeen = 0;
-  private down?: { x: number; y: number; cx: number; cy: number; t: number; id: number | null };
+  private down?: {
+    x: number;
+    y: number;
+    cx: number;
+    cy: number;
+    t: number;
+    id: number | null;
+    artBlocked: boolean;
+  };
   private dragged = false;
   /** Which role the current pointer gesture has committed to. */
   private gesture: 'none' | 'pan' | 'deploy' | 'drag-building' | 'drag-wall' = 'none';
@@ -1366,6 +1374,7 @@ export class VillageScene extends Phaser.Scene {
         cy: this.cameras.main.scrollY,
         t: performance.now(),
         id: held?.id ?? null,
+        artBlocked: !!this.model.battle && this.battleArtPending(),
       };
       this.dragged = false;
       this.gesture = 'none';
@@ -1469,6 +1478,11 @@ export class VillageScene extends Phaser.Scene {
       )
         return;
       if (this.dragged || gesture !== 'none') return;
+      // The art gate opening must not turn an earlier press into a deployment.
+      if (down.artBlocked) {
+        if (this.battleArtPending()) this.model.notify(this.battleArtWaitMessage());
+        return;
+      }
       this.tap(p);
     };
     this.input.on('pointerup', onPointerUp);
@@ -2748,6 +2762,7 @@ export class VillageScene extends Phaser.Scene {
     const b = this.model.battle;
     return (
       !!b &&
+      !this.down?.artBlocked &&
       !this.model.replay &&
       !b.finished &&
       !this.model.placement &&
