@@ -3879,6 +3879,18 @@ export class GameModel {
   trainingTime(_kind: TroopKind) {
     return 0;
   }
+  superBoostCapacityIssue(kind: TroopKind) {
+    const limit = nativeGlobal('MAX_ACTIVE_SUPER_LICENCES');
+    const active = Object.values(this.state.superBoosts ?? {}).filter((end) => end! > this.clock);
+    if (active.length >= limit) return 'Two Super Troop boosts are already active.';
+    const prepared = new Set(
+      TROOP_KEYS.filter((troop) => superOriginal(troop) && this.state.army[troop] > 0),
+    );
+    for (const { kind: troop } of this.state.queue) if (superOriginal(troop)) prepared.add(troop);
+    return prepared.size >= limit && !prepared.has(kind)
+      ? 'Use or remove one of your prepared Super Troop types before boosting another.'
+      : null;
+  }
   boostSuperTroop(kind: TroopKind) {
     if (this.battle) return;
     const row = superLicence(kind),
@@ -3890,8 +3902,8 @@ export class GameModel {
       );
     const now = this.clock;
     if ((this.state.superBoosts?.[kind] ?? 0) > now) return;
-    if (Object.values(this.state.superBoosts ?? {}).filter((end) => end! > now).length >= 2)
-      return this.notify('Two super troop boosts are already active.');
+    const capacityIssue = this.superBoostCapacityIssue(kind);
+    if (capacityIssue) return this.notify(capacityIssue);
     const cost = Number(row.ResourceCost);
     if (!this.itemCoversCost && this.state.dark < cost)
       return this.lacking('dark', cost, 'Not enough dark elixir.', () => {

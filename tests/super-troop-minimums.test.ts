@@ -123,3 +123,24 @@ it('cancels one active boost without a refund and clears only its prepared troop
   m.boostSuperTroop('sneakygoblin');
   expect(m.troopUnlocked('sneakygoblin')).toBe(true);
 });
+
+it('uses prepared and queued Super Troop types to gate a new boost after expiry', () => {
+  const m = village('minion', 8);
+  m.state.troopLevels!.balloon = 8;
+  m.state.troopLevels!.goblin = 7;
+  m.boostSuperTroop('superminion');
+  m.train('superminion');
+  m.tick(m.state.superBoosts!.superminion! + 1);
+  m.state.queue.push({ kind: 'rocketballoon', end: m.clock + 60000 });
+  m.addMagicItem('super-potion', 1);
+
+  const before = JSON.stringify(m.state);
+  m.boostSuperTroop('sneakygoblin');
+  expect(m.useSuperPotion('sneakygoblin')).toBe(false);
+  expect(JSON.stringify(m.state)).toBe(before);
+  m.boostSuperTroop('superminion');
+  expect(m.troopUnlocked('superminion')).toBe(true);
+  m.removeTroop('superminion', Infinity);
+  expect(m.useSuperPotion('sneakygoblin')).toBe(true);
+  expect(m.troopUnlocked('sneakygoblin')).toBe(true);
+});

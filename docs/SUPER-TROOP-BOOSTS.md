@@ -46,6 +46,12 @@ errors use the same check. A missing or expired Super Minion boost now says
 Clock expiry refreshes the controls while retaining prepared troops. Ordinary
 facility requirements continue to name their correct Barracks or Dark Barracks.
 
+The pinned `MAX_ACTIVE_SUPER_LICENCES` is two. The retained Super Troop
+reference also describes a separate check on the types in the camps and
+queue. If those already contain two different Super Troop types, both
+activation methods block a third type until one is used or removed. A player
+can still reboost a type already prepared if an active boost slot is free.
+
 The Army panel lets players cancel an active boost after confirming that it
 will remove that type's prepared troops. Cancellation frees the boost slot,
 clears that type from the camps and queue, and returns neither Dark Elixir nor

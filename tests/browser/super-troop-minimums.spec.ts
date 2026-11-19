@@ -104,6 +104,23 @@ for (const c of [
         await expect(tile.locator(`[data-army-count="troop:${c.kind}"]`)).toHaveText('0');
         await expect(tile.locator(`[data-action="train:${c.kind}"]`)).toBeDisabled();
         expect(await page.evaluate(() => window.__game.model.state.dark)).toBe(75000);
+        await page.evaluate(() => {
+          const m = window.__game.model;
+          m.state.army.rocketballoon = 1;
+          m.state.army.sneakygoblin = 1;
+          m.changed();
+        });
+        await expect(currency).toBeDisabled();
+        await expect(potion).toBeDisabled();
+        await expect(tile).toContainText('Use or remove one of your prepared Super Troop types');
+        await page.screenshot({ path: 'output/playtest/super-boost-prepared-limit.png' });
+        await page.locator('#army-search').fill('Sneaky Goblin');
+        await page.locator('[data-action="remove-troop:sneakygoblin"]').click();
+        await page.locator('#army-search').fill(c.name);
+        await expect(currency).toBeEnabled();
+        await expect(potion).toBeEnabled();
+        await currency.click();
+        await expect(tile.locator('.boost-left')).toContainText('Boosted');
       }
       expect(errors).toEqual([]);
     });
