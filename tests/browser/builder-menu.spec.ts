@@ -65,3 +65,94 @@ test('the builder counter opens the builder menu, whose suggestions show each bu
     true,
   );
 });
+
+test('a Gear Up keeps its own job label through reload and frees the builder for construction', async ({
+  page,
+}, info) => {
+  const before = await page.evaluate(() => {
+    const m = window.__game.model;
+    m.townhall!.level = 8;
+    m.state.gold = 2_000_000;
+    const cannon = m.state.buildings.find((b) => b.kind === 'cannon')!;
+    cannon.level = 7;
+    m.changed();
+    return { id: cannon.id, gold: m.state.gold };
+  });
+  const menu = page.locator('.builder-menu');
+  const counter = page.locator('.status-chips [data-action="builders"]');
+  await counter.tap();
+  await menu.locator('[data-action="builder-option:cannon,7"]').tap();
+  await page.locator(`[data-action="gear-up:${before.id}"]`).tap();
+  const state = () =>
+    page.evaluate((id) => {
+      const m = window.__game.model;
+      const b = m.state.buildings.find((row) => row.id === id)!;
+      return {
+        level: b.level,
+        upgrading: b.improving,
+        geared: !!b.geared,
+        end: b.upgradeEnd,
+        gold: m.state.gold,
+        busy: m.busy,
+        xp: m.state.xp,
+      };
+    }, before.id);
+  const pending = await state();
+  expect(pending).toMatchObject({
+    level: 7,
+    upgrading: 'gearup',
+    geared: false,
+    gold: before.gold - 1_000_000,
+    busy: 1,
+  });
+  expect(pending.end).toBeDefined();
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  expect(await state()).toEqual(pending);
+  await counter.tap();
+  const job = menu.locator('.working');
+  await expect(job).toContainText('Cannon');
+  await expect(job).toContainText('Gear Up');
+  await page.screenshot({ path: info.outputPath('builder-gear-up.png') });
+  await job.tap();
+  await expect(page.locator(`[data-action="finish:${before.id}"]`)).toBeVisible();
+
+  await page.goto('about:blank');
+  await page.clock.setFixedTime(pending.end! + 1);
+  await page.goto('/');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  const completed = await state();
+  expect(completed).toMatchObject({ level: 7, geared: true, gold: pending.gold, busy: 0 });
+  expect(completed.end).toBeUndefined();
+  expect(completed.xp).toBeGreaterThan(pending.xp);
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  expect(await state()).toEqual(completed);
+
+  await counter.tap();
+  await expect(menu.locator('.working')).toHaveCount(0);
+  await menu.locator('[data-action="builder-option:mortar,0"]').tap();
+  await page.locator('[data-action="build:mortar"]').tap();
+  const point = await page.evaluate(() => {
+    const { model, scene } = window.__game;
+    for (let y = 3; y < 42; y++)
+      for (let x = 3; x < 42; x++) {
+        if (!model.canPlace('mortar', x, y)) continue;
+        const point = scene.screenFor(x + 0.5, y + 0.5);
+        if (document.elementFromPoint(point.x, point.y) === scene.game.canvas) return point;
+      }
+    throw Error('No visible valid construction site');
+  });
+  await page.touchscreen.tap(point.x, point.y);
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const m = window.__game.model;
+        return {
+          constructing: m.state.buildings.some((b) => b.kind === 'mortar' && b.constructing),
+          busy: m.busy,
+        };
+      }),
+    )
+    .toEqual({ constructing: true, busy: 1 });
+});

@@ -1,8 +1,9 @@
 import catalog from '../../reference/builder-menu/catalog.json' with { type: 'json' };
+import { craftedModules } from './crafted-defenses';
 import { BUILDINGS, buildPrice, needsBuilder, type BuildingKind } from './data';
 import { isMergedKind } from './native-merges';
 import { HERO_SOURCE, type HeroKind } from './native-hero-data';
-import type { GameModel } from './model';
+import type { Building, GameModel } from './model';
 
 /**
  * The builder menu, the list the original opens from its builder counter: what the builders are
@@ -33,6 +34,28 @@ export const BUILDER_MENU_TEXTS = catalog.texts;
 /** How many affordable options the menu suggests; the rest are "Other upgrades". */
 export const SUGGESTED = 5;
 
+function buildingJobDetail(b: Building) {
+  if (b.constructing) return 'Construction';
+  switch (b.improving) {
+    case 'gearup':
+      return 'Gear Up';
+    case 'weapon':
+      return `Weapon level ${(b.weaponLevel ?? 1) + 1}`;
+    case 'guardian':
+      return `Guardian level ${(b.guardianLevel ?? 1) + 1}`;
+    case 'supercharge':
+      return `Supercharge ${(b.supercharge ?? 0) + 1}`;
+    case 'module': {
+      const job = b.moduleUpgrade;
+      if (!job) return 'Module upgrade';
+      const level = b.craftedModules?.[job.kind]?.[job.module] ?? 1;
+      return `${craftedModules(job.kind)[job.module].name} level ${level + 1}`;
+    }
+    default:
+      return `Level ${b.level + 1}`;
+  }
+}
+
 export function builderMenu(m: GameModel) {
   const jobs: BuilderJob[] = [];
   for (const b of m.state.buildings)
@@ -40,7 +63,7 @@ export function builderMenu(m: GameModel) {
       jobs.push({
         id: b.id,
         name: BUILDINGS[b.kind].name,
-        detail: b.constructing ? 'Construction' : `Level ${b.level + 1}`,
+        detail: buildingJobDetail(b),
         end: b.upgradeEnd,
       });
   const heroes: [HeroKind, { level: number; upgradeEnd?: number } | undefined][] = [

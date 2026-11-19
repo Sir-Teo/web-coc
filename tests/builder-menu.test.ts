@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GameModel } from '../src/game/model';
+import { GameModel, makeBuilding, type Building } from '../src/game/model';
 import { BUILDER_MENU_TEXTS, SUGGESTED, builderMenu } from '../src/game/builder-menu';
 import { BUILDINGS } from '../src/game/data';
 
@@ -33,6 +33,27 @@ describe('builder menu', () => {
     const { jobs } = builderMenu(m);
     expect(jobs.map((j) => j.id)).toEqual([mine.id, cannon.id]);
     expect(jobs[1]).toMatchObject({ name: 'Cannon', detail: `Level ${cannon.level + 1}` });
+  });
+
+  const specialJobs: [Building['kind'], Partial<Building>, string][] = [
+    ['cannon', { level: 7, improving: 'gearup' }, 'Gear Up'],
+    ['townhall', { level: 17, improving: 'weapon', weaponLevel: 3 }, 'Weapon level 4'],
+    ['townhall', { level: 18, improving: 'guardian', guardianLevel: 2 }, 'Guardian level 3'],
+    ['cannon', { level: 21, improving: 'supercharge', supercharge: 1 }, 'Supercharge 2'],
+    [
+      'craftingstation',
+      { improving: 'module', moduleUpgrade: { kind: 'candle', module: 1 } },
+      'Damage level 2',
+    ],
+  ];
+  it.each(specialJobs)('labels the timed %s job %j as %s', (kind, fields, detail) => {
+    const m = village();
+    const b = m.state.buildings.find((row) => row.kind === kind) ?? makeBuilding(999, kind, 30, 30);
+    if (!m.state.buildings.includes(b)) m.state.buildings.push(b);
+    Object.assign(b, fields, { upgradeEnd: m.clock + 1000 });
+    expect(builderMenu(m).jobs).toEqual([
+      { id: b.id, name: BUILDINGS[kind].name, detail, end: b.upgradeEnd },
+    ]);
   });
 
   it('suggests the cheapest affordable upgrades and groups buildings of a kind and level', () => {
