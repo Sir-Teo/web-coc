@@ -703,3 +703,95 @@ test('a phone restores a hidden raid from the synchronous backup alone', async (
     await restored.close();
   }
 });
+
+test('a hidden raid writes its backup while an older IndexedDB save is queued', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const outcome = await page.evaluate(async () => {
+    const { model, game } = window.__game;
+    const { BUILDINGS } = await import('/src/game/data.ts');
+    const { loadSave } = await import('/src/game/save.ts');
+    game.loop.sleep();
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('crown-and-clan', 1);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    // Keep a real readwrite transaction open so the app's subsequent writes queue behind it.
+    const blocker = db.transaction('saves', 'readwrite');
+    const store = blocker.objectStore('saves');
+    let hold = true;
+    let released = false;
+    const release = new Promise<void>((resolve, reject) => {
+      blocker.oncomplete = () => {
+        released = true;
+        resolve();
+      };
+      blocker.onabort = () => reject(blocker.error);
+    });
+    const keepOpen = (resolve: () => void) => {
+      store.get('village').onsuccess = () => {
+        if (hold) keepOpen(() => {});
+        resolve();
+      };
+    };
+    await new Promise<void>(keepOpen);
+    const visible = (shown: boolean) => {
+      Object.defineProperty(document, 'hidden', { value: !shown, configurable: true });
+      document.dispatchEvent(new Event('visibilitychange'));
+    };
+    const readBackup = () => JSON.parse(localStorage.getItem('crown-clan-save-v1')!);
+    let checkpoint;
+    let completed;
+    let older;
+    let beforeRelease;
+    let expectedGold;
+    try {
+      model.state.gold = 0;
+      model.state.spells.lightning = 1;
+      model.changed();
+      visible(false);
+      older = readBackup();
+      visible(true);
+      model.startBattle(0);
+      model.activeSpell = 'lightning';
+      const mine = model.battle!.buildings.find((building) => building.kind === 'goldmine')!;
+      const center = BUILDINGS[mine.kind].size / 2;
+      if (!model.castSpell(mine.x + center, mine.y + center))
+        throw Error('Lightning did not deploy');
+      for (let i = 0; i < 40; i++) model.step(0.05);
+      expectedGold = model.state.gold + model.battle!.lootTaken!.gold;
+      visible(false);
+      checkpoint = readBackup();
+
+      visible(true);
+      model.step(0.1);
+      model.finishBattle();
+      visible(false);
+      completed = readBackup();
+      beforeRelease = !released;
+    } finally {
+      hold = false;
+      await release;
+      db.close();
+    }
+    const loaded = await loadSave();
+    return { older, checkpoint, completed, beforeRelease, expectedGold, loaded };
+  });
+
+  expect(outcome.beforeRelease).toBe(true);
+  expect(outcome.checkpoint.saveRevision).toBeGreaterThan(outcome.older.saveRevision);
+  expect(outcome.checkpoint.stats.raids).toBe(outcome.older.stats.raids + 1);
+  expect(outcome.expectedGold).toBeGreaterThan(outcome.older.gold);
+  expect(outcome.checkpoint.gold).toBe(outcome.expectedGold);
+  expect(outcome.checkpoint.raidLog[0].replay).toBeDefined();
+  expect(outcome.completed.saveRevision).toBeGreaterThan(outcome.checkpoint.saveRevision);
+  expect(outcome.completed.stats.raids).toBe(outcome.checkpoint.stats.raids);
+  expect(outcome.completed.gold).toBe(outcome.checkpoint.gold);
+  expect(outcome.completed.raidLog[0].replay.steps.length).toBeGreaterThan(
+    outcome.checkpoint.raidLog[0].replay.steps.length,
+  );
+  expect(outcome.loaded!.saveRevision).toBe(outcome.completed.saveRevision);
+  expect(outcome.loaded!.raidLog).toEqual(outcome.completed.raidLog);
+});

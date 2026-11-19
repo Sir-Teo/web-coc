@@ -140,22 +140,19 @@ async function boot() {
     let lastPersistAt = 0;
     /** Collector drift alone (no structural change) is written this often, not every 5 s. */
     const PASSIVE_SAVE_MS = 60_000;
-    let saving = false;
-    // A forced save (tab hidden) that arrives while a persist is in flight.
-    let pendingForce = false;
+    const savesInFlight = new Set<number>();
+    let lastAttemptedRevision = -1;
     const persist = async (force = false) => {
-      if (!ownsSession || lastSavedRevision === model.revision) return;
-      if (saving) {
-        // Never drop a forced save: a finished raid would be lost if the tab
-        // is evicted before the in-flight persist lands.
-        if (force) pendingForce = true;
-        return;
-      }
+      const revision = model.revision;
+      if (!ownsSession || lastSavedRevision === revision || savesInFlight.has(revision)) return;
+      // A hidden tab can be discarded before a queued transaction finishes.
+      // Forced saves must reach saveGame's synchronous backup immediately.
+      if (!force && savesInFlight.size) return;
       // Battles mutate revision every step and collectors bump it every second:
       // persist at most every 5s so the full stringify stays off the hot path.
       // During an attack or replay only transient battle state changes, so timed
       // saves wait for the battle to settle (see the economy timer); a forced persist
-      // (tab hidden, battle finished) skips both gates but keeps the in-flight guard.
+      // (tab hidden, battle finished) skips both gates.
       const now = Date.now();
       if (!force && (model.battle || model.replay)) return;
       if (!force && now - lastPersistAt < 5000) return;
@@ -164,26 +161,22 @@ async function boot() {
       const structural = model.structuralRevision;
       if (!force && structural === lastSavedStructural && now - lastPersistAt < PASSIVE_SAVE_MS)
         return;
-      saving = true;
+      // A failed write waits for the next window too, instead of retrying every second.
+      lastPersistAt = now;
+      lastAttemptedRevision = revision;
+      savesInFlight.add(revision);
       try {
-        const revision = model.revision;
         // A raid in progress has spent its deployed troops but settles only on pagehide, which a
         // discarded hidden tab may never fire. Store the raid settled at its current score; if
         // the player returns, the raid continues and its real result is saved over it.
         const ok = await saveGame(model.battle ? model.settledState() : model.state);
-        hud.setSaveState(ok);
-        // A failed write waits for the next window too, instead of retrying every second.
-        lastPersistAt = now;
-        if (ok) {
+        if (ownsSession && revision === lastAttemptedRevision) hud.setSaveState(ok);
+        if (ok && revision > lastSavedRevision) {
           lastSavedRevision = revision;
           lastSavedStructural = structural;
         }
       } finally {
-        saving = false;
-        if (pendingForce) {
-          pendingForce = false;
-          void persist(true);
-        }
+        savesInFlight.delete(revision);
       }
     };
     // 'none' | 'active' | 'finished': a finished raid's result and the return home
