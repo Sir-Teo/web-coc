@@ -539,6 +539,10 @@ test.describe('full deployment tray on touch', () => {
       )?.dataset.action;
     });
     expect(action).toBeTruthy();
+    // Keep this small campaign base from falling while the HUD assertions run.
+    await page.evaluate(() => {
+      window.__game.scene.paused = true;
+    });
     await tray.locator(`[data-action="${action}"]`).tap();
     const troop = action!.split(':')[1] as keyof typeof before.remaining;
     expect(await state()).toEqual({ ...before, troop });
@@ -550,5 +554,45 @@ test.describe('full deployment tray on touch', () => {
       started: true,
       remaining: { ...before.remaining, [troop]: before.remaining[troop] - 1 },
     });
+
+    const refresh = () =>
+      page.evaluate(async () => {
+        window.__game.model.changed();
+        await new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        );
+      });
+    const offset = () => tray.evaluate((el) => el.scrollLeft);
+    const card = tray.locator(`[data-action="${action}"]`);
+    const troopOffset = await offset();
+    await page.touchscreen.tap(target.x, target.y);
+    await expect(card).toBeDisabled();
+    const depleted = await state();
+    expect(depleted).toEqual({
+      ...before,
+      troop,
+      started: true,
+      remaining: { ...before.remaining, [troop]: 0 },
+    });
+    await refresh();
+    expect(await offset()).toBeCloseTo(troopOffset, 0);
+    expect(await state()).toEqual(depleted);
+
+    const heal = tray.locator('[data-action="spell:heal"]');
+    await heal.scrollIntoViewIfNeeded();
+    await heal.tap();
+    const spellOffset = await offset();
+    expect(spellOffset).toBeGreaterThan(troopOffset);
+    await page.touchscreen.tap(target.x, target.y);
+    await expect(heal).toBeDisabled();
+    const spent = await state();
+    expect(spent.troop).toBe(troop);
+    expect(spent.spell).toBe('rage');
+    await expect(tray.locator('[data-action="spell:rage"]')).toHaveClass(/selected/);
+    expect(spent.spells).toEqual({ ...depleted.spells, heal: 0 });
+    expect(spent.remaining).toEqual(depleted.remaining);
+    await refresh();
+    expect(await offset()).toBeCloseTo(spellOffset, 0);
+    expect(await state()).toEqual(spent);
   });
 });
