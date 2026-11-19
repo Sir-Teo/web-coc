@@ -35,3 +35,45 @@ test('training from a campaign scout returns to the same opponent', async ({ pag
     )
     .toEqual({ troops: 1, raids: 0 });
 });
+
+test('an empty army can prepare a campaign rematch from the Battle Log', async ({ page }, info) => {
+  await page.goto('/?lazyart');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  await page.locator('[data-action="skip-tutorial"]').tap();
+  await page.evaluate(async () => {
+    const { emptyArmy } = await import('/src/game/army.ts');
+    const m = window.__game.model;
+    m.state.army = { ...emptyArmy(), swordsman: 1 };
+    m.startCampaign(0);
+    m.activeTroop = 'swordsman';
+    if (!m.deploy(2, 2)) throw Error('Payback deployment refused');
+    m.finishBattle();
+  });
+  await page.locator('.result-modal [data-action="home"]').tap();
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  await page.locator('[data-action="battle-log"]').tap();
+  const record = page.locator('.raid-record').first();
+  await expect(record.getByRole('heading', { name: 'Payback' })).toBeVisible();
+  const retry = record.getByRole('button', { name: /Prepare army|Attack village/ });
+  await expect(retry).toBeEnabled();
+  await retry.tap();
+  const scout = page.locator('.campaign-scout');
+  await expect(scout.getByRole('heading', { name: 'Payback' })).toBeVisible();
+  await scout.getByRole('button', { name: 'Prepare army' }).tap();
+  await expect(page.locator('.drawer-sheet')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.__game.model.battle)).toBeNull();
+  await page.locator('[data-action="train:swordsman"]').tap();
+  await page.locator('[data-action="close-drawer"]').tap();
+  await scout.getByRole('button', { name: 'Attack', exact: true }).tap();
+  await expect(page.locator('.battle-enemy h2')).toHaveText('Payback');
+  await expect(page.locator('.prep-banner')).toBeVisible();
+  await page.screenshot({ path: info.outputPath('campaign-rematch-from-log.png') });
+  await page.locator('.end-battle[data-action="home"]').tap();
+  expect(
+    await page.evaluate(() => ({
+      army: window.__game.model.armySize,
+      records: window.__game.model.state.raidLog?.length,
+    })),
+  ).toEqual({ army: 1, records: 1 });
+});
