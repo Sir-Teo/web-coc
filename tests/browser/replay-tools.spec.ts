@@ -307,3 +307,55 @@ test('a restored recording remains watchable after overlapping browser saves', a
   await page.getByRole('button', { name: 'Watch replay' }).click();
   await expect(page.getByRole('slider', { name: 'Replay position' })).toBeVisible();
 });
+
+test.describe('replay navigation with touch', () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  test('resizing during a scrub discards the old position and allows a new seek', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(browserName !== 'chromium', 'Uses Chromium touch injection');
+    await page.getByRole('button', { name: 'Watch replay' }).tap();
+    const pause = page.getByRole('button', { name: 'Pause', exact: true });
+    if (await pause.isVisible()) await pause.tap();
+    const range = page.getByRole('slider', { name: 'Replay position' });
+    await range.focus();
+    await range.press('Home');
+    const time = () => page.evaluate(() => window.__game.model.replay!.time);
+    await expect.poll(time).toBe(0);
+
+    const cdp = await page.context().newCDPSession(page);
+    const old = (await range.boundingBox())!;
+    const touch = (type: string, x?: number, y?: number) =>
+      cdp.send('Input.dispatchTouchEvent', {
+        type,
+        touchPoints: x === undefined ? [] : [{ x, y, id: 1 }],
+      });
+    await touch('touchStart', old.x + 8, old.y + old.height / 2);
+    await touch('touchMove', old.x + old.width * 0.6, old.y + old.height / 2);
+    await expect.poll(async () => Number(await range.inputValue())).toBeGreaterThan(10);
+    expect(await time()).toBe(0);
+    expect(await page.evaluate(() => window.__game.model.replay!.seekTarget)).toBe(0);
+    await page.evaluate(() => {
+      window.addEventListener(
+        'resize',
+        () => {
+          document.body.dataset.replayResized = 'true';
+        },
+        { once: true },
+      );
+    });
+    await page.setViewportSize({ width: 844, height: 390 });
+    await expect(page.locator('body')).toHaveAttribute('data-replay-resized', 'true');
+    await touch('touchEnd');
+    await expect.poll(async () => Number(await range.inputValue())).toBe(0);
+    expect(await time()).toBe(0);
+
+    const current = (await range.boundingBox())!;
+    await page.touchscreen.tap(current.x + current.width * 0.5, current.y + current.height / 2);
+    await expect.poll(time).toBeGreaterThan(10);
+    await page.getByRole('button', { name: 'Back to log' }).tap();
+    await expect(page.getByRole('button', { name: 'Watch replay' })).toBeVisible();
+  });
+});

@@ -462,3 +462,93 @@ test.describe('phone viewport changes during raids', () => {
     expect(await stock()).toEqual({ troops: afterResize.troops - 1, spells: initial.spells - 1 });
   });
 });
+
+test.describe('full deployment tray on touch', () => {
+  test.use({ hasTouch: true, isMobile: true });
+
+  test('swipes scroll the full roster without changing selection or deploying', async ({
+    page,
+    browserName,
+  }, info) => {
+    test.skip(browserName !== 'chromium', 'Uses Chromium touch injection');
+    await startDeployment(page);
+    await page.evaluate(() => {
+      const { model } = window.__game;
+      const battle = model.battle!;
+      // Stress the tray with every roster entry in a disposable browser session.
+      for (const key of Object.keys(battle.carriedArmy) as (keyof typeof battle.carriedArmy)[])
+        battle.carriedArmy[key] = battle.remaining[key] = 2;
+      for (const key of Object.keys(battle.carried) as (keyof typeof battle.carried)[])
+        battle.carried[key] = battle.spells[key] = 1;
+      model.changed();
+    });
+    const state = () =>
+      page.evaluate(() => {
+        const { model } = window.__game;
+        return {
+          troop: model.activeTroop,
+          spell: model.activeSpell,
+          remaining: model.battle!.remaining,
+          spells: model.battle!.spells,
+          started: model.battle!.started,
+        };
+      });
+    const tray = page.locator('.deploy-tray .army-tray');
+    expect(await tray.locator('.troop-card').count()).toBeGreaterThan(20);
+    const cdp = await page.context().newCDPSession(page);
+    const swipe = async () => {
+      const box = (await tray.boundingBox())!;
+      const x = Math.round(box.x + box.width * 0.82);
+      const y = Math.round(box.y + box.height * 0.5);
+      const touch = (type: string, at: number) =>
+        cdp.send('Input.dispatchTouchEvent', {
+          type,
+          touchPoints: type === 'touchEnd' ? [] : [{ x: at, y, id: 1 }],
+        });
+      const before = await tray.evaluate((el) => el.scrollLeft);
+      await touch('touchStart', x);
+      for (let step = 1; step <= 8; step++)
+        await touch('touchMove', x - Math.round((box.width * 0.6 * step) / 8));
+      await touch('touchEnd', x);
+      await expect.poll(() => tray.evaluate((el) => el.scrollLeft)).toBeGreaterThan(before + 20);
+    };
+    const before = await state();
+    await swipe();
+    expect(await state()).toEqual(before);
+    await page.setViewportSize({ width: 844, height: 390 });
+    await page.waitForFunction(() => innerWidth === 844 && innerHeight === 390);
+    await swipe();
+    expect(await state()).toEqual(before);
+    await page.screenshot({
+      path: info.outputPath('full-tray-landscape.png'),
+      animations: 'disabled',
+    });
+
+    const action = await tray.evaluate((el) => {
+      const rect = el.getBoundingClientRect();
+      return [...el.querySelectorAll<HTMLButtonElement>('button[data-action^="troop:"]')].find(
+        (button) => {
+          const card = button.getBoundingClientRect();
+          return (
+            !button.disabled &&
+            card.left >= rect.left &&
+            card.right <= rect.right &&
+            button.dataset.action !== 'troop:swordsman'
+          );
+        },
+      )?.dataset.action;
+    });
+    expect(action).toBeTruthy();
+    await tray.locator(`[data-action="${action}"]`).tap();
+    const troop = action!.split(':')[1] as keyof typeof before.remaining;
+    expect(await state()).toEqual({ ...before, troop });
+    const target = await grassPoint(page);
+    await page.touchscreen.tap(target.x, target.y);
+    expect(await state()).toEqual({
+      ...before,
+      troop,
+      started: true,
+      remaining: { ...before.remaining, [troop]: before.remaining[troop] - 1 },
+    });
+  });
+});

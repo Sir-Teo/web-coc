@@ -910,10 +910,17 @@ export class HUD {
       },
       { signal },
     );
+    let scrubChanged = false;
     const finishScrub = (event?: PointerEvent) => {
       if (this.replayScrubPointer === null || (event && event.pointerId !== this.replayScrubPointer))
         return;
       this.replayScrubPointer = null;
+      const commit = scrubChanged && event?.type === 'pointerup';
+      scrubChanged = false;
+      if (commit) {
+        const progress = this.hudEl.querySelector<HTMLInputElement>('#replay-progress');
+        if (progress) this.model.seekReplay(Number(progress.value));
+      }
       this.scheduleRender();
     };
     document.addEventListener('pointerup', finishScrub, { signal });
@@ -949,6 +956,21 @@ export class HUD {
           this.resizedRepeatPointer = this.repeatPointer;
           this.stopRepeat();
         }
+        if (this.replayScrubPointer !== null) {
+          const progress = this.hudEl.querySelector<HTMLInputElement>('#replay-progress');
+          if (progress) {
+            // Detach the old range so its native drag cannot commit after it moves.
+            const focused = document.activeElement === progress;
+            const replacement = progress.cloneNode(true) as HTMLInputElement;
+            progress.replaceWith(replacement);
+            if (focused) replacement.focus({ preventScroll: true });
+            this.liveRefs = null;
+          }
+          this.pressedActions.delete(this.replayScrubPointer);
+          finishScrub();
+          this.replayInputAt = -Infinity;
+          this.updateLive();
+        }
         this.safeInsets = null;
         // The card's size and the HUD floor are measured again on the next frame.
         this.anchorCard = null;
@@ -963,7 +985,11 @@ export class HUD {
         const t = e.target as HTMLInputElement;
         if (t.id === 'import-file' && t.files?.[0]) void this.import(t.files[0]);
         if (t.id === 'import-replay-file' && t.files?.[0]) void this.importReplay(t.files[0]);
-        if (t.id === 'replay-progress') this.model.seekReplay(Number(t.value));
+        if (t.id === 'replay-progress') {
+          // Mobile range controls can emit change while a finger is still down.
+          if (this.replayScrubPointer !== null) scrubChanged = true;
+          else this.model.seekReplay(Number(t.value));
+        }
         if (t.id === 'effects-volume' || t.id === 'music-volume') this.model.changed();
       },
       { signal },
