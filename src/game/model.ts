@@ -3010,10 +3010,20 @@ export class GameModel {
       b.upgradeStart = this.clock;
       b.upgradeEnd = this.clock + d.build * 1000;
     }
+    // The coach points to Army after the first construction. Its control is only
+    // available while no building is selected.
+    const coachNeedsArmy =
+      kind !== 'wall' &&
+      !this.editing &&
+      !this.state.tutorial &&
+      (this.state.goblinRaidSeen || this.state.stats.raids > 0) &&
+      this.state.stats.collected > 0 &&
+      !this.state.stats.built &&
+      !this.state.stats.trained;
     this.state.buildings.push(b);
     if (kind !== 'wall') this.state.stats.built = (this.state.stats.built ?? 0) + 1;
     this.placement = null;
-    this.selected = b.id;
+    this.selected = coachNeedsArmy ? null : b.id;
     // Walls are laid in runs, so the tool stays in hand while another is affordable.
     if (
       kind === 'wall' &&

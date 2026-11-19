@@ -581,11 +581,14 @@ describe('second-pass behaviour', () => {
     m.train('archer', 2);
     expect(m.state.stats.trained).toBe(2);
     m.startBattle(0);
-    expect(m.battle!.carried).toEqual(m.state.lastSpells);
+    expect(m.battle!.carried).toEqual(m.state.spells);
+    expect(m.state.lastSpells).toBeUndefined();
     m.activeSpell = 'rage';
     m.castSpell(2, 2);
     expect(m.battle!.spells.rage).toBe(0);
     // Spent, but the slot it came from is still recorded for the tray.
     expect(m.battle!.carried.rage).toBe(1);
+    m.finishBattle();
+    expect(m.state.lastSpells).toEqual(m.battle!.carried);
   });
 });
