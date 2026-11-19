@@ -858,6 +858,8 @@ export interface Battle {
   nativeHeroPoisonSpeed?: true;
   /** Version 68: full native freezes carry a distinct visual deadline on defenders. */
   nativeDefenderFreezeCue?: true;
+  /** Version 250: a Freeze on a waiting Guardian delays its launch. */
+  nativeGuardianActivationFreeze?: true;
   /** Version 69: penetrating equipment damages each spawned defender directly once. */
   nativeEquipmentDashHits?: true;
   /** Version 69: defending heroes act only for the unfrozen/unstunned part of a step. */

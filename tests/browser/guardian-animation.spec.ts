@@ -100,3 +100,40 @@ for (const { kind, width, poison } of [
     expect(errors).toEqual([]);
   });
 }
+
+test('a phone replay shows a directly frozen Guardian waiting, then launching after thaw', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/?lazyart');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  await page.locator('[data-action="skip-tutorial"]').click();
+  await page.evaluate(async () => {
+    const { guardianFreezeBattle } = await import('/tests/fixtures/guardian-freeze.ts');
+    const { makeReplayFile, parseReplayFile } = await import('/src/game/replay-file.ts');
+    const fixture = guardianFreezeBattle();
+    fixture.until(5);
+    fixture.model.finishBattle();
+    const recording = fixture.model.state.raidLog![0].replay!;
+    const { model, scene } = window.__game;
+    scene.paused = true;
+    if (!model.openReplay(parseReplayFile(JSON.stringify(makeReplayFile(recording)))))
+      throw Error('Guardian Freeze replay rejected');
+    scene.sync();
+  });
+  await page.waitForFunction(() => !window.__game.scene.battleArtPending());
+  const phase = (at: number) =>
+    page.evaluate((at) => {
+      const { model, scene } = window.__game;
+      model.seekReplay(at);
+      while (model.replay!.seeking) model.step(0.05);
+      model.changed();
+      scene.sync();
+      scene.drawOverlay(0);
+      return model.battle!.defenders!.find((d) => d.kind === 'guardian')?.phase;
+    }, at);
+  expect(await phase(2)).toBe('waiting');
+  await page.screenshot({ path: 'output/playtest/guardian-frozen-phone.png' });
+  expect(await phase(4.1)).toBe('leaping');
+  expect(await phase(2)).toBe('waiting');
+});

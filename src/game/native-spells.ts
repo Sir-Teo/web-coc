@@ -425,6 +425,18 @@ function harmDefense(
   if (damage > 0 && !battle.nativeDefenderSpellRules)
     damageDefenders(battle, { x, y }, damage, radius, 'both');
   for (const d of battle.defenders ?? []) {
+    if (
+      battle.nativeGuardianActivationFreeze &&
+      cast.name === 'Freeze' &&
+      d.kind === 'guardian' &&
+      d.phase === 'waiting' &&
+      d.hp > 0 &&
+      !defenderSpellImmune(row, d) &&
+      distance2D(d.x - x, d.y - y) <= radius + 1e-9
+    ) {
+      d.frozenUntil = Math.max(d.frozenUntil ?? 0, at + freeze);
+      continue;
+    }
     // Defenders still inside their coffin or hut take nothing.
     if (d.hp <= 0 || d.spawnedAt > at + 1e-9) continue;
     if (distance2D(d.x - x, d.y - y) > radius + 1e-9) continue;

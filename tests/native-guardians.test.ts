@@ -5,6 +5,8 @@ import { emptyArmy, emptySpells } from '../src/game/army';
 import { guardianStats, guardianUpgrade, type GuardianKind } from '../src/game/native-guardians';
 import type { GuardianDefender } from '../src/game/defenders';
 import { validateSave } from '../src/game/save';
+import { guardianFreezeBattle } from './fixtures/guardian-freeze';
+import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 
 function arena(guardian: GuardianKind, level = 5, extra: Building[] = []) {
   const m = new GameModel();
@@ -70,6 +72,33 @@ describe('Town Hall 18 Guardians', () => {
     expect(g.phase).toBe('fighting');
     run(m, 3);
     expect(golem.maxHp - golem.hp).toBeGreaterThanOrEqual(810 - 1e-6);
+  });
+
+  it('waits through a direct Freeze and preserves historical activation in old replays', () => {
+    const current = guardianFreezeBattle();
+    current.until(2);
+    expect(current.guardian.phase).toBe('waiting');
+    expect(current.guardian.frozenUntil).toBeGreaterThan(2);
+    const frozen = JSON.parse(JSON.stringify(current.battle));
+    const frozenAt = current.battle.elapsed;
+    current.until(4.1);
+    expect(current.guardian.phase).toBe('leaping');
+    current.until(4.9);
+    expect(current.guardian.phase).toBe('fighting');
+    current.model.finishBattle();
+    const viewer = new GameModel();
+    const data = current.model.state.raidLog![0].replay!;
+    expect(viewer.openReplay(parseReplayFile(JSON.stringify(makeReplayFile(data))))).toBe(true);
+    for (const at of [frozenAt, 0, frozenAt]) {
+      viewer.seekReplay(at);
+      while (viewer.replay!.seeking) viewer.step(0.05);
+      if (at === frozenAt) expect(JSON.parse(JSON.stringify(viewer.battle))).toEqual(frozen);
+    }
+
+    const old = guardianFreezeBattle(249);
+    old.until(2);
+    expect(old.guardian.phase).toBe('leaping');
+    expect(old.guardian.frozenUntil).toBeUndefined();
   });
 
   it('enrages the Smasher when its Town Hall falls and releases Rage when it dies', () => {

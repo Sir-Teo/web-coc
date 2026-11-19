@@ -181,3 +181,12 @@ cases pass in Chromium and WebKit without failed asset requests, page errors or 
 
 World registration, particle motion and action-frame alignment remain local interpretations of
 the source data. These rendering checks do not establish native executable parity.
+
+## Freezing a waiting Guardian
+
+Replay version 250 lets a direct Freeze pulse covering the waiting Guardian
+delay its launch until thaw. The waiting body stays hidden from damage and
+other targeting. This uses the source spell's radius, timing and immunity
+rules and applies to the dormant phase. Version 249 and earlier keep their
+historical launch behavior. [Supercell's Sound of Clash update](https://supercell.com/en/games/clashofclans/blog/release-notes/the-sound-of-clash-update/)
+documents that a frozen Guardian cannot activate.

@@ -219,6 +219,7 @@ export function stepGuardian(ctx: NativeTroopContext, g: GuardianDefender, dt: n
   }
   const th = battle.buildings.find((b) => b.id === g.sourceId);
   if (g.phase === 'waiting') {
+    if (battle.nativeGuardianActivationFreeze && (g.frozenUntil ?? 0) > at + EPS) return;
     let trigger: Unit | undefined;
     let best = Infinity;
     let bestId = Infinity;

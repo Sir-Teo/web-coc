@@ -46,3 +46,14 @@ invalid-link recovery and initial navigation. Existing local sharing scenarios
 exercise the shared preview boundary.
 
 ![Original-game army preview on a phone](../../docs/screenshots/army-code-phone.png)
+
+## Warden code mapping evidence
+
+The 37 retained 18.400.21 Cookbook codes contain seven explicit Warden mode
+tokens, all `m1`. The rows have no Ground or Air labels for the Warden.
+The pinned Hero row describes the alternate flight and range, but it does
+not bind those fields to the army-link suffix. A public evidence pass found
+no labeled pair tied to this version. To verify the mapping, retain two
+original links from the same client build with the Warden's state labeled in
+each and the rest of the composition held fixed. Until then the import preview
+continues to disclose that original links leave the selected mode alone.
