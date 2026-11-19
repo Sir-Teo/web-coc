@@ -1,10 +1,14 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page, type TestInfo } from '@playwright/test';
 
 test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-test('first Laboratory research is applied to new raids and leaves earlier recordings intact', async ({
-  page,
-}, info) => {
+for (const duringRaid of [false, true]) {
+  test(`Laboratory research completing ${duringRaid ? 'during a live raid' : 'offline'} carries into new raids only`, ({
+    page,
+  }, info) => checkResearchAndRaid(page, info, duringRaid));
+}
+
+async function checkResearchAndRaid(page: Page, info: TestInfo, duringRaid: boolean) {
   test.setTimeout(120000);
   await page.clock.setFixedTime(Date.now());
   const ready = () => expect(page.locator('#loading')).toBeHidden({ timeout: 30000 });
@@ -15,8 +19,19 @@ test('first Laboratory research is applied to new raids and leaves earlier recor
   const snapshot = () =>
     page.evaluate(() => {
       const m = window.__game.model;
-      const { elixir, gems, xp, research, starter, raidLog } = m.state;
-      return { elixir, gems, xp, research, starter, raidLog, level: m.troopLevel('swordsman') };
+      const { gold, elixir, gems, xp, research, starter, raidLog, army, stats } = m.state;
+      return {
+        gold,
+        elixir,
+        gems,
+        xp,
+        research,
+        starter,
+        raidLog,
+        army,
+        raids: stats.raids,
+        level: m.state.troopLevels?.swordsman ?? 1,
+      };
     });
   await page.goto('/?lazyart');
   await ready();
@@ -56,42 +71,70 @@ test('first Laboratory research is applied to new raids and leaves earlier recor
   await page.locator('[data-action="close-drawer"]').tap();
   await reload();
   expect(await snapshot()).toEqual(pending);
-  await page.goto('about:blank');
-  await page.clock.setFixedTime(pending.research!.end + 1);
-  await page.goto('/?lazyart');
-  await ready();
-  const completed = { ...pending, level: 2, research: undefined };
-  expect(await snapshot()).toEqual(completed);
-  await reload();
-  expect(await snapshot()).toEqual(completed);
-
-  await page.locator('.attack-btn').tap();
-  await page.locator('[data-action="attack:0"]').tap();
-  await page.waitForFunction(() => !window.__game.scene.battleArtPending());
-  const troop = page.locator('[data-action="troop:swordsman"]');
-  await troop.tap();
-  const spot = await page.evaluate(() => {
-    const { model, scene, game } = window.__game;
-    for (let x = 1.5; x < 44; x++)
-      for (let y = 1.5; y < 44; y++) {
-        if (model.deployBlocked(x, y)) continue;
-        const p = scene.screenFor(x, y);
-        if (
-          p.y > innerHeight * 0.3 &&
-          p.y < innerHeight * 0.65 &&
-          document.elementFromPoint(p.x, p.y) === game.canvas
-        )
-          return p;
-      }
-    throw Error('No visible ground for the next raid');
-  });
-  await page.touchscreen.tap(spot.x, spot.y);
+  const deployBarbarian = async () => {
+    await page.locator('.attack-btn').tap();
+    await page.locator('[data-action="attack:0"]').tap();
+    await page.waitForFunction(() => !window.__game.scene.battleArtPending());
+    const troop = page.locator('[data-action="troop:swordsman"]');
+    await troop.tap();
+    const spot = await page.evaluate(() => {
+      const { model, scene, game } = window.__game;
+      for (let x = 1.5; x < 44; x++)
+        for (let y = 1.5; y < 44; y++) {
+          if (model.deployBlocked(x, y)) continue;
+          const p = scene.screenFor(x, y);
+          if (
+            p.y > innerHeight * 0.3 &&
+            p.y < innerHeight * 0.65 &&
+            document.elementFromPoint(p.x, p.y) === game.canvas
+          )
+            return p;
+        }
+      throw Error('No visible ground for the next raid');
+    });
+    await page.touchscreen.tap(spot.x, spot.y);
+  };
   const troopStats = () =>
     page.evaluate(() => {
       const m = window.__game.model;
       const barbarian = m.battle?.units.find((u) => u.kind === 'swordsman');
       return { hp: barbarian?.maxHp, damage: m.troopStats('swordsman').damage };
     });
+  const completed = { ...pending, level: 2, research: undefined };
+  if (duringRaid) {
+    await deployBarbarian();
+    await expect.poll(troopStats).toEqual({ hp: 45, damage: 9 });
+    await page.clock.setFixedTime(pending.research!.end + 1);
+    await expect.poll(async () => (await snapshot()).level).toBe(2);
+    expect(await troopStats()).toEqual({ hp: 45, damage: 9 });
+    await reload();
+    const settled = await snapshot();
+    expect(settled).toMatchObject({
+      level: 2,
+      research: undefined,
+      gold: pending.gold,
+      elixir: pending.elixir,
+      xp: pending.xp,
+      gems: pending.gems,
+      raids: pending.raids + 1,
+      army: { swordsman: pending.army.swordsman - 1 },
+    });
+    expect(settled.raidLog).toHaveLength(2);
+    expect(settled.raidLog![0].deployed.swordsman).toBe(1);
+    expect(settled.raidLog![0].replay!.initial.troopLevels.swordsman).toBe(1);
+    await reload();
+    expect(await snapshot()).toEqual(settled);
+  } else {
+    await page.goto('about:blank');
+    await page.clock.setFixedTime(pending.research!.end + 1);
+    await page.goto('/?lazyart');
+    await ready();
+    expect(await snapshot()).toEqual(completed);
+    await reload();
+    expect(await snapshot()).toEqual(completed);
+  }
+
+  await deployBarbarian();
   await expect.poll(troopStats).toEqual({ hp: 54, damage: 12 });
   const firstHit = await page.evaluate(() => {
     const { model, game } = window.__game;
@@ -115,9 +158,9 @@ test('first Laboratory research is applied to new raids and leaves earlier recor
   await page.locator('.result-modal [data-action="home"]').tap();
   await reload();
   const finished = await snapshot();
-  expect(finished.raidLog).toHaveLength(2);
+  expect(finished.raidLog).toHaveLength(duringRaid ? 3 : 2);
   expect(finished.raidLog![0].replay!.initial.troopLevels.swordsman).toBe(2);
-  expect(finished.raidLog![1]).toEqual(before.raidLog![0]);
+  expect(finished.raidLog!.at(-1)).toEqual(before.raidLog![0]);
   await page.locator('[data-action="battle-log"]').tap();
   for (const [index, stats] of [
     [0, { hp: 54, damage: 12 }],
@@ -132,4 +175,4 @@ test('first Laboratory research is applied to new raids and leaves earlier recor
     await page.getByRole('button', { name: 'Back to log' }).tap();
   }
   expect(await snapshot()).toEqual(finished);
-});
+}
