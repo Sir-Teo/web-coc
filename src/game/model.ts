@@ -3717,8 +3717,7 @@ export class GameModel {
     this.decorationPlacement = null;
     this.movingDecoration = null;
     this.movingObstacle = null;
-    this.undoStack = [];
-    this.redoStack = [];
+    // A shared layout restored before entering Edit already has an undo entry.
     this.notify('Edit mode — drag any building to rearrange your village.');
     this.changed();
   }

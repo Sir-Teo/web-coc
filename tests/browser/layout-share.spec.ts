@@ -8,6 +8,11 @@ test('a shared layout link opens in the layouts panel, copies into a slot and re
   await page.goto('/');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
+  const positions = () =>
+    page.evaluate(() =>
+      window.__game.model.state.buildings.map((b) => `${b.kind}@${b.x},${b.y}`).sort(),
+    );
+  const original = await positions();
   // A layout of this village with a Cannon and the Archer Tower (both 3×3) swapped.
   const shared = await page.evaluate(async () => {
     const { encodeLayout, layoutLink } = await import('/src/game/layout-share.ts');
@@ -36,11 +41,7 @@ test('a shared layout link opens in the layouts panel, copies into a slot and re
   );
   await page.screenshot({ path: `output/playtest/layout-share-390-${browserName}.png` });
   await page.locator('[data-action="layout-load:1"]').click();
-  expect(
-    await page.evaluate(() =>
-      window.__game.model.state.buildings.map((b) => `${b.kind}@${b.x},${b.y}`).sort(),
-    ),
-  ).toEqual(shared.want);
+  expect(await positions()).toEqual(shared.want);
   // Sharing a slot copies its link where no share sheet exists.
   await page.evaluate(() => {
     Object.defineProperty(navigator, 'share', { value: undefined, configurable: true });
@@ -60,6 +61,17 @@ test('a shared layout link opens in the layouts panel, copies into a slot and re
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
+  // Shared links can restore a layout without entering Edit first. Undo must
+  // still reverse that restore when the player opens the Edit tools.
+  await page.getByRole('button', { name: 'Close dialog' }).click();
+  await page.getByRole('button', { name: 'Edit village layout' }).click();
+  const undo = page.getByRole('button', { name: 'Undo', exact: true });
+  await expect(undo).toBeEnabled();
+  await undo.click();
+  expect(await positions()).toEqual(original);
+  await page.getByRole('button', { name: 'Redo', exact: true }).click();
+  expect(await positions()).toEqual(shared.want);
+  await page.screenshot({ path: `output/playtest/layout-restore-edit-390-${browserName}.png` });
 });
 
 test('a layout link opened in a new tab offers the layout once the village loads', async ({
