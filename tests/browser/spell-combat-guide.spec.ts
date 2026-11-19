@@ -2,6 +2,21 @@ import { expect, test } from '@playwright/test';
 
 const profiles = [
   {
+    kind: 'invisibility',
+    name: 'Invisibility Spell',
+    max: 4,
+    targets: [
+      'Friendly troops, defending troops and enemy buildings',
+      'Friendly troops, defending troops and enemy buildings',
+    ],
+    tactic: 'Keep the building you want to attack outside the ring',
+    facts: [
+      ['Spell duration', '3.5 s', '4.25 s'],
+      ['Cover lingers after the last pulse', '0.6 s', '0.6 s'],
+      ['Unaffected', 'Walls, Siege Machines and traps', 'Walls, Siege Machines and traps'],
+    ],
+  },
+  {
     kind: 'poison',
     name: 'Poison Spell',
     max: 12,

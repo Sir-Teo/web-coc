@@ -2,7 +2,7 @@ import type { SpellKind } from '../game/data';
 import { nativeRow, num, seconds, text } from '../game/native-data';
 import { nativeUnitStats, unitKindForName } from '../game/native-units';
 import { rageModifiers } from '../game/native-rage';
-import { SPELL_SOURCE } from '../game/spell-progression';
+import { invisibilitySeconds, INVISIBILITY_LINGER, SPELL_SOURCE } from '../game/spell-progression';
 import { troopAttackTargets } from './troop-combat-guide';
 
 interface SpellCombatGuide {
@@ -18,6 +18,18 @@ export function spellCombatGuide(kind: SpellKind, level: number): SpellCombatGui
   const row = nativeRow('spells', SPELL_SOURCE[kind], level);
   const hits = Math.max(1, num(row, 'NumberOfHits', 1));
   switch (kind) {
+    case 'invisibility':
+      return {
+        targets: 'Friendly troops, defending troops and enemy buildings',
+        facts: [
+          ['Damage', 'None'],
+          ['Spell duration', `${number(invisibilitySeconds(level))} s`],
+          ['Cover lingers after the last pulse', `${INVISIBILITY_LINGER} s`],
+          ['Unaffected', 'Walls, Siege Machines and traps'],
+        ],
+        tactic:
+          'Keep the building you want to attack outside the ring. Hidden targets cannot be selected, but can still take splash damage, and traps can still trigger.',
+      };
     case 'poison':
       return {
         targets: 'Defending ground and air troops',
