@@ -36,7 +36,7 @@ The Shop's **Treasure** tab (the client's `TID_SHOP_CATEGORY_TREASURE`) sells ea
 
 These are the wiki's rules; a blocked pack shows the client's "Not enough storage space!" (`TID_RESOURCE_PACK_LOCKED`). Dark Elixir packs appear once the village has somewhere to store it. A tap asks first, in the client's words ("Buy Gold?" · "Are you sure you want to buy 700 Gold?", `TID_BUY_RESOURCE_PACK_HEADER` and `_TEXT`), then fills the storages and plays the resource's collect sound; closing the dialog returns to the Treasure. The pictures are the client's `sc/shop.sc` piles (`icon_gold_small`, `_medium`, `_big` and their Elixir and Dark Elixir versions), scaled to 160 pixels across for the tiles. At Town Hall 2 (7,000 Gold storage) the three Gold packs cost 4, 9 and 15 gems.
 
-Not included: the original's two-resource offer (`TID_BUY_MISSING_RESOURCES_TEXT_TWO`), which no single price here needs, and the Treasure's real-money gem packs. The resource bars' `+` buttons still collect from mines, collectors and drills; in the original they open the Treasure.
+Not included: the original's two-resource offer (`TID_BUY_MISSING_RESOURCES_TEXT_TWO`), which no single price here needs, and the Treasure's real-money gem packs. The Gold, Elixir and Dark Elixir `+` shortcuts open the Treasure tab, following the retained client behavior. Collect remains available from its village button and the producers themselves.
 
 ## Tests
 

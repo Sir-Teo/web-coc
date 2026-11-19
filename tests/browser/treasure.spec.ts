@@ -74,3 +74,37 @@ test('full storages lock their packs and too few gems stop the purchase', async 
   await page.locator('.shortfall-body [data-action="close"]').tap();
   await expect(page.locator('.treasure-tile')).toHaveCount(6);
 });
+
+test('resource shortcuts open Treasure without collecting income or spending gems', async ({
+  page,
+}) => {
+  const balances = () =>
+    page.evaluate(() => {
+      const { gold, elixir, dark, gems } = window.__game.model.state;
+      return { gold, elixir, dark, gems };
+    });
+  await page.evaluate(() => {
+    const m = window.__game.model;
+    m.townhall!.level = 7;
+    for (const b of m.state.buildings) {
+      if (b.kind === 'goldmine' || b.kind === 'collector') b.stored = 100;
+    }
+    m.state.gold = m.state.elixir = m.state.dark = 0;
+    m.changed();
+  });
+  const before = await balances();
+  for (const kind of ['gold', 'elixir', 'dark']) {
+    const shortcut = page.locator(`.resource-bar.${kind} .resource-plus`);
+    await shortcut.tap();
+    await expect(page.getByRole('tab', { name: 'Treasure' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await expect(page.locator(`[data-pack="${kind}-100"]`)).toBeVisible();
+    expect(await balances()).toEqual(before);
+    await page.locator('[data-action="close-drawer"]').tap();
+  }
+  await page.locator('.collect-btn').tap();
+  expect((await balances()).gold).toBeGreaterThan(before.gold);
+  expect((await balances()).elixir).toBeGreaterThan(before.elixir);
+});

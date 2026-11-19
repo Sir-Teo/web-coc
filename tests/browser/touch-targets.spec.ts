@@ -80,24 +80,24 @@ test('tall phone HUD controls take a 44-pixel finger', async ({ page }) => {
     expect(box.height, action).toBeGreaterThanOrEqual(44);
   }
   // Each resource "+" answers presses up to 10 px beside and 6 px above or below its art...
-  for (const action of ['collect:gold', 'collect:elixir']) {
+  for (const action of ['resource-shop:gold', 'resource-shop:elixir']) {
     const points = await probes(page, `[data-action="${action}"]`, { x: 10, y: 6 });
     expect(Object.keys(points)).toContain('left');
     expect(await hits(page, points), action).toEqual(all(points, action));
   }
   // ...without reaching the neighbouring row.
-  const gold = (await page.locator('[data-action="collect:gold"]').boundingBox())!;
-  const elixir = (await page.locator('[data-action="collect:elixir"]').boundingBox())!;
+  const gold = (await page.locator('[data-action="resource-shop:gold"]').boundingBox())!;
+  const elixir = (await page.locator('[data-action="resource-shop:elixir"]').boundingBox())!;
   const between = (gold.y + gold.height + elixir.y) / 2;
   expect(
     await hits(page, {
       above: { x: gold.x + gold.width / 2, y: between - 2 },
       below: { x: gold.x + gold.width / 2, y: between + 2 },
     }),
-  ).toEqual({ above: 'collect:gold', below: 'collect:elixir' });
+  ).toEqual({ above: 'resource-shop:gold', below: 'resource-shop:elixir' });
   // A real finger beside the art presses the button.
   await page.touchscreen.tap(gold.x - 8, gold.y + gold.height / 2);
-  expect(await lastPress(page)).toBe('collect:gold');
+  expect(await lastPress(page)).toBe('resource-shop:gold');
 });
 
 test('dialog close buttons and settings switches take presses beside their art', async ({

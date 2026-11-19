@@ -1776,6 +1776,12 @@ export class HUD {
         this.tab = 'All';
         this.showDrawer('shop');
         break;
+      case 'resource-shop':
+        if (m.battle) break;
+        this.tab = GEM_TEXTS.treasureTab;
+        if (this.drawerPanel === 'shop') this.render();
+        else this.showDrawer('shop');
+        break;
       case 'army':
         this.showDrawer('army');
         break;
@@ -2877,7 +2883,7 @@ export class HUD {
        `<div class="resource-bar ${k} ${k !== 'gems' && m.resourceCap(k) > 0 && s[k] >= m.resourceCap(k) ? 'full' : ''}"><div class="resource-fill" style="width:${k === 'gems' ? pct((s.gems / 500) * 100) : pct((s[k] / m.resourceCap(k)) * 100)}"></div><div class="resource-topline">${k === 'gems' ? 'Gems' : `Max: ${n(m.resourceCap(k))}`}</div><span class="resource-amount" data-resource="${k}">${n(s[k])}</span>${resource(k)}${
          k === 'gems'
            ? `<button class="resource-plus gems-earn" data-action="achievements" aria-label="Earn gems from achievements" title="Earn gems from achievements">${icon('Trophy', 15)}</button>`
-           : `<button class="resource-plus" data-action="collect:${k}" aria-label="Collect ${k === 'dark' ? 'dark elixir' : k}" title="Collect ${k === 'dark' ? 'dark elixir from drills' : k === 'gold' ? 'gold from mines' : 'elixir from collectors'}">+</button>`
+           : `<button class="resource-plus" data-action="resource-shop:${k}" aria-label="Open Treasure for ${GEM_TEXTS[k]}" title="Open Treasure for ${GEM_TEXTS[k]}">+</button>`
        }</div>`,
    )
    .join('')}</div>
