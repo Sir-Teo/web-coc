@@ -44,7 +44,12 @@ for (const kind of RELEASE_SIEGES)
       expect(createHash('sha256').update(JSON.stringify(old.snapshots)).digest('hex')).toBe(
         OLD[`${kind}:${level}`],
       );
-      for (const snapshot of current.snapshots) delete snapshot.battle.nativeSiegeManualRelease;
+      for (const { battle } of current.snapshots) {
+        delete battle.nativeSiegeManualRelease;
+        // These fixtures have no airborne defenders, so only the new rules flag can differ.
+        expect(battle.defenders?.some((d) => d.mode === 'air') ?? false).toBe(false);
+        delete battle.nativeFlameFlingerGroundPoison;
+      }
       expect(current.snapshots).toEqual(old.snapshots);
       expect(viewer.openReplay(parseReplayFile(JSON.stringify(makeReplayFile(old.data))))).toBe(
         true,
