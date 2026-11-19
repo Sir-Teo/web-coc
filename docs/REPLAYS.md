@@ -30,6 +30,12 @@ Version 243 uses the pinned Totem row's `HealerWeight=0` and the retained notes
 to exclude Totems from Healer and Druid targeting, splash and bounces. Earlier
 recordings retain the previous troop healing rules.
 
+Version 244 applies the pinned 18.400.21 `FireSpiritExplosion` row's
+`PoisonAffectAir=FALSE` to Flame Flinger pools. Airborne defenders still take
+the flat pulse damage. Ground defenders can also take the sustained poison
+and react to the poison area. Recordings through version 243 retain their
+original pool behavior.
+
 ## Persistence and limits
 
 New recordings stay inline in the synchronous local backup until IndexedDB

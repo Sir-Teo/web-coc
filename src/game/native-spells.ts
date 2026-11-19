@@ -331,6 +331,8 @@ function harmDefense(
   const quakeBuilding = num(row, 'BuildingDamagePermil') / 1000;
   const quakeTroop = num(row, 'TroopDamagePermil') / 1000;
   const poison = num(row, 'PoisonDPS');
+  const groundPoison =
+    battle.nativeFlameFlingerGroundPoison && fixedFlamePool(cast) && !flag(row, 'PoisonAffectAir');
   const drillWalls =
     battle.nativeDrillSurfaceWalls && cast.name === 'DrillerSurfacing' && flag(row, 'DestroyWalls');
   const flameWallPulse =
@@ -446,7 +448,7 @@ function harmDefense(
     )
       d.frozenUntil = Math.max(d.frozenUntil ?? 0, at + freeze);
     if (quakeTroop > 0 && d.mode === 'ground') hurtDefender(battle, d, d.maxHp * quakeTroop);
-    if (poison > 0) {
+    if (poison > 0 && (!groundPoison || d.mode === 'ground')) {
       poisonDefender(battle, d, row, at, cast.interval);
       if (
         (battle.nativePoisonAvoidance && isGarrisonDefender(d)) ||

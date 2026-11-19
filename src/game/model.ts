@@ -1154,6 +1154,7 @@ export interface Battle {
   nativeFlameFlingerWallPulse?: true;
   /** Version 227: overlapping Flame Flinger pools share building poison damage. */
   nativeFlameFlingerBurnOverlap?: true;
+  nativeFlameFlingerGroundPoison?: true;
   /** Version 228: charged three-projectile Flame Flinger bursts. */
   nativeFlameFlingerBursts?: true;
   /** Version 229: Wall Wrecker source ram windup and recovery. */

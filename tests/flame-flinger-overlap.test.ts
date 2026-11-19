@@ -165,3 +165,21 @@ it('only new carried Flame Flinger armies enable shared building burn damage', (
   r.data.initial.army.flameflinger = 0;
   expect(replayBattle(r.data.initial, 227).nativeFlameFlingerBurnOverlap).toBeUndefined();
 });
+
+it.each([243, 244])('Flame Flinger poison applies its air flag in replay %i', (version) => {
+  const { battle } = flameFlingerBurnBattle(1, version);
+  const ground = spawnGarrisonDefender(battle, 'golem', 8, 1, 10, 10, 0);
+  const air = spawnGarrisonDefender(battle, 'dragon', 7, 1, 10, 10, 0);
+  expect([ground.mode, air.mode]).toEqual(['ground', 'air']);
+  const cast = castNativeSpell(battle, 'FireSpiritExplosion', 1, 'attack', 10, 10, {
+    immediate: true,
+  });
+  battle.elapsed = cast.firstHit;
+  stepNativeSpells({ battle, damageBuilding: () => {}, effect: () => {} });
+  expect(ground.poison).toBeDefined();
+  if (version === 243) expect(air.poison).toBeDefined();
+  else {
+    expect(air.poison).toBeUndefined();
+    expect(air.hp).toBe(air.maxHp - 1);
+  }
+});
