@@ -180,9 +180,11 @@ try {
           });
           expect(lateGraphCached).toBe(false);
           await enter(63, 'Bowling Alley');
+          const scoutingHint = page.locator('.prep-banner [role="status"]');
           await expect
             .poll(() => [...misses].some((path) => path.includes('/late-campaign-scene-')))
             .toBe(true);
+          await expect(scoutingHint).toHaveText('Reconnect to download this village’s art.');
           await troop.tap();
           await page.touchscreen.tap(195, 390);
           await expect(page.locator('#toast')).toContainText(
@@ -224,6 +226,7 @@ try {
           await reload();
           expect((await snapshot()).army).toEqual(settled.army);
           await enter(63, 'Bowling Alley');
+          await expect(scoutingHint).toContainText('Deploy to start', { timeout: 25000 });
           await expect
             .poll(
               async () => {

@@ -677,6 +677,7 @@ type LiveRefs = {
   legacyHeroCard: HTMLElement | null;
   trayButtons: HTMLButtonElement[];
   deployLabel: HTMLElement | null;
+  scoutingHint: HTMLElement | null;
   resources: HTMLElement[];
   obstacleTimes: HTMLElement[];
   upgrades: HTMLElement[];
@@ -3781,7 +3782,7 @@ export class HUD {
     return `<div class="battle-enemy"><span class="eyebrow">${m.goblinRaid ? 'GOBLIN RAID' : m.replay ? (m.replay.recordId === null ? 'SHARED REPLAY' : 'ATTACK REPLAY') : b.practice ? 'PRACTICE ATTACK' : b.ladder ? 'LADDER MATCH' : 'ENEMY VILLAGE'}</span><h2>${v.name}</h2>${m.goblinRaid ? '<small class="practice-note">Goblins are raiding your village!<br>Watch your defenses fight back.</small>' : m.replay ? '<small class="practice-note">Recorded attack · Watch &amp; learn</small>' : b.practice ? '<small class="practice-note">Your village and army are safe.<br>No loot or trophies at stake.</small>' : b.ladder ? `<small class="ladder-stake">${icon('Trophy', 15)} ${n(b.ladder.opponent)} · Win <b>+${b.ladder.win}</b> · Defeat <b>−${b.ladder.loss}</b></small><small class="practice-note">No loot at stake.</small>` : `<small>AVAILABLE LOOT</small><div class="loot-bars">${lootKeys.map(lootBar).join('')}</div>${limitedStorage ? '<small class="loot-capacity-note">Loot beyond your storage capacity will be lost.</small>' : ''}`}</div>
  <div class="battle-clock ${b.started ? '' : 'prep'}"><span>${!timedBattle(b) ? 'NO TIME LIMIT' : b.started ? 'BATTLE ENDS IN' : 'SCOUTING — BATTLE BEGINS IN'}</span><b id="battle-timer">${timedBattle(b) ? clock(b.started ? BATTLE_SECONDS - b.elapsed : b.prep) : '∞'}</b></div>
  <div class="destruction"><span>Total destruction</span><div id="battle-stars" class="battle-stars" data-stars="${b.stars}">${'★'.repeat(b.stars)}<span>${'★'.repeat(3 - b.stars)}</span></div><b id="destruction-value">${b.destruction}%</b><div class="destruction-bar"><i id="destruction-fill" style="transform:${fillScale(b.destruction)}"></i><span class="notch half" style="left:50%"></span><span class="notch full" style="left:100%"></span></div><small>★ 50% <i>·</i> ★ Town Hall <i>·</i> ★ 100%</small></div>
- ${m.practiceGuide && !m.replay ? this.practiceGuideBanner() : !b.started && !m.replay ? `<div class="prep-banner">${icon('Timer', 20)}<div><b>Scout the base</b><small>Tap a defense to see its range · Deploy to start</small></div></div>` : ''}
+ ${m.practiceGuide && !m.replay ? this.practiceGuideBanner() : !b.started && !m.replay ? `<div class="prep-banner">${icon('Timer', 20)}<div><b>Scout the base</b><small role="status"></small></div></div>` : ''}
   ${
     m.replay
       ? this.replayControls()
@@ -5882,6 +5883,7 @@ export class HUD {
           )
         : [],
       deployLabel: this.hudEl.querySelector<HTMLElement>('.deploy-label'),
+      scoutingHint: this.hudEl.querySelector<HTMLElement>('.prep-banner [role="status"]'),
       resources: all('[data-resource]'),
       obstacleTimes: all('[data-obstacle-time]'),
       upgrades: all('[data-upgrade]'),
@@ -5908,6 +5910,11 @@ export class HUD {
     const m = this.model;
     this.audio.musicScene(musicScene(m.battle));
     let refs = (this.liveRefs ??= this.collectLiveRefs());
+    if (refs.scoutingHint)
+      setText(
+        refs.scoutingHint,
+        this.scene.scoutingArtNotice() ?? 'Tap a defense to see its range · Deploy to start',
+      );
     // Legacy King and per-hero upgrade timers in the roster panel.
     for (const el of refs.heroTimers) {
       const kind = el.dataset.heroTimer;

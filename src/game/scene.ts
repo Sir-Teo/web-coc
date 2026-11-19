@@ -2190,6 +2190,9 @@ export class VillageScene extends Phaser.Scene {
   private battleArtWaitMessage() {
     return this.lateArtFailure?.module && !navigator.onLine ? OFFLINE_LATE_ART : LOADING_LATE_ART;
   }
+  scoutingArtNotice() {
+    return this.battleArtPending() ? this.battleArtWaitMessage() : null;
+  }
   /**
    * Loads deferred families in one loader batch, after any batch already running. Their samples
    * registered before the files existed, so every cached sample is bound again afterwards.

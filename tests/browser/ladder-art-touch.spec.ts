@@ -51,6 +51,8 @@ test('a Ladder touch that begins while art is loading cannot deploy when it land
     await request;
     await page.locator('[data-action="troop:swordsman"]').tap();
     expect(await page.evaluate(() => window.__game.scene.battleArtPending())).toBe(true);
+    const readiness = page.locator('.prep-banner [role="status"]');
+    await expect(readiness).toHaveText('Loading village art…');
     const initial = await stock();
     expect(initial).toMatchObject({ prep: 30, started: false, ladder: offer });
     const point = await page.evaluate(() => {
@@ -73,6 +75,7 @@ test('a Ladder touch that begins while art is loading cannot deploy when it land
     expect(await stock()).toEqual(initial);
     release();
     await page.waitForFunction(() => !window.__game.scene.battleArtPending());
+    await expect(readiness).toHaveText('Tap a defense to see its range · Deploy to start');
     await page.waitForTimeout(450);
     const afterWait = await stock();
     expect(afterWait).toMatchObject({
