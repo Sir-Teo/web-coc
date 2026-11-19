@@ -389,11 +389,12 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       }
       effect({ type: 'spring', x: target.x, y: target.y });
     } else {
-      // Trap activation and splash eligibility differ for Home Bombs and Air Bombs.
+      // Trigger eligibility is separate from splash eligibility for these Home traps.
       const splashWithoutTrigger =
         !trap.npc &&
         ((trap.kind === 'airbomb' && battle.nativeAirBombSplashEligibility) ||
-          (trap.kind === 'bomb' && battle.nativeBombSplashEligibility));
+          (trap.kind === 'bomb' && battle.nativeBombSplashEligibility) ||
+          (trap.kind === 'giantbomb' && battle.nativeGiantBombSplashEligibility));
       const splashEligible = splashWithoutTrigger
         ? (u: Unit) => canHit(u) && !u.native?.burrowed
         : eligible;

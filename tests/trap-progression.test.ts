@@ -294,47 +294,56 @@ it.each([
 });
 
 it.each([
-  { version: 250, splashDamage: 0 },
-  { version: REPLAY_VERSION, splashDamage: 20 },
-])('Bomb trigger and splash eligibility in replay $version', ({ version, splashDamage }) => {
-  const { b: template, u: giant, trap } = arena('bomb', 1);
-  const battle = replayBattle(
-    {
-      index: 0,
-      practice: true,
-      buildings: [trap],
-      army: emptyArmy(),
-      spells: emptySpells(),
-      troopLevels: template.troopLevels,
-      nextId: 9007,
-    },
-    version,
-  );
-  const skeleton: Unit = {
-    ...giant,
-    id: 9003,
-    kind: 'spellskeleton',
-    native: initialNativeState('spellskeleton', 1),
-  };
-  const outside = { ...skeleton, id: 9004, x: skeleton.x + 3.1 };
-  const air: Unit = { ...skeleton, id: 9005, kind: 'spellbat' };
-  const burrowed: Unit = { ...skeleton, id: 9006, native: { ...skeleton.native!, burrowed: true } };
-  battle.started = true;
-  battle.units = [skeleton, outside, air, burrowed];
-  battle.elapsed = 0.05;
-  stepTraps(battle, 0.05, () => {});
-  expect(battle.traps[trap.id]).toBeUndefined();
+  { kind: 'bomb', version: 250, damage: 20, splashDamage: 0 },
+  { kind: 'bomb', version: 251, damage: 20, splashDamage: 20 },
+  { kind: 'giantbomb', version: 251, damage: 175, splashDamage: 0 },
+  { kind: 'giantbomb', version: REPLAY_VERSION, damage: 175, splashDamage: 175 },
+] as const)(
+  '$kind trigger and splash eligibility in replay $version',
+  ({ kind, version, damage, splashDamage }) => {
+    const { b: template, u: giant, trap } = arena(kind, 1);
+    const battle = replayBattle(
+      {
+        index: 0,
+        practice: true,
+        buildings: [trap],
+        army: emptyArmy(),
+        spells: emptySpells(),
+        troopLevels: template.troopLevels,
+        nextId: 9007,
+      },
+      version,
+    );
+    const skeleton: Unit = {
+      ...giant,
+      id: 9003,
+      kind: 'spellskeleton',
+      native: initialNativeState('spellskeleton', 1),
+    };
+    const outside = { ...skeleton, id: 9004, x: skeleton.x + 3.1 };
+    const air: Unit = { ...skeleton, id: 9005, kind: 'spellbat' };
+    const burrowed: Unit = {
+      ...skeleton,
+      id: 9006,
+      native: { ...skeleton.native!, burrowed: true },
+    };
+    battle.started = true;
+    battle.units = [skeleton, outside, air, burrowed];
+    battle.elapsed = 0.05;
+    stepTraps(battle, 0.05, () => {});
+    expect(battle.traps[trap.id]).toBeUndefined();
 
-  battle.units.push(giant);
-  battle.elapsed += 0.05;
-  stepTraps(battle, 0.05, () => {});
-  expect(battle.traps[trap.id]?.targetId).toBe(giant.id);
-  battle.elapsed += trapStats('bomb', 1)!.delay;
-  stepTraps(battle, 0.05, () => {});
-  expect(giant.hp).toBe(giant.maxHp - 20);
-  expect(skeleton.hp).toBe(skeleton.maxHp - splashDamage);
-  for (const unit of [outside, air, burrowed]) expect(unit.hp).toBe(unit.maxHp);
-});
+    battle.units.push(giant);
+    battle.elapsed += 0.05;
+    stepTraps(battle, 0.05, () => {});
+    expect(battle.traps[trap.id]?.targetId).toBe(giant.id);
+    battle.elapsed += trapStats(kind, 1)!.delay;
+    stepTraps(battle, 0.05, () => {});
+    expect(giant.hp).toBe(giant.maxHp - damage);
+    expect(skeleton.hp).toBe(skeleton.maxHp - splashDamage);
+    for (const unit of [outside, air, burrowed]) expect(unit.hp).toBe(unit.maxHp);
+  },
+);
 
 it('Giant Bomb radius grows at levels 2 and 4', () => {
   expect([1, 2, 3, 4, 5].map((level) => trapStats('giantbomb', level)!.radius)).toEqual([
