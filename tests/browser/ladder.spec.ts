@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 for (const viewport of [
   { width: 1440, height: 960 },
@@ -86,5 +86,106 @@ test.describe('phone Ladder recovery', () => {
     await page.getByRole('button', { name: 'Watch replay' }).tap();
     await expect(page.getByRole('slider', { name: 'Replay position' })).toBeVisible();
     expect(await result()).toEqual(settled);
+  });
+});
+
+test.describe('phone Ladder results', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  async function openLadder(page: Page, trophies: number) {
+    await page.goto('/?lazyart');
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    await page.locator('[data-action="skip-tutorial"]').tap();
+    await page.evaluate((trophies) => {
+      const { model } = window.__game;
+      model.state.trophies = trophies;
+      model.changed();
+    }, trophies);
+    await page.locator('.attack-btn').tap();
+    await page.locator('.campaign-summary [data-action="ladder"]').tap();
+    await expect(page.locator('.battle-clock')).toContainText('SCOUTING');
+  }
+
+  for (const direction of ['up', 'down'] as const) {
+    test(`Next ladder match uses the updated offer after moving ${direction} a trophy band`, async ({
+      page,
+    }) => {
+      const before = direction === 'up' ? 1399 : 1400;
+      await openLadder(page, before);
+      const expected = await page.evaluate(
+        async ({ direction, before }) => {
+          const { ladderOpponent } = await import('/src/game/ladder.ts');
+          const { model: m } = window.__game;
+          const oldLeague = m.league.name;
+          const match = m.battle!.ladder!;
+          if (direction === 'up') {
+            m.discardRecording();
+            for (const building of m.battle!.buildings) m.damage(building, building.hp);
+          }
+          m.finishBattle();
+          const { trophies, ladderSeed } = m.state;
+          const next = ladderOpponent(ladderSeed!, m.townhallLevel, trophies);
+          const stale = ladderOpponent(ladderSeed!, m.townhallLevel, before);
+          return { next, stale, match, trophies, oldLeague, league: m.league.name };
+        },
+        { direction, before },
+      );
+      expect(expected.trophies).toBe(
+        before + (direction === 'up' ? expected.match.win : -expected.match.loss),
+      );
+      expect(expected.league).not.toBe(expected.oldLeague);
+      expect(expected.next.match.opponent).not.toBe(expected.stale.match.opponent);
+      await expect(page.locator('.ladder-result')).toContainText(expected.league);
+      await page.getByRole('button', { name: 'Next ladder match' }).tap();
+      await expect(page.locator('.battle-clock')).toContainText('SCOUTING');
+      await expect(page.locator('.ladder-stake')).toContainText(`Win +${expected.next.match.win}`);
+      await expect(page.locator('.ladder-stake')).toContainText(
+        `Defeat −${expected.next.match.loss}`,
+      );
+      expect(
+        await page.evaluate(() => {
+          const { battle, state } = window.__game.model;
+          return { index: battle!.index, match: battle!.ladder, trophies: state.trophies };
+        }),
+      ).toEqual({ ...expected.next, trophies: expected.trophies });
+      const loadout = await page.evaluate(() => {
+        const { army, spells } = window.__game.model.state;
+        return { army, spells };
+      });
+      await page.locator('[data-action="home"]').tap();
+      await page.reload();
+      await page.waitForFunction(() => window.__game?.scene.artSettled);
+      expect(
+        await page.evaluate(() => {
+          const { state, battle } = window.__game.model;
+          return {
+            trophies: state.trophies,
+            raids: state.stats.raids,
+            records: state.raidLog!.length,
+            battle,
+            army: state.army,
+            spells: state.spells,
+          };
+        }),
+      ).toEqual({ trophies: expected.trophies, raids: 1, records: 1, battle: null, ...loadout });
+    });
+  }
+
+  test('a Ladder loss reports only the trophies actually deducted at the floor', async ({
+    page,
+  }) => {
+    await openLadder(page, 2);
+    await page.evaluate(() => window.__game.model.finishBattle());
+    await expect(page.locator('.ladder-result')).toContainText('-2 trophies');
+    await expect(page.locator('.ladder-result')).toContainText('now 0');
+    await page.locator('.result-modal [data-action="home"]').tap();
+    await page.reload();
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    await page.locator('[data-action="battle-log"]').tap();
+    const latest = page.locator('.raid-record').first();
+    await expect(latest.locator('.raid-loot')).toContainText('-2');
+    await latest.getByRole('button', { name: 'Watch replay' }).tap();
+    await expect(page.getByRole('slider', { name: 'Replay position' })).toBeVisible();
+    expect(await page.evaluate(() => window.__game.model.state.trophies)).toBe(0);
   });
 });

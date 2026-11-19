@@ -7883,7 +7883,7 @@ export class GameModel {
     b.projectiles = [];
     b.shells = [];
     for (const bomb of Object.values(b.deathBombs ?? {})) if (!bomb.resolved) bomb.cancelled = true;
-    const trophies = b.ladder ? ladderTrophies(b.ladder, b.stars) : 0;
+    const trophyStake = b.ladder ? ladderTrophies(b.ladder, b.stars) : 0;
     const overflow = (gold: number, elixir: number, dark = 0) => {
       const lost = {
         gold: Math.max(0, (b.lootTaken?.gold ?? 0) - gold),
@@ -7902,7 +7902,7 @@ export class GameModel {
         elixir: b.loot.elixir,
         ...(b.loot.dark !== undefined ? { dark: b.loot.dark } : {}),
         ...overflow(b.loot.gold, b.loot.elixir, b.loot.dark),
-        trophies,
+        trophies: trophyStake,
         stars: b.stars,
         destruction: b.destruction,
       };
@@ -7925,7 +7925,9 @@ export class GameModel {
     this.state.gold += gold;
     this.state.elixir += elixir;
     this.state.dark += dark;
-    if (b.ladder) this.state.trophies = Math.max(0, this.state.trophies + trophies);
+    const nextTrophies = Math.max(0, this.state.trophies + trophyStake);
+    const trophies = nextTrophies - this.state.trophies;
+    if (b.ladder) this.state.trophies = nextTrophies;
     if (!b.practice && !b.ladder) {
       if (b.catalog === 'goblin-v1') this.state.nativeCampaign ??= freshNativeCampaign();
       else this.state.campaignLoot ??= freshCampaignLoot();

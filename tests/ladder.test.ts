@@ -93,6 +93,13 @@ describe('ladder matches', () => {
     m.startLadder();
     m.finishBattle();
     expect(m.state.trophies).toBe(0);
+    expect(m.battle!.result!.trophies).toBe(-3);
+    expect(m.state.raidLog![0].result.trophies).toBe(-3);
+    m.returnHome();
+    m.startLadder();
+    m.finishBattle();
+    expect(m.battle!.result!.trophies).toBe(0);
+    expect(validateSave(m.state)).toBe(true);
   });
 
   it('ends at the three-minute deadline after thirty seconds of scouting', () => {
