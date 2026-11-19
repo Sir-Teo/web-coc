@@ -5,16 +5,29 @@ import {
   ARCHER_TOWER_PROJECTILE_GRAPH,
   archerTowerProjectilePose,
 } from './archer-tower-projectile';
-import { preloadNativeMeshes } from './native-mesh-scene';
+import { nativeMeshTexture } from './native-mesh';
+import type { LazyTextures } from './lazy-textures';
 import { NativeSceneView } from './native-scene-view';
 import { presentationLive, presentationProjectiles, presentationTime } from './presentation-clock';
 const PREFIX = 'archer-tower-projectile';
-export function preloadArcherTowerProjectiles(scene: Phaser.Scene) {
-  preloadNativeMeshes(scene, ARCHER_TOWER_PROJECTILE_GRAPH, PREFIX);
-}
+const PAGES = Object.entries(ARCHER_TOWER_PROJECTILE_GRAPH.textures).map(([id, page]) => ({
+  key: nativeMeshTexture(PREFIX, id),
+  url: '/' + page.path,
+}));
+
 export class ArcherTowerProjectiles {
   readonly views = new Map<string, NativeSceneView>();
-  constructor(private scene: Phaser.Scene) {}
+  constructor(
+    private scene: Phaser.Scene,
+    private textures: LazyTextures,
+  ) {}
+  /** Fetch without putting the projectile page on the village's boot loader. */
+  prefetch() {
+    for (const { key, url } of PAGES) void this.textures.request(key, url);
+  }
+  get artReady() {
+    return PAGES.every(({ key }) => this.scene.textures.exists(key));
+  }
   clear() {
     for (const view of this.views.values()) view.destroy();
     this.views.clear();
@@ -27,7 +40,7 @@ export class ArcherTowerProjectiles {
   ) {
     const wanted = new Set<string>();
     // Arrows in flight when the battle ends keep flying on the presentation clock.
-    if (battle && presentationLive(battle) && !reduced) {
+    if (battle && presentationLive(battle) && !reduced && this.artReady) {
       const elapsed = presentationTime(battle);
       for (const p of presentationProjectiles(battle)) {
         if (p.weapon !== 'arrow' || p.variant === undefined || !p.flight) continue;

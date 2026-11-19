@@ -76,10 +76,8 @@ import {
 } from './frost-flake-effects';
 import { NativeDefensePresentation } from './native-defense-scene';
 import { nativeRow, tiles as nativeTiles } from './native-data';
-import {
-  ArcherTowerProjectiles,
-  preloadArcherTowerProjectiles,
-} from './archer-tower-projectile-scene';
+import { ArcherTowerProjectiles } from './archer-tower-projectile-scene';
+import { archerTowerProjectilePose } from './archer-tower-projectile';
 import {
   VillageArcherTowers,
   preloadVillageArcherTowers,
@@ -913,7 +911,6 @@ export class VillageScene extends Phaser.Scene {
     for (const file of this.load.list)
       if (/^archer-tower-(body|resident):mesh:/.test(file.key))
         markRecoverableBootImage(file);
-    preloadArcherTowerProjectiles(this);
     // Per-level fallback sprites: Level 1 and the home village's own levels load now; any other
     // level loads when something first draws it (see deferredTexture), as Level 1 meanwhile.
     const owned = (kind: string) =>
@@ -1125,9 +1122,10 @@ export class VillageScene extends Phaser.Scene {
     this.garrisonPresentation = new GarrisonPresentation(this, this.audio, this.nativeEffectPacks);
     this.castlePresentation = new CastlePresentation(this);
     this.infernoPresentation = new InfernoPresentation(this, this.audio);
-    this.archerTowerProjectiles = new ArcherTowerProjectiles(this);
-    this.villageArcherTowers = new VillageArcherTowers(this, this.audio);
     this.deferredArt = new LazyTextures(this);
+    this.archerTowerProjectiles = new ArcherTowerProjectiles(this, this.deferredArt);
+    this.archerTowerProjectiles.prefetch();
+    this.villageArcherTowers = new VillageArcherTowers(this, this.audio);
     this.darkDrillPresentation = new DarkDrillPresentation(this, this.audio);
     this.heroNativePresentation = new HeroNativePresentation(this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.heroNativePresentation.destroy());
@@ -2096,6 +2094,7 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.placement === 'archertower') towers.add(level);
     this.cannonPresentation?.retryPages(cannons, immediate);
     this.villageArcherTowers?.retryPages(towers, immediate);
+    if (towers.size && !this.archerTowerProjectiles.artReady) this.archerTowerProjectiles.prefetch();
   }
   /** Back online: every failed request is due now. */
   private retryArtNow = () => {
@@ -4784,7 +4783,7 @@ export class VillageScene extends Phaser.Scene {
     const key = this.frameKey,
       cam = this.cameras.main,
       grace = battle.finished && presentationLive(battle);
-    const art = `${this.heavyArtReady}:${this.deferredArtSettled}:${this.lateAssetsReady}:${this.cannonPresentation.artRevision}:${this.villageArcherTowers.artRevision}:${this.villageNativePresentation.artRevision}:${this.nativeEffectPacks.revision}:${this.nativeProjectiles?.artRevision ?? 0}`;
+    const art = `${this.heavyArtReady}:${this.deferredArtSettled}:${this.lateAssetsReady}:${this.cannonPresentation.artRevision}:${this.villageArcherTowers.artRevision}:${this.archerTowerProjectiles.artReady}:${this.villageNativePresentation.artRevision}:${this.nativeEffectPacks.revision}:${this.nativeProjectiles?.artRevision ?? 0}`;
     const same =
       !this.fxDrained &&
       // The grace window after the finish animates on the presentation clock, not elapsed.
@@ -7004,7 +7003,7 @@ export class VillageScene extends Phaser.Scene {
           (p.weapon === 'xbowbolt' && xbowNative) ||
           p.weapon === 'towerbomb' ||
           p.weapon === 'arcane' ||
-          (p.weapon === 'arrow' && p.variant !== undefined && p.flight)
+          this.archerTowerProjectiles.views.has(p.id)
         )
           continue;
         if (p.weapon === 'cannonball' && p.sourceId !== undefined) {
@@ -7018,6 +7017,11 @@ export class VillageScene extends Phaser.Scene {
         }
         retained.add(p.id);
         const { from, to } = this.projectileAnchors(projectileEffect(p, 'projectile'));
+        if (p.weapon === 'arrow' && p.variant !== undefined && p.flight) {
+          const pose = archerTowerProjectilePose(p, now, iso, iso(p.x, p.y).y - to.y);
+          this.combatEffects.poseProjectile(p.id, p.weapon, pose, to, 0);
+          continue;
+        }
         const motionAt = p.motionAt ?? p.launched;
         const progress = Phaser.Math.Clamp((now - motionAt) / (p.impact - motionAt), 0, 1);
         this.combatEffects.poseProjectile(p.id, p.weapon, from, to, progress);
