@@ -1759,10 +1759,10 @@ export class HUD {
         if (!m.heroProgress(kind)) break;
         const current = m.heroLineup;
         if (current.includes(kind)) break;
-        // The lineup always refills from ready heroes in roster order, so benching is
-        // expressed as swapping: append when a slot is free, otherwise take the last slot.
-        const next =
-          current.length < m.heroSlotCount ? [...current, kind] : [...current.slice(0, -1), kind];
+        const replace = this.heroSwapTarget(current, kind);
+        const next = replace
+          ? current.map((hero) => (hero === replace ? kind : hero))
+          : [...current, kind];
         if (!m.setHeroLineup(next)) m.notify('That hero cannot join the lineup right now.');
         break;
       }
@@ -4051,6 +4051,14 @@ export class HUD {
       ${button('practice', 'Practice with this army', 'game-btn blue', m.armyReady ? '' : 'disabled')}
     </div>`;
   }
+  private heroSwapTarget(lineup: HeroKind[], incoming: HeroKind) {
+    const m = this.model;
+    if (lineup.length < m.heroSlotCount) return undefined;
+    const unavailable = m.heroProgress(incoming)?.upgradeEnd
+      ? undefined
+      : lineup.find((hero) => m.heroProgress(hero)?.upgradeEnd);
+    return unavailable ?? lineup.at(-1);
+  }
   /** One roster entry: unlock gate, native stats, equipment, pet, upgrade and lineup. */
   private heroRosterCard(kind: HeroKind) {
     const m = this.model,
@@ -4064,7 +4072,9 @@ export class HUD {
     }
     if (!progress)
       return `<section class="hero-section" data-hero="${kind}"><article class="hero-overview"><div class="hero-portrait"><img src="${heroPortrait(kind)}" alt="${name}"></div><div><span class="eyebrow">HERO HALL ${hall.level}</span><h2>${name}</h2><p>Unlocked · Joining your village…</p></div></article></section>`;
-    const inLineup = m.heroLineup.includes(kind);
+    const lineup = m.heroLineup;
+    const inLineup = lineup.includes(kind);
+    const replace = inLineup ? undefined : this.heroSwapTarget(lineup, kind);
     const gear = m.gear,
       loadout = (gear.loadouts[kind] ?? []).filter((slug) => gear.levels[slug] !== undefined),
       setup = {
@@ -4127,7 +4137,7 @@ export class HUD {
       : this.heroCancelConfirm === kind
         ? `<p>Cancel this upgrade and recover ${n(cancellation.refund)} ${cancellation.resource === 'dark' ? 'dark elixir' : cancellation.resource}?</p><div class="confirm-actions">${button('hero-cancel-keep', 'Keep upgrading', 'game-btn stone')}${button(`hero-cancel-confirm:${kind}`, 'Confirm cancellation', 'game-btn red')}</div>`
         : button(`hero-cancel-request:${kind}`, 'Cancel upgrade', 'game-btn stone');
-    return `<section class="hero-section" data-hero="${kind}"><article class="hero-overview"><div class="hero-portrait"><img src="${isKing ? hudAsset('king') : heroPortrait(kind)}" alt="${name}"></div><div><span class="eyebrow">HERO HALL ${hall.level}${inLineup ? ` · SLOT ${m.heroLineup.indexOf(kind) + 1} OF ${nativeHeroSlots(hall.level)}` : ' · BENCHED'}</span><h2>${name}</h2><p>Level ${progress.level} / ${max} · ${progress.upgradeEnd ? 'Upgrading' : inLineup ? 'In battle lineup' : 'Benched'}${petStatus ? ` · ${petStatus}` : ''}</p></div></article>
+    return `<section class="hero-section" data-hero="${kind}"><article class="hero-overview"><div class="hero-portrait"><img src="${isKing ? hudAsset('king') : heroPortrait(kind)}" alt="${name}"></div><div><span class="eyebrow">HERO HALL ${hall.level}${inLineup ? ` · SLOT ${lineup.indexOf(kind) + 1} OF ${nativeHeroSlots(hall.level)}` : ' · BENCHED'}</span><h2>${name}</h2><p>Level ${progress.level} / ${max} · ${progress.upgradeEnd ? 'Upgrading' : inLineup ? 'In battle lineup' : 'Benched'}${petStatus ? ` · ${petStatus}` : ''}</p></div></article>
       ${kind === 'warden' ? button('warden-mode', m.wardenMode === 'air' ? 'Air mode' : 'Ground mode', 'game-btn stone', `aria-label="Grand Warden mode: ${m.wardenMode}"`) : ''}
       ${`<div class="hero-stat-grid">${stat('Hitpoints', native.hp, upcoming?.hp)}${stat('Damage per second', native.dps, upcoming?.dps)}${stat('Damage per hit', native.damage, upcoming?.damage)}${stat('Attack interval', native.rate, undefined, 's')}${stat('Attack range', native.range, undefined, native.range === 1 ? ' tile' : ' tiles')}${stat('Movement', native.speed, undefined, ' tiles/s')}</div>
       ${scale < 1 ? `<p class="hero-scaling">Town Hall ${m.townhallLevel} strength: ${scale * 100}% health, damage and recovery. Full strength at Town Hall 6.</p>` : ''}
@@ -4146,7 +4156,7 @@ export class HUD {
       }`}
       <p class="hero-stats-note">Pet: ${petStatus || 'none'} · ${button('pets', 'Manage pets', 'replay-link')}</p>
       <div class="hero-upgrade"><p>${resource('dark')} <b data-resource="dark">${n(m.state.dark)}</b> dark elixir · ${resource('elixir')} <b data-resource="elixir">${n(m.state.elixir)}</b> elixir</p>${progress.upgradeEnd ? `<p>Upgrade completes in <b data-hero-timer="${kind}">${time((progress.upgradeEnd - m.clock) / 1000)}</b></p>${button(`hero-finish:${kind}`, `Finish ${gem} <span data-hero-gems="${kind}">${m.finishCost({ upgradeEnd: progress.upgradeEnd } as Building)}</span>`, 'game-btn green')}${m.booksFor({ hero: kind }).length ? button(`book-hero:${kind}`, `${icon('BookOpen', 17)} ${MAGIC_ITEMS[m.booksFor({ hero: kind })[0]].name}`, 'game-btn blue') : ''}${cancelUpgrade}` : capped ? `<p class="max-level">${isKing && m.townhallLevel < 7 ? 'Hero upgrades unlock at Town Hall 7' : missing.length ? `Upgrade to ${missing.join(' and ')}` : 'Maximum hero level'}</p>` : `${button(`hero-upgrade:${kind}`, upgradeCostText, 'game-btn green', upgradeDisabled ? 'disabled' : '')}${m.magicItemCount('hammer-of-heroes') ? button(`hammer-hero:${kind}`, `${icon('Hammer', 17)} Hammer of Heroes`, 'game-btn blue', m.busy >= m.builders ? 'disabled' : '') : ''}<p>${upgradeSecondsText} · Requires one free builder</p>`}</div>
-      ${inLineup ? '' : `<div class="hero-upgrade">${m.heroLineup.length >= nativeHeroSlots(hall.level) ? button(`hero-lineup:${kind}`, `Swap in for ${HERO_SOURCE[m.heroLineup[m.heroLineup.length - 1]]}`, 'game-btn blue') : button(`hero-lineup:${kind}`, 'Add to lineup', 'game-btn blue')}</div>`}</section>`;
+      ${inLineup ? '' : `<div class="hero-upgrade">${replace ? button(`hero-lineup:${kind}`, `Swap in for ${HERO_SOURCE[replace]}`, 'game-btn blue') : button(`hero-lineup:${kind}`, 'Add to lineup', 'game-btn blue')}</div>`}</section>`;
   }
   /** Pet House: research one pet at a time and assign one pet to each hero. */
   private pets() {

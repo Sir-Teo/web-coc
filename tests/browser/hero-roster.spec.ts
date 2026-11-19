@@ -494,3 +494,129 @@ for (const lineup of [
       .toBe(true);
     expect(errors).toEqual([]);
   });
+
+test.describe('phone pet upgrade items', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  for (const item of ['pet-potion', 'book-of-heroes'] as const) {
+    test(`${item} completes assigned pet research once across reload`, async ({ page }) => {
+      await boot(page);
+      await develop(page);
+      const before = await page.evaluate((item) => {
+        const { model } = window.__game;
+        model.addMagicItem(item);
+        return { dark: model.state.dark, gems: model.state.gems };
+      }, item);
+      const pets = async () => {
+        await heroes(page);
+        await page.locator('[data-action="pets"]').first().tap();
+      };
+      const reload = async () => {
+        await page.reload();
+        await page.waitForFunction(() => window.__game?.scene.artSettled);
+      };
+      const state = () =>
+        page.evaluate((item) => {
+          const { model: m } = window.__game;
+          return {
+            count: m.magicItemCount(item),
+            level: m.petProgress.levels.lassi,
+            assigned: m.petProgress.assigned.king,
+            research: m.petProgress.research,
+            dark: m.state.dark,
+            gems: m.state.gems,
+          };
+        }, item);
+
+      await pets();
+      await page.locator('[data-action="pet-assign:lassi,king"]').tap();
+      await page.locator('[data-action="pet-research:lassi"]').tap();
+      await expect(page.locator('[data-pet-timer]')).toBeVisible();
+      const charged = { dark: before.dark - 20_000, gems: before.gems };
+      const researching = await state();
+      expect(researching).toMatchObject({ ...charged, count: 1, level: 1, assigned: 'lassi' });
+      expect(researching.research?.kind).toBe('lassi');
+      await reload();
+      expect(await state()).toEqual(researching);
+      if (item === 'book-of-heroes') {
+        await pets();
+        await page.locator('[data-pet="lassi"] [data-action="book-pet"]').tap();
+        await expect(page.locator('[data-pet-timer]')).toHaveCount(0);
+      } else {
+        await page.evaluate(() => {
+          const { model } = window.__game;
+          model.selected = model.townhall!.id;
+          model.changed();
+        });
+        await page.locator('.building-context [data-action="magic-items"]').tap();
+        const use = page.locator('[data-action="item-potion:pet-potion"]');
+        await use.tap();
+        await expect(use).toHaveCount(0);
+        await reload();
+        const accelerated = await page.evaluate(() => {
+          const { model: m } = window.__game;
+          const boost = m.state.boosts!.pets!;
+          const before = m.petProgress.research!.end;
+          const now = boost.applied + 600_000;
+          m.tick(now);
+          const after = m.petProgress.research!.end;
+          m.tick(now);
+          return { before, after, repeated: m.petProgress.research!.end };
+        });
+        expect(accelerated.after).toBe(accelerated.before - 23 * 600_000);
+        expect(accelerated.repeated).toBe(accelerated.after);
+        await reload();
+        expect((await state()).research?.end).toBe(accelerated.after);
+        await page.evaluate(() => {
+          const { model: m } = window.__game;
+          m.tick(m.state.boosts!.pets!.end);
+        });
+      }
+      const finished = { ...charged, count: 0, level: 2, assigned: 'lassi', research: undefined };
+      expect(await state()).toEqual(finished);
+      await reload();
+      expect(await state()).toEqual(finished);
+      await page.locator('.attack-btn').tap();
+      await page.locator('[data-action="attack:0"]').tap();
+      await expect(page.locator('.prep-banner')).toBeVisible();
+      expect(await page.evaluate(() => window.__game.model.battleHero('king')!.pet)).toEqual({
+        kind: 'lassi',
+        level: 2,
+      });
+    });
+  }
+});
+
+test.describe('phone Hero Hall lineup', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('swapping in a ready hero fills an unavailable battle slot first', async ({ page }) => {
+    await boot(page);
+    await develop(page);
+    await page.evaluate(() => {
+      const { model: m } = window.__game;
+      m.heroHall!.level = 9;
+      m.tick(m.clock);
+      if (!m.setHeroLineup(['king', 'queen', 'prince', 'warden']))
+        throw Error('Lineup setup failed');
+      const king = m.heroProgress('king')!;
+      king.upgradeStart = m.clock;
+      king.upgradeEnd = m.clock + 3_600_000;
+      m.changed();
+    });
+    await heroes(page);
+    const swap = page.locator('[data-action="hero-lineup:champion"]');
+    await expect(swap).toHaveText('Swap in for Barbarian King');
+    await swap.tap();
+    const lineup = ['champion', 'queen', 'prince', 'warden'];
+    expect(await page.evaluate(() => window.__game.model.heroLineup)).toEqual(lineup);
+    await page.reload();
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    await page.locator('.attack-btn').tap();
+    await page.locator('[data-action="attack:0"]').tap();
+    await expect(page.locator('.prep-banner')).toBeVisible();
+    expect(
+      await page.evaluate(() => window.__game.model.battle!.nativeHeroes!.map((hero) => hero.kind)),
+    ).toEqual(lineup);
+  });
+});
