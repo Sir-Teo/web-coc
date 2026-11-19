@@ -197,7 +197,8 @@ test('enabling the map cursor moves focus from battle controls so Enter and Spac
     model.state.army = { ...emptyArmy(), swordsman: 5 };
     model.startCampaign(0);
   });
-  await page.waitForFunction(() => window.__game.scene.artSettled);
+  await page.waitForFunction(() => !window.__game.scene.battleArtPending());
+  await page.locator('[data-action="troop:swordsman"]').click();
   await page.locator('[data-action="battle-speed"]').focus();
   await page.keyboard.press('m');
   await expect(page.locator('#game')).toBeFocused();

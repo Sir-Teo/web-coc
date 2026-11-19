@@ -2775,7 +2775,8 @@ export class HUD {
       const first = items[0],
         last = items.at(-1);
       const outside = !!dialog && !dialog.contains(document.activeElement);
-      if (e.shiftKey && (outside || document.activeElement === first)) {
+      const resultHeading = result && document.activeElement?.id === 'result-title';
+      if (e.shiftKey && (outside || resultHeading || document.activeElement === first)) {
         e.preventDefault();
         last?.focus();
       } else if (!e.shiftKey && (outside || document.activeElement === last)) {
@@ -2973,7 +2974,8 @@ export class HUD {
       this.resultShown = true;
       this.countUp();
       this.audio.play('victory');
-      this.modalEl.querySelector<HTMLElement>('[data-action="home"]')?.focus();
+      // A short viewport must open on the outcome, even when the actions are below the fold.
+      this.modalEl.querySelector<HTMLElement>('#result-title')?.focus({ preventScroll: true });
     }
     this.updateLive();
   }
@@ -5788,7 +5790,7 @@ export class HUD {
   private result() {
     const b = this.model.battle!,
       r = b.result!;
-    return `<div class="modal-backdrop result-backdrop"><section class="result-modal" role="dialog" aria-modal="true" aria-labelledby="result-title"><div class="result-rays"></div><span class="result-eyebrow">BATTLE COMPLETE</span><h1 id="result-title">${b.practice ? 'Practice complete' : r.stars ? 'Victory!' : 'A brave attempt'}</h1><div class="result-stars">${[0, 1, 2].map((i) => `<span class="${i < r.stars ? 'earned' : ''}">★</span>`).join('')}</div><p>${r.destruction}% destruction <span>·</span> ${b.practice ? 'Your village' : campaignStage(b.index, b.catalog).name}</p>${
+    return `<div class="modal-backdrop result-backdrop"><section class="result-modal" role="dialog" aria-modal="true" aria-labelledby="result-title"><div class="result-rays"></div><span class="result-eyebrow">BATTLE COMPLETE</span><h1 id="result-title" tabindex="-1">${b.practice ? 'Practice complete' : r.stars ? 'Victory!' : 'A brave attempt'}</h1><div class="result-stars">${[0, 1, 2].map((i) => `<span class="${i < r.stars ? 'earned' : ''}">★</span>`).join('')}</div><p>${r.destruction}% destruction <span>·</span> ${b.practice ? 'Your village' : campaignStage(b.index, b.catalog).name}</p>${
       b.practice
         ? '<p class="practice-result-note">Your village, troops and spells are unchanged.<br>Rearrange your defenses and try a different approach.</p>'
         : b.ladder
