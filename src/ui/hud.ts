@@ -762,6 +762,7 @@ export class HUD {
         panel: 'campaign' | 'campaign-scout';
         focus: FocusMark | null;
         launcher: FocusMark | null;
+        scoutScroll: number;
       }
     | ({ panel: 'battle-log' } & BattleLogReturn);
   private repeatAttack?: RepeatAttack;
@@ -1338,6 +1339,7 @@ export class HUD {
           panel: this.panel === 'campaign-scout' ? 'campaign-scout' : 'campaign',
           focus: this.focusBefore,
           launcher: focusMark(this.actionSource ?? document.activeElement),
+          scoutScroll: this.modalEl.querySelector('.campaign-scout')?.scrollTop ?? 0,
         }
       : drawer === 'army' && this.panel === 'battle-log'
         ? { panel: 'battle-log', ...this.captureBattleLogReturn() }
@@ -1362,6 +1364,8 @@ export class HUD {
     else {
       this.show(previous.panel);
       this.focusBefore = previous.focus;
+      const scout = this.modalEl.querySelector('.campaign-scout');
+      if (scout) scout.scrollTop = previous.scoutScroll;
       restoreFocusMark(previous.launcher);
     }
   }

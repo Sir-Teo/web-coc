@@ -2,7 +2,10 @@ import { test, expect } from '@playwright/test';
 
 test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-test('training from a campaign scout returns to the same opponent', async ({ page }) => {
+test('training from a campaign scout returns to the same opponent and visible action', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 480 });
   await page.goto('/?lazyart');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').tap();
@@ -14,16 +17,28 @@ test('training from a campaign scout returns to the same opponent', async ({ pag
   const scout = page.locator('.campaign-scout');
   await expect(scout.getByRole('heading', { name: 'Payback' })).toBeVisible();
   await expect(scout.getByRole('button', { name: 'Back to campaign' })).toBeVisible();
-  await scout.getByRole('button', { name: 'Prepare army' }).tap();
+  const prepare = scout.getByRole('button', { name: 'Prepare army' });
+  const offset = () => scout.evaluate((element) => element.scrollTop);
+  await prepare.scrollIntoViewIfNeeded();
+  const before = await offset();
+  expect(before).toBeGreaterThan(0);
+  await prepare.tap();
   await expect(page.locator('.drawer-sheet')).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.__game.model.battle)).toBeNull();
   await page.locator('[data-action="close-drawer"]').tap();
   await expect(scout.getByRole('heading', { name: 'Payback' })).toBeVisible();
-  await scout.getByRole('button', { name: 'Prepare army' }).tap();
+  expect(await offset()).toBe(before);
+  await expect(prepare).toBeInViewport();
+  await expect(prepare).toBeFocused();
+  await prepare.tap();
   await page.locator('[data-action="train:swordsman"]').tap();
   await page.locator('[data-action="close-drawer"]').tap();
   await expect(scout.getByRole('heading', { name: 'Payback' })).toBeVisible();
-  await scout.getByRole('button', { name: 'Attack', exact: true }).tap();
+  const attack = scout.getByRole('button', { name: 'Attack', exact: true });
+  expect(await offset()).toBe(before);
+  await expect(attack).toBeInViewport();
+  await expect(attack).toBeFocused();
+  await attack.tap();
   await expect(page.locator('.battle-enemy h2')).toHaveText('Payback');
   await expect(page.locator('.prep-banner')).toBeVisible();
   await page.locator('.end-battle[data-action="home"]').tap();

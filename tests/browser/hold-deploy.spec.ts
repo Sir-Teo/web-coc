@@ -416,6 +416,15 @@ test.describe('phone campaign preparation', () => {
       const x = Math.round(bounds.x + bounds.width * 0.45);
       const y = Math.round(Math.min(bounds.y + bounds.height, viewport.height) - 15);
       const travel = Math.min(60, Math.round(bounds.height / 2));
+      await list.evaluate((element) => {
+        element.addEventListener(
+          'scrollend',
+          () => element.setAttribute('data-swipe-settled', ''),
+          {
+            once: true,
+          },
+        );
+      });
       const cdp = await page.context().newCDPSession(page);
       await cdp.send('Input.dispatchTouchEvent', {
         type: 'touchStart',
@@ -428,17 +437,10 @@ test.describe('phone campaign preparation', () => {
         });
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
       await expect.poll(offset).toBeGreaterThan(priorScroll);
-      // Capture the actual return point after the trusted swipe, including any momentum.
-      const returning = list.evaluate(
-        (element) =>
-          new Promise<number>((resolve) => {
-            document
-              .querySelector('[data-action="campaign-army"]')!
-              .addEventListener('click', () => resolve(element.scrollTop), { once: true });
-          }),
-      );
+      // A tap during the swipe's momentum can stop scrolling without activating the button.
+      await expect(list).toHaveAttribute('data-swipe-settled', '');
+      const returnOffset = await offset();
       await prepare.tap();
-      const returnOffset = await returning;
       await train.tap();
       await page.locator('[data-action="close-drawer"]').tap();
       await expect(list).toBeVisible();
