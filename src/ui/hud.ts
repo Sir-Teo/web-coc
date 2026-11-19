@@ -2265,8 +2265,19 @@ export class HUD {
       case 'train':
         m.train(arg as TroopKind);
         break;
-      case 'attack':
-        m.startCampaign(Number(arg));
+      case 'attack': {
+        const index = Number(arg);
+        if (
+          this.panel === 'campaign' &&
+          !m.armyReady &&
+          m.campaignOpen(index) &&
+          !campaignPending(index) &&
+          !practiceLevelAt(index)
+        ) {
+          this.showDrawer('army', true);
+          break;
+        }
+        m.startCampaign(index);
         if (m.battle) {
           this.panel = null;
           this.drawerPanel = null;
@@ -2275,6 +2286,7 @@ export class HUD {
         }
         this.render();
         break;
+      }
       case 'siege-end':
         m.endSiege();
         break;

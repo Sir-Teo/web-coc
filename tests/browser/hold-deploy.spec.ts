@@ -318,6 +318,22 @@ test('switching troop cards starts a fresh deployment tap', async ({ page }) => 
 test.describe('phone campaign preparation', () => {
   test.use({ hasTouch: true, isMobile: true });
 
+  test('an unlocked attack opens army preparation when the army is empty', async ({ page }) => {
+    await page.goto('/?lazyart');
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    await page.locator('[data-action="skip-tutorial"]').tap();
+    await page.locator('.train-add').tap();
+    const clear = page.locator('[data-action="clear-army"]');
+    if (await clear.isEnabled()) await clear.tap();
+    await page.locator('[data-action="close-drawer"]').tap();
+    await page.locator('.attack-btn').tap();
+    await page.locator('[data-action="attack:0"]').tap();
+    await expect(page.locator('[data-action="train:swordsman"]').first()).toBeVisible();
+    await page.locator('[data-action="close-drawer"]').tap();
+    await expect(page.locator('[data-action="attack:0"]')).toBeVisible();
+    expect(await page.evaluate(() => window.__game.model.battle)).toBeNull();
+  });
+
   test('an empty army can be prepared directly from the campaign map', async ({ page }) => {
     await page.goto('/?lazyart');
     await page.waitForFunction(() => window.__game?.scene.artSettled);
