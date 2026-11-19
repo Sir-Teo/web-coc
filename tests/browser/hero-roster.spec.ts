@@ -184,8 +184,56 @@ test.describe('phone attack preparation', () => {
     await heroes(page);
     await page.locator('[data-action="pets"]').first().tap();
     await page.locator('[data-action="pet-assign:lassi,king"]').tap();
-    await page.locator('[data-action="pet-research:lassi"]').tap();
+    await expect(page.locator('[data-pet="diggy"]')).toContainText('Requires Pet House 6');
+    await expect(page.locator('[data-action="pet-research:diggy"]')).toHaveCount(0);
+    const quote = await page.evaluate(async () => {
+      const { petLevelCap, petUpgradeQuote } = await import('/src/game/native-hero-data.ts');
+      const { model: m } = window.__game;
+      m.state.pets!.levels.lassi = petLevelCap('lassi', m.petHouse!.level);
+      m.changed();
+      return petUpgradeQuote('lassi', 1)!;
+    });
+    expect(quote.resource).toBe('dark');
+    const research = page.locator('[data-action="pet-research:lassi"]');
+    await expect(page.locator('[data-pet="lassi"]')).toContainText('Upgrade the Pet House');
+    await expect(research).toHaveCount(0);
+    const dark = await page.evaluate((cost) => {
+      const { model: m } = window.__game;
+      const dark = m.state.dark;
+      m.state.pets!.levels.lassi = 1;
+      m.state.dark = cost - 1;
+      m.changed();
+      return dark;
+    }, quote.cost);
+    await expect(research).toBeDisabled();
+    await page.evaluate((dark) => {
+      const { model: m } = window.__game;
+      m.state.dark = dark;
+      m.changed();
+    }, dark);
+    await expect(research).toBeEnabled();
+    await expect(research).toHaveAccessibleName(
+      `Research to level 2 for ${quote.cost.toLocaleString()} Dark Elixir`,
+    );
+    const balance = () =>
+      page.evaluate(() => {
+        const { model: m } = window.__game;
+        return { dark: m.state.dark, elixir: m.state.elixir, gems: m.state.gems, busy: m.busy };
+      });
+    const before = await balance();
+    await research.tap();
     await expect(page.locator('[data-pet-timer]')).toBeVisible();
+    const pending = await page.evaluate(() => window.__game.model.petProgress.research!);
+    expect(pending.end - pending.start).toBe(quote.seconds * 1000);
+    const charged = { ...before, dark: before.dark - quote.cost };
+    expect(await balance()).toEqual(charged);
+    await page.reload();
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    expect(await balance()).toEqual(charged);
+    expect(await page.evaluate(() => window.__game.model.petProgress.research)).toEqual(pending);
+    await heroes(page);
+    await page.locator('[data-action="pets"]').first().tap();
+    await expect(page.locator('[data-action="pet-research:owl"]')).toHaveCount(0);
     await page.screenshot({ path: 'output/playtest/upgrading-pet-phone.png' });
     await page.locator('.modal [data-action="close"]').tap();
     const closeArmy = page.locator('[data-action="close-drawer"]');
