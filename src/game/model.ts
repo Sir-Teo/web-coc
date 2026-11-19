@@ -8046,6 +8046,8 @@ export class GameModel {
     if (!this.battle || this.replay || this.battle.finished) return this.state;
     const copy = new GameModel(structuredClone(this.state), this.clock);
     copy.battle = structuredClone(this.battle);
+    copy.recording = structuredClone(this.recording);
+    copy.recordingLimitReached = this.recordingLimitReached;
     copy.suspendBattle();
     return copy.state;
   }

@@ -36,7 +36,7 @@ import {
   validStashedDecorations,
   withinDecorationLimits,
 } from './decorations';
-import { validateReplay } from './replay';
+import { type ReplayData, validateReplay } from './replay';
 import { HERO_MAX_LEVEL } from './heroes';
 import { validEquipment, validOres, EQUIPMENT_KEYS } from './equipment';
 import { validStarBonus, validTreasury } from './leagues';
@@ -562,15 +562,14 @@ let db: IDBDatabase | null = null;
 let commitRevision = 0;
 /**
  * Recordings live apart from the village. A save writes the village without them (small enough
- * to stringify on every save and on unload); each recording is written to IndexedDB once, under
- * its raid record's id, in the same transaction as the village that first lists it, and deleted
- * with the last village that lists it. Loading attaches them again.
+ * to stringify on every save and on unload). A transaction updates its recordings alongside
+ * the village and removes any it no longer lists. Loading attaches them again.
  */
 // Keyed by record id and time: an imported village may reuse an id for a different raid.
 const REPLAY_KEY = (record: { id: number; at: number }) => `replay:${record.id}:${record.at}`;
-/** Keys of the recordings IndexedDB already holds. A recording never changes once written. */
-const storedReplays = new Set<string>();
-const pendingReplayDeletions = new Set<string[]>();
+/** Committed recordings, or a key whose recording has not been loaded into memory yet. */
+const storedReplays = new Map<string, ReplayData | undefined>();
+const pendingReplayChanges = new Set<{ added: string[]; dropped: string[] }>();
 /** The village without its recordings; the in-memory state keeps them. */
 export function villageSnapshot(state: Save): Save {
   if (!state.raidLog?.some((record) => record.replay)) return state;
@@ -611,6 +610,7 @@ async function attachReplays(save: Save): Promise<Save> {
     if (replays[i]) target.replay = replays[i] as NonNullable<typeof target.replay>;
     // A recording that no longer fits its record is dropped rather than failing the village.
     if (!validateSave(full)) delete target.replay;
+    if (target.replay) storedReplays.set(REPLAY_KEY(record), target.replay);
   }
   return full;
 }
@@ -656,7 +656,7 @@ export async function loadSave(): Promise<Save | undefined> {
     });
     storedReplays.clear();
     for (const key of keys)
-      if (typeof key === 'string' && key.startsWith('replay:')) storedReplays.add(key);
+      if (typeof key === 'string' && key.startsWith('replay:')) storedReplays.set(key, undefined);
   } catch {
     /* A valid local backup remains usable. */
   }
@@ -734,13 +734,18 @@ export async function saveGame(state: Save): Promise<boolean> {
       record.replay ? [[REPLAY_KEY(record), record.replay] as const] : [],
     ),
   );
-  // IndexedDB runs these writes in order. A newer snapshot restoring a recording
-  // must write it again even if the earlier deletion has yet to commit.
-  const scheduledDeletions = new Set([...pendingReplayDeletions].flat());
-  const added = [...listed.keys()].filter(
-    (id) => !storedReplays.has(id) || scheduledDeletions.has(id),
+  // A resumed raid can finish under the same key as its hidden checkpoint. Write
+  // the new recording even if an older payload or deletion is already queued.
+  const scheduledChanges = new Set(
+    [...pendingReplayChanges].flatMap(({ added, dropped }) => [...added, ...dropped]),
   );
-  const dropped = [...storedReplays].filter((id) => !listed.has(id));
+  const added = [...listed.keys()].filter(
+    (id) => storedReplays.get(id) !== listed.get(id) || scheduledChanges.has(id),
+  );
+  const dropped = [...new Set([...storedReplays.keys(), ...scheduledChanges])].filter(
+    (id) => !listed.has(id),
+  );
+  const changes = { added, dropped };
   // A reload may abort the asynchronous database write. Keep only not-yet-durable
   // recordings inline until the same transaction commits their separate payloads.
   const pending = new Set(added);
@@ -780,9 +785,9 @@ export async function saveGame(state: Save): Promise<boolean> {
         store.put(village, 'village');
         for (const key of added) store.put(listed.get(key), key);
         for (const key of dropped) store.delete(key);
-        if (dropped.length) pendingReplayDeletions.add(dropped);
+        if (added.length || dropped.length) pendingReplayChanges.add(changes);
         tx.oncomplete = () => {
-          for (const key of added) storedReplays.add(key);
+          for (const key of added) storedReplays.set(key, listed.get(key)!);
           for (const key of dropped) storedReplays.delete(key);
           // Use the text captured before yielding, and never overwrite a newer
           // save's backup when an older transaction finishes afterwards.
@@ -801,7 +806,7 @@ export async function saveGame(state: Save): Promise<boolean> {
     } catch {
       /* Keep the local backup. */
     } finally {
-      pendingReplayDeletions.delete(dropped);
+      pendingReplayChanges.delete(changes);
     }
   return stored;
 }

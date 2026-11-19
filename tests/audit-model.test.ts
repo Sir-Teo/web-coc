@@ -105,12 +105,15 @@ it('checkpoints an open raid as settled without touching the live battle', () =>
   const checkpoint = m.settledState();
   // The checkpoint records the raid: its log entry and the spent troop.
   expect(checkpoint.raidLog).toHaveLength(1);
+  expect(checkpoint.raidLog![0].replay).toBeDefined();
   expect(checkpoint.stats.raids).toBe(1);
   expect(checkpoint.army.swordsman).toBe(4);
   expect(validateSave(checkpoint)).toBe(true);
   // The running raid carries on untouched.
   expect(m.state).toEqual(live);
   expect(m.battle?.finished).toBe(false);
+  m.suspendBattle();
+  expect(m.state).toEqual(checkpoint);
   // Scouting alone commits nothing.
   const scouting = new GameModel();
   scouting.state.army = { ...emptyArmy(), swordsman: 5 };

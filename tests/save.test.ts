@@ -284,3 +284,25 @@ it('preserves a recording restored while its earlier deletion is still pending',
   expect(pendingReplay).toEqual(restored.raidLog![0].replay);
   expect(backup().raidLog[0].replay).toBeUndefined();
 });
+
+it('stores the completed recording over an earlier checkpoint with the same raid key', async () => {
+  await replayStorage();
+  const model = new GameModel();
+  model.state.spells.lightning = 1;
+  model.startBattle(0);
+  model.activeSpell = 'lightning';
+  expect(model.castSpell(10, 10)).toBe(true);
+  model.step(0.05);
+  const checkpoint = model.settledState();
+  expect(checkpoint.raidLog![0].replay).toBeDefined();
+  await saveGame(checkpoint);
+  model.step(0.1);
+  model.finishBattle();
+  const completed = model.state.raidLog![0];
+  expect(completed.id).toBe(checkpoint.raidLog![0].id);
+  expect(completed.at).toBe(checkpoint.raidLog![0].at);
+  expect(completed.replay).not.toEqual(checkpoint.raidLog![0].replay);
+
+  await saveGame(model.state);
+  expect((await loadSave())!.raidLog![0]).toEqual(completed);
+});

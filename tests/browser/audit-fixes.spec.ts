@@ -623,3 +623,83 @@ test('the map cursor selects, and deploys in battle, from the keyboard', async (
     .poll(() => page.evaluate(() => window.__game.model.battle.remaining.swordsman))
     .toBe(4);
 });
+
+test('a phone restores a hidden raid from the synchronous backup alone', async ({
+  page,
+  browser,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const checkpoint = await page.evaluate(async () => {
+    const { model, game } = window.__game;
+    const { BUILDINGS } = await import('/src/game/data.ts');
+    game.loop.sleep();
+    model.state.gold = 0;
+    model.state.elixir = 0;
+    model.state.spells.lightning = 1;
+    model.startBattle(0);
+    model.activeSpell = 'lightning';
+    const mine = model.battle!.buildings.find((building) => building.kind === 'goldmine')!;
+    const center = BUILDINGS[mine.kind].size / 2;
+    if (!model.castSpell(mine.x + center, mine.y + center)) throw Error('Lightning did not deploy');
+    for (let i = 0; i < 40; i++) model.step(0.05);
+    const state = structuredClone(model.state);
+    const taken = model.battle!.lootTaken!;
+    const stars = model.battle!.stars;
+    const availableGold = model.battle!.availableLoot!.gold;
+    if (model.battle!.finished || taken.gold <= 0)
+      throw Error('Expected a live raid with gold loot');
+
+    IDBObjectStore.prototype.put = () => {
+      throw new DOMException('IndexedDB unavailable during checkpoint', 'InvalidStateError');
+    };
+    Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+    const backup = localStorage.getItem('crown-clan-save-v1')!;
+    return { backup, state, taken, stars, availableGold, liveFinished: model.battle!.finished };
+  });
+  expect(checkpoint.liveFinished).toBe(false);
+  const saved = JSON.parse(checkpoint.backup);
+  expect(saved.stats.raids).toBe(checkpoint.state.stats.raids + 1);
+  expect(saved.gold).toBe(checkpoint.state.gold + checkpoint.taken.gold);
+  expect(saved.stars[0]).toBe(checkpoint.stars);
+  expect(saved.campaignLoot.remaining[0].gold).toBe(
+    checkpoint.availableGold - checkpoint.taken.gold,
+  );
+  expect(saved.raidLog).toHaveLength(1);
+  expect(saved.raidLog[0].spells.lightning).toBe(1);
+  expect(saved.raidLog[0].replay).toBeDefined();
+
+  // A new browser context receives only the synchronous snapshot. This simulates
+  // loss of the original document and IndexedDB, without invoking browser discard.
+  const restored = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  try {
+    await restored.addInitScript((backup) => {
+      if (!localStorage.getItem('crown-clan-save-v1'))
+        localStorage.setItem('crown-clan-save-v1', backup);
+      indexedDB.open = () => {
+        throw new DOMException('IndexedDB unavailable on restore', 'InvalidStateError');
+      };
+    }, checkpoint.backup);
+    const reopened = await restored.newPage();
+    await reopened.goto(new URL('/?lazyart', page.url()).href);
+    await reopened.waitForFunction(() => window.__game?.scene.artSettled);
+    const balances = () =>
+      reopened.evaluate(() => {
+        const { gold, stats, campaignLoot, raidLog } = window.__game.model.state;
+        return { gold, raids: stats.raids, campaignLoot, raidLog };
+      });
+    const loaded = {
+      gold: saved.gold,
+      raids: saved.stats.raids,
+      campaignLoot: saved.campaignLoot,
+      raidLog: saved.raidLog,
+    };
+    expect(await balances()).toEqual(loaded);
+    await reopened.locator('[data-action="battle-log"]').click();
+    await reopened.getByRole('button', { name: 'Watch replay' }).click();
+    await expect(reopened.getByRole('slider', { name: 'Replay position' })).toBeVisible();
+    expect(await balances()).toEqual(loaded);
+  } finally {
+    await restored.close();
+  }
+});
