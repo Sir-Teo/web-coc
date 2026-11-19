@@ -2305,6 +2305,10 @@ export class HUD {
         this.audio.music(m.state.settings.music);
         m.changed();
         break;
+      case 'hero-ability-auto':
+        m.state.settings.manualHeroAbilities = !m.state.settings.manualHeroAbilities;
+        m.changed();
+        break;
       case 'motion':
         m.toggleReducedMotion();
         applyMotionPreference(m);
@@ -5354,6 +5358,12 @@ export class HUD {
           'Battery saver',
           'Draws 30 frames a second at no more than 2× sharpness, so phones run cooler and last longer.',
           !!s.batterySaver,
+        ],
+        [
+          'hero-ability-auto',
+          'Automatic Hero abilities',
+          'Use an unspent Hero ability when the Hero takes lethal damage.',
+          !s.manualHeroAbilities,
         ],
         // Only where the browser can vibrate (not iOS Safari).
         ...(typeof navigator.vibrate === 'function'

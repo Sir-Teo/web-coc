@@ -743,6 +743,8 @@ export interface Save {
     sound: boolean;
     music: boolean;
     reducedMotion: boolean;
+    /** Disable automatic Hero abilities on lethal damage. Absent means automatic. */
+    manualHeroAbilities?: boolean;
     /** Effects channel volume, 0–1; absent keeps the original full effects mix. */
     effectsVolume?: number;
     /** Music channel volume, 0–1; absent keeps the original half-volume mix. */
@@ -826,6 +828,8 @@ export interface MortarShell {
   radius: number;
 }
 export interface Battle {
+  /** Version 248: the attacking player disabled automatic Hero abilities at entry. */
+  manualHeroAbilities?: true;
   /** Version 45+: native troop abilities, spawned units, statuses and delayed death effects. */
   nativeRoster?: true;
   nativeContentExpansion?: true;
@@ -6218,6 +6222,9 @@ export class GameModel {
         : {}),
       townhall: this.townhallLevel,
       ...(heroes.length ? { heroes } : {}),
+      ...(heroes.length && this.state.settings.manualHeroAbilities
+        ? { manualHeroAbilities: true as const }
+        : {}),
     };
     this.battle = replayBattle(initial);
     resetPathCaches();
@@ -7543,7 +7550,7 @@ export class GameModel {
         const unit = b.units.find((u) => u.id === hero.unitId);
         if (!unit) continue;
         // A knocked-out hero fires its ability automatically (SimulatePlayerInputOnDeath).
-        if (unit.hp <= 0 && !unit.spent && !hero.abilityUsed)
+        if (!b.manualHeroAbilities && unit.hp <= 0 && !unit.spent && !hero.abilityUsed)
           this.activateNativeHeroAbility(hero.kind, true);
         hatchPhoenix(native, hero, unit);
         ragePetAfterHeroDeath(b, hero, unit);
@@ -7561,7 +7568,14 @@ export class GameModel {
           );
       }
     const king = b.units.find((u) => u.hero);
-    if (king && !king.spent && king.hp <= 0 && b.hero && !b.hero.abilityUsed)
+    if (
+      !b.manualHeroAbilities &&
+      king &&
+      !king.spent &&
+      king.hp <= 0 &&
+      b.hero &&
+      !b.hero.abilityUsed
+    )
       this.activateHeroAbility(true);
     for (const u of b.units) {
       if (u.hp > 0) continue;

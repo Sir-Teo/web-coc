@@ -28,6 +28,7 @@ export function makeReplayFile(replay: ReplayData): ReplayFile {
         ...(s.catalog ? { catalog: s.catalog } : {}),
         ...(s.scenery ? { scenery: s.scenery.map((o) => ({ data: o.data, x: o.x, y: o.y })) } : {}),
         practice: s.practice,
+        ...(s.manualHeroAbilities ? { manualHeroAbilities: s.manualHeroAbilities } : {}),
         ...(s.ladder
           ? { ladder: { opponent: s.ladder.opponent, win: s.ladder.win, loss: s.ladder.loss } }
           : {}),

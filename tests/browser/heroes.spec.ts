@@ -204,3 +204,39 @@ test('dark elixir collection updates its own HUD counter and survives reload', a
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   await expect(page.locator('.resource-bar [data-resource="dark"]')).toHaveText('20');
 });
+
+test.describe('phone Hero ability settings', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('manual-only abilities persist and still allow a tap to activate', async ({ page }) => {
+    await boot(page);
+    await unlock(page);
+    const settings = page.getByRole('button', { name: 'Settings', exact: true });
+    const automatic = page.getByRole('switch', { name: 'Automatic Hero abilities' });
+    await settings.tap();
+    await expect(automatic).toBeChecked();
+    await automatic.tap();
+    await expect(automatic).not.toBeChecked();
+    await page.screenshot({ path: 'output/playtest/hero-ability-setting-phone.png' });
+    await page.reload();
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    await settings.tap();
+    await expect(automatic).not.toBeChecked();
+    await page.locator('.modal [data-action="close"]').tap();
+
+    await page.locator('.attack-btn').tap();
+    await page.locator('[data-action="attack:0"]').tap();
+    await expect(page.locator('.prep-banner')).toBeVisible();
+    const card = page.locator('[data-action="hero-select:king"]');
+    expect(
+      await page.evaluate(() => {
+        const m = window.__game.model;
+        return m.battle!.manualHeroAbilities && m.deployNativeHero('king', 2, 13);
+      }),
+    ).toBe(true);
+    await card.tap();
+    await expect
+      .poll(() => page.evaluate(() => window.__game.model.battleHero('king')?.abilityUsed))
+      .toBe(true);
+  });
+});

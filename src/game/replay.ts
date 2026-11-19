@@ -66,7 +66,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 247;
+export const REPLAY_VERSION = 248;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -437,6 +437,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 244 ||
   version === 245 ||
   version === 246 ||
+  version === 247 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -543,6 +544,8 @@ export type ReplayAction = { step: number } & (
   | { type: 'end' }
 );
 export interface ReplaySetup {
+  /** Version 248, stored only when automatic Hero abilities are disabled. */
+  manualHeroAbilities?: true;
   defendingHeroes?: DefendingHeroSetup[];
   garrisons?: GarrisonSetup[];
   catalog?: CampaignCatalog;
@@ -610,6 +613,7 @@ export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
     s.buildings.some((building) => building.kind === 'airbomb' && !building.npc);
   const petSpring = version >= 237 && homeSpring && s.heroes?.some((hero) => hero.pet);
   return {
+    ...(version >= 248 && s.manualHeroAbilities ? { manualHeroAbilities: true as const } : {}),
     ...(version >= 239 &&
     s.heroes?.some((hero) =>
       hero.items.some(
@@ -1200,6 +1204,8 @@ export function validateReplay(value: unknown): value is ReplayData {
   const spellKeys = spellKeysAt(value.version);
   const equipmentCeiling = value.version < 47 ? EQUIPMENT_LEVEL_BEFORE_47 : EQUIPMENT_MAX_LEVEL;
   if (
+    (s.manualHeroAbilities !== undefined &&
+      (value.version < 248 || s.manualHeroAbilities !== true)) ||
     !validCampaignCatalog(s.catalog) ||
     (s.catalog !== undefined && value.version < 27) ||
     (s.practice && s.catalog === 'goblin-v1') ||

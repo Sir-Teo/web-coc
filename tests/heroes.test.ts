@@ -17,6 +17,8 @@ import { heroUpgradeCost, heroRecovery, HERO_ABILITY, HERO_MAX_LEVEL } from '../
 import { requiredTownHall } from '../src/game/progression';
 import { migrateSave, validateSave } from '../src/game/save';
 import { stepTraps } from '../src/game/traps';
+import { validateReplay } from '../src/game/replay';
+import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 
 function village(th = 7) {
   const m = new GameModel();
@@ -202,6 +204,54 @@ describe('hero combat', () => {
     early.deployHero(2, 13);
     expect(early.activateHeroAbility()).toBe(true);
     expect(early.battle!.units[0].maxHp).toBeLessThan(u.maxHp);
+  });
+
+  it('records manual-only Hero abilities and replays the choice independently of home settings', () => {
+    const m = village(18);
+    m.state.settings.manualHeroAbilities = true;
+    expect(validateSave(m.state)).toBe(true);
+    m.state.buildings = [
+      makeBuilding(1, 'townhall', 36, 36, 18),
+      makeBuilding(2, 'herohall', 38, 20, 1),
+      makeBuilding(3, 'monolith', 13, 10, 1),
+      makeBuilding(4, 'monolith', 20, 10, 1),
+      makeBuilding(5, 'monolith', 13, 17, 1),
+      makeBuilding(6, 'monolith', 20, 17, 1),
+    ];
+    m.state.nextId = 100;
+    m.state.army = { ...emptyArmy(), swordsman: 1 };
+    m.startBattle(0, true);
+    expect(m.deployNativeHero('king', 6.9, 11.5)).toBe(true);
+    const u = m.battle!.units[0];
+    for (let step = 0; step < 600 && u.hp > 0 && !m.battleHero('king')!.abilityUsed; step++)
+      m.step(0.05);
+    expect(u.hp).toBeLessThanOrEqual(0);
+    expect(m.battleHero('king')!.abilityUsed).toBeFalsy();
+    const at = m.battle!.elapsed;
+    const snapshot = structuredClone(m.battle);
+    m.step(0.05);
+    m.finishBattle();
+    const data = m.state.raidLog![0].replay!;
+    expect(data.initial.manualHeroAbilities).toBe(true);
+    expect(data.actions.some((action) => action.type === 'ability')).toBe(false);
+    expect(validateReplay({ ...data, version: 247 })).toBe(false);
+
+    const viewer = new GameModel();
+    expect(viewer.openReplay(parseReplayFile(JSON.stringify(makeReplayFile(data))))).toBe(true);
+    for (const target of [at, 0, at]) {
+      viewer.seekReplay(target);
+      while (viewer.replay!.seeking) viewer.step(0.05);
+      if (target === at) expect(viewer.battle).toEqual(snapshot);
+    }
+
+    const historical = structuredClone(data);
+    historical.version = 247;
+    delete historical.initial.manualHeroAbilities;
+    viewer.state.settings.manualHeroAbilities = true;
+    expect(viewer.openReplay(historical)).toBe(true);
+    viewer.seekReplay(at);
+    while (viewer.replay!.seeking) viewer.step(0.05);
+    expect(viewer.battleHero('king')!.abilityUsed).toBe(true);
   });
 
   it('a spring damages a hero by half without ejecting him', () => {

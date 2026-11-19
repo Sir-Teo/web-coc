@@ -16,6 +16,12 @@ retain their text labels. This presentation change adds no recording version.
 
 `src/game/replay.ts` defines a versioned initial snapshot containing the actual enemy layout, defense levels and upgrade state, original army/spells, troop and spell research levels, King level/Town Hall, and starting unit identifier. A compact event stream records successful troop deployments, spell casts, hero deployment, manual hero activation, and battle termination, in order at simulation-step boundaries. Failed inputs and selection/camera movements are not recorded. The actual simulation deltas are preserved, including scouting time. Automatic hero activation, traps, mortar impacts, and combat outcomes are reproduced by the normal simulation.
 
+Version 248 captures the **Automatic Hero abilities** setting at attack entry.
+A manual-only recording carries that choice through export, import and seeking.
+Earlier recordings and recordings made with automatic activation enabled keep
+their established lethal-damage behavior regardless of the viewer's setting.
+[Supercell's Hero ability patch notes](https://supercell.com/en/games/clashofclans/blog/news/december-update-patch-notes/) document the opt-out.
+
 Troop and spell research levels are frozen at attack entry. Research that finishes at home during an attack applies to the next attack. While watching a replay, home research advances from the home level, never from the recorded troop or spell level. This closes a timing dependency that would otherwise change damage midway through a recording.
 
 Playback runs a separate GameModel and exposes only its battlefield to the scene. It never spends home troops or spells, pays loot, changes trophies/stars/statistics, or appends a result to the home log. Home collectors and upgrade timers continue their normal wall-clock behavior while watching. Restart creates a fresh simulation from the stored snapshot, so later layout changes, upgrades, or empty army camps cannot alter an old replay.

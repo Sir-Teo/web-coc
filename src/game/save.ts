@@ -193,6 +193,8 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
     !['sound', 'music', 'reducedMotion'].every(
       (k) => typeof s.settings[k as keyof Save['settings']] === 'boolean',
     ) ||
+    (s.settings.manualHeroAbilities !== undefined &&
+      typeof s.settings.manualHeroAbilities !== 'boolean') ||
     (s.settings.fullMotion !== undefined && typeof s.settings.fullMotion !== 'boolean') ||
     (s.settings.batterySaver !== undefined && typeof s.settings.batterySaver !== 'boolean') ||
     (s.settings.haptics !== undefined && typeof s.settings.haptics !== 'boolean') ||
