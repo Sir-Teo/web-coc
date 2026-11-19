@@ -3420,7 +3420,7 @@ export class HUD {
         `<span>${icon('ArrowBigUp', 18)} Upgrade ${quote.walls.length > 1 ? quote.walls.length : ''}</span><small>${resource(kind)} ${n(quote.cost)}</small>`,
         // Short of the price: grey like the Shop's unaffordable tiles, still tappable for gems.
         `game-btn ${quote.short ? 'stone' : 'green'}`,
-        `${quote.issue && !quote.short ? 'disabled' : ''} aria-label="Upgrade ${quote.walls.length} ${quote.walls.length === 1 ? 'wall' : 'walls'} with ${kind}"`,
+        `${quote.issue && !quote.short ? 'disabled' : ''} aria-label="Upgrade ${quote.walls.length} ${quote.walls.length === 1 ? 'wall' : 'walls'} with ${kind}"${quote.issue ? ` title="${html(quote.issue)}"` : ''}`,
       );
     const levelText = low === high ? `Level ${low}` : `Levels ${low}–${high}`;
     const note = !gold.walls.length

@@ -3046,11 +3046,14 @@ export class GameModel {
     if (count < 1) return false;
     if (delta < 0) return true;
     if (anchor.level >= this.maxLevel('wall')) return false;
-    const funds = Math.max(this.state.gold, anchor.level >= 4 ? this.state.elixir : 0);
+    const capacity = Math.max(
+      this.resourceCap('gold'),
+      anchor.level >= 4 ? this.resourceCap('elixir') : 0,
+    );
     const cost = this.upgradeCost(anchor);
     return (
       count <= matchingWalls(this.state.buildings, anchor.id).length &&
-      (count * cost <= funds || count * wallRings(cost) <= this.magicItemCount('wall-ring'))
+      (count * cost <= capacity || count * wallRings(cost) <= this.magicItemCount('wall-ring'))
     );
   }
   adjustWallSelection(delta: number) {
@@ -3091,9 +3094,11 @@ export class GameModel {
             ? 'Elixir upgrades start at wall level 4 → 5. Upgrade lower-level walls with gold first.'
             : this.busy >= this.builders
               ? 'A free builder is needed for instant wall upgrades.'
-              : this.state[resource] < cost
-                ? `You need ${cost.toLocaleString()} ${resource}.`
-                : null;
+              : this.state[resource] >= cost
+                ? null
+                : cost > this.resourceCap(resource)
+                  ? `This upgrade exceeds your ${resource} storage capacity.`
+                  : `You need ${cost.toLocaleString()} ${resource}.`;
     // Only resources are missing, which gems can buy while the price fits the storages.
     const short = !!issue && this.state[resource] < cost && issue.startsWith('You need');
     return { walls, cost, skipped: ids.length - walls.length, issue, short };

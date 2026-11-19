@@ -76,7 +76,7 @@ test('a touched wall selects its connected row, upgrades it instantly and surviv
   expect(await page.evaluate(() => window.__game.model.selectedWalls)).toEqual([]);
 });
 
-test('same-level controls respect the budget and wait for a free builder', async ({ page }) => {
+test('same-level controls use storage capacity and wait for a free builder', async ({ page }) => {
   await selectWall(page);
   await page.evaluate(() => {
     const m = window.__game.model;
@@ -86,7 +86,7 @@ test('same-level controls respect the budget and wait for a free builder', async
   });
   await page.locator('[data-action="wall-count:10"]').tap();
   await expect(page.locator('.wall-context h2')).toHaveText('11 Walls');
-  await expect(page.locator('[data-action="wall-count:1"]')).toBeDisabled();
+  await expect(page.locator('[data-action="wall-count:1"]')).toBeEnabled();
   await page.locator('[data-action="wall-count:-10"]').tap();
   await expect(page.locator('.wall-context h2')).toHaveText('Wall');
   await page.locator('[data-action="wall-count:10"]').tap();
@@ -113,6 +113,39 @@ test('same-level controls respect the budget and wait for a free builder', async
       ids,
     ),
   ).toEqual(Array(11).fill(3));
+});
+
+test('selects beyond the wallet and uses the existing gem shortfall for the batch', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await selectWall(page);
+  await page.evaluate(() => {
+    const m = window.__game.model;
+    m.state.gold = 0;
+    m.changed();
+  });
+  await page.getByRole('button', { name: 'Add 1 wall', exact: true }).tap();
+  const before = await page.evaluate(() => {
+    const m = window.__game.model;
+    return { ids: m.selectedWalls.map((wall) => wall.id), gems: m.state.gems };
+  });
+  await page.getByRole('button', { name: 'Upgrade 2 walls with gold' }).tap();
+  const buy = page.locator('[data-action="shortfall-buy"]');
+  await expect(buy).toBeEnabled();
+  await page.screenshot({ path: 'output/playtest/wall-storage-shortfall.png' });
+  const gems = await page.evaluate(() => window.__game.model.shortfallOffer!.gems);
+  await buy.tap();
+  expect(
+    await page.evaluate((ids) => {
+      const m = window.__game.model;
+      return {
+        levels: ids.map((id) => m.state.buildings.find((b) => b.id === id)!.level),
+        gold: m.state.gold,
+        gems: m.state.gems,
+      };
+    }, before.ids),
+  ).toEqual({ levels: [3, 3], gold: 0, gems: before.gems - gems });
 });
 
 test('mixed rows disclose capped walls and unlock elixir after every piece reaches level four', async ({

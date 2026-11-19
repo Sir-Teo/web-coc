@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { GameModel, makeBuilding } from '../src/game/model';
 import { wallRow, matchingWalls } from '../src/game/wall-selection';
 import { validateSave } from '../src/game/save';
@@ -48,10 +48,6 @@ describe('wall selection and instant upgrades', () => {
     expect(m.selectedWalls).toContain(anchor);
     expect(m.adjustWallSelection(-10)).toBe(true);
     expect(m.adjustWallSelection(-1)).toBe(false);
-    m.state.gold = m.upgradeCost(anchor);
-    m.state.elixir = 200000; // Low-level walls cannot use elixir.
-    expect(m.adjustWallSelection(1)).toBe(false);
-    m.state.gold *= 2;
     expect(m.adjustWallSelection(1)).toBe(true);
     expect(m.adjustWallSelection(2)).toBe(false);
     m.selected = m.townhall!.id;
@@ -59,6 +55,31 @@ describe('wall selection and instant upgrades', () => {
     expect(m.selectedWalls.map((b) => b.id)).toEqual([anchor.id]);
     m.beginEdit();
     expect(m.selectedWalls).toEqual([]);
+  });
+
+  it('uses storage capacity for selection and only offers shortfalls that fit', () => {
+    const m = village();
+    const anchor = m.state.buildings.find((b) => b.kind === 'wall')!;
+    m.selected = anchor.id;
+    const cost = m.upgradeCost(anchor);
+    vi.spyOn(m, 'resourceCap').mockImplementation((kind) => cost * (kind === 'gold' ? 2 : 10));
+    m.state.gold = 0;
+    expect(m.adjustWallSelection(1)).toBe(true);
+    expect(m.adjustWallSelection(1)).toBe(false);
+    const ids = m.selectedWalls.map((wall) => wall.id);
+    expect(m.wallUpgradeQuote(ids, 'gold')).toMatchObject({ cost: cost * 2, short: true });
+
+    m.addMagicItem('wall-ring', 3);
+    expect(m.adjustWallSelection(1)).toBe(true);
+    expect(m.adjustWallSelection(1)).toBe(false);
+    const group = m.selectedWalls.map((wall) => wall.id);
+    expect(m.wallUpgradeQuote(group, 'gold')).toMatchObject({
+      cost: cost * 3,
+      short: false,
+      issue: 'This upgrade exceeds your gold storage capacity.',
+    });
+    expect(m.upgradeWalls(group, 'gold')).toBe(false);
+    expect(m.shortfallOffer).toBeNull();
   });
 
   it('selects and upgrades multiple walls with Wall Rings and busy builders', () => {
@@ -71,7 +92,6 @@ describe('wall selection and instant upgrades', () => {
       cannon.upgradeEnd = m.clock + 3600000;
     m.addMagicItem('wall-ring', 2);
     expect(m.adjustWallSelection(1)).toBe(true);
-    expect(m.adjustWallSelection(1)).toBe(false);
     const ids = m.selectedWalls.map((wall) => wall.id);
     expect(m.busy).toBe(m.builders);
     expect(m.useWallRings([...ids, ids[0]])).toBe(false);
