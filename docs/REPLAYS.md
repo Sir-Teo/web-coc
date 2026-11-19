@@ -20,6 +20,12 @@ Troop and spell research levels are frozen at attack entry. Research that finish
 
 Playback runs a separate GameModel and exposes only its battlefield to the scene. It never spends home troops or spells, pays loot, changes trophies/stars/statistics, or appends a result to the home log. Home collectors and upgrade timers continue their normal wall-clock behavior while watching. Restart creates a fresh simulation from the stored snapshot, so later layout changes, upgrades, or empty army camps cannot alter an old replay.
 
+Version 242 lets the Healing Spell restore HP to a Totem while its normal decay
+continues. The pinned 18.400.21 Healing row has no Totem immunity, and the
+[retained Totem notes](../reference/official-wiki/spells-siege-super/totem-spell.md)
+distinguish Healing Spells from Healers and Druids. Version 241 and earlier retain
+their original Healing Spell behavior.
+
 ## Persistence and limits
 
 New recordings stay inline in the synchronous local backup until IndexedDB

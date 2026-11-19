@@ -220,7 +220,7 @@ export interface NativeUnitState {
   superHogSplit?: true;
   /** Siege machines are immune to troop spells. */
   siege?: boolean;
-  /** Units the client marks immune to healing (Totem). */
+  /** Units the client marks immune to healing. */
   noHealing?: boolean;
   /** Halves consumed by a merge resolve no death effects. */
   merged?: boolean;

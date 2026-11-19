@@ -586,8 +586,9 @@ function supportAttackers(
   const immuneSieges = flag(row, 'ImmunitySiegeMachines');
   const excludesOwner = flag(row, 'DoesNotAffectOwner');
   const extraHealthCap = num(row, 'ExtraHealthMax');
+  const healsTotems = battle.nativeHealingTotem && cast.name === 'Healing';
   for (const u of battle.units) {
-    if (!liveAttacker(u, at) || isTotem(u)) continue;
+    if (!liveAttacker(u, at) || (isTotem(u) && !healsTotems)) continue;
     if (u.native?.siege && immuneSieges) continue;
     if (excludesOwner && u.id === cast.owner) continue;
     if (distance2D(u.x - x, u.y - y) > radius + 1e-9) continue;

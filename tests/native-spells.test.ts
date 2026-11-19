@@ -291,6 +291,34 @@ describe('complete spell roster', () => {
     expect(totem.hp).toBeLessThan(hp);
   });
 
+  it('lets Healing restore a Totem without changing its timed HP drain', () => {
+    const runTotem = (heal: boolean) => {
+      const m = arena([], { swordsman: 1 }, { totem: 1, heal: 1 }, 1);
+      cast(m, 'totem', 10, 10);
+      run(m, 2);
+      const totem = m.battle!.units.find((u) => u.kind === 'totem')!;
+      expect(totem.hp).toBeLessThan(totem.maxHp);
+      if (heal) cast(m, 'heal', 10, 10);
+      run(m, firstHit('heal', 1) + 0.1);
+      const hp = totem.hp;
+      m.finishBattle();
+      return { hp, record: m.state.raidLog![0].replay! };
+    };
+    const healed = runTotem(true);
+    const control = runTotem(false);
+    expect(healed.hp - control.hp).toBe(-num(nativeRow('spells', 'Healing', 1), 'Damage'));
+    for (const [version, expectedHp] of [
+      [241, control.hp],
+      [healed.record.version, healed.hp],
+    ]) {
+      const viewer = new GameModel();
+      expect(viewer.openReplay({ ...healed.record, version })).toBe(true);
+      viewer.seekReplay(1e9);
+      while (viewer.replay!.seeking) viewer.step(0.05);
+      expect(viewer.battle!.units.find((u) => u.kind === 'totem')?.hp).toBe(expectedHp);
+    }
+  });
+
   it('replays every new spell to the identical final battle', () => {
     const spells = SPELL_KEYS.filter((k) => !['rage', 'heal', 'lightning', 'revive'].includes(k));
     const m = arena(
