@@ -2677,8 +2677,10 @@ export class HUD {
     }
     const drawerBody = this.drawerEl.querySelector('.drawer-body');
     const modalScroll = this.modalEl.querySelector('.modal-body')?.scrollTop ?? 0;
-    const drawerScroll = drawerBody?.scrollLeft ?? 0;
-    const drawerScrollY = drawerBody?.scrollTop ?? 0;
+    const armyDrawer = this.drawerPanel === 'army';
+    let drawerScroll = armyDrawer ? 0 : drawerBody?.scrollLeft ?? 0;
+    let drawerScrollY = armyDrawer ? 0 : drawerBody?.scrollTop ?? 0;
+    let drawerRebuilt = false;
     const categoryScroll = this.drawerEl.querySelector('.shop-tabs')?.scrollLeft ?? 0;
     const armyScroll = this.hudEl.querySelector('.army-tray')?.scrollLeft ?? 0;
     const active = document.activeElement;
@@ -2705,7 +2707,12 @@ export class HUD {
         !!this.drawerMarkup && !!this.drawerPanel && this.drawerPanel === this.renderedDrawer;
       const next = drawerMarkup ? this.drawerParts : null;
       if (!updatingOpenDrawer || !next || !this.patchDrawer(this.renderedDrawerParts, next)) {
+        if (armyDrawer && drawerBody) {
+          drawerScroll = drawerBody.scrollLeft;
+          drawerScrollY = drawerBody.scrollTop;
+        }
         this.drawerEl.innerHTML = drawerMarkup;
+        drawerRebuilt = true;
         if (updatingOpenDrawer)
           this.drawerEl
             .querySelector<HTMLElement>('.drawer-sheet')
@@ -2752,7 +2759,9 @@ export class HUD {
     const armyTray = this.hudEl.querySelector('.army-tray');
     if (armyTray && armyTray.scrollLeft !== armyScroll) armyTray.scrollLeft = armyScroll;
     const body = this.drawerEl.querySelector('.drawer-body');
-    if (body && drawerChanged) {
+    // A patched Army drawer keeps its scroll container. Reading and writing its offsets
+    // forces layout on every troop edit, even while its position stays the same.
+    if (body && drawerChanged && (!armyDrawer || drawerRebuilt)) {
       body.scrollLeft = drawerScroll;
       body.scrollTop = drawerScrollY;
     }

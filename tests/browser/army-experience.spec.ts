@@ -307,3 +307,48 @@ test('the Army drawer reads each housing capacity a bounded number of times per 
   expect(result.keptFill).toBe(true);
   expect(result.changedLabel).toBe(true);
 });
+
+test('editing a scrolled Army catalog on a phone keeps its position without forcing a scroll', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('.train-add').click();
+  const drawer = page.locator('.army-strip');
+  await page.locator('[data-action="train:giant"]').scrollIntoViewIfNeeded();
+  const result = await drawer.evaluate((element) => {
+    const { model, hud } = window.__game;
+    const offsets = ['scrollLeft', 'scrollTop'] as const;
+    const before = offsets.map((key) => element[key]);
+    let accesses = 0;
+    for (const key of offsets) {
+      const { get, set } = Object.getOwnPropertyDescriptor(Element.prototype, key)!;
+      Object.defineProperty(element, key, {
+        configurable: true,
+        get() {
+          accesses++;
+          return get!.call(element);
+        },
+        set(value: number) {
+          accesses++;
+          set!.call(element, value);
+        },
+      });
+    }
+    try {
+      model.removeTroop('swordsman');
+      hud.render();
+    } finally {
+      for (const key of offsets) Reflect.deleteProperty(element, key);
+    }
+    return {
+      accesses,
+      sameDrawer: document.querySelector('.army-strip') === element,
+      before,
+      after: offsets.map((key) => element[key]),
+    };
+  });
+  expect(result.before[0]).toBeGreaterThan(0);
+  expect(result.sameDrawer).toBe(true);
+  expect(result.after).toEqual(result.before);
+  expect(result.accesses).toBe(0);
+});

@@ -2482,3 +2482,17 @@ and updated runs were taken consecutively. A final run after the production
 typecheck fixes measured 7.51 ms. This covers synchronous Army edit
 and redraw work with the scene paused. Frame presentation, actual device
 latency and live-battle FPS require separate measurements.
+
+A follow-up CPU profile attributed most sampled HUD render time to writing
+the retained drawer's scroll offset. The Army drawer now lets its mounted
+scroll container keep its position and saves and restores offsets when the
+container must be replaced. A 390 × 844 regression records zero offset reads
+or writes during a scrolled edit and verifies the same container and position.
+Before the change it recorded four offset accesses.
+
+Matched runs against `8ed00081` on cloud Chromium 155 with SwiftShader used the
+same 340-building, 75-card workload. Five baseline run medians ranged from
+6.80 to 7.77 ms per action and four candidate medians ranged from 3.15 to
+3.61 ms. The candidate's slowest batch ranged from 5.73 to 8.13 ms per action,
+versus 7.70 to 11.03 ms for baseline. These are synchronous edit and HUD
+redraw timings with the scene paused.
