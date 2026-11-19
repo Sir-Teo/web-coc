@@ -156,3 +156,121 @@ test('a Gear Up keeps its own job label through reload and frees the builder for
     )
     .toEqual({ constructing: true, busy: 1 });
 });
+
+test('a shrinking Builder suggestion continues at the next eligible building', async ({
+  page,
+}, info) => {
+  const ids = await page.evaluate(async () => {
+    const { makeBuilding } = await import('/src/game/model.ts');
+    const m = window.__game.model;
+    m.townhall!.level = 6;
+    m.state.gold = 100_000;
+    m.state.obstacles = [];
+    const cannons = m.state.buildings.filter((b) => b.kind === 'cannon');
+    for (const cannon of cannons) cannon.level = 2;
+    const third = makeBuilding(m.state.nextId++, 'cannon', 32, 32, 2);
+    m.state.buildings.push(third);
+    m.changed();
+    return [...cannons, third].map((cannon) => cannon.id);
+  });
+  const counter = page.locator('.status-chips [data-action="builders"]');
+  const row = page.locator('[data-action="builder-option:cannon,2"]');
+  const selected = () => page.evaluate(() => window.__game.model.selected);
+  await counter.tap();
+  await expect(row).toContainText('×3');
+  await row.tap();
+  expect(await selected()).toBe(ids[0]);
+  await page.locator(`[data-action="upgrade:${ids[0]}"]`).tap();
+  await counter.tap();
+  await expect(row).toContainText('×2');
+  await expect(page.locator('.builder-menu .working')).toContainText('Cannon');
+  await page.screenshot({ path: info.outputPath('shrinking-builder-row.png') });
+  for (const id of [ids[1], ids[2], ids[1]]) {
+    await row.tap();
+    expect(await selected()).toBe(id);
+    await counter.tap();
+  }
+  expect(await page.evaluate(() => window.__game.model.busy)).toBe(1);
+});
+
+test('a normal offline upgrade frees the sole builder for the next affordable suggestion', async ({
+  page,
+}) => {
+  const fixture = await page.evaluate(() => {
+    const m = window.__game.model;
+    m.townhall!.level = 5;
+    m.state.gold = 100_000;
+    m.state.elixir = 100_000;
+    const hut = m.state.buildings.find((b) => b.kind === 'builder')!;
+    m.state.buildings = m.state.buildings.filter((b) => b.kind !== 'builder' || b.id === hut.id);
+    const cannon = m.state.buildings.find((b) => b.kind === 'cannon')!;
+    const storage = m.state.buildings.find((b) => b.kind === 'goldstorage')!;
+    cannon.level = storage.level = 1;
+    m.changed();
+    return {
+      cannon: cannon.id,
+      storage: storage.id,
+      initialGold: m.state.gold,
+      initialElixir: m.state.elixir,
+    };
+  });
+  const counter = page.locator('.status-chips [data-action="builders"]');
+  const upgrade = (id: number) => page.locator(`[data-action="upgrade:${id}"]`);
+  const read = () =>
+    page.evaluate(({ cannon, storage }) => {
+      const m = window.__game.model;
+      const a = m.state.buildings.find((b) => b.id === cannon)!;
+      const b = m.state.buildings.find((b) => b.id === storage)!;
+      return {
+        builders: m.builders,
+        busy: m.busy,
+        gold: m.state.gold,
+        elixir: m.state.elixir,
+        xp: m.state.xp,
+        cannon: a.level,
+        cannonEnd: a.upgradeEnd,
+        cannonStart: a.upgradeStart,
+        storageEnd: b.upgradeEnd,
+        storageCost: m.upgradeCost(b),
+      };
+    }, fixture);
+  await counter.tap();
+  await page.locator('[data-action="builder-option:cannon,1"]').tap();
+  await upgrade(fixture.cannon).tap();
+  const active = await read();
+  expect(active).toMatchObject({
+    builders: 1,
+    busy: 1,
+    cannon: 1,
+    gold: fixture.initialGold - 1000,
+    elixir: fixture.initialElixir,
+  });
+  expect(active.cannonEnd).toBeGreaterThan(active.cannonStart!);
+  await page.goto('about:blank');
+  await page.clock.setFixedTime(active.cannonEnd! + 1);
+  await page.goto('/');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  const complete = await read();
+  expect(complete).toEqual({
+    ...active,
+    busy: 0,
+    cannon: 2,
+    cannonEnd: undefined,
+    cannonStart: undefined,
+    xp: active.xp + Math.floor(Math.sqrt((active.cannonEnd! - active.cannonStart!) / 1000)),
+  });
+  await counter.tap();
+  await page.locator('[data-action="builder-option:goldstorage,1"]').tap();
+  await upgrade(fixture.storage).tap();
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  const next = await read();
+  expect(next).toMatchObject({
+    busy: 1,
+    cannon: 2,
+    gold: complete.gold,
+    elixir: complete.elixir - complete.storageCost,
+    xp: complete.xp,
+  });
+  expect(next.storageEnd).toBeDefined();
+});

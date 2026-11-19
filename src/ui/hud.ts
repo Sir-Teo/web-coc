@@ -1885,9 +1885,15 @@ export class HUD {
           this.showDrawer('shop');
           break;
         }
-        const turn = (this.builderTurns.get(arg) ?? -1) + 1;
-        this.builderTurns.set(arg, turn);
-        this.action(`select-building:${option.ids[turn % option.ids.length]}`);
+        // The last building can leave the group when its upgrade starts. Keep
+        // walking the village order so a shortened group still picks its successor.
+        const previous = this.builderLastSelection.get(arg);
+        const after = m.state.buildings.findIndex((b) => b.id === previous);
+        const next =
+          m.state.buildings.find((b, i) => i > after && option.ids.includes(b.id))?.id ??
+          option.ids[0];
+        this.builderLastSelection.set(arg, next);
+        this.action(`select-building:${next}`);
         break;
       }
       case 'builder-hut':
@@ -4369,8 +4375,8 @@ export class HUD {
     ).join('')}</div>`;
   }
   /** Army catalog search and filters; kept while the drawer is closed and reopened. */
-  /** Builder menu groups by `kind,level`: how many taps each has had, to cycle its buildings. */
-  private builderTurns = new Map<string, number>();
+  /** Last selected building in each Builder menu group, keyed by kind and level. */
+  private builderLastSelection = new Map<string, number>();
   /** The Treasure pack waiting for its confirmation. */
   private treasureConfirm: { resource: GemResource; share: TreasurePack['share'] } | null = null;
   private armyFilter = { query: '', show: 'all' as ArmyShow, family: 'all' as ArmyFamily };
