@@ -1492,6 +1492,8 @@ export class VillageScene extends Phaser.Scene {
       this.fling.stop();
       this.model.endDrag(true);
       this.down = undefined;
+      // A cancelled press breaks the sequence of consecutive deployment taps.
+      this.lastTap = undefined;
       this.gesture = 'none';
       this.dragged = false;
       this.pinchDistance = 0;

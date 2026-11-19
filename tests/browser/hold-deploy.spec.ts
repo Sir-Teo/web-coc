@@ -218,7 +218,7 @@ test('a rapid second map tap deploys four troops with one tray refresh', async (
 test.describe('battle map multitouch', () => {
   test.use({ hasTouch: true, isMobile: true });
 
-  test('two fingers touching the battle map never spend a troop as a tap', async ({
+  test('a two-finger gesture interrupts rapid deployment without spending troops', async ({
     page,
     browserName,
   }) => {
@@ -229,7 +229,14 @@ test.describe('battle map multitouch', () => {
     const second = { id: 2, x: first.x + 12, y: first.y };
     const remaining = () => page.evaluate(() => window.__game.model.battle!.remaining.swordsman);
     const start = await remaining();
+    await page.evaluate(() => {
+      window.__game.scene.paused = true;
+      const now = performance.now();
+      Object.defineProperty(performance, 'now', { value: () => now, configurable: true });
+    });
     const cdp = await page.context().newCDPSession(page);
+    await page.touchscreen.tap(first.x, first.y);
+    expect(await remaining()).toBe(start - 1);
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [first] });
     await cdp.send('Input.dispatchTouchEvent', {
       type: 'touchStart',
@@ -237,11 +244,11 @@ test.describe('battle map multitouch', () => {
     });
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [second] });
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    expect(await remaining()).toBe(start);
+    expect(await remaining()).toBe(start - 1);
 
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [first] });
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    expect(await remaining()).toBe(start - 1);
+    expect(await remaining()).toBe(start - 2);
   });
 
   test('a second finger on a troop card cannot redirect a map hold', async ({
