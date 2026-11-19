@@ -1961,9 +1961,26 @@ export class HUD {
         this.show('buildings');
         break;
       case 'campaign-scout':
+        this.scoutLogReturn =
+          this.panel === 'battle-log'
+            ? {
+                scroll: this.modalEl.querySelector('.battle-log-body')?.scrollTop ?? 0,
+                focus: focusMark(this.actionSource ?? document.activeElement),
+              }
+            : undefined;
         this.scoutedStage = Math.max(0, Math.min(NATIVE_CAMPAIGN.length - 1, Number(arg) || 0));
         this.show('campaign-scout');
         break;
+      case 'scout-back-log': {
+        const previous = this.scoutLogReturn;
+        if (!previous) break;
+        this.scoutLogReturn = undefined;
+        this.show('battle-log');
+        const log = this.modalEl.querySelector('.battle-log-body');
+        if (log) log.scrollTop = previous.scroll;
+        restoreFocusMark(previous.focus);
+        break;
+      }
       case 'campaign-continue':
         this.scrollToStage(this.nextCampaignStage(), true);
         break;
@@ -5411,6 +5428,7 @@ export class HUD {
   }
   /** The stage a scouting preview shows. */
   private scoutedStage = 0;
+  private scoutLogReturn?: { scroll: number; focus: FocusMark | null };
   /**
    * An enlarged look at a campaign village before attacking: its layout, the defenses on show
    * (hidden Teslas and traps stay hidden, as in battle), the loot left and the suggested tier.
@@ -5446,7 +5464,10 @@ export class HUD {
       : !drill && !m.armyReady
         ? 'Prepare army'
         : `Attack ${icon('ArrowRight', 17)}`;
-    return `<div class="modal-body campaign-scout"><img class="campaign-scout-map" src="${campaignMapSource(i)}" alt="${html(v.name)} base layout" width="320" height="320"><div class="campaign-scout-info"><span class="eyebrow">STAGE ${v.stage}${v.family === 'forged' ? ' · FAN-MADE' : ''}${v.recommendedTownHall ? ` · SUGGESTED TOWN HALL ${v.recommendedTownHall}` : ''}</span><h2>${html(v.name)}</h2><p class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</p>${drill ? this.practiceArmy(drill, !(m.state.nativeCampaign?.stars[i] ?? 0)) : ''}<h3>Defenses on show</h3>${defenses.length ? `<ul class="campaign-scout-defenses">${defenses.map(([name, count]) => `<li><b>${count}×</b> ${html(name)}</li>`).join('')}</ul>` : '<p>No defenses in sight.</p>'}<p class="campaign-scout-note">Traps and hidden defenses are not shown until they trigger.</p><div class="confirm-actions">${button('campaign', 'Back to campaign', 'game-btn stone')}${drill?.steps.length && !locked && (m.state.nativeCampaign?.stars[i] ?? 0) ? button(`attack-guided:${i}`, `${icon('Info', 17)} Guided attack`, 'game-btn blue') : ''}${button(`attack:${i}`, attackLabel, 'game-btn orange', locked ? 'disabled' : '')}</div></div></div>`;
+    const back = this.scoutLogReturn
+      ? button('scout-back-log', 'Back to battle log', 'game-btn stone')
+      : button('campaign', 'Back to campaign', 'game-btn stone');
+    return `<div class="modal-body campaign-scout"><img class="campaign-scout-map" src="${campaignMapSource(i)}" alt="${html(v.name)} base layout" width="320" height="320"><div class="campaign-scout-info"><span class="eyebrow">STAGE ${v.stage}${v.family === 'forged' ? ' · FAN-MADE' : ''}${v.recommendedTownHall ? ` · SUGGESTED TOWN HALL ${v.recommendedTownHall}` : ''}</span><h2>${html(v.name)}</h2><p class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</p>${drill ? this.practiceArmy(drill, !(m.state.nativeCampaign?.stars[i] ?? 0)) : ''}<h3>Defenses on show</h3>${defenses.length ? `<ul class="campaign-scout-defenses">${defenses.map(([name, count]) => `<li><b>${count}×</b> ${html(name)}</li>`).join('')}</ul>` : '<p>No defenses in sight.</p>'}<p class="campaign-scout-note">Traps and hidden defenses are not shown until they trigger.</p><div class="confirm-actions">${back}${drill?.steps.length && !locked && (m.state.nativeCampaign?.stars[i] ?? 0) ? button(`attack-guided:${i}`, `${icon('Info', 17)} Guided attack`, 'game-btn blue') : ''}${button(`attack:${i}`, attackLabel, 'game-btn orange', locked ? 'disabled' : '')}</div></div></div>`;
   }
   /** Campaign list filter and position; kept between visits. */
   private campaignFilter: 'all' | 'open' | 'stars' | 'done' = 'all';

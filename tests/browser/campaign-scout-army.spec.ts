@@ -13,6 +13,7 @@ test('training from a campaign scout returns to the same opponent', async ({ pag
   await page.locator('[data-action="campaign-scout:0"]').tap();
   const scout = page.locator('.campaign-scout');
   await expect(scout.getByRole('heading', { name: 'Payback' })).toBeVisible();
+  await expect(scout.getByRole('button', { name: 'Back to campaign' })).toBeVisible();
   await scout.getByRole('button', { name: 'Prepare army' }).tap();
   await expect(page.locator('.drawer-sheet')).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.__game.model.battle)).toBeNull();
@@ -43,26 +44,41 @@ test('an empty army can prepare a campaign rematch from the Battle Log', async (
   await page.evaluate(async () => {
     const { emptyArmy } = await import('/src/game/army.ts');
     const m = window.__game.model;
-    m.state.army = { ...emptyArmy(), swordsman: 1 };
-    m.startCampaign(0);
-    m.activeTroop = 'swordsman';
-    if (!m.deploy(2, 2)) throw Error('Payback deployment refused');
-    m.finishBattle();
+    for (let attempt = 0; attempt < 4; attempt++) {
+      m.state.army = { ...emptyArmy(), swordsman: 1 };
+      m.startCampaign(0);
+      m.activeTroop = 'swordsman';
+      if (!m.deploy(2, 2)) throw Error('Payback deployment refused');
+      m.finishBattle();
+      if (attempt < 3) m.returnHome();
+    }
   });
   await page.locator('.result-modal [data-action="home"]').tap();
   await page.reload();
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="battle-log"]').tap();
-  const record = page.locator('.raid-record').first();
+  const log = page.locator('.battle-log-body');
+  const record = page.locator('.raid-record').last();
   await expect(record.getByRole('heading', { name: 'Payback' })).toBeVisible();
   const retry = record.getByRole('button', { name: /Prepare army|Attack village/ });
   await expect(retry).toBeEnabled();
+  await retry.scrollIntoViewIfNeeded();
+  const logScroll = await log.evaluate((el) => el.scrollTop);
+  expect(logScroll).toBeGreaterThan(0);
   await retry.tap();
   const scout = page.locator('.campaign-scout');
   await expect(scout.getByRole('heading', { name: 'Payback' })).toBeVisible();
   await scout.getByRole('button', { name: 'Prepare army' }).tap();
   await expect(page.locator('.drawer-sheet')).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.__game.model.battle)).toBeNull();
+  await page.locator('[data-action="close-drawer"]').tap();
+  await scout.getByRole('button', { name: 'Back to battle log', exact: true }).tap();
+  await expect(log).toBeVisible();
+  await expect(retry).toBeFocused();
+  expect(await log.evaluate((el) => el.scrollTop)).toBeCloseTo(logScroll, 0);
+  expect(await page.evaluate(() => window.__game.model.armySize)).toBe(0);
+  await retry.tap();
+  await scout.getByRole('button', { name: 'Prepare army' }).tap();
   await page.locator('[data-action="train:swordsman"]').tap();
   await page.locator('[data-action="close-drawer"]').tap();
   await scout.getByRole('button', { name: 'Attack', exact: true }).tap();
@@ -75,5 +91,5 @@ test('an empty army can prepare a campaign rematch from the Battle Log', async (
       army: window.__game.model.armySize,
       records: window.__game.model.state.raidLog?.length,
     })),
-  ).toEqual({ army: 1, records: 1 });
+  ).toEqual({ army: 1, records: 4 });
 });
