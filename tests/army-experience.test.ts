@@ -294,3 +294,23 @@ describe('practice and battle history', () => {
     expect(validateSave(m.state)).toBe(false);
   });
 });
+
+it('keeps the last fought loadout when scouting is abandoned', () => {
+  const model = new GameModel();
+  model.startBattle(0);
+  model.finishBattle();
+  model.returnHome();
+  const lastArmy = model.state.lastArmy;
+  const lastSpells = model.state.lastSpells;
+  model.state.army = { ...emptyArmy(), archer: 2 };
+  model.state.spells = { ...emptySpells(), lightning: 1 };
+  model.startBattle(0);
+  model.returnHome();
+  expect(model.state.lastArmy).toEqual(lastArmy);
+  expect(model.state.lastSpells).toEqual(lastSpells);
+  expect(model.state.stats.raids).toBe(1);
+  model.startBattle(0);
+  model.finishBattle();
+  expect(model.state.lastArmy).toEqual(model.state.army);
+  expect(model.state.lastSpells).toEqual(model.state.spells);
+});

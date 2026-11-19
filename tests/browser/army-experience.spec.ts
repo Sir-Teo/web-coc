@@ -352,3 +352,82 @@ test('editing a scrolled Army catalog on a phone keeps its position without forc
   expect(result.after).toEqual(result.before);
   expect(result.accesses).toBe(0);
 });
+
+test.describe('repeat raid preparation on touch', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  for (const action of ['continue', 'cancel'] as const) {
+    test(`a Last Army that no longer fits allows the player to ${action} from preparation`, async ({
+      page,
+    }) => {
+      const completed = await page.evaluate(async () => {
+        const { emptyArmy } = await import('/src/game/army.ts');
+        const { freshNativeCampaign } = await import('/src/game/native-campaign.ts');
+        const { model: m } = window.__game;
+        m.state.army = { ...emptyArmy(), swordsman: 5 };
+        (m.state.nativeCampaign ??= freshNativeCampaign()).stars[0] = 1;
+        m.startCampaign(1);
+        m.activeTroop = 'swordsman';
+        for (const [x, y] of [
+          [2, 2],
+          [2, 45],
+          [45, 2],
+          [45, 45],
+        ]) {
+          if (!m.deployBlocked(x, y) && m.deploy(x, y)) break;
+        }
+        if (!m.battle?.started) throw Error('Required a completed raid with one deployment');
+        m.finishBattle();
+        Object.defineProperty(m, 'capacity', { value: 4 });
+        return {
+          raids: m.state.stats.raids,
+          records: m.state.raidLog!.length,
+          index: m.battle.index,
+        };
+      });
+      await page.locator('[data-action="raid-again"]').tap();
+      await expect(page.locator('.drawer-sheet')).toBeVisible();
+      const retry = page.locator('[data-action="repeat-adjusted-attack"]');
+      await expect(retry).toHaveAccessibleName(/Goblin Forest/);
+      await expect(retry).toBeInViewport({ ratio: 1 });
+      const read = () =>
+        page.evaluate(() => {
+          const { model: m } = window.__game;
+          return {
+            battle: m.battle ? { index: m.battle.index, started: m.battle.started } : null,
+            raids: m.state.stats.raids,
+            records: m.state.raidLog!.length,
+            swordsman: m.state.army.swordsman,
+            archer: m.state.army.archer,
+          };
+        });
+      const expected = {
+        battle: null,
+        raids: completed.raids,
+        records: completed.records,
+        swordsman: 4,
+        archer: 0,
+      };
+      expect(await read()).toEqual(expected);
+      await page.locator('[data-action="remove-troop:swordsman"]').tap();
+      await page.locator('[data-action="train:archer"]').tap();
+      if (action === 'continue') await retry.tap();
+      else {
+        await page.locator('[data-action="close-drawer"]').tap();
+        await page.locator('.train-add').tap();
+        await expect(retry).toHaveCount(0);
+      }
+      expect(await read()).toEqual({
+        ...expected,
+        swordsman: 3,
+        archer: 1,
+        battle: action === 'continue' ? { index: completed.index, started: false } : null,
+      });
+      if (action === 'continue') {
+        await page.locator('[data-action="home"]').tap();
+        expect(await read()).toEqual({ ...expected, swordsman: 3, archer: 1 });
+      }
+      expect(await page.evaluate(() => window.__game.model.state.lastArmy!.swordsman)).toBe(5);
+    });
+  }
+});

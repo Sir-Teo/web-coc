@@ -212,6 +212,7 @@ import {
   timedBattle,
   EPIC_ITEM_GEMS,
   raidHeroes,
+  type Battle,
   type Building,
   type Save,
 } from '../game/model';
@@ -745,12 +746,15 @@ const RECALL_CARD_ART = {
   superhog: 'assets/recall-cards/superhog.png',
   superrider: 'assets/recall-cards/superrider.png',
 } as const;
+type RepeatAttack = Pick<Battle, 'index' | 'catalog'> & { ladder: boolean };
+
 export class HUD {
   private recallCardImages = new Map<string, HTMLImageElement>();
   private root: HTMLElement;
   private panel: Panel = null;
   private drawerPanel: Drawer = null;
   private campaignArmyReturn?: { focus: FocusMark | null };
+  private repeatAttack?: RepeatAttack;
   private tab = 'All';
   /** The decoration whose Stash the context card is asking to confirm. */
   private stashConfirm: number | null = null;
@@ -1261,13 +1265,14 @@ export class HUD {
     }
     this.restoreFocus();
   }
-  private showDrawer(drawer: Drawer, fromCampaign = false) {
+  private showDrawer(drawer: Drawer, fromCampaign = false, repeatAttack?: RepeatAttack) {
     if (this.drawerPanel === drawer) {
       this.closeDrawer();
       return;
     }
     if (fromCampaign) this.rememberCampaign();
     this.campaignArmyReturn = fromCampaign ? { focus: this.focusBefore } : undefined;
+    this.repeatAttack = repeatAttack;
     // Remember the launcher (the Train or Shop button) so closing the sheet can return to it.
     if (!this.drawerPanel)
       this.drawerLauncher = focusMark(this.actionSource ?? document.activeElement);
@@ -1280,6 +1285,7 @@ export class HUD {
   private closeDrawer() {
     const campaign = this.drawerPanel === 'army' ? this.campaignArmyReturn : undefined;
     this.campaignArmyReturn = undefined;
+    this.repeatAttack = undefined;
     this.drawerPanel = null;
     if (campaign && !this.model.battle) {
       this.show('campaign');
@@ -2118,7 +2124,11 @@ export class HUD {
         // Practice levels supply their army again; the player's Last army stays at home.
         if (!battle.practice && !battle.fixedArmy && !m.retrain()) {
           this.resultShown = false;
-          this.showDrawer('army');
+          this.showDrawer('army', false, {
+            index: battle.index,
+            catalog: battle.catalog,
+            ladder: !!battle.ladder,
+          });
           break;
         }
         // Another ladder match meets a new opponent, not the one just fought.
@@ -2127,6 +2137,20 @@ export class HUD {
         else m.startBattle(battle.index, battle.practice, battle.catalog);
         this.resultShown = false;
         this.panel = null;
+        this.render();
+        break;
+      }
+      case 'repeat-adjusted-attack': {
+        const repeat = this.repeatAttack;
+        if (!repeat || this.drawerPanel !== 'army' || !m.armyReady || m.battle) break;
+        if (repeat.ladder) m.startLadder();
+        else m.startBattle(repeat.index, false, repeat.catalog);
+        if (m.battle) {
+          this.repeatAttack = undefined;
+          this.drawerPanel = null;
+          this.panel = null;
+          this.resultShown = false;
+        }
         this.render();
         break;
       }
@@ -4485,6 +4509,15 @@ export class HUD {
     const overTroops = troopSpace < 0;
     const overSpells = spellRoomSpace < 0;
     const overCapacity = overTroops || overSpells;
+    const repeat = this.repeatAttack;
+    const attack = repeat
+      ? button(
+          'repeat-adjusted-attack',
+          repeat.ladder ? 'Find next match' : `Attack ${html(campaignStage(repeat.index, repeat.catalog).name)}`,
+          'game-btn green',
+          m.armyReady && !overCapacity ? '' : 'disabled',
+        )
+      : '';
     const power = m.boostLeft('army');
     const preparationNote = power
       ? `Power Potion · <b data-boost-end="${m.state.boosts!.army!.end}">${time(power)}</b> left · troops and spells fight at their Town Hall maximum`
@@ -4564,7 +4597,7 @@ export class HUD {
               `<p class="army-empty">No troops or spells match. ${button('army-filter-clear', 'Clear filters', 'replay-link')}</p>`,
             ]),
       ],
-      foot: `<footer class="drawer-foot ${overCapacity ? 'army-over-capacity' : ''}">${icon(overCapacity ? 'UsersRound' : 'Check', 17)} ${overCapacity ? 'Over capacity' : preparationLabel} <span>${preparationNote}</span></footer>`,
+      foot: `<footer class="drawer-foot ${overCapacity ? 'army-over-capacity' : ''}">${icon(overCapacity ? 'UsersRound' : 'Check', 17)} ${overCapacity ? 'Over capacity' : preparationLabel} <span>${preparationNote}</span>${attack}</footer>`,
     };
   }
 

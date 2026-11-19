@@ -6167,10 +6167,6 @@ export class GameModel {
     this.cancel();
     this.editing = false;
     this.practiceGuide = null;
-    if (!practice && !drill) {
-      this.state.lastArmy = { ...this.state.army };
-      this.state.lastSpells = { ...this.state.spells };
-    }
     const heroes = drill ? structuredClone(drill.heroes) : this.heroSetups();
     const buildings = practice
       ? this.state.buildings.map((building) => ({ ...building, hp: building.maxHp, cooldown: 0 }))
@@ -7912,6 +7908,10 @@ export class GameModel {
       };
       this.changed();
       return;
+    }
+    if (!b.practice && !b.fixedArmy) {
+      this.state.lastArmy = { ...b.carriedArmy };
+      this.state.lastSpells = { ...b.carried };
     }
     const gold = b.practice
         ? 0
