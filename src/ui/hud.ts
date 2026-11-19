@@ -738,6 +738,7 @@ export class HUD {
   private tab = 'All';
   /** The decoration whose Stash the context card is asking to confirm. */
   private stashConfirm: number | null = null;
+  private heroCancelConfirm: HeroKind | null = null;
   private inspectedTroop: TroopKind = 'swordsman';
   private inspectedSpell: SpellKind = 'lightning';
   private inspectedSmithHero: HeroKind = 'king';
@@ -1194,6 +1195,7 @@ export class HUD {
       card.querySelector<HTMLElement>('[data-action^="attack:"]')?.focus({ preventScroll: true });
   }
   private show(panel: Panel) {
+    if (panel !== 'heroes') this.heroCancelConfirm = null;
     this.rememberCampaign();
     // Another panel replaces an unanswered gem offer.
     if (panel !== 'shortfall') this.model.shortfall = null;
@@ -1218,6 +1220,7 @@ export class HUD {
     this.render();
   }
   private closePanel() {
+    this.heroCancelConfirm = null;
     this.rememberCampaign();
     if (this.panel === 'shortfall') this.model.dismissShortfall();
     if (this.panel === 'treasure') this.treasureConfirm = null;
@@ -1671,6 +1674,7 @@ export class HUD {
         this.show('progression');
         break;
       case 'hero-upgrade':
+        this.heroCancelConfirm = null;
         if (
           arg && (HERO_KINDS as string[]).includes(arg)
             ? m.upgradeRosterHero(arg as HeroKind)
@@ -1678,6 +1682,22 @@ export class HUD {
         )
           this.audio.effect('Start Hero Upgrade', 'build');
         break;
+      case 'hero-cancel-request':
+        if ((HERO_KINDS as string[]).includes(arg) && m.heroUpgradeCancellation(arg as HeroKind)) {
+          this.heroCancelConfirm = arg as HeroKind;
+          this.render();
+        }
+        break;
+      case 'hero-cancel-keep':
+        this.heroCancelConfirm = null;
+        this.render();
+        break;
+      case 'hero-cancel-confirm': {
+        const kind = this.heroCancelConfirm;
+        this.heroCancelConfirm = null;
+        if (!kind || kind !== arg || !m.cancelRosterHeroUpgrade(kind)) this.render();
+        break;
+      }
       case 'hero-finish':
         if (arg && (HERO_KINDS as string[]).includes(arg)) m.finishRosterHero(arg as HeroKind);
         else m.finishHero();
@@ -3955,6 +3975,12 @@ export class HUD {
       : quote
         ? time(quote.seconds)
         : '';
+    const cancellation = m.heroUpgradeCancellation(kind);
+    const cancelUpgrade = !cancellation
+      ? ''
+      : this.heroCancelConfirm === kind
+        ? `<p>Cancel this upgrade and recover ${n(cancellation.refund)} ${cancellation.resource === 'dark' ? 'dark elixir' : cancellation.resource}?</p><div class="confirm-actions">${button('hero-cancel-keep', 'Keep upgrading', 'game-btn stone')}${button(`hero-cancel-confirm:${kind}`, 'Confirm cancellation', 'game-btn red')}</div>`
+        : button(`hero-cancel-request:${kind}`, 'Cancel upgrade', 'game-btn stone');
     return `<section class="hero-section" data-hero="${kind}"><article class="hero-overview"><div class="hero-portrait"><img src="${isKing ? hudAsset('king') : heroPortrait(kind)}" alt="${name}"></div><div><span class="eyebrow">HERO HALL ${hall.level}${inLineup ? ` · SLOT ${m.heroLineup.indexOf(kind) + 1} OF ${nativeHeroSlots(hall.level)}` : ' · BENCHED'}</span><h2>${name}</h2><p>Level ${progress.level} / ${max} · ${progress.upgradeEnd ? 'Upgrading' : inLineup ? 'In battle lineup' : 'Benched'}${pet ? ` · ${PET_DISPLAY[pet as keyof typeof PET_DISPLAY] ?? pet}` : ''}</p></div></article>
       ${`<div class="hero-stat-grid">${stat('Hitpoints', native.hp, upcoming?.hp)}${stat('Damage per second', native.dps, upcoming?.dps)}${stat('Damage per hit', native.damage, upcoming?.damage)}${stat('Attack interval', native.rate, undefined, 's')}${stat('Attack range', native.range, undefined, native.range === 1 ? ' tile' : ' tiles')}${stat('Movement', native.speed, undefined, ' tiles/s')}</div>
       ${scale < 1 ? `<p class="hero-scaling">Town Hall ${m.townhallLevel} strength: ${scale * 100}% health, damage and recovery. Full strength at Town Hall 6.</p>` : ''}
@@ -3972,7 +3998,7 @@ export class HUD {
           : ''
       }`}
       <p class="hero-stats-note">Pet: ${pet ? (PET_DISPLAY[pet as keyof typeof PET_DISPLAY] ?? pet) : 'none'} · ${button('pets', 'Manage pets', 'replay-link')}</p>
-      <div class="hero-upgrade"><p>${resource('dark')} <b data-resource="dark">${n(m.state.dark)}</b> dark elixir · ${resource('elixir')} <b data-resource="elixir">${n(m.state.elixir)}</b> elixir</p>${progress.upgradeEnd ? `<p>Upgrade completes in <b data-hero-timer="${kind}">${time((progress.upgradeEnd - m.clock) / 1000)}</b></p>${button(`hero-finish:${kind}`, `Finish ${gem} <span data-hero-gems="${kind}">${m.finishCost({ upgradeEnd: progress.upgradeEnd } as Building)}</span>`, 'game-btn green')}${m.booksFor({ hero: kind }).length ? button(`book-hero:${kind}`, `${icon('BookOpen', 17)} ${MAGIC_ITEMS[m.booksFor({ hero: kind })[0]].name}`, 'game-btn blue') : ''}` : capped ? `<p class="max-level">${isKing && m.townhallLevel < 7 ? 'Hero upgrades unlock at Town Hall 7' : missing.length ? `Upgrade to ${missing.join(' and ')}` : 'Maximum hero level'}</p>` : `${button(`hero-upgrade:${kind}`, upgradeCostText, 'game-btn green', upgradeDisabled ? 'disabled' : '')}${m.magicItemCount('hammer-of-heroes') ? button(`hammer-hero:${kind}`, `${icon('Hammer', 17)} Hammer of Heroes`, 'game-btn blue', m.busy >= m.builders ? 'disabled' : '') : ''}<p>${upgradeSecondsText} · Requires one free builder</p>`}</div>
+      <div class="hero-upgrade"><p>${resource('dark')} <b data-resource="dark">${n(m.state.dark)}</b> dark elixir · ${resource('elixir')} <b data-resource="elixir">${n(m.state.elixir)}</b> elixir</p>${progress.upgradeEnd ? `<p>Upgrade completes in <b data-hero-timer="${kind}">${time((progress.upgradeEnd - m.clock) / 1000)}</b></p>${button(`hero-finish:${kind}`, `Finish ${gem} <span data-hero-gems="${kind}">${m.finishCost({ upgradeEnd: progress.upgradeEnd } as Building)}</span>`, 'game-btn green')}${m.booksFor({ hero: kind }).length ? button(`book-hero:${kind}`, `${icon('BookOpen', 17)} ${MAGIC_ITEMS[m.booksFor({ hero: kind })[0]].name}`, 'game-btn blue') : ''}${cancelUpgrade}` : capped ? `<p class="max-level">${isKing && m.townhallLevel < 7 ? 'Hero upgrades unlock at Town Hall 7' : missing.length ? `Upgrade to ${missing.join(' and ')}` : 'Maximum hero level'}</p>` : `${button(`hero-upgrade:${kind}`, upgradeCostText, 'game-btn green', upgradeDisabled ? 'disabled' : '')}${m.magicItemCount('hammer-of-heroes') ? button(`hammer-hero:${kind}`, `${icon('Hammer', 17)} Hammer of Heroes`, 'game-btn blue', m.busy >= m.builders ? 'disabled' : '') : ''}<p>${upgradeSecondsText} · Requires one free builder</p>`}</div>
       ${inLineup ? '' : `<div class="hero-upgrade">${m.heroLineup.length >= nativeHeroSlots(hall.level) ? button(`hero-lineup:${kind}`, `Swap in for ${HERO_SOURCE[m.heroLineup[m.heroLineup.length - 1]]}`, 'game-btn blue') : button(`hero-lineup:${kind}`, 'Add to lineup', 'game-btn blue')}</div>`}</section>`;
   }
   /** Pet House: research one pet at a time and assign one pet to each hero. */

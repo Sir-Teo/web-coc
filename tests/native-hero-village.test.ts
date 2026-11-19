@@ -74,6 +74,29 @@ describe('complete hero roster in the village', () => {
     expect(m.heroProgress('warden')!.level).toBe(2);
   });
 
+  it.each(['king', 'warden'] as const)('cancels a %s upgrade for half its cost', (kind) => {
+    const m = village(11, 5, [makeBuilding(8, 'helperhut', 16, 2)]);
+    const level = m.heroProgress(kind)!.level;
+    const { resource, cost } = heroUpgradeQuote(kind, level)!;
+    const before = m.state[resource];
+    expect(m.upgradeRosterHero(kind)).toBe(true);
+    const end = m.heroProgress(kind)!.upgradeEnd!;
+    m.state.helpers = { builder: { level: 1 } };
+    expect(m.assignHelper('builder', { hero: kind, level }, true)).toBe(true);
+    const readyAt = m.state.helpers.builder!.readyAt;
+    const xp = m.state.xp;
+    expect(m.cancelRosterHeroUpgrade(kind)).toBe(true);
+    expect(m.state[resource]).toBe(before - cost / 2);
+    expect(m.busy).toBe(0);
+    expect(m.state.helpers.builder).toEqual({ level: 1, readyAt });
+    expect(m.heroProgress(kind)).toEqual({ level });
+    expect(m.cancelRosterHeroUpgrade(kind)).toBe(false);
+    const restored = new GameModel(structuredClone(m.state));
+    restored.tick(end + 1);
+    expect(restored.heroProgress(kind)).toEqual({ level });
+    expect(restored.state.xp).toBe(xp);
+  });
+
   it('migrates the original King equipment and gates items by Blacksmith level', () => {
     const legacy = gearFromLegacy({
       levels: { puppet: 4, vial: 2, boots: 3 },

@@ -1,3 +1,4 @@
+import { nativeGlobal } from './native-data';
 import { advanceBoostedHelper } from './helper-potion-timing';
 import { encodeArmy, decodeSharedArmy } from './army-share';
 import { siegeSelfDestructAbility } from './native-siege-release';
@@ -5305,6 +5306,37 @@ export class GameModel {
     if (!this.itemCoversCost) this.state[quote.resource] -= quote.cost;
     hero.upgradeStart = this.clock;
     hero.upgradeEnd = this.clock + quote.seconds * 1000;
+    this.changed();
+    return true;
+  }
+  heroUpgradeCancellation(kind: HeroKind) {
+    const hero = this.heroProgress(kind);
+    if (this.battle || this.itemCoversCost || !hero?.upgradeEnd || hero.upgradeEnd <= this.clock)
+      return null;
+    const quote =
+      kind === 'king'
+        ? { resource: 'dark' as const, cost: heroUpgradeCost(hero.level) }
+        : heroUpgradeQuote(kind, hero.level);
+    if (!quote) return null;
+    return {
+      resource: quote.resource,
+      refund: Math.floor(quote.cost * (nativeGlobal('HERO_UPGRADE_CANCEL_MULTIPLIER') / 100)),
+    };
+  }
+  cancelRosterHeroUpgrade(kind: HeroKind) {
+    const cancellation = this.heroUpgradeCancellation(kind);
+    if (!cancellation) return false;
+    const hero = this.heroProgress(kind)!;
+    const { resource, refund } = cancellation;
+    this.state[resource] += refund;
+    delete hero.upgradeStart;
+    delete hero.upgradeEnd;
+    const apprentice = this.state.helpers?.builder;
+    const target = apprentice?.job?.target;
+    if (apprentice && target && 'hero' in target && target.hero === kind) delete apprentice.job;
+    this.notify(
+      `${HERO_SOURCE[kind]}'s upgrade canceled. ${refund.toLocaleString()} ${resource === 'dark' ? 'dark elixir' : resource} refunded.`,
+    );
     this.changed();
     return true;
   }

@@ -30,6 +30,11 @@ Town Halls 4–6 scale the King down with the client's `ScaleByTH` column (50%, 
 hitpoints, damage and healing). The scale applies to the hero's own numbers _and_ to its equipment
 contribution, so a low Town Hall cannot import a high-level item's full value.
 
+The Hero Hall can cancel an active hero upgrade after confirmation. The pinned
+`HERO_UPGRADE_CANCEL_MULTIPLIER` refunds 50% of the original resource cost.
+Cancellation frees the builder, leaves the hero at its current level, and ends
+any Apprentice assignment to that job while preserving the helper's cooldown.
+
 ## Equipment
 
 Forty-two playable items, each with its own level cap, ore prices and ability rows. An item's

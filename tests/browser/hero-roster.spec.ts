@@ -85,6 +85,34 @@ test('roster lists every hero with gates, upgrades and lineup swaps', async ({ p
   expect(errors).toEqual([]);
 });
 
+test('Hero Hall confirms a cancellation and refunds the selected upgrade', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await boot(page);
+  await develop(page);
+  await heroes(page);
+  const card = page.locator('[data-hero="warden"]');
+  const before = await page.evaluate(() => {
+    const m = window.__game.model;
+    return { elixir: m.state.elixir, busy: m.busy, level: m.heroProgress('warden').level };
+  });
+
+  await card.locator('[data-action="hero-upgrade:warden"]').click();
+  await card.getByRole('button', { name: 'Cancel upgrade' }).click();
+  await expect(card).toContainText('recover 500,000 elixir');
+  await card.getByRole('button', { name: 'Keep upgrading' }).click();
+  await expect(card.locator('[data-hero-timer="warden"]')).toBeVisible();
+  await card.getByRole('button', { name: 'Cancel upgrade' }).click();
+  await page.screenshot({ path: 'output/playtest/hero-upgrade-cancel.png' });
+  await card.getByRole('button', { name: 'Confirm cancellation' }).click();
+  await expect(card.locator('[data-hero-timer="warden"]')).toHaveCount(0);
+
+  const after = await page.evaluate(() => {
+    const m = window.__game.model;
+    return { elixir: m.state.elixir, busy: m.busy, level: m.heroProgress('warden').level };
+  });
+  expect(after).toEqual({ ...before, elixir: before.elixir - 500_000 });
+});
+
 test('pets research once, finish with gems, assign and move between heroes', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
