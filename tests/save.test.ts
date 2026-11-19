@@ -270,3 +270,17 @@ it('keeps recordings out of the village snapshot and stores each one once', asyn
   await saveGame(m.state);
   expect((await keys()).filter((k) => String(k).startsWith('replay:'))).toHaveLength(1);
 });
+
+it('preserves a recording restored while its earlier deletion is still pending', async () => {
+  const { backup } = await replayStorage();
+  const restored = recordedVillage();
+  await saveGame(restored);
+  const deletion = saveGame({ ...restored, raidLog: [] });
+  const restore = saveGame(restored);
+  const pendingReplay = backup().raidLog[0].replay;
+  await Promise.all([deletion, restore]);
+
+  expect((await loadSave())!.raidLog![0].replay).toEqual(restored.raidLog![0].replay);
+  expect(pendingReplay).toEqual(restored.raidLog![0].replay);
+  expect(backup().raidLog[0].replay).toBeUndefined();
+});

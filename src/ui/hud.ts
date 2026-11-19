@@ -812,7 +812,7 @@ export class HUD {
   private anchorWidth = 470;
   private anchorHeight = 120;
   private anchorFloor = 150;
-  private replayScrubbing = false;
+  private replayScrubPointer: number | null = null;
   /** When the replay slider last reported an input; the live clock leaves it alone briefly. */
   private replayInputAt = -Infinity;
   private rafId = 0;
@@ -877,8 +877,12 @@ export class HUD {
           this.pressedActions.add(e.pointerId);
         const repeat = target.closest<HTMLButtonElement>('[data-repeat]');
         if (repeat && !repeat.disabled && e.isPrimary) this.startRepeat(repeat);
-        if (target.id === 'replay-progress' && this.model.replay) {
-          this.replayScrubbing = true;
+        if (
+          target.id === 'replay-progress' &&
+          this.model.replay &&
+          this.replayScrubPointer === null
+        ) {
+          this.replayScrubPointer = e.pointerId;
           this.model.replay.paused = true;
         }
         const card = target.closest<HTMLElement>('[data-drag]');
@@ -888,9 +892,10 @@ export class HUD {
       },
       { signal },
     );
-    const finishScrub = () => {
-      if (!this.replayScrubbing) return;
-      this.replayScrubbing = false;
+    const finishScrub = (event?: PointerEvent) => {
+      if (this.replayScrubPointer === null || (event && event.pointerId !== this.replayScrubPointer))
+        return;
+      this.replayScrubPointer = null;
       this.scheduleRender();
     };
     document.addEventListener('pointerup', finishScrub, { signal });
@@ -2675,7 +2680,7 @@ export class HUD {
     this.renderPending = false;
     const m = this.model,
       b = m.battle;
-    if (this.replayScrubbing && m.replay) {
+    if (this.replayScrubPointer !== null && m.replay) {
       this.updateLive();
       return;
     }
@@ -5879,7 +5884,7 @@ export class HUD {
     const replay = m.replay;
     // Leave the slider to the pointer while scrubbing (and briefly after a value
     // change); focus alone must not freeze the clock once playback resumes.
-    if (replay && !this.replayScrubbing && performance.now() - this.replayInputAt > 300) {
+    if (replay && this.replayScrubPointer === null && performance.now() - this.replayInputAt > 300) {
       const value = replay.seeking ? replay.seekTarget : replay.time;
       setText(refs.replayTime, `${clock(value)} / ${clock(replay.duration)}`);
       const progress = refs.replayProgress;

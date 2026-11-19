@@ -570,6 +570,7 @@ let commitRevision = 0;
 const REPLAY_KEY = (record: { id: number; at: number }) => `replay:${record.id}:${record.at}`;
 /** Keys of the recordings IndexedDB already holds. A recording never changes once written. */
 const storedReplays = new Set<string>();
+const pendingReplayDeletions = new Set<string[]>();
 /** The village without its recordings; the in-memory state keeps them. */
 export function villageSnapshot(state: Save): Save {
   if (!state.raidLog?.some((record) => record.replay)) return state;
@@ -733,7 +734,12 @@ export async function saveGame(state: Save): Promise<boolean> {
       record.replay ? [[REPLAY_KEY(record), record.replay] as const] : [],
     ),
   );
-  const added = [...listed.keys()].filter((id) => !storedReplays.has(id));
+  // IndexedDB runs these writes in order. A newer snapshot restoring a recording
+  // must write it again even if the earlier deletion has yet to commit.
+  const scheduledDeletions = new Set([...pendingReplayDeletions].flat());
+  const added = [...listed.keys()].filter(
+    (id) => !storedReplays.has(id) || scheduledDeletions.has(id),
+  );
   const dropped = [...storedReplays].filter((id) => !listed.has(id));
   // A reload may abort the asynchronous database write. Keep only not-yet-durable
   // recordings inline until the same transaction commits their separate payloads.
@@ -774,6 +780,7 @@ export async function saveGame(state: Save): Promise<boolean> {
         store.put(village, 'village');
         for (const key of added) store.put(listed.get(key), key);
         for (const key of dropped) store.delete(key);
+        if (dropped.length) pendingReplayDeletions.add(dropped);
         tx.oncomplete = () => {
           for (const key of added) storedReplays.add(key);
           for (const key of dropped) storedReplays.delete(key);
@@ -793,6 +800,8 @@ export async function saveGame(state: Save): Promise<boolean> {
       stored = true;
     } catch {
       /* Keep the local backup. */
+    } finally {
+      pendingReplayDeletions.delete(dropped);
     }
   return stored;
 }

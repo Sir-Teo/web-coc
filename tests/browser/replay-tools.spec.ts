@@ -256,3 +256,54 @@ test('phone replay controls refresh when the window blurs during a scrub', async
   await page.getByRole('button', { name: 'Play', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
 });
+
+test('a second finger lifting does not end the active replay scrub', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium', 'Uses Chromium touch injection');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Watch replay' }).click();
+  const range = page.getByRole('slider', { name: 'Replay position' });
+  await expect(range).toBeEnabled();
+  const box = (await range.boundingBox())!;
+  const first = {
+    id: 1,
+    x: Math.round(box.x + box.width / 2),
+    y: Math.round(box.y + box.height / 2),
+  };
+  const second = { id: 2, x: first.x, y: first.y - 100 };
+  const cdp = await page.context().newCDPSession(page);
+  const scrubbing = () =>
+    page.evaluate(() => Reflect.get(window.__game.hud, 'replayScrubPointer') !== null);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [first] });
+  await expect.poll(scrubbing).toBe(true);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [first, second] });
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [second] });
+  expect(await scrubbing()).toBe(true);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await expect.poll(scrubbing).toBe(false);
+
+  await expect(range).toBeEnabled();
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [first] });
+  await expect.poll(scrubbing).toBe(true);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+  await expect.poll(scrubbing).toBe(false);
+});
+
+test('a restored recording remains watchable after overlapping browser saves', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(async () => {
+    const { loadSave, saveGame } = await import('/src/game/save.ts');
+    const { model } = window.__game;
+    const state = structuredClone(model.state);
+    await saveGame(state);
+    await Promise.all([saveGame({ ...state, raidLog: [] }), saveGame(state)]);
+    const loaded = await loadSave();
+    if (!loaded) throw Error('The saved village could not be read');
+    model.state = loaded;
+    model.changed();
+  });
+  await page.getByRole('button', { name: 'Watch replay' }).click();
+  await expect(page.getByRole('slider', { name: 'Replay position' })).toBeVisible();
+});
