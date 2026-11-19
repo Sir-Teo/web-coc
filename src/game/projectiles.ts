@@ -14,7 +14,7 @@ import { XBOW_PROJECTILES } from './xbow-stats';
 import { WIZARD_TOWER_PROJECTILES } from './wizard-tower-stats';
 import { flag, nativeRow, num } from './native-data';
 import { hurtUnit } from './native-status';
-import { healingEligible } from './friendly-unit';
+import { troopHealingEligible } from './friendly-unit';
 import { nativeProjectileBouncePause } from './native-projectile-step';
 
 export type Weapon =
@@ -495,7 +495,7 @@ export function stepProjectiles(
           unit.hp > 0 &&
           (unit.spawnedAt ?? 0) <= p.impact + 1e-9 &&
           !TROOPS[unit.kind].flying &&
-          healingEligible(battle, unit, p.impact) &&
+          troopHealingEligible(battle, unit, p.impact) &&
           !((unit.native?.effects?.phoenixRevive?.until ?? 0) > p.impact + 1e-9) &&
           distance2D(unit.x - p.x, unit.y - p.y) <= (p.splash ?? 0)
         )

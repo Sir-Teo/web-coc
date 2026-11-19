@@ -2,7 +2,7 @@ import type { Unit } from './model';
 import type { NativeTroopContext } from './native-troops';
 import { nativeUnitStats, type NativeUnitStats } from './native-units';
 import { launchProjectile, type CombatProjectile } from './projectiles';
-import { healingEligible } from './friendly-unit';
+import { healingEligible, troopHealingEligible } from './friendly-unit';
 import { healUnit } from './native-status';
 import { healerContribution } from './healing';
 import { nativeRow, tiles } from './native-data';
@@ -48,7 +48,8 @@ export function resolveNativeHealing(ctx: NativeTroopContext, projectile: Combat
   if (!ctx.battle.nativeHealingProjectiles || !source || !healing) return false;
   const battle = ctx.battle;
   const target = battle.units.find((u) => u.id === projectile.targetId);
-  if (!target || !healingEligible(battle, target, projectile.impact)) return true;
+  const eligible = source.kind === 'druid' ? troopHealingEligible : healingEligible;
+  if (!target || !eligible(battle, target, projectile.impact)) return true;
   const stats = nativeUnitStats(source.kind, source.level);
   const scale = target.hero ? stats.heroMultiplier : 1;
   const contribution =
@@ -60,7 +61,7 @@ export function resolveNativeHealing(ctx: NativeTroopContext, projectile: Combat
     nearest = Infinity;
   for (const candidate of battle.units) {
     if (
-      !healingEligible(battle, candidate, projectile.impact) ||
+      !eligible(battle, candidate, projectile.impact) ||
       candidate.hp >= candidate.maxHp ||
       healing.hit.includes(candidate.id)
     )

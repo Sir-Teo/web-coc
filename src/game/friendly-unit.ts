@@ -12,3 +12,8 @@ export const friendlyCombatant = (unit: Unit, at: number) =>
 /** Version 96 shares the native immunity/participation rules across healing paths. */
 export const healingEligible = (battle: Battle, unit: Unit, at = battle.elapsed) =>
   !battle.nativeFriendlyEligibility || (friendlyCombatant(unit, at) && !unit.native?.noHealing);
+
+/** Totems accept Healing Spell pulses, while Healers and Druids skip them. */
+export const troopHealingEligible = (battle: Battle, unit: Unit, at = battle.elapsed) =>
+  !(battle.nativeTotemTroopHealingImmunity && unit.kind === 'totem') &&
+  healingEligible(battle, unit, at);

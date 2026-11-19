@@ -3,7 +3,7 @@ import { TROOPS } from './data';
 import type { Battle, Unit } from './model';
 import { launchProjectile } from './projectiles';
 import type { FX } from './model';
-import { friendlyCombatant, healingEligible } from './friendly-unit';
+import { friendlyCombatant, healingEligible, troopHealingEligible } from './friendly-unit';
 import { nativeUnitStats } from './native-units';
 import {
   advanceHealerWindup,
@@ -18,7 +18,7 @@ export const HEALER_HERO_SCALE = 0.55;
 export const HEALER_RADIUS = 1.5;
 const HEALER_RADIUS_SQ = HEALER_RADIUS * HEALER_RADIUS;
 const groundAlly = (battle: Battle, u: Unit) =>
-  u.hp > 0 && !TROOPS[u.kind].flying && healingEligible(battle, u);
+  u.hp > 0 && !TROOPS[u.kind].flying && troopHealingEligible(battle, u);
 const distance = (a: Unit, b: Unit) => distance2D(a.x - b.x, a.y - b.y);
 const distanceSq = (a: Unit, b: Unit) => distanceSquared2D(a.x - b.x, a.y - b.y);
 

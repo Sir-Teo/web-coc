@@ -319,6 +319,33 @@ describe('complete spell roster', () => {
     }
   });
 
+  it.each(['healer', 'druid'] as const)('%s ignores a damaged Totem', (kind) => {
+    const m = arena([], { [kind]: 1, giant: 1 }, { totem: 1 }, 1);
+    cast(m, 'totem', 10, 10);
+    run(m, 2);
+    m.activeTroop = kind;
+    expect(m.deploy(10, 10)).toBe(true);
+    m.activeTroop = 'giant';
+    expect(m.deploy(12, 10)).toBe(true);
+    run(m, 0.1);
+    const units = m.battle!.units;
+    const giant = units.find((u) => u.kind === 'giant')!;
+    const healer = units.find((u) => u.kind === kind)!;
+    expect(healer.healTarget).toBe(giant.id);
+
+    m.finishBattle();
+    const record = m.state.raidLog![0].replay!;
+    for (const version of [242, record.version]) {
+      const viewer = new GameModel();
+      expect(viewer.openReplay({ ...record, version })).toBe(true);
+      viewer.seekReplay(1e9);
+      while (viewer.replay!.seeking) viewer.step(0.05);
+      const units = viewer.battle!.units;
+      const target = units.find((u) => u.kind === (version === 242 ? 'totem' : 'giant'));
+      expect(units.find((u) => u.kind === kind)?.healTarget).toBe(target?.id);
+    }
+  });
+
   it('replays every new spell to the identical final battle', () => {
     const spells = SPELL_KEYS.filter((k) => !['rage', 'heal', 'lightning', 'revive'].includes(k));
     const m = arena(

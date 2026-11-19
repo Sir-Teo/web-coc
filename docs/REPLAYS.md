@@ -26,6 +26,10 @@ continues. The pinned 18.400.21 Healing row has no Totem immunity, and the
 distinguish Healing Spells from Healers and Druids. Version 241 and earlier retain
 their original Healing Spell behavior.
 
+Version 243 uses the pinned Totem row's `HealerWeight=0` and the retained notes
+to exclude Totems from Healer and Druid targeting, splash and bounces. Earlier
+recordings retain the previous troop healing rules.
+
 ## Persistence and limits
 
 New recordings stay inline in the synchronous local backup until IndexedDB

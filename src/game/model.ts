@@ -922,6 +922,7 @@ export interface Battle {
   /** Version 100: native healing resolves through source projectile travel and chain hops. */
   nativeHealingProjectiles?: true;
   nativeHealingTotem?: true;
+  nativeTotemTroopHealingImmunity?: true;
   /** Version 101: ground healing units follow allies around buildings, crossing jumpable walls. */
   nativeHealerRoutes?: true;
   /** Version 102: Sneezy spawns without attacking until its Hero falls, and pauses to sneeze. */

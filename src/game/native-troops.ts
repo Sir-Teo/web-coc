@@ -84,7 +84,7 @@ import {
   type NativeDamageRamp,
 } from './native-damage-ramp';
 import { recordInfernoDragonTransition } from './inferno-dragon-transitions';
-import { friendlyCombatant, healingEligible } from './friendly-unit';
+import { friendlyCombatant, healingEligible, troopHealingEligible } from './friendly-unit';
 import { healerContribution } from './healing';
 import {
   advanceHealerWindup,
@@ -2852,12 +2852,13 @@ function stepNativeHealer(
   const windup = phased ? advanceHealerWindup(battle, u, dt, actionDt) : undefined;
   const units = battle.units;
   const previousTarget = u.healTarget;
+  const eligible = u.kind === 'druid' ? troopHealingEligible : healingEligible;
   const ally = (a: Unit) =>
     a.id !== u.id &&
     a.hp > 0 &&
     !a.ejected &&
     (a.spawnedAt ?? 0) <= battle.elapsed + 1e-9 &&
-    healingEligible(battle, a);
+    eligible(battle, a);
   const boundMaster =
     battle.nativeUnicornController && u.kind === 'unicorn' ? petAnchor(battle, u)?.hero : undefined;
   let target = boundMaster && ally(boundMaster) ? boundMaster : undefined;
