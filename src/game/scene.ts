@@ -1477,7 +1477,10 @@ export class VillageScene extends Phaser.Scene {
         p.event.type.includes('cancel')
       )
         return;
-      if (this.dragged || gesture !== 'none') return;
+      if (this.dragged || gesture !== 'none') {
+        if (gesture === 'pan') this.lastTap = undefined;
+        return;
+      }
       // The art gate opening must not turn an earlier press into a deployment.
       if (down.artBlocked) {
         if (this.battleArtPending()) this.model.notify(this.battleArtWaitMessage());

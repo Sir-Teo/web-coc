@@ -251,6 +251,36 @@ test.describe('battle map multitouch', () => {
     expect(await remaining()).toBe(start - 2);
   });
 
+  test('a quick camera pan breaks a rapid deployment sequence', async ({ page, browserName }) => {
+    test.skip(browserName !== 'chromium', 'Uses Chromium touch injection');
+    await startDeployment(page);
+    const point = await grassPoint(page);
+    const touch = { id: 1, x: Math.round(point.x), y: Math.round(point.y) };
+    const remaining = () => page.evaluate(() => window.__game.model.battle!.remaining.swordsman);
+    const cameraX = () => page.evaluate(() => window.__game.scene.cameras.main.scrollX);
+    const start = await remaining();
+    await page.evaluate(() => {
+      window.__game.scene.paused = true;
+      const now = performance.now();
+      Object.defineProperty(performance, 'now', { value: () => now, configurable: true });
+    });
+    const cdp = await page.context().newCDPSession(page);
+    await page.touchscreen.tap(touch.x, touch.y);
+    expect(await remaining()).toBe(start - 1);
+    const beforePan = await cameraX();
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [touch] });
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ ...touch, x: touch.x + 10 }],
+    });
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    expect(await cameraX()).not.toBe(beforePan);
+    expect(await remaining()).toBe(start - 1);
+
+    await page.touchscreen.tap(touch.x + 10, touch.y);
+    expect(await remaining()).toBe(start - 2);
+  });
+
   test('a second finger on a troop card cannot redirect a map hold', async ({
     page,
     browserName,
