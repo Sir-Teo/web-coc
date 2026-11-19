@@ -101,3 +101,47 @@ for (const interruption of ['blur', 'hidden', 'destroy'] as const) {
     await expect.poll(() => barbarians(page)).toBe(stoppedAt + 1);
   });
 }
+
+test('lifting a second finger does not interrupt held troop training', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium', 'Native touch injection requires CDP.');
+  await openArmy(page);
+  await page.evaluate(() => {
+    document.addEventListener(
+      'pointerup',
+      (event) => {
+        if (event.isTrusted && event.pointerType === 'touch')
+          document.body.dataset.releasedTouch = event.isPrimary ? 'primary' : 'secondary';
+      },
+      { capture: true },
+    );
+  });
+  const box = (await page.locator(portrait).boundingBox())!;
+  const first = {
+    id: 1,
+    x: Math.round(box.x + box.width / 2),
+    y: Math.round(box.y + box.height / 2),
+  };
+  const second = { id: 2, x: first.x + 12, y: first.y };
+  const cdp = await page.context().newCDPSession(page);
+  const touch = (type: string, touchPoints: (typeof first)[]) =>
+    cdp.send('Input.dispatchTouchEvent', { type, touchPoints });
+
+  await touch('touchStart', [first]);
+  await expect.poll(() => barbarians(page)).toBeGreaterThan(0);
+  await touch('touchStart', [first, second]);
+  await touch('touchEnd', [second]);
+  await expect(page.locator('body')).toHaveAttribute('data-released-touch', 'secondary');
+  const afterSecond = await barbarians(page);
+  await expect.poll(() => barbarians(page), { timeout: 1000 }).toBeGreaterThan(afterSecond);
+
+  await touch('touchEnd', []);
+  await expect(page.locator('body')).toHaveAttribute('data-released-touch', 'primary');
+  const stopped = await barbarians(page);
+  await page.waitForTimeout(600);
+  expect(await barbarians(page)).toBe(stopped);
+  await page.locator(portrait).tap();
+  await expect.poll(() => barbarians(page)).toBe(stopped + 1);
+});

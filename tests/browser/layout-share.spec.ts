@@ -193,3 +193,62 @@ test('a query layout link is consumed once while other application flags are kep
   await page.evaluate(() => window.__game.game.loop.sleep());
   await expect(page.locator('#modal-title')).toHaveCount(0);
 });
+
+test.describe('older layouts on touch', () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  test('a blocked restore preserves the new building and progression after reload', async ({
+    page,
+  }, info) => {
+    await page.clock.setFixedTime(Date.now());
+    await page.goto('/');
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    await page.locator('[data-action="skip-tutorial"]').tap();
+    await page.getByRole('button', { name: 'Edit village layout' }).tap();
+    await page.locator('[data-action="layouts"]').tap();
+    await page.locator('[data-action="layout-save:0"]').tap();
+    await page.getByRole('button', { name: 'Close dialog' }).tap();
+
+    const built = await page.evaluate(() => {
+      const m = window.__game.model;
+      const cannon = m.state.buildings.find((b) => b.kind === 'cannon')!;
+      const { x, y } = cannon;
+      m.state.obstacles = [];
+      if (!m.dragTo(cannon.id, 25, 25)) throw Error('Could not move the Cannon');
+      m.endEdit();
+      m.townhall!.level = 5;
+      m.state.gold = 4000;
+      m.beginBuild('cannon');
+      if (!m.place(x, y)) throw Error('Could not build on the old Cannon site');
+      return m.selected;
+    });
+    const snapshot = () =>
+      page.evaluate(() => {
+        const { state } = window.__game.model;
+        return {
+          buildings: state.buildings,
+          layouts: state.layouts,
+          gold: state.gold,
+          elixir: state.elixir,
+          gems: state.gems,
+          nextId: state.nextId,
+          xp: state.xp,
+          built: state.stats.built,
+        };
+      });
+    const before = await snapshot();
+    expect(before.buildings.find((b) => b.id === built)?.constructing).toBe(true);
+    await page.getByRole('button', { name: 'Edit village layout' }).tap();
+    await page.locator('[data-action="layouts"]').tap();
+    await page.locator('[data-action="layout-load:0"]').tap();
+    await expect(page.locator('#toast')).toContainText('does not fit your village any more');
+    expect(await snapshot()).toEqual(before);
+    await page.screenshot({
+      path: info.outputPath('blocked-layout-restore.png'),
+      animations: 'disabled',
+    });
+    await page.reload();
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    expect(await snapshot()).toEqual(before);
+  });
+});

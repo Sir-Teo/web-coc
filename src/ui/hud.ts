@@ -779,12 +779,14 @@ export class HUD {
   private pressedActions = new Set<number>();
   /** Hold-to-repeat on Add and Remove: a short delay, then steady repeats until release. */
   private repeatTimer?: ReturnType<typeof setTimeout>;
+  private repeatPointer: number | null = null;
   private repeatedClick = false;
-  private startRepeat(control: HTMLButtonElement) {
+  private startRepeat(control: HTMLElement, pointerId: number) {
     this.stopRepeat();
+    this.repeatPointer = pointerId;
     const action = (control.dataset.action ?? control.dataset.add)!;
     const tick = () => {
-      if (!control.isConnected || control.disabled) return this.stopRepeat();
+      if (!control.isConnected || control.matches(':disabled')) return this.stopRepeat();
       this.repeatedClick = true;
       this.action(action);
       this.updateLive();
@@ -795,6 +797,7 @@ export class HUD {
   private stopRepeat() {
     clearTimeout(this.repeatTimer);
     this.repeatTimer = undefined;
+    this.repeatPointer = null;
     // The click that follows this release (if any) runs first; later clicks count again.
     if (this.repeatedClick) setTimeout(() => (this.repeatedClick = false), 0);
   }
@@ -883,8 +886,9 @@ export class HUD {
           target.matches('#effects-volume, #music-volume')
         )
           this.pressedActions.add(e.pointerId);
-        const repeat = target.closest<HTMLButtonElement>('[data-repeat]');
-        if (repeat && !repeat.disabled && e.isPrimary) this.startRepeat(repeat);
+        const repeat = target.closest<HTMLElement>('[data-repeat]');
+        if (repeat && !repeat.matches(':disabled') && e.isPrimary)
+          this.startRepeat(repeat, e.pointerId);
         if (
           target.id === 'replay-progress' &&
           this.model.replay &&
@@ -909,7 +913,7 @@ export class HUD {
     document.addEventListener('pointerup', finishScrub, { signal });
     document.addEventListener('pointercancel', finishScrub, { signal });
     const releaseAction = (e: PointerEvent) => {
-      this.stopRepeat();
+      if (e.pointerId === this.repeatPointer) this.stopRepeat();
       this.pressedActions.delete(e.pointerId);
       // The browser dispatches click after pointerup; render on the next frame.
       if (!this.pressedActions.size && this.renderPending) this.scheduleRender();
