@@ -354,6 +354,7 @@ import {
 import { campaignBlueprint, CAMPAIGN_LAYOUTS } from './campaign';
 import {
   armySpace,
+  unitsThatFit,
   spellSpace,
   emptyArmy,
   emptySpells,
@@ -4035,19 +4036,14 @@ export class GameModel {
   troopRoom(kind: TroopKind) {
     if (this.battle || !TROOP_KEYS.includes(kind) || !this.troopUnlocked(kind)) return 0;
     if (isSiege(kind)) return Math.max(0, 3 - this.siegeCount);
-    return Math.max(
-      0,
-      Math.floor((this.capacity - this.armySize - this.queuedSize) / TROOPS[kind].space),
-    );
+    return unitsThatFit(this.capacity - this.armySize - this.queuedSize, TROOPS[kind].space);
   }
   /** How many more of a spell fit in spell housing. */
   spellRoom(kind: SpellKind) {
     if (this.battle || !SPELL_KEYS.includes(kind) || !this.spellUnlocked(kind)) return 0;
-    return Math.max(
-      0,
-      Math.floor(
-        (this.spellCapacity - this.spellHousing - this.queuedSpellHousing) / SPELLS[kind].space,
-      ),
+    return unitsThatFit(
+      this.spellCapacity - this.spellHousing - this.queuedSpellHousing,
+      SPELLS[kind].space,
     );
   }
   /** Adds as many of a troop as the remaining room allows, in one step. */

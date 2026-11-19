@@ -17,6 +17,7 @@ export interface ArmyPreset {
   /** The hero lineup, in slot order (absent in presets saved before heroes were kept). */
   heroes?: PresetHero[];
 }
+export const unitsThatFit = (free: number, size: number) => Math.max(0, Math.floor(free / size));
 export const armySpace = (army: Army) =>
   TROOP_KEYS.reduce((n, k) => n + (isSiege(k) ? 0 : (army[k] ?? 0) * TROOPS[k].space), 0);
 export const spellSpace = (spells: SpellBook) =>

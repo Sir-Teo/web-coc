@@ -202,11 +202,29 @@ test('campaign results prepare the last army and start a fresh repeat attack', a
   }));
   await page.locator('.attack-btn').click();
   await page.locator('[data-action="attack:0"]').click();
+  await page.waitForFunction(() => !window.__game.scene.battleArtPending());
   await page.locator('[data-action="troop:giant"]').click();
-  const p = await page.evaluate(() => window.__game.scene.screenFor(4, 11));
-  await page.mouse.click(p.x, p.y);
+  const p = await page.evaluate(() => {
+    const { model, scene } = window.__game;
+    for (let y = 1.5; y < 27; y++)
+      for (let x = 1.5; x < 27; x++) {
+        const screen = scene.screenFor(x, y);
+        if (
+          !model.deployBlocked(x, y) &&
+          screen.x > 35 &&
+          screen.x < innerWidth - 35 &&
+          screen.y > innerHeight * 0.35 &&
+          screen.y < innerHeight * 0.7
+        )
+          return { x, y, screen };
+      }
+    throw Error('No visible deployment ground');
+  });
+  await page.mouse.click(p.screen.x, p.screen.y);
+  await expect.poll(() => page.evaluate(() => window.__game.model.battle.units.length)).toBe(1);
   await page.locator('[data-action="spell:heal"]').click();
-  await page.mouse.click(p.x + 30, p.y + 20);
+  await page.mouse.click(p.screen.x + 30, p.screen.y + 20);
+  await expect.poll(() => page.evaluate(() => window.__game.model.battle.spells.heal)).toBe(0);
   await page.locator('[data-action="surrender"]').click();
   await page.locator('[data-action="end"]').click();
   await expect(page.locator('#result-title')).toBeVisible();
@@ -229,7 +247,7 @@ test('campaign results prepare the last army and start a fresh repeat attack', a
     })),
   ).toEqual({ units: 0, raids: 1, logs: 1 });
   // An unfinished facility must not silently send an incomplete army into another raid.
-  await page.evaluate(() => {
+  await page.evaluate(({ x, y }) => {
     const m = window.__game.model;
     for (const b of m.state.buildings.filter((b) => b.kind === 'barracks')) {
       b.constructing = true;
@@ -237,11 +255,55 @@ test('campaign results prepare the last army and start a fresh repeat attack', a
       b.upgradeEnd = m.clock + 600000;
     }
     m.activeTroop = 'giant';
-    m.deploy(4, 11);
+    if (!m.deploy(x, y)) throw Error('Repeat deployment failed');
     m.finishBattle();
-  });
+  }, p);
   await page.locator('[data-action="raid-again"]').click();
   await expect(page.locator('.drawer-sheet')).toBeVisible();
   expect(await page.evaluate(() => window.__game.model.battle)).toBeNull();
   await expect(page.locator('[data-action="train:giant"]')).toBeDisabled();
+});
+
+test('the Army drawer reads each housing capacity a bounded number of times per render', async ({
+  page,
+}) => {
+  await page.locator('.train-add').click();
+  const result = await page.evaluate(() => {
+    const { model, hud, scene } = window.__game;
+    scene.paused = true;
+    const reads = { capacity: 0, spellCapacity: 0 };
+    const prototype = Object.getPrototypeOf(model);
+    for (const name of ['capacity', 'spellCapacity'] as const) {
+      const get = Object.getOwnPropertyDescriptor(prototype, name)!.get!;
+      Object.defineProperty(model, name, {
+        configurable: true,
+        get() {
+          reads[name]++;
+          return get.call(model);
+        },
+      });
+    }
+    try {
+      hud.render();
+      const first = { ...reads, cards: document.querySelectorAll('.army-tile').length };
+      const selector = '[data-action="train-fill:archer"]';
+      const fill = document.querySelector(selector)!;
+      const label = fill.getAttribute('aria-label');
+      model.train('swordsman');
+      hud.render();
+      return {
+        ...first,
+        keptFill: document.querySelector(selector) === fill,
+        changedLabel: fill.getAttribute('aria-label') !== label,
+      };
+    } finally {
+      Reflect.deleteProperty(model, 'capacity');
+      Reflect.deleteProperty(model, 'spellCapacity');
+    }
+  });
+  expect(result.cards).toBeGreaterThan(50);
+  expect(result.capacity).toBeLessThanOrEqual(5);
+  expect(result.spellCapacity).toBeLessThanOrEqual(5);
+  expect(result.keptFill).toBe(true);
+  expect(result.changedLabel).toBe(true);
 });

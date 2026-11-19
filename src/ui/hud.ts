@@ -163,7 +163,14 @@ import {
 import { LEGACY_ITEM } from '../game/native-hero-village';
 import { heroAbilityHeal, heroStatsFor } from '../game/native-heroes';
 import { BUILDING_LEVELS, requiredTownHall } from '../game/progression';
-import { armySpace, emptyArmy, emptySpells, spellSpace, type ArmyPreset } from '../game/army';
+import {
+  armySpace,
+  emptyArmy,
+  emptySpells,
+  spellSpace,
+  unitsThatFit,
+  type ArmyPreset,
+} from '../game/army';
 import { ARMY_RECIPE_TEXTS, FIRST_RECIPE_TOWN_HALL, type ArmyRecipe } from '../game/army-recipes';
 import { PRACTICE_TEXTS, practiceLevelAt, type PracticeLevel } from '../game/practice-mode';
 import {
@@ -637,7 +644,15 @@ function restoreFocusMark(mark: FocusMark | null) {
     }
 }
 /** Drawer markup split at its stable structure, so an update can replace single tiles. */
-type DrawerParts = { open: string; head: string; body: string; items: string[]; foot: string };
+type ArmyFill = { room: number; description: string };
+type DrawerParts = {
+  open: string;
+  head: string;
+  body: string;
+  items: string[];
+  foot: string;
+  fills?: Map<string, ArmyFill>;
+};
 /** Elements updateLive() patches, looked up once per rebuild instead of every 250 ms. */
 type ArmyShow = 'all' | 'unlocked' | 'ready';
 type ArmyFamily = 'all' | 'elixir' | 'dark' | 'super' | 'siege' | 'spells';
@@ -2697,6 +2712,7 @@ export class HUD {
       this.renderedDrawer = drawerMarkup ? this.drawerPanel : null;
       rebuilt = true;
     }
+    if (drawerMarkup && this.drawerParts?.fills) this.updateArmyFill(this.drawerParts.fills);
     this.drawerEl.classList.toggle('dragging', this.dragging);
     // An open sheet owns the bottom of the screen, so the bars beneath it step aside.
     this.root.classList.toggle('drawer-open', !!this.drawerPanel && !b);
@@ -2854,6 +2870,19 @@ export class HUD {
       });
     if (prev.foot !== next.foot) foot.outerHTML = next.foot;
     return true;
+  }
+  /** Fill availability changes on almost every Army edit. Keep the cards and buttons mounted. */
+  private updateArmyFill(fills: ReadonlyMap<string, ArmyFill>) {
+    this.drawerEl.querySelectorAll<HTMLButtonElement>('[data-army-fill]').forEach((control) => {
+      const action = control.dataset.action;
+      const fill = action && fills.get(action);
+      if (!fill) return;
+      const label = fill.room ? `Fill +${fill.room}` : 'Fill';
+      if (control.textContent !== label) control.textContent = label;
+      if (control.disabled !== !fill.room) control.disabled = !fill.room;
+      if (control.getAttribute('aria-label') !== fill.description)
+        control.setAttribute('aria-label', fill.description);
+    });
   }
   /**
    * Looping decorations (full storage glow) are restarted whenever #hud is rebuilt.
@@ -4275,10 +4304,18 @@ export class HUD {
   private drawer() {
     if (!this.drawerPanel || this.model.battle) return '';
     const titles = { shop: 'Shop', army: 'Army' };
-    const body = this.drawerPanel === 'shop' ? this.shop() : this.army();
+    const body: Pick<DrawerParts, 'body' | 'items' | 'foot' | 'fills'> =
+      this.drawerPanel === 'shop' ? this.shop() : this.army();
     const head = `<header class="drawer-head${this.drawerPanel === 'army' ? ' army-head' : ''}"><h2 tabindex="-1">${titles[this.drawerPanel]}</h2>${this.drawerPanel === 'shop' ? `<div class="shop-tabs" role="tablist" aria-label="Building category">${['All', 'Resources', 'Army', 'Defenses', 'Traps', DECORATION_TEXTS.shopTab, GEM_TEXTS.treasureTab].map((t) => button(`tab:${t}`, t, `tab ${this.tab === t ? 'active' : ''}`, `role="tab" aria-selected="${this.tab === t}"`)).join('')}</div>` : `<nav class="army-categories" aria-label="Army catalog">${button('army-jump:troops', `${icon('Tent', 17)}<span>Troops<b>${this.model.armySize + this.model.queuedSize}/${this.model.capacity}</b></span>`, 'army-category', `aria-label="Show troops, ${this.model.armySize + this.model.queuedSize} of ${this.model.capacity} housing spaces"`)}${button('army-jump:spells', `${icon('Sparkles', 17)}<span>Spells<b>${this.model.spellHousing}/${this.model.spellCapacity}</b></span>`, 'army-category', `aria-label="Show spells, ${this.model.spellHousing} of ${this.model.spellCapacity} housing spaces"`)}</nav>${this.armyFilters()}`}<button class="square-btn small close-btn" data-action="close-drawer" aria-label="Close">${icon('X', 22)}</button></header>`;
     const open = `<section class="drawer-sheet" aria-label="${titles[this.drawerPanel]}">`;
-    this.drawerParts = { open, head, body: body.body, items: body.items, foot: body.foot };
+    this.drawerParts = {
+      open,
+      head,
+      body: body.body,
+      items: body.items,
+      foot: body.foot,
+      fills: body.fills,
+    };
     return `${open}${head}${body.body}${body.items.join('')}</div>${body.foot}</section>`;
   }
   /** The Decorations tab: the client's Shop rows, with stashed ones placed again for free. */
@@ -4365,6 +4402,11 @@ export class HUD {
   }
   private army() {
     const m = this.model;
+    const fills = new Map<string, ArmyFill>();
+    const fill = (action: string, room: number, description: string) => {
+      fills.set(action, { room, description });
+      return button(action, 'Fill', 'game-btn stone shop-buy tiny', 'data-army-fill');
+    };
     const upgradingFacilities = (['barracks', 'spellfactory'] as const)
       .filter((kind) =>
         m.state.buildings.some((b) => b.kind === kind && !b.constructing && !!b.upgradeEnd),
@@ -4373,8 +4415,13 @@ export class HUD {
     const preparationLabel = upgradingFacilities.length
       ? 'Free &amp; instant during upgrades'
       : 'Free &amp; instant preparation';
-    const overTroops = m.armySize + m.queuedSize > m.capacity;
-    const overSpells = m.spellHousing + m.queuedSpellHousing > m.spellCapacity;
+    const troopSpace = m.capacity - m.armySize - m.queuedSize;
+    const spellCapacity = m.spellCapacity;
+    const spellSpaceLeft = spellCapacity - m.spellHousing;
+    const spellRoomSpace = spellSpaceLeft - m.queuedSpellHousing;
+    const siegeCount = m.siegeCount;
+    const overTroops = troopSpace < 0;
+    const overSpells = spellRoomSpace < 0;
     const overCapacity = overTroops || overSpells;
     const power = m.boostLeft('army');
     const preparationNote = power
@@ -4389,17 +4436,19 @@ export class HUD {
           ? `${upgradingFacilities.join(' and ')} upgrading`
           : 'Rage and Healing use 2 spell spaces · Lightning uses 1';
     const troopTile = (k: TroopKind) => {
-      const d = m.troopStats(k, m.armyLevel(k)),
-        direct = !troopSummonsOnly(nativeUnitStats(k, m.armyLevel(k))),
+      const level = m.armyLevel(k);
+      const researchLevel = m.troopLevel(k);
+      const d = m.troopStats(k, level),
+        direct = !troopSummonsOnly(nativeUnitStats(k, level)),
         launcher =
           k === 'trooplauncher' && (!m.battle || m.battle.nativeTroopLauncherFriendly)
-            ? troopLauncherStats(m.armyLevel(k))
+            ? troopLauncherStats(level)
             : undefined,
         hit =
           k === 'superdragon' && (!m.battle || m.battle.nativeSuperDragonBurst)
-            ? damageNumber(superDragonBurstStats(m.armyLevel(k)).damage)
+            ? damageNumber(superDragonBurstStats(level).damage)
             : k === 'flameflinger' && (!m.battle || m.battle.nativeFlameFlingerBursts)
-              ? damageNumber(flameFlingerBurstStats(m.armyLevel(k)).damage)
+              ? damageNumber(flameFlingerBurstStats(level).damage)
               : d.damage;
       const boostEnd = m.state.superBoosts?.[k] ?? 0;
       const boostStatus =
@@ -4417,26 +4466,29 @@ export class HUD {
         superBase && m.townhallLevel >= 11 && m.troopLevel(superBase) >= superMinimum(k);
       const boostCapacity =
         boostRequirementsMet && boostEnd <= m.clock ? m.superBoostCapacityIssue(k) : null;
-      const room = m.troopRoom(k);
-      const blocked =
-        !unlocked ||
-        (isSiege(k)
-          ? TROOP_KEYS.filter(isSiege).reduce((n, kind) => n + (m.state.army[kind] ?? 0), 0) >= 3
-          : m.armySize + m.queuedSize + d.space > m.capacity);
-      return `<article class="shop-tile army-tile ${unlocked ? '' : 'army-locked'}" data-army-category="troops"><div class="shop-tile-art"${blocked ? '' : ` data-add="train:${k}" data-repeat`}><img src="${hudAsset(k)}" alt="" draggable="false">${d.flying ? '<span class="air-tag">AIR</span>' : ''}</div><h3>${d.name} ${m.armyLevel(k) > m.troopLevel(k) ? `<small class="potion-level" title="Power Potion">★${m.troopDisplayLevel(k) + m.armyLevel(k) - m.troopLevel(k)}</small>` : `<small>★${m.troopDisplayLevel(k)}</small>`}</h3>${button(`troop-info:${k}`, `${icon('Info', 13)} ${direct ? d.role : 'SUMMONER'}`, 'troop-info-button', `aria-label="About ${d.name}"`)}<small class="shop-count">${icon('Heart', 11)} ${d.hp} ${launcher ? `${icon('Sparkles', 11)} ${launcher.count} barrels` : direct ? `${icon('Swords', 11)} ${hit}` : `${icon('Sparkles', 11)} Summons`} ${icon('Users', 11)} ${d.space}</small>${boostStatus}${superOriginal(k) && !unlocked && m.magicItemCount('super-potion') ? button(`super-potion:${k}`, `Boost · Super Potion (${m.magicItemCount('super-potion')})`, 'game-btn blue shop-buy', boostCapacity || !boostRequirementsMet ? 'disabled' : '') : ''}${superOriginal(k) && !unlocked ? button(`boost-super:${k}`, `Boost · ${Number(superLicence(k)?.ResourceCost).toLocaleString()} dark · 3 days`, 'game-btn purple shop-buy', boostCapacity || !boostRequirementsMet ? 'disabled' : '') + `<small>TH11 · ${TROOPS[superOriginal(k)!].name} level ${superMinimum(k)}</small>` : ''}${boostCapacity ? `<small>${html(boostCapacity)}</small>` : ''}${button(`train:${k}`, issue ? `${icon('LockKeyhole', 13)} ${html(issue.label)}` : `+ Add`, `game-btn ${blocked ? 'stone' : 'green'} shop-buy`, `${blocked ? 'disabled' : ''} data-repeat title="${html(issue?.message ?? 'Hold to keep adding')}"`)}<span class="army-bulk">${button(`train-five:${k}`, `×5`, 'game-btn stone shop-buy tiny', blocked || isSiege(k) || m.armySize + m.queuedSize + d.space * 5 > m.capacity ? 'disabled' : '')}${button(`train-fill:${k}`, `Fill${room ? ` +${room}` : ''}`, 'game-btn stone shop-buy tiny', `${room ? '' : 'disabled'} aria-label="Fill: add ${room} ${d.name}${isSiege(k) ? '' : `, ${room * d.space} housing space${room * d.space === 1 ? '' : 's'}`}"`)}</span><span class="army-bulk">${button(`remove-troop:${k}`, `${icon('Minus', 12)} Remove`, 'army-remove', `aria-label="Remove one ${d.name}" data-repeat ${m.state.army[k] ? '' : 'disabled'}`)}${button(`remove-all-troop:${k}`, 'All', 'army-remove', `aria-label="Remove every ${d.name}" ${m.state.army[k] > 1 ? '' : 'disabled'}`)}</span><small class="shop-note"><b data-army-count="troop:${k}">${m.state.army[k]}</b> ready · ${isSiege(k) ? `Siege reserve ${m.siegeCount}/3 · one per battle` : `${d.space} space${d.space === 1 ? '' : 's'}`}</small></article>`;
+      const siege = isSiege(k);
+      const room =
+        m.battle || !unlocked
+          ? 0
+          : siege
+            ? Math.max(0, 3 - siegeCount)
+            : unitsThatFit(troopSpace, TROOPS[k].space);
+      const blocked = !unlocked || (siege ? siegeCount >= 3 : d.space > troopSpace);
+      return `<article class="shop-tile army-tile ${unlocked ? '' : 'army-locked'}" data-army-category="troops"><div class="shop-tile-art"${blocked ? '' : ` data-add="train:${k}" data-repeat`}><img src="${hudAsset(k)}" alt="" draggable="false">${d.flying ? '<span class="air-tag">AIR</span>' : ''}</div><h3>${d.name} ${level > researchLevel ? `<small class="potion-level" title="Power Potion">★${m.troopDisplayLevel(k) + level - researchLevel}</small>` : `<small>★${m.troopDisplayLevel(k)}</small>`}</h3>${button(`troop-info:${k}`, `${icon('Info', 13)} ${direct ? d.role : 'SUMMONER'}`, 'troop-info-button', `aria-label="About ${d.name}"`)}<small class="shop-count">${icon('Heart', 11)} ${d.hp} ${launcher ? `${icon('Sparkles', 11)} ${launcher.count} barrels` : direct ? `${icon('Swords', 11)} ${hit}` : `${icon('Sparkles', 11)} Summons`} ${icon('Users', 11)} ${d.space}</small>${boostStatus}${superOriginal(k) && !unlocked && m.magicItemCount('super-potion') ? button(`super-potion:${k}`, `Boost · Super Potion (${m.magicItemCount('super-potion')})`, 'game-btn blue shop-buy', boostCapacity || !boostRequirementsMet ? 'disabled' : '') : ''}${superOriginal(k) && !unlocked ? button(`boost-super:${k}`, `Boost · ${Number(superLicence(k)?.ResourceCost).toLocaleString()} dark · 3 days`, 'game-btn purple shop-buy', boostCapacity || !boostRequirementsMet ? 'disabled' : '') + `<small>TH11 · ${TROOPS[superOriginal(k)!].name} level ${superMinimum(k)}</small>` : ''}${boostCapacity ? `<small>${html(boostCapacity)}</small>` : ''}${button(`train:${k}`, issue ? `${icon('LockKeyhole', 13)} ${html(issue.label)}` : `+ Add`, `game-btn ${blocked ? 'stone' : 'green'} shop-buy`, `${blocked ? 'disabled' : ''} data-repeat title="${html(issue?.message ?? 'Hold to keep adding')}"`)}<span class="army-bulk">${button(`train-five:${k}`, `×5`, 'game-btn stone shop-buy tiny', blocked || siege || d.space * 5 > troopSpace ? 'disabled' : '')}${fill(`train-fill:${k}`, room, `Fill: add ${room} ${d.name}${siege ? '' : `, ${room * d.space} housing space${room * d.space === 1 ? '' : 's'}`}`)}</span><span class="army-bulk">${button(`remove-troop:${k}`, `${icon('Minus', 12)} Remove`, 'army-remove', `aria-label="Remove one ${d.name}" data-repeat ${m.state.army[k] ? '' : 'disabled'}`)}${button(`remove-all-troop:${k}`, 'All', 'army-remove', `aria-label="Remove every ${d.name}" ${m.state.army[k] > 1 ? '' : 'disabled'}`)}</span><small class="shop-note"><b data-army-count="troop:${k}">${m.state.army[k]}</b> ready · ${siege ? `Siege reserve ${siegeCount}/3 · one per battle` : `${d.space} space${d.space === 1 ? '' : 's'}`}</small></article>`;
     };
     const spellTile = (k: SpellKind) => {
       const level = m.armySpellLevel(k),
         d = m.spellStats(k, level);
       const unlocked = m.spellUnlocked(k);
-      const room = m.spellRoom(k);
-      const blocked = !unlocked || m.spellHousing + d.space > m.spellCapacity;
-      return `<article class="shop-tile army-tile ${unlocked ? '' : 'army-locked'}" data-army-category="spells"><div class="shop-tile-art"${blocked || !m.spellCapacity ? '' : ` data-add="brew:${k}" data-repeat`}><img src="${hudAsset(k)}" alt="" draggable="false"></div><h3>${d.name.replace(' Spell', '')} ${level > m.spellLevel(k) ? `<small class="potion-level" title="Power Potion">★${level}</small>` : `<small>★${level}</small>`}</h3>${button(`spell-info:${k}`, `${icon('Info', 13)} ${d.role}`, 'troop-info-button', `aria-label="About ${d.name}"`)}<small class="shop-count">${d.effect}</small>${button(`brew:${k}`, unlocked ? '+ Add' : `${icon('LockKeyhole', 13)} ${spellFactory(k) === 'darkspellfactory' ? 'Dark ' : ''}Factory ${SPELL_UNLOCK[k]}`, `game-btn ${blocked || !m.spellCapacity ? 'stone' : 'green'} shop-buy`, `${blocked || !m.spellCapacity ? 'disabled' : ''} data-repeat title="Hold to keep adding"`)}${button(`brew-fill:${k}`, `Fill${room ? ` +${room}` : ''}`, 'game-btn stone shop-buy tiny', `${room ? '' : 'disabled'} aria-label="Fill: add ${room} ${d.name}, ${room * d.space} spell space${room * d.space === 1 ? '' : 's'}"`)}<span class="army-bulk">${button(`remove-spell:${k}`, `${icon('Minus', 12)} Remove`, 'army-remove', `aria-label="Remove one ${d.name}" data-repeat ${m.state.spells[k] ? '' : 'disabled'}`)}${button(`remove-all-spell:${k}`, 'All', 'army-remove', `aria-label="Remove every ${d.name}" ${m.state.spells[k] > 1 ? '' : 'disabled'}`)}</span><small class="shop-note"><b data-army-count="spell:${k}">${m.state.spells[k]}</b> ready · ${d.space} spell space${d.space === 1 ? '' : 's'}</small></article>`;
+      const room = m.battle || !unlocked ? 0 : unitsThatFit(spellRoomSpace, SPELLS[k].space);
+      const blocked = !unlocked || d.space > spellSpaceLeft;
+      return `<article class="shop-tile army-tile ${unlocked ? '' : 'army-locked'}" data-army-category="spells"><div class="shop-tile-art"${blocked || !spellCapacity ? '' : ` data-add="brew:${k}" data-repeat`}><img src="${hudAsset(k)}" alt="" draggable="false"></div><h3>${d.name.replace(' Spell', '')} ${level > m.spellLevel(k) ? `<small class="potion-level" title="Power Potion">★${level}</small>` : `<small>★${level}</small>`}</h3>${button(`spell-info:${k}`, `${icon('Info', 13)} ${d.role}`, 'troop-info-button', `aria-label="About ${d.name}"`)}<small class="shop-count">${d.effect}</small>${button(`brew:${k}`, unlocked ? '+ Add' : `${icon('LockKeyhole', 13)} ${spellFactory(k) === 'darkspellfactory' ? 'Dark ' : ''}Factory ${SPELL_UNLOCK[k]}`, `game-btn ${blocked || !spellCapacity ? 'stone' : 'green'} shop-buy`, `${blocked || !spellCapacity ? 'disabled' : ''} data-repeat title="Hold to keep adding"`)}${fill(`brew-fill:${k}`, room, `Fill: add ${room} ${d.name}, ${room * d.space} spell space${room * d.space === 1 ? '' : 's'}`)}<span class="army-bulk">${button(`remove-spell:${k}`, `${icon('Minus', 12)} Remove`, 'army-remove', `aria-label="Remove one ${d.name}" data-repeat ${m.state.spells[k] ? '' : 'disabled'}`)}${button(`remove-all-spell:${k}`, 'All', 'army-remove', `aria-label="Remove every ${d.name}" ${m.state.spells[k] > 1 ? '' : 'disabled'}`)}</span><small class="shop-note"><b data-army-count="spell:${k}">${m.state.spells[k]}</b> ready · ${d.space} spell space${d.space === 1 ? '' : 's'}</small></article>`;
     };
     const troopTiles = TROOP_ORDER.filter((k) => this.armyShown(k, false)).map(troopTile);
     const spellTiles = SPELL_ORDER.filter((k) => this.armyShown(k, true)).map(spellTile);
     return {
       body: '<div class="drawer-body army-strip">',
+      fills,
       items: [
         `<div class="army-actions modern-army-actions" role="toolbar" aria-label="Army actions"><span class="army-ready-label">READY WHEN YOU ARE</span>${armyAction('heroes', 'ShieldCheck', 'Heroes', 'blue')}${armyAction('progression', 'Layers', 'Progression', 'stone')}${armyAction('army-presets', 'Save', 'Quick armies', 'green')}${armyAction('retrain', 'RotateCcw', 'Last army', 'stone', !m.state.lastArmy)}${armyAction('research', 'FlaskConical', 'Research', 'blue')}${armyAction('practice', 'Swords', 'Practice', 'blue', !m.armyReady)}${armyAction('clear-army', 'X', 'Clear army', 'stone', !(m.armySize || m.siegeCount || m.spellCount))}</div>`,
         ...troopTiles,

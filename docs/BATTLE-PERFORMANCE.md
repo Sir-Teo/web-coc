@@ -2462,3 +2462,23 @@ unverified.
   `renderGroup`), or nested groups silently fall back to the slow path.
 - A view whose leaves a spec counts (`meshes.size` lower bounds) should not enable
   `mergeLeaves` without rechecking that spec.
+
+## Army preparation between battles
+
+The Army drawer reads available housing and siege reserves once per render.
+An edit updates the Fill count, accessible label and disabled state directly
+when the rest of the card is unchanged.
+
+Run `ARMY_BENCH_CHROMIUM=/usr/bin/chromium node scripts/army-prepare-benchmark.mjs`
+against a Vite development server on port 5176. Set `ARMY_BENCH_URL` for another
+address. The benchmark uses a phone-sized viewport, 340 buildings and 75
+visible cards. After warm-up it times 13 batches of 24 alternating add and
+remove actions, each followed by a synchronous HUD redraw. The output includes
+each batch's milliseconds per action.
+
+Three separate Chromium/SwiftShader runs had baseline medians of 13.43, 10.45
+and 12.49 ms and updated medians of 7.75, 7.41 and 7.13 ms. The final baseline
+and updated runs were taken consecutively. A final run after the production
+typecheck fixes measured 7.51 ms. This covers synchronous Army edit
+and redraw work with the scene paused. Frame presentation, actual device
+latency and live-battle FPS require separate measurements.
