@@ -299,5 +299,9 @@ test.describe('shared layouts during a raid', () => {
     await page.locator('[data-action="layouts"]').tap();
     await expect(page.locator('#layout-code')).toHaveValue(code);
     expect(await page.evaluate(() => window.__game.model.state.layouts ?? [])).toEqual([]);
+    await page.getByRole('button', { name: 'Close dialog' }).tap();
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#loading')).toBeHidden({ timeout: 20000 });
+    await expect(page.locator('.modal')).toHaveCount(0);
   });
 });

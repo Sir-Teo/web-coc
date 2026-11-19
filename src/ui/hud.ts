@@ -753,6 +753,7 @@ export class HUD {
   private recallCardImages = new Map<string, HTMLImageElement>();
   private root: HTMLElement;
   private panel: Panel = null;
+  onSharedPreviewShown: (kind: 'layout' | 'army') => void = () => {};
   private drawerPanel: Drawer = null;
   private armyReturn?:
     | { panel: 'campaign' | 'campaign-scout'; focus: FocusMark | null }
@@ -1292,6 +1293,10 @@ export class HUD {
       if (panel === 'info') this.model.selected = selected;
     }
     this.render();
+    if (!this.model.battle) {
+      if (panel === 'layouts') this.onSharedPreviewShown('layout');
+      if (panel === 'army-presets') this.onSharedPreviewShown('army');
+    }
   }
   private closePanel() {
     this.superCancelConfirm = null;

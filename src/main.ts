@@ -66,34 +66,42 @@ async function boot() {
     await prepareHomeArt(model.buildings);
     const scene = new VillageScene(model, audio);
     const hud = new HUD(model, scene, audio);
-    // A shared layout link ("#layout=…"), opened or pasted into an open tab: offer it in the
-    // layouts panel, and drop it from the address so a reload does not offer it again.
-    const consumeSharedLink = (parameter: string) => {
+    type SharedPreview = { kind: 'layout' | 'army'; code: string };
+    const pendingPreview = (): SharedPreview | undefined => history.state?.pendingShare;
+    const previewShare = ({ kind, code }: SharedPreview) => {
+      if (kind === 'layout') hud.receiveLayout(code);
+      else hud.receiveArmy(code);
+    };
+    const offerLink = (kind: SharedPreview['kind'], code: string) => {
       const url = new URL(location.href);
-      url.searchParams.delete(parameter);
+      url.searchParams.delete(kind);
       url.hash = '';
-      history.replaceState(null, '', url.pathname + url.search);
-    };
-    const offerLayout = () => {
-      const code = layoutFromLink(location.href);
-      if (!code) return;
-      consumeSharedLink('layout');
-      hud.receiveLayout(code);
-    };
-    const offerArmy = () => {
-      const code = armyFromLink(location.href);
-      if (!code) return;
-      consumeSharedLink('army');
-      hud.receiveArmy(code);
+      const preview = { kind, code };
+      // The current history entry survives reload in this tab and stays outside the save.
+      history.replaceState(
+        model.battle ? { pendingShare: preview } : null,
+        '',
+        url.pathname + url.search,
+      );
+      previewShare(preview);
     };
     const offerSharedLinks = () => {
-      offerLayout();
-      offerArmy();
+      const layout = layoutFromLink(location.href);
+      if (layout) offerLink('layout', layout);
+      const army = armyFromLink(location.href);
+      if (army) offerLink('army', army);
+      return !!(layout || army);
+    };
+    hud.onSharedPreviewShown = (kind) => {
+      if (pendingPreview()?.kind === kind) history.replaceState(null, '');
     };
     scene.onReveal = () => {
       // Keep the URL intact until the preview can be shown and focused. A terrain retry
       // reloads this address and must still have the original link.
-      offerSharedLinks();
+      if (!offerSharedLinks()) {
+        const pending = pendingPreview();
+        if (pending) previewShare(pending);
+      }
       window.addEventListener('hashchange', offerSharedLinks);
     };
     const game = new Phaser.Game({
