@@ -21,19 +21,20 @@ async function grassPoint(page: Page) {
 
 test.use({ viewport: { width: 390, height: 844 } });
 
-async function startDeployment(page: Page) {
+async function startDeployment(page: Page, archers?: number) {
   await page.goto('/');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   await page.locator('#loading').waitFor({ state: 'detached' });
-  await page.evaluate(() => {
+  await page.evaluate((archers) => {
     const m = window.__game.model;
     m.state.army.swordsman = 40;
+    if (archers !== undefined) m.state.army.archer = archers;
     m.changed();
     m.startCampaign(0);
     m.activeTroop = 'swordsman';
     m.changed();
-  });
+  }, archers);
   await expect(page.locator('.battle-enemy')).toBeVisible();
   await expect
     .poll(() => page.evaluate(() => window.__game.scene.battleArtPending()), { timeout: 15000 })
@@ -242,4 +243,21 @@ test.describe('battle map multitouch', () => {
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     expect(await remaining()).toBe(start - 1);
   });
+});
+
+test('switching troop cards starts a fresh deployment tap', async ({ page }) => {
+  await startDeployment(page, 5);
+  const point = await grassPoint(page);
+  await page.evaluate(() => {
+    window.__game.scene.paused = true;
+    // Keep the two map taps inside the rapid-tap window regardless of renderer timing.
+    const now = performance.now();
+    Object.defineProperty(performance, 'now', { value: () => now, configurable: true });
+  });
+  await page.mouse.click(point.x, point.y);
+  await page.locator('[data-action="troop:archer"]').dispatchEvent('click');
+  await page.mouse.click(point.x, point.y);
+  const army = await page.evaluate(() => window.__game.model.battle!.remaining);
+  expect(army.swordsman).toBe(39);
+  expect(army.archer).toBe(4);
 });

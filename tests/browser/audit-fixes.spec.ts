@@ -795,3 +795,84 @@ test('a hidden raid writes its backup while an older IndexedDB save is queued', 
   expect(outcome.loaded!.saveRevision).toBe(outcome.completed.saveRevision);
   expect(outcome.loaded!.raidLog).toEqual(outcome.completed.raidLog);
 });
+
+test('browser history settles a live raid once and reopens its recording', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    for (const type of ['pagehide', 'pageshow']) {
+      window.addEventListener(type, (event: PageTransitionEvent) => {
+        const key = 'raid-history-events';
+        const entries = JSON.parse(sessionStorage.getItem(key) ?? '[]');
+        const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+        entries.push({
+          type,
+          path: location.pathname,
+          persisted: event.persisted,
+          nav: nav?.type,
+          reasons: Reflect.get(nav, 'notRestoredReasons'),
+        });
+        sessionStorage.setItem(key, JSON.stringify(entries));
+      });
+    }
+  });
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  const expected = await page.evaluate(async () => {
+    const { model, game } = window.__game;
+    const { BUILDINGS } = await import('/src/game/data.ts');
+    game.loop.sleep();
+    model.state.gold = 0;
+    model.state.spells.lightning = 1;
+    model.startBattle(0);
+    model.activeSpell = 'lightning';
+    const mine = model.battle!.buildings.find((building) => building.kind === 'goldmine')!;
+    const center = BUILDINGS[mine.kind].size / 2;
+    if (!model.castSpell(mine.x + center, mine.y + center)) throw Error('Lightning did not deploy');
+    for (let i = 0; i < 40; i++) model.step(0.05);
+    const loot = model.battle!.lootTaken!.gold;
+    if (!loot || model.battle!.finished) throw Error('Expected an unsettled raid with loot');
+    return { loot, raids: model.state.stats.raids + 1 };
+  });
+  let priorDocument = await page.evaluate(() => performance.timeOrigin);
+  const next = new URL('/app-icon-192.png', page.url()).href;
+  await page.goto(next);
+  await page.goBack({ waitUntil: 'commit' });
+  const checkRestored = async () => {
+    await page.waitForFunction((previous) => performance.timeOrigin > previous, priorDocument);
+    priorDocument = await page.evaluate(() => performance.timeOrigin);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    await expect
+      .poll(() =>
+        page.evaluate(async () => {
+          const { model } = window.__game;
+          const { held } = await navigator.locks.query();
+          return {
+            gold: model.state.gold,
+            raids: model.state.stats.raids,
+            log: model.state.raidLog?.length,
+            replay: !!model.state.raidLog?.[0].replay,
+            ownsSession: held?.some((lock) => lock.name === 'crown-clan-village-writer'),
+          };
+        }),
+      )
+      .toEqual({
+        gold: expected.loot,
+        raids: expected.raids,
+        log: 1,
+        replay: true,
+        ownsSession: true,
+      });
+  };
+  await checkRestored();
+  await page.locator('[data-action="battle-log"]').click();
+  await page.getByRole('button', { name: 'Watch replay' }).click();
+  await expect(page.getByRole('slider', { name: 'Replay position' })).toBeVisible();
+  await page.goForward({ waitUntil: 'commit' });
+  await expect(page).toHaveURL(next);
+  await page.goBack({ waitUntil: 'commit' });
+  await checkRestored();
+  await test.info().attach('history lifecycle', {
+    body: (await page.evaluate(() => sessionStorage.getItem('raid-history-events'))) ?? '[]',
+    contentType: 'application/json',
+  });
+});

@@ -706,7 +706,7 @@ export class VillageScene extends Phaser.Scene {
   private fling = new PanFling();
   private flingCamera?: { x: number; y: number; zoom: number; t: number };
   private lastDeploy = { x: -99, y: -99 };
-  private lastTap = { x: -99, y: -99, t: 0 };
+  private lastTap?: { kind: GameModel['activeTroop']; x: number; y: number; t: number };
   /** Press-and-hold deployment: when the next troop of the held stream drops. */
   private holdNext = 0;
   private boundary: { signature: number; edges: number[][] } = { signature: -1, edges: [] };
@@ -2785,15 +2785,19 @@ export class VillageScene extends Phaser.Scene {
       if (!this.model.deploymentSelected) return;
       // A second tap on the same spot commits a full squad, the way rapid taps do in Clash.
       const now = performance.now();
+      const kind =
+        this.model.activeHero || this.model.activeHeroKind ? null : this.model.activeTroop;
+      const lastTap = this.lastTap;
       const repeat =
-        now - this.lastTap.t < 380 &&
-        Math.hypot(grid.x - this.lastTap.x, grid.y - this.lastTap.y) < 1.4;
+        lastTap?.kind === kind &&
+        now - lastTap.t < 380 &&
+        Math.hypot(grid.x - lastTap.x, grid.y - lastTap.y) < 1.4;
       const placed = repeat
         ? this.model.deployMany(grid.x, grid.y, 4)
         : Number(this.model.deploy(grid.x, grid.y));
       if (placed) {
         this.model.selected = null;
-        this.lastTap = { x: grid.x, y: grid.y, t: now };
+        this.lastTap = kind ? { kind, x: grid.x, y: grid.y, t: now } : undefined;
         this.deployFeedback();
       }
       return;
@@ -3282,6 +3286,7 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.reducedMotion) this.resourceFlights.clear();
     const mode = this.model.battle ? 'battle' : 'home';
     if (mode !== this.mode || this.renderedBattle !== this.model.battle) {
+      this.lastTap = undefined;
       // A retry starts on the same guide step, but its camera has been framed afresh.
       this.guideFocus = '';
       this.combatEffects.clear();
