@@ -3864,7 +3864,8 @@ export class GameModel {
     const fitted = fitLayout(
       shared,
       this.state.buildings.filter((b) => !b.npc),
-      (x, y, size) => overlapsObstacle(this.obstacles, x, y, size),
+      (x, y, size) =>
+        overlapsObstacle(this.obstacles, x, y, size) || this.overlapsVillageObject(x, y, size),
     );
     if (!fitted) {
       this.notify('This layout has no room for every building of your village.');
@@ -3892,6 +3893,18 @@ export class GameModel {
     if (!layout?.slots.length) return this.notify('That layout slot is still empty.');
     if (this.layoutOverlapsObstacles(layout.slots))
       return this.notify('Clear the obstacles beneath this layout before restoring it.');
+    const buildings = new Map(this.state.buildings.map((b) => [b.id, b]));
+    if (
+      layout.slots.some(({ id, x, y }) => {
+        const b = buildings.get(id);
+        return (
+          b && (b.x !== x || b.y !== y) && this.overlapsVillageObject(x, y, BUILDINGS[b.kind].size)
+        );
+      })
+    )
+      return this.notify(
+        'This layout would cover a village feature. Share and reimport it to fit it again.',
+      );
     const before = this.positions();
     if (!this.applyPositions(layout.slots))
       return this.notify(
