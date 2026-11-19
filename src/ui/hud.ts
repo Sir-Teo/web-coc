@@ -2352,9 +2352,11 @@ export class HUD {
         const kept = keepReplacedVillage(m.state);
         void this.applyVillage(
           data,
-          kept
-            ? 'Village restored successfully. Undo it from Settings.'
-            : 'Village restored successfully.',
+          kept.then((ok) =>
+            ok
+              ? 'Village restored successfully. Undo it from Settings.'
+              : 'Village restored successfully.',
+          ),
         );
         break;
       }
@@ -2456,7 +2458,7 @@ export class HUD {
     return `<div class="modal-body confirm-body import-review"><h3>Backup</h3><p>${summary(data)}</p><p><small>Last played ${html(when)} · ${data.raidLog?.length ?? 0} raids in its log</small></p><h3>Your current village</h3><p>${summary(this.model.state)}</p><p class="confirm-line">${icon('ShieldCheck', 20)} Your current village is kept, so you can undo this import from Settings.</p><div class="confirm-actions">${button('import-cancel', 'Cancel', 'game-btn stone')}${button('import-confirm', `${icon('Upload', 18)} Replace village`, 'game-btn green')}</div></div>`;
   }
   /** Makes `data` the village: resets transient state, then saves it and says whether it stuck. */
-  private async applyVillage(data: Save, done: string) {
+  private async applyVillage(data: Save, done: string | Promise<string>) {
     this.model.state = data;
     this.model.clearSlotHistory();
     this.presetNames.clear();
@@ -2483,7 +2485,7 @@ export class HUD {
       this.toast(
         'Village restored for this session only: it could not be saved in this browser. Export it from Settings to keep it.',
       );
-    else if (!this.showMapUpgrade()) this.toast(done);
+    else if (!this.showMapUpgrade()) this.toast(await done);
     return saved;
   }
   /**

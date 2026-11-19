@@ -1,7 +1,15 @@
 import { it, expect, vi, afterEach } from 'vitest';
 import { IDBFactory, IDBDatabase as FakeIDBDatabase } from 'fake-indexeddb';
 import { GameModel, initialSave } from '../src/game/model';
-import { loadSave, saveGame, SaveRecoveryError, validateSave } from '../src/game/save';
+import {
+  forgetReplacedVillage,
+  keepReplacedVillage,
+  loadSave,
+  replacedVillage,
+  saveGame,
+  SaveRecoveryError,
+  validateSave,
+} from '../src/game/save';
 import { overfullArmyVillage } from './fixtures/legacy-army-village';
 afterEach(() => vi.unstubAllGlobals());
 async function replayStorage(rejectPendingBackup = false) {
@@ -9,6 +17,7 @@ async function replayStorage(rejectPendingBackup = false) {
   vi.stubGlobal('indexedDB', new IDBFactory());
   vi.stubGlobal('localStorage', {
     getItem: (key: string) => local.get(key) ?? null,
+    removeItem: (key: string) => local.delete(key),
     setItem: (key: string, value: string) => {
       if (rejectPendingBackup && value.includes('"steps"')) throw Error('QuotaExceededError');
       local.set(key, value);
@@ -305,4 +314,48 @@ it('stores the completed recording over an earlier checkpoint with the same raid
 
   await saveGame(model.state);
   expect((await loadSave())!.raidLog![0]).toEqual(completed);
+});
+
+it('keeps an undo recording in IndexedDB when local storage is full and prunes it after undo', async () => {
+  await replayStorage(true);
+  const keys = async () => {
+    const db = await new Promise<IDBDatabase>((resolve) => {
+      const request = indexedDB.open('crown-and-clan', 1);
+      request.onsuccess = () => resolve(request.result);
+    });
+    try {
+      return await new Promise<IDBValidKey[]>((resolve) => {
+        const request = db.transaction('saves').objectStore('saves').getAllKeys();
+        request.onsuccess = () => resolve(request.result);
+      });
+    } finally {
+      db.close();
+    }
+  };
+  const original = recordedVillage();
+  const expected = original.raidLog![0].replay;
+  await saveGame(original);
+  expect(await keepReplacedVillage(original)).toBe(true);
+
+  const replacement = { ...original, raidLog: [] };
+  await saveGame(replacement);
+  expect((await loadSave())!.raidLog).toEqual([]);
+  expect(await keys()).toEqual(['crown-clan-save-v1-before-import', 'village']);
+  const undo = replacedVillage()!.state;
+  expect(undo.raidLog![0].replay).toEqual(expected);
+  await saveGame(undo);
+  forgetReplacedVillage();
+
+  expect((await loadSave())!.raidLog![0].replay).toEqual(expected);
+  expect(replacedVillage()).toBeNull();
+  await saveGame(replacement);
+  expect(await keys()).toEqual(['village']);
+});
+
+it('opens an existing progress-only undo backup', async () => {
+  const { local } = await replayStorage();
+  const state = initialSave();
+  state.gold = 314;
+  local.set('crown-clan-save-v1-before-import', JSON.stringify({ at: 123, state }));
+  expect(replacedVillage()).toMatchObject({ at: 123, state: { gold: 314 } });
 });

@@ -919,3 +919,58 @@ test('an unsuccessful import undo keeps the previous village available for retry
   await page.evaluate(() => window.__game.hud.show('settings'));
   await expect(undo).toHaveCount(0);
 });
+
+for (const store of ['localStorage', 'IndexedDB'] as const) {
+  test(`Undo Import restores a playable recording after a phone reload from ${store}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const original = await page.evaluate(() => {
+      const { model } = window.__game;
+      model.state.gold = 111;
+      model.state.spells.lightning = 1;
+      model.startBattle(0, true);
+      model.activeSpell = 'lightning';
+      if (!model.castSpell(10, 10)) throw Error('Lightning did not deploy');
+      model.step(0.05);
+      model.finishBattle();
+      model.returnHome();
+      const record = model.state.raidLog!.at(0)!;
+      if (!record.replay) throw Error('Fixture raid did not record');
+      const replacement = { ...model.state, gold: 222, raidLog: [] };
+      return { backup: JSON.stringify(replacement), replay: record.replay };
+    });
+    if (store === 'IndexedDB') {
+      await page.evaluate(() => {
+        const setItem = Storage.prototype.setItem;
+        Storage.prototype.setItem = function (key, value) {
+          if (key === 'crown-clan-save-v1-before-import')
+            throw new DOMException('Rollback exceeds local storage quota', 'QuotaExceededError');
+          setItem.call(this, key, value);
+        };
+      });
+    }
+    await page.locator('#import-file').setInputFiles({
+      name: 'replacement.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(original.backup),
+    });
+    await page.locator('[data-action="import-confirm"]').click();
+    await expect(page.locator('#toast')).toContainText('Undo it from Settings');
+    await page.reload();
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    expect(await page.evaluate(() => window.__game.model.state.gold)).toBe(222);
+    await page.evaluate(() => window.__game.hud.show('settings'));
+    await page.locator('[data-action="import-undo"]').click();
+    await expect(page.locator('#toast')).toContainText('previous village is back');
+    expect(
+      await page.evaluate(() => {
+        const { gold, raidLog } = window.__game.model.state;
+        return { gold, length: raidLog?.length, replay: raidLog?.[0].replay };
+      }),
+    ).toEqual({ gold: 111, length: 1, replay: original.replay });
+    await page.locator('[data-action="battle-log"]').click();
+    await page.getByRole('button', { name: 'Watch replay' }).click();
+    await expect(page.getByRole('slider', { name: 'Replay position' })).toBeVisible();
+  });
+}

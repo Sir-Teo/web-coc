@@ -36,7 +36,7 @@ import {
   validStashedDecorations,
   withinDecorationLimits,
 } from './decorations';
-import { type ReplayData, validateReplay } from './replay';
+import { REPLAY_LIMIT, type ReplayData, validateReplay } from './replay';
 import { HERO_MAX_LEVEL } from './heroes';
 import { validEquipment, validOres, EQUIPMENT_KEYS } from './equipment';
 import { validStarBonus, validTreasury } from './leagues';
@@ -630,6 +630,7 @@ export async function loadSave(): Promise<Save | undefined> {
   let backup: unknown;
   let primary: unknown;
   let backupText: string | null = null;
+  replacedDatabaseText = null;
   try {
     backupText = localStorage.getItem(KEY);
     backup = JSON.parse(backupText || 'null');
@@ -657,6 +658,12 @@ export async function loadSave(): Promise<Save | undefined> {
     storedReplays.clear();
     for (const key of keys)
       if (typeof key === 'string' && key.startsWith('replay:')) storedReplays.set(key, undefined);
+    if (keys.includes(REPLACED_KEY))
+      replacedDatabaseText = await new Promise<string | null>((resolve) => {
+        const req = db!.transaction('saves').objectStore('saves').get(REPLACED_KEY);
+        req.onsuccess = () => resolve(typeof req.result === 'string' ? req.result : null);
+        req.onerror = () => resolve(null);
+      });
   } catch {
     /* A valid local backup remains usable. */
   }
@@ -854,38 +861,74 @@ export function parseSaveFile(text: string): Save | null {
   }
   return validateSave(data) ? data : null;
 }
-/**
- * The village an import replaced, kept (without recordings) so the import can be undone, even
- * after a reload. One is kept at a time.
- */
+// Keep one rollback snapshot outside the active village's recording keys.
 const REPLACED_KEY = KEY + '-before-import';
-export function keepReplacedVillage(state: Save) {
+let replacedDatabaseText: string | null = null;
+
+function updateReplacedDatabase(text: string | null): Promise<boolean> {
+  if (!db) return Promise.resolve(false);
+  return new Promise<boolean>((resolve) => {
+    const tx = db!.transaction('saves', 'readwrite');
+    const store = tx.objectStore('saves');
+    if (text === null) store.delete(REPLACED_KEY);
+    else store.put(text, REPLACED_KEY);
+    tx.oncomplete = () => {
+      replacedDatabaseText = text;
+      resolve(true);
+    };
+    tx.onabort = () => resolve(false);
+  }).catch(() => false);
+}
+
+export async function keepReplacedVillage(state: Save): Promise<boolean> {
+  let recordings = 0;
+  const raidLog = state.raidLog?.map((record) => {
+    if (!record.replay || ++recordings <= REPLAY_LIMIT) return record;
+    const { replay: _, ...summary } = record;
+    return summary;
+  });
+  const at = Math.max(Date.now(), (replacedVillage()?.at ?? 0) + 1);
+  const village = saveFileText({ ...state, raidLog });
+  const text = `{"at":${at},"state":${village.text}}`;
   try {
-    localStorage.setItem(
-      REPLACED_KEY,
-      JSON.stringify({ at: Date.now(), state: villageSnapshot(state) }),
-    );
+    localStorage.setItem(REPLACED_KEY, text);
+    if (replacedDatabaseText !== null) await updateReplacedDatabase(null);
     return true;
   } catch {
-    return false;
+    // A rollback containing recordings may exceed the synchronous storage quota.
+    return updateReplacedDatabase(text);
   }
 }
-export function replacedVillage(): { at: number; state: Save } | null {
+
+function parseReplacedVillage(text: string | null): { at: number; state: Save } | null {
   try {
-    const kept = JSON.parse(localStorage.getItem(REPLACED_KEY) ?? 'null');
-    if (!kept || typeof kept.at !== 'number') return null;
+    const kept = JSON.parse(text ?? 'null');
+    if (!kept || !Number.isSafeInteger(kept.at) || kept.at < 0) return null;
     const state = migrateSave(kept.state);
     return validateSave(state) ? { at: kept.at, state } : null;
   } catch {
     return null;
   }
 }
+
+export function replacedVillage(): { at: number; state: Save } | null {
+  const primary = parseReplacedVillage(replacedDatabaseText);
+  try {
+    const local = parseReplacedVillage(localStorage.getItem(REPLACED_KEY));
+    if (!primary || (local && local.at >= primary.at)) return local;
+  } catch {
+    /* IndexedDB may still hold the rollback. */
+  }
+  return primary;
+}
+
 export function forgetReplacedVillage() {
   try {
     localStorage.removeItem(REPLACED_KEY);
   } catch {
-    /* Nothing to forget. */
+    /* IndexedDB cleanup can still proceed. */
   }
+  if (replacedDatabaseText !== null) void updateReplacedDatabase(null);
 }
 export const saveFileName = (recordings: boolean) =>
   recordings ? 'crown-and-clan-village.json' : 'crown-and-clan-village-only.json';
