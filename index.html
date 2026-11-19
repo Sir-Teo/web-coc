@@ -10,6 +10,8 @@
     />
     <title>Crown & Clan — Your village awaits</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Phaser loads this same image on every boot. Fetch it alongside the app modules. -->
+    <link rel="preload" as="image" href="/assets/environment/terrain-field-v4.webp" />
     <link
       rel="preload"
       href="/assets/fonts-native/headline.woff2"
