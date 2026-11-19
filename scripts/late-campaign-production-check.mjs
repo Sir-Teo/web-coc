@@ -7,8 +7,9 @@ import fs from 'node:fs/promises';
 const selectedBrowser = process.env.PRODUCTION_BROWSER;
 if (selectedBrowser && !['chromium', 'webkit'].includes(selectedBrowser))
   throw Error(`Unknown PRODUCTION_BROWSER: ${selectedBrowser}`);
+// The Archer Tower arrow shares this one atlas with the late buildings.
 const LATE =
-  /\/assets\/(late-campaign-scene-[^/]+\.js|characters-native\/|buildings\/(eagle-artillery|scattershot|monolith|spell-tower|tornado-trap|freeze-trap|late-goblin|builder-hut)-native\/)/;
+  /\/assets\/(?!buildings\/late-goblin-native\/characters\/texture\/texture-7\.webp$)(late-campaign-scene-[^/]+\.js|characters-native\/|buildings\/(eagle-artillery|scattershot|monolith|spell-tower|tornado-trap|freeze-trap|late-goblin|builder-hut)-native\/)/;
 
 await fs.mkdir('output/playtest', { recursive: true });
 const modules = await createServer({
@@ -57,6 +58,7 @@ try {
     if (selectedBrowser && selectedBrowser !== name) continue;
     const browser = await engine.launch({
       headless: true,
+      ...(name === 'chromium' ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM } : {}),
       ...(name === 'chromium' && process.platform === 'darwin'
         ? { args: ['--use-angle=metal'] }
         : {}),

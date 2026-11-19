@@ -4,8 +4,9 @@ import { test, expect } from '@playwright/test';
 // battle that needs it, and that battle holds deployments until the art can render.
 test.describe.configure({ timeout: 120_000 });
 
+// The Archer Tower arrow shares this one atlas with the late buildings.
 const LATE_ART =
-  /\/assets\/(characters-native|buildings\/(eagle-artillery|scattershot|monolith|spell-tower|tornado-trap|freeze-trap|late-goblin|builder-hut)-native)\//;
+  /\/assets\/(?!buildings\/late-goblin-native\/characters\/texture\/texture-7\.png$)(characters-native|buildings\/(eagle-artillery|scattershot|monolith|spell-tower|tornado-trap|freeze-trap|late-goblin|builder-hut)-native)\//;
 
 test('late campaign art loads on first use and holds deployment until it renders', async ({
   page,
@@ -74,6 +75,7 @@ test('late campaign art loads on first use and holds deployment until it renders
       }
     throw Error('No legal deployment point on screen');
   });
+  await page.locator('[data-action="troop:archer"]').click();
   await page.mouse.click(spot.x, spot.y);
   await expect(page.locator('#toast')).toContainText('Loading village art');
   const held = await page.evaluate(() => {
@@ -111,9 +113,7 @@ test('late campaign art loads on first use and holds deployment until it renders
   });
   expect(rendered).toEqual({ body: true, missing: 0, gl: 0 });
   await page.mouse.click(spot.x, spot.y);
-  await expect
-    .poll(() => page.evaluate(() => window.__game.model.battle.units.length))
-    .toBeGreaterThan(0);
+  await expect.poll(() => page.evaluate(() => window.__game.model.battle.remaining.archer)).toBe(9);
   await page.screenshot({ path: 'output/playtest/late-assets-deferred.png' });
   expect(errors).toEqual([]);
 });

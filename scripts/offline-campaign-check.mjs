@@ -86,12 +86,12 @@ try {
           await expect(page.locator('.battle-enemy h2')).toHaveText(title);
         };
         const troop = page.locator('[data-action="troop:swordsman"]');
-        const deploy = async () => {
+        const deploy = async (stock = home.army.swordsman) => {
           await troop.tap();
           // Try visible canvas points via touch. The red boundary excludes some candidates.
           for (const y of [390, 340, 440, 290, 490, 240])
             for (const x of [195, 130, 260, 65, 325]) {
-              if ((await snapshot()).battle.remaining.swordsman < home.army.swordsman) return;
+              if ((await snapshot()).battle.remaining.swordsman < stock) return;
               if (
                 !(await page.evaluate(
                   ([x, y]) => document.elementFromPoint(x, y)?.tagName === 'CANVAS',
@@ -151,9 +151,29 @@ try {
             .toBe(home.army.swordsman - 1);
           await expect(page.locator('.battle-enemy h2')).toHaveText('Bowling Alley');
           await expect(troop.locator('.troop-count')).toHaveText(`x${home.army.swordsman - 1}`);
+          await page.locator('[data-action="surrender"]').tap();
+          await page.locator('[data-action="end"]').tap();
+          await page.locator('.result-modal [data-action="home"]').tap();
+          const settled = await snapshot();
+          await context.setOffline(true);
+          misses.clear();
+          await reload();
+          expect((await snapshot()).army).toEqual(settled.army);
+          await enter(63, 'Bowling Alley');
+          await expect
+            .poll(
+              async () => {
+                await deploy(settled.army.swordsman);
+                return (await snapshot()).battle.remaining.swordsman;
+              },
+              { timeout: 25000 },
+            )
+            .toBe(settled.army.swordsman - 1);
+          expect([...misses].filter((path) => path.includes('/late-campaign-scene-'))).toEqual([]);
+          await page.screenshot({ path: 'output/offline-bowling-alley.png' });
           expect(errors).toEqual([]);
           console.log(
-            'late: uncached Bowling Alley explained offline scouting, left at no cost, and deployed after reconnect',
+            'late: uncached Bowling Alley explained offline scouting, left at no cost, deployed after reconnect, and deployed again after an offline reload',
           );
           continue;
         }
