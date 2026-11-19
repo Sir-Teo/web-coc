@@ -9,7 +9,8 @@ const modules = await createServer({
 });
 let fixtures;
 try {
-  const { GameModel, initialSave } = await modules.ssrLoadModule('/src/game/model.ts');
+  const { GameModel, initialSave, makeBuilding } =
+    await modules.ssrLoadModule('/src/game/model.ts');
   const { developedSave } = await modules.ssrLoadModule('/tests/fixtures/developed-village.ts');
   const { validateSave } = await modules.ssrLoadModule('/src/game/save.ts');
   const { freshNativeCampaign } = await modules.ssrLoadModule('/src/game/native-campaign.ts');
@@ -26,7 +27,40 @@ try {
   recorded.finishBattle();
   if (!recorded.state.raidLog?.[0]?.replay) throw Error('Missing late replay fixture');
   recorded.returnHome();
-  fixtures = { starter: initialSave(), developed: developedSave(), late, replay: recorded.state };
+  const ladder = new GameModel(initialSave());
+  ladder.townhall.level = 18;
+  ladder.state.buildings.find((b) => b.kind === 'barracks').level = 18;
+  ladder.state.buildings.find((b) => b.kind === 'camp').level = 13;
+  for (const [kind, x, y, level] of [
+    ['camp', 21, 11, 13],
+    ['camp', 28, 8, 13],
+    ['camp', 28, 20, 13],
+    ['workshop', 32, 14, 7],
+    ['spellfactory', 32, 20, 8],
+  ])
+    ladder.state.buildings.push(makeBuilding(ladder.state.nextId++, kind, x, y, level));
+  ladder.state.obstacles = [];
+  ladder.state.trophies = 1399;
+  // Consecutive offers share Builderopolis, so warming advances the seed normally.
+  ladder.state.ladderSeed = 89;
+  const roster = { swordsman: 8, electrodragon: 8, balloon: 8, dragonrider: 1, battledrill: 1 };
+  for (const kind of Object.keys(ladder.state.army)) ladder.state.army[kind] = 0;
+  for (const [kind, count] of Object.entries(roster))
+    for (let i = 0; i < count; i++) ladder.train(kind);
+  ladder.brew('rage', 2);
+  ladder.brew('freeze', 3);
+  expect(ladder.armySize).toBe(313);
+  expect(ladder.siegeCount).toBe(1);
+  expect(ladder.spellHousing).toBe(7);
+  expect(ladder.ladderPreview).toEqual({ index: 84, match: { opponent: 1499, win: 38, loss: 12 } });
+  fixtures = {
+    ladderMiss: structuredClone(ladder.state),
+    ladderWarm: ladder.state,
+    starter: initialSave(),
+    developed: developedSave(),
+    late,
+    replay: recorded.state,
+  };
   for (const [name, fixture] of Object.entries(fixtures)) {
     fixture.tutorial = true;
     fixture.settings.sound = false;
@@ -81,6 +115,109 @@ try {
         );
         if ((await snapshot()).mode !== 'village')
           throw Error('Warm-up should stay in the village');
+        if (name === 'ladderMiss' || name === 'ladderWarm') {
+          const summary = () =>
+            page.evaluate(() => {
+              const save = JSON.parse(localStorage.getItem('crown-clan-save-v1'));
+              return {
+                trophies: save.trophies,
+                seed: save.ladderSeed,
+                army: save.army,
+                spells: save.spells,
+                raids: save.stats.raids,
+                records: (save.raidLog ?? []).map(({ replay, ...record }) => record),
+              };
+            });
+          const start = await summary();
+          const title = page.locator('.battle-enemy h2');
+          const status = page.locator('.prep-banner [role="status"]');
+          const ready = 'Tap a defense to see its range · Deploy to start';
+          const homeButton = page.locator('.end-battle[data-action="home"]');
+          const enterLadder = async (stake) => {
+            await page.locator('.attack-btn').tap();
+            await page.locator('.campaign-summary [data-action="ladder"]').tap();
+            await expect(title).toHaveText('Builderopolis');
+            await expect(page.locator('.ladder-stake')).toContainText(stake);
+          };
+          const cached = (path) =>
+            page.evaluate(async (path) => !!(await caches.match(path)), path);
+          const atlas = '/assets/buildings/scattershot-native/texture-45.webp';
+          expect(await cached(atlas)).toBe(false);
+          if (name === 'ladderWarm') {
+            await enterLadder('Defeat −12');
+            await expect(status).toHaveText(ready, { timeout: 45000 });
+            await expect.poll(() => cached(atlas)).toBe(true);
+            await homeButton.tap();
+            await expect.poll(async () => (await summary()).seed).toBe(90);
+          }
+          await context.setOffline(true);
+          misses.clear();
+          await reload();
+          const warmed = name === 'ladderWarm';
+          const before = await summary();
+          expect(before).toEqual({ ...start, seed: warmed ? 90 : 89 });
+          await enterLadder(warmed ? 'Defeat −15' : 'Defeat −12');
+          const card = page.locator('[data-action="troop:swordsman"]');
+          // Open grass near the upper-right edge at this fixed phone viewport.
+          // Use one touch in each profile to test the exact same deployment point.
+          const deploySwordsman = async () => {
+            await card.tap();
+            await page.touchscreen.tap(377, 273);
+          };
+          if (!warmed) {
+            await expect(status).toHaveText('Reconnect to download this village’s art.');
+            expect(await cached(atlas)).toBe(false);
+            await deploySwordsman();
+            expect((await snapshot()).battle).toMatchObject({
+              scouting: true,
+              remaining: { swordsman: 8 },
+              units: 0,
+            });
+            await homeButton.tap();
+            await reload();
+            expect(await summary()).toEqual({ ...start, seed: 90 });
+          } else {
+            await expect(status).toHaveText(ready, { timeout: 45000 });
+            await deploySwordsman();
+            await expect.poll(async () => (await snapshot()).battle.remaining.swordsman).toBe(7);
+            expect((await snapshot()).battle).toMatchObject({ scouting: false, units: 1 });
+            await page.locator('[data-action="surrender"]').tap();
+            await page.locator('[data-action="end"]').tap();
+            await expect(page.locator('.ladder-result')).toContainText('-15 trophies');
+            await expect.poll(async () => (await summary()).records.length).toBe(1);
+            const settled = await summary();
+            expect(settled).toMatchObject({
+              seed: 91,
+              trophies: 1384,
+              raids: start.raids + 1,
+              spells: start.spells,
+              army: { ...start.army, swordsman: 7 },
+            });
+            expect(settled.records[0]).toMatchObject({
+              ladder: { opponent: 1454, win: 35, loss: 15 },
+              deployed: { swordsman: 1 },
+            });
+            await reload();
+            expect(await summary()).toEqual(settled);
+            await page.locator('[data-action="battle-log"]').tap();
+            await page.getByRole('button', { name: 'Watch replay', exact: true }).tap();
+            await page.locator('[data-action="replay-skip"]').tap();
+            await expect.poll(async () => (await snapshot()).battle.units).toBeGreaterThan(0);
+            await expect(page.locator('.replay-status')).toContainText('Replay complete', {
+              timeout: 30000,
+            });
+            const replayed = (await snapshot()).battle;
+            expect(replayed.result).toEqual(settled.records[0].result);
+            expect(replayed.remaining.swordsman).toBe(7);
+            await reload();
+            expect(await summary()).toEqual(settled);
+          }
+          expect(errors).toEqual([]);
+          console.log(
+            `${name}: Builderopolis ${warmed ? 'deployed offline, settled once, and replayed' : 'cache miss blocked deployment without spending troops or trophies'}`,
+          );
+          continue;
+        }
         misses.clear();
         await context.setOffline(true);
         await reload();
