@@ -1,23 +1,32 @@
 import { GameModel, makeBuilding } from '../../src/game/model';
 import { emptyArmy, emptySpells } from '../../src/game/army';
-import { replayBattle, type ReplayData } from '../../src/game/replay';
+import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
 
 /** Real deployed/Clone-created Golems throw at a defending Queen; no injected damage or spawned units. */
-export function nativeMeteorThrowRecording(level = 1, cloned = false) {
+export function nativeMeteorThrowRecording(
+  level = 1,
+  cloned = false,
+  { angry = false, version = REPLAY_VERSION } = {},
+) {
   const model = new GameModel();
   model.state.king = undefined;
   model.state.obstacles = [];
   model.state.nextId = 1000;
   model.state.buildings = [makeBuilding(1, 'townhall', 36, 36, 1)];
   model.state.army = { ...emptyArmy(), meteorgolem: 1, giant: 1 };
-  model.state.spells = { ...emptySpells(), ...(cloned ? { clone: 1 } : {}) };
+  model.state.spells = {
+    ...emptySpells(),
+    ...(cloned ? { clone: 1 } : {}),
+    ...(angry ? { angry: 1 } : {}),
+  };
   model.state.troopLevels = { ...model.state.troopLevels, meteorgolem: level };
   model.state.spellLevels = { ...model.state.spellLevels, clone: 9 };
   model.startBattle(0, true);
   const data = (model as unknown as { recording: ReplayData }).recording;
   data.initial.heroes = [];
   data.initial.defendingHeroes = [{ kind: 'queen', level: 100, x: cloned ? 26 : 9, y: 6.5 }];
-  const battle = (model.battle = replayBattle(data.initial));
+  data.version = version;
+  const battle = (model.battle = replayBattle(data.initial, version));
   const snapshots: { at: number; battle: unknown }[] = [];
   const snapshot = () => ({ at: battle.elapsed, battle: JSON.parse(JSON.stringify(battle)) });
   const step = () => {
@@ -29,8 +38,13 @@ export function nativeMeteorThrowRecording(level = 1, cloned = false) {
     model.activeSpell = 'clone';
     if (!model.castSpell(13, 6.5)) throw Error('Clone input failed');
   }
+  if (angry) {
+    model.activeSpell = 'angry';
+    if (!model.castSpell(19, 6.5)) throw Error('Angry input failed');
+  }
   model.activeTroop = 'meteorgolem';
-  if (!model.deploy(cloned ? 13 : 15, 6.5)) throw Error('Meteor Golem deployment failed');
+  if (!model.deploy(angry ? 19 : cloned ? 13 : 15, 6.5))
+    throw Error('Meteor Golem deployment failed');
   let actor;
   if (cloned) {
     while (
@@ -106,6 +120,8 @@ export function nativeMeteorThrowRecording(level = 1, cloned = false) {
     targetId: shot.targetId,
     cloneUntil,
     stayingHP,
+    stayingAngryUntil: actor.native?.angryUntil,
+    childAngryUntil: child.native?.angryUntil,
     snapshots,
     data: JSON.parse(JSON.stringify(model.state.raidLog![0].replay!)) as ReplayData,
   };

@@ -244,6 +244,7 @@ export interface NativePendingSpawn {
   owner?: number;
   /** Version 108: a thrown cloned half retains the original body’s deadline. */
   cloneUntil?: number;
+  throwAnger?: { until: number; castIds: number[] };
   /** A thrown body materializes after its own packet damage, rather than before the unit step. */
   projectileId?: string;
 }
@@ -1904,6 +1905,7 @@ function splitOnThrow(
   const battle = ctx.battle;
   const kind = unitKindForName(s.secondary) as UnitKind | undefined;
   const cloneUntil = u.native?.cloneUntil;
+  const angryUntil = u.native?.angryUntil ?? 0;
   if (!kind || (cloneUntil !== undefined && !battle.nativeMeteorThrows)) return;
   const mite = nativeUnitStats(kind, s.level);
   const step = mite.hp / 100;
@@ -1919,6 +1921,16 @@ function splitOnThrow(
     y: landing.y,
     hp: half >= step ? half : 1,
     ...(cloneUntil !== undefined ? { cloneUntil } : {}),
+    ...(battle.nativeMeteorThrowAnger && angryUntil > battle.elapsed
+      ? {
+          throwAnger: {
+            until: angryUntil,
+            castIds: (battle.nativeSpells ?? [])
+              .filter((cast) => cast.name === 'AngrySpell' && cast.touched?.includes(u.id))
+              .map((cast) => cast.id),
+          },
+        }
+      : {}),
     ...(projectileId ? { projectileId } : {}),
   });
   if (half < step) {
@@ -2639,6 +2651,13 @@ function materializePending(ctx: NativeTroopContext, spawn: NativePendingSpawn) 
     spawn.owner,
   );
   if (spawn.hp !== undefined) unit.hp = Math.min(unit.maxHp, spawn.hp);
+  if (spawn.throwAnger && spawn.throwAnger.until > spawn.at) {
+    (unit.native ??= {}).angryUntil = spawn.throwAnger.until;
+    // Landing inside an already applied field must not restart its seven-second effect.
+    for (const cast of ctx.battle.nativeSpells ?? []) {
+      if (spawn.throwAnger.castIds.includes(cast.id)) cast.touched?.push(unit.id);
+    }
+  }
   if (spawn.cloneUntil !== undefined) {
     (unit.native ??= {}).cloneUntil = spawn.cloneUntil;
     unit.summoned = true;

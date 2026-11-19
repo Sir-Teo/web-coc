@@ -36,6 +36,13 @@ the flat pulse damage. Ground defenders can also take the sustained poison
 and react to the poison area. Recordings through version 243 retain their
 original pool behavior.
 
+Version 245 preserves a Meteor Golem's active Angry Spell deadline when its
+thrown Meteormite lands. Landing inside a field that already applied to the
+parent keeps that deadline. The [August 2026 update](https://supercell.com/en/games/clashofclans/blog/release-notes/august-update-3/)
+documents continuity through throws. The separate merge behavior still needs
+evidence for overlapping deadlines. Version 244 and earlier keep their
+historical behavior.
+
 ## Persistence and limits
 
 New recordings stay inline in the synchronous local backup until IndexedDB

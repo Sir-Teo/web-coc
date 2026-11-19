@@ -259,3 +259,44 @@ for (const { level, cloned, width } of [
     });
     expect(errors).toEqual([]);
   });
+
+test('the thrown Meteormite keeps Angry targeting after a portable replay seek', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/?lazyart');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  await page.locator('[data-action="skip-tutorial"]').click();
+  const deadlines = await page.evaluate(async () => {
+    const { nativeMeteorThrowRecording } = await import('/tests/fixtures/native-meteor-throws.ts');
+    const { makeReplayFile, parseReplayFile } = await import('/src/game/replay-file.ts');
+    const { model, scene } = window.__game;
+    const r = nativeMeteorThrowRecording(1, false, { angry: true });
+    window.__meteorThrow = r;
+    scene.paused = true;
+    if (!model.openReplay(parseReplayFile(JSON.stringify(makeReplayFile(r.data)))))
+      throw Error('Angry Meteor replay rejected');
+    model.seekReplay(r.landed);
+    while (model.replay.seeking) model.step(0.05);
+    model.changed();
+    scene.sync();
+    scene.drawOverlay(0);
+    return {
+      parentDeadline: model.battle.units.find((u) => u.id === r.sourceId)?.native?.angryUntil,
+      thrownDeadline: model.battle.units.find((u) => u.id === r.childId)?.native?.angryUntil,
+      landed: r.landed,
+    };
+  });
+  expect(deadlines.parentDeadline).toBeGreaterThan(deadlines.landed);
+  expect(deadlines.thrownDeadline).toBe(deadlines.parentDeadline);
+  await seek(page, deadlines.landed);
+  await page.waitForFunction(() => {
+    const { scene } = window.__game;
+    scene.drawOverlay(0);
+    return scene.troopNativePresentation.drewUnit(window.__meteorThrow.childId);
+  });
+  await page.screenshot({
+    path: 'output/playtest/angry-meteor-throw.png',
+    animations: 'disabled',
+  });
+});

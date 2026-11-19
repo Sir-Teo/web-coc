@@ -19,3 +19,20 @@ it.each([
     }
   },
 );
+
+it.each([244, 245])(
+  'version %i reconstructs Angry Spell through a Meteor Golem throw',
+  (version) => {
+    const r = nativeMeteorThrowRecording(1, false, { angry: true, version });
+    expect(r.stayingAngryUntil).toBeGreaterThan(r.landed);
+    if (version >= 245) expect(r.childAngryUntil).toBe(r.stayingAngryUntil);
+    else expect(r.childAngryUntil).toBeGreaterThan(r.stayingAngryUntil!);
+    const viewer = new GameModel();
+    expect(viewer.openReplay(parseReplayFile(JSON.stringify(makeReplayFile(r.data))))).toBe(true);
+    for (const snapshot of [...r.snapshots].reverse()) {
+      viewer.seekReplay(snapshot.at);
+      while (viewer.replay!.seeking) viewer.step(0.05);
+      expect(viewer.battle).toEqual(snapshot.battle);
+    }
+  },
+);
