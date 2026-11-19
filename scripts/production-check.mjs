@@ -487,46 +487,44 @@ for (const [name, engine] of Object.entries(engines)) {
     errors,
   };
   if (name === 'chromium') {
-    await page.evaluate(async () => {
-      await navigator.serviceWorker.ready;
-      if (!navigator.serviceWorker.controller)
-        await new Promise((r) =>
-          navigator.serviceWorker.addEventListener('controllerchange', r, { once: true }),
-        );
-    });
+    // Poll resolved cache checks before disconnecting. waitForFunction sees a
+    // returned Promise as truthy even when the asynchronous result is false.
+    await expect
+      .poll(
+        () =>
+          page.evaluate(async (fonts) => {
+            if (!navigator.serviceWorker.controller) return false;
+            const icon = document.querySelector('.campaign-map-icon');
+            const background = icon?.closest('button')
+              ? getComputedStyle(icon.closest('button')).borderImageSource.match(
+                  /^url\(["']?(.*?)["']?\)$/,
+                )?.[1]
+              : undefined;
+            const images = [
+              ...document.querySelectorAll(
+                '.campaign-map-icon,.native-shop-icon,.native-settings-art',
+              ),
+            ];
+            if (!background || images.length !== 3 || images.some((image) => !image.currentSrc))
+              return false;
+            const urls = [
+              '/index.html',
+              background,
+              ...images.map((image) => image.currentSrc),
+              ...fonts.map((font) => '/' + font.path),
+            ];
+            return (
+              await Promise.all(urls.map(async (url) => !!(await caches.match(url))?.ok))
+            ).every(Boolean);
+          }, nativeFonts),
+        { timeout: 30000, message: 'Wait for the service worker and offline shell assets' },
+      )
+      .toBe(true);
     const cachesState = await page.evaluate(async () => ({
       caches: await caches.keys(),
       requests: (await (await caches.open((await caches.keys())[0])).keys()).length,
     }));
-    await page.waitForFunction(
-      async (fonts) =>
-        (
-          await Promise.all(fonts.map(async (font) => !!(await caches.match('/' + font.path))?.ok))
-        ).every(Boolean),
-      nativeFonts,
-    );
     expect(await checkNativeFonts(page, true)).toBe(nativeFonts.length);
-    await page.waitForFunction(async () => {
-      const image = document.querySelector('.campaign-map-icon');
-      const background =
-        image &&
-        getComputedStyle(image.closest('button')).borderImageSource.match(
-          /^url\(["']?(.*?)["']?\)$/,
-        )?.[1];
-      return (
-        image instanceof HTMLImageElement &&
-        !!(await caches.match(image.currentSrc))?.ok &&
-        (
-          await Promise.all(
-            [...document.querySelectorAll('.native-shop-icon,.native-settings-art')].map(
-              async (icon) => !!(await caches.match(icon.currentSrc))?.ok,
-            ),
-          )
-        ).every(Boolean) &&
-        background &&
-        !!(await caches.match(background))?.ok
-      );
-    });
     expect(await checkNativeHud(page, true)).toEqual(report[name].nativeHud);
     await context.setOffline(true);
     await page.reload();
