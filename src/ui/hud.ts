@@ -951,6 +951,7 @@ export class HUD {
     window.addEventListener(
       'resize',
       () => {
+        this.cancelDrawerDrag?.();
         if (this.repeatPointer !== null) {
           // Releasing a held touch over the resized control can still dispatch a click.
           this.resizedRepeatPointer = this.repeatPointer;

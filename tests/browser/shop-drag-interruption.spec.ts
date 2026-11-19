@@ -56,3 +56,54 @@ for (const interruption of ['blur', 'hidden', 'destroy'] as const) {
     await expect.poll(() => page.evaluate(() => window.__game.model.placement)).toBe('goldmine');
   });
 }
+
+test.describe('phone Shop drag', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('resizing mid-drag prevents the old release from buying a building', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(browserName !== 'chromium', 'Uses Chromium touch injection');
+    const tile = page.locator('[data-drag="goldmine"] .shop-tile-art');
+    await tile.scrollIntoViewIfNeeded();
+    const box = (await tile.boundingBox())!;
+    const cdp = await page.context().newCDPSession(page);
+    const touch = (type: string, point?: { x: number; y: number }) =>
+      cdp.send('Input.dispatchTouchEvent', {
+        type,
+        touchPoints: point ? [{ ...point, id: 1 }] : [],
+      });
+    await touch('touchStart', { x: box.x + box.width / 2, y: box.y + box.height / 2 });
+    await expect.poll(() => page.evaluate(() => window.__game.model.placement)).toBe('goldmine');
+
+    await page.setViewportSize({ width: 844, height: 390 });
+    await page.waitForFunction(() => {
+      const canvas = window.__game.game.canvas.getBoundingClientRect();
+      return canvas.width === 844 && canvas.height === 390;
+    });
+    const drop = await page.evaluate(() => window.__game.scene.screenFor(6.2, 10.2));
+    expect(drop.x).toBeGreaterThan(0);
+    expect(drop.x).toBeLessThan(844);
+    expect(drop.y).toBeGreaterThan(0);
+    expect(drop.y).toBeLessThan(390);
+    await touch('touchMove', drop);
+    await touch('touchEnd');
+    expect(
+      await page.evaluate(() => {
+        const { model, scene } = window.__game;
+        return {
+          gold: model.state.gold,
+          buildings: model.state.buildings.length,
+          placement: model.placement,
+          ghost: !!scene.ghost,
+        };
+      }),
+    ).toEqual({ gold: 500000, buildings: 2, placement: null, ghost: false });
+
+    await page.locator('.shop-btn').tap();
+    await page.locator('[data-action="tab:Resources"]').tap();
+    await page.locator('[data-action="build:goldmine"]').tap();
+    await expect.poll(() => page.evaluate(() => window.__game.model.placement)).toBe('goldmine');
+  });
+});
