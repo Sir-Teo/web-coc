@@ -1183,6 +1183,8 @@ export interface Battle {
   nativeSpringEjection?: true;
   nativeAirBombFixedAim?: true;
   nativeAirBombSplashEligibility?: true;
+  /** Version 251: a Home Bomb can splash ground units that cannot trigger it. */
+  nativeBombSplashEligibility?: true;
   /** Version239: source Seeking Shield/Spiky Ball bounce stop counters hold movement. */
   nativeProjectileBouncePause?: true;
   /** Version 207: source demolition contact cues reconstruct and cover the death tone. */

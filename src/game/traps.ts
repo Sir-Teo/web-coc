@@ -389,11 +389,14 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       }
       effect({ type: 'spring', x: target.x, y: target.y });
     } else {
-      // Spell Bats cannot trigger traps but can be caught in an Air Bomb's splash.
-      const splashEligible =
-        battle.nativeAirBombSplashEligibility && trap.kind === 'airbomb' && !trap.npc
-          ? (u: Unit) => canHit(u) && !u.native?.burrowed
-          : eligible;
+      // Trap activation and splash eligibility differ for Home Bombs and Air Bombs.
+      const splashWithoutTrigger =
+        !trap.npc &&
+        ((trap.kind === 'airbomb' && battle.nativeAirBombSplashEligibility) ||
+          (trap.kind === 'bomb' && battle.nativeBombSplashEligibility));
+      const splashEligible = splashWithoutTrigger
+        ? (u: Unit) => canHit(u) && !u.native?.burrowed
+        : eligible;
       for (const u of battle.units)
         if (splashEligible(u) && distance2D(u.x - state.x, u.y - state.y) <= d.radius) {
           hurtUnit(battle, u, power, battle.elapsed, undefined, true);

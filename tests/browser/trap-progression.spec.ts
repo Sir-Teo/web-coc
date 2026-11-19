@@ -194,3 +194,71 @@ test('a sprung hero rises in place on battle time, pauses, and respects reduced 
   expect(landed.x).toBe(first.x);
   expect(landed.y).toBe(first.y);
 });
+
+test.describe('phone Bomb splash', () => {
+  test.use({ hasTouch: true, isMobile: true });
+  test('a Home Bomb hurts a spell Skeleton after a Giant triggers it', async ({ page }, info) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const trapId = await page.evaluate(async () => {
+      const { makeBuilding } = await import('/src/game/model.ts');
+      const m = window.__game.model;
+      const hall = m.townhall!;
+      hall.level = 3;
+      hall.x = 11;
+      hall.y = 8;
+      const bomb = makeBuilding(m.state.nextId++, 'bomb', 8, 8);
+      m.state.buildings = [hall, bomb];
+      m.state.obstacles = [];
+      m.state.army.giant = 1;
+      m.changed();
+      return bomb.id;
+    });
+    await page.locator('.train-add').tap();
+    await page.locator('.drawer-sheet [data-action="practice"]').tap();
+    await page.waitForFunction(() => !window.__game.scene.battleArtPending());
+    const point = await page.evaluate(async () => {
+      const { initialNativeState } = await import('/src/game/native-troops.ts');
+      const { iso } = await import('/src/game/scene.ts');
+      const { model, scene } = window.__game;
+      const battle = model.battle!;
+      // Supply a grounded Spell Skeleton without depending on the spell's random spawn offset.
+      battle.units.push({
+        id: model.state.nextId++,
+        kind: 'spellskeleton',
+        x: 8.5,
+        y: 8.5,
+        hp: 30,
+        maxHp: 30,
+        native: initialNativeState('spellskeleton', 1),
+        cooldown: 100,
+        target: null,
+        path: [],
+        pathAt: 0,
+        attacking: false,
+      });
+      model.discardRecording();
+      const center = iso(8.5, 8.5);
+      scene.cameras.main.centerOn(center.x, center.y);
+      scene.cameras.main.preRender();
+      if (model.deployBlocked(8.5, 8.5)) throw Error('Bomb square is blocked');
+      return scene.screenFor(8.5, 8.5);
+    });
+    const trap = () => page.evaluate((id) => window.__game.model.battle!.traps[id], trapId);
+    expect(await trap()).toBeUndefined();
+    const giant = page.locator('[data-action="troop:giant"]');
+    await giant.tap();
+    await page.touchscreen.tap(point.x, point.y);
+    await expect(giant.locator('.troop-count')).toHaveText('x0');
+    await expect.poll(async () => (await trap())?.resolved).toBe(true);
+    expect(
+      await page.evaluate((id) => {
+        const b = window.__game.model.battle!;
+        return {
+          trigger: b.units.find((u) => u.id === b.traps[id].targetId)?.kind,
+          skeletonHp: b.units.find((u) => u.kind === 'spellskeleton')?.hp,
+        };
+      }, trapId),
+    ).toEqual({ trigger: 'giant', skeletonHp: 10 });
+    await page.screenshot({ path: info.outputPath('home-bomb-skeleton-splash.png') });
+  });
+});
