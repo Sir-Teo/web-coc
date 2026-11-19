@@ -77,6 +77,25 @@ describe('league Star Bonus', () => {
     expect(m.starBonusReady).toBe(true);
   });
 
+  it('unlocks one stacked bonus and preserves the next deadline across reloads', () => {
+    const first = new GameModel();
+    first.state.starBonus = { stars: STAR_BONUS_STARS * 3, readyAt: 0 };
+    expect(first.collectStarBonus()).toBeTruthy();
+    const next = first.starBonus.readyAt;
+    const stackedAt = next + STAR_BONUS_COOLDOWN;
+    const m = new GameModel(structuredClone(first.state), stackedAt);
+    expect(m.collectStarBonus()).toBeTruthy();
+    expect(m.starBonusReady).toBe(true);
+    expect(m.starBonus.readyAt).toBe(stackedAt);
+
+    const restored = new GameModel(structuredClone(m.state), stackedAt + STAR_BONUS_COOLDOWN / 2);
+    expect(restored.collectStarBonus()).toBeTruthy();
+    expect(restored.starBonus.readyAt).toBe(stackedAt + STAR_BONUS_COOLDOWN);
+    expect(restored.starBonus.stars).toBe(0);
+    expect(restored.collectStarBonus()).toBe(false);
+    expect(validateSave(restored.state)).toBe(true);
+  });
+
   it('never banks ore past what the forge holds, and rejects malformed bonus state', () => {
     const m = new GameModel();
     m.townhall!.level = 8;

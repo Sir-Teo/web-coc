@@ -97,3 +97,58 @@ test('a completed ladder Star Bonus is visible in the Treasury without a claim',
   await expect(page.locator('[data-treasury="gold"]')).toContainText('350,000 /');
   await expect(page.locator('[data-action="treasury-collect"]')).toBeEnabled();
 });
+
+test('a stacked Star Bonus pays twice from ladder results and then starts its cooldown', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  await page.locator('[data-action="skip-tutorial"]').click();
+  await page.evaluate(async () => {
+    const { makeBuilding } = await import('/src/game/model.ts');
+    const { STAR_BONUS_COOLDOWN } = await import('/src/game/leagues.ts');
+    const { model: m } = window.__game;
+    m.townhall!.level = 8;
+    m.state.buildings.push(makeBuilding(m.state.nextId++, 'clancastle', 22, 4, 2));
+    m.state.starBonus = { stars: 7, readyAt: m.clock - STAR_BONUS_COOLDOWN };
+    m.changed();
+  });
+  await page.locator('[data-action="achievements"]').first().click();
+  await expect(page.locator('[data-star-bonus-status]')).toContainText('Next bonus stacked');
+  await page.screenshot({ path: 'output/playtest/star-bonus-stacked.png', animations: 'disabled' });
+  await page.locator('.modal [data-action="close"]').click();
+
+  const result = await page.evaluate(async () => {
+    const { STAR_BONUS_COOLDOWN } = await import('/src/game/leagues.ts');
+    const { model: m } = window.__game;
+    const finish = () => {
+      m.startLadder();
+      for (const b of m.battle!.buildings) m.damage(b, b.hp);
+      m.finishBattle();
+      m.returnHome();
+    };
+    const at = m.clock;
+    finish();
+    const first = m.treasury.gold;
+    finish();
+    const second = m.treasury.gold;
+    finish();
+    m.selected = m.clanCastle!.id;
+    m.changed();
+    return {
+      first,
+      second,
+      third: m.treasury.gold,
+      onCooldown: m.starBonus.readyAt === at + STAR_BONUS_COOLDOWN,
+    };
+  });
+  expect(result.first).toBeGreaterThan(0);
+  expect(result.second).toBeGreaterThan(result.first);
+  expect(result.third).toBe(result.second);
+  expect(result.onCooldown).toBe(true);
+  await page.locator('.building-context [data-action="treasury"]').click();
+  await expect(page.locator('[data-treasury="gold"]')).toContainText(
+    `${result.second.toLocaleString('en-US')} /`,
+  );
+});

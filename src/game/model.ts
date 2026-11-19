@@ -4355,6 +4355,11 @@ export class GameModel {
     const bonus = this.starBonus;
     return bonus.stars >= STAR_BONUS_STARS && this.clock >= bonus.readyAt;
   }
+  /** One more daily bonus waits after the current one has been available for a full day. */
+  get starBonusStacked() {
+    const { readyAt } = this.starBonus;
+    return readyAt > 0 && this.clock - readyAt >= STAR_BONUS_COOLDOWN;
+  }
   /** The Clan Castle that holds the Treasury, once built. */
   get clanCastle() {
     return this.state.buildings.find((b) => b.kind === 'clancastle' && !b.constructing);
@@ -4419,7 +4424,9 @@ export class GameModel {
     }
     this.state.ores = ores;
     bonus.stars -= STAR_BONUS_STARS;
-    bonus.readyAt = this.clock + STAR_BONUS_COOLDOWN;
+    // The first timer starts on payout. Later timers start when a bonus becomes available.
+    if (this.starBonusStacked) bonus.readyAt = this.clock;
+    else bonus.readyAt = (bonus.readyAt || this.clock) + STAR_BONUS_COOLDOWN;
     // 'Resources collected' counts gold, elixir and dark elixir as collectors do, when they
     // reach the storages; ore is not a village resource and has its own balance.
     if (!castle)

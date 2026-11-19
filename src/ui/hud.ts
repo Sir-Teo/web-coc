@@ -5360,11 +5360,12 @@ export class HUD {
       bonus = m.starBonus,
       waiting = Math.max(0, bonus.readyAt - m.clock);
     const short = Math.max(0, STAR_BONUS_STARS - bonus.stars);
-    return short
+    const status = short
       ? `${short} more ${short === 1 ? 'star' : 'stars'}`
       : waiting
         ? `Ready in ${time(waiting / 1000)}`
         : 'Ready to collect';
+    return m.starBonusStacked ? `${status} · Next bonus stacked` : status;
   }
   private starBonusCard() {
     const m = this.model,
