@@ -478,3 +478,84 @@ test.describe('repeat raid preparation on touch', () => {
     });
   }
 });
+
+test.describe('blocked Quick Army on touch', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('a blocked preset preserves the active army and can be used after the Barracks upgrade', async ({
+    page,
+  }, info) => {
+    const fixedTime = Date.now();
+    await page.clock.setFixedTime(fixedTime);
+    const barracksId = await page.evaluate(async () => {
+      const { emptyArmy, emptySpells } = await import('/src/game/army.ts');
+      const m = window.__game.model;
+      m.state.army = { ...emptyArmy(), giant: 2 };
+      m.state.spells = emptySpells();
+      m.changed();
+      return m.state.buildings.find((building) => building.kind === 'barracks')!.id;
+    });
+    const open = async () => {
+      await page.locator('.train-add').tap();
+      await page.locator('[data-action="army-presets"]').tap();
+    };
+    await open();
+    await page.locator('#preset-name-0').fill('Two Giants');
+    await page.locator('[data-action="preset-save:0"]').tap();
+    await page.evaluate(async (id) => {
+      const { emptyArmy } = await import('/src/game/army.ts');
+      const { TROOP_UNLOCK } = await import('/src/game/army-unlocks.ts');
+      const m = window.__game.model;
+      const barracks = m.state.buildings.find((building) => building.id === id)!;
+      barracks.level = TROOP_UNLOCK.giant - 1;
+      m.state.army = { ...emptyArmy(), swordsman: 3 };
+      m.addMagicItem('book-of-building');
+      m.changed();
+    }, barracksId);
+    const read = () =>
+      page.evaluate(() => {
+        const m = window.__game.model;
+        return {
+          army: m.state.army,
+          spells: m.state.spells,
+          presets: m.state.armyPresets,
+          lineup: m.heroLineup,
+        };
+      });
+    const before = await read();
+    expect(before.presets?.[0]?.name).toBe('Two Giants');
+    expect(before.presets?.[0]?.army.giant).toBe(2);
+    const use = page.locator('[data-action="preset-load:0"]');
+    await expect(use).toBeDisabled();
+    await expect(page.locator('.preset-card').first()).toContainText(
+      'Giant requires a completed level',
+    );
+    await page.screenshot({ path: info.outputPath('blocked-quick-army.png') });
+    // The disabled control prevents a tap, so exercise the operation directly too.
+    await page.evaluate(() => window.__game.model.loadArmyPreset(0));
+    expect(await read()).toEqual(before);
+
+    await page.reload();
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    expect(await read()).toEqual(before);
+    await open();
+    await expect(use).toBeDisabled();
+    await page.locator('.modal [data-action="close"]').tap();
+    await page.locator('[data-action="close-drawer"]').tap();
+    await page.evaluate((id) => {
+      const m = window.__game.model;
+      m.selected = id;
+      m.changed();
+    }, barracksId);
+    await page.locator(`[data-action="upgrade:${barracksId}"]`).tap();
+    await page.locator(`[data-action="book-building:${barracksId}"]`).tap();
+    await page.getByRole('button', { name: 'Close building' }).tap();
+    await open();
+    await expect(use).toBeEnabled();
+    await use.tap();
+    expect(await read()).toEqual({ ...before, army: before.presets![0]!.army });
+    await page.reload();
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    expect(await read()).toEqual({ ...before, army: before.presets![0]!.army });
+  });
+});

@@ -616,11 +616,19 @@ const ART_FAMILIES: ArtFamily[] = [
  * preload queues their textures. One that fails simply loads on demand later.
  */
 export async function prepareHomeArt(buildings: Building[]) {
-  await Promise.allSettled(
+  const preparing = Promise.allSettled(
     ART_FAMILIES.filter((family) => family.prepare && buildings.some(family.draws)).map((family) =>
       family.prepare!(),
     ),
   );
+  // The scene can start with portraits while a stalled graph finishes in the background.
+  await new Promise<void>((resolve) => {
+    const timer = setTimeout(resolve, HOME_ART_WAIT_MS);
+    void preparing.then(() => {
+      clearTimeout(timer);
+      resolve();
+    });
+  });
 }
 /** A kind's base (Level 1) fallback sprite, keyed by the kind itself. */
 const baseAsset = (kind: string) =>

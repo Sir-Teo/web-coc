@@ -70,3 +70,57 @@ for (const actor of ART_GRAPH_CASES)
     expect(errors).toEqual([]);
     await page.screenshot({ path: `output/playtest/graph-${actor.kind}-recovered.png` });
   });
+
+test.describe('phone cold boot', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('a stalled X-Bow graph does not block the first village interaction', async ({
+    page,
+  }, info) => {
+    const graph = ART_GRAPH_CASES.find(({ kind }) => kind === 'xbow')!;
+    await page.addInitScript(
+      (save) => localStorage.setItem('crown-clan-save-v1', save),
+      artGraphSave(graph.kind),
+    );
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const pattern = '**/' + graph.module + '*';
+    await page.route(pattern, async (route) => {
+      await held;
+      await route.continue();
+    });
+    try {
+      const requested = page.waitForRequest(
+        (request) => new URL(request.url()).pathname === '/' + graph.module,
+      );
+      await page.goto('/?lazyart', { waitUntil: 'domcontentloaded' });
+      await requested;
+      await expect(page.locator('#loading')).toBeHidden({ timeout: 18000 });
+      await page.locator('[data-action="settings"]').tap();
+      await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
+      expect(
+        await page.evaluate(() => {
+          const { scene } = window.__game;
+          return scene.sprites.get(3)?.alpha;
+        }),
+      ).toBe(1);
+      await page.screenshot({ path: info.outputPath('settings-while-graph-stalled.png') });
+    } finally {
+      release();
+    }
+
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            const { model, scene } = window.__game;
+            const bow = model.buildings.find((building) => building.id === 3);
+            return { ready: scene.familyArtReady(bow), alpha: scene.sprites.get(3)?.alpha };
+          }),
+        { timeout: 20000 },
+      )
+      .toEqual({ ready: true, alpha: 0 });
+  });
+});
