@@ -123,6 +123,11 @@ test('a compact phone completes and rearms after its first campaign raid', async
   const title = result.getByRole('heading', { name: 'Victory!' });
   await expect(title).toBeFocused();
   await expect(title).toBeInViewport();
+  const completion = 'Gold Mine is ready! +2 XP';
+  await page.evaluate((message) => window.__game.model.notify(message), completion);
+  await expect(page.locator('#toast')).not.toHaveClass(/show/);
+  await expect(title).toBeFocused();
+  await expect(result.locator('.result-stars')).toBeInViewport();
   await expect(result.locator('[data-count="500"]').first()).toHaveText('500');
   await page.screenshot({ path: info.outputPath('compact-first-raid-result.png') });
   expect(await result.evaluate((el) => el.scrollTop)).toBe(0);
@@ -130,6 +135,7 @@ test('a compact phone completes and rearms after its first campaign raid', async
   const home = result.getByRole('button', { name: 'Return to village' });
   await expect(home).toBeFocused();
   await home.tap();
+  await expect(page.locator('#toast.show')).toHaveText(completion);
   await page.setViewportSize({ width: 320, height: 568 });
   await expect(coach).toHaveCount(0);
   await page.reload();

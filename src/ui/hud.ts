@@ -776,6 +776,7 @@ export class HUD {
   private layoutCode = '';
   private sharedArmyCode = '';
   private toastTimer?: ReturnType<typeof setTimeout>;
+  private deferredResultToast?: string;
   private toastFrame = 0;
   private resultShown = false;
   private raf = false;
@@ -1220,6 +1221,10 @@ export class HUD {
     card.style.top = `${topPx}px`;
   }
   toast(message: string) {
+    if (message && this.model.battle?.finished && !this.model.replay) {
+      this.deferredResultToast = message;
+      return;
+    }
     const el = document.querySelector<HTMLElement>('#toast')!;
     el.textContent = message;
     el.classList.toggle('show', !!message);
@@ -2953,6 +2958,10 @@ export class HUD {
       m.state.tutorial = true;
       this.toast('That is the whole loop, Chief. The valley is yours from here.');
     }
+    if (!b && this.deferredResultToast) {
+      this.toast(this.deferredResultToast);
+      this.deferredResultToast = undefined;
+    }
     const drawerSwitched = this.drawerPanel !== this.lastDrawer;
     this.lastDrawer = this.drawerPanel;
     if (this.panel === 'campaign' && this.lastPanel !== 'campaign') this.positionCampaign();
@@ -2972,6 +2981,9 @@ export class HUD {
     }
     if (result && !this.resultShown) {
       this.resultShown = true;
+      // Keep home notifications out of the outcome and show the latest one on return.
+      this.deferredResultToast ??= this.root.querySelector('#toast.show')?.textContent || undefined;
+      this.toast('');
       this.countUp();
       this.audio.play('victory');
       // A short viewport must open on the outcome, even when the actions are below the fold.
