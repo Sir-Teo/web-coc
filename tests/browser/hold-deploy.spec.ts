@@ -314,3 +314,41 @@ test('switching troop cards starts a fresh deployment tap', async ({ page }) => 
   expect(army.swordsman).toBe(39);
   expect(army.archer).toBe(4);
 });
+
+test.describe('phone campaign preparation', () => {
+  test.use({ hasTouch: true, isMobile: true });
+
+  test('an empty army can be prepared directly from the campaign map', async ({ page }) => {
+    await page.goto('/?lazyart');
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    await page.locator('[data-action="skip-tutorial"]').tap();
+    await page.locator('.train-add').tap();
+    const clear = page.locator('[data-action="clear-army"]');
+    if (await clear.isEnabled()) await clear.tap();
+    await page.locator('[data-action="close-drawer"]').tap();
+    await page.locator('.attack-btn').tap();
+    const prepare = page.getByRole('button', { name: 'Prepare army', exact: true });
+    await expect(prepare).toBeVisible();
+    await prepare.tap();
+    const train = page.locator('[data-action="train:swordsman"]').first();
+    await expect(train).toBeEnabled();
+    await train.tap();
+    await page.locator('[data-action="close-drawer"]').tap();
+    await page.locator('.attack-btn').tap();
+    await expect(prepare).toHaveCount(0);
+    await page.locator('[data-action="attack:0"]').tap();
+    await page.waitForFunction(() => !window.__game.scene.battleArtPending());
+    await page.locator('[data-action="troop:swordsman"]').tap();
+    const point = await grassPoint(page);
+    await page.touchscreen.tap(point.x, point.y);
+    await expect
+      .poll(() => page.evaluate(() => window.__game.model.battle?.remaining.swordsman))
+      .toBe(0);
+    await page.locator('[data-action="surrender"]').tap();
+    await page.locator('[data-action="end"]').tap();
+    await page.locator('.result-modal [data-action="home"]').tap();
+    await page.locator('.train-add').tap();
+    await page.locator('[data-action="retrain"]').tap();
+    await expect.poll(() => page.evaluate(() => window.__game.model.state.army.swordsman)).toBe(1);
+  });
+});
