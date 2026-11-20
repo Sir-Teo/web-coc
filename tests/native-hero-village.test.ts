@@ -233,3 +233,27 @@ describe('complete hero roster in the village', () => {
     expect(viewer.battle!.projectiles?.some((shot) => shot.targetId === ground.id)).toBe(false);
   });
 });
+
+it.each([4, 5, 6, 7])('respects the King’s Practice defense availability at Town Hall %i', (tier) => {
+  const m = village(tier, 1);
+  m.startBattle(0, true);
+  expect(m.battleHero('king')).toMatchObject({ level: 1 });
+  const defenders = m.battle!.defenders?.filter(d => d.kind === 'hero') ?? [];
+  expect(defenders).toHaveLength(tier < 7 ? 0 : 1);
+  expect(m.deployNativeHero('king', 10, 10)).toBe(true);
+  m.step(0.05);
+  m.finishBattle();
+  const recording = m.state.raidLog![0].replay!;
+  expect(recording.initial.defendingHeroes ?? []).toHaveLength(tier < 7 ? 0 : 1);
+  const viewer = new GameModel();
+  expect(viewer.openReplay(recording)).toBe(true);
+  expect(viewer.battle!.defenders?.filter(d => d.kind === 'hero') ?? []).toHaveLength(defenders.length);
+  if (tier === 6) {
+    // Earlier builds could record the King on defense here. Playback follows that snapshot.
+    viewer.returnHome();
+    const old = structuredClone(recording);
+    old.initial.defendingHeroes = [{ kind: 'king', level: 1, x: 32, y: 22 }];
+    expect(viewer.openReplay(old)).toBe(true);
+    expect(viewer.battle!.defenders?.some(d => d.kind === 'hero')).toBe(true);
+  }
+});

@@ -6360,11 +6360,12 @@ export class GameModel {
       !practice && catalog === 'goblin-v1' ? campaignGarrisonSetup(index, buildings) : undefined;
     const home =
       buildings.find((b) => b.kind === 'herohall') ?? buildings.find((b) => b.kind === 'townhall')!;
-    // Practice defends with your own heroes; a campaign village defends with the heroes its
-    // source names. They stand around the Hero Hall, except on a Practice level, whose level
-    // file posts each one on a hero flag.
+    // The early King has an attack-only slot. From Town Hall 7, local Practice uses the
+    // attacking lineup as its fallback defense until separate banner assignments exist.
     const defenders = practice
-      ? heroes.map((h) => ({ kind: h.kind, level: h.level }))
+      ? this.townhallLevel >= 7
+        ? heroes.map((h) => ({ kind: h.kind, level: h.level }))
+        : []
       : catalog === 'goblin-v1'
         ? nativeDefendingHeroes(index)
         : [];
