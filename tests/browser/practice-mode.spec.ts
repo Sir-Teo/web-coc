@@ -345,6 +345,48 @@ for (const viewport of [
   });
 }
 
+test('the guided Practice HUD keeps the clock and deployment controls readable on compact phones', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await boot(page, 4);
+  await page.locator(`#campaign-stage-${GIANT_SMASH} [data-action="attack:${GIANT_SMASH}"]`).tap();
+  const guide = page.locator('.practice-guide');
+  await expect(guide).toContainText('Deploy a Giant');
+  for (const [width, height] of [
+    [320, 568],
+    [390, 650],
+    [320, 480],
+    [568, 320],
+    [844, 390],
+  ]) {
+    await page.setViewportSize({ width, height });
+    const overlaps = await guide.evaluate((element) => {
+      const banner = element.getBoundingClientRect();
+      return ['.battle-clock', '.deploy-tray', '.battle-bottom > button'].flatMap((selector) =>
+        [...document.querySelectorAll(selector)]
+          .filter((control) => {
+            const rect = control.getBoundingClientRect();
+            return (
+              rect.width > 0 &&
+              rect.height > 0 &&
+              banner.left < rect.right &&
+              rect.left < banner.right &&
+              banner.top < rect.bottom &&
+              rect.top < banner.bottom
+            );
+          })
+          .map(() => selector),
+      );
+    });
+    expect(overlaps, `${width}×${height}`).toEqual([]);
+  }
+  await page.setViewportSize({ width: 568, height: 320 });
+  await guide.getByRole('button', { name: 'Skip guide' }).tap();
+  await expect(guide).toHaveCount(0);
+  await expect(page.locator('#battle-timer')).toHaveText('∞');
+});
+
 test('full-map guide reaches the original Queen deployment beyond the old board edge', async ({
   page,
 }) => {

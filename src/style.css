@@ -7289,3 +7289,21 @@ body:has(#ui.drawer-open, #ui .battle-enemy, #ui .modal-backdrop) #update-ready 
   flex-direction: column;
   gap: 2px;
 }
+
+/* Keep the guided Practice banner out of the clock and deployment controls. */
+@media (max-width: 700px) and (min-height: 501px) {
+  .practice-guide {
+    top: 218px;
+  }
+}
+@media (min-width: 540px) and (max-width: 700px) and (max-height: 370px) and (min-aspect-ratio: 4/3) {
+  .battle-clock:has(~ .practice-guide) {
+    top: calc(16px + env(safe-area-inset-top));
+    left: max(150px, env(safe-area-inset-left));
+    transform: none;
+  }
+  .practice-guide {
+    top: calc(76px + env(safe-area-inset-top));
+    width: calc(100% - 2 * max(156px, env(safe-area-inset-left), env(safe-area-inset-right)));
+  }
+}

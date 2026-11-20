@@ -44,7 +44,7 @@ export function positionBattleToast(root: HTMLElement, insets: Insets) {
   toast.dataset.battleAnchor = '';
   for (const width of new Set([
     originalWidth,
-    ...[320, 260, 200, 160].map((n) => Math.min(n, originalWidth)),
+    ...[320, 260, 200, 180, 160].map((n) => Math.min(n, originalWidth)),
   ])) {
     toast.style.setProperty('--toast-width', `${width}px`);
     const height = toast.getBoundingClientRect().height;
