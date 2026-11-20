@@ -111,6 +111,27 @@ lesson preview. Returning restores focus to the originating action. The
 preview and log controls are web behavior and still need a native comparison.
 [Practice catalog and guide](PRACTICE-MODE.md) · [Campaign rules](CAMPAIGN-RULES.md).
 
+## Shared HUD art bindings
+
+| Runtime control or state | Asset used | Pinned comparison |
+| --- | --- | --- |
+| Village Attack | Campaign map image and sliced background | `hud_button_fight` clip 201, frame 0 (`no_stars`), and shape 55. The web entry opens the single-player map, so alternate mode children are absent. |
+| Village Shop and Settings | Separate retained normal-state PNGs | `ui_bottom_right` supplies Shop shape 21791 and Settings clip 22637. Their native badges and alternate states are outside the retained capture. |
+| Village and combat resource badges | CSS coin, droplets and gem | No equivalent per-state source export was established in this pass. |
+| Scouting and combat deployment cards, plus Army and composition previews | Standalone UI portraits from the pinned roster index | 57 troop and 18 spell bindings checked. 62 already used the corresponding UI asset. Ten troops and three spells previously used art from the Characters or Spells collections. The cards now use the declared frame-zero exports. The selected and exhausted card treatments are local CSS. |
+| Combat exit and speed, Campaign lock, result and replay controls | SVG glyphs, text and CSS stars | Native inactive, pressed, filled-star and transition frames remain unverified. |
+| Shared headings and body text | Clash Headline and Clash Text | Both bundled families map to the pinned English HUD names, Supercell-Magic and CCBackBeat Light. Per-control text transforms and layout still need matched reference. |
+
+Decoded RGBA hashes for all 75 packaged roster icons and the four captured
+HUD images matched their source records. Both packaged font checksums also
+matched. Those checks establish asset identity. The phone-sized Chromium
+tour separately checked which icons Village, Army, scouting and live combat
+actually displayed.
+
+[HUD source slots](../reference/hud/README.md) ·
+[Font source records](../reference/fonts/README.md) ·
+[Standalone roster exports](../reference/full-client/roster.json)
+
 ## Remaining parity work by player impact
 
 | Priority | Gap against the pinned build | Comparison required |

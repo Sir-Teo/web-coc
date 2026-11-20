@@ -9,7 +9,8 @@ test('starter army, troop details and saved additions use the Barbarian presenta
   await page.locator('[data-action="skip-tutorial"]').click();
   const card = page.getByRole('button', { name: /^Barbarian, / });
   await expect(card).toHaveAccessibleName(/Barbarian/);
-  await expect(card.locator('img')).toHaveAttribute('src', '/assets/characters/barbarian-v1.webp');
+  const rosterArt = '/assets/catalog-native/roster/troop-barbarian.png';
+  await expect(card.locator('img')).toHaveAttribute('src', rosterArt);
   await page.locator('.train-add').click();
   await page.locator('[data-action="train:swordsman"]').click();
   await page.getByRole('button', { name: 'About Barbarian', exact: true }).click();
@@ -33,6 +34,13 @@ test('starter army, troop details and saved additions use the Barbarian presenta
   expect(await page.evaluate(() => window.__game.model.state.army.swordsman)).toBe(13);
   await expect(card).toHaveAccessibleName(/Barbarian/);
   await expect(page.locator('body')).not.toContainText('Swordsman');
+  await page.locator('.attack-btn').click();
+  await page.locator('[data-action="attack:0"]').click();
+  const deploy = page.locator('[data-action="troop:swordsman"]');
+  await expect(deploy.locator('img')).toHaveAttribute('src', rosterArt);
+  await deploy.click();
+  await expect(deploy).toHaveClass(/selected/);
+  await expect(deploy.locator('img')).toHaveAttribute('src', rosterArt);
 });
 
 test('camp Barbarians use the new atlas and rest on a fixed frame with reduced motion', async ({
