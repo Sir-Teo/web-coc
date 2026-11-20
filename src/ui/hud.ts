@@ -227,6 +227,7 @@ import {
   isMergedKind,
   mergeInputs,
   mergeQuote,
+  townHallMergeInputs,
   type MergedKind,
 } from '../game/native-merges';
 import { superchargeQuote } from '../game/native-supercharge';
@@ -5428,6 +5429,9 @@ export class HUD {
     const next = capped
       ? []
       : statRows(b.kind, b.level + 1, b.xbowMode, b.infernoMode, b.supercharge);
+    const townHallUpgrade = b.kind === 'townhall' && !capped && !b.upgradeEnd;
+    const mergeBlocker = townHallUpgrade ? m.townHallMergeIssue(b.level) : null;
+    const merges = townHallUpgrade ? townHallMergeInputs(b.level + 1) : [];
     const nextUnlocks =
       b.kind === 'barracks' || b.kind === 'darkbarracks' || b.kind === 'workshop'
         ? TROOP_ORDER.filter((k) => facilityUnlocks(b.kind, b.level + 1).includes(k)).map(
@@ -5447,12 +5451,14 @@ export class HUD {
    })
    .join('')}</tbody></table>
  ${nextUnlocks.length ? `<p class="upgrade-unlocks">Unlocks at level ${b.level + 1}: <b>${nextUnlocks.join(', ')}</b></p>` : ''}
+ ${merges.length ? `<p class="upgrade-unlocks townhall-merge-consequence">Starting this upgrade permanently merges ${merges.map(({ kind, level }) => `level ${level} ${BUILDINGS[kind].name}`).join(', ')} into the Town Hall${b.level === 16 ? '. Inferno Artillery becomes available when Town Hall 17 completes' : ''}.</p>` : ''}
+ ${mergeBlocker ? `<p id="townhall-merge-blocker" class="upgrade-unlocks townhall-merge-blocker" role="note">${icon('LockKeyhole', 15)} ${html(mergeBlocker)}</p>` : ''}
  <div class="info-upgrade">${
    capped
      ? `<span class="max-level">★ Fully upgraded</span>`
      : gated
        ? `<span class="max-level locked">${icon('LockKeyhole', 15)} ${requiredTownHall(b.kind, b.level + 1) ? `Requires Town Hall ${requiredTownHall(b.kind, b.level + 1)}` : 'Maximum level for the available Town Hall tiers'}</span>`
-       : `<div class="info-cost"><span>${resource(d.resource)} <b>${n(costFor(b.kind, b.level))}</b></span><span>${icon('Clock3', 15)} <b>${b.kind === 'wall' ? 'Instant' : time(upgradeSeconds(b.kind, b.level))}</b></span><span>${icon('Hammer', 15)} <b>${m.builders - m.busy} free</b></span></div>${button(b.kind === 'wall' ? `wall-info-upgrade:${b.id}` : `upgrade:${b.id}`, `${icon('ArrowBigUp', 19)} Upgrade to level ${b.level + 1}`, 'game-btn green', b.upgradeEnd || m.busy >= m.builders ? 'disabled' : '')}`
+       : `<div class="info-cost"><span>${resource(d.resource)} <b>${n(costFor(b.kind, b.level))}</b></span><span>${icon('Clock3', 15)} <b>${b.kind === 'wall' ? 'Instant' : time(upgradeSeconds(b.kind, b.level))}</b></span><span>${icon('Hammer', 15)} <b>${m.builders - m.busy} free</b></span></div>${button(b.kind === 'wall' ? `wall-info-upgrade:${b.id}` : `upgrade:${b.id}`, `${icon('ArrowBigUp', 19)} Upgrade to level ${b.level + 1}`, 'game-btn green', b.upgradeEnd || m.busy >= m.builders || mergeBlocker ? `disabled${mergeBlocker ? ' aria-describedby="townhall-merge-blocker"' : ''}` : '')}`
  }</div></div>`;
   }
   private layoutPanel() {
