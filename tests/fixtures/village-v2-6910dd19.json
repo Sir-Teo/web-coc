@@ -1,0 +1,1134 @@
+{
+  "version": 2,
+  "dark": 0,
+  "gold": 4321,
+  "elixir": 161670,
+  "gems": 250,
+  "trophies": 1248,
+  "xp": 1850,
+  "buildings": [
+    {
+      "id": 1,
+      "kind": "townhall",
+      "x": 11,
+      "y": 10,
+      "level": 2,
+      "hp": 2625,
+      "maxHp": 2625,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 2,
+      "kind": "goldstorage",
+      "x": 9,
+      "y": 14,
+      "level": 2,
+      "hp": 1500,
+      "maxHp": 1500,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 3,
+      "kind": "elixirstorage",
+      "x": 15,
+      "y": 10,
+      "level": 2,
+      "hp": 1500,
+      "maxHp": 1500,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 4,
+      "kind": "cannon",
+      "x": 9,
+      "y": 10,
+      "level": 2,
+      "hp": 360,
+      "maxHp": 360,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 5,
+      "kind": "archertower",
+      "x": 15,
+      "y": 15,
+      "level": 2,
+      "hp": 420,
+      "maxHp": 420,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 6,
+      "kind": "barracks",
+      "x": 4,
+      "y": 15,
+      "level": 2,
+      "hp": 1062.5,
+      "maxHp": 1062.5,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 7,
+      "kind": "camp",
+      "x": 10,
+      "y": 21,
+      "level": 1,
+      "hp": 700,
+      "maxHp": 700,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 8,
+      "kind": "camp",
+      "x": 21,
+      "y": 11,
+      "level": 1,
+      "hp": 700,
+      "maxHp": 700,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 9,
+      "kind": "goldmine",
+      "x": 3,
+      "y": 8,
+      "level": 2,
+      "hp": 812.5,
+      "maxHp": 812.5,
+      "stored": 1800,
+      "cooldown": 0
+    },
+    {
+      "id": 10,
+      "kind": "goldmine",
+      "x": 5,
+      "y": 4,
+      "level": 1,
+      "hp": 650,
+      "maxHp": 650,
+      "stored": 1800,
+      "cooldown": 0,
+      "upgradeStart": 1789214400000,
+      "upgradeEnd": 1789214445000
+    },
+    {
+      "id": 11,
+      "kind": "collector",
+      "x": 17,
+      "y": 4,
+      "level": 2,
+      "hp": 812.5,
+      "maxHp": 812.5,
+      "stored": 1800,
+      "cooldown": 0
+    },
+    {
+      "id": 12,
+      "kind": "collector",
+      "x": 21,
+      "y": 7,
+      "level": 1,
+      "hp": 650,
+      "maxHp": 650,
+      "stored": 1800,
+      "cooldown": 0
+    },
+    {
+      "id": 13,
+      "kind": "builder",
+      "x": 16,
+      "y": 23,
+      "level": 1,
+      "hp": 500,
+      "maxHp": 500,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 14,
+      "kind": "builder",
+      "x": 21,
+      "y": 19,
+      "level": 1,
+      "hp": 500,
+      "maxHp": 500,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 15,
+      "kind": "goldstorage",
+      "x": 6,
+      "y": 20,
+      "level": 1,
+      "hp": 1200,
+      "maxHp": 1200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 16,
+      "kind": "elixirstorage",
+      "x": 9,
+      "y": 4,
+      "level": 1,
+      "hp": 1200,
+      "maxHp": 1200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 17,
+      "kind": "cannon",
+      "x": 5,
+      "y": 11,
+      "level": 1,
+      "hp": 300,
+      "maxHp": 300,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 18,
+      "kind": "wall",
+      "x": 8,
+      "y": 8,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 19,
+      "kind": "wall",
+      "x": 8,
+      "y": 19,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 20,
+      "kind": "wall",
+      "x": 9,
+      "y": 8,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 21,
+      "kind": "wall",
+      "x": 9,
+      "y": 19,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 22,
+      "kind": "wall",
+      "x": 10,
+      "y": 8,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 23,
+      "kind": "wall",
+      "x": 10,
+      "y": 19,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 24,
+      "kind": "wall",
+      "x": 11,
+      "y": 8,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 25,
+      "kind": "wall",
+      "x": 11,
+      "y": 19,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 26,
+      "kind": "wall",
+      "x": 12,
+      "y": 8,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 27,
+      "kind": "wall",
+      "x": 12,
+      "y": 19,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 28,
+      "kind": "wall",
+      "x": 15,
+      "y": 19,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 29,
+      "kind": "wall",
+      "x": 16,
+      "y": 19,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 30,
+      "kind": "wall",
+      "x": 17,
+      "y": 19,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 31,
+      "kind": "wall",
+      "x": 18,
+      "y": 19,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 32,
+      "kind": "wall",
+      "x": 19,
+      "y": 19,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 33,
+      "kind": "wall",
+      "x": 8,
+      "y": 9,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 34,
+      "kind": "wall",
+      "x": 8,
+      "y": 10,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 35,
+      "kind": "wall",
+      "x": 8,
+      "y": 11,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 36,
+      "kind": "wall",
+      "x": 8,
+      "y": 12,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 37,
+      "kind": "wall",
+      "x": 8,
+      "y": 13,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 38,
+      "kind": "wall",
+      "x": 8,
+      "y": 14,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 39,
+      "kind": "wall",
+      "x": 8,
+      "y": 15,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 40,
+      "kind": "wall",
+      "x": 8,
+      "y": 16,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 41,
+      "kind": "wall",
+      "x": 8,
+      "y": 17,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    },
+    {
+      "id": 42,
+      "kind": "wall",
+      "x": 8,
+      "y": 18,
+      "level": 2,
+      "hp": 200,
+      "maxHp": 200,
+      "stored": 0,
+      "cooldown": 0
+    }
+  ],
+  "obstacles": [
+    {
+      "id": 1,
+      "kind": "trees",
+      "x": 2,
+      "y": 2
+    },
+    {
+      "id": 2,
+      "kind": "trees",
+      "x": 0,
+      "y": 12
+    },
+    {
+      "id": 3,
+      "kind": "trees",
+      "x": 22,
+      "y": 3
+    },
+    {
+      "id": 4,
+      "kind": "trees",
+      "x": 24,
+      "y": 23
+    },
+    {
+      "id": 5,
+      "kind": "trees",
+      "x": 2,
+      "y": 24
+    },
+    {
+      "id": 6,
+      "kind": "rocks",
+      "x": 1,
+      "y": 17
+    },
+    {
+      "id": 7,
+      "kind": "rocks",
+      "x": 22,
+      "y": 1
+    },
+    {
+      "id": 8,
+      "kind": "rocks",
+      "x": 23,
+      "y": 19
+    }
+  ],
+  "army": {
+    "swordsman": 12,
+    "archer": 10,
+    "giant": 0,
+    "wizard": 0,
+    "balloon": 0,
+    "goblin": 0,
+    "wallbreaker": 0
+  },
+  "queue": [],
+  "spells": {
+    "rage": 0,
+    "heal": 0,
+    "lightning": 0
+  },
+  "spellQueue": [],
+  "stars": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "lastTick": 1789214400000,
+  "nextId": 45,
+  "tutorial": true,
+  "settings": {
+    "sound": true,
+    "music": false,
+    "reducedMotion": false
+  },
+  "stats": {
+    "raids": 0,
+    "destroyed": 0,
+    "collected": 0
+  },
+  "obstacleGemIndex": 0,
+  "obstacleGrowth": {
+    "nextAt": 1789243200000,
+    "seed": 677433433,
+    "nextId": 9
+  },
+  "raidLog": [
+    {
+      "id": 44,
+      "at": 1789214400000,
+      "index": 0,
+      "practice": true,
+      "duration": 1.0000000000000002,
+      "result": {
+        "gold": 0,
+        "elixir": 0,
+        "trophies": 0,
+        "stars": 0,
+        "destruction": 0
+      },
+      "replay": {
+        "version": 11,
+        "initial": {
+          "index": 0,
+          "practice": true,
+          "buildings": [
+            {
+              "id": 1,
+              "kind": "townhall",
+              "x": 11,
+              "y": 10,
+              "level": 2,
+              "hp": 2625,
+              "maxHp": 2625,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 2,
+              "kind": "goldstorage",
+              "x": 9,
+              "y": 14,
+              "level": 2,
+              "hp": 1500,
+              "maxHp": 1500,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 3,
+              "kind": "elixirstorage",
+              "x": 15,
+              "y": 10,
+              "level": 2,
+              "hp": 1500,
+              "maxHp": 1500,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 4,
+              "kind": "cannon",
+              "x": 9,
+              "y": 10,
+              "level": 2,
+              "hp": 360,
+              "maxHp": 360,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 5,
+              "kind": "archertower",
+              "x": 15,
+              "y": 15,
+              "level": 2,
+              "hp": 420,
+              "maxHp": 420,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 6,
+              "kind": "barracks",
+              "x": 4,
+              "y": 15,
+              "level": 2,
+              "hp": 1062.5,
+              "maxHp": 1062.5,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 7,
+              "kind": "camp",
+              "x": 10,
+              "y": 21,
+              "level": 1,
+              "hp": 700,
+              "maxHp": 700,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 8,
+              "kind": "camp",
+              "x": 21,
+              "y": 11,
+              "level": 1,
+              "hp": 700,
+              "maxHp": 700,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 9,
+              "kind": "goldmine",
+              "x": 3,
+              "y": 8,
+              "level": 2,
+              "hp": 812.5,
+              "maxHp": 812.5,
+              "stored": 1800,
+              "cooldown": 0
+            },
+            {
+              "id": 10,
+              "kind": "goldmine",
+              "x": 5,
+              "y": 4,
+              "level": 1,
+              "hp": 650,
+              "maxHp": 650,
+              "stored": 1800,
+              "cooldown": 0
+            },
+            {
+              "id": 11,
+              "kind": "collector",
+              "x": 17,
+              "y": 4,
+              "level": 2,
+              "hp": 812.5,
+              "maxHp": 812.5,
+              "stored": 1800,
+              "cooldown": 0
+            },
+            {
+              "id": 12,
+              "kind": "collector",
+              "x": 21,
+              "y": 7,
+              "level": 1,
+              "hp": 650,
+              "maxHp": 650,
+              "stored": 1800,
+              "cooldown": 0
+            },
+            {
+              "id": 13,
+              "kind": "builder",
+              "x": 16,
+              "y": 23,
+              "level": 1,
+              "hp": 500,
+              "maxHp": 500,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 14,
+              "kind": "builder",
+              "x": 21,
+              "y": 19,
+              "level": 1,
+              "hp": 500,
+              "maxHp": 500,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 15,
+              "kind": "goldstorage",
+              "x": 6,
+              "y": 20,
+              "level": 1,
+              "hp": 1200,
+              "maxHp": 1200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 16,
+              "kind": "elixirstorage",
+              "x": 9,
+              "y": 4,
+              "level": 1,
+              "hp": 1200,
+              "maxHp": 1200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 17,
+              "kind": "cannon",
+              "x": 5,
+              "y": 11,
+              "level": 1,
+              "hp": 300,
+              "maxHp": 300,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 18,
+              "kind": "wall",
+              "x": 8,
+              "y": 8,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 19,
+              "kind": "wall",
+              "x": 8,
+              "y": 19,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 20,
+              "kind": "wall",
+              "x": 9,
+              "y": 8,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 21,
+              "kind": "wall",
+              "x": 9,
+              "y": 19,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 22,
+              "kind": "wall",
+              "x": 10,
+              "y": 8,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 23,
+              "kind": "wall",
+              "x": 10,
+              "y": 19,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 24,
+              "kind": "wall",
+              "x": 11,
+              "y": 8,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 25,
+              "kind": "wall",
+              "x": 11,
+              "y": 19,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 26,
+              "kind": "wall",
+              "x": 12,
+              "y": 8,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 27,
+              "kind": "wall",
+              "x": 12,
+              "y": 19,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 28,
+              "kind": "wall",
+              "x": 15,
+              "y": 19,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 29,
+              "kind": "wall",
+              "x": 16,
+              "y": 19,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 30,
+              "kind": "wall",
+              "x": 17,
+              "y": 19,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 31,
+              "kind": "wall",
+              "x": 18,
+              "y": 19,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 32,
+              "kind": "wall",
+              "x": 19,
+              "y": 19,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 33,
+              "kind": "wall",
+              "x": 8,
+              "y": 9,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 34,
+              "kind": "wall",
+              "x": 8,
+              "y": 10,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 35,
+              "kind": "wall",
+              "x": 8,
+              "y": 11,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 36,
+              "kind": "wall",
+              "x": 8,
+              "y": 12,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 37,
+              "kind": "wall",
+              "x": 8,
+              "y": 13,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 38,
+              "kind": "wall",
+              "x": 8,
+              "y": 14,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 39,
+              "kind": "wall",
+              "x": 8,
+              "y": 15,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 40,
+              "kind": "wall",
+              "x": 8,
+              "y": 16,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 41,
+              "kind": "wall",
+              "x": 8,
+              "y": 17,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            },
+            {
+              "id": 42,
+              "kind": "wall",
+              "x": 8,
+              "y": 18,
+              "level": 2,
+              "hp": 200,
+              "maxHp": 200,
+              "stored": 0,
+              "cooldown": 0
+            }
+          ],
+          "army": {
+            "swordsman": 12,
+            "archer": 10,
+            "giant": 0,
+            "wizard": 0,
+            "balloon": 0,
+            "goblin": 0,
+            "wallbreaker": 0
+          },
+          "spells": {
+            "rage": 0,
+            "heal": 0,
+            "lightning": 0
+          },
+          "troopLevels": {
+            "swordsman": 1,
+            "archer": 1,
+            "giant": 1,
+            "wizard": 1,
+            "balloon": 1,
+            "goblin": 1,
+            "wallbreaker": 1
+          },
+          "nextId": 43
+        },
+        "steps": [
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.05
+        ],
+        "actions": [
+          {
+            "type": "troop",
+            "kind": "swordsman",
+            "x": 3,
+            "y": 22,
+            "step": 0
+          },
+          {
+            "type": "end",
+            "step": 20
+          }
+        ]
+      },
+      "deployed": {
+        "swordsman": 1,
+        "archer": 0,
+        "giant": 0,
+        "wizard": 0,
+        "balloon": 0,
+        "goblin": 0,
+        "wallbreaker": 0
+      },
+      "spells": {
+        "rage": 0,
+        "heal": 0,
+        "lightning": 0
+      }
+    }
+  ]
+}

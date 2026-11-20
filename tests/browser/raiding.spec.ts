@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { useDevelopedVillage } from './developed-village';
 import { test, expect } from '@playwright/test';
 
@@ -96,35 +97,82 @@ test('mobile army and battle trays scroll to every specialist without overflowin
   expect(selected!.x + selected!.width).toBeLessThanOrEqual(390);
 });
 
-test('imports an older village backup and preserves its gold and existing army', async ({
+test('rejects a mislabeled current backup, then imports a genuine version 2 village', async ({
   page,
 }) => {
-  const backup = await page.evaluate(() => {
-    const s = structuredClone(window.__game.model.state);
-    s.version = 2;
-    delete s.army.goblin;
-    delete s.army.wallbreaker;
-    s.gold = 4321;
-    return JSON.stringify(s);
+  // Emitted and validated by the historical 6910dd19 model before the 28-tile grid expanded.
+  const legacy = readFileSync(new URL('../fixtures/village-v2-6910dd19.json', import.meta.url));
+  await page.clock.setFixedTime(Date.parse('2026-09-12T12:00:00Z'));
+  const snapshot = () =>
+    page.evaluate(() => {
+      const { state } = window.__game.model;
+      const { version, gold, army, raidLog, buildings } = state;
+      return {
+        version,
+        gold,
+        army,
+        records: raidLog?.map(({ id, replay }) => ({ id, replay })),
+        buildings: buildings.map(({ id, x, y, level, upgradeEnd }) => ({
+          id,
+          x,
+          y,
+          level,
+          upgradeEnd,
+        })),
+      };
+    });
+  const before = await snapshot();
+  const invalid = await page.evaluate(() => {
+    const state = structuredClone(window.__game.model.state);
+    state.version = 2;
+    delete state.army.goblin;
+    delete state.army.wallbreaker;
+    state.gold = 4321;
+    return JSON.stringify(state);
   });
+  expect(before.buildings.some(({ x, y }) => x >= 28 || y >= 28)).toBe(true);
   await page.locator('[data-action="settings"]').click();
-  await page.locator('#import-file').setInputFiles({
-    name: 'older-village.json',
+  const file = page.locator('#import-file');
+  const confirm = page.locator('[data-action="import-confirm"]');
+  await file.setInputFiles({
+    name: 'mislabeled-village.json',
     mimeType: 'application/json',
-    buffer: Buffer.from(backup),
+    buffer: Buffer.from(invalid),
   });
-  // Imports are reviewed before they replace the village.
-  await page.locator('[data-action="import-confirm"]').click();
-  await expect(page.locator('#toast')).toContainText('Village restored successfully.');
-  expect(
-    await page.evaluate(() => ({
-      gold: window.__game.model.state.gold,
-      army: window.__game.model.state.army,
-    })),
-  ).toMatchObject({
+  await expect(page.locator('#toast')).toContainText('not a valid Crown & Clan village');
+  await expect(confirm).toHaveCount(0);
+  expect(await snapshot()).toEqual(before);
+
+  await file.setInputFiles({
+    name: 'village-v2.json',
+    mimeType: 'application/json',
+    buffer: legacy,
+  });
+  await expect(confirm).toBeVisible();
+  expect(await snapshot()).toEqual(before);
+  await confirm.click();
+  await expect(page.locator('#toast')).toContainText('Village updated · 1 building moved to clear ground. Your progress is preserved.');
+  const restored = await snapshot();
+  expect(restored).toMatchObject({
+    version: 4,
     gold: 4321,
     army: { swordsman: 12, goblin: 0, wallbreaker: 0 },
+    records: [{ replay: { version: 11 } }],
   });
+  expect(restored.buildings.find(({ id }) => id === 10)).toMatchObject({
+    level: 1,
+    upgradeEnd: Date.parse('2026-09-12T12:00:45Z'),
+  });
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  expect(await snapshot()).toEqual(restored);
+
+  await page.locator('[data-action="battle-log"]').click();
+  const record = page.locator('.raid-record');
+  await expect(record).toContainText('Your village');
+  await expect(record).toContainText('Replay unavailable · Recorded before a combat update.');
+  await expect(record.getByRole('button', { name: 'Watch replay' })).toHaveCount(0);
+  expect(await snapshot()).toEqual(restored);
 });
 
 test('scouting a mortar shows its range without starting the battle', async ({ page }) => {
