@@ -5656,7 +5656,7 @@ export class HUD {
    .map(([ic, label, value], i) => {
      const after = next[i]?.[2];
      const changed = after !== undefined && after !== value;
-     return `<tr><td>${icon(ic, 15)} ${label}</td><td>${value}</td><td class="${changed ? 'better' : 'same'}">${capped ? '—' : changed ? `${after} ${icon('ArrowBigUp', 13)}` : after}</td></tr>`;
+     return `<tr><td><span class="info-stat-label">${icon(ic, 15)} ${label}</span></td><td>${value}</td><td class="${changed ? 'better' : 'same'}">${capped ? '—' : changed ? `${after} ${icon('ArrowBigUp', 13)}` : after}</td></tr>`;
    })
    .join('')}</tbody></table>
  ${nextUnlocks.length ? `<p class="upgrade-unlocks">Unlocks at level ${b.level + 1}: <b>${nextUnlocks.join(', ')}</b></p>` : ''}

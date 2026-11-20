@@ -3668,17 +3668,36 @@ h3 {
 .info-table td:first-child {
   color: #7d6c4d;
   font-weight: 800;
+}
+.info-stat-label {
   display: flex;
   align-items: center;
   gap: 7px;
 }
+.info-stat-label > svg {
+  flex: none;
+}
 .info-table td.better {
   color: #4f8a25;
   font-weight: 800;
-  white-space: nowrap;
 }
 .info-table td.same {
   color: #a89877;
+}
+@media (max-width: 700px) {
+  .info-table {
+    table-layout: fixed;
+    overflow-wrap: anywhere;
+  }
+  .info-table th:first-child {
+    width: 40%;
+  }
+  .info-stat-label {
+    gap: 5px;
+  }
+  .info-table :is(th, td) {
+    padding-inline: 5px;
+  }
 }
 .info-upgrade {
   margin-top: 17px;

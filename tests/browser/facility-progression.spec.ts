@@ -381,4 +381,41 @@ test.describe('building inspection on a compact phone', () => {
     await page.getByRole('button', { name: 'Close dialog' }).tap();
     await expect(info).toBeFocused();
   });
+
+  test('the Laboratory comparison fits portrait and short landscape at its normal text size', async ({
+    page,
+  }) => {
+    await boot(page);
+    await useDevelopedVillage(page);
+    await page.locator('[data-action="skip-tutorial"]').tap();
+    await select(page, 'laboratory');
+    await page.locator('.building-context [data-action="info"]').tap();
+
+    const table = page.locator('.info-table');
+    await expect(table.getByRole('row').filter({ hasText: 'Hitpoints' }).getByRole('cell')).toHaveText(
+      ['Hitpoints', '500', '550'],
+    );
+    await expect(table.getByRole('row').filter({ hasText: 'Spell research' }).getByRole('cell')).toHaveText([
+      'Spell research',
+      'Up to level 2 · varies by spell',
+      'Up to level 3 · varies by spell',
+    ]);
+    for (const viewport of [
+      { width: 320, height: 568 },
+      { width: 390, height: 844 },
+      { width: 568, height: 320 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await expect(table).toHaveCSS('font-size', '13px');
+      await expect
+        .poll(() =>
+          table.evaluate((el) => {
+            const body = el.closest('.info-body')!;
+            return body.scrollWidth - body.clientWidth;
+          }),
+        )
+        .toBe(0);
+      await expect(page.locator('.info-upgrade button').first()).toBeEnabled();
+    }
+  });
 });
