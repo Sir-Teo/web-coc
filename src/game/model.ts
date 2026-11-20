@@ -2199,9 +2199,11 @@ export class GameModel {
     }
     return null;
   }
-  /** Early Town Hall milestones with a verified Hero Hall prerequisite. */
+  /** Verified prerequisites tied to a hero unlock. Cap-only Hall tiers are separate. */
   private townHallHeroHallIssue(level: number) {
-    const hero = (['queen', 'prince'] as const).find((kind) => heroUnlockTownHall(kind) === level);
+    const hero = (['queen', 'prince', 'warden', 'champion', 'duke'] as const).find(
+      (kind) => heroUnlockTownHall(kind) === level,
+    );
     if (!hero) return null;
     const requiredHall = heroUnlockHall(hero);
     return this.heroHallLevel < requiredHall

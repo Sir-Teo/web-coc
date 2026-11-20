@@ -43,3 +43,18 @@ The former linear storage curve made some newly available higher-level upgrades 
 Model tests cover unlock completion, builder/resource gates, one-time offline completion, gem finishing, legacy saves, malformed hero state, collector overflow/downtime, hero-only attacks, blocked/duplicate deployment, manual and automatic equipment activation, summons, spring immunity, defeat/reuse, result records, level tables, and upgrade affordability. Browser tests cover hero art, real pointer deployment, H activation, upgrade persistence, and portrait/landscape control reachability.
 
 Remaining hero gaps: ore income beyond the Star Bonus (Clan War and Hero Journey rewards), and exact combat/economy tuning. Dark elixir is earned from drills; campaign villages do not yet award dark loot. Existing simplified building counts, research caps, troop unlocks and army housing still need explicit progression tables.
+
+
+## Town Hall prerequisites tied to hero unlocks
+
+The retained [Hero Hall dossier](../reference/official-wiki/heroes-pets/hero-hall.md#mechanics) describes unlocking the heroes available at the current Town Hall before advancing. The pinned Hero Hall and hero rows establish building tiers and unlocks. The slot counts come from `TAVERN_LEVEL_TO_HERO_SLOT_COUNT`.
+
+| Town Hall upgrade | Completed Hero Hall | Hero unlocked | Active attack slots before → after |
+| --- | ---: | --- | --- |
+| 8 → 9 | 2 | Archer Queen | 1 → 1 |
+| 9 → 10 | 3 | Minion Prince | 1 → 2 |
+| 11 → 12 | 5 | Grand Warden | 2 → 3 |
+| 13 → 14 | 7 | Royal Champion | 3 → 4 |
+| 15 → 16 | 9 | Dragon Duke | 4 → 4 |
+
+Hero Hall 1 is available at Town Hall 4 and unlocks the Barbarian King and first attack slot. This audit covers the five progression gates above. A separate Town Hall gate for the first Hall or cap-only Hall tiers, Hero Banner placement requirements, and native UI layout remain outside the verified implementation.

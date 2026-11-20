@@ -278,6 +278,13 @@ describe('Town Hall tier village', () => {
     // one rung that is not a plain upgrade: the source merges an Eagle Artillery into the hall's
     // own weapon, so the village has to own a maxed one first (docs/NATIVE-DEFENSES.md).
     for (let tier = 9; tier < MAX_TOWNHALL; tier++) {
+      // Supply the Hero Hall milestones as well as the merge prerequisites.
+      const hallMilestones: Partial<Record<number, number>> = { 11: 5, 13: 7, 15: 9 };
+      const requiredHall = hallMilestones[tier] ?? heroHall.level;
+      while (heroHall.level < requiredHall) {
+        restored.upgrade(heroHall.id);
+        restored.tick(heroHall.upgradeEnd!);
+      }
       restored.upgrade(restored.townhall!.id);
       if (restored.townhall!.upgradeEnd === undefined) {
         // This rung is a merge, not a plain upgrade: the source consumes finished defenses into
@@ -492,4 +499,39 @@ it('requires Hero Hall 3 before Town Hall 10 and restores a saved second slot af
   expect(restored.setHeroLineup(['queen', 'prince'])).toBe(true);
   expect(restored.heroSetups().map(h => h.kind)).toEqual(['queen', 'prince']);
   expect(restored.upgradeIssue(restored.townhall!)).toBeNull();
+});
+
+it.each([
+  { th: 11, hall: 5, hero: 'warden', name: 'Grand Warden', before: 2, after: 3 },
+  { th: 13, hall: 7, hero: 'champion', name: 'Royal Champion', before: 3, after: 4 },
+  { th: 15, hall: 9, hero: 'duke', name: 'Dragon Duke', before: 4, after: 4 },
+] as const)('requires Hero Hall $hall before advancing from Town Hall $th', ({ th, hall, hero, name, before, after }) => {
+  const m = village(th);
+  const townHall = m.townhall!;
+  const building = makeBuilding(m.state.nextId++, 'herohall', 30, 30, hall - 1);
+  m.state.buildings.push(building);
+  m.tick(m.clock);
+  const gold = m.state.gold;
+  expect(m.heroSlotCount).toBe(before);
+  expect(m.heroUnlocked(hero)).toBe(false);
+  expect(m.upgradeIssue(townHall)).toMatchObject({
+    requiredBuilding: 'herohall',
+    reason: expect.stringContaining(`Hero Hall level ${hall} to unlock the ${name}`),
+  });
+  m.upgrade(townHall.id);
+  expect(townHall.upgradeEnd).toBeUndefined();
+  expect(m.state.gold).toBe(gold);
+
+  m.upgrade(building.id);
+  expect(building.upgradeEnd).toBeDefined();
+  expect(m.upgradeIssue(townHall)?.requiredBuilding).toBe('herohall');
+  expect(m.heroProgress(hero)).toBeUndefined();
+  expect(m.heroSlotCount).toBe(before);
+  const restored = new GameModel(JSON.parse(JSON.stringify(m.state)));
+  restored.tick(building.upgradeEnd!);
+  expect(restored.heroProgress(hero)?.level).toBe(1);
+  expect(restored.heroSlotCount).toBe(after);
+  expect(restored.upgradeIssue(restored.townhall!)).toBeNull();
+  restored.upgrade(restored.townhall!.id);
+  expect(restored.townhall!.upgradeEnd).toBeDefined();
 });
