@@ -13,7 +13,7 @@ for (const width of [390, 1440])
       const { model: m, scene } = window.__game,
         { makeBuilding } = await import('/src/game/model.ts');
       scene.paused = true;
-      m.townhall.level = 10;
+      m.townhall.level = 11;
       m.state.buildings.find((b) => b.kind === 'barracks').level = 6;
       m.state.buildings.push(makeBuilding(m.state.nextId++, 'darkbarracks', 32, 32, 1));
       m.state.troopLevels = { ...m.state.troopLevels, minion: 7 };
@@ -30,8 +30,9 @@ for (const width of [390, 1440])
         .filter({ has: page.locator('[data-action="troop-info:superminion"]') }),
       train = tile.locator('[data-action="train:superminion"]');
     await expect(train).toBeDisabled();
-    await expect(train).toHaveText('TH11 required');
-    await expect(train).toHaveAttribute('title', 'Super Minion requires Town Hall 11.');
+    await expect(train).toHaveText('TH12 required');
+    await expect(train).toHaveAttribute('title', 'Super Minion requires Town Hall 12.');
+    await expect(tile.locator('[data-action="boost-super:superminion"]')).toBeDisabled();
     await page.evaluate(() => {
       const m = window.__game.model;
       m.townhall.level = 12;

@@ -391,8 +391,24 @@ try {
         await expect(troop.locator('.troop-count')).toHaveText(`x${home.army.swordsman - 1}`);
         await page.locator('[data-action="surrender"]').tap();
         await page.locator('[data-action="end"]').tap();
+        const result = (await snapshot()).battle.result;
+        expect(result).toBeTruthy();
         await page.locator('.result-modal [data-action="home"]').tap();
         const settled = await snapshot();
+        const savedProgress = () =>
+          page.evaluate(() => {
+            const { nativeCampaign, stats, raidLog } = JSON.parse(
+              localStorage.getItem('crown-clan-save-v1'),
+            );
+            return {
+              nativeCampaign,
+              raids: stats.raids,
+              records: (raidLog ?? []).map(({ result, deployed }) => ({ result, deployed })),
+            };
+          });
+        await expect.poll(async () => (await savedProgress()).records.length).toBe(1);
+        const progress = await savedProgress();
+        expect(progress.records[0]).toMatchObject({ result, deployed: { swordsman: 1 } });
         await reload();
         expect((await snapshot()).resources).toEqual(settled.resources);
         expect((await snapshot()).army.swordsman).toBe(home.army.swordsman - 1);
@@ -402,6 +418,13 @@ try {
         await expect(page.getByRole('slider', { name: 'Replay position' })).toBeVisible();
         await page.locator('[data-action="replay-skip"]').tap();
         await expect.poll(async () => (await snapshot()).battle.units).toBeGreaterThan(0);
+        await expect(page.locator('.replay-status')).toContainText('Replay complete');
+        expect((await snapshot()).battle.result).toEqual(result);
+        await page.screenshot({ path: `output/offline-payback-${name}-replay.png` });
+        await reload();
+        expect(await savedProgress()).toEqual(progress);
+        expect((await snapshot()).resources).toEqual(settled.resources);
+        expect((await snapshot()).army.swordsman).toBe(home.army.swordsman - 1);
         expect(errors).toEqual([]);
         console.log(`${name}: offline deployment, settlement, reload and replay passed`);
         console.log(`${name}: ${misses.size} distinct unavailable request paths`);
