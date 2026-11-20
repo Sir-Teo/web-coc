@@ -609,3 +609,31 @@ describe('native defense combat', () => {
     void validateReplay;
   });
 });
+
+it.each([[267, true], [REPLAY_VERSION, false]] as const)(
+  'Firespitter balls already in flight can hit a newly invisible unit (replay %s, legacy %s)',
+  (version, legacy) => {
+    const m = arena([['firespitter', 20, 20, 1, { direction: 4 }]], { golem: 1, giant: 1 }, {
+      spells: { invisibility: 1 },
+    });
+    const { recording } = m as unknown as { recording: ReplayData };
+    const battle = (m.battle = replayBattle(recording.initial, version));
+    const [outside] = deploy(m, 'giant', 31.5, 21.5);
+    m.activeSpell = 'invisibility';
+    expect(m.castSpell(9.5, 21.5)).toBe(true);
+    run(m, 1.15);
+    expect(battle.nativeShotSequence).toBeUndefined();
+    const [inside] = deploy(m, 'golem', 9.5, 21.5);
+    run(m, 0.4);
+    expect(lost(outside)).toBe(0);
+    expect(lost(inside)).toBe(0);
+    expect(inside.native?.effects?.invisibleUntil).toBeGreaterThan(battle.elapsed);
+    expect(battle.nativePiercing?.length).toBeGreaterThan(0);
+    const fired = battle.nativeShotSequence;
+    run(m, 0.65);
+    expect(battle.nativeShotSequence).toBe(fired);
+    expect(lost(outside)).toBe(0);
+    if (legacy) expect(lost(inside)).toBe(0);
+    else expect(lost(inside)).toBeGreaterThan(0);
+  },
+);

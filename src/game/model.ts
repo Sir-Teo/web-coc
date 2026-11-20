@@ -962,6 +962,8 @@ export interface Battle {
   nativeIndependentRavenRecall?: true;
   /** Version 267: the Grand Warden needs his source group weight before following allies. */
   nativeWardenGroupThreshold?: true;
+  /** Version 268: Fired Firespitter projectiles can still strike concealed attackers. */
+  nativeFirespitterConcealedImpact?: true;
   /** Version 100: native healing resolves through source projectile travel and chain hops. */
   nativeHealingProjectiles?: true;
   nativeHealingTotem?: true;

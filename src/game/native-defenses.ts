@@ -915,6 +915,8 @@ export interface NativePiercingShot {
   hits: number;
   damage: number;
   hit: number[];
+  /** A fired Firespitter ball collides even when its target becomes invisible. */
+  hitsConcealed?: true;
   /** Logger logs knock struck units back along their path. */
   pushback?: number;
 }
@@ -951,6 +953,9 @@ function firePiercing(
     travelled: 0,
     radius: weapon.pierce!.radius,
     hits: weapon.pierce!.hits,
+    ...(battle.nativeFirespitterConcealedImpact && tower.kind === 'firespitter'
+      ? { hitsConcealed: true as const }
+      : {}),
     damage,
     hit: [],
   });
@@ -968,7 +973,14 @@ export function stepPiercingShots(ctx: NativeTroopContext) {
     shot.travelled = travelled;
     if (travelled <= from) continue;
     const candidates = battle.units
-      .filter((u) => liveTarget(u, battle.elapsed) && !shot.hit.includes(u.id))
+      .filter(
+        (u) =>
+          liveAttacker(u, battle.elapsed) &&
+          !shot.hit.includes(u.id) &&
+          (shot.hitsConcealed
+            ? !u.native?.burrowed && !u.native?.recalled && !u.native?.untargetable
+            : !unitHidden(u, battle.elapsed)),
+      )
       .map((u) => {
         const along = (u.x - shot.fromX) * shot.dirX + (u.y - shot.fromY) * shot.dirY;
         const side = Math.abs((u.x - shot.fromX) * shot.dirY - (u.y - shot.fromY) * shot.dirX);
