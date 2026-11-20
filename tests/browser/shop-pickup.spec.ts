@@ -49,6 +49,44 @@ test.describe('phone', () => {
     expect(await purchaseState(page)).toEqual({ ...pickedUp, placement: null });
   });
 
+  test('a compact Shop pickup does not activate Attack under the closed drawer', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    const art = page.locator('[data-drag="goldmine"] .shop-tile-art');
+    await art.tap();
+    await expect(art).toHaveCount(0);
+    await expect(page.locator('.placement-banner')).toContainText('Place Gold Mine');
+    await expect(page.getByRole('dialog', { name: 'The Goblin Valley' })).toHaveCount(0);
+    expect(await purchaseState(page)).toEqual(pickedUp);
+    await page.getByRole('button', { name: 'Cancel placement' }).tap();
+    await page.locator('.attack-btn').tap();
+    await expect(page.getByRole('dialog', { name: 'The Goblin Valley' })).toBeVisible();
+    await page.getByRole('button', { name: 'Close dialog' }).tap();
+    await page.locator('.shop-btn').tap();
+    await page.locator('[data-action="tab:Resources"]').tap();
+    await art.tap();
+    await expect(art).toHaveCount(0);
+    await expect(page.locator('.placement-banner')).toBeVisible();
+    const drop = await page.evaluate(() => {
+      const { model, scene } = window.__game;
+      for (let y = 200; y <= 360; y += 16)
+        for (let x = 105; x <= 205; x += 16) {
+          if (document.elementFromPoint(x, y) !== scene.game.canvas) continue;
+          const tile = scene.gridAtScreen(x, y);
+          if (model.canPlace('goldmine', Math.floor(tile.x), Math.floor(tile.y))) return { x, y };
+        }
+    });
+    expect(drop).toBeDefined();
+    await page.touchscreen.tap(drop!.x, drop!.y);
+    await expect.poll(() => purchaseState(page)).toEqual({
+      ...pickedUp,
+      placement: null,
+      elixir: 499850,
+      buildings: 3,
+    });
+  });
+
   test('a touch drag buys the building exactly once', async ({ page, browserName }) => {
     test.skip(browserName !== 'chromium', 'Native touch injection requires CDP.');
     const art = page.locator('[data-drag="goldmine"] .shop-tile-art');

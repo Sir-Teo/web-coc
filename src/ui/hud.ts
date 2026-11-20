@@ -1554,6 +1554,13 @@ export class HUD {
       if (!dragged || overDrawer) {
         // Treated as a plain pick-up: close the sheet and let them tap the map.
         this.drawerPanel = null;
+        if (!dragged && e.pointerType === 'touch') {
+          // Keep the press target mounted through touchend so Phaser clears the touch.
+          // Chromium can still retarget its follow-up click to a HUD button.
+          this.cancelledActionPointers.add(pointerId);
+          this.scheduleRender();
+          return;
+        }
       } else {
         const g = this.scene.gridAtScreen(e.clientX, e.clientY);
         if (!this.scene.placeBuilding(Math.floor(g.x), Math.floor(g.y))) this.drawerPanel = null;
