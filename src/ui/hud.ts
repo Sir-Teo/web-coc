@@ -377,6 +377,12 @@ const clock = (seconds: number) => {
   const s = Math.max(0, Math.ceil(seconds));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };
+const battleClockLabel = (battle: Battle) =>
+  !timedBattle(battle)
+    ? 'NO TIME LIMIT'
+    : battle.started
+      ? 'BATTLE ENDS IN'
+      : 'SCOUTING — BATTLE BEGINS IN';
 /** 1.5M, 10K: an amount short enough for a stat box. */
 const short = (v: number) =>
   v >= 1e6 ? `${+(v / 1e6).toFixed(2)}M` : v >= 1e4 ? `${+(v / 1e3).toFixed(1)}K` : n(v);
@@ -698,6 +704,7 @@ type LiveRefs = {
   replayTime: HTMLElement | null;
   replayProgress: HTMLInputElement | null;
   battleTimer: HTMLElement | null;
+  battlePhase: HTMLElement | null;
   destructionValue: HTMLElement | null;
   destructionFill: HTMLElement | null;
   battleStars: HTMLElement | null;
@@ -2571,6 +2578,11 @@ export class HUD {
         m.finishBattle();
         break;
       case 'home':
+        // A held Return home button can outlive the scouting phase that rendered it.
+        if (m.battle?.started && !m.battle.finished && !m.replay) {
+          this.show('surrender');
+          break;
+        }
         m.returnHome();
         this.panel = null;
         this.resultShown = false;
@@ -3918,13 +3930,13 @@ export class HUD {
     const lootBar = (k: CampaignResource) =>
       `<div class="loot-row ${k}" aria-label="${k === 'dark' ? 'Dark Elixir' : k} remaining">${resource(k)}<div class="loot-track"><i data-lootbar="${k}" style="transform:${fillScale((lootLeft(k) / Math.max(1, campaignAmount(v, k))) * 100)}"></i></div><b data-loot="${k}">${n(lootLeft(k))}</b></div>`;
     return `<div class="battle-enemy"><span class="eyebrow">${m.goblinRaid ? 'GOBLIN RAID' : m.replay ? (m.replay.recordId === null ? 'SHARED REPLAY' : 'ATTACK REPLAY') : b.practice ? 'PRACTICE ATTACK' : b.ladder ? 'LADDER MATCH' : 'ENEMY VILLAGE'}</span><h2>${v.name}</h2>${m.goblinRaid ? '<small class="practice-note">Goblins are raiding your village!<br>Watch your defenses fight back.</small>' : m.replay ? '<small class="practice-note">Recorded attack · Watch &amp; learn</small>' : b.practice ? '<small class="practice-note">Your village and army are safe.<br>No loot or trophies at stake.</small>' : b.ladder ? `<small class="ladder-stake">${icon('Trophy', 15)} ${n(b.ladder.opponent)} · Win <b>+${b.ladder.win}</b> · Defeat <b>−${b.ladder.loss}</b></small><small class="practice-note">No loot at stake.</small>` : `<small>AVAILABLE LOOT</small><div class="loot-bars">${lootKeys.map(lootBar).join('')}</div>${limitedStorage ? '<small class="loot-capacity-note">Loot beyond your storage capacity will be lost.</small>' : ''}`}</div>
- <div class="battle-clock ${b.started ? '' : 'prep'}"><span>${!timedBattle(b) ? 'NO TIME LIMIT' : b.started ? 'BATTLE ENDS IN' : 'SCOUTING — BATTLE BEGINS IN'}</span><b id="battle-timer">${timedBattle(b) ? clock(b.started ? BATTLE_SECONDS - b.elapsed : b.prep) : '∞'}</b></div>
+ <div class="battle-clock ${b.started ? '' : 'prep'}"><span>${battleClockLabel(b)}</span><b id="battle-timer">${timedBattle(b) ? clock(b.started ? BATTLE_SECONDS - b.elapsed : b.prep) : '∞'}</b></div>
  <div class="destruction"><span>Total destruction</span><div id="battle-stars" class="battle-stars" data-stars="${b.stars}">${'★'.repeat(b.stars)}<span>${'★'.repeat(3 - b.stars)}</span></div><b id="destruction-value">${b.destruction}%</b><div class="destruction-bar"><i id="destruction-fill" style="transform:${fillScale(b.destruction)}"></i><span class="notch half" style="left:50%"></span><span class="notch full" style="left:100%"></span></div><small>★ 50% <i>·</i> ★ Town Hall <i>·</i> ★ 100%</small></div>
  ${m.practiceGuide && !m.replay ? this.practiceGuideBanner() : !b.started && !m.replay ? `<div class="prep-banner">${icon('Timer', 20)}<div><b>Scout the base</b><small role="status"></small></div></div>` : ''}
   ${
     m.replay
       ? this.replayControls()
-      : `<div class="battle-bottom"><button class="game-btn red end-battle" data-action="${b.started ? 'surrender' : 'home'}">${icon('Flag', 23)} ${b.started ? 'Surrender' : 'Return home'}</button>${button('battle-speed', `${icon('FastForward', 20)} <b>${m.battleSpeed}×</b>`, `game-btn ${m.battleSpeed > 1 ? 'green' : 'stone'} battle-speed`, `aria-label="Battle speed ${m.battleSpeed}×, tap to change"`)}<div class="deploy-tray"><div class="deploy-label">${this.deployHint()}</div><div class="army-tray">${this.battleHeroCards()}${TROOP_ORDER.filter(
+      : `<div class="battle-bottom"><button id="battle-exit" class="game-btn red end-battle" data-action="${b.started ? 'surrender' : 'home'}">${icon('Flag', 23)} ${b.started ? 'Surrender' : 'Return home'}</button>${button('battle-speed', `${icon('FastForward', 20)} <b>${m.battleSpeed}×</b>`, `game-btn ${m.battleSpeed > 1 ? 'green' : 'stone'} battle-speed`, `aria-label="Battle speed ${m.battleSpeed}×, tap to change"`)}<div class="deploy-tray"><div class="deploy-label">${this.deployHint()}</div><div class="army-tray">${this.battleHeroCards()}${TROOP_ORDER.filter(
           (k) => b.carriedArmy[k] > 0,
         )
           .map((k) =>
@@ -6119,6 +6131,7 @@ export class HUD {
       replayTime: one('#replay-time'),
       replayProgress: one<HTMLInputElement>('#replay-progress'),
       battleTimer: one('#battle-timer'),
+      battlePhase: one('.battle-clock > span'),
       destructionValue: one('#destruction-value'),
       destructionFill: one('#destruction-fill'),
       battleStars: one('#battle-stars'),
@@ -6371,6 +6384,8 @@ export class HUD {
     }
     const b = m.battle;
     if (b) {
+      setText(refs.battlePhase, battleClockLabel(b));
+      refs.battlePhase?.parentElement?.classList.toggle('prep', !b.started);
       setText(
         refs.battleTimer,
         timedBattle(b) ? clock(b.started ? BATTLE_SECONDS - b.elapsed : b.prep) : '∞',
