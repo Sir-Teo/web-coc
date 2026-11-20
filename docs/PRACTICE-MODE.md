@@ -60,6 +60,14 @@ A level with no star yet starts with its guide. On a level with a star, the scou
 - **Abilities.** A `UseAbility` step waits for the hero's ability.
 - **Moving on.** A step ends once its units are down, or when none of its unit is left to deploy. An ability step also ends when its hero cannot use the ability. When the last step ends, the player plays on freely.
 
+Whirl Power’s pinned opener calls for four Earthquakes at source tile (22, 27),
+with a forced 1.5-tile radius and exact placement, then a 2.5-second wait and a
+Hog Rider. Web CoC now uses the same boundary for accepting taps as it does
+for drawing the ring. The previous half-tile allowance consumed an
+Earthquake for a tap 1.8 tiles away. Accepted casts still snap to the center,
+local tile (24, 29). Native camera, touch feedback, and any client-specific
+edge tolerance remain unverified.
+
 An `ObjectGID` is not a row index: it is the instance id the level file gives the building (`500000200` in Hog Rush is a level 7 Cannon at 35, 20), resolved by the importer to the building's tile. A step's spot is the client's tile plus `BUILD_MIN`, as for the buildings, and its radius is `Radius` in hundredths of a tile.
 
 The guide sits beside the battle, not in its replay setup. A frozen moment is simply not simulated, and a slowed one is recorded at its slowed length, so a recording holds exactly the time fought and replays without the guide.

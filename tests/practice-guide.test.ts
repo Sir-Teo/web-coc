@@ -115,6 +115,42 @@ describe('Practice Mode guide', () => {
     expect(m.deploy(2, 2)).toBe(true);
   });
 
+  it('enforces Whirl Power’s marked radius, four casts and wait before the Hog Rider', () => {
+    const m = village();
+    const toasts: string[] = [];
+    m.onToast = (message) => toasts.push(message);
+    m.startCampaign(152);
+    const b = m.battle!;
+    const spot = { x: 24, y: 29 };
+    expect(m.practiceGuide?.spot).toEqual(spot);
+    expect(m.guideStep).toMatchObject({ count: 4, radius: 1.5, forceLocation: true, exact: true });
+    expect(m.activeSpell).toBe('earthquake');
+    const count = b.spells.earthquake;
+
+    for (const offset of [3, 2.4, 1.8])
+      expect(m.castSpell(spot.x + offset, spot.y)).toBe(false);
+    expect(b.spells.earthquake).toBe(count);
+    expect(b.started).toBe(false);
+    for (let placed = 1; placed <= 3; placed++) {
+      expect(m.castSpell(spot.x + 0.4, spot.y)).toBe(true);
+      expect(m.guideStep?.name).toBe('TH8_Gowiva_Earthquake');
+      expect(m.practiceGuide?.placed).toBe(placed);
+    }
+    expect(m.castSpell(spot.x + 1.5, spot.y)).toBe(true);
+    expect(b.spells.earthquake).toBe(count - 4);
+    expect(m.guideStep?.name).toBe('Wait_2500ms');
+    m.activeTroop = 'hogrider';
+    expect(b.remaining.hogrider).toBeGreaterThan(0);
+    expect(m.deploy(2, 2)).toBe(false);
+    expect(toasts.at(-1)).toBe('Wait for the guide’s next step.');
+    for (let i = 0; i < 49; i++) m.step(0.05);
+    expect(m.guideStep?.name).toBe('Wait_2500ms');
+    m.step(0.05);
+    m.step(0.05);
+    expect(m.guideStep?.name).toBe('TH8_Gowiva_HogRider');
+    expect(m.activeTroop).toBe('hogrider');
+  });
+
   it('plays every fielded level’s guide through to its end', { timeout: 120_000 }, () => {
     for (const level of PRACTICE_LEVELS.filter((l) => l.stage)) {
       const m = village();

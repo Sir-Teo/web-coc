@@ -6370,7 +6370,7 @@ export class GameModel {
     }
     const spot = this.practiceGuide?.spot;
     if (!own || !spot) return { x, y };
-    if (step.forceLocation && Math.hypot(x - spot.x, y - spot.y) > step.radius + 0.5) {
+    if (step.forceLocation && Math.hypot(x - spot.x, y - spot.y) > step.radius) {
       this.notify('Deploy inside the marked circle.');
       return null;
     }
