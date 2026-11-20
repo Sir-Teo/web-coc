@@ -1590,7 +1590,8 @@ export class HUD {
         this.model.cycleSpellTowerWeapon();
         break;
       case 'xbow-mode':
-        this.model.toggleXbowMode();
+        if (arg === 'ground' || arg === 'both') m.toggleXbowMode(arg);
+        else if (!arg) m.toggleXbowMode();
         break;
       case 'merge': {
         const [kind, id] = arg.split('.');
@@ -5471,6 +5472,22 @@ export class HUD {
     const b = this.model.battle!;
     return `<div class="modal-body confirm-body"><p class="confirm-line">${icon('TriangleAlert', 34)} You are at <b>${b.destruction}% destruction</b> with <b>${b.stars} ${b.stars === 1 ? 'star' : 'stars'}</b>. ${b.practice ? 'Ending now records this practice result without spending your army.' : 'Ending now keeps that result and any loot already taken.'}</p><div class="confirm-actions">${button('close', 'Keep fighting', 'game-btn stone')}${button('end', `${icon('Flag', 18)} End battle`, 'game-btn red')}</div></div>`;
   }
+  private xbowModeOptions(b: Building) {
+    return `<div class="xbow-mode-options" role="group" aria-label="X-Bow targeting">${(
+      [
+        ['ground', 'Ground only'],
+        ['both', 'Ground & air'],
+      ] as const
+    ).map(([mode, label]) => {
+      const active = mode === (b.xbowMode ?? 'ground');
+      return button(
+        `xbow-mode:${mode}`,
+        `<span>${label}</span><small>${xbowRange(mode)} tiles</small>`,
+        `game-btn ${active ? 'green' : 'stone'}`,
+        `aria-pressed="${active}"`,
+      );
+    }).join('')}</div>`;
+  }
   private info() {
     const m = this.model;
     const b = m.state.buildings.find((v) => v.id === m.selected);
@@ -5496,6 +5513,7 @@ export class HUD {
             ).map((k) => SPELLS[k].name)
           : [];
     return `<div class="modal-body info-body"><div class="info-hero"><img src="${hudAsset(b.kind, b.level, b.skeletonMode, b.xbowMode, b.infernoMode, b.spellMode ?? b.spellTowerWeapon, b.gearMode)}" alt=""><div><span class="eyebrow">${d.category.toUpperCase()} · LEVEL ${b.level} OF ${d.maxLevel}</span><h2>${d.name}</h2><p>${d.description}</p>${b.kind === 'skeletontrap' ? `<p class="trap-note"><b>${b.skeletonMode === 'air' ? 'Air mode' : 'Ground mode'}</b> · Skeletons pursue ${b.skeletonMode === 'air' ? 'flying' : 'ground'} troops.</p>` : ''}${d.trap ? '<p class="trap-note">Hidden from attackers until triggered. One use per attack; automatically armed for the next practice. Traps do not count toward destruction.</p>' : ''}<div class="info-levels">${Array.from({ length: d.maxLevel }, (_, i) => `<i class="${i < b.level ? 'on' : ''}"></i>`).join('')}</div></div></div>
+ ${b.kind === 'xbow' && !b.constructing ? this.xbowModeOptions(b) : ''}
  <table class="info-table"><thead><tr><th>Stat</th><th>Level ${b.level}</th><th>${capped ? 'Max' : `Level ${b.level + 1}`}</th></tr></thead><tbody>${now
    .map(([ic, label, value], i) => {
      const after = next[i]?.[2];

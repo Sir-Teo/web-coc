@@ -3592,12 +3592,15 @@ export class GameModel {
     this.changed();
     return true;
   }
-  toggleXbowMode() {
+  toggleXbowMode(mode?: XbowMode) {
     if (this.battle || this.placement || this.wallMove) return false;
     const b = this.state.buildings.find((v) => v.id === this.selected);
     if (!b || b.kind !== 'xbow' || b.constructing || !validXbowMode(b.xbowMode)) return false;
+    const current = b.xbowMode ?? 'ground';
+    const next = mode ?? (current === 'both' ? 'ground' : 'both');
+    if (next === current) return false;
     if (this.editing) this.recordPositions();
-    b.xbowMode = b.xbowMode === 'both' ? 'ground' : 'both';
+    b.xbowMode = next;
     this.onEffect({ type: 'xbow-mode', sourceId: b.id, x: b.x + 1.5, y: b.y + 1.5 });
     this.changed();
     return true;

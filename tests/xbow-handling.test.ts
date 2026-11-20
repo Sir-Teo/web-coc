@@ -72,6 +72,16 @@ it('emits a mode cue only for an accepted home X-Bow toggle', () => {
   expect(effects).toEqual([]);
 });
 
+it('selects a mode without toggling again or replaying its cue on a repeated selection', () => {
+  const { model, effects } = village();
+  model.selected = 3;
+  expect(model.toggleXbowMode('ground')).toBe(false);
+  expect(model.toggleXbowMode('both')).toBe(true);
+  expect(model.toggleXbowMode('both')).toBe(false);
+  expect(model.state.buildings.find(({ id }) => id === 3)?.xbowMode).toBe('both');
+  expect(effects.map(({ type }) => type)).toEqual(['xbow-mode']);
+});
+
 it('keeps the original effect records and the building’s three home effect names', async () => {
   const { readFile } = await import('node:fs/promises');
   const source = JSON.parse(await readFile('reference/xbow/native.json', 'utf8'));

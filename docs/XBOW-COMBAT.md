@@ -12,6 +12,8 @@ The home-village X-Bow uses the pinned client 18.400.21 values and artwork docum
 
 The X-Bow unlocks at Town Hall 9, where the shop sells **two** and the source gates levels 1–3; the ladder reaches four X-Bows at level 13 by Town Hall 18. See [TOWNHALL-TIERS.md](TOWNHALL-TIERS.md). A newly built X-Bow stores no mode and defends the ground layer until it is switched. The renderer and combat support later levels for imported/replayed battles and native campaign adaptation. Dark Elixir rewards and active-mode adaptation are separate work.
 
+Building Details lets players compare and select both targeting modes before a practice raid. The mode selector and exact range labels are web controls. The pinned rows establish the two ranges and eligible layers. The original control layout, mode-change restrictions, and initial default remain unverified.
+
 ## Presentation
 
 The live scene retains original polygon strips, complete affine transforms, multiply/add colors, texture coordinates and additive layers through `NativeMeshView`. Independent `turret` and `ammo` controls select the source's held directional frames. The empty presentation hides the named ammunition instance while retaining the armed base and turret. Upgrade exports provide the construction/upgrade presentation. A transparent preview image keeps selection bounds and becomes the existing stone ruin when destroyed.
