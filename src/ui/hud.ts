@@ -1,3 +1,4 @@
+import { siegeCargoCapacity, type SiegeCargoEntry } from '../game/siege-cargo';
 import { armyFromLink, armyLink, decodeSharedArmy } from '../game/army-share';
 import { flameFlingerBurstStats } from '../game/native-flame-flinger';
 import { troopLauncherStats } from '../game/native-troop-launcher';
@@ -282,6 +283,7 @@ type Panel =
   | 'research'
   | 'campaign'
   | 'campaign-scout'
+  | 'practice-cargo'
   | 'settings'
   | 'import-confirm'
   | 'buildings'
@@ -2220,6 +2222,55 @@ export class HUD {
         }
         this.render();
         break;
+      case 'practice-cargo':
+        if (m.battle || !m.siegeCount || !m.clanCastle) break;
+        this.practiceCargo = [];
+        this.show('practice-cargo');
+        break;
+      case 'practice-cargo-back':
+        this.show('campaign');
+        this.modalEl.querySelector<HTMLElement>('[data-action="practice-cargo"]')?.focus();
+        break;
+      case 'practice-cargo-add':
+      case 'practice-cargo-remove': {
+        if (this.panel !== 'practice-cargo' || m.battle) break;
+        const kind = arg as TroopKind;
+        if (!this.practiceCargoTroops().includes(kind)) break;
+        const entry = this.practiceCargo.find((troop) => troop.kind === kind);
+        if (verb === 'practice-cargo-add') {
+          if (
+            this.practiceCargoHousing() + TROOPS[kind].space >
+            siegeCargoCapacity(m.clanCastle?.level ?? 0)
+          )
+            break;
+          if (entry) entry.count++;
+          else this.practiceCargo.push({ kind, level: m.troopLevel(kind), count: 1 });
+        } else if (entry && --entry.count === 0) {
+          this.practiceCargo = this.practiceCargo.filter((troop) => troop !== entry);
+        }
+        this.render();
+        break;
+      }
+      case 'practice-cargo-start':
+        if (this.panel !== 'practice-cargo' || !this.practiceCargo.length) break;
+        // The existing practice entry point snapshots and validates the draft before battle.
+        m.startBattle(
+          0,
+          true,
+          'valley-v1',
+          undefined,
+          this.practiceCargo.map((entry) => ({ ...entry, level: m.troopLevel(entry.kind) })),
+        );
+        if (!m.battle) {
+          m.notify('Check your Clan Castle, troop housing and prepared siege.');
+          break;
+        }
+        this.practiceCargo = [];
+        this.panel = null;
+        this.drawerPanel = null;
+        this.resultShown = false;
+        this.render();
+        break;
       case 'practice':
         m.startBattle(0, true);
         if (m.battle) {
@@ -2247,7 +2298,14 @@ export class HUD {
         // Another ladder match meets a new opponent, not the one just fought.
         if (battle.ladder) m.startLadder();
         else if (battle.fixedArmy) m.startCampaign(battle.index, verb === 'raid-again-guided');
-        else m.startBattle(battle.index, battle.practice, battle.catalog);
+        else
+          m.startBattle(
+            battle.index,
+            battle.practice,
+            battle.catalog,
+            undefined,
+            battle.siegeCargo?.troops,
+          );
         this.resultShown = false;
         this.panel = null;
         this.render();
@@ -4782,6 +4840,7 @@ export class HUD {
       research: 'The laboratory',
       campaign: 'The Goblin Valley',
       'campaign-scout': 'Scout village',
+      'practice-cargo': 'Practice siege cargo',
       settings: 'Settings',
       'import-confirm': 'Replace this village?',
       buildings: 'Buildings',
@@ -4815,6 +4874,7 @@ export class HUD {
       research: 'A little elixir. A stronger army.',
       campaign: 'Beyond the forest, a whole valley is waiting.',
       'campaign-scout': 'Study the layout before you attack.',
+      'practice-cargo': 'Local loadout for one practice battle. Your village army is kept.',
       settings: 'Make yourself at home.',
       'import-confirm': 'Check the backup before it replaces your village.',
       buildings: 'Every building in your village, for keyboard and screen reader play.',
@@ -4885,7 +4945,9 @@ export class HUD {
                                                               ? this.layoutPanel()
                                                               : this.panel === 'surrender'
                                                                 ? this.surrender()
-                                                                : this.help();
+                                                                : this.panel === 'practice-cargo'
+                                                                  ? this.practiceCargoPanel()
+                                                                  : this.help();
     return `<div class="modal-backdrop"><section class="modal ${this.panel === 'campaign' ? 'campaign-modal' : ''} ${this.panel === 'surrender' ? 'small-modal' : this.panel === 'blacksmith' ? 'blacksmith-modal' : ''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header class="modal-header"><div><small>CROWN & CLAN</small><h1 id="modal-title">${titles[this.panel!]}</h1><p>${subtitles[this.panel!]}</p></div><button class="square-btn small close-btn" data-action="close" aria-label="Close dialog">${icon('X', 25)}</button></header>${content}</section></div>`;
   }
   private composition(
@@ -5532,6 +5594,25 @@ export class HUD {
       : button('campaign', 'Back to campaign', 'game-btn stone');
     return `<div class="modal-body campaign-scout"><img class="campaign-scout-map" src="${campaignMapSource(i)}" alt="${html(v.name)} base layout" width="320" height="320"><div class="campaign-scout-info"><span class="eyebrow">STAGE ${v.stage}${v.family === 'forged' ? ' · FAN-MADE' : ''}${v.recommendedTownHall ? ` · SUGGESTED TOWN HALL ${v.recommendedTownHall}` : ''}</span><h2>${html(v.name)}</h2><p class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</p>${drill ? this.practiceArmy(drill, !(m.state.nativeCampaign?.stars[i] ?? 0)) : ''}<h3>Defenses on show</h3>${defenses.length ? `<ul class="campaign-scout-defenses">${defenses.map(([name, count]) => `<li><b>${count}×</b> ${html(name)}</li>`).join('')}</ul>` : '<p>No defenses in sight.</p>'}<p class="campaign-scout-note">Traps and hidden defenses are not shown until they trigger.</p><div class="confirm-actions">${back}${drill?.steps.length && !locked && (m.state.nativeCampaign?.stars[i] ?? 0) ? button(`attack-guided:${i}`, `${icon('Info', 17)} Guided attack`, 'game-btn blue') : ''}${button(`attack:${i}`, attackLabel, 'game-btn orange', locked ? 'disabled' : '')}</div></div></div>`;
   }
+  private practiceCargo: SiegeCargoEntry[] = [];
+  private practiceCargoTroops() {
+    return TROOP_ORDER.filter(
+      (kind) => !isSiege(kind) && !superOriginal(kind) && this.model.troopUnlocked(kind),
+    );
+  }
+  private practiceCargoHousing() {
+    return this.practiceCargo.reduce((sum, { kind, count }) => sum + TROOPS[kind].space * count, 0);
+  }
+  private practiceCargoPanel() {
+    const capacity = siegeCargoCapacity(this.model.clanCastle?.level ?? 0);
+    const housing = this.practiceCargoHousing();
+    const rows = this.practiceCargoTroops().map((kind) => {
+      const { name, space } = TROOPS[kind];
+      const count = this.practiceCargo.find((entry) => entry.kind === kind)?.count ?? 0;
+      return `<li><img src="${hudAsset(kind)}" alt=""><span><b>${name}</b><small>Level ${this.model.troopLevel(kind)} · ${space} housing</small></span>${button(`practice-cargo-remove:${kind}`, '−', 'game-btn stone', `aria-label="Remove ${name}" ${count ? '' : 'disabled'}`)}<output aria-label="${name} in cargo">${count}</output>${button(`practice-cargo-add:${kind}`, '+', 'game-btn green', `aria-label="Add ${name}" ${housing + space <= capacity ? '' : 'disabled'}`)}</li>`;
+    });
+    return `<div class="modal-body practice-cargo-body"><p>Deploy a siege to carry these troops. End the siege to release them, or wait for it to fall.</p><p role="status" class="practice-cargo-capacity">${housing} / ${capacity} troop housing</p><ul class="practice-cargo-rows">${rows.join('')}</ul></div><footer class="modal-footer practice-cargo-footer">${button('practice-cargo-back', 'Back', 'game-btn stone')}${button('practice-cargo-start', 'Start practice', 'game-btn green', housing && housing <= capacity && this.model.siegeCount ? '' : 'disabled')}</footer>`;
+  }
   /** Campaign list filter and position; kept between visits. */
   private campaignFilter: 'all' | 'open' | 'stars' | 'done' = 'all';
   private campaignScroll: number | null = null;
@@ -5570,7 +5651,7 @@ export class HUD {
     const prepare = armyReady
       ? ''
       : button('campaign-army', `${icon('Tent', 17)} Prepare army`, 'game-btn green');
-    return `<div class="campaign-summary">${prepare}${button('practice', `${icon('ShieldCheck', 17)} Practice your defense`, 'game-btn blue', armyReady ? '' : 'disabled')}${button('ladder', `${icon('Trophy', 17)} Ladder match <small>+${ladder.win} / −${ladder.loss}</small>`, 'game-btn orange', `${armyReady ? '' : 'disabled'} aria-label="Ladder match: win up to ${ladder.win} trophies, lose ${ladder.loss}"`)}${icon('Map', 23)} <span>${NATIVE_CAMPAIGN.length} villages · ${forged} fan-made</span><b>${stars.reduce((a, b) => a + b, 0)} / ${NATIVE_CAMPAIGN.length * 3} ${icon('Star', 17)}</b></div><div class="campaign-nav">${next === null ? '' : button('campaign-continue', `${icon('ArrowRight', 17)} Continue · ${html(NATIVE_CAMPAIGN[next].name)}`, 'game-btn orange')}<select id="campaign-filter" aria-label="Show villages">${option('all', 'All villages')}${option('open', 'Not yet won')}${option('stars', 'Missing stars')}${option('done', 'Three stars')}</select><select id="campaign-section" aria-label="Jump to">${'<option value="">Jump to…</option>'}${sections.map(([family, i]) => `<option value="${i}">${sectionName[family]} · ${NATIVE_CAMPAIGN[i].stage}+</option>`).join('')}</select></div><p class="campaign-rules">Campaign villages: no time limit · no trophy changes · loot does not replenish</p><div class="modal-body campaign-list">${NATIVE_CAMPAIGN.map(
+    return `<div class="campaign-summary">${prepare}${button('practice', `${icon('ShieldCheck', 17)} Practice your defense`, 'game-btn blue', armyReady ? '' : 'disabled')}${this.model.siegeCount && this.model.clanCastle ? button('practice-cargo', 'Practice siege cargo', 'game-btn blue') : ''}${button('ladder', `${icon('Trophy', 17)} Ladder match <small>+${ladder.win} / −${ladder.loss}</small>`, 'game-btn orange', `${armyReady ? '' : 'disabled'} aria-label="Ladder match: win up to ${ladder.win} trophies, lose ${ladder.loss}"`)}${icon('Map', 23)} <span>${NATIVE_CAMPAIGN.length} villages · ${forged} fan-made</span><b>${stars.reduce((a, b) => a + b, 0)} / ${NATIVE_CAMPAIGN.length * 3} ${icon('Star', 17)}</b></div><div class="campaign-nav">${next === null ? '' : button('campaign-continue', `${icon('ArrowRight', 17)} Continue · ${html(NATIVE_CAMPAIGN[next].name)}`, 'game-btn orange')}<select id="campaign-filter" aria-label="Show villages">${option('all', 'All villages')}${option('open', 'Not yet won')}${option('stars', 'Missing stars')}${option('done', 'Three stars')}</select><select id="campaign-section" aria-label="Jump to">${'<option value="">Jump to…</option>'}${sections.map(([family, i]) => `<option value="${i}">${sectionName[family]} · ${NATIVE_CAMPAIGN[i].stage}+</option>`).join('')}</select></div><p class="campaign-rules">Campaign villages: no time limit · no trophy changes · loot does not replenish</p><div class="modal-body campaign-list">${NATIVE_CAMPAIGN.map(
       (v, i) => {
         if (!shown(i)) return '';
         const loot = this.model.campaignLoot(i, 'goblin-v1');

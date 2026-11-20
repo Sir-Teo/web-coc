@@ -7182,3 +7182,49 @@ h3 {
 .builder-foot .game-btn {
   min-height: 44px;
 }
+
+.practice-cargo-body p {
+  margin: 0 0 10px;
+}
+.practice-cargo-capacity {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  padding: 8px;
+  background: #fff5db;
+  font-weight: 700;
+}
+.practice-cargo-rows {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.practice-cargo-rows li {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 44px 2ch 44px;
+  align-items: center;
+  gap: 6px;
+}
+.practice-cargo-rows img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+.practice-cargo-rows small {
+  display: block;
+}
+.practice-cargo-rows .game-btn,
+.practice-cargo-footer .game-btn {
+  min-height: 44px;
+}
+.practice-cargo-rows .game-btn {
+  padding: 0;
+}
+.practice-cargo-rows output {
+  text-align: center;
+}
+.practice-cargo-footer {
+  justify-content: space-between;
+}

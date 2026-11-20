@@ -19,18 +19,20 @@ export interface SiegeCargoSetup {
 
 const troopIds = new Map(Object.entries(source.troops).map(([id, name]) => [name, Number(id)]));
 
+export function siegeCargoCapacity(castleLevel: number) {
+  return Number.isInteger(castleLevel) &&
+    castleLevel >= 1 &&
+    castleLevel <= nativeLevelCount('buildings', 'Clan Castle')
+    ? num(nativeRow('buildings', 'Clan Castle', castleLevel), 'HousingSpace')
+    : 0;
+}
+
 /** Castle capacity uses pinned troop housing. Levels are local combat tiers, not donation caps. */
 export function prepareSiegeCargo(value: unknown): SiegeCargoSetup | undefined {
   if (!value || typeof value !== 'object') return;
   const { castleLevel, troops } = value as SiegeCargoSetup;
-  if (
-    !Number.isInteger(castleLevel) ||
-    castleLevel < 1 ||
-    castleLevel > nativeLevelCount('buildings', 'Clan Castle') ||
-    !Array.isArray(troops)
-  )
-    return;
-  const capacity = num(nativeRow('buildings', 'Clan Castle', castleLevel), 'HousingSpace');
+  const capacity = siegeCargoCapacity(castleLevel);
+  if (!capacity || !Array.isArray(troops)) return;
   if (!troops.length || troops.length > capacity) return;
   const ordered: SiegeCargoEntry[] = [];
   const seen = new Set<string>();
