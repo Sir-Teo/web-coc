@@ -150,7 +150,7 @@ it('reconciles every reduced wall tier at the saved damage fraction without chan
   expect(validateSave(reloaded.state)).toBe(true);
 });
 
-it('TH5 can fund level 4 to 5 walls and same-level selection with elixir, but lower pieces block a mixed batch', () => {
+it('TH5 uses elixir storage for selection and requires funds and eligible levels to upgrade', () => {
   const m = new GameModel();
   m.townhall!.level = 5;
   const walls = [
@@ -161,12 +161,18 @@ it('TH5 can fund level 4 to 5 walls and same-level selection with elixir, but lo
   m.selected = walls[0].id;
   m.state.gold = 0;
   m.state.elixir = 39999;
-  expect(m.canAdjustWallSelection(1)).toBe(false);
-  m.state.elixir++;
+  expect(m.resourceCap('elixir')).toBeGreaterThanOrEqual(40000);
   expect(m.adjustWallSelection(1)).toBe(true);
-  expect(m.selectedWalls.map((b) => b.id)).toEqual(walls.map((b) => b.id));
-  walls[1].level = 3;
   const ids = walls.map((b) => b.id);
+  expect(m.selectedWalls.map((b) => b.id)).toEqual(ids);
+  expect(m.upgradeWalls(ids, 'elixir')).toBe(false);
+  expect(m.shortfallOffer).toMatchObject({ resource: 'elixir', cost: 40000, missing: 1 });
+  m.dismissShortfall();
+  expect(m.state.elixir).toBe(39999);
+  expect(walls.map((b) => b.level)).toEqual([4, 4]);
+
+  m.state.elixir++;
+  walls[1].level = 3;
   expect(m.upgradeWalls(ids, 'elixir')).toBe(false);
   expect(m.state.elixir).toBe(40000);
   expect(walls[0].level).toBe(4);
