@@ -144,3 +144,29 @@ function unitAtJump(kind: 'wallwrecker' | 'swordsman', version: number, jump: bo
     },
   });
 }
+
+it.each(['wallbreaker', 'superwallbreaker'] as const)(
+  '%s selects the next protected wall beyond an active Jump field',
+  (kind) => {
+    const run = (version: number) =>
+      nativeDirectBattle(kind, kind === 'wallbreaker' ? 7 : 1, version, 8, 'storage', { jump: 1 }, {
+        layout: [
+          makeBuilding(1, 'townhall', 19, 10, 12),
+          ...Array.from({ length: 15 }, (_, n) => makeBuilding(10 + n, 'wall', 11, 4 + n, 12)),
+          ...Array.from({ length: 15 }, (_, n) => makeBuilding(30 + n, 'wall', 16, 4 + n, 12)),
+        ],
+        beforeDeploy({ model, battle, step }) {
+          model.activeSpell = 'jump';
+          expect(model.castSpell(11.5, 11.5)).toBe(true);
+          while (battle.elapsed < 1.55) step();
+        },
+      });
+    for (const [version, expectedX] of [[262, 11], [REPLAY_VERSION, 16]] as const) {
+      const raid = run(version);
+      raid.until(1.8);
+      const target = raid.battle.buildings.find(({ id }) => id === raid.unit.target);
+      expect(target).toMatchObject({ kind: 'wall', x: expectedX });
+      expect(jumpWalls(raid.battle).has(target!.id)).toBe(expectedX === 11);
+    }
+  },
+);

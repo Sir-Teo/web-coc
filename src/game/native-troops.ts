@@ -587,10 +587,13 @@ function chooseTarget(ctx: NativeTroopContext, u: Unit, base: NativeUnitStats) {
     if (hall) return hall;
   }
   if (s.preferredClass === 'Wall') {
+    const ignoresJumpWalls =
+      battle.nativeJumpWallBreakerTargets &&
+      (u.kind === 'wallbreaker' || u.kind === 'superwallbreaker');
     const breach = breachTarget(
       u,
-      ctx.buildings,
-      !!ctx.battle.nativeSubtiles,
+      ignoresJumpWalls ? (ctx.routableBuildings ?? ctx.buildings) : ctx.buildings,
+      !!battle.nativeSubtiles,
       battleMapSize(ctx.battle),
     );
     if (breach) return breach;

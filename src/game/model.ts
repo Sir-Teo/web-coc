@@ -952,6 +952,8 @@ export interface Battle {
   nativeLateProjectileProtection?: true;
   /** Version 262: siege machines route against walls even during a Jump Spell. */
   nativeJumpSiegeImmunity?: true;
+  /** Version 263: Wall Breakers choose breaches on routes opened by Jump. */
+  nativeJumpWallBreakerTargets?: true;
   /** Version 100: native healing resolves through source projectile travel and chain hops. */
   nativeHealingProjectiles?: true;
   nativeHealingTotem?: true;
