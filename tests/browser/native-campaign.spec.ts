@@ -86,6 +86,9 @@ for (const viewport of [
       animations: 'disabled',
       path: `output/playtest/native-payback-${viewport.width}-${browserName}.png`,
     });
+    // An unselected battlefield tap inspects the base during scouting.
+    await page.waitForFunction(() => !window.__game.scene.scoutingArtNotice());
+    await page.locator('[data-action="troop:swordsman"]').click();
     for (let i = 0; i < 5; i++) {
       await page.mouse.click(native.point.x, native.point.y);
       await page.waitForTimeout(400);
