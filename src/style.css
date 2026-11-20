@@ -3860,7 +3860,8 @@ h3 {
 }
 @media (max-width: 700px) {
   .drawer-head {
-    padding: 8px 50px 6px 14px;
+    padding: 8px max(50px, calc(48px + env(safe-area-inset-right))) 6px
+      max(14px, env(safe-area-inset-left));
     gap: 10px;
   }
   .drawer-head h2 {

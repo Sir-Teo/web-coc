@@ -58,10 +58,9 @@ for (const [name, viewport, insets] of CASES)
     // The campaign list is taller than any phone, so its dialog fills the allowed height.
     await page.locator('.attack-btn').tap();
     await expect(page.locator('.modal .campaign-list')).toBeVisible();
-    expect(await intrusion(page, ['.modal', '.modal [data-action="close"]'], insets)).toEqual({
-      '.modal': 0,
-      '.modal [data-action="close"]': 0,
-    });
+    await expect
+      .poll(() => intrusion(page, ['.modal', '.modal [data-action="close"]'], insets))
+      .toEqual({ '.modal': 0, '.modal [data-action="close"]': 0 });
     // Still closable with a finger.
     await page.locator('.modal [data-action="close"]').tap();
     await expect(page.locator('.modal')).toHaveCount(0);
@@ -73,8 +72,36 @@ test('without insets, dialogs keep their previous size', async ({ page, browserN
   await boot(page);
   await page.locator('.attack-btn').tap();
   await expect(page.locator('.modal .campaign-list')).toBeVisible();
-  const box = (await page.locator('.modal').boundingBox())!;
   // 12 pixels of backdrop on every side, as before.
-  expect(Math.round(box.y)).toBe(12);
-  expect(Math.round(box.height)).toBe(844 - 24);
+  await expect
+    .poll(async () => {
+      const box = (await page.locator('.modal').boundingBox())!;
+      return [Math.round(box.y), Math.round(box.height)];
+    })
+    .toEqual([12, 844 - 24]);
+});
+
+test('short landscape: Shop tabs scroll clear of the close button and remain tappable', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium', 'Safe-area emulation requires CDP.');
+  await page.setViewportSize({ width: 568, height: 320 });
+  const insets = { top: 0, right: 59, bottom: 21, left: 59 };
+  await emulateInsets(page, insets);
+  await boot(page);
+  await page.locator('.shop-btn').tap();
+  const tabs = page.locator('.drawer-head .shop-tabs');
+  const close = page.locator('.drawer-head [data-action="close-drawer"]');
+  const treasure = tabs.locator('[data-action="tab:Treasure"]');
+  const tabBox = (await tabs.boundingBox())!;
+  const closeBox = (await close.boundingBox())!;
+  expect(tabBox.x).toBeGreaterThanOrEqual(insets.left);
+  expect(tabBox.x + tabBox.width).toBeLessThanOrEqual(closeBox.x);
+  await treasure.scrollIntoViewIfNeeded();
+  const box = (await treasure.boundingBox())!;
+  await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(treasure).toHaveAttribute('aria-selected', 'true');
+  await close.tap();
+  await expect(page.locator('.drawer-sheet')).toHaveCount(0);
 });
