@@ -202,3 +202,24 @@ test('compact first-run coaching leaves Collect, Shop and Skip actionable', asyn
     await expect(page.locator('.coach-banner')).toHaveCount(0);
   }
 });
+
+test.describe('short landscape onboarding', () => {
+  test.use({ viewport: { width: 568, height: 320 }, isMobile: true, hasTouch: true });
+
+  test('the opening coach leaves Battle Log reachable by touch', async ({ page }) => {
+    await page.goto('/?lazyart');
+    await expect(page.locator('#loading')).toBeHidden({ timeout: 30000 });
+    const coach = page.locator('.coach-banner');
+    await expect(coach).toContainText('Goblins are raiding');
+    await page.getByRole('button', { name: 'Settings', exact: true }).tap();
+    await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible();
+    await page.getByRole('button', { name: 'Close dialog' }).tap();
+    const log = page.getByRole('button', { name: 'Battle log', exact: true });
+    const box = (await log.boundingBox())!;
+    await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+    await expect(page.locator('.battle-log-body')).toBeVisible();
+    await page.getByRole('button', { name: 'Close dialog' }).tap();
+    await coach.getByRole('button', { name: 'Watch' }).tap();
+    await expect(page.getByRole('region', { name: 'Goblin raid' })).toBeVisible();
+  });
+});
