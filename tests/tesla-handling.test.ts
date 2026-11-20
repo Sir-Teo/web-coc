@@ -116,3 +116,36 @@ it('uses original pickup/drop samples at 80% volume, normal pitch and three gras
     expect(teslaHandlingPoses(3, 9, kind, 10, 10.14, ground)).toEqual(poses);
   }
 });
+
+it('rolls back an interrupted touch drag without spending undo history', () => {
+  const { m } = village();
+  m.beginEdit();
+  m.beginDrag();
+  expect(m.dragTo(3, 7, 10)).toBe(true);
+  m.endDrag(true);
+  expect(m.state.buildings.find((b) => b.id === 3)).toMatchObject({ x: 6, y: 10 });
+  expect(m.canUndo).toBe(false);
+});
+
+it('rejects a blocked release and only records a successful drag once', () => {
+  const { m } = village();
+  const tesla = m.state.buildings.find((b) => b.id === 3)!;
+  m.beginEdit();
+  m.beginDrag();
+  expect(m.dragTo(3, 7, 10)).toBe(true);
+  expect(m.dragTo(3, 20, 20)).toBe(false);
+  m.endDrag();
+  expect(tesla.x).toBe(6);
+  expect(m.canUndo).toBe(false);
+
+  m.beginDrag();
+  expect(m.dragTo(3, 7, 10)).toBe(true);
+  expect(m.dragTo(3, 8, 10)).toBe(true);
+  m.endDrag();
+  expect(tesla.x).toBe(8);
+  m.undo();
+  expect(tesla.x).toBe(6);
+  expect(m.canUndo).toBe(false);
+  m.redo();
+  expect(tesla.x).toBe(8);
+});

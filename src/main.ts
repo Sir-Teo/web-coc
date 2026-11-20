@@ -157,6 +157,11 @@ async function boot() {
     const savesInFlight = new Set<number>();
     let lastAttemptedRevision = -1;
     const persist = async (force = false) => {
+      if (model.hasBuildingDrag) {
+        // A live preview must never become a saved location.
+        if (!force) return;
+        model.endDrag(true);
+      }
       const revision = model.revision;
       if (
         !scene.ready ||
@@ -223,6 +228,7 @@ async function boot() {
       audio.samples.stopAll();
       stopEconomyTimer();
       if (scene.ready) {
+        model.endDrag(true);
         model.tick(Date.now());
         // A raid in progress has already spent its troops; settle it before the state is stored.
         model.suspendBattle();

@@ -1446,6 +1446,13 @@ export class VillageScene extends Phaser.Scene {
       const gesture = this.gesture;
       this.gesture = 'none';
       const down = this.down;
+      if (
+        gesture === 'drag-building' &&
+        !this.uiBlocked &&
+        p.downElement === this.game.canvas &&
+        !p.event.type.includes('cancel')
+      )
+        this.dragBuilding(p);
       this.down = undefined;
       // A touch pan glides on as phones scroll; a pinch, a cancel or reduced motion stops dead.
       if (

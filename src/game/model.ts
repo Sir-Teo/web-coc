@@ -1617,9 +1617,15 @@ export class GameModel {
   editing = false;
   private undoStack: Layout['slots'][] = [];
   private redoStack: Layout['slots'][] = [];
-  /** True once the current drag has recorded its single undo entry. */
+  /** True after the current drag first moves a building. */
   private dragOpen = false;
   private draggedBuilding: number | null = null;
+  private dragGesture = false;
+  private dragOrigin: { x: number; y: number; size: number } | null = null;
+  private dragBlocked = false;
+  get hasBuildingDrag() {
+    return this.dragOrigin !== null;
+  }
   onChange = (_passive = false) => {};
   onEffect = (_fx: FX) => {};
   onToast = (_message: string) => {};
@@ -2827,6 +2833,7 @@ export class GameModel {
     const obstacleEvents = advanceObstacles(this.obstacles, this.state.buildings, growth, now, [
       ...decorationFootprints(this.decorations),
       ...villageObjectFootprints(this.townhallLevel),
+      ...(this.dragOrigin ? [this.dragOrigin] : []),
     ]);
     if (growth.nextAt !== nextGrowth) changed = true;
     if (obstacleEvents.grown.length) structural = changed = true;
@@ -3691,8 +3698,8 @@ export class GameModel {
     this.changed();
     return true;
   }
-  private recordPositions() {
-    this.undoStack.push(this.positions());
+  private recordPositions(positions = this.positions()) {
+    this.undoStack.push(positions);
     if (this.undoStack.length > 60) this.undoStack.shift();
     this.redoStack = [];
   }
@@ -3748,19 +3755,37 @@ export class GameModel {
   get canUndo() {
     return this.undoStack.length > 0;
   }
-  /**
-   * Opens one history entry for a whole drag. Without it a single drag across ten
-   * tiles would take ten presses of undo to reverse.
-   */
+  /** Starts a gesture whose preview is committed as one undo entry on release. */
   beginDrag() {
     this.endDrag(true);
-    this.dragOpen = false;
+    this.dragGesture = true;
   }
   endDrag(cancelled = false) {
     const b = this.state.buildings.find((b) => b.id === this.draggedBuilding);
+    const origin = this.dragOrigin;
+    const blocked = this.dragBlocked;
     this.draggedBuilding = null;
     this.dragOpen = false;
-    if (b) this.nativeBuildingHandling(b, cancelled ? 'cancel' : 'place');
+    this.dragGesture = false;
+    this.dragOrigin = null;
+    this.dragBlocked = false;
+    if (!b) return;
+    const discard = cancelled || (origin !== null && blocked);
+    if (origin) {
+      if (discard) {
+        b.x = origin.x;
+        b.y = origin.y;
+        if (!cancelled) this.notify('That spot is blocked. The building was returned.');
+      } else if (b.x !== origin.x || b.y !== origin.y) {
+        const before = this.positions();
+        const slot = before.find(({ id }) => id === b.id)!;
+        slot.x = origin.x;
+        slot.y = origin.y;
+        this.recordPositions(before);
+      }
+    }
+    this.nativeBuildingHandling(b, discard ? 'cancel' : 'place');
+    if (origin) this.changed();
   }
   get canRedo() {
     return this.redoStack.length > 0;
@@ -3792,10 +3817,12 @@ export class GameModel {
   dragTo(id: number, x: number, y: number) {
     const b = this.state.buildings.find((v) => v.id === id);
     if (!b || !this.editing || this.battle) return false;
+    this.dragBlocked = !this.canPlace(b.kind, x, y, id);
+    if (this.dragBlocked) return false;
     if (b.x === x && b.y === y) return true;
-    if (!this.canPlace(b.kind, x, y, id)) return false;
     if (!this.dragOpen) {
-      this.recordPositions();
+      if (this.dragGesture) this.dragOrigin = { x: b.x, y: b.y, size: BUILDINGS[b.kind].size };
+      else this.recordPositions();
       this.dragOpen = true;
       this.draggedBuilding = b.id;
       this.nativeBuildingHandling(b, 'pickup');
@@ -3812,6 +3839,7 @@ export class GameModel {
     });
   }
   undo() {
+    if (this.hasBuildingDrag) this.endDrag();
     if (this.layoutOverlapsObstacles(this.undoStack.at(-1) ?? []))
       return this.notify('Clear the obstacles beneath this layout before undoing.');
     const previous = this.undoStack.pop();
@@ -3827,6 +3855,7 @@ export class GameModel {
     this.changed();
   }
   redo() {
+    if (this.hasBuildingDrag) this.endDrag(true);
     if (this.layoutOverlapsObstacles(this.redoStack.at(-1) ?? []))
       return this.notify('Clear the obstacles beneath this layout before redoing.');
     const next = this.redoStack.pop();
@@ -6270,6 +6299,7 @@ export class GameModel {
       !this.heroReady
     )
       return this.notify('Prepare an army or a hero before attacking.');
+    this.endDrag(true);
     this.cancel();
     this.editing = false;
     this.practiceGuide = null;
