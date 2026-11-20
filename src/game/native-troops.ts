@@ -46,6 +46,7 @@ import { nativeMiteJump } from './native-mite-jumps';
 import { superHogLanding, superHogSplitStats } from './native-super-hog';
 import { hogAttackKind } from './native-hog-attacks';
 import { SIEGE_BARRACKS_KINDS } from './native-siege-barracks';
+import { jellyHeroStats } from './native-angry-jelly';
 import { sneezyCombatStats, sneezySpawner, sneezySummon } from './native-sneezy';
 import { distance2D } from './distance';
 import { furnaceReleasePoint } from './native-furnace-geometry';
@@ -324,8 +325,10 @@ export const unitLevel = (battle: Battle, u: Pick<Unit, 'kind' | 'level'>) =>
 export function statsFor(battle: Battle, u: Pick<Unit, 'kind' | 'level' | 'id'>) {
   if (battle.nativeHeroes && u.id !== undefined) {
     const hero = battle.nativeHeroes.find((entry) => entry.unitId === u.id);
-    if (hero)
-      return heroStatsFor(hero, battle.townhall ?? 18, !!battle.nativeHeroPassiveSpeedDamage);
+    if (hero) {
+      const base = heroStatsFor(hero, battle.townhall ?? 18, !!battle.nativeHeroPassiveSpeedDamage);
+      return jellyHeroStats(battle, hero, base);
+    }
   }
   return sneezyCombatStats(battle, u, nativeUnitStats(u.kind, unitLevel(battle, u)));
 }

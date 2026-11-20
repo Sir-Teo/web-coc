@@ -1,3 +1,4 @@
+import { startJellyBrainwash } from './native-angry-jelly';
 import { stepSpiritFox } from './native-spirit-fox';
 import { prepareSiegeCargo, type SiegeCargoEntry } from './siege-cargo';
 import { nativeGlobal } from './native-data';
@@ -933,6 +934,8 @@ export interface Battle {
   nativeUnicornController?: true;
   /** Version 255: Spirit Walk runs on the Fox’s own clock. */
   nativeSpiritFox?: true;
+  /** Version 256: Angry Jelly grants its assigned hero temporary defense preference. */
+  nativeJellyBrainwash?: true;
   /** Version 100: native healing resolves through source projectile travel and chain hops. */
   nativeHealingProjectiles?: true;
   nativeHealingTotem?: true;
@@ -5798,6 +5801,7 @@ export class GameModel {
         );
       }
     }
+    if (b.nativeJellyBrainwash) startJellyBrainwash(b, hero);
     if (b.nativeSpiritFox) stepSpiritFox(b, hero);
     hero.deployed = true;
     let passiveActivationId: string | undefined;
@@ -7672,6 +7676,7 @@ export class GameModel {
         // A knocked-out hero fires its ability automatically (SimulatePlayerInputOnDeath).
         if (!b.manualHeroAbilities && unit.hp <= 0 && !unit.spent && !hero.abilityUsed)
           this.activateNativeHeroAbility(hero.kind, true);
+        if (unit.hp <= 0 && hero.jellyBrainwashUntil !== undefined) hero.jellyBrainwashUntil = 0;
         hatchPhoenix(native, hero, unit);
         ragePetAfterHeroDeath(b, hero, unit);
         // Waves stop when the hero falls; the automatic activation above still fires once.

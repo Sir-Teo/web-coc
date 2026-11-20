@@ -37,6 +37,7 @@ export const heroBattleUnitKind = (hero: HeroSetup) =>
 export interface NativeBattleHero extends HeroSetup {
   /** Next Spirit Walk pulse, retained for the same pet through Recall. */
   spiritFoxNextAt?: number;
+  jellyBrainwashUntil?: number;
   /** Version 97: the pet's Hero-death boost is spent for this raid, including later Revive. */
   petHeroDeathUsed?: true;
   /** Version 102: Sneezy's one-use spawner transform stays deactivated after Revive/Recall. */
