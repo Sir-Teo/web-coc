@@ -219,6 +219,7 @@ import {
   type Save,
 } from '../game/model';
 import {
+  nativeGearedWeapon,
   nativeWeapon,
   spellTowerModes,
   townHallWeaponUpgrade,
@@ -477,19 +478,23 @@ function statRows(building: Building, level = building.level): [string, string, 
       ['Radar', 'Targets', 'Ground & air'],
     );
   }
-  const gearWeapon = kind === 'multigeartower'
-    ? nativeWeapon(kind, level, { mode: building.gearMode, supercharge })
-    : null;
+  const gearWeapon =
+    kind === 'multigeartower'
+      ? nativeWeapon(kind, level, { mode: building.gearMode, supercharge })
+      : building.geared && isGearable(kind)
+        ? nativeGearedWeapon(kind, level, supercharge)
+        : null;
   if (gearWeapon) {
+    const { air, ground, range, minRange, damage, interval, burst, burstDelay, splash } = gearWeapon;
     rows.push(
-      ['Swords', 'Damage per second', damageNumber(gearWeapon.damage * gearWeapon.burst / gearWeapon.interval)],
-      ['Swords', 'Damage per hit', damageNumber(gearWeapon.damage)],
-      ['Target', 'Range', `${gearWeapon.range} tiles`],
-      ['Gauge', 'Attack speed', gearWeapon.burst > 1 ? `${gearWeapon.burstDelay}s between shots` : `${gearWeapon.interval}s`],
-      ['Radar', 'Targets', gearWeapon.air && gearWeapon.ground ? 'Ground & air' : gearWeapon.air ? 'Air only' : 'Ground only'],
+      ['Swords', 'Damage per second', damageNumber((damage * burst) / interval)],
+      ['Swords', 'Damage per hit', damageNumber(damage)],
+      ['Target', 'Range', `${minRange ? `${minRange}–` : ''}${range} tiles`],
+      ['Gauge', 'Attack speed', burst > 1 ? `${burstDelay}s between shots` : `${interval}s`],
+      ['Radar', 'Targets', air && ground ? 'Ground & air' : air ? 'Air only' : 'Ground only'],
     );
-    if (gearWeapon.burst > 1) rows.push(['Layers', 'Shots per burst', String(gearWeapon.burst)]);
-    if (gearWeapon.splash) rows.push(['Sparkles', 'Splash radius', `${gearWeapon.splash} tiles`]);
+    if (burst > 1) rows.push(['Layers', 'Shots per burst', String(burst)]);
+    if (splash) rows.push(['Sparkles', 'Splash radius', `${splash} tiles`]);
   } else if (d.damage && kind !== 'inferno') {
     rows.push(['Swords', 'Damage per second', damageNumber(defenseDps(kind, level))]);
     rows.push(['Swords', 'Damage per hit', damageNumber(defenseDamage(kind, level))]);
@@ -5561,7 +5566,7 @@ export class HUD {
           : [];
     return `<div class="modal-body info-body"><div class="info-hero"><img src="${hudAsset(b.kind, b.level, b.skeletonMode, b.xbowMode, b.infernoMode, b.spellMode ?? b.spellTowerWeapon, b.gearMode)}" alt=""><div><span class="eyebrow">${d.category.toUpperCase()} · LEVEL ${b.level} OF ${d.maxLevel}</span><h2>${d.name}</h2><p>${d.description}</p>${b.kind === 'skeletontrap' ? `<p class="trap-note"><b>${b.skeletonMode === 'air' ? 'Air mode' : 'Ground mode'}</b> · Skeletons pursue ${b.skeletonMode === 'air' ? 'flying' : 'ground'} troops.</p>` : ''}${d.trap ? '<p class="trap-note">Hidden from attackers until triggered. One use per attack; automatically armed for the next practice. Traps do not count toward destruction.</p>' : ''}<div class="info-levels">${Array.from({ length: d.maxLevel }, (_, i) => `<i class="${i < b.level ? 'on' : ''}"></i>`).join('')}</div></div></div>
  ${b.kind === 'xbow' && !b.constructing ? this.xbowModeOptions(b) : ''}
- ${b.kind === 'multigeartower' ? `<p><b>${b.gearMode === 'fast' ? 'Fast Attack' : 'Long Range'} mode</b></p>` : ''}
+ ${b.kind === 'multigeartower' ? `<p><b>${b.gearMode === 'fast' ? 'Fast Attack' : 'Long Range'} mode</b></p>` : b.geared && isGearable(b.kind) ? `<p><b>${b.kind === 'archertower' ? 'Fast Attack' : 'Burst'} mode</b></p>` : ''}
  <table class="info-table"><thead><tr><th>Stat</th><th>Level ${b.level}</th><th>${capped ? 'Max' : `Level ${b.level + 1}`}</th></tr></thead><tbody>${now
    .map(([ic, label, value], i) => {
      const after = next[i]?.[2];
