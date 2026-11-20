@@ -1487,13 +1487,20 @@ export function stepNativeUnit(
       return;
     }
   }
+  const blimpObjective =
+    battle.nativeBlimpObjectiveRelease && u.kind === 'battleblimp' && target.kind === 'townhall';
+  if (blimpObjective && distance <= 1e-9) {
+    u.hp = 0;
+    u.defeatedAt = at;
+    return;
+  }
   if (
-    (u.kind === 'battleblimp' || u.kind === 'loglauncher') &&
-    distance > s.range &&
+    ((distance > s.range && (u.kind === 'battleblimp' || u.kind === 'loglauncher')) ||
+      (blimpObjective && !attackDisabled)) &&
     u.cooldown <= 0
   ) {
     let passing: Building | undefined = target;
-    if (u.kind === 'battleblimp') {
+    if (u.kind === 'battleblimp' && distance > s.range) {
       // Nearest standing structure in range, lowest id on a tie: the first of the old sort.
       passing = undefined;
       let best = Infinity;
@@ -1512,7 +1519,7 @@ export function stepNativeUnit(
       strike(ctx, u, s, passing, damage);
     }
   }
-  if (distance <= s.range + 1e-6) {
+  if (!blimpObjective && distance <= s.range + 1e-6) {
     if (attackDisabled) {
       u.attacking = false;
       return;
@@ -1571,7 +1578,13 @@ export function stepNativeUnit(
       state.surfaced = false;
       state.burrowed = true;
     }
-    moveToward(u, edge, Math.min(speed * dt, distance2D(edge.x - u.x, edge.y - u.y)));
+    const travel = distance2D(edge.x - u.x, edge.y - u.y);
+    if (blimpObjective && speed * dt >= travel) {
+      u.x = edge.x;
+      u.y = edge.y;
+      u.hp = 0;
+      u.defeatedAt = at;
+    } else moveToward(u, edge, Math.min(speed * dt, travel));
     return;
   }
   const jumping = s.jumper;

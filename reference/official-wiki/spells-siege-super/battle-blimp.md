@@ -64,3 +64,24 @@ Cells shown as `wiki (client X)` differ from the pinned client.
 **Notes, ambiguities and manual checks**
 
 - `AttackCount` = 20 has no wiki counterpart (possibly a cap on bomb drops or a legacy field); verify before using.
+
+## Town Hall arrival in recording version 276
+
+[Supercell's siege introduction](https://supercell.com/en/games/clashofclans/blog/news/wall-wrecker-battle-blimp/)
+documents objective arrival, destruction and manual self-destruct as separate
+cargo release triggers. The pinned Battle Blimp row retains the Town Hall
+movement target and the moving-bomb and self-destruct fields. Before version
+276 the Blimp stopped at its 1.5-tile bombing range. A surviving carrier could
+keep its cargo aboard there until the player ended it or it was destroyed.
+
+The Web CoC arrival rule uses the Town Hall footprint boundary. Route bombs
+continue on approach. The existing casualty path releases the local Practice
+payload once and retains the pinned delayed death blast. Exact native arrival
+geometry and visual timing are unverified. Recordings through version 275
+retain the previous movement and release behavior. Practice preparation is
+local and does not model the original online reinforcement UI.
+
+Run `node scripts/blimp-objective-production-check.mjs` after packaging. Pass
+the packaged version 275 directory to exercise the baseline with manual
+release. The check uses phone-sized Chromium touch with a disposable save
+and compares the live flight and cargo state to seeked playback.

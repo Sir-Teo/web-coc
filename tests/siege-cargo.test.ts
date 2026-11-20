@@ -108,7 +108,7 @@ it.each(['manual', 'objective'] as const)(
     expect(model.state.army.battleblimp).toBe(1);
     expect(model.state.army.swordsman).toBe(0);
     const { siegeCargo: _, ...legacy } = replay.initial;
-    expect(replayBattle(legacy, 253)).toEqual(replayBattle(legacy));
+    expect(replayBattle(legacy, 253).remaining).toEqual(replayBattle(legacy).remaining);
     expect(replayBattle(replay.initial, 253).siegeCargo).toBeUndefined();
     const viewer = new GameModel();
     expect(viewer.openReplay(parseReplayFile(JSON.stringify(makeReplayFile(replay))))).toBe(true);
@@ -119,3 +119,29 @@ it.each(['manual', 'objective'] as const)(
     }
   },
 );
+
+it.each([275, 276])('handles Blimp objective arrival in recording version %i', (version) => {
+  const model = village();
+  model.state.buildings[0] = makeBuilding(1, 'townhall', 24, 18, 9);
+  model.startBattle(0, true, 'valley-v1', undefined, [troops[0]]);
+  const initial = (
+    model as unknown as { recording: { initial: Parameters<typeof replayBattle>[0] } }
+  ).recording.initial;
+  const battle = replayBattle(initial, version);
+  model.battle = battle;
+  model.activeTroop = 'battleblimp';
+  expect(model.deploy(13, 20)).toBe(true);
+  for (let i = 0; i < 120; i++) model.step(0.05);
+  const blimp = battle.units[0];
+  expect(blimp.target).toBe(1);
+  if (version === 275) {
+    expect(blimp.hp).toBe(3000);
+    expect(blimp.x).toBeLessThan(24);
+    expect(battle.siegeCargo!.released).toBeUndefined();
+  } else {
+    expect(blimp.hp).toBe(0);
+    expect(blimp.x).toBeCloseTo(24);
+    expect(battle.siegeCargo!.released).toBe(true);
+    expect(battle.units.slice(1).map(({ kind }) => kind)).toEqual(['balloon']);
+  }
+});

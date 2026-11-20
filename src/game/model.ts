@@ -1228,6 +1228,8 @@ export interface Battle {
   nativeMovingSiegeFreezeClock?: true;
   /** Version 232: a deployed siege can use its source manual self-destruct. */
   nativeSiegeManualRelease?: true;
+  /** Version 276: Battle Blimp releases at the Town Hall footprint. */
+  nativeBlimpObjectiveRelease?: true;
   /** Version 237: source Spring Trap pet damage uses the recovered integer percentage. */
   nativeSpringPetDamage?: true;
   /** Version 238: source ejection immunity and siege reduction in native home Spring Traps. */
