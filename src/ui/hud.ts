@@ -854,6 +854,7 @@ export class HUD {
   private drawerMarkup = '';
   private modalMarkup = '';
   private hudMarkup = '';
+  private hudBattle: Battle | null = null;
   private contextMarkup = '';
   private lastPanel: Panel = null;
   private lastDrawer: Drawer = null;
@@ -3129,7 +3130,10 @@ export class HUD {
     let drawerScrollY = armyDrawer ? 0 : drawerBody?.scrollTop ?? 0;
     let drawerRebuilt = false;
     const categoryScroll = this.drawerEl.querySelector('.shop-tabs')?.scrollLeft ?? 0;
-    const armyScroll = this.hudEl.querySelector('.army-tray')?.scrollLeft ?? 0;
+    // Preserve the position across HUD rebuilds within a raid. A rematch can
+    // replace the battle before the village HUD has had a chance to render.
+    const armyScroll =
+      b === this.hudBattle ? (this.hudEl.querySelector('.army-tray')?.scrollLeft ?? 0) : 0;
     const active = document.activeElement;
     const focused = focusMark(active);
     const expiredHeroCancel =
@@ -3145,6 +3149,7 @@ export class HUD {
       rebuilt = true;
       this.syncLoops(this.hudEl);
     }
+    this.hudBattle = b;
     const contextMarkup = this.context();
     if (contextMarkup !== this.contextMarkup) {
       this.contextEl.innerHTML = contextMarkup;
