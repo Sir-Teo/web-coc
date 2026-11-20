@@ -3497,6 +3497,8 @@ h3 {
   margin: 0 2px;
 }
 .prep-banner {
+  /* Keep a pinch starting on the scouting overlay from zooming the browser page. */
+  touch-action: none;
   position: absolute;
   top: 178px;
   left: 50%;

@@ -76,6 +76,7 @@ boot. `tests/first-audio-gesture.test.ts` checks listener cleanup and key policy
 October 1, 2026. Several browser gestures could take over during touch play. The canvas already set `touch-action: none`, but the HUD did not:
 
 - **Pull-to-refresh and page bounce.** A downward swipe that started on a HUD panel could pull-to-refresh in Chrome on Android, reloading the page mid-raid, or rubber-band the page in iOS Safari. `html` and `body` now set `overscroll-behavior: none`.
+- **Scouting banner pinch.** The banner still blocks battlefield input beneath it. A pinch beginning on the banner also leaves browser zoom alone, including during a viewport rotation after selecting a spell.
 - **Double-tap zoom.** Two quick taps on a train or deploy button could zoom the page instead of registering two presses. Buttons now set `touch-action: manipulation`. Shop tiles keep `pan-x`, so a vertical drag still lifts a building out of the shop.
 - **Long-press selection and callouts.** Holding a finger still to stream troops or move a building could raise iOS's selection loupe or a callout over nearby HUD text. `body` now disables text selection and the touch callout. Inputs, selects and textareas re-enable selection so the army search and army preset names can still be edited.
 - **Context menu.** A long press fires `contextmenu`. Phaser's `disableContextMenu` now cancels it on the canvas. The game has no right-click action, so desktop play loses nothing.
