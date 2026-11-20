@@ -8478,6 +8478,7 @@ export class GameModel {
     r.seeking = true;
     this.replayBudget = 0;
     r.complete = false;
+    delete r.finishedBySeek;
     r.paused = true;
     // Forward seeks continue from the current runner; backward seeks restore the
     // nearest keyframe snapshot (every 10s) instead of restarting from tick zero.
@@ -8552,6 +8553,7 @@ export class GameModel {
       r.seeking = false;
       r.paused = r.complete || this.replaySeekPaused;
       this.battle = this.replayRunner!.battle;
+      if (this.battle?.finished) r.finishedBySeek = true;
       this.changed();
     }
   }

@@ -613,6 +613,8 @@ export interface ReplayPlayback {
   time: number;
   duration: number;
   complete: boolean;
+  /** The finished state was reached by seeking, so transient effects are already settled. */
+  finishedBySeek?: true;
 }
 /** New full-map bounds apply only to source Practice lessons with a fixed army. */
 function fullMapPractice(

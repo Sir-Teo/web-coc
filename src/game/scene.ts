@@ -258,7 +258,12 @@ import { heroStats } from './heroes';
 import { unitDepth } from './unit-depth';
 import { mergeEdges } from './boundary-edges';
 import { defenderIndex, unitIndex } from './battle-index';
-import { presentationLive, presentationProjectiles, presentationTime } from './presentation-clock';
+import {
+  presentationLive,
+  presentationProjectiles,
+  presentationTime,
+  settlePresentation,
+} from './presentation-clock';
 import { defenderStatusTint, unitStatusTint } from './unit-status-tint';
 /** Appearance shared by placed buildings, Move previews and lower-level art fallbacks. */
 type BuildingAppearance = Readonly<
@@ -4829,8 +4834,9 @@ export class VillageScene extends Phaser.Scene {
   private present(_time: number, live: boolean) {
     // Culling (here and in every presentation) reads worldView: refresh it for this frame's
     // scroll and zoom instead of using the one left by the previous render.
-    this.cameras.main.preRender();
     const battle = this.model.battle;
+    if (battle?.finished && this.model.replay?.finishedBySeek) settlePresentation(battle);
+    this.cameras.main.preRender();
     if (battle) this.effectTimeline.update(this.effectClock(battle, true));
     // Units draw between the last two ticks; the simulation itself is never touched.
     if (live) this.interpolation.prepare(battle, this.tick / TICK);

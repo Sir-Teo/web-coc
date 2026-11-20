@@ -59,6 +59,7 @@ describe('replay seeking', () => {
     const at30 = battle(ordinary);
     for (let i = 0; i < 2000 && !ordinary.replay!.complete; i++) ordinary.step(0.05);
     const end = battle(ordinary);
+    expect(ordinary.replay!.finishedBySeek).toBeUndefined();
     let effects = 0;
     m.onEffect = () => effects++;
     m.toggleReplay();
@@ -71,6 +72,7 @@ describe('replay seeking', () => {
       expect(m.seekReplay(position)).toBe(true);
       settleSeek(m);
       expect(battle(m)).toEqual(expected);
+      expect(m.replay!.finishedBySeek).toBe(expected?.finished ? true : undefined);
       expect(m.replay!.paused).toBe(true);
       expect(m.replay!.speed).toBe(4);
     }
@@ -81,6 +83,7 @@ describe('replay seeking', () => {
     expect(m.replay!.time).toBe(0);
     expect(m.battle!.units).toHaveLength(0);
     expect(m.replay!.complete).toBe(false);
+    expect(m.replay!.finishedBySeek).toBeUndefined();
     expect(m.seekReplay(NaN)).toBe(false);
     expect(m.seekReplay(Infinity)).toBe(false);
   });

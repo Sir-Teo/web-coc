@@ -17,7 +17,7 @@ forces one cleanup frame, retiring spell and other transient views before unchan
 skipping resumes. Without this transition, the last rendered crater could remain indefinitely
 even though a forced redraw correctly cleared it.
 
-Opening a replay directly at its finished state grants no grace; it stays settled. Reduced
+Seeking to a replay’s finished state settles its effects immediately, including a forward seek from a battle already shown running. Playing through the finish retains the grace window. Reduced
 motion keeps moving field views empty. The existing source-presentation version gates remain,
 and combat version 141, recorded outcomes, damage, source graphs and audio files are unchanged.
 
