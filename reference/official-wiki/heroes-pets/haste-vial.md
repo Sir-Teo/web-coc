@@ -74,3 +74,19 @@ Costs on a row are the price to reach that level (wiki convention). Values as di
 **Mismatches / ambiguities**
 
 - None found in the compared fields.
+
+## Hidden Tesla reveal in recording version 285
+
+The pinned `RoyalChampionHaste` row sets `DisableRetargeting=TRUE`
+for the active window. Web CoC used to clear the Champion's current
+building target whenever a Hidden Tesla revealed. Version 285 keeps a
+valid target through that reveal while allowing route recalculation.
+If the target is destroyed or otherwise invalid, she can acquire a
+replacement. Normal reveal behavior resumes after Haste expires.
+Earlier recordings retain their original behavior.
+
+Run `node scripts/champion-haste-target-production-check.mjs` after
+packaging, or pass a packaged version 284 directory for comparison.
+The touch run checks Hero Hall equipment, activation, reveal, damage
+to the selected defense and replay seeking. Native UI layout and exact
+retarget timing remain unverified.

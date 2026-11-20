@@ -894,6 +894,8 @@ export interface Battle {
   nativeDefenderFrost?: true;
   /** Version 78: Royal Champion Haste overrides combat intervals with passive speed applied. */
   nativeChampionHaste?: true;
+  /** Version 285: Haste Vial retains a valid target on Hidden Tesla reveal. */
+  nativeChampionHasteTargetLock?: true;
   /** Version 79: equipped Hero life steal heals once after a completed attack. */
   nativeHeroLifeSteal?: true;
   /** Version 80: Invisibility Vial adds its captured flat bonus to the Queen's ordinary shots. */

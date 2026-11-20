@@ -47,6 +47,7 @@ export interface UnitEffects {
   attackInterval?: { until: number; seconds: number };
   /** Source ability attack lock; its fixed clock is independent of animation slowdowns. */
   attackDisabledUntil?: number;
+  hasteTargetLockUntil?: number;
   /** Flat damage an equipment ability adds, optionally for a number of hits. */
   extraDamage?: {
     until: number;

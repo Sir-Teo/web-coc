@@ -90,6 +90,12 @@ function applyAbility(
   const battle = ctx.battle;
   const duration = seconds(row, 'DeactivateAfterTime');
   const effects = unitEffects(unit);
+  if (
+    battle.nativeChampionHasteTargetLock &&
+    ability.name === 'RoyalChampionHaste' &&
+    flag(row, 'DisableRetargeting')
+  )
+    effects.hasteTargetLockUntil = at + duration;
   const speed = num(row, 'SpeedBoost') / 100;
   const damage = num(row, 'BoostDamagePercentage') / 100;
   const rate = seconds(row, 'AttackSpeed');

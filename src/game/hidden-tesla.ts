@@ -83,8 +83,13 @@ export function revealTeslas(
             x > t.x - 1 && x < t.x + size + 1 && y > t.y - 1 && y < t.y + size + 1;
           return near(unit.x, unit.y) || unit.path.some((p) => near(p.x, p.y));
         });
-      if (!targeted && !touches && !(diverts?.(unit) ?? true)) continue;
-      unit.target = null;
+      const lockedTarget =
+        (unit.native?.effects?.hasteTargetLockUntil ?? 0) > battle.elapsed + 1e-9
+          ? battle.buildings.find(({ id }) => id === unit.target)
+          : undefined;
+      const keepTarget = lockedTarget && targetableBuilding(battle, lockedTarget);
+      if (!targeted && !touches && (keepTarget || !(diverts?.(unit) ?? true))) continue;
+      if (!keepTarget) unit.target = null;
       unit.path = [];
       unit.pathAt = 0;
       unit.attacking = false;
