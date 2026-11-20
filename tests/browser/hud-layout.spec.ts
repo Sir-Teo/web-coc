@@ -223,3 +223,45 @@ test.describe('short landscape onboarding', () => {
     await expect(page.getByRole('region', { name: 'Goblin raid' })).toBeVisible();
   });
 });
+
+test.describe('small portrait onboarding', () => {
+  test.use({ viewport: { width: 320, height: 568 }, isMobile: true, hasTouch: true });
+
+  for (const enlarged of [false, true]) {
+    test(`Settings and the opening coach remain tappable ${enlarged ? 'with insets and enlarged text' : 'at default size'}`, async ({
+      page,
+      browserName,
+    }) => {
+      test.skip(enlarged && browserName !== 'chromium', 'Safe-area emulation requires CDP.');
+      if (enlarged) {
+        const session = await page.context().newCDPSession(page);
+        await session.send('Emulation.setSafeAreaInsetsOverride' as never, {
+          insets: { top: 59, right: 0, bottom: 34, left: 0 },
+        } as never);
+      }
+      await page.goto('/?lazyart');
+      await expect(page.locator('#loading')).toBeHidden({ timeout: 30000 });
+      if (enlarged)
+        await page.addStyleTag({
+          content: '.coach-banner b { font-size: 22.5px } .coach-banner small { font-size: 15px }',
+        });
+      const coach = page.locator('.coach-banner');
+      await expect(coach).toContainText('Goblins are raiding');
+      const settings = page.getByRole('button', { name: 'Settings', exact: true });
+      const box = (await settings.boundingBox())!;
+      await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+      await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible();
+      await page.getByRole('button', { name: 'Close dialog' }).tap();
+      await coach.getByRole('button', { name: 'Watch' }).tap();
+      await expect(page.getByRole('region', { name: 'Goblin raid' })).toBeVisible();
+      await page.getByRole('button', { name: 'Back to village' }).tap();
+      await page.locator('.collect-btn').tap();
+      await expect(coach).toContainText('Put up a new building');
+      await settings.tap();
+      await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible();
+      await page.getByRole('button', { name: 'Close dialog' }).tap();
+      await coach.getByRole('button', { name: 'Skip' }).tap();
+      await expect(coach).toHaveCount(0);
+    });
+  }
+});
