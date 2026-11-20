@@ -330,6 +330,38 @@
   }
 }
 
+@media (max-width: 360px) and (orientation: portrait) {
+  .research-banner {
+    flex-wrap: wrap;
+  }
+  .research-banner > div {
+    flex: 1 1 min-content;
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+  .research-status {
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+  .research-status .game-btn {
+    max-width: 100%;
+    white-space: normal;
+  }
+  .research-grid .training-art,
+  .research-grid .training-art img {
+    max-width: 100%;
+  }
+  .research-grid .training-card {
+    overflow-wrap: anywhere;
+  }
+  .research-grid .research-stats {
+    width: 100%;
+  }
+  .research-grid .research-stats > span {
+    flex-wrap: wrap;
+  }
+}
+
 @media (min-width: 540px) and (max-width: 700px) and (max-height: 400px) and (min-aspect-ratio: 4/3) {
   .coach-banner {
     /* Keep the banner above the camera row and clear of the two activity columns. */
