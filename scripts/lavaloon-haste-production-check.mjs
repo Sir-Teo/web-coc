@@ -2,8 +2,12 @@ import { chromium, expect } from '@playwright/test';
 import { createServer, preview } from 'vite';
 import { mkdir } from 'node:fs/promises';
 
-const baseline = process.argv[2];
-const artifacts = 'output/rea-cloud-playtest/lavaloon-haste';
+const args = process.argv.slice(2);
+const handoff = args.includes('--hound-handoff');
+const baseline = args.find((arg) => !arg.startsWith('--'));
+const artifacts = handoff
+  ? 'output/rea-cloud-playtest/hound-handoff'
+  : 'output/rea-cloud-playtest/lavaloon-haste';
 await mkdir(artifacts, { recursive: true });
 const modules = await createServer({
   server: { middlewareMode: true, ws: false },
@@ -25,6 +29,15 @@ try {
       makeBuilding(1, 'townhall', 33, 33, 9),
       makeBuilding(2, 'goldstorage', 20, 19, 1),
       makeBuilding(3, 'airdefense', 21, 16, 1),
+      ...(handoff
+        ? [
+            makeBuilding(12, 'seekingairmine', 16, 13, 2),
+            makeBuilding(13, 'seekingairmine', 17, 13, 2),
+            makeBuilding(14, 'seekingairmine', 18, 13, 2),
+            makeBuilding(16, 'seekingairmine', 25, 16, 2),
+            { ...makeBuilding(15, 'skeletontrap', 21, 14, 1), skeletonMode: 'air' },
+          ]
+        : []),
       makeBuilding(8, 'cannon', 17, 16, 1),
       makeBuilding(9, 'darkbarracks', 35, 26, 6),
       makeBuilding(10, 'darkspellfactory', 30, 36, 3),
@@ -134,6 +147,14 @@ try {
         const { model, scene } = window.qa;
         const b = model.battle;
         const done = () => {
+          if (mode === 'pup-air-attack')
+            return b.projectiles?.some(
+              (p) =>
+                p.native?.kind === 'lavapup' &&
+                !p.targetBuilding &&
+                b.defenders?.some((d) => d.id === p.targetId && d.mode === 'air'),
+            );
+          if (mode === 'pups') return b.units.some((u) => u.kind === 'lavapup');
           if (mode === 'cast') return b.units.some((u) => u.native?.effects?.boost);
           if (mode === 'contact') return b.buildings.find((v) => v.id === 3).hp < 800;
           return b.finished;
@@ -149,7 +170,11 @@ try {
         return {
           at: battle.elapsed,
           units: battle.units.map((u) => ({
+            id: u.id,
             kind: u.kind,
+            level: u.level,
+            owner: u.native?.owner,
+            defenderTarget: u.defenderTarget,
             target: u.target,
             x: u.x,
             y: u.y,
@@ -159,25 +184,58 @@ try {
           })),
           buildings: battle.buildings.map(({ id, hp }) => ({ id, hp })),
           remaining: battle.remaining,
+          destruction: battle.destruction,
+          traps: battle.traps,
           finished: battle.finished,
         };
       });
     await shot('scout');
     await tap('troop:lavahound');
     await tapField(13.5, 14, true);
+    let transition, airAttack;
+    if (handoff) {
+      await stepUntil('pups');
+      transition = await read();
+      const hound = transition.units.find(({ kind }) => kind === 'lavahound');
+      expect(hound.hp).toBeLessThanOrEqual(0);
+      const pups = transition.units.filter(({ kind }) => kind === 'lavapup');
+      expect(pups.every(({ owner }) => owner === hound.id)).toBe(true);
+      expect(pups).toHaveLength(8);
+      expect(pups.every(({ level, hp }) => level === 1 && hp === 50)).toBe(true);
+      await shot('pup-handoff');
+      await stepUntil('pup-air-attack');
+      airAttack = await read();
+      expect([12, 13, 14].map((id) => airAttack.traps[id].targetId)).toEqual(
+        Array(3).fill(hound.id),
+      );
+      expect(airAttack.traps[16]).toBeUndefined();
+      expect(
+        airAttack.units.some(
+          ({ kind, hp, x, y }) =>
+            kind === 'lavapup' && hp > 0 && Math.hypot(x - 25.5, y - 16.5) < 4,
+        ),
+      ).toBe(true);
+      await shot('pup-air-attack');
+      // Separate the checkpoint from the next recorded inputs, which run at the same tick otherwise.
+      await page.evaluate(() => window.qa.model.step(0.05));
+    }
     await tap('troop:balloon');
     for (let i = 0; i < 8; i++) await tapField(13.5, 16 + i * 0.15, true);
-    await tap('spell:haste');
-    await tapField(16, 16);
-    await stepUntil('cast');
+    if (!handoff) {
+      await tap('spell:haste');
+      await tapField(16, 16);
+      await stepUntil('cast');
+    }
     const cast = await read();
     expect(cast.units.filter((u) => u.kind === 'balloon')).toHaveLength(8);
-    for (const unit of cast.units.filter(({ hp }) => hp > 0)) {
-      expect(unit.speed).toBe(baseline ? 1.75 : 3.5);
-      expect(unit.damage).toBe(0);
-      expect(unit.target).toBe(unit.kind === 'lavahound' ? 3 : 8);
+    if (!handoff) {
+      for (const unit of cast.units.filter(({ hp }) => hp > 0)) {
+        expect(unit.speed).toBe(baseline ? 1.75 : 3.5);
+        expect(unit.damage).toBe(0);
+        expect(unit.target).toBe(unit.kind === 'lavahound' ? 3 : 8);
+      }
+      await shot('haste');
     }
-    await shot('haste');
     await stepUntil('contact');
     const contact = await read();
     expect(contact.buildings.find(({ id }) => id === 3).hp).toBeLessThan(800);
@@ -186,7 +244,7 @@ try {
     for (let i = 0; i < 4; i++) await tapField(13.5, 19 + i * 0.15, true);
     await stepUntil('finish');
     const result = await read();
-    expect(result.buildings.every(({ hp }) => hp === 0)).toBe(true);
+    expect(result.destruction).toBe(100);
     expect(result.remaining.minion).toBe(0);
     await shot('results');
     await page.getByRole('button', { name: 'Watch replay', exact: true }).tap();
@@ -208,22 +266,33 @@ try {
       const { replay, state } = window.qa.model;
       return { duration: replay.duration, version: state.raidLog[0].replay.version };
     });
-    expect(recording.version).toBe(baseline ? 274 : 275);
+    expect(recording.version).toBe(baseline && !handoff ? 274 : 275);
     await seek(recording.duration);
     const final = await read();
     expect(final.buildings).toEqual(result.buildings);
     expect(final.units).toEqual(result.units);
     const scout = recording.duration - final.at;
-    await seek(scout + cast.at);
-    expect(await read()).toEqual(cast);
-    await shot('replay-haste');
+    const checkpoint = transition ?? cast;
+    if (handoff) {
+      await seek(scout + checkpoint.at - 0.05);
+      expect((await read()).units.some(({ kind }) => kind === 'lavapup')).toBe(false);
+    }
+    await seek(scout + checkpoint.at);
+    expect(await read()).toEqual(checkpoint);
+    await shot(handoff ? 'replay-pup-handoff' : 'replay-haste');
+    if (airAttack) {
+      await seek(scout + airAttack.at);
+      expect(await read()).toEqual(airAttack);
+    }
     await seek(recording.duration);
     expect(await read()).toEqual(final);
     expect(errors).toEqual([]);
     console.log(
       JSON.stringify({
         baseline: !!baseline,
-        speedBonus: cast.units.find(({ kind }) => kind === 'lavahound').speed,
+        ...(transition
+          ? { handoffAt: transition.at, pups: 8 }
+          : { speedBonus: cast.units.find(({ kind }) => kind === 'lavahound').speed }),
         firstAirDefenseDamageAt: contact.at,
         fullClearAt: final.at,
         recording,

@@ -115,3 +115,20 @@ Chromium and WebKit checks compare complete Node battle states through birth, ch
 release, flight and impact in both seek directions. They cover current and historical
 recordings, original Pup bodies and projectiles, source tier, read-only/reduced-motion
 rendering and WebGL health on phone and desktop.
+
+## Packaged LavaLoon handoff
+
+Run `node scripts/lavaloon-haste-production-check.mjs --hound-handoff` after
+packaging. For a comparison, pass a second argument pointing to the packaged
+version 275 baseline. The check enters Practice from a disposable TH9 save at
+390×650 and uses touch for the Hound, Balloon and Minion deployments and for
+opening the recording. Three Seeking Air Mines target the Hound. It then
+releases eight level-one, 50-HP Pups, which can shoot an airborne Skeleton
+Trap defender without waking a fourth mine within range. Both seek
+directions preserve the handoff and the completed raid.
+
+The pinned combat rows give level-by-level counts of 8, 10, 12, 14, 16, 18,
+20 and 22, plus the single Pup row with both air and ground eligibility.
+The retained [Seeking Air Mine comparison](../official-wiki/defenses/seeking-air-mine.md)
+establishes the five-housing threshold. This playthrough covers level one.
+Exact native death choreography and spawn geometry remain unverified.
