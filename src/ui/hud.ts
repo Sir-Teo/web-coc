@@ -2563,7 +2563,8 @@ export class HUD {
           !campaignPending(index) &&
           !practiceLevelAt(index)
         ) {
-          this.showDrawer('army', true);
+          if (this.panel === 'campaign') this.action(`campaign-scout:${index}`);
+          else this.showDrawer('army', true);
           break;
         }
         m.startCampaign(index);
@@ -5865,10 +5866,11 @@ export class HUD {
           score = stars[i] ?? 0;
         // A Practice level brings its own army and opens at its Town Hall.
         const drill = practiceLevelAt(i);
-        const key = `${locked}|${score}|${loot.gold}|${loot.elixir}|${loot.dark}`;
+        const needsArmy = !locked && !pending && !drill && !armyReady;
+        const key = `${locked}|${needsArmy}|${score}|${loot.gold}|${loot.elixir}|${loot.dark}`;
         const cached = this.campaignCards.get(i);
         if (cached?.key === key) return cached.markup;
-        const markup = `<article class="campaign-card ${locked || pending ? 'locked' : ''}" id="campaign-stage-${i}" data-stage="${v.stage}"><div class="campaign-number">${locked ? icon('LockKeyhole', 22) : v.stage}</div>${this.campaignMap(i)}<div class="campaign-info"><span>${drill ? PRACTICE_TEXTS.title.toUpperCase() : 'SINGLE PLAYER'}</span><h3>${v.name}</h3><p>${pending ? 'This village is coming soon.' : drill ? (locked ? `Opens at Town Hall ${drill.townHall}.` : `Fought with its own army: ${practiceArmyLine(drill)}. Yours stays home.`) : v.dependencies.length ? 'Win a star to open the next path.' : 'Your campaign begins here.'}</p>${v.family === 'forged' ? '<small class="campaign-fan-made">Fan-made · not a client village</small>' : ''}${v.recommendedTownHall ? `<small class="campaign-recommendation">Suggested Town Hall: ${v.recommendedTownHall}</small>` : ''}<div class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</div>${loot.gold || loot.elixir || loot.dark ? '' : `<small class="campaign-depleted">Loot depleted${score < 3 ? ' · Replay for stars' : ' · Village cleared'}</small>`}</div><div class="campaign-action"><div class="campaign-stars">${'★'.repeat(score)}<span>${'★'.repeat(3 - score)}</span></div>${button(`attack:${i}`, pending ? 'Coming soon' : locked ? 'Locked' : `Attack ${icon('ArrowRight', 17)}`, 'game-btn ' + (locked || pending ? 'stone' : 'orange'), locked || pending ? 'disabled' : '')}</div></article>`;
+        const markup = `<article class="campaign-card ${locked || pending ? 'locked' : ''}" id="campaign-stage-${i}" data-stage="${v.stage}"><div class="campaign-number">${locked ? icon('LockKeyhole', 22) : v.stage}</div>${this.campaignMap(i)}<div class="campaign-info"><span>${drill ? PRACTICE_TEXTS.title.toUpperCase() : 'SINGLE PLAYER'}</span><h3>${v.name}</h3><p>${pending ? 'This village is coming soon.' : drill ? (locked ? `Opens at Town Hall ${drill.townHall}.` : `Fought with its own army: ${practiceArmyLine(drill)}. Yours stays home.`) : v.dependencies.length ? 'Win a star to open the next path.' : 'Your campaign begins here.'}</p>${v.family === 'forged' ? '<small class="campaign-fan-made">Fan-made · not a client village</small>' : ''}${v.recommendedTownHall ? `<small class="campaign-recommendation">Suggested Town Hall: ${v.recommendedTownHall}</small>` : ''}<div class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</div>${loot.gold || loot.elixir || loot.dark ? '' : `<small class="campaign-depleted">Loot depleted${score < 3 ? ' · Replay for stars' : ' · Village cleared'}</small>`}</div><div class="campaign-action"><div class="campaign-stars">${'★'.repeat(score)}<span>${'★'.repeat(3 - score)}</span></div>${button(`attack:${i}`, pending ? 'Coming soon' : locked ? 'Locked' : needsArmy ? 'Scout' : `Attack ${icon('ArrowRight', 17)}`, 'game-btn ' + (locked || pending ? 'stone' : 'orange'), locked || pending ? 'disabled' : '')}</div></article>`;
         this.campaignCards.set(i, { key, markup });
         return markup;
       },

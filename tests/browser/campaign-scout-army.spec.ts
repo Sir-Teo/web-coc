@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-test('training from a campaign scout returns to the same opponent and visible action', async ({
+test('an empty-army campaign row preserves the opponent through preparation and returns focus', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 480 });
@@ -13,10 +13,13 @@ test('training from a campaign scout returns to the same opponent and visible ac
   await page.locator('[data-action="clear-army"]').tap();
   await page.locator('[data-action="close-drawer"]').tap();
   await page.locator('.attack-btn').tap();
-  await page.locator('[data-action="campaign-scout:0"]').tap();
+  const rowAction = page.locator('#campaign-stage-0 [data-action="attack:0"]');
+  await rowAction.tap();
   const scout = page.locator('.campaign-scout');
   await expect(scout.getByRole('heading', { name: 'Payback' })).toBeVisible();
-  await expect(scout.getByRole('button', { name: 'Back to campaign' })).toBeVisible();
+  await scout.getByRole('button', { name: 'Back to campaign' }).tap();
+  await expect(rowAction).toHaveAccessibleName('Scout');
+  await rowAction.tap();
   const prepare = scout.getByRole('button', { name: 'Prepare army' });
   const offset = () => scout.evaluate((element) => element.scrollTop);
   await prepare.scrollIntoViewIfNeeded();
@@ -50,7 +53,9 @@ test('training from a campaign scout returns to the same opponent and visible ac
   expect(await offset()).toBe(Math.min(secondOffset, maxScroll));
   await expect(attack).toBeInViewport();
   await expect(attack).toBeFocused();
-  await attack.tap();
+  await scout.getByRole('button', { name: 'Back to campaign' }).tap();
+  await expect(rowAction).toHaveAccessibleName('Attack');
+  await rowAction.tap();
   await expect(page.locator('.battle-enemy h2')).toHaveText('Payback');
   await expect(page.locator('.prep-banner')).toBeVisible();
   await page.locator('.end-battle[data-action="home"]').tap();

@@ -112,3 +112,14 @@ The native adapter now recognizes X-Bows and Dark Elixir Storage, maps current X
 Stage 51, Invaders, is now playable with all 272 original buildings/traps. Native Goblin Town Hall levels 1–11 and their source artwork are now implemented. All 17 Hidden Tesla levels now have native artwork and source combat values. All 13 Bomb Tower levels now use source combat and presentation data, including Invaders’ level-3 defender, thrown bomb, impact and death charge. Villages 52–54 now support their original level-three Seeking Air Mines. Village 55, Magic Practice, still requires Wizard Tower level 11 and the campaign Shrink Trap; subsequent villages add more unsupported levels and mechanics. Dark Elixir settlement and browser tests use explicit supported-entity fixtures with the catalog reward, without weakening the real village guards. They cover half-damage allocation, full-storage loss, suspension, idempotent settlement, depletion after reload, portable replay/rewind, old-record compatibility and invalid snapshot rejection.
 
 The groundwork pass verified 928 model tests across 76 files, TypeScript compilation, and three Dark Elixir browser cases per engine (Chromium and WebKit, DPR 2) at desktop, portrait and landscape sizes. Captures/logs are under `output/playtest/dark-loot-*`. These fixture checks establish resource handling and layout, not implementation of the gated source villages.
+
+### Preparing from a campaign row
+
+In the web Campaign list, selecting an open village with no deployable army opens
+that village's scout screen. Prepare army returns to the same scout screen, where
+the player can confirm the attack once ready. Leaving before first deployment
+keeps the army and does not record a raid. Rows with a ready army keep their
+direct attack action, and Practice levels still provide their own armies.
+
+The pinned campaign records identify the village, layout, and Practice roster.
+They do not establish an original-client confirmation sequence or screen layout.
