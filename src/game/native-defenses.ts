@@ -95,8 +95,9 @@ const center = (b: Building) => ({
 });
 const air = (u: Unit) => !!TROOPS[u.kind].flying;
 const housing = (u: Unit) => (u.hero ? 25 : TROOPS[u.kind].space);
-const liveTarget = (u: Unit, at: number) =>
-  u.hp > 0 && !u.ejected && (u.spawnedAt ?? 0) <= at + EPS && !unitHidden(u, at);
+const liveAttacker = (u: Unit, at: number) =>
+  u.hp > 0 && !u.ejected && (u.spawnedAt ?? 0) <= at + EPS;
+const liveTarget = (u: Unit, at: number) => liveAttacker(u, at) && !unitHidden(u, at);
 
 /** Defenses the version 45 engine owns; campaign NPC archetypes keep their own rules. */
 /**
@@ -1315,7 +1316,8 @@ function stepDeathBomb(ctx: NativeDefenseContext, tower: Building, state: Native
   const c = center(tower);
   for (const u of ctx.battle.units)
     if (
-      liveTarget(u, at) &&
+      (ctx.battle.nativeTownHallDeathSplash ? liveAttacker(u, at) : liveTarget(u, at)) &&
+      !u.native?.recalled &&
       !u.native?.burrowed &&
       distance2D(u.x - c.x, u.y - c.y) <= death.radius + EPS
     )

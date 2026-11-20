@@ -18,7 +18,7 @@ import {
   revengeTier,
   spellTowerModes,
 } from '../src/game/native-defense-stats';
-import { validateReplay } from '../src/game/replay';
+import { REPLAY_VERSION, replayBattle, type ReplayData, validateReplay } from '../src/game/replay';
 import { validateSave } from '../src/game/save';
 import { unitEffects } from '../src/game/native-status';
 
@@ -309,6 +309,38 @@ describe('native defense combat', () => {
     run(m, 0.2);
     for (const [i, u] of units.entries()) expect(before[i] - u.hp).toBeCloseTo(500, 6);
   });
+
+  it.each([
+    [REPLAY_VERSION, 500],
+    [257, 0],
+  ])(
+    'uses the recorded splash eligibility for a Town Hall 12 death bomb in replay version %s',
+    (version, concealedDamage) => {
+      const m = arena([['goldmine', 2, 2, 1]], { golem: 2, dragon: 1 }, { townhall: 12 });
+      if (version !== REPLAY_VERSION) {
+        const { recording } = m as unknown as { recording: ReplayData };
+        m.battle = replayBattle(recording.initial, version);
+      }
+      const b = m.battle!;
+      const th = b.buildings.find(({ kind }) => kind === 'townhall')!;
+      const insideGround = deploy(m, 'golem', 42.5, 46)[0];
+      const insideAir = deploy(m, 'dragon', 42.5, 45)[0];
+      const outside = deploy(m, 'golem', 40, 46)[0];
+      for (const unit of [insideGround, insideAir, outside]) {
+        unit.springUntil = 100;
+        unitEffects(unit).invisibleUntil = 100;
+      }
+      th.hp = 0;
+      run(m, 1.6);
+      expect([insideGround, insideAir, outside].map(lost)).toEqual([0, 0, 0]);
+      run(m, 0.1);
+      expect([insideGround, insideAir, outside].map(lost)).toEqual([
+        concealedDamage,
+        concealedDamage,
+        0,
+      ]);
+    },
+  );
 
   it('arms the Town Hall 17 Inferno Artillery one second into the battle', () => {
     const m = arena([], { golem: 1 }, { townhall: 17, troopLevel: 10 });

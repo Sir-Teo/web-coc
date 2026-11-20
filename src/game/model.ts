@@ -942,6 +942,8 @@ export interface Battle {
   nativeJellyBrainwash?: true;
   /** Version 257: Jelly rides its hero, shoots defenses and ignores incoming attacks. */
   nativeJellyAttachment?: true;
+  /** Version 258: Town Hall death splash also damages concealed attackers. */
+  nativeTownHallDeathSplash?: true;
   /** Version 100: native healing resolves through source projectile travel and chain hops. */
   nativeHealingProjectiles?: true;
   nativeHealingTotem?: true;
