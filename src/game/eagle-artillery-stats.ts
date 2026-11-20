@@ -67,7 +67,8 @@ export const EAGLE_ARTILLERY_HOUSING = housing;
 /**
  * Deployed housing as the retained battle log counts it: troops and heroes use their housing
  * multipliers, each spell housing space is weighted by SPELL_HOUSING_COST_MULTIPLIER (500%).
- * Hero-summoned units are not deployments. The game has no attacking Clan Castle troops or pets.
+ * Roster heroes count once when fielded, including after Recall or defeat. Pets and summons
+ * do not count as deployments.
  */
 export function eagleArtilleryDeployedHousing(battle: Battle) {
   const g = housing.globals;
@@ -79,8 +80,10 @@ export function eagleArtilleryDeployedHousing(battle: Battle) {
         (battle.carriedArmy[kind] - battle.remaining[kind])) /
         100,
     );
-  if (battle.hero && battle.hero.unitId !== null)
-    total += Math.trunc((g.HERO_HOUSING_COST_MULTIPLIER * housing.hero.housingSpace) / 100);
+  const heroSpace = Math.trunc((g.HERO_HOUSING_COST_MULTIPLIER * housing.hero.housingSpace) / 100);
+  if (battle.nativeEagleHeroHousing && battle.nativeHeroes) {
+    for (const hero of battle.nativeHeroes) if (hero.deployed) total += heroSpace;
+  } else if (battle.hero && battle.hero.unitId !== null) total += heroSpace;
   for (const kind of SPELL_KEYS)
     total += Math.trunc(
       (g.SPELL_HOUSING_COST_MULTIPLIER *

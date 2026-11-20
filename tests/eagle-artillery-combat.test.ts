@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { makeBuilding, type Battle, type Building, type Unit } from '../src/game/model';
-import { replayBattle } from '../src/game/replay';
+import { REPLAY_VERSION, replayBattle } from '../src/game/replay';
 import { SPELLS, TROOPS, TROOP_KEYS, SPELL_KEYS } from '../src/game/data';
 import { stepLateCampaign } from '../src/game/late-campaign';
 import { NATIVE_COMBAT } from '../src/game/native-campaign';
@@ -262,4 +262,34 @@ describe('Eagle Artillery shells', () => {
     expect(s.emptyAt).toBe(s.volleys.at(-1)!.launches.at(-1));
     expect(s.group).toEqual([]);
   });
+});
+
+it('counts each fielded roster hero once toward the campaign Eagle wake threshold', () => {
+  const setup = isolatedSetup(65, artillery(), { pekka: 6 });
+  setup.heroes = [
+    { kind: 'king', level: 20, items: [] },
+    { kind: 'queen', level: 20, items: [] },
+  ];
+  for (const [version, legacy] of [[263, true], [REPLAY_VERSION, false]] as const) {
+    const battle = replayBattle(setup, version);
+    battle.remaining.pekka = 0;
+    battle.started = true;
+    battle.units.push(unit('pekka', center.x + 12, center.y));
+    const [king, queen] = battle.nativeHeroes!;
+    expect(eagleArtilleryDeployedHousing(battle)).toBe(150);
+    king.deployed = true;
+    king.unitId = 7;
+    expect(eagleArtilleryDeployedHousing(battle)).toBe(legacy ? 150 : 175);
+    advance(battle, 2);
+    expect(tower(battle).awakeAt).toBeUndefined();
+    // Recall clears the actor ID, but the original deployment still counts.
+    king.unitId = null;
+    queen.deployed = true;
+    queen.unitId = 8;
+    advance(battle, 2);
+    expect(eagleArtilleryDeployedHousing(battle)).toBe(legacy ? 150 : 200);
+    expect(tower(battle).awakeAt !== undefined).toBe(!legacy);
+    king.unitId = 9;
+    expect(eagleArtilleryDeployedHousing(battle)).toBe(legacy ? 150 : 200);
+  }
 });

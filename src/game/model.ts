@@ -954,6 +954,8 @@ export interface Battle {
   nativeJumpSiegeImmunity?: true;
   /** Version 263: Wall Breakers choose breaches on routes opened by Jump. */
   nativeJumpWallBreakerTargets?: true;
+  /** Version 264: campaign Eagle Artillery counts each deployed roster hero once. */
+  nativeEagleHeroHousing?: true;
   /** Version 100: native healing resolves through source projectile travel and chain hops. */
   nativeHealingProjectiles?: true;
   nativeHealingTotem?: true;
