@@ -3152,6 +3152,8 @@ export class VillageScene extends Phaser.Scene {
   /** Army and active Puppet tiers, including source secondary/summoned descendants. */
   private wantedTroopArtLevels() {
     const summons = this.heroSummonArt();
+    for (const { kind, level } of this.model.battle?.siegeCargo?.troops ?? [])
+      summons.set(kind, [...(summons.get(kind) ?? []), level]);
     const wanted = new Set<string>();
     for (const army of [this.model.state.army, this.model.battle?.carriedArmy]) {
       if (!army) continue;
@@ -4992,6 +4994,8 @@ export class VillageScene extends Phaser.Scene {
           ...(soundRoots.get(kind) ?? []),
           this.model.troopLevel(kind as TroopKind),
         ]);
+    for (const { kind, level } of battle.siegeCargo?.troops ?? [])
+      soundRoots.set(kind, [...(soundRoots.get(kind) ?? []), level]);
     for (const kind of spawnedTroopArtLevels(soundRoots, {
       researchedLevel: (kind) => this.model.troopLevel(kind),
       siegeBarracksTroops: !!battle.nativeSiegeBarracksTroops,

@@ -1,3 +1,4 @@
+import { prepareSiegeCargo, type SiegeCargoEntry } from './siege-cargo';
 import { nativeGlobal } from './native-data';
 import { advanceBoostedHelper } from './helper-potion-timing';
 import { encodeArmy, decodeSharedArmy } from './army-share';
@@ -1260,6 +1261,8 @@ export interface Battle {
   /** Version 54: last time a structure or defender lost hit points, and their total then. */
   progressAt?: number;
   progressHp?: number;
+  /** Practice-only payload, consumed by the casualty pass for its deployed carrier. */
+  siegeCargo?: { troops: readonly SiegeCargoEntry[]; carrierId?: number; released?: true };
   siegeDeployed?: boolean;
   nativeSpells?: NativeSpellCast[];
   nativeSpellSequence?: number;
@@ -6165,6 +6168,7 @@ export class GameModel {
     practice = false,
     catalog: CampaignCatalog = 'valley-v1',
     ladder?: LadderMatch,
+    practiceCargo?: readonly SiegeCargoEntry[],
   ) {
     if (this.battle) return;
     if (
@@ -6174,6 +6178,15 @@ export class GameModel {
       index >= campaignStages(catalog).length ||
       (practice && catalog !== 'valley-v1') ||
       (ladder && (practice || catalog !== 'goblin-v1'))
+    )
+      return;
+    const siegeCargo =
+      practiceCargo && practice && this.clanCastle?.hp
+        ? prepareSiegeCargo({ castleLevel: this.clanCastle.level, troops: practiceCargo })
+        : undefined;
+    if (
+      practiceCargo &&
+      (!siegeCargo || !TROOP_KEYS.some((kind) => isSiege(kind) && this.state.army[kind] > 0))
     )
       return;
     // A Practice level brings its own army and opens at its Town Hall.
@@ -6282,6 +6295,7 @@ export class GameModel {
             },
           }
         : {}),
+      ...(siegeCargo ? { siegeCargo } : {}),
       townhall: this.townhallLevel,
       ...(heroes.length ? { heroes } : {}),
       ...(heroes.length && this.state.settings.manualHeroAbilities
@@ -6363,7 +6377,10 @@ export class GameModel {
     const starting = !b.started;
     this.beginFight();
     b.remaining[k]--;
-    if (isSiege(k)) b.siegeDeployed = true;
+    if (isSiege(k)) {
+      b.siegeDeployed = true;
+      if (b.siegeCargo) b.siegeCargo.carrierId = this.state.nextId;
+    }
     if (!b.practice && !b.fixedArmy) this.state.army[k]--;
     const d = this.troopStats(k);
     const recalled = b.recalledHp?.[k]?.shift();
@@ -7659,6 +7676,12 @@ export class GameModel {
       if (b.dropFallenPaths && u.path.length) u.path = [];
       if (u.spent) continue;
       u.spent = true;
+      if (native && b.siegeCargo?.carrierId === u.id && !b.siegeCargo.released) {
+        const { troops } = b.siegeCargo;
+        b.siegeCargo.released = true;
+        for (const { kind, level, count } of troops)
+          for (let i = 0; i < count; i++) spawnNativeUnit(native, kind, level, u.x, u.y, b.elapsed);
+      }
       if (native && nativeBehavior(b, u.kind)) {
         resolveNativeDeath(native, u);
         continue;

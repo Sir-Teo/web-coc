@@ -1,3 +1,4 @@
+import { prepareSiegeCargo, SIEGE_CARGO_REPLAY_VERSION, type SiegeCargoSetup } from './siege-cargo';
 import { defendingHero, type DefendingHeroSetup } from './defending-heroes';
 import { validLadderMatch, type LadderMatch } from './ladder';
 import { validCraftedFields } from './crafted-defenses';
@@ -66,7 +67,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 253;
+export const REPLAY_VERSION = SIEGE_CARGO_REPLAY_VERSION;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -443,6 +444,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 250 ||
   version === 251 ||
   version === 252 ||
+  version === 253 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -549,6 +551,7 @@ export type ReplayAction = { step: number } & (
   | { type: 'end' }
 );
 export interface ReplaySetup {
+  siegeCargo?: SiegeCargoSetup;
   /** Version 248, stored only when automatic Hero abilities are disabled. */
   manualHeroAbilities?: true;
   defendingHeroes?: DefendingHeroSetup[];
@@ -608,7 +611,14 @@ function fullMapPractice(
     NATIVE_CAMPAIGN[s.index]?.useFullMapSize === true
   );
 }
-export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
+export function replayBattle(setup: ReplaySetup, version = REPLAY_VERSION): Battle {
+  const cargo =
+    version >= SIEGE_CARGO_REPLAY_VERSION && setup.practice
+      ? prepareSiegeCargo(setup.siegeCargo)
+      : undefined;
+  // Cargo enables the same per-troop combat rules as the army without adding deployable stock.
+  const s = cargo ? { ...setup, army: { ...setup.army } } : setup;
+  if (cargo) for (const { kind, count } of cargo.troops) s.army[kind] += count;
   const launcher = version >= 223 && s.army.trooplauncher > 0;
   const homeSpring =
     s.catalog !== 'goblin-v1' &&
@@ -1164,8 +1174,9 @@ export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
     ...(s.ladder ? { ladder: { ...s.ladder } } : {}),
     ...(s.fixedArmy ? { fixedArmy: true } : {}),
     buildings: structuredClone(s.buildings),
-    carriedArmy: { ...s.army },
-    remaining: { ...s.army },
+    ...(cargo ? { siegeCargo: { troops: cargo.troops } } : {}),
+    carriedArmy: { ...setup.army },
+    remaining: { ...setup.army },
     carried: { ...s.spells },
     spells: { ...s.spells },
     troopLevels: { ...s.troopLevels },
@@ -1225,7 +1236,26 @@ export function validateReplay(value: unknown): value is ReplayData {
   // A recording is checked against the book it was written with, not today's.
   const spellKeys = spellKeysAt(value.version);
   const equipmentCeiling = value.version < 47 ? EQUIPMENT_LEVEL_BEFORE_47 : EQUIPMENT_MAX_LEVEL;
+  const siegeCargo = prepareSiegeCargo(s.siegeCargo);
   if (
+    (s.siegeCargo !== undefined &&
+      (value.version < SIEGE_CARGO_REPLAY_VERSION ||
+        s.fixedArmy === true ||
+        s.practice !== true ||
+        !siegeCargo ||
+        !Array.isArray(s.buildings) ||
+        !s.buildings.some(
+          (b) =>
+            object(b) &&
+            b.kind === 'clancastle' &&
+            !b.npc &&
+            !b.constructing &&
+            b.level === siegeCargo.castleLevel,
+        ) ||
+        !object(s.army) ||
+        !TROOP_KEYS.some(
+          (kind) => isSiege(kind) && typeof s.army[kind] === 'number' && s.army[kind] > 0,
+        ))) ||
     (s.manualHeroAbilities !== undefined &&
       (value.version < 248 || s.manualHeroAbilities !== true)) ||
     !validCampaignCatalog(s.catalog) ||

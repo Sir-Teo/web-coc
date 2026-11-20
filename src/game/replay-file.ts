@@ -1,3 +1,4 @@
+import { prepareSiegeCargo } from './siege-cargo';
 import { compatibleReplayVersion, spellKeysAt, validateReplay, type ReplayData } from './replay';
 import { TROOP_KEYS, SPELL_KEYS } from './data';
 import { EQUIPMENT_KEYS, type KingEquipment } from './equipment';
@@ -15,6 +16,7 @@ export function makeReplayFile(replay: ReplayData): ReplayFile {
   if (!compatibleReplayVersion(replay.version))
     throw Error('This replay needs a different game version.');
   const s = replay.initial;
+  const siegeCargo = prepareSiegeCargo(s.siegeCargo);
   const army = (v: typeof s.army) =>
     Object.fromEntries(TROOP_KEYS.map((k) => [k, v[k]])) as typeof v;
   const spells = Object.fromEntries(SPELL_KEYS.map((k) => [k, s.spells[k]])) as typeof s.spells;
@@ -28,6 +30,7 @@ export function makeReplayFile(replay: ReplayData): ReplayFile {
         ...(s.catalog ? { catalog: s.catalog } : {}),
         ...(s.scenery ? { scenery: s.scenery.map((o) => ({ data: o.data, x: o.x, y: o.y })) } : {}),
         practice: s.practice,
+        ...(siegeCargo ? { siegeCargo } : {}),
         ...(s.manualHeroAbilities ? { manualHeroAbilities: s.manualHeroAbilities } : {}),
         ...(s.ladder
           ? { ladder: { opponent: s.ladder.opponent, win: s.ladder.win, loss: s.ladder.loss } }
