@@ -159,6 +159,7 @@ import { preloadXbows, XbowPresentation } from './xbow-scene';
 import { XBOW_ART, xbowTexture } from './xbow-art';
 import { XBOW_LEVELS } from './xbow-stats';
 import { buildingRange } from './building-range';
+import { firespitterFacing, nativeWeapon } from './native-defense-stats';
 import { battleTrapStats } from './traps';
 import { BOMB_TOWER_ART } from './bomb-tower-art';
 import { preloadBombTowers, BombTowerPresentation } from './bomb-tower-scene';
@@ -5427,17 +5428,23 @@ export class VillageScene extends Phaser.Scene {
       if (range) {
         const p = iso(b.x + d.size / 2, b.y + d.size / 2);
         g.lineStyle(1, 0xffffff, 0.35);
-        if (b.kind === 'airsweeper') {
-          const angle = sweeperAngle(b.direction),
-            x = b.x + 1,
-            y = b.y + 1;
-          const points = this.sweeperArc;
+        const cone =
+          b.kind === 'airsweeper'
+            ? SWEEPER.cone
+            : b.kind === 'firespitter'
+              ? ((nativeWeapon('firespitter', b.level)?.cone ?? 0) * Math.PI) / 180
+              : 0;
+        if (cone) {
+          const angle = b.kind === 'airsweeper' ? sweeperAngle(b.direction) : firespitterFacing(b.direction) * Math.PI / 2;
+          const x = b.x + d.size / 2,
+            y = b.y + d.size / 2;
+          const points = this.selectionArc;
           for (let i = 0; i < 98; i++) {
             // Outer arc out, inner arc back.
             const outer = i < 49,
               step = outer ? i : 97 - i,
-              radius = outer ? range : SWEEPER.minRange;
-            const a = angle + SWEEPER.cone * (step / 48 - 0.5);
+              radius = outer ? range : b.kind === 'airsweeper' ? SWEEPER.minRange : (d.minRange ?? 0);
+            const a = angle + cone * (step / 48 - 0.5);
             isoInto(points[i], x + Math.cos(a) * radius, y + Math.sin(a) * radius);
           }
           g.fillStyle(0xcaf8ff, 0.1).fillPoints(points, true);
@@ -5482,7 +5489,7 @@ export class VillageScene extends Phaser.Scene {
         );
     }
   }
-  private sweeperArc = Array.from({ length: 98 }, () => new Phaser.Math.Vector2());
+  private selectionArc = Array.from({ length: 98 }, () => new Phaser.Math.Vector2());
   private gridLayer?: Phaser.GameObjects.Graphics;
   /** The edit grid never changes: record it once and toggle it. */
   private showGrid(visible: boolean) {

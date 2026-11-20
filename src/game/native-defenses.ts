@@ -6,6 +6,7 @@ import { flag, nativeRow, num, text, tiles } from './native-data';
 import {
   HERO_WAKE_MULTIPLIER,
   SPELL_WAKE_MULTIPLIER,
+  firespitterFacing,
   isNativeDefenseKind,
   monolithProjectile,
   nativeGearedWeapon,
@@ -560,7 +561,7 @@ const FACING = [
 function inCone(tower: Building, weapon: NativeWeapon, u: Unit) {
   if (!weapon.cone || weapon.cone >= 360) return true;
   const c = center(tower);
-  const [fx, fy] = FACING[Math.floor(((tower.direction ?? 0) % 8) / 2)];
+  const [fx, fy] = FACING[firespitterFacing(tower.direction)];
   const dx = u.x - c.x,
     dy = u.y - c.y,
     d = distance2D(dx, dy);

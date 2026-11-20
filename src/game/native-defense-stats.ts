@@ -60,6 +60,9 @@ export type GearMode = 'long' | 'fast';
  * (46.03 per ball at level 1) and Multi-Gear Fast Attack 0.384 + 3 x 0.192 = 0.96 s (156 per ball).
  */
 
+/** Firespitters face along tile edges. Older saved diagonals use the preceding edge. */
+export const firespitterFacing = (direction = 0) => Math.floor((direction % 8) / 2);
+
 export interface NativeWeapon {
   /** Client row that supplied the numbers (building or weapon). */
   source: string;

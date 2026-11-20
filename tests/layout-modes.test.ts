@@ -69,3 +69,25 @@ it('rejects malformed layout modes and accepts layouts saved before they existed
   (layout.slots[3] as { gearMode?: string }).gearMode = 'sideways';
   expect(validateSave(m.state)).toBe(false);
 });
+
+it.each([
+  ['airsweeper', 1, 2],
+  ['firespitter', 2, 4],
+] as const)('temporarily rotate and restore a saved %s, retaining direction in old slots', (kind, saved, changed) => {
+  const { m } = village();
+  const tower = makeBuilding(m.state.nextId++, kind, 13, 2, 1);
+  m.state.buildings.push(tower);
+  m.selected = tower.id;
+  expect(m.rotateSweeper()).toBe(true);
+  expect(tower.direction).toBe(saved);
+  m.saveLayout(0);
+  expect(m.rotateSweeper()).toBe(true);
+  expect(tower.direction).toBe(changed);
+  m.loadLayout(0);
+  expect(tower.direction).toBe(saved);
+  delete m.state.layouts![0].slots.find(({ id }) => id === tower.id)!.direction;
+  expect(validateSave(m.state)).toBe(true);
+  expect(m.rotateSweeper()).toBe(true);
+  m.loadLayout(0);
+  expect(tower.direction).toBe(changed);
+});
