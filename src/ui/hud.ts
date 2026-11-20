@@ -1469,6 +1469,10 @@ export class HUD {
   private restoreFocus() {
     restoreFocusMark(this.focusBefore);
   }
+  private focusHeroUpgrade(kind: HeroKind) {
+    const next = this.modalEl.querySelector<HTMLElement>(`[data-action="hero-upgrade:${kind}"]:enabled`);
+    (next ?? this.modalEl.querySelector<HTMLElement>('.modal [data-action="close"]'))?.focus();
+  }
   /**
    * Picks a building up out of the shop drawer and follows the pointer onto the
    * map, dropping it where the pointer is released. A tap or release over the drawer
@@ -1943,12 +1947,18 @@ export class HUD {
         if ((HERO_KINDS as string[]).includes(arg) && m.heroUpgradeCancellation(arg as HeroKind)) {
           this.heroCancelConfirm = arg as HeroKind;
           this.render();
+          this.modalEl.querySelector<HTMLElement>('[data-action="hero-cancel-keep"]')?.focus();
         }
         break;
-      case 'hero-cancel-keep':
+      case 'hero-cancel-keep': {
+        const kind = this.heroCancelConfirm;
         this.heroCancelConfirm = null;
         this.render();
+        this.modalEl
+          .querySelector<HTMLElement>(`[data-action="hero-cancel-request:${kind}"]`)
+          ?.focus();
         break;
+      }
       case 'hero-cancel-confirm': {
         const kind = this.heroCancelConfirm;
         this.heroCancelConfirm = null;
@@ -3085,6 +3095,11 @@ export class HUD {
     const armyScroll = this.hudEl.querySelector('.army-tray')?.scrollLeft ?? 0;
     const active = document.activeElement;
     const focused = focusMark(active);
+    const expiredHeroCancel =
+      this.heroCancelConfirm && !m.heroUpgradeCancellation(this.heroCancelConfirm)
+        ? this.heroCancelConfirm
+        : null;
+    if (expiredHeroCancel) this.heroCancelConfirm = null;
     let rebuilt = false;
     const hudMarkup = b ? this.battleHUD() : this.homeHUD();
     if (hudMarkup !== this.hudMarkup) {
@@ -3201,6 +3216,11 @@ export class HUD {
         this.drawerEl.querySelector<HTMLElement>('.drawer-head h2')?.focus({ preventScroll: true });
       else if (!document.activeElement?.isConnected || document.activeElement === document.body)
         restoreFocusMark(this.drawerLauncher);
+    } else if (
+      expiredHeroCancel &&
+      active?.matches('[data-action="hero-cancel-keep"], [data-action^="hero-cancel-confirm:"]')
+    ) {
+      this.focusHeroUpgrade(expiredHeroCancel);
     } else if (focused && active && !active.isConnected && (this.panel || !this.scene.uiBlocked)) {
       // The focused control (or text field, with its caret) was rebuilt: focus its replacement.
       restoreFocusMark(focused);

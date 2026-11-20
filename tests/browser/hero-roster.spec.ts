@@ -590,6 +590,45 @@ test.describe('phone pet upgrade items', () => {
 test.describe('phone Hero Hall lineup', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
+  test('an expiring upgrade keeps focus in Hero Hall while cancellation is open', async ({
+    page,
+  }) => {
+    await page.clock.setFixedTime(Date.now());
+    await boot(page);
+    await develop(page);
+    await page.locator('.train-add').tap();
+    await page.locator('.modern-army-actions [data-action="heroes"]').tap();
+    const king = page.locator('[data-hero="king"]');
+    const upgrade = king.locator('[data-action="hero-upgrade:king"]');
+    const cancel = king.getByRole('button', { name: 'Cancel upgrade' });
+    const keep = king.getByRole('button', { name: 'Keep upgrading' });
+    const confirm = king.getByRole('button', { name: 'Confirm cancellation' });
+    await upgrade.tap();
+    await cancel.tap();
+    await expect(keep).toBeFocused();
+    await keep.tap();
+    await expect(cancel).toBeFocused();
+    await cancel.tap();
+    await confirm.focus();
+    const before = await page.evaluate(() => {
+      const { model } = window.__game;
+      const hero = model.heroProgress('king')!;
+      return { end: hero.upgradeEnd!, level: hero.level, dark: model.state.dark };
+    });
+    await page.clock.setFixedTime(before.end + 1000);
+    await expect(confirm).toHaveCount(0);
+    await expect(upgrade).toBeFocused();
+    expect(
+      await page.evaluate(() => {
+        const { model } = window.__game;
+        return { level: model.heroProgress('king')!.level, dark: model.state.dark };
+      }),
+    ).toEqual({ level: before.level + 1, dark: before.dark });
+    await upgrade.tap();
+    await expect(cancel).toBeVisible();
+    await expect(confirm).toHaveCount(0);
+  });
+
   test('closing Heroes after a swap restores its Village or Army launcher', async ({ page }) => {
     await boot(page);
     const point = await page.evaluate(async () => {
