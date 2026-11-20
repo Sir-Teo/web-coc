@@ -107,7 +107,8 @@ test('dialog close buttons and settings switches take presses beside their art',
   test.skip(!(await coarsePointer(page)), 'This engine does not emulate a coarse pointer.');
   await page.locator('[data-action="settings"]').first().tap();
   const close = '.modal [data-action="close"]';
-  await expect(page.locator(close)).toBeVisible();
+  // Probe the enlarged hit area after the dialog finishes moving.
+  await page.locator(close).tap({ trial: true });
   const closePoints = await probes(page, close, { x: 4, y: 4 });
   expect(await hits(page, closePoints)).toEqual(all(closePoints, 'close'));
 
@@ -124,7 +125,7 @@ test('dialog close buttons and settings switches take presses beside their art',
   await page.locator(close).tap();
   await page.locator('.shop-btn').tap();
   const drawerClose = '.drawer-head [data-action="close-drawer"]';
-  await expect(page.locator(drawerClose)).toBeVisible();
+  await page.locator(drawerClose).tap({ trial: true });
   // Its category tabs take a finger too, and the building tiles keep their room.
   const shop = await page.evaluate(() => {
     const tabs = [...document.querySelectorAll('.drawer-head .shop-tabs .tab')];
