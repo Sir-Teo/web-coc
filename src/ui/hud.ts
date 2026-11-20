@@ -3770,7 +3770,9 @@ export class HUD {
     const issue = m.upgradeIssue(b);
     const free = m.builders - m.busy;
     const facts = `<small class="upgrade-facts">${resource(d.resource)} ${n(m.upgradeCost(b))} <i>·</i> ${icon('Clock3', 12)} ${time(m.upgradeSeconds(b))} <i>·</i> ${icon('Hammer', 12)} ${free}/${m.builders}</small>`;
-    const target = issue?.merge ? m.state.buildings.find((v) => v.kind === issue.merge) : undefined;
+    const target = issue?.requiredBuilding
+      ? m.state.buildings.find((v) => v.kind === issue.requiredBuilding)
+      : undefined;
     return `<span class="upgrade-control">${button(
       `upgrade:${b.id}`,
       `<span>${icon('ArrowBigUp', 19)} Upgrade</span>${facts}`,

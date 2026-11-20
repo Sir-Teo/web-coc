@@ -2199,6 +2199,13 @@ export class GameModel {
     }
     return null;
   }
+  /** Town Hall 9 follows the Hero Hall tier that unlocks the Archer Queen. */
+  private townHallHeroHallIssue(level: number) {
+    const requiredHall = heroUnlockHall('queen');
+    return level === heroUnlockTownHall('queen') && this.heroHallLevel < requiredHall
+      ? `Complete Hero Hall level ${requiredHall} to unlock the Archer Queen before upgrading the Town Hall.`
+      : null;
+  }
   countOf(kind: BuildingKind) {
     return this.state.buildings.filter((b) => b.kind === kind).length;
   }
@@ -3302,14 +3309,18 @@ export class GameModel {
   }
   /**
    * Why a building cannot start its next level now, in the order `upgrade` checks, or null when
-   * it can. `merge` names the building a Town Hall merge needs, so the card can point at it.
+   * it can. A required building gives the card a destination for its shortcut.
    */
-  upgradeIssue(b: Building): { reason: string; merge?: BuildingKind } | null {
+  upgradeIssue(b: Building): { reason: string; requiredBuilding?: BuildingKind } | null {
     if (b.upgradeEnd) return { reason: 'Already upgrading.' };
     if (b.level >= BUILDINGS[b.kind].maxLevel)
       return { reason: 'This building is at its maximum level.' };
     if (b.level >= this.maxLevel(b.kind))
       return { reason: `Upgrade your Town Hall to raise this past level ${b.level}.` };
+    if (b.kind === 'townhall') {
+      const reason = this.townHallHeroHallIssue(b.level);
+      if (reason) return { reason, requiredBuilding: 'herohall' };
+    }
     if (b.kind !== 'wall' && this.busy >= this.builders)
       return { reason: `All ${this.builders} builders are busy.` };
     if (b.kind === 'townhall') {
@@ -3320,7 +3331,7 @@ export class GameModel {
           townHallMergeInputs(b.level + 1).find((input) =>
             issue.includes(BUILDINGS[input.kind].name),
           )?.kind;
-        return { reason: issue, ...(merge ? { merge } : {}) };
+        return { reason: issue, ...(merge ? { requiredBuilding: merge } : {}) };
       }
     }
     const resource = BUILDINGS[b.kind].resource,
@@ -3343,6 +3354,10 @@ export class GameModel {
       return this.notify('This building is at its maximum level.');
     if (b.level >= this.maxLevel(b.kind))
       return this.notify(`Upgrade your Town Hall to raise this past level ${b.level}.`);
+    if (b.kind === 'townhall') {
+      const reason = this.townHallHeroHallIssue(b.level);
+      if (reason) return this.notify(reason);
+    }
     if (b.kind !== 'wall' && this.busy >= this.builders)
       return this.notify('All builders are busy.');
     const d = BUILDINGS[b.kind],

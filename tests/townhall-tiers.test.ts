@@ -258,6 +258,7 @@ describe('Town Hall tier village', () => {
 
   it('upgrades the Town Hall from eight to nine and keeps the village intact', () => {
     const m = village(8);
+    m.state.buildings.push(makeBuilding(m.state.nextId++, 'herohall', 30, 30, 2));
     const before = m.state.buildings.length;
     expect(m.maxCount('xbow')).toBe(0);
     m.upgrade(m.townhall!.id);
@@ -428,4 +429,36 @@ describe('Town Hall tier village', () => {
     for (const version of [43, 44, 45])
       expect(validateReplay({ ...current, version }), `version ${version}`).toBe(false);
   });
+});
+
+it('requires the completed Queen-unlocking Hero Hall before Town Hall 9', () => {
+  const m = village(8);
+  const townHall = m.townhall!;
+  m.addMagicItem('hammer-of-building');
+  const gold = m.state.gold;
+  expect(m.upgradeIssue(townHall)?.reason).toContain('Hero Hall level 2');
+  m.upgrade(townHall.id);
+  expect(townHall.upgradeEnd).toBeUndefined();
+  expect(m.useHammer('hammer-of-building', { building: townHall.id })).toBe(false);
+  expect(m.magicItemCount('hammer-of-building')).toBe(1);
+  expect(m.state.gold).toBe(gold);
+
+  const hall = makeBuilding(m.state.nextId++, 'herohall', 30, 30, 1);
+  m.state.buildings.push(hall);
+  m.upgrade(hall.id);
+  expect(hall.upgradeEnd).toBeDefined();
+  expect(m.upgradeIssue(townHall)?.reason).toContain('Hero Hall level 2');
+  expect(m.heroUnlocked('queen')).toBe(false);
+  expect(m.heroSlotCount).toBe(1);
+  m.tick(hall.upgradeEnd!);
+  expect(m.heroUnlocked('queen')).toBe(true);
+  expect(m.heroSlotCount).toBe(1);
+  expect(m.upgradeIssue(townHall)).toBeNull();
+  m.upgrade(townHall.id);
+  m.tick(townHall.upgradeEnd!);
+  expect(m.townhallLevel).toBe(9);
+  m.upgrade(hall.id);
+  m.tick(hall.upgradeEnd!);
+  expect(m.heroSlotCount).toBe(2);
+  expect(m.heroUnlocked('prince')).toBe(true);
 });
