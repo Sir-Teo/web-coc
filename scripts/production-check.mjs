@@ -183,6 +183,7 @@ for (const [name, engine] of Object.entries(engines)) {
   if (selectedBrowser !== undefined && name !== selectedBrowser) continue;
   const browser = await engine.launch({
     headless: true,
+    ...(name === 'chromium' ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM } : {}),
     ...(name === 'chromium' && process.platform === 'darwin'
       ? { args: ['--use-angle=metal'] }
       : {}),
@@ -403,6 +404,10 @@ for (const [name, engine] of Object.entries(engines)) {
       })),
     )
     .toEqual({ css: [844, 390], inBudget: true, proportional: true });
+  // At short phone widths, the base HUD can cover this button if the
+  // packaged stylesheets lose the order of the compact overrides.
+  await page.locator('[data-action="skip-tutorial"]').click();
+  await page.setViewportSize({ width: 568, height: 320 });
   await page.locator('[data-action="battle-log"]').click();
   await page.getByRole('button', { name: 'Watch replay', exact: true }).click();
   await expect(page.locator('#toast')).not.toHaveClass(/show/, { timeout: 500 });

@@ -1,7 +1,6 @@
 import { armyFromLink } from './game/army-share';
 import Phaser from 'phaser';
-import './style.css';
-import './ui/compact-hud.css';
+import './app.css';
 import './game/import-retry';
 import { GameModel } from './game/model';
 import { VillageScene, prepareHomeArt } from './game/scene';
