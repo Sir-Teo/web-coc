@@ -23,10 +23,10 @@ const cases: { kind: TroopKind; setup: (m: GameModel) => void; label: string; me
     {
       kind: 'superminion',
       setup: (m) => {
-        m.townhall.level = 10;
+        m.townhall.level = 11;
       },
-      label: 'TH11 required',
-      message: 'Super Minion requires Town Hall 11.',
+      label: 'TH12 required',
+      message: 'Super Minion requires Town Hall 12.',
     },
     {
       kind: 'superminion',
@@ -126,4 +126,22 @@ it('clock expiry publishes the new missing-boost requirement and keeps prepared 
   expect(m.state.superBoosts.superminion).toBeUndefined();
   expect(m.troopTrainingIssue('superminion')!.label).toBe('Boost to train');
   expect(m.state.army.superminion).toBe(1);
+});
+
+it('reports each housing shortfall and preserves the active army on refusal', () => {
+  const m = village();
+  m.state.buildings.push(makeBuilding(5, 'spellfactory', 30, 30, 1));
+  m.train('giant');
+  m.brew('lightning');
+  const army = { ...emptyArmy(), swordsman: m.capacity + 1 };
+  const spells = { ...emptySpells(), lightning: 3 };
+  m.state.armyPresets = [{ name: 'Oversized', army, spells }, null, null];
+  const troopIssue = `Troops need ${m.capacity + 1} spaces, but your camps hold ${m.capacity}.`;
+  const spellIssue = 'Spells need 3 spaces, but your factories hold 2.';
+  expect(m.armyPreparationIssue(army, emptySpells())).toBe(troopIssue);
+  expect(m.armyPreparationIssue(emptyArmy(), spells)).toBe(spellIssue);
+  expect(m.armyPreparationIssue(army, spells)).toBe(`${troopIssue} ${spellIssue}`);
+  const before = structuredClone(m.state);
+  m.loadArmyPreset(0);
+  expect(m.state).toEqual(before);
 });

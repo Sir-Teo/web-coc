@@ -4303,8 +4303,16 @@ export class GameModel {
       siege.some((kind) => army[kind] > this.state.army[kind])
     )
       return this.siegeCapacityMessage(capacity);
-    if (armySpace(army) > this.capacity || spellSpace(spells) > this.spellCapacity)
-      return 'This army needs more troop or spell housing.';
+    const troopHousing = armySpace(army);
+    const spellHousing = spellSpace(spells);
+    const troopCapacity = this.capacity;
+    const spellCapacity = this.spellCapacity;
+    const shortfalls: string[] = [];
+    if (troopHousing > troopCapacity)
+      shortfalls.push(`Troops need ${troopHousing} spaces, but your camps hold ${troopCapacity}.`);
+    if (spellHousing > spellCapacity)
+      shortfalls.push(`Spells need ${spellHousing} spaces, but your factories hold ${spellCapacity}.`);
+    if (shortfalls.length) return shortfalls.join(' ');
     const troop = TROOP_KEYS.find((k) => army[k] > this.state.army[k] && !this.troopUnlocked(k));
     if (troop) return this.troopTrainingIssue(troop)!.message;
     const spell = SPELL_KEYS.find(

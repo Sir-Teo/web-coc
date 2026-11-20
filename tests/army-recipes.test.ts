@@ -143,7 +143,7 @@ describe('army recipes', () => {
     expect(m.useArmyRecipe('EV_TH10_HotHogSummer')).toBe(false);
     expect(m.state.army).toEqual(before);
     expect(toasts.at(-1)).toBe(
-      'You cannot train this army. This army needs more troop or spell housing.',
+      `You cannot train this army. Troops need 240 spaces, but your camps hold ${m.capacity}.`,
     );
     // Only the recipes of the village's own Town Hall can be used.
     expect(m.useArmyRecipe('EV_TH11_HotHogSummer')).toBe(false);

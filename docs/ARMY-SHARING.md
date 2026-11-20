@@ -60,3 +60,17 @@ ground/air mode appear as explicit
 exclusions before using the army and in the completion message; they are not
 silently applied or converted into ordinary troops. Newer original-game roster
 entries may remain unsupported until this pinned client is updated.
+
+### Capacity feedback before replacement
+
+The pinned [Spell Factory rows](../reference/official-wiki/spells-siege-super/spell-factory.md)
+separate spell housing from troop housing. Spell Factory levels 1 and 2
+provide two and four spell spaces respectively. Quick Armies and shared
+preparation report the required and available housing for each exceeded
+limit. These messages are web UI. Original warning text and layout remain
+unverified.
+
+After packaging, `node scripts/preset-capacity-production-check.mjs` exercises
+a spell-only refusal, an in-progress upgrade across reload, and replacement
+once the upgrade completes. It verifies the loaded Balloon and Lightning
+stock during Practice and replay.
