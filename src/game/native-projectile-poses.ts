@@ -2,6 +2,7 @@ import projectileArt from '../../reference/full-client/projectile-art.json' with
 import darkOrbArt from '../../reference/dark-orb/effects.json' with { type: 'json' };
 import { nativeScenePoses, type NativeMatrix, type NativeScenePose } from './native-mesh';
 import { nativeSceneId, type NativeArtPack } from './native-art-pack';
+import { nativeRow } from './native-data';
 import {
   NATIVE_ALTITUDE,
   NATIVE_ART_SCALE,
@@ -53,6 +54,10 @@ export const nativeProjectilePack = (name: string | undefined) => {
     ? index.packs[index.projectiles[name]].path
     : undefined;
 };
+
+/** Air Defense shots retain their existing combat projectile and use the building row for art. */
+export const airDefenseProjectileName = (level: number) =>
+  nativeRow('buildings', 'Air Defense', level).Projectile;
 
 const num = (value: string | undefined, fallback = 0) => {
   const parsed = Number(value);

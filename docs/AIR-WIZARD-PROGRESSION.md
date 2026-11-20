@@ -58,3 +58,13 @@ Replay version **34** identifies the current source projectile rules (the earlie
 Tests cover every playable upgrade, exact-resource boundaries, timers, builders, saved health, counts, every accepted damage tier, range edges, 20/30/60 fps cadence, idle reacquisition, upgrade downtime, air-only rockets, one-tile splash on both layers, destruction during rocket flight, and replay fidelity. Browser checks inspect phone Info values, save/reload paid timers, shop unlocks and older replay messaging. The automatic-hero replay fixture adds a second Cannon to produce the required low-health event under the corrected defense stats.
 
 All seventeen Wizard Tower levels now use their source artwork in the live scene, moving previews and Info. Original attack, impact, destruction and home feedback reconstruct through replay with bounded history. Air Defense per-level artwork remains unfinished and currently has two original tiers. Air Defense projectile speed, firing animations, troop statistics, authored campaign layouts and the broader economy still contain local tuning; this audit does not establish complete native combat parity.
+
+## Air Defense flight artwork
+
+The pinned Air Defense building rows select eleven Firework exports across sixteen
+levels, with levels 10–14 inheriting Firework9. The native projectile renderer resolves
+each existing rocket's source tower and plays that retained export once its pack is
+ready. The generated flight remains available while the pack loads or fails. Flight
+duration and damage still come from the recorded shot. This binding does not establish
+native projectile speed, muzzle alignment, or impact timing. See the [pinned building
+rows](../reference/full-client/combat.json) and [projectile art index](../reference/full-client/projectile-art.json).

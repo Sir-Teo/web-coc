@@ -17,6 +17,7 @@ import { NativeSceneView, effectSceneView } from './native-scene-view';
 import { NativeArtPacks, nativePackPrefix, type NativeArtPack } from './native-art-pack';
 import { NativeEffectLayer, nativeEffectPack } from './native-effect-layer';
 import {
+  airDefenseProjectileName,
   nativeProjectileFlight,
   nativeProjectilePack,
   nativeProjectilePoses,
@@ -264,6 +265,33 @@ export class NativeProjectilePresentation {
       ...(battle.nativeSuperHogFlights ?? []).filter((shot) => elapsed <= shot.impact + AFTERLIFE),
       ...(battle.projectiles ?? []),
     ]) {
+      if (p.weapon === 'rocket') {
+        // The existing rocket homes on its recorded target. Rebuild the cached
+        // flight points when the simulation advances that target.
+        const known = this.history.get(p.id);
+        if (known && known.x === p.x && known.y === p.y && known.impact === p.impact) continue;
+        const tower = buildingIndex(battle).get(p.sourceId);
+        if (tower?.kind !== 'airdefense') continue;
+        const name = airDefenseProjectileName(tower.level);
+        const packPath = nativeProjectilePack(name);
+        if (packPath)
+          this.history.set(p.id, {
+            id: p.id,
+            name,
+            packPath,
+            sourceId: p.sourceId,
+            bounce: 0,
+            fromX: p.fromX,
+            fromY: p.fromY,
+            x: p.x,
+            y: p.y,
+            launched: p.launched,
+            motionAt: p.motionAt,
+            impact: p.impact,
+            toAir: p.toAir,
+          });
+        continue;
+      }
       if (p.weapon !== 'native' || !p.native) continue;
       const known = this.history.get(p.id);
       // Recorded shots are immutable; keep the snapshot and its cached flight points.

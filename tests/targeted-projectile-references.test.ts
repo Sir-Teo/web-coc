@@ -6,6 +6,7 @@ import type { NativeArtPack } from '../src/game/native-art-pack';
 import { nativeTrailBirths, nativeTrailPoses } from '../src/game/native-effects';
 import type { NativeScenePose, NativeMeshPose } from '../src/game/native-mesh';
 import {
+  airDefenseProjectileName,
   nativeProjectileFlight,
   nativeProjectilePack,
   nativeProjectilePoses,
@@ -18,6 +19,21 @@ const leaves = (poses: NativeScenePose[]): NativeMeshPose[] =>
   poses.flatMap((pose) => ('group' in pose ? leaves(pose.group) : [pose]));
 
 describe('retained projectile references', () => {
+  it('resolves drawable Firework art at all Air Defense levels without retiming impacts', () => {
+    let source: string | undefined;
+    for (const [index, level] of combat.buildings['Air Defense'].entries()) {
+      source = level.Projectile ?? source;
+      const name = airDefenseProjectileName(index + 1);
+      expect(name).toBe(source);
+      const pack = read<NativeProjectilePack>(nativeProjectilePack(name)!);
+      const row = pack.projectiles[name];
+      const shot = { fromX: 10, fromY: 10, x: 14, y: 12, launched: 2, impact: 2.2, toAir: true };
+      const flight = nativeProjectileFlight(row, shot, 2.1, { iso, airLift: 46 });
+      expect(flight.end).toBe(shot.impact);
+      expect(leaves(nativeProjectilePoses(pack, row, flight, 2.1, 2).poses).length).toBeGreaterThan(0);
+    }
+  });
+
   it('closes every projectile reference across all compiled source tables', () => {
     const columns = new Set([
       'Projectile',

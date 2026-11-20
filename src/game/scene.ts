@@ -46,6 +46,7 @@ import {
 } from './village-native-scene';
 import { NativeArtPacks, type NativeArtPack } from './native-art-pack';
 import { NativeProjectilePresentation } from './native-projectile-scene';
+import { airDefenseProjectileName } from './native-projectile-poses';
 import { nativeUnitStats } from './native-units';
 import { superMinionLongShot } from './native-super-minion';
 import { heroProjectileNames } from './hero-projectile-prefetch';
@@ -3437,6 +3438,12 @@ export class VillageScene extends Phaser.Scene {
       // Fetch every native pack the new village draws now, while scouting, rather than as each
       // building first scrolls into view (which swapped fallback sprites to native art in view).
       void prefetchVillageArt(this.model.buildings);
+      if (mode === 'battle' && !reduced)
+        this.nativeProjectiles.prefetch(
+          this.model.buildings
+            .filter((b) => b.kind === 'airdefense')
+            .map((b) => airDefenseProjectileName(b.level)),
+        );
       if (this.cannonPresentation.artReady)
         void this.cannonPresentation.prefetchLevels(
           this.model.buildings.filter((b) => b.kind === 'cannon' && !b.npc).map((b) => b.level),
