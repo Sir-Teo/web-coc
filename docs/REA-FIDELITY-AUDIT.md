@@ -195,6 +195,26 @@ early linear path, while the original branch policy, node layout, input
 sequence, star badge art, and action arrangement remain unverified.
 [Campaign source and interpretation boundaries](../reference/campaign/README.md).
 
+## Early Home Village resource buildings
+
+The early save contains 16 non-wall buildings, including two mines, two
+collectors, and four storages at levels one and two. Their world bodies already
+use retained scene packs. The default placement and forest-and-stream
+terrain come from Web CoC. The retained references establish building
+exports, but do not establish the original starting layout, camera, tile
+composition, or selection animation.
+
+The selected building, Details, and Shop now use the pinned body-and-base
+portraits for Gold Mines, Elixir Collectors, Gold Storage, and Elixir Storage
+at all 72 supported levels. This closes the mismatch between rendered world
+building tiers and the generic low-level portraits previously shown in cards.
+A selected producer's Collect button now uses the corresponding web resource
+glyph. The prior button showed a gold coin for Elixir and Dark Elixir too.
+Resource art and selection behavior remain web presentation, while the
+resource-specific audio mappings are retained separately.
+[Building exports](../reference/full-client/catalog.json) ·
+[Terrain and camera](TERRAIN-CAMERA.md) · [Collection sounds](VILLAGE-SOUNDS.md).
+
 ## Remaining parity work by player impact
 
 | Priority | Gap against the pinned build | Comparison required |

@@ -36,6 +36,10 @@ test('the building card collects only from the selected mine', async ({ page }, 
     .locator('.building-context')
     .getByRole('button', { name: 'Collect', exact: true });
   await expect(collect).toBeVisible();
+  await expect(collect.locator('.resource-icon')).toHaveClass(/coin/);
+  await expect(page.locator('.building-context .context-art')).toHaveAttribute(
+    'src', '/assets/catalog-native/gold-mine/level-1.png',
+  );
   await page.screenshot({ path: info.outputPath('mine-context.png'), animations: 'disabled' });
   await collect.tap();
   const afterTap = { gold: 12, elixir: 0, stored: [0, 8, 18] };
@@ -46,6 +50,15 @@ test('the building card collects only from the selected mine', async ({ page }, 
   expect(await balances()).toEqual(afterTap);
   await page.locator('.collect-btn').tap();
   expect(await balances()).toEqual({ gold: 20, elixir: 18, stored: [0, 0, 0] });
+  await page.keyboard.press('b');
+  await page.locator(`[data-action="select-building:${ids[2]}"]`).tap();
+  const context = page.locator('.building-context');
+  const collectorArt = '/assets/catalog-native/elixir-collector/level-1.png';
+  await expect(context.locator('.context-art')).toHaveAttribute('src', collectorArt);
+  await expect(context.getByRole('button', { name: 'Collect', exact: true }).locator('.resource-icon')).toHaveClass(/elixir/);
+  await context.locator('[data-action="info"]').tap();
+  await expect(page.locator('.info-hero img')).toHaveAttribute('src', collectorArt);
+
 });
 
 test('full Gold Storage leaves legacy mine overflow available after an upgrade', async ({
