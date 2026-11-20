@@ -72,12 +72,13 @@ export function prepareHealerTargets(battle: Battle) {
   for (const healer of battle.units) {
     if (!sharedHealer(healer) || healer.hp <= 0) continue;
     if (allyIds.has(healer.healTarget ?? -1)) continue;
-    // Min-scan with the old sort's winner (distance + injury penalty, then id). The cluster
-    // filter does not depend on the pick so far, so it runs only for would-be winners.
+    // The Healer chooses by distance, then ID. Older playback and other healers
+    // keep the previous injury preference.
+    const preferWounded = !battle.nativeHealerNearestTarget || healer.kind !== 'healer';
     let pick: Unit | undefined;
     let pickScore = Infinity;
     for (const target of allies) {
-      const score = distance(healer, target) + (target.hp < target.maxHp ? 0 : 0.75);
+      const score = distance(healer, target) + (preferWounded && target.hp >= target.maxHp ? 0.75 : 0);
       if (!(
         pick === undefined ||
         score < pickScore ||

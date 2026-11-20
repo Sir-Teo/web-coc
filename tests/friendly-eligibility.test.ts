@@ -28,7 +28,7 @@ function settleNativeHealing(ctx: NativeTroopContext) {
   }
 }
 
-function arena(version = REPLAY_VERSION) {
+function arena(version = REPLAY_VERSION, healerInArmy = false) {
   const model = new GameModel();
   model.state.obstacles = [];
   model.state.king = undefined;
@@ -38,6 +38,7 @@ function arena(version = REPLAY_VERSION) {
   model.startBattle(0, true);
   const data = (model as unknown as { recording: ReplayData }).recording;
   data.initial.heroes = [];
+  if (healerInArmy) data.initial.army.healer = 1;
   const battle = (model.battle = replayBattle(data.initial, version));
   battle.started = true;
   let id = 1000;
@@ -267,5 +268,32 @@ it.each(['healing', 'rage'] as const)(
       while (viewer.replay!.seeking) viewer.step(0.05);
       expect(JSON.parse(JSON.stringify(viewer.battle))).toEqual(snapshot.battle);
     }
+  },
+);
+
+it.each([[268, true], [REPLAY_VERSION, false]] as const)(
+  'the Healer selects the nearest eligible ally and retargets on loss (version %s, legacy %s)',
+  (version, legacy) => {
+    const { battle, unit } = arena(version, true);
+    const healer = unit('healer', 5);
+    const dragon = unit('dragon', 5.5);
+    const giant = unit('giant', 7);
+    const hero = unit('archerqueen', 7.5);
+    hero.hero = 'queen';
+    hero.hp -= 100;
+    dragon.hp -= 100;
+
+    prepareHealerTargets(battle);
+    expect(healer.healTarget).toBe((legacy ? hero : giant).id);
+    // Full health and an injured closer air target cannot dislodge a valid lock.
+    hero.x = 6;
+    prepareHealerTargets(battle);
+    expect(healer.healTarget).toBe((legacy ? hero : giant).id);
+    giant.hp = 0;
+    prepareHealerTargets(battle);
+    expect(healer.healTarget).toBe(hero.id);
+    hero.hp = 0;
+    prepareHealerTargets(battle);
+    expect(healer.healTarget).toBeUndefined();
   },
 );

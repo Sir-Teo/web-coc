@@ -964,6 +964,8 @@ export interface Battle {
   nativeWardenGroupThreshold?: true;
   /** Version 268: Fired Firespitter projectiles can still strike concealed attackers. */
   nativeFirespitterConcealedImpact?: true;
+  /** Version 269: a Healer locks onto the closest eligible ally regardless of HP. */
+  nativeHealerNearestTarget?: true;
   /** Version 100: native healing resolves through source projectile travel and chain hops. */
   nativeHealingProjectiles?: true;
   nativeHealingTotem?: true;
