@@ -46,10 +46,22 @@ export function nativeTroopFacingTarget(
     (battle.nativeValkyrieWindup && (unit.kind === 'valkyrie' || unit.kind === 'supervalkyrie'))
       ? unit.native?.attackWindup
       : undefined;
-  const committedWall =
+  const committedBuilding =
     windup?.engaged && windup.target?.building ? buildings.get(windup.target.id) : undefined;
-  if (committedWall?.kind === 'wall' && committedWall.hp > 0)
-    return { x: committedWall.x + 0.5, y: committedWall.y + 0.5 };
+  // A lethal Drill strike still points at the building during its contact pose.
+  if (
+    battle.nativeBattleDrillWindup &&
+    unit.kind === 'battledrill' &&
+    unit.attacking &&
+    committedBuilding &&
+    committedBuilding.hp <= 0 &&
+    (windup?.animationOffset ?? -1) >= 0
+  ) {
+    const half = BUILDINGS[committedBuilding.kind].size / 2;
+    return { x: committedBuilding.x + half, y: committedBuilding.y + half };
+  }
+  if (committedBuilding?.kind === 'wall' && committedBuilding.hp > 0)
+    return { x: committedBuilding.x + 0.5, y: committedBuilding.y + 0.5 };
   const charge =
     battle.nativeBowlerWallWindup && unit.kind === 'bowler' ? unit.native?.bowler : undefined;
   const committed =

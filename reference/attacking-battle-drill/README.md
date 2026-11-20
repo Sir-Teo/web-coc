@@ -38,7 +38,10 @@ All six original `SM_drill1..6_attack1_*` takes have **19 timeline frames at
 frame **three** at first and repeat contact. Backward/read-only sampling and
 reduced motion retain their existing guarantees. Current Army Info shows the
 fresh charge and recovery alongside the unchanged interval, damage, surfacing
-stun, Wall destruction and healing immunity.
+stun, Wall destruction and healing immunity. The web renderer keeps the committed
+building as the facing target through a lethal contact pose. This makes a seek
+to the strike frame agree with uninterrupted playback even when the building
+has reached zero HP. The selected frame and ground anchor stay the same.
 
 Only initial armies carrying Battle Drill enable `nativeBattleDrillWindup`.
 Version 229 and earlier retain their complete prior states and omit the new

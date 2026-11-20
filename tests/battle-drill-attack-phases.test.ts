@@ -1,9 +1,11 @@
 import { createHash } from 'node:crypto';
 import { expect, it } from 'vitest';
 import { GameModel, makeBuilding } from '../src/game/model';
+import { BUILDINGS } from '../src/game/data';
 import { replayBattle } from '../src/game/replay';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import { nativeUnitStats } from '../src/game/native-units';
+import { nativeTroopFacingTarget } from '../src/game/native-troop-facing';
 import { nativeDirectBattle } from './fixtures/native-direct-attacks';
 import { drillSurfaceBattle, drillSurfaceRecording } from './fixtures/battle-drill-surface-walls';
 
@@ -67,6 +69,17 @@ it('target loss ends the exposed charge and sends the Drill underground', () => 
   expect(r.unit.native!.attackWindup!.engaged).toBeFalsy();
   expect(r.unit.native!.surfaced).toBe(false);
   expect(r.unit.native!.burrowed).toBe(true);
+});
+
+it('faces the committed building during the strike that destroys it', () => {
+  const r = nativeDirectBattle('battledrill', 1, 230, 10.5, 'cannon', {}, { buildingLevel: 1 });
+  const target = r.battle.buildings.find((b) => b.id === 2)!;
+  r.untilAttacks(1);
+  expect(target.hp).toBe(0);
+  expect(r.unit.attacking).toBe(true);
+  expect(r.unit.native!.attackWindup!.animationOffset).toBeCloseTo(0, 8);
+  const half = BUILDINGS.cannon.size / 2;
+  expect(nativeTroopFacingTarget(r.battle, r.unit)).toEqual({ x: target.x + half, y: target.y + half });
 });
 
 it('caster loss cancels the pending hit while the released surfacing spell still pulses', () => {

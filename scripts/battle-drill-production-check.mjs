@@ -3,6 +3,7 @@ import { chromium, expect } from '@playwright/test';
 import { createServer, preview } from 'vite';
 import { mkdir } from 'node:fs/promises';
 
+const baseline = process.argv[2];
 const artifacts = 'output/rea-cloud-playtest/battle-drill';
 await mkdir(artifacts, { recursive: true });
 const modules = await createServer({
@@ -49,7 +50,11 @@ try {
   await modules.close();
 }
 
-const server = await preview({ preview: { host: '127.0.0.1', port: 0 }, logLevel: 'error' });
+const server = await preview({
+  ...(baseline ? { build: { outDir: baseline } } : {}),
+  preview: { host: '127.0.0.1', port: 0 },
+  logLevel: 'error',
+});
 try {
   const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM });
   try {
@@ -111,7 +116,8 @@ try {
           replay,
         };
       });
-    const shot = (name) => page.screenshot({ path: `${artifacts}/${name}.png` });
+    const shot = (name) =>
+      page.screenshot({ path: `${artifacts}/${baseline ? 'baseline' : 'patched'}-${name}.png` });
     const capture = async (label, condition) => {
       let state;
       await expect
@@ -130,8 +136,17 @@ try {
     await tap('practice');
     await expect(page.locator('.prep-banner [role="status"]')).toContainText('Deploy to start');
     await tap('troop:battledrill');
-    await tapField(13, 18, true);
+    await tapField(18.5, 13, true);
     const approach = await capture('01-approach', ({ drill }) => drill.burrowed);
+    // Freeze before the encounter so screenshot time cannot overshoot the contact tick.
+    await page.evaluate(() => {
+      const { model, scene } = window.qa;
+      scene.paused = true;
+      for (let i = 0; i < 80 && !(model.battle.defenseStuns[2] > model.battle.elapsed); i++) {
+        model.step(0.05);
+        scene.drawOverlay(0);
+      }
+    });
     const first = await capture(
       '02-first-surface',
       ({ at, drill, defenses }) =>
@@ -140,6 +155,40 @@ try {
     expect(first.defenses[0].stun - first.at).toBeGreaterThan(pinned.stun - 0.4);
     expect(first.defenses[0].stun - first.at).toBeLessThanOrEqual(pinned.stun + 0.05);
     expect(first.defenses[1].stun).toBe(0);
+    const pose = () =>
+      page.evaluate(() => {
+        const { model, scene } = window.qa;
+        const drill = model.battle.units.find((u) => u.kind === 'battledrill');
+        const owned = scene.troopNativePresentation.views.get(drill?.id);
+        const sample = owned?.sample;
+        return {
+          at: model.battle.elapsed,
+          state: owned?.state,
+          frame: sample?.frame,
+          mirror: sample?.mirror,
+          take: sample?.name,
+          x: owned?.x,
+          y: owned?.y,
+        };
+      });
+    // Lock the scene on the exact hit tick; the deployment and all UI actions use touch.
+    await page.evaluate(() => {
+      const { model, scene } = window.qa;
+      scene.paused = true;
+      const cannon = model.battle.buildings.find((b) => b.id === 2);
+      if (cannon.hp <= 0) throw Error('Missed the live contact tick');
+      for (let i = 0; i < 40 && cannon.hp > 0; i++) {
+        model.step(0.05);
+        scene.drawOverlay(0);
+      }
+    });
+    const liveStrike = await pose();
+    expect(liveStrike).toMatchObject({ state: 'attack', frame: 3, mirror: -1 });
+    await shot('02b-live-lethal-strike');
+    await page.evaluate(() => {
+      window.qa.scene.paused = false;
+    });
+
     const transit = await capture(
       '03-reburrow',
       ({ drill, defenses }) => drill.burrowed && defenses[0].hp === 0,
@@ -189,7 +238,33 @@ try {
     expect(replaySecond.drill).toMatchObject({ id: second.drill.id, surfaced: true, target: 3 });
     expect(replaySecond.defenses[1].stun).toBe(second.defenses[1].stun);
     await shot('05-replay-second-surface');
-    console.log(JSON.stringify({ pinned, approach, first, transit, second }, null, 2));
+    // The touch slider has already exercised rewind. Seek to the exact recorded contact tick
+    // so both screenshots sample the same frame rather than adjacent timeline pixels.
+    await page.evaluate((time) => {
+      const { model, scene } = window.qa;
+      model.seekReplay(time);
+      while (model.replay.seeking) model.step(0.05);
+      scene.sync();
+      scene.drawOverlay(0);
+    }, scouting + liveStrike.at);
+    const replayStrike = await pose();
+    expect(replayStrike).toMatchObject({
+      state: liveStrike.state,
+      frame: liveStrike.frame,
+      mirror: baseline ? 1 : liveStrike.mirror,
+    });
+    expect(replayStrike.x).toBeCloseTo(liveStrike.x, 6);
+    expect(replayStrike.y).toBeCloseTo(liveStrike.y, 6);
+    if (!baseline) expect(replayStrike.take).toBe(liveStrike.take);
+    await shot('06-replay-lethal-strike');
+
+    console.log(
+      JSON.stringify(
+        { pinned, approach, first, transit, second, liveStrike, replayStrike },
+        null,
+        2,
+      ),
+    );
     expect(errors).toEqual([]);
   } finally {
     await browser.close();
