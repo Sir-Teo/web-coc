@@ -259,6 +259,19 @@ describe('complete spell roster', () => {
     expect(before - giant.hp).toBeCloseTo(100 * (1 - blocked), 6);
   });
 
+  it('does not extend a stronger shield when Ice Block overlaps it', () => {
+    const m = arena([], { giant: 1 }, { iceblock: 1 }, 1);
+    m.activeTroop = 'giant';
+    expect(m.deploy(6, 6)).toBe(true);
+    const giant = m.battle!.units[0];
+    unitEffects(giant).shield = { until: 3, percent: 1 };
+    cast(m, 'iceblock', 6, 6);
+    run(m, firstHit('iceblock', 1) + 0.05);
+    expect(hurtUnit(m.battle!, giant, 100, 2.9)).toBe(0);
+    expect(hurtUnit(m.battle!, giant, 100, 3.1)).toBeCloseTo(14);
+    expect(hurtUnit(m.battle!, giant, 100, 10)).toBe(100);
+  });
+
   it('makes troops inside the Angry Spell switch to defenses', () => {
     const m = arena(
       [

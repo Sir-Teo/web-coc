@@ -28,6 +28,7 @@ export interface UnitEffects {
   jumpUntil?: number;
   invisibleUntil?: number;
   shield?: { until: number; percent: number };
+  iceBlockShield?: { until: number; percent: number };
   /** Temporary health granted by life auras; damage consumes it before hitpoints. */
   extraHp?: {
     until: number;
@@ -195,7 +196,11 @@ export function hurtUnit(
   if (e) {
     if (trap && e.rampage) amount *= Math.max(0, 1 - e.rampage.trapProtection);
     if ((e.immortalUntil ?? 0) > at + 1e-9) return 0;
-    if (e.shield && e.shield.until > at + 1e-9) amount *= Math.max(0, 1 - e.shield.percent);
+    const shield = e.shield && e.shield.until > at + 1e-9 ? e.shield.percent : 0;
+    const iceBlock = e.iceBlockShield && e.iceBlockShield.until > at + 1e-9
+      ? e.iceBlockShield.percent
+      : 0;
+    amount *= Math.max(0, 1 - Math.max(shield, iceBlock));
     if (e.extraHp && e.extraHp.until > at + 1e-9 && e.extraHp.amount > 0) {
       const absorbed = Math.min(amount, e.extraHp.amount);
       e.extraHp.amount -= absorbed;

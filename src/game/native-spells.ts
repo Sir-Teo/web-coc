@@ -698,9 +698,11 @@ function supportAttackers(
       const e = unitEffects(u);
       e.frozenUntil = Math.max(e.frozenUntil ?? 0, at + freezeFriendly);
       const percent = num(ability, 'ShieldProtectionPercent') / 100;
-      e.shield = {
-        until: Math.max(e.shield?.until ?? 0, at + freezeFriendly),
-        percent: Math.max(percent, e.shield && e.shield.until > at ? e.shield.percent : 0),
+      const shieldKey = battle.independentIceBlockShield ? 'iceBlockShield' : 'shield';
+      const prior = e[shieldKey];
+      e[shieldKey] = {
+        until: Math.max(prior?.until ?? 0, at + freezeFriendly),
+        percent: Math.max(percent, prior && prior.until > at ? prior.percent : 0),
       };
     }
     if (given === 'AngrySpellAnger') {

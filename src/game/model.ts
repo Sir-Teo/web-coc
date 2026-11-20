@@ -966,6 +966,7 @@ export interface Battle {
   nativeFirespitterConcealedImpact?: true;
   /** Version 269: a Healer locks onto the closest eligible ally regardless of HP. */
   nativeHealerNearestTarget?: true;
+  independentIceBlockShield?: true;
   /** Version 100: native healing resolves through source projectile travel and chain hops. */
   nativeHealingProjectiles?: true;
   nativeHealingTotem?: true;
