@@ -145,3 +145,7 @@ recordings retain their original behavior.
 Use `node scripts/action-figure-production-check.mjs --rage` after packaging
 to watch the trigger and seek across it. The portrait remains the battlefield
 fallback. Native animation and exact native tick ordering remain unverified.
+
+A bounded check of the retained project and scratch material found a roster
+portrait and an info-asset manifest entry, with no verified combat frame
+sequence or rage anchor. The portrait remains the battlefield fallback.

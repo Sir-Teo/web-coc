@@ -192,9 +192,14 @@ export function releaseSpawns(
     : num(row, 'TroopLevel', 1) || 1;
   for (let index = done; index < due; index++) {
     const when = hero.abilityAt + (gap > 0 ? Math.floor(index / perHit) * gap : 0);
-    const offset = kind === 'giantgiant' && text(row, 'SpawnPattern') === 'InFront'
-      ? actionFigureOffset(ctx, unit)
-      : spawnOffset(row, index, perHit);
+    const pattern = text(row, 'SpawnPattern');
+    const offset =
+      kind === 'giantgiant' && pattern === 'InFront'
+        ? actionFigureOffset(ctx, unit)
+        : ctx.battle.nativeHealerPuppetFormation && ability.name === 'ArcherQueenSpawnHealers' &&
+            pattern === 'SemiCircleBehind'
+          ? healerPuppetOffset(ctx, unit, index, total)
+          : spawnOffset(row, index, perHit);
     const spawn = ctx.spawn?.(kind, level, unit.x + offset.x, unit.y + offset.y, when, unit.id);
     if (!spawn) break;
     spawn.summoned = true;
@@ -210,7 +215,7 @@ export function releaseSpawns(
   }
 }
 // Use the Queen's current aim, falling back to the usual diagonal before she acquires a target.
-function actionFigureOffset(ctx: NativeTroopContext, unit: Unit) {
+function queenAim(ctx: NativeTroopContext, unit: Unit) {
   const target = ctx.buildingsById.get(unit.native?.wallTarget ?? unit.target ?? -1);
   const half = target ? BUILDINGS[target.kind].size / 2 : 0;
   const aim = ctx.battle.defenders?.find((d) => d.id === unit.defenderTarget) ??
@@ -219,8 +224,21 @@ function actionFigureOffset(ctx: NativeTroopContext, unit: Unit) {
   const dy = aim ? aim.y - unit.y : 1;
   const distance = distance2D(dx, dy);
   return distance > EPS
-    ? { x: (dx / distance) * 0.8, y: (dy / distance) * 0.8 }
-    : { x: Math.SQRT1_2 * 0.8, y: Math.SQRT1_2 * 0.8 };
+    ? { x: dx / distance, y: dy / distance }
+    : { x: Math.SQRT1_2, y: Math.SQRT1_2 };
+}
+
+function actionFigureOffset(ctx: NativeTroopContext, unit: Unit) {
+  const aim = queenAim(ctx, unit);
+  return { x: aim.x * 0.8, y: aim.y * 0.8 };
+}
+
+function healerPuppetOffset(ctx: NativeTroopContext, unit: Unit, index: number, total: number) {
+  const aim = queenAim(ctx, unit);
+  const angle = Math.PI * ((index + 0.5) / total - 0.5);
+  const back = -0.8 * Math.cos(angle);
+  const sideways = 0.8 * Math.sin(angle);
+  return { x: aim.x * back - aim.y * sideways, y: aim.y * back + aim.x * sideways };
 }
 
 /** SpawnPattern places a semicircle in front of the hero; others land on its tile. */

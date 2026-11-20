@@ -987,6 +987,8 @@ export interface Battle {
   nativeActionFigureSummon?: true;
   /** Version 281: Giant Giant rages once after the source damage threshold. */
   nativeGiantGiantRage?: true;
+  /** Version 282: Healer Puppet places its summons behind the Queen. */
+  nativeHealerPuppetFormation?: true;
   nativeTotemTroopHealingImmunity?: true;
   /** Version 101: ground healing units follow allies around buildings, crossing jumpable walls. */
   nativeHealerRoutes?: true;

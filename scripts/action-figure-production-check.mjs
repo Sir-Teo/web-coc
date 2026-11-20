@@ -7,9 +7,10 @@ const args = process.argv.slice(2);
 const baselineDist = args.find((arg) => !arg.startsWith('--'));
 const control = args.includes('--control');
 const rage = args.includes('--rage');
+const healers = args.includes('--healer-formation');
 const label = `${baselineDist ? 'baseline' : 'patched'}${control ? '-control' : ''}`;
-const item = control ? 'archer-puppet' : 'action-figure';
-const screenshots = `output/rea-cloud-playtest/${rage ? 'giant-giant-rage' : 'action-figure'}`;
+const item = healers ? 'healer-puppet' : control ? 'archer-puppet' : 'action-figure';
+const screenshots = `output/rea-cloud-playtest/${healers ? 'healer-puppet-formation' : rage ? 'giant-giant-rage' : 'action-figure'}`;
 await mkdir(screenshots, { recursive: true });
 
 const modules = await createServer({
@@ -45,7 +46,7 @@ try {
     spells: emptySpells(),
     heroes: { queen: { level: 20 } },
     heroLineup: ['queen'],
-    gear: { levels: { [item]: 1 }, loadouts: { queen: [item] } },
+    gear: { levels: { [item]: healers ? 18 : 1 }, loadouts: { queen: [item] } },
   });
   model.brew('freeze');
   expect(model.state.spells.freeze).toBe(1);
@@ -140,7 +141,9 @@ try {
     await page.locator('.modern-army-actions [data-action="heroes"]').tap();
     const queen = page.locator('.hero-section[data-hero="queen"]');
     await queen
-      .getByRole('heading', { name: control ? 'Archer Puppet' : 'Action Figure' })
+      .getByRole('heading', {
+        name: healers ? 'Healer Puppet' : control ? 'Archer Puppet' : 'Action Figure',
+      })
       .scrollIntoViewIfNeeded();
     await shot('equipment');
     await page.locator('.modal [data-action="close"]').tap();
@@ -169,13 +172,26 @@ try {
     const summons = await read();
     const giant = summons.units.find(({ kind }) => kind === 'giantgiant');
     const queenUnit = summons.units.find(({ kind }) => kind === 'archerqueen');
-    if ((baselineDist && !rage) || control) expect(giant).toBeUndefined();
+    if ((baselineDist && !rage) || control || healers) expect(giant).toBeUndefined();
     else {
       expect(giant).toMatchObject({ level: 1, maxHp: 800, owner: queenUnit.id });
       expect(giant.x).toBeGreaterThan(queenUnit.x);
       expect(giant.y).toBeGreaterThan(queenUnit.y);
     }
     if (control) expect(summons.units.some(({ kind }) => kind === 'archer')).toBe(true);
+    const formation = summons.units.filter(({ kind }) => kind === 'healer');
+    if (healers) {
+      expect(formation.map(({ level }) => level)).toEqual([8, 8, 8]);
+      if (baselineDist)
+        expect(formation.every(({ x, y }) => x === queenUnit.x && y === queenUnit.y)).toBe(true);
+      else {
+        expect(new Set(formation.map(({ x, y }) => `${x},${y}`)).size).toBe(3);
+        for (const { x, y } of formation)
+          expect(
+            (x - queenUnit.x) * (22.5 - queenUnit.x) + (y - queenUnit.y) * (22.5 - queenUnit.y),
+          ).toBeLessThan(0);
+      }
+    }
     await step(5);
     if (giant) {
       await page.waitForFunction((id) => {
@@ -241,12 +257,28 @@ try {
       await seek(scout + frame.at);
       expect(await read()).toEqual(frame);
     }
+    if (healers) {
+      await page.waitForFunction(() => {
+        const { model, scene } = window.qa;
+        scene.drawOverlay(0);
+        const units = model.battle.units.filter(({ kind }) => kind === 'healer');
+        return (
+          units.length === 3 && units.every(({ id }) => scene.troopNativePresentation.drewUnit(id))
+        );
+      });
+    }
     await shot('replay-activation');
+    if (healers) {
+      await seek(scout + live.at);
+      expect(await read()).toEqual(live);
+      await shot('replay-defense-contact');
+    }
     expect(errors).toEqual([]);
     console.log({
       label,
       summon: giant,
       archers: summons.units.filter(({ kind }) => kind === 'archer').length,
+      ...(healers ? { formation } : {}),
       defenseHp: live.defenseHp,
       ...(damaged
         ? { thresholdFrame: damaged.units.find(({ kind }) => kind === 'giantgiant') }

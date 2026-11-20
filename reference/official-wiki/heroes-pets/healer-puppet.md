@@ -70,3 +70,17 @@ Costs on a row are the price to reach that level (wiki convention). Values as di
 **Mismatches / ambiguities**
 
 - None found in the compared fields.
+
+## Healer deployment in recording version 282
+
+The pinned `ArcherQueenSpawnHealers` rows specify `SemiCircleBehind`. In
+version 281 the web spawn handler used the Queen's tile for this pattern.
+Version 282 places the summons in the rear half-plane relative to her
+current aim. The web uses a small arc with evenly spaced positions. Exact
+native offsets, ordering and initial facing are unverified. Earlier
+recordings retain the original positions.
+
+Run `node scripts/action-figure-production-check.mjs --healer-formation`
+after packaging. Pass a packaged version 281 directory for the baseline.
+The phone touch run activates a level-18 Healer Puppet, verifies its three
+level-eight Healers, and seeks across deployment and defense contact.

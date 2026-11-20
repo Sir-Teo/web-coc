@@ -142,3 +142,31 @@ it('keeps the version 279 Action Figure activation without its new summon', () =
   r.model.step(0.05);
   expect(r.battle.units.some((u) => u.kind === 'giantgiant')).toBe(false);
 });
+
+it.each([281, 282])('uses the Healer Puppet rear formation in version %i', (version) => {
+  const r = heroPuppetBattle(
+    { kind: 'queen', level: 20, items: [{ slug: 'healer-puppet', level: 18 }] },
+    {},
+    undefined,
+    version,
+  );
+  expect(r.model.deployNativeHero('queen', 11.4, 11.5)).toBe(true);
+  r.model.step(0.05);
+  const queen = r.battle.units.find(({ kind }) => kind === 'archerqueen')!;
+  const target = r.battle.buildings.find(({ id }) => id === queen.target)!;
+  const targetX = target.x + 1.5;
+  const targetY = target.y + 1.5;
+  expect(r.model.activateNativeHeroAbility('queen')).toBe(true);
+  const healers = r.battle.units.filter(({ kind }) => kind === 'healer');
+  expect(healers.map(({ level }) => level)).toEqual([8, 8, 8]);
+  if (version === 281) {
+    expect(healers.every(({ x, y }) => x === queen.x && y === queen.y)).toBe(true);
+  } else {
+    expect(new Set(healers.map(({ x, y }) => `${x},${y}`)).size).toBe(3);
+    expect(
+      healers.every(
+        ({ x, y }) => (x - queen.x) * (targetX - queen.x) + (y - queen.y) * (targetY - queen.y) < 0,
+      ),
+    ).toBe(true);
+  }
+});
