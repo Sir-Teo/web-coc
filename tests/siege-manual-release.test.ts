@@ -37,20 +37,19 @@ const OLD: Record<string, string> = {
 
 for (const kind of RELEASE_SIEGES)
   for (const level of [1, maxTroopLevel(kind)]) {
-    it(`${kind} ${level} retains untouched version231 states and unactivated current behavior`, () => {
+    it(`${kind} ${level} preserves version 231 playback and version 232 behavior before manual release`, () => {
       const old = siegeUnreleasedRecording(kind, level, 231),
-        current = siegeUnreleasedRecording(kind, level),
+        withManualRelease = siegeUnreleasedRecording(kind, level, 232),
         viewer = new GameModel();
       expect(createHash('sha256').update(JSON.stringify(old.snapshots)).digest('hex')).toBe(
         OLD[`${kind}:${level}`],
       );
-      for (const { battle } of current.snapshots) {
-        delete battle.nativeSiegeManualRelease;
-        // These fixtures have no airborne defenders, so only the new rules flag can differ.
+      for (const { battle } of withManualRelease.snapshots) {
+        expect(battle.nativeSiegeManualRelease).toBe(true);
         expect(battle.defenders?.some((d) => d.mode === 'air') ?? false).toBe(false);
-        delete battle.nativeFlameFlingerGroundPoison;
+        delete battle.nativeSiegeManualRelease;
       }
-      expect(current.snapshots).toEqual(old.snapshots);
+      expect(withManualRelease.snapshots).toEqual(old.snapshots);
       expect(viewer.openReplay(parseReplayFile(JSON.stringify(makeReplayFile(old.data))))).toBe(
         true,
       );

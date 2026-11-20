@@ -4,10 +4,10 @@ import { campaignResources } from '../../src/game/campaign-loot';
 import type { GarrisonDefender } from '../../src/game/defenders';
 import { maxTroopLevel } from '../../src/game/data';
 import { GameModel, makeBuilding, type Battle } from '../../src/game/model';
-import { replayBattle, type ReplayData } from '../../src/game/replay';
+import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
 
 /** Actual lure, source melee frost, Wizard kill and defensive death-freeze. */
-export function iceGolemGarrisonRecording() {
+export function iceGolemGarrisonRecording(version = REPLAY_VERSION) {
   const model = new GameModel();
   model.state.king = undefined;
   model.state.obstacles = [];
@@ -25,6 +25,7 @@ export function iceGolemGarrisonRecording() {
   model.state.spells = emptySpells();
   model.startBattle(0, true);
   const data = (model as unknown as { recording: ReplayData }).recording;
+  data.version = version;
   data.initial.heroes = [];
   data.initial.catalog = 'goblin-v1';
   data.initial.practice = false;
@@ -33,7 +34,7 @@ export function iceGolemGarrisonRecording() {
   data.initial.garrisons = [
     { castleId: 2, mode: 'guard', troops: [{ kind: 'icegolem', level: 5, count: 1 }] },
   ];
-  const battle = (model.battle = replayBattle(data.initial)),
+  const battle = (model.battle = replayBattle(data.initial, version)),
     snapshots: { at: number; battle: Battle }[] = [];
   model.activeHero = false;
   model.activeHeroKind = null;

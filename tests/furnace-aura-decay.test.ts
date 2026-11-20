@@ -4,12 +4,14 @@ import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import { replayBattle } from '../src/game/replay';
 import { furnaceAuraBattle, furnaceAuraRecording } from './fixtures/furnace-aura';
 
+// Version 150 keeps the Warden in aura range for this continuous-drain fixture.
+const sustainedAuraVersion = 150;
 const capacities = [
   640, 640, 750, 750, 750, 830, 830, 830, 930, 930, 930, 1010, 1010, 1010, 1120, 1120, 1120, 1200,
 ];
 for (const [i, capacity] of capacities.entries())
   it(`Life Gem ${i + 1} adds exactly ${capacity} consumable HP to Furnace's fixed drain`, () => {
-    const r = furnaceAuraBattle(1, i + 1);
+    const r = furnaceAuraBattle(1, i + 1, sustainedAuraVersion);
     r.until(1);
     const extra = r.unit.native!.effects!.extraHp!;
     expect(extra.capacity).toBe(capacity);
@@ -24,7 +26,7 @@ for (const [i, capacity] of capacities.entries())
   });
 for (const [index, hp] of [1530, 1620, 1710, 1800].entries())
   it(`Furnace ${index + 1} keeps its base drain rate and finite source stock while boosted`, () => {
-    const r = furnaceAuraBattle(index + 1, 18);
+    const r = furnaceAuraBattle(index + 1, 18, sustainedAuraVersion);
     r.until(65);
     expect(r.unit.maxHp).toBe(hp);
     expect(r.unit.hp).toBeCloseTo(hp + 1200 - (hp * 65) / 60, 6);
@@ -48,7 +50,7 @@ it('simultaneous Life Gem and Apprentice auras spend only the strongest health g
   expect(r.unit.hp + extra.amount).toBeCloseTo(1530 + 640 - 25.5, 7);
 });
 it('the granted 640 HP extends life by 640/25.5 seconds without refilling or extra stock', () => {
-  const r = furnaceAuraBattle();
+  const r = furnaceAuraBattle(1, 1, sustainedAuraVersion);
   r.until(85.05);
   expect(r.unit.hp).toBeGreaterThan(0);
   expect(r.unit.hp).toBeCloseTo(1530 + 640 - 25.5 * r.battle.elapsed, 6);

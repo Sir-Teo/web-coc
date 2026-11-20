@@ -56,20 +56,22 @@ for (const name of names) {
 }
 it('gates new cast history at version 236 and retains version 235 portable recordings', () => {
   expect(REPLAY_VERSION).toBeGreaterThanOrEqual(236);
-  const r = iceGolemGarrisonRecording();
+  const r = iceGolemGarrisonRecording(236);
+  const legacy = iceGolemGarrisonRecording(235);
   const current = r.snapshots.find((s) => s.at === r.frozen)!.battle;
   expect(current.nativeSpellCastHistory?.map((cast) => cast.name)).toEqual(['IceGolemFreeze_DEF']);
   const old = replayBattle(r.data.initial, 235);
   expect(old.nativeSpellArt).not.toContain('IceGolemFreeze_DEF');
-  expect(validateReplay({ ...r.data, version: 235 })).toBe(true);
+  expect(validateReplay(legacy.data)).toBe(true);
   castNativeSpell(old, 'IceGolemFreeze_DEF', 5, 'defense', 10, 10);
   expect(old.nativeSpellCastHistory).toBeUndefined();
   const player = new GameModel();
-  expect(player.openReplay({ ...r.data, version: 235 })).toBe(true);
+  expect(player.openReplay(legacy.data)).toBe(true);
   player.seekReplay(r.frozen);
   while (player.replay!.seeking) player.step(0.05);
   const now = structuredClone(current),
-    then = structuredClone(player.battle!);
+    then = JSON.parse(JSON.stringify(player.battle!)) as typeof now;
+  expect(then).toEqual(legacy.snapshots.find((snapshot) => snapshot.at === legacy.frozen)!.battle);
   delete now.nativeSpellArt;
   delete then.nativeSpellArt;
   delete now.nativeSpellCastHistory;
@@ -77,9 +79,23 @@ it('gates new cast history at version 236 and retains version 235 portable recor
   expect(now).toEqual(then);
 });
 
+it('reconstructs current defensive frost and freeze state on seek', () => {
+  const r = iceGolemGarrisonRecording();
+  const player = new GameModel();
+  expect(player.openReplay(r.data)).toBe(true);
+  player.seekReplay(r.frozen);
+  while (player.replay!.seeking) player.step(0.05);
+  expect(player.battle!.nativeSpellCastHistory?.map((cast) => cast.name)).toEqual([
+    'IceGolemFreeze_DEF',
+  ]);
+  expect(JSON.parse(JSON.stringify(player.battle))).toEqual(
+    r.snapshots.find((snapshot) => snapshot.at === r.frozen)!.battle,
+  );
+});
+
 it('retains identical attacking death and defensive freeze rules across the presentation boundary', async () => {
   const { iceGolemDeathRecording } = await import('./fixtures/ice-golem-death');
-  const current = iceGolemDeathRecording();
+  const current = iceGolemDeathRecording(236);
   const old = iceGolemDeathRecording(235);
   expect(current.frozen).toBe(old.frozen);
   for (let i = 0; i < current.snapshots.length; i++) {
@@ -102,13 +118,15 @@ it('retains identical attacking death and defensive freeze rules across the pres
   ).toBe(true);
 });
 
-it('leaves unrelated current battles byte-identical to version 235', () => {
+it('leaves unrelated battles byte-identical across versions 235 and 236', () => {
   const model = new GameModel();
   model.startBattle(0, true);
   const data = (model as unknown as { recording: import('../src/game/replay').ReplayData })
     .recording;
-  const current = replayBattle(data.initial);
+  const current = replayBattle(data.initial, 236);
   expect(current.nativeSpellArt).not.toContain('IceGolemFreeze');
   expect(current.nativeSpellArt).not.toContain('IceGolemFreeze_DEF');
   expect(current).toEqual(replayBattle(data.initial, 235));
+  expect(replayBattle(data.initial).nativeSpellArt ?? []).not.toContain('IceGolemFreeze');
+  expect(replayBattle(data.initial).nativeSpellArt ?? []).not.toContain('IceGolemFreeze_DEF');
 });

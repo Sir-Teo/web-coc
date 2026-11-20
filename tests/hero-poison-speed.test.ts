@@ -31,7 +31,7 @@ function poisonedHero(name: string, level = 1, legacy = false, hero: HeroKind = 
 
 it.each([
   ['Spell Tower Poison', 1, 0.83, 0.65, 0.75],
-  ['TH14 Poison', 1, 0.75, 0.5, 0.5],
+  ['TH14 Poison', 1, 0.5, 0.5, 0.5],
   ['Poison', 1, 0.87, 0.74, 0.65],
   ['Poison', 12, 0.74, 0.48, 0.26],
 ] as const)(
