@@ -102,3 +102,28 @@ it('presentation capture preserves physical spell behavior and version 112 omits
   delete now.nativeSpellEffectTimelines;
   expect(now).toEqual(then);
 });
+
+it.each([270, 271])('Overgrowth reveal respects replay version %i', (version) => {
+  const model = new GameModel();
+  model.state.obstacles = [];
+  model.state.buildings = [
+    makeBuilding(1, 'townhall', 36, 36, 12),
+    makeBuilding(2, 'tesla', 20, 20, 1),
+    makeBuilding(3, 'tesla', 32, 32, 1),
+  ];
+  model.state.army = { ...emptyArmy(), giant: 1 };
+  model.state.spells = { ...emptySpells(), overgrowth: 1 };
+  model.startBattle(0, true);
+  const data = (model as unknown as { recording: ReplayData }).recording;
+  const battle = (model.battle = replayBattle(data.initial, version));
+  model.activeSpell = 'overgrowth';
+  expect(model.castSpell(21, 21)).toBe(true);
+  for (let i = 0; i < 32; i++) model.step(0.05);
+  expect(battle.buildingEffects?.[2].overgrownUntil).toBeCloseTo(23.5);
+  expect(battle.defenseStuns[2]).toBeCloseTo(23.5);
+  expect(battle.revealedTeslas?.[2]).toBe(version === 271 ? 1.5 : undefined);
+  expect(battle.revealedTeslas?.[3]).toBeUndefined();
+  for (let i = 0; i < 450; i++) model.step(0.05);
+  expect(battle.elapsed).toBeGreaterThan(battle.defenseStuns[2]);
+  expect(battle.revealedTeslas?.[2]).toBe(version === 271 ? 1.5 : undefined);
+});

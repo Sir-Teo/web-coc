@@ -26,7 +26,7 @@ import {
   type NativeRow,
 } from './native-data';
 import { buildingEffects, healUnit, hurtUnit, unitEffects } from './native-status';
-import { concealedTesla } from './hidden-tesla';
+import { concealedTesla, revealTesla } from './hidden-tesla';
 import { freezeDefendingBuilders } from './defending-builder-freeze';
 import { recordPoisonArea } from './poison-avoidance';
 import { poisonDefendingBuilders } from './defending-builder-poison';
@@ -294,7 +294,7 @@ function resolvePulse(ctx: NativeSpellContext, cast: NativeSpellCast, at: number
   if (cast.side === 'attack') {
     harmDefense(ctx, cast, row, at, x, y, radius);
     supportAttackers(ctx, cast, row, at, x, y, radius);
-    if (flag(row, 'Overgrowth')) overgrow(battle, row, at, x, y, radius, cast.id);
+    if (flag(row, 'Overgrowth')) overgrow(ctx, row, at, x, y, radius, cast.id);
     if (num(row, 'DuplicateHousing')) cloneUnits(ctx, cast, row, at, radius);
     if (num(row, 'RecallHousing')) recallUnits(ctx, cast, at, radius);
     if (num(row, 'ResurrectHitpointPercentage')) reviveHero(ctx, row, x, y, cast, at);
@@ -731,7 +731,7 @@ function supportAttackers(
 
 /** Overgrowth roots every non-wall building in range: disabled, untargetable and immune. */
 function overgrow(
-  battle: Battle,
+  { battle, effect }: NativeSpellContext,
   row: NativeRow,
   at: number,
   x: number,
@@ -751,6 +751,8 @@ function overgrow(
     const e = buildingEffects(battle, b);
     e.overgrownUntil = Math.max(e.overgrownUntil ?? 0, at + duration);
     recordOvergrowthRoot(battle, b, at, e.overgrownUntil, castId);
+    if (battle.overgrowthRevealsTesla && concealedTesla(battle, b))
+      revealTesla(battle, b, at, effect);
     battle.defenseStuns[b.id] = Math.max(battle.defenseStuns[b.id] ?? 0, e.overgrownUntil);
     delete battle.defenseTargets[b.id];
   }

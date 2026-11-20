@@ -36,6 +36,12 @@ export function presentBuilding(battle: Battle, building: Building) {
   return building.hp > 0 && !isTrap(building.kind) && !concealedTesla(battle, building);
 }
 
+export function revealTesla(battle: Battle, tower: Building, at: number, effect: (fx: FX) => void) {
+  (battle.revealedTeslas ??= {})[tower.id] = at;
+  const half = BUILDINGS.tesla.size / 2;
+  effect({ type: 'tesla-reveal', sourceId: tower.id, x: tower.x + half, y: tower.y + half });
+}
+
 /** A Tesla stays up for the rest of this attack. Reveal invalidates offensive routes. */
 export function revealTeslas(
   battle: Battle,
@@ -60,10 +66,9 @@ export function revealTeslas(
       !battle.units.some((u) => u.hp > 0 && distance2D(u.x - x, u.y - y) <= TESLA_TRIGGER)
     )
       continue;
-    (battle.revealedTeslas ??= {})[tower.id] = battle.elapsed;
+    revealTesla(battle, tower, battle.elapsed, effect);
     revealed.push(tower);
     changed = true;
-    effect({ type: 'tesla-reveal', sourceId: tower.id, x, y });
   }
   if (changed)
     for (const unit of battle.units) {

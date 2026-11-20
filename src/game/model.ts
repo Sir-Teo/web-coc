@@ -967,6 +967,7 @@ export interface Battle {
   /** Version 269: a Healer locks onto the closest eligible ally regardless of HP. */
   nativeHealerNearestTarget?: true;
   independentIceBlockShield?: true;
+  overgrowthRevealsTesla?: true;
   /** Version 100: native healing resolves through source projectile travel and chain hops. */
   nativeHealingProjectiles?: true;
   nativeHealingTotem?: true;
