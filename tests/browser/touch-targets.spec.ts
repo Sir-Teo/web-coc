@@ -216,3 +216,56 @@ test('the pending update leaves compact village Army controls tappable', async (
   expect(box.y + box.height).toBeLessThan(tray.y);
   await update.tap();
 });
+
+test('a pending update waits through battle and the surrender confirmation', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await boot(page);
+  await page.locator('.attack-btn').tap();
+  await page.locator('[data-action="attack:0"]').tap();
+  await page.waitForFunction(() => !window.__game.scene.battleArtPending());
+  await page.locator('[data-action="troop:swordsman"]').tap();
+  const spot = await page.evaluate(() => {
+    const { model, scene, game } = window.__game;
+    for (let x = 4.63; x < 44; x++) {
+      for (let y = 4.67; y < 44; y++) {
+        if (model.deployBlocked(x, y)) continue;
+        const p = scene.screenFor(x, y);
+        if (
+          p.y > innerHeight * 0.31 &&
+          p.y < innerHeight * 0.61 &&
+          document.elementFromPoint(p.x, p.y) === game.canvas
+        ) return p;
+      }
+    }
+    throw Error('No visible deployment tile');
+  });
+  await page.touchscreen.tap(spot.x, spot.y);
+  await expect(page.locator('[data-action="surrender"]')).toBeVisible();
+  await page.evaluate(() => {
+    const prompt = document.createElement('button');
+    prompt.id = 'update-ready';
+    prompt.textContent = 'Update ready · Reload';
+    document.body.append(prompt);
+  });
+  const update = page.locator('#update-ready');
+  await expect(update).toBeHidden();
+  await page.locator('[data-action="troop:archer"]').tap();
+  expect(await page.evaluate(() => window.__game.model.activeTroop)).toBe('archer');
+  await page.locator('[data-action="surrender"]').tap();
+  await expect(page.locator('[data-action="end"]')).toBeVisible();
+  await expect(update).toBeHidden();
+  await page.locator('[data-action="end"]').tap();
+  await expect(page.locator('#result-title')).toBeVisible();
+  await expect(update).toBeHidden();
+  await page.locator('[data-action="home"]').tap();
+  await expect(update).toBeVisible();
+
+  await page.locator('.train-add').tap();
+  await expect(update).toBeHidden();
+  await page.locator('[data-action="close-drawer"]').tap();
+  await expect(update).toBeVisible();
+  await page.locator('.attack-btn').tap();
+  await expect(update).toBeHidden();
+  await page.getByRole('button', { name: 'Close dialog' }).tap();
+  await expect(update).toBeVisible();
+});

@@ -6320,6 +6320,11 @@ h3 {
   cursor: pointer;
 }
 
+/* Keep reload out of battles and panels; the waiting update returns in the village. */
+body:has(#ui.drawer-open, #ui .battle-enemy, #ui .modal-backdrop) #update-ready {
+  display: none;
+}
+
 /* Fit the pending update between Attack and Shop, above the portrait army tray. */
 @media (max-width: 700px) and (orientation: portrait) {
   body:has(#ui .bottom-center .army-tray) #update-ready {

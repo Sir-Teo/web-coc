@@ -65,6 +65,8 @@ worker. Both paths must reload exactly once; a previously activated worker canno
 produce another controller-change event for the original prompt to wait on.
 On compact portrait village screens, the update button sits above the Army
 tray so a troop-card tap cannot accidentally accept the update.
+While battle, replay, a drawer or a dialog is open, the prompt waits behind
+that interaction and reappears when the player returns to the village.
 Using that button as the first pointer gesture must not start village-sound downloads
 while the worker switch is pending.
 
