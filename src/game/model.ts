@@ -388,6 +388,7 @@ import {
   TROOP_KEYS,
   SPELL_KEYS,
   RELEASED_SPELL_KEYS,
+  MAX_TOWNHALL,
   CAMPAIGN,
   isSpellKind,
   spellStatsAt,
@@ -4017,6 +4018,15 @@ export class GameModel {
   trainingTime(_kind: TroopKind) {
     return 0;
   }
+  superMinimumTownHall(kind: TroopKind) {
+    const original = superOriginal(kind);
+    if (!original) return 0;
+    const minimum = superMinimum(kind);
+    for (let townHall = 11; townHall < MAX_TOWNHALL; townHall++)
+      if (researchLevelForLab(original, maxLevelFor('laboratory', townHall)) >= minimum)
+        return townHall;
+    return MAX_TOWNHALL;
+  }
   superBoostCapacityIssue(kind: TroopKind) {
     const limit = nativeGlobal('MAX_ACTIVE_SUPER_LICENCES');
     const active = Object.values(this.state.superBoosts ?? {}).filter((end) => end! > this.clock);
@@ -4034,9 +4044,10 @@ export class GameModel {
     const row = superLicence(kind),
       original = superOriginal(kind);
     if (!row || !original) return this.notify('Choose a Super Troop to boost.');
-    if (this.townhallLevel < 11 || this.troopLevel(original) < superMinimum(kind))
+    const townHall = this.superMinimumTownHall(kind);
+    if (this.townhallLevel < townHall || this.troopLevel(original) < superMinimum(kind))
       return this.notify(
-        `Requires Town Hall 11 and ${TROOPS[original].name} level ${superMinimum(kind)}.`,
+        `Requires Town Hall ${townHall} and ${TROOPS[original].name} level ${superMinimum(kind)}.`,
       );
     const now = this.clock;
     if ((this.state.superBoosts?.[kind] ?? 0) > now) return;
@@ -4074,8 +4085,9 @@ export class GameModel {
     const original = superOriginal(kind),
       name = TROOPS[kind].name;
     if (original) {
-      if (this.townhallLevel < 11)
-        return { label: 'TH11 required', message: `${name} requires Town Hall 11.` };
+      const townHall = this.superMinimumTownHall(kind);
+      if (this.townhallLevel < townHall)
+        return { label: `TH${townHall} required`, message: `${name} requires Town Hall ${townHall}.` };
       const minimum = superMinimum(kind),
         baseName = TROOPS[original].name;
       if (this.troopLevel(original) < minimum)

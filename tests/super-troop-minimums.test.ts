@@ -25,6 +25,13 @@ const requirements = [
   ['superyeti', 'yeti', 3],
 ] as const;
 
+it('matches the pinned Sauna training tiers across the roster', () => {
+  const model = new GameModel();
+  expect(requirements.map(([kind]) => model.superMinimumTownHall(kind))).toEqual([
+    11, 11, 12, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 13, 13, 13,
+  ]);
+});
+
 function village(original: TroopKind, level: number) {
   const m = new GameModel();
   m.state.king = undefined;
@@ -143,4 +150,19 @@ it('uses prepared and queued Super Troop types to gate a new boost after expiry'
   m.removeTroop('superminion', Infinity);
   expect(m.useSuperPotion('sneakygoblin')).toBe(true);
   expect(m.troopUnlocked('sneakygoblin')).toBe(true);
+});
+
+it('blocks both Rocket Balloon boost payments until Town Hall 12', () => {
+  const m = village('balloon', 8);
+  m.townhall!.level = 11;
+  m.addMagicItem('super-potion', 1);
+  m.boostSuperTroop('rocketballoon');
+  expect(m.state.dark).toBe(100000);
+  expect(m.useSuperPotion('rocketballoon')).toBe(false);
+  expect(m.magicItemCount('super-potion')).toBe(1);
+  expect(m.troopTrainingIssue('rocketballoon')?.label).toBe('TH12 required');
+  m.townhall!.level = 12;
+  expect(m.useSuperPotion('rocketballoon')).toBe(true);
+  m.train('rocketballoon');
+  expect(m.state.army.rocketballoon).toBe(1);
 });

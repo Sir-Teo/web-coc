@@ -43,14 +43,14 @@ for (const c of [
         potion = tile.locator(`[data-action="super-potion:${c.kind}"]`);
       await expect(currency).toBeDisabled();
       await expect(potion).toBeDisabled();
-      await expect(tile).toContainText(`TH11 · ${c.baseName} level 8`);
+      await expect(tile).toContainText(`TH12 · ${c.baseName} level 8`);
       await page.getByRole('button', { name: `About ${c.name}`, exact: true }).click();
       await expect(
         page
           .locator('.troop-stats > div')
           .filter({ has: page.getByText('Boost requirement', { exact: true }) })
           .locator('dd'),
-      ).toHaveText(`TH11 · ${c.baseName} level 8`);
+      ).toHaveText(`TH12 · ${c.baseName} level 8`);
       await expect(page.locator('.troop-info-hero p')).toContainText('Super Troop boost');
       await expect(page.locator('.troop-info-hero p')).not.toContainText('Barracks level');
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
@@ -76,6 +76,7 @@ for (const c of [
       }, c.original);
       await expect(currency).toBeEnabled();
       await expect(potion).toBeEnabled();
+      const earliest = await page.evaluate(() => window.__game.model.clock);
       await (method === 'dark' ? currency : potion).click();
       await expect(tile.locator('.boost-left')).toContainText('Boosted');
       const result = await page.evaluate((kind) => {
@@ -83,14 +84,17 @@ for (const c of [
         return {
           dark: m.state.dark,
           items: m.magicItemCount('super-potion'),
-          duration: m.state.superBoosts[kind] - m.clock,
+          end: m.state.superBoosts[kind],
+          now: m.clock,
         };
       }, c.kind);
-      expect(result).toEqual({
+      expect({ dark: result.dark, items: result.items }).toEqual({
         dark: method === 'dark' ? 75000 : 100000,
         items: method === 'dark' ? 1 : 0,
-        duration: 72 * 3600000,
       });
+      const duration = 72 * 3600000;
+      expect(result.end).toBeGreaterThanOrEqual(earliest + duration);
+      expect(result.end).toBeLessThanOrEqual(result.now + duration);
       await tile.locator(`[data-action="train:${c.kind}"]`).click();
       await expect(tile.locator(`[data-army-count="troop:${c.kind}"]`)).toHaveText('1');
       if (c.width === 390 && method === 'dark') {
