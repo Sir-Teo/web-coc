@@ -6,6 +6,7 @@ import { emptyArmy, emptySpells } from '../src/game/army';
 import { maxTroopLevel } from '../src/game/data';
 import { MAGIC_ITEMS, advanceBoost, wallRings, type Boost } from '../src/game/magic-items';
 import { validateSave } from '../src/game/save';
+import { produceCollector } from '../src/game/collector-production';
 
 const HOUR = 3_600_000;
 
@@ -396,6 +397,33 @@ describe('magic items', () => {
     plain.tick(plain.clock + HOUR / 4);
     boosted.tick(boosted.clock + HOUR / 4);
     expect(mine(boosted).stored).toBeCloseTo(mine(plain).stored * 2, 3);
+  });
+
+  it('keeps an upgraded collector unboosted through reload while other collectors stay boosted', () => {
+    const m = village(3);
+    m.state.buildings = m.state.buildings.filter((b) => b.id !== 8);
+    m.state.buildings.push(
+      makeBuilding(8, 'goldmine', 26, 10),
+      makeBuilding(11, 'goldmine', 30, 10),
+    );
+    m.state.nextId = 12;
+    m.state.gold = m.state.elixir = 10000;
+    m.addMagicItem('resource-potion');
+    m.usePotion('resource-potion');
+    m.upgrade(8);
+    const end = m.state.buildings.find((b) => b.id === 8)!.upgradeEnd!;
+    expect(end).toBeLessThan(m.state.boosts!.resources!.end);
+    expect(save(m)).toBe(true);
+    const restored = new GameModel(structuredClone(m.state));
+    restored.tick(end);
+    const mine = restored.state.buildings.find((b) => b.id === 8)!;
+    const other = restored.state.buildings.find((b) => b.id === 11)!;
+    expect(mine.level).toBe(2);
+    expect(mine.stored).toBe(0);
+    other.stored = 0;
+    restored.tick(end + 600_000);
+    expect(mine.stored).toBeCloseTo(produceCollector('goldmine', 2, 0, 600));
+    expect(other.stored).toBeCloseTo(produceCollector('goldmine', 1, 0, 1200));
   });
 
   it('moves a timer no further than the moment its work is done', () => {

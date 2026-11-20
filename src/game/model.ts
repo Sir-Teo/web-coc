@@ -579,6 +579,7 @@ export interface Building {
   upgradeEnd?: number;
   /** Set alongside upgradeEnd so progress bars are exact for any timer length. */
   upgradeStart?: number;
+  resourceBoostCanceledUntil?: number;
   constructing?: boolean;
   stored: number;
   cooldown: number;
@@ -2828,7 +2829,11 @@ export class GameModel {
           ? Math.max(
               0,
               Math.min(now, potion.end) / 1000 -
-                Math.max(now / 1000 - productionSeconds, potion.start / 1000),
+                Math.max(
+                  now / 1000 - productionSeconds,
+                  potion.start / 1000,
+                  (b.resourceBoostCanceledUntil ?? 0) / 1000,
+                ),
             ) *
             ((MAGIC_ITEMS[boostItem('resources')].effect as { multiplier: number }).multiplier - 1)
           : 0;
@@ -3388,6 +3393,10 @@ export class GameModel {
         );
         if (merged) this.state.buildings = this.state.buildings.filter((v) => v !== merged);
       }
+    }
+    const resourceBoost = this.state.boosts?.resources;
+    if (isCollector(b.kind) && resourceBoost && resourceBoost.end > this.clock) {
+      b.resourceBoostCanceledUntil = resourceBoost.end;
     }
     b.upgradeStart = this.clock;
     b.upgradeEnd = this.clock + this.upgradeSeconds(b) * 1000;

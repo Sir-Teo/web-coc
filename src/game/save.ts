@@ -464,6 +464,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
       !finite(b.hp) ||
       !finite(b.maxHp) ||
       !finite(b.stored) ||
+      (b.resourceBoostCanceledUntil !== undefined && !finite(b.resourceBoostCanceledUntil)) ||
       !finite(b.cooldown) ||
       (b.upgradeEnd !== undefined && !finite(b.upgradeEnd)) ||
       (b.upgradeStart !== undefined && !finite(b.upgradeStart))
