@@ -93,3 +93,27 @@ it('retains both Skeleton tiers from mixed parent levels without changing the in
   expect(demand.get('bigboy')).toEqual([1]);
   expect(JSON.stringify([...seeds])).toBe(before);
 });
+
+it.each([278, 279])('uses the Lavaloon bomb Pup rule for recording %i', (version) => {
+  const r = heroPuppetBattle(
+    {
+      kind: 'warden',
+      level: 1,
+      items: [{ slug: 'lavaloon-puppet', level: 3 }],
+    },
+    {},
+    undefined,
+    version,
+  );
+  expect(r.model.deployNativeHero('warden', 11.4, 11.5)).toBe(true);
+  expect(r.model.activateNativeHeroAbility('warden')).toBe(true);
+  const parent = r.battle.units.find((u) => u.kind === 'gwlavaloon')!;
+  for (let bomb = 1; bomb <= 2; bomb++) {
+    for (let i = 0; i < 100 && (parent.native?.attacks ?? 0) < bomb; i++) r.model.step(0.05);
+    expect(parent.native?.attacks).toBe(bomb);
+    r.model.step(0.05);
+    const pups = r.battle.units.filter((u) => u.kind === 'gwlavaloonpup');
+    expect(parent.hp).toBeGreaterThan(0);
+    expect(pups.map((u) => u.level)).toEqual(version === 278 ? [] : Array(bomb).fill(2));
+  }
+});

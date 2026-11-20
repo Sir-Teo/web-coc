@@ -114,3 +114,22 @@ Costs on a row are the price to reach that level (wiki convention). Values as di
 **Mismatches / ambiguities**
 
 - `Lavaloon.bombSplashRadius`: wiki **not given ('???' range)** vs client **DamageRadius 180 (1.8 tiles), AttackRange 0** — wiki omits
+
+## Bomb impact in recording version 279
+
+The pinned `GW Equipment Lavaloon` bomb projectile rows point to
+`GWLavaloonSpawnPup` at their own tier. Each linked spell summons one
+`GW Equipment Lavaloon Pup` at that tier with zero configured delay. Before
+version 279 the web self-centered splash resolved without running the
+projectile's hit spell. A living Lavaloon could bomb repeatedly without
+creating a Pup.
+
+Version 279 dispatches that hit spell at the existing splash impact.
+The separate death burst keeps its source count. The change keeps the
+existing bombardment reach, cadence and presentation. Native moving-bomb
+release geometry and visual timing are still unverified.
+
+Run `node scripts/lavaloon-puppet-production-check.mjs` after packaging, or
+pass the packaged version 278 directory for comparison. The disposable
+phone touch run activates Lavaloon Puppet, uses Freeze and Balloons against
+an Air Defense, and seeks across the resulting live combat checkpoints.

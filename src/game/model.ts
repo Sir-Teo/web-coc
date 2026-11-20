@@ -981,6 +981,8 @@ export interface Battle {
   nativeHealingTotem?: true;
   /** Version 278: Invisibility can conceal a summoned Totem. */
   nativeInvisibilityTotem?: true;
+  /** Version 279: Warden LavaLoon bomb impacts trigger their source Pup spell. */
+  nativeLavaloonBombPups?: true;
   nativeTotemTroopHealingImmunity?: true;
   /** Version 101: ground healing units follow allies around buildings, crossing jumpable walls. */
   nativeHealerRoutes?: true;

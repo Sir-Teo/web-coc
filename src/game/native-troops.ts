@@ -1855,6 +1855,16 @@ function strike(
   let shot: CombatProjectile | undefined;
   if (s.selfAreaCenter || s.multipleBuildings) {
     selfAreaHit(ctx, u, s, damage);
+    if (battle.nativeLavaloonBombPups && u.kind === 'gwlavaloon') {
+      const projectile = nativeRow('projectiles', s.projectile);
+      const hitSpell = text(projectile, 'HitSpell');
+      if (hitSpell)
+        castNativeSpell(battle, hitSpell, num(projectile, 'HitSpellLevel', 1), 'attack', u.x, u.y, {
+          at: battle.elapsed,
+          immediate: true,
+          owner: u.id,
+        });
+    }
   } else if (
     s.projectile &&
     (s.range >= 1 || (battle.nativeHoundWindup && u.kind === 'lavahound'))
