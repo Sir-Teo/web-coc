@@ -5692,10 +5692,12 @@ export class HUD {
                 ['Heart', 'Healing', n(d.heal * HEAL_PULSES), n(next.heal * HEAL_PULSES)],
                 ['Scan', 'Radius', `${d.radius}`, `${next.radius}`],
               ]
-            : [
-                ['Swords', 'Damage', `+${d.damageBoost}%`, `+${next.damageBoost}%`],
-                ['Wind', 'Speed', `+${d.speedBoost / 8}`, `+${next.speedBoost / 8}`],
-              ];
+            : kind === 'rage'
+              ? [
+                  ['Swords', 'Damage', `+${d.damageBoost}%`, `+${next.damageBoost}%`],
+                  ['Wind', 'Speed', `+${d.speedBoost / 8}`, `+${next.speedBoost / 8}`],
+                ]
+              : [['Sparkles', 'Effect', d.effect, next.effect]];
     } else {
       const d = m.troopStats(kind),
         next = m.troopStats(kind, nextLevel);

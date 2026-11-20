@@ -162,6 +162,9 @@ test.describe('phone Dark Spell research', () => {
       return m.researchCost('poison');
     });
     expect(cost).toBeGreaterThan(0);
+    const stats = page.locator('[data-research-kind="poison"] .research-stats');
+    await expect(stats).toContainText('Up to 90 DPS · 26% slower');
+    await expect(stats).toContainText('Up to 115 DPS · 30% slower');
     const research = page.locator('[data-action="research-start:poison"]');
     await expect(research).toHaveAccessibleName(/Dark elixir/);
     await expect(research).toBeDisabled();
