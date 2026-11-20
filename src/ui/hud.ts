@@ -3084,7 +3084,9 @@ export class HUD {
           el.style.animation = 'none';
         });
       this.modalMarkup = modalMarkup;
-      root.querySelector('.modal-body')?.scrollTo(0, modalScroll);
+      // Awards and the Starter Pass have separate scroll positions.
+      const scroll = this.panel === 'starter' && !updatingOpenDialog ? 0 : modalScroll;
+      root.querySelector('.modal-body')?.scrollTo(0, scroll);
       rebuilt = true;
     }
     if (rebuilt) this.liveRefs = null;
