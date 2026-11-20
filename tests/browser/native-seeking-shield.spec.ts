@@ -76,7 +76,13 @@ for (const { level, count, width } of [
       errors: string[] = [];
     page.on('request', (request) => requests.push(new URL(request.url()).pathname));
     page.on('pageerror', (error) => errors.push(error.message));
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
     const r = await open(page, level);
+    // The paused scene keeps its last adaptive detail tier. This check samples full-detail
+    // art regardless of startup frame pressure, which can otherwise suppress all trails.
+    await page.evaluate(() => {
+      window.__game.scene.detailLevel = 0;
+    });
     await expect
       .poll(() => requests)
       .toEqual(
@@ -123,6 +129,7 @@ for (const { level, count, width } of [
       .poll(() =>
         page.evaluate(() => {
           const scene = window.__game.scene;
+          scene.drawOverlay(0);
           return scene.children.list.some(
             (o) => o.getData?.('nativeEffect') === 'shield_trail_glow' && o.visible && o.alpha > 0,
           );
