@@ -35,6 +35,13 @@ cancellation and listener cleanup.
 
 The native-grid audit reproduced a separate lost-click race: a model update scheduled between a Save button’s pointer press and release replaced the button node, preventing its click. HUD structural rendering now waits until active action pointers release or cancel, and resumes on the next animation frame after click dispatch. Window blur also releases this guard. Live counters keep updating while a pointer is held.
 
+An interruption also invalidates the click that Chromium can still emit when
+the old touch lifts over a HUD action. A touch started on the surrender
+confirmation cannot finish the battle after a blur or hidden-page event.
+A fresh touch or keyboard activation can still confirm. The touch regressions
+in `tests/browser/hold-deploy.spec.ts` inject real browser touch input and
+simulate the lifecycle events separately, then verify replay playback.
+
 Drawers and dialogs retain their DOM when their generated content is unchanged. Their scroll positions are restored only after content replacement, so an unrelated redraw cannot cancel a smooth Army category jump. Changed contents still rerender and preserve the existing focus behavior.
 
 The added browser regression holds a real Save button, triggers a structural update, checks that its node remains connected, then releases and verifies the persisted army name in the model. It also triggers redraws during jumps to Spells and back to Troops. The old implementation failed the mounted-node assertion. Quick-army reload, narrow catalog scrolling, modal focus and replay interaction cases exercise the adjacent flows.

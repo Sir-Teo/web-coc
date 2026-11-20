@@ -820,7 +820,8 @@ export class HUD {
   /** Hold-to-repeat on Add and Remove: a short delay, then steady repeats until release. */
   private repeatTimer?: ReturnType<typeof setTimeout>;
   private repeatPointer: number | null = null;
-  private resizedRepeatPointer: number | null = null;
+  /** Releases from interrupted presses can still generate a browser click. */
+  private cancelledActionPointers = new Set<number>();
   private repeatedClick = false;
   private startRepeat(control: HTMLElement, pointerId: number) {
     this.stopRepeat();
@@ -899,8 +900,8 @@ export class HUD {
     this.root.addEventListener(
       'click',
       (e) => {
-        if (e instanceof PointerEvent && e.pointerId === this.resizedRepeatPointer) {
-          this.resizedRepeatPointer = null;
+        if (e instanceof PointerEvent && this.cancelledActionPointers.delete(e.pointerId)) {
+          e.preventDefault();
           return;
         }
         // An army portrait (data-add) adds as its tile's Add button does.
@@ -925,7 +926,7 @@ export class HUD {
     this.root.addEventListener(
       'pointerdown',
       (e) => {
-        if (e.pointerId === this.resizedRepeatPointer) this.resizedRepeatPointer = null;
+        this.cancelledActionPointers.delete(e.pointerId);
         const target = e.target as HTMLElement;
         if (
           target.closest('[data-action], [data-add]') ||
@@ -968,6 +969,7 @@ export class HUD {
     const releaseAction = (e: PointerEvent) => {
       if (e.pointerId === this.repeatPointer) this.stopRepeat();
       this.pressedActions.delete(e.pointerId);
+      if (e.type === 'pointercancel') this.cancelledActionPointers.delete(e.pointerId);
       // The browser dispatches click after pointerup; render on the next frame.
       if (!this.pressedActions.size && this.renderPending) this.scheduleRender();
     };
@@ -976,6 +978,7 @@ export class HUD {
     const cancelActions = () => {
       finishScrub();
       this.stopRepeat();
+      for (const pointer of this.pressedActions) this.cancelledActionPointers.add(pointer);
       this.pressedActions.clear();
       this.cancelDrawerDrag?.();
       if (this.renderPending) this.scheduleRender();
@@ -994,7 +997,7 @@ export class HUD {
         this.cancelDrawerDrag?.();
         if (this.repeatPointer !== null) {
           // Releasing a held touch over the resized control can still dispatch a click.
-          this.resizedRepeatPointer = this.repeatPointer;
+          this.cancelledActionPointers.add(this.repeatPointer);
           this.stopRepeat();
         }
         if (this.replayScrubPointer !== null) {

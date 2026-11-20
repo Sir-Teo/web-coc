@@ -749,3 +749,48 @@ test.describe('full deployment tray on touch', () => {
     expect(await state()).toEqual(spent);
   });
 });
+
+test.describe('interrupted battle confirmation on touch', () => {
+  test.use({ hasTouch: true, isMobile: true });
+
+  for (const interruption of ['blur', 'hidden'] as const) {
+    test(`a stale touch cannot confirm surrender after ${interruption}`, async ({
+      page,
+      browserName,
+    }) => {
+      test.skip(browserName !== 'chromium', 'Uses Chromium touch injection');
+      await startDeployment(page);
+      const point = await grassPoint(page);
+      await page.touchscreen.tap(point.x, point.y);
+      await page.locator('[data-action="surrender"]').tap();
+      const confirm = page.locator('[data-action="end"]');
+      const box = (await confirm.boundingBox())!;
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x: box.x + box.width / 2, y: box.y + box.height / 2, id: 1 }],
+      });
+      await page.evaluate((interruption) => {
+        if (interruption === 'blur') {
+          window.dispatchEvent(new Event('blur'));
+        } else {
+          Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+          document.dispatchEvent(new Event('visibilitychange'));
+          Reflect.deleteProperty(document, 'hidden');
+          document.dispatchEvent(new Event('visibilitychange'));
+        }
+      }, interruption);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await expect(confirm).toBeVisible();
+      expect(await page.evaluate(() => window.__game.model.battle!.finished)).toBe(false);
+
+      if (interruption === 'blur') await confirm.tap();
+      else await confirm.press('Enter');
+      await expect(page.getByRole('button', { name: 'Watch replay', exact: true })).toBeVisible();
+      await page.getByRole('button', { name: 'Watch replay', exact: true }).tap();
+      await page.getByRole('slider', { name: 'Replay position' }).press('End');
+      await expect(page.locator('.replay-status')).toContainText('Replay complete');
+      expect(await page.evaluate(() => window.__game.model.battle!.remaining.swordsman)).toBe(39);
+    });
+  }
+});
