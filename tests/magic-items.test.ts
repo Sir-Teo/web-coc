@@ -352,27 +352,46 @@ describe('magic items', () => {
     },
   );
 
-  it('runs a Builder Potion at ten times speed for an hour, offline included', () => {
+  it('keeps Builder Potion progress across reload and leaves Laboratory research alone', () => {
     const m = village();
     m.state.gold = m.state.elixir = 10_000_000;
+    const start = m.clock;
     const cannon = m.state.buildings.find((b) => b.id === 6)!;
     const mine = m.state.buildings.find((b) => b.id === 8)!;
+    m.state.buildings.push(
+      makeBuilding(11, 'builder', 30, 34),
+      makeBuilding(12, 'herohall', 14, 26, 2),
+    );
+    m.state.nextId = 13;
     m.upgrade(cannon.id);
-    cannon.upgradeEnd = m.clock + 20 * HOUR;
-    mine.upgradeStart = m.clock;
-    mine.upgradeEnd = m.clock + 5 * HOUR;
+    cannon.upgradeEnd = start + 20 * HOUR;
+    mine.level = 1;
+    mine.constructing = true;
+    mine.upgradeStart = start;
+    mine.upgradeEnd = start + 5 * HOUR;
+    m.state.king = { level: 1, upgradeStart: start, upgradeEnd: start + 15 * HOUR };
+    const research = { kind: 'archer' as const, end: start + 15 * HOUR };
+    m.state.research = { ...research };
     m.addMagicItem('builder-potion', 2);
-    const start = m.clock;
     expect(m.usePotion('builder-potion')).toBe(true);
-    m.tick(start + 2 * HOUR);
-    // Ten hours of work in the hour: 9 saved on the Cannon, the mine done at 30 minutes.
-    expect(cannon.upgradeEnd).toBe(start + 11 * HOUR);
-    expect(mine.upgradeEnd).toBeUndefined();
-    expect(m.state.boosts?.builders).toBeUndefined();
-    // A second potion while one runs extends it.
-    m.usePotion('builder-potion');
-    expect(m.boostLeft('builders')).toBe(3600);
+
+    m.tick(start + HOUR / 4);
     expect(save(m)).toBe(true);
+    const restored = new GameModel(structuredClone(m.state), start + HOUR / 2);
+    expect(restored.boostLeft('builders')).toBe(1800);
+    expect(restored.state.buildings.find((b) => b.id === mine.id)?.constructing).toBe(false);
+    expect(restored.state.king?.upgradeEnd).toBe(start + 10.5 * HOUR);
+    expect(restored.state.research).toEqual(research);
+
+    restored.tick(start + 2 * HOUR);
+    expect(restored.state.buildings.find((b) => b.id === cannon.id)?.upgradeEnd).toBe(
+      start + 11 * HOUR,
+    );
+    expect(restored.state.king?.upgradeEnd).toBe(start + 6 * HOUR);
+    expect(restored.state.research).toEqual(research);
+    expect(restored.state.boosts?.builders).toBeUndefined();
+    expect(restored.magicItemCount('builder-potion')).toBe(1);
+    expect(save(restored)).toBe(true);
   });
 
   it('extends a running potion instead of stacking it', () => {

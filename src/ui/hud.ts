@@ -4183,14 +4183,14 @@ export class HUD {
         `aria-label="${html(d.name)}${o.ids.length > 1 ? `, ${o.ids.length} of them` : ''}: ${o.level ? `level ${o.level} to ${o.level + 1}` : 'new'}, ${n(o.cost)} ${o.resource}${o.affordable ? '' : ', not enough'}"`,
       )}</li>`;
     };
-    // The work under way counts down like the boost timers ([data-boost-end]).
+    // Read active job deadlines from the model as potions and helpers move them.
     const jobs = menu.jobs.length
       ? `<ul class="builder-list">${menu.jobs
           .map(
             (j) =>
               `<li>${button(
                 j.hero ? `hero-builder-job:${j.hero}` : `select-building:${j.id}`,
-                `${icon('Hammer', 18)}<span><b>${html(j.name)}</b><small>${html(j.detail)}</small></span><em data-boost-end="${j.end}">${time(Math.max(0, j.end - m.clock) / 1000)}</em>`,
+                `${icon('Hammer', 18)}<span><b>${html(j.name)}</b><small>${html(j.detail)}</small></span><em ${j.hero ? `data-hero-timer="${j.hero}"` : `data-upgrade="${j.id}"`}>${time((j.end - m.clock) / 1000)}</em>`,
                 'builder-option working',
               )}</li>`,
           )
