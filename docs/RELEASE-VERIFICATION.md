@@ -63,6 +63,8 @@ reload once onto its cache.
 The update button is also checked before and after another tab activates the waiting
 worker. Both paths must reload exactly once; a previously activated worker cannot
 produce another controller-change event for the original prompt to wait on.
+On compact portrait village screens, the update button sits above the Army
+tray so a troop-card tap cannot accidentally accept the update.
 Using that button as the first pointer gesture must not start village-sound downloads
 while the worker switch is pending.
 

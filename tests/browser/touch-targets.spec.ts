@@ -190,3 +190,29 @@ for (const [label, width, height] of [
       });
     }
   });
+
+test('the pending update leaves compact village Army controls tappable', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await boot(page);
+  // Production creates this control after a waiting worker is downloaded. Exercise
+  // its layout here without installing a service worker in the dev server.
+  await page.evaluate(() => {
+    const prompt = document.createElement('button');
+    prompt.id = 'update-ready';
+    prompt.textContent = 'Update ready · Reload';
+    document.body.append(prompt);
+  });
+  const army = page.locator('.bottom-center .army-tray');
+  const archer = army.getByRole('button', { name: /^Archer,/ });
+  const point = (await archer.boundingBox())!;
+  await page.touchscreen.tap(point.x + point.width / 2, point.y + point.height / 2);
+  await expect(page.locator('.drawer-head h2')).toHaveText('Army');
+  await page.locator('[data-action="close-drawer"]').tap();
+
+  const update = page.locator('#update-ready');
+  const box = (await update.boundingBox())!;
+  const tray = (await army.boundingBox())!;
+  expect(box.height).toBeGreaterThanOrEqual(44);
+  expect(box.y + box.height).toBeLessThan(tray.y);
+  await update.tap();
+});

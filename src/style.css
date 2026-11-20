@@ -6320,6 +6320,17 @@ h3 {
   cursor: pointer;
 }
 
+/* Fit the pending update between Attack and Shop, above the portrait army tray. */
+@media (max-width: 700px) and (orientation: portrait) {
+  body:has(#ui .bottom-center .army-tray) #update-ready {
+    bottom: calc(145px + env(safe-area-inset-bottom));
+    width: 108px;
+    min-height: 44px;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+}
+
 /* Army catalog search and filters (second row of the Army drawer header). */
 .drawer-head.army-head {
   flex-wrap: wrap;
