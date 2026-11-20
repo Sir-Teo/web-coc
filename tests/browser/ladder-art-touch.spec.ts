@@ -103,6 +103,17 @@ test('a Ladder touch that begins while art is loading cannot deploy when it land
     });
     expect(recording?.stake).toEqual(offer);
     expect(recording?.deployments).toMatchObject([{ kind: 'swordsman' }]);
+    const results = page.getByRole('dialog', { name: 'A brave attempt' });
+    const home = results.getByRole('button', { name: 'Return to village' });
+    for (const viewport of [{ width: 568, height: 320 }, { width: 320, height: 568 }]) {
+      await page.setViewportSize(viewport);
+      await expect(results.getByRole('heading')).toBeInViewport({ ratio: 1 });
+      await expect(results.getByRole('img', { name: /stars/i })).toBeInViewport({ ratio: 1 });
+      await expect(home).toBeInViewport({ ratio: 1 });
+    }
+    await page.setViewportSize({ width: 568, height: 320 });
+    await home.tap();
+    await expect(page.locator('.attack-btn')).toBeVisible();
   } finally {
     release();
     await cdp.detach();
