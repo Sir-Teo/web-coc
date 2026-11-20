@@ -1456,10 +1456,11 @@ export const isDefense = (kind: BuildingKind) =>
 export const isTrap = (kind: BuildingKind) => !!BUILDINGS[kind].trap;
 /**
  * Traps, Builder's Huts (sold for gems, built instantly), the free, instant Crafting Station and
- * the instant Helper Hut are placed without a free builder.
+ * the instant Helper Hut are placed without a free builder. Rebuilding the Clan Castle also
+ * takes no builder.
  */
 export const needsBuilder = (kind: BuildingKind) =>
-  !isTrap(kind) && kind !== 'builder' && kind !== 'craftingstation' && kind !== 'helperhut';
+  !isTrap(kind) && kind !== 'builder' && kind !== 'craftingstation' && kind !== 'helperhut' && kind !== 'clancastle';
 /** First tier that permits one. A withheld building still shows its original requirement. */
 export const unlockTownHall = (kind: BuildingKind) =>
   kind === 'clancastle'

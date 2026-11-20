@@ -60,3 +60,24 @@ it('keeps Castle Lightning immunity in live practice and replay, with old-versio
   while (viewer.replay!.seeking) viewer.step(0.05);
   expect(viewer.battle!.buildings.find((b) => b.id === 6)?.hp).toBe(3000);
 });
+
+it('rebuilds the Clan Castle instantly while builders are busy', () => {
+  const model = new GameModel();
+  model.townhall!.level = 3;
+  model.state.obstacles = [];
+  model.state.elixir = 20_000;
+  for (const building of model.state.buildings.filter(b => b.kind !== 'builder').slice(0, model.builders))
+    building.upgradeEnd = model.clock + 60_000;
+  const busy = model.busy;
+  expect(busy).toBe(model.builders);
+  model.beginBuild('clancastle');
+  expect(model.placement).toBe('clancastle');
+  expect(model.place(30, 30)).toBe(true);
+  expect(model.clanCastle).toMatchObject({ level: 1 });
+  expect(model.clanCastle?.upgradeEnd).toBeUndefined();
+  expect(model.state.elixir).toBe(10_000);
+  expect(model.busy).toBe(busy);
+  model.beginBuild('clancastle');
+  expect(model.placement).toBeNull();
+  expect(model.state.elixir).toBe(10_000);
+});
