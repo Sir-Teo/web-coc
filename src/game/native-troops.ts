@@ -221,6 +221,8 @@ export interface NativeUnitState {
   angryUntil?: number;
   /** Clone Spell copies vanish at this time without death effects. */
   cloneUntil?: number;
+  /** Magic Mirror has its own lifetime and retains its existing spell eligibility. */
+  mirrorExpiresAt?: number;
   /** Version 176: a Super Hog Rider body releases its two death abilities once. */
   superHogSplit?: true;
   /** Siege machines are immune to troop spells. */
@@ -3173,17 +3175,15 @@ export function stepNativeBattle(ctx: NativeTroopContext) {
     );
   if (battle.nativeAttackerHitPoison)
     for (const defender of battle.defenders ?? []) tickDefenderHitPoison(defender, battle.elapsed);
-  // Clone Spell copies expire silently: no death damage, splits or spells.
-  for (const u of battle.units)
-    if (
-      u.hp > 0 &&
-      u.native?.cloneUntil !== undefined &&
-      u.native.cloneUntil <= battle.elapsed + 1e-9
-    ) {
+  // Temporary copies expire without running casualty abilities.
+  for (const u of battle.units) {
+    const expiresAt = u.native?.mirrorExpiresAt ?? u.native?.cloneUntil;
+    if (u.hp > 0 && expiresAt !== undefined && expiresAt <= battle.elapsed + 1e-9) {
       u.hp = 0;
       u.spent = true;
-      u.defeatedAt = u.native.cloneUntil;
+      u.defeatedAt = expiresAt;
     }
+  }
   stepNativeSpells({
     ...ctx,
     spawn: (kind, level, x, y, at, owner) => spawnNativeUnit(ctx, kind, level, x, y, at, owner),

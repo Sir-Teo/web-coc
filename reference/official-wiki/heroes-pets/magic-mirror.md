@@ -101,3 +101,18 @@ retain their old placement. Clone stats and lifetime are a separate audit.
 
 Run `node scripts/action-figure-production-check.mjs --mirror-formation`
 after packaging, or pass a packaged version 282 directory to compare.
+
+## Clone lifetime in recording version 284
+
+The pinned `AQCloningCloak` gives each summon `ClonedArcherQueenAbility`.
+That ability sets `SelfDestruct=TRUE` and gives a 20-, 25-, or 30-second
+`DeactivateAfterTime` by tier. Web CoC now starts each deadline at its
+summon timestamp and expires the copy on the battle clock without a
+casualty ability. The parent Queen remains active. Older recordings
+retain their prior lifetime.
+
+Run `node scripts/action-figure-production-check.mjs --mirror-expiry`
+after packaging. Pass the packaged version 283 directory for comparison.
+The check exercises a level-18 Mirror in phone touch Practice and seeks
+to both sides of the 25-second deadline. Native disappearance visuals
+and exact executable tick ordering remain unverified.

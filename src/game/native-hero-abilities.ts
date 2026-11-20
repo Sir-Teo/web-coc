@@ -265,6 +265,13 @@ export function applyGiven(unit: Unit, row: NativeRow, at: number, battle: Battl
   const effects = unitEffects(unit);
   const duration = seconds(row, 'DeactivateAfterTime');
   if (duration <= 0) return;
+  if (
+    battle.nativeMagicMirrorExpiry &&
+    unit.kind === 'archerqueen' &&
+    text(row, 'Name') === 'ClonedArcherQueenAbility' &&
+    flag(row, 'SelfDestruct')
+  )
+    unit.native!.mirrorExpiresAt = at + duration;
   const speed = num(row, 'SpeedBoost') / 100;
   const damage = num(row, 'BoostDamagePercentage') / 100;
   if (speed || damage)

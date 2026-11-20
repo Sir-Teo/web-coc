@@ -8,7 +8,8 @@ const baselineDist = args.find((arg) => !arg.startsWith('--'));
 const control = args.includes('--control');
 const rage = args.includes('--rage');
 const healers = args.includes('--healer-formation');
-const mirror = args.includes('--mirror-formation');
+const mirrorExpiry = args.includes('--mirror-expiry');
+const mirror = mirrorExpiry || args.includes('--mirror-formation');
 const label = `${baselineDist ? 'baseline' : 'patched'}${control ? '-control' : ''}`;
 const item = mirror
   ? 'magic-mirror'
@@ -17,7 +18,7 @@ const item = mirror
     : control
       ? 'archer-puppet'
       : 'action-figure';
-const screenshots = `output/rea-cloud-playtest/${mirror ? 'magic-mirror-formation' : healers ? 'healer-puppet-formation' : rage ? 'giant-giant-rage' : 'action-figure'}`;
+const screenshots = `output/rea-cloud-playtest/${mirrorExpiry ? 'magic-mirror-expiry' : mirror ? 'magic-mirror-formation' : healers ? 'healer-puppet-formation' : rage ? 'giant-giant-rage' : 'action-figure'}`;
 await mkdir(screenshots, { recursive: true });
 
 const modules = await createServer({
@@ -37,8 +38,21 @@ try {
     obstacles: [],
     nextId: 100,
     buildings: [
-      makeBuilding(1, 'townhall', 34, 31, 16),
-      makeBuilding(2, 'cannon', 21, 21, rage ? 4 : 8),
+      makeBuilding(1, 'townhall', mirrorExpiry ? 42 : 34, mirrorExpiry ? 42 : 31, 16),
+      ...(mirrorExpiry
+        ? [
+            makeBuilding(12, 'goldstorage', 18, 24, 16),
+            makeBuilding(13, 'goldstorage', 21, 25, 16),
+            makeBuilding(14, 'goldstorage', 24, 25, 16),
+            makeBuilding(15, 'elixirstorage', 24, 22, 16),
+            makeBuilding(16, 'elixirstorage', 24, 19, 16),
+            makeBuilding(17, 'elixirstorage', 27, 23, 16),
+            makeBuilding(18, 'elixirstorage', 27, 20, 16),
+          ]
+        : []),
+      mirrorExpiry
+        ? makeBuilding(2, 'goldstorage', 21, 21, 16)
+        : makeBuilding(2, 'cannon', 21, 21, rage ? 4 : 8),
       ...(rage
         ? [makeBuilding(10, 'giantbomb', 17, 18, 1), makeBuilding(11, 'giantbomb', 19, 18, 3)]
         : []),
@@ -119,7 +133,8 @@ try {
         return {
           at: b.elapsed,
           defenseHp: b.buildings.find(({ id }) => id === 2).hp,
-          units: b.units.map(({ id, kind, x, y, level, hp, maxHp, native }) => ({
+          buildingHp: b.buildings.reduce((sum, { hp }) => sum + hp, 0),
+          units: b.units.map(({ id, kind, x, y, level, hp, maxHp, native, spent, defeatedAt }) => ({
             id,
             kind,
             x,
@@ -130,6 +145,9 @@ try {
             owner: native?.owner,
             damageTaken: native?.damageTaken,
             boost: native?.effects?.boost,
+            expiresAt: native?.mirrorExpiresAt,
+            spent,
+            defeatedAt,
           })),
           target: b.defenseTargets[2],
           remainingFreeze: b.spells.freeze,
@@ -197,7 +215,7 @@ try {
     );
     if (mirror) {
       expect(formation).toHaveLength(2);
-      if (baselineDist)
+      if (baselineDist && !mirrorExpiry)
         expect(
           formation.every(({ x, y }) => Math.hypot(x - queenUnit.x, y - queenUnit.y) < 0.4),
         ).toBe(true);
@@ -259,14 +277,51 @@ try {
     await step(65);
     const live = await read();
     expect(live.remainingFreeze).toBe(0);
-    expect(live.defenseHp).toBeLessThan(before.defenseHp);
+    expect(live.buildingHp).toBeLessThan(before.buildingHp);
     expect(live.units.filter(({ kind }) => kind === 'giantgiant')).toHaveLength(giant ? 1 : 0);
     await shot('defense-contact');
+    const expiryFrames = [];
+    let expiryCamera;
+    const frameCamera = async (x, y) =>
+      page.evaluate(
+        ({ x, y }) => {
+          const { scene } = window.qa;
+          const camera = scene.cameras.main;
+          const screen = scene.screenFor(x, y);
+          const canvas = scene.canvasPoint(screen.x, screen.y);
+          const world = camera.getWorldPoint(canvas.x, canvas.y);
+          camera.centerOn(world.x, world.y);
+          scene.drawOverlay(0);
+          return { x: camera.scrollX, y: camera.scrollY, zoom: camera.zoom };
+        },
+        { x, y },
+      );
+    if (mirrorExpiry) {
+      const expiresAt = summons.at + 25;
+      const copies = (frame) => frame.units.filter(({ owner }) => owner === queenUnit.id);
+      await step(Math.floor((expiresAt - live.at - 0.06) / 0.05));
+      const beforeExpiry = await read();
+      expect(copies(beforeExpiry)).toHaveLength(2);
+      expect(copies(beforeExpiry).every(({ hp }) => hp > 0)).toBe(true);
+      const queenAtExpiry = beforeExpiry.units.find(({ id }) => id === queenUnit.id);
+      expiryCamera = await frameCamera(queenAtExpiry.x, queenAtExpiry.y);
+      await shot('before-expiry');
+      await step(40);
+      const afterExpiry = await read();
+      expect(afterExpiry.at).toBeGreaterThan(expiresAt);
+      expect(afterExpiry.units.find(({ id }) => id === queenUnit.id).hp).toBeGreaterThan(0);
+      for (const clone of copies(afterExpiry)) {
+        if (baselineDist) expect(clone.hp).toBeGreaterThan(0);
+        else expect(clone).toMatchObject({ hp: 0, spent: true, defeatedAt: expiresAt });
+      }
+      expiryFrames.push(beforeExpiry, afterExpiry);
+      await shot('after-expiry');
+    }
     await step(1);
     await tap('surrender');
     await tap('end');
     await page.getByRole('button', { name: 'Watch replay', exact: true }).tap();
-    const seek = (at) =>
+    const seek = (at, pose = cameraPose) =>
       page.evaluate(
         ({ at, cameraPose }) => {
           const { model, scene } = window.qa;
@@ -277,13 +332,20 @@ try {
           scene.cameras.main.setZoom(cameraPose.zoom).setScroll(cameraPose.x, cameraPose.y);
           scene.drawOverlay(0);
         },
-        { at, cameraPose },
+        { at, cameraPose: pose },
       );
     const duration = await page.evaluate(() => window.qa.model.replay.duration);
     await seek(duration);
     const scout = duration - (await read()).at;
-    for (const frame of [live, before, after, ...(damaged ? [damaged] : [])]) {
-      await seek(scout + frame.at);
+    for (const frame of [
+      ...expiryFrames.slice().reverse(),
+      live,
+      before,
+      after,
+      ...expiryFrames,
+      ...(damaged ? [damaged] : []),
+    ]) {
+      await seek(scout + frame.at, expiryFrames.includes(frame) ? expiryCamera : cameraPose);
       expect(await read()).toEqual(frame);
     }
     if (healers) {
@@ -296,7 +358,7 @@ try {
         );
       });
     }
-    await shot('replay-activation');
+    await shot(mirrorExpiry ? 'replay-after-expiry' : 'replay-activation');
     if (healers) {
       await seek(scout + live.at);
       expect(await read()).toEqual(live);

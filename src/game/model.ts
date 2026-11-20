@@ -991,6 +991,8 @@ export interface Battle {
   nativeHealerPuppetFormation?: true;
   /** Version 283: Magic Mirror rear and Henchmen Puppet forward formations. */
   nativeEquipmentFormation?: true;
+  /** Version 284: Magic Mirror summons expire after their granted ability duration. */
+  nativeMagicMirrorExpiry?: true;
   nativeTotemTroopHealingImmunity?: true;
   /** Version 101: ground healing units follow allies around buildings, crossing jumpable walls. */
   nativeHealerRoutes?: true;
