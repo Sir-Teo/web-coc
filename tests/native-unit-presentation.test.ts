@@ -214,6 +214,18 @@ const loadedTroopPresentation = (kinds: readonly string[]) => {
   return { p, internals };
 };
 
+it('faces an Archer along its route on the first rendered walking frame', () => {
+  const r = nativeDirectBattle('archer', 1, undefined, 24);
+  r.step();
+  const next = r.unit.path[0]!;
+  expect(next.x - r.unit.x - (next.y - r.unit.y)).toBeLessThan(0);
+  const { p, internals } = loadedTroopPresentation(['archer']);
+  const before = JSON.stringify(r.battle);
+  p.render(r.battle, false, iso, 46, new Map());
+  expect(internals.views.get(r.unit.id)).toMatchObject({ state: 'walk', sample: { mirror: -1 } });
+  expect(JSON.stringify(r.battle)).toBe(before);
+});
+
 describe('unit motion tracker', () => {
   it('keeps walking across rendered frames between 20 Hz simulation steps', () => {
     const motion = new UnitMotionTracker();

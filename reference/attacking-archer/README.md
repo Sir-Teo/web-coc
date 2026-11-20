@@ -38,6 +38,12 @@ Archers, assets, audio and the village save format are unchanged. Local
 geometry, minimum flight duration and projectile adapters remain in use;
 native executable and pixel parity are not claimed.
 
+The web renderer uses the first route waypoint to face a walking unit before a
+previous position sample is available. The Archer touch check compares the
+same first walking tick in live Practice and after replay reconstruction.
+This changes the direction of the existing pose without changing its clock
+or the recorded combat.
+
 ## Validation
 
 `tests/attacking-archer-windup.test.ts` covers every source tier from near/far,

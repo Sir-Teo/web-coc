@@ -420,6 +420,10 @@ export class TroopNativePresentation {
       } else if (moving && motion.heading) {
         facing.dx = motion.dx;
         facing.dy = motion.dy;
+      } else if (moving && u.path[0]) {
+        // A first render has a route before it has a previous position to compare.
+        facing.dx = u.path[0].x - u.x;
+        facing.dy = u.path[0].y - u.y;
       }
       const dragon =
         battle?.nativeElectroDragon && u.kind === 'electrodragon'
