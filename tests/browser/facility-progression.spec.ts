@@ -335,3 +335,50 @@ test.describe('simultaneous village completions on a compact phone', () => {
     expect(await read()).toMatchObject({ ...completed, research: { kind: 'archer' } });
   });
 });
+
+test.describe('building inspection on a compact phone', () => {
+  test.use({ viewport: { width: 320, height: 568 }, isMobile: true, hasTouch: true });
+
+  test('canceling a Laboratory shortfall returns to the same Details and upgrade control', async ({
+    page,
+  }) => {
+    await boot(page);
+    await useDevelopedVillage(page);
+    await page.locator('[data-action="skip-tutorial"]').tap();
+    await page.evaluate(() => {
+      const { model } = window.__game;
+      model.state.elixir = 5000;
+      model.state.gems = 200;
+      model.changed();
+    });
+
+    const id = await select(page, 'laboratory');
+    const info = page.locator('.building-context [data-action="info"]');
+    await info.tap();
+    const upgrade = page.locator(`.info-upgrade [data-action="upgrade:${id}"]`);
+    await upgrade.scrollIntoViewIfNeeded();
+    const scroll = () => page.locator('.info-body').evaluate((el) => el.scrollTop);
+    const before = await scroll();
+    expect(before).toBeGreaterThan(0);
+    await upgrade.tap();
+    const offer = page.locator('.shortfall-body');
+    await expect(offer).toContainText('Buy the missing 20,000 Elixir?');
+    await offer.locator('[data-action="close"]').tap();
+
+    await expect(page.locator('.info-hero h2')).toHaveText('Laboratory');
+    expect(await scroll()).toBeCloseTo(before, 0);
+    await expect(upgrade).toBeFocused();
+    expect(
+      await page.evaluate(() => {
+        const { model } = window.__game;
+        return { elixir: model.state.elixir, gems: model.state.gems, busy: model.busy };
+      }),
+    ).toEqual({ elixir: 5000, gems: 200, busy: 0 });
+    await upgrade.tap();
+    await expect(offer).toContainText('Buy the missing 20,000 Elixir?');
+    await page.keyboard.press('Escape');
+    await expect(upgrade).toBeFocused();
+    await page.getByRole('button', { name: 'Close dialog' }).tap();
+    await expect(info).toBeFocused();
+  });
+});

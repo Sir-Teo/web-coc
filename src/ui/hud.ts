@@ -854,6 +854,7 @@ export class HUD {
   /** The control that opened the current drawer, focused again when it closes. */
   private drawerLauncher: FocusMark | null = null;
   private drawerBefore: { panel: Drawer; left: number; top: number } | null = null;
+  private upgradeInfoReturn?: { building: number; scroll: number; focus: FocusMark | null };
   private actionSource: HTMLElement | null = null;
   private dragging = false;
   private cancelDrawerDrag: (() => void) | null = null;
@@ -1322,6 +1323,14 @@ export class HUD {
     this.superCancelConfirm = null;
     if (panel !== 'heroes') this.heroCancelConfirm = null;
     this.rememberCampaign();
+    this.upgradeInfoReturn =
+      panel === 'shortfall' && this.panel === 'info' && this.model.selected !== null
+        ? {
+            building: this.model.selected,
+            scroll: this.modalEl.querySelector('.info-body')?.scrollTop ?? 0,
+            focus: focusMark(this.actionSource ?? document.activeElement),
+          }
+        : undefined;
     // Another panel replaces an unanswered gem offer.
     if (panel !== 'shortfall') this.model.shortfall = null;
     // The info sheet describes the selected building, so it is the one panel that
@@ -1360,7 +1369,22 @@ export class HUD {
     this.superCancelConfirm = null;
     this.heroCancelConfirm = null;
     this.rememberCampaign();
-    if (this.panel === 'shortfall') this.model.dismissShortfall();
+    if (this.panel === 'shortfall') {
+      const previous = this.upgradeInfoReturn;
+      this.upgradeInfoReturn = undefined;
+      this.model.dismissShortfall();
+      if (
+        previous &&
+        !this.model.battle &&
+        this.model.state.buildings.some((building) => building.id === previous.building)
+      ) {
+        this.model.selected = previous.building;
+        this.show('info');
+        this.modalEl.querySelector('.info-body')?.scrollTo(0, previous.scroll);
+        restoreFocusMark(previous.focus);
+        return;
+      }
+    }
     if (this.panel === 'treasure') this.treasureConfirm = null;
     this.panel = null;
     const previous = this.drawerBefore;

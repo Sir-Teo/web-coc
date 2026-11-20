@@ -65,6 +65,10 @@ On short landscape screens (up to 600px high and at least 4:3), research uses a 
 
 Refreshing an already open dialog no longer replays its entrance animation. Research changes, building upgrades, settings and result refreshes keep the panel and backdrop fully opaque at their normal scale. New dialog openings still animate. A first-frame browser regression checks both behaviors, alongside focus restoration and the real research/finish/close interactions.
 
+A resource shortfall opened from Building Details returns to that building
+when dismissed. Cancel restores the Details scroll and Upgrade focus, so the
+player can review the same proposal again without selecting the building.
+
 Twenty-seven new model cases exercise every purchasable level through actual payment, persistence and exact deadline completion, all eight Town Hall count/level gates, direct placement rejection, legacy capacity and paid queues, health migration, independent research/building timers in both start orders, gem completion and replay compatibility. The full model suite includes the unchanged 192-battle campaign matrix. Browser checks cover Info values, research while upgrading, paid reload, gem completion, shop unlocks and preserved excess spells on desktop, phone and landscape. See [QA.md](QA.md) for final run results and evidence.
 
 The three supported spells now have laboratory research; see [SPELL-PROGRESSION.md](SPELL-PROGRESSION.md). This completes the audited numeric progression for these supported facilities. Barracks levels 8–10 now unlock Healer, Dragon and P.E.K.K.A; see [LATE-TROOPS.md](LATE-TROOPS.md). Dark Barracks, Dark Spell Factory (including its extra housing), remaining spells and their research, per-level building art, and the broader resource economy remain unfinished. The complete supported Spell Factory contribution is six spaces at TH8 and eight at TH9; this is not a claim that all sources of native spell housing are implemented. Barracks 11 and Laboratory 7 arrive at TH9; the local research roster still stops at five troop levels, so Laboratory 7 raises no research ceiling.
