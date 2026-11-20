@@ -958,6 +958,8 @@ export interface Battle {
   nativeEagleHeroHousing?: true;
   /** Version 265: recalled troops keep their campaign Eagle deployment weight. */
   nativeEagleRecallHousing?: true;
+  /** Version 266: a Greedy Raven stays on the field when its Hero is recalled. */
+  nativeIndependentRavenRecall?: true;
   /** Version 100: native healing resolves through source projectile travel and chain hops. */
   nativeHealingProjectiles?: true;
   nativeHealingTotem?: true;
@@ -5791,7 +5793,8 @@ export class GameModel {
       };
       delete hero.recalledAttackExtra;
     }
-    if (hero.pet) {
+    // A Raven that stayed in combat keeps its actor, including if it was defeated.
+    if (hero.pet && !(b.nativeIndependentRavenRecall && hero.pet.kind === 'crow' && hero.petId !== null)) {
       const pet = petTroopStats(hero.pet);
       const recalledPet = hero.recalledPetHp;
       delete hero.recalledPetHp;
@@ -6860,7 +6863,7 @@ export class GameModel {
       )
         roster.recalledAttackExtra = { ...extra };
       const pet = b.units.find((other) => other.id === roster.petId);
-      if (pet) {
+      if (pet && !(b.nativeIndependentRavenRecall && pet.kind === 'greedyraven')) {
         (pet.native ??= {}).recalled = true;
         roster.recalledPetHp = pet.hp;
         roster.petId = null;
