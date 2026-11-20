@@ -24,6 +24,7 @@ import {
   nativeCampaignIssues,
 } from '../game/native-campaign';
 import { sweeperStats } from '../game/air-control-stats';
+import { nativeRow, num as sourceNumber, tiles as sourceTiles } from '../game/native-data';
 import { XBOW, xbowRange, type XbowMode } from '../game/xbow-stats';
 import {
   EQUIPMENT_LEVELS,
@@ -4507,6 +4508,22 @@ export class HUD {
     const unlockLevel = !owned && rarity === 'COMMON' ? itemUnlockBlacksmith(slug) : 0;
     const purchase = this.nativeOrePurchase;
     const stats = slug ? nativeItemStats(slug, owned ? level : 1) : null;
+    const arrow = stats?.abilities.find(({ name }) => name === 'ArcherQueenPierceProjectile');
+    const arrowRow = arrow && nativeRow('abilities', arrow.name, arrow.level);
+    const arrowDamage = sourceNumber(arrowRow, 'Damage');
+    const arrowRadius = sourceTiles(arrowRow, 'PenetratingRadius');
+    const abilityRows = arrowRow
+      ? [
+          ['Arrow damage', damageNumber(arrowDamage)],
+          [
+            'Damage to Air Defenses',
+            damageNumber(
+              arrowDamage * (1 + sourceNumber(arrowRow, 'ExtraDamagePercentageAgainstTarget') / 100),
+            ),
+          ],
+          ['Piercing radius', `${arrowRadius} ${arrowRadius === 1 ? 'tile' : 'tiles'}`],
+        ]
+      : [['Abilities', stats?.abilities.map((ability) => ability.name).join(', ') || '—']];
     return `<div class="modal-body blacksmith-body">
       <div class="ore-wallet" aria-label="Ore storage">${ORE_KEYS.map((k) => `<div class="ore-balance ${k}">${gearImage(k)}<span>${ORES[k].name}<b>${n(m.ores[k])}<small> / ${n(m.oreCapacity[k])}</small></b></span></div>`).join('')}</div>
       ${this.smithTabs()}
@@ -4550,12 +4567,13 @@ export class HUD {
                 'Attack speed',
                 stats.attackSpeed ? `+${Math.round(stats.attackSpeed * 100)}%` : '—',
               ],
-              ['Abilities', stats.abilities.map((a) => a.name).join(', ') || '—'],
+              ...abilityRows,
             ]
               .map(([label, value]) => `<tr><td>${label}</td><td>${value}</td></tr>`)
               .join('')}</tbody></table>`
           : ''
       }
+      ${arrow ? '<p class="hero-stats-note">Fires one piercing arrow through buildings and defending ground and air units in its path.</p>' : ''}
       ${owned ? `<div class="equipment-equip">${loadout.includes(slug) ? `<span class="equipped-label">${icon('Check', 18)} Equipped in slot ${loadout.indexOf(slug) + 1}</span>` : [0, 1].map((slot) => button(`native-equip:${slug},${slot}`, `Equip in slot ${slot + 1}`, 'game-btn blue', unlocked && !m.battle ? '' : 'disabled')).join('')}</div>` : ''}
       ${!owned && rarity === 'EPIC' ? `<div class="equipment-upgrade"><div><b>Buy for ${gem} ${n(EPIC_ITEM_GEMS)}</b><p>Instant · Epic items are sold, not forged</p></div>${button(`epic-buy:${slug}`, `${icon('ArrowBigUp', 20)} Buy`, 'game-btn green', unlocked && m.state.gems >= EPIC_ITEM_GEMS && !m.battle ? '' : 'disabled')}</div>` : ''}
       ${

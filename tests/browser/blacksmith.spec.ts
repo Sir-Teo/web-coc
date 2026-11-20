@@ -136,7 +136,14 @@ test('locked Common equipment identifies the required Blacksmith tier', async ({
   });
   await page.locator('[data-action="blacksmith-hero:queen"]').click();
   await page.locator('[data-action="native-item:piercing-arrow"]').click();
-  await expect(page.locator('.equipment-detail')).toContainText('Requires Blacksmith level 2');
+  const detail = page.locator('.equipment-detail');
+  await expect(detail).toContainText('Requires Blacksmith level 2');
+  await expect(detail.locator('tr').filter({ hasText: 'Arrow damage' })).toContainText('750');
+  await expect(detail.locator('tr').filter({ hasText: 'Damage to Air Defenses' })).toContainText(
+    '1,500',
+  );
+  await expect(detail.locator('tr').filter({ hasText: 'Piercing radius' })).toContainText('1 tile');
+  await expect(detail).not.toContainText('ArcherQueenPierceProjectile');
   await expect(page.locator('[data-action^="native-equip:piercing-arrow"]')).toHaveCount(0);
 });
 
