@@ -8477,7 +8477,7 @@ export class GameModel {
     this.changed();
     return true;
   }
-  private resetReplayRunner() {
+  private resetReplayRunner(keepKeyframes = false) {
     const data = this.replayData!;
     const runner = new GameModel();
     runner.recordBattles = false;
@@ -8497,7 +8497,7 @@ export class GameModel {
     };
     this.replayRunner = runner;
     this.replayStep = this.replayAction = this.replayBudget = 0;
-    this.replayKeyframes = [];
+    if (!keepKeyframes) this.replayKeyframes = [];
   }
   replayRecording(recordId?: number) {
     return recordId === undefined
@@ -8521,29 +8521,26 @@ export class GameModel {
     r.complete = false;
     delete r.finishedBySeek;
     r.paused = true;
-    // Forward seeks continue from the current runner; backward seeks restore the
-    // nearest keyframe snapshot (every 10s) instead of restarting from tick zero.
-    if (r.seekTarget < r.time - 1e-9) {
-      let frame: (typeof this.replayKeyframes)[number] | undefined;
-      for (const key of this.replayKeyframes) {
-        if (key.time <= r.seekTarget + 1e-9) frame = key;
-        else break;
-      }
-      if (frame && this.replayRunner) {
-        r.time = frame.time;
-        this.replayStep = frame.step;
-        this.replayAction = frame.action;
-        this.replayRunner.battle = structuredClone(frame.battle) as Battle;
-        this.replayRunner.state.nextId = frame.nextId;
-        // Drop newer keyframes; they will be rebuilt as the seek advances.
-        this.replayKeyframes = this.replayKeyframes.filter((k) => k.time <= frame!.time + 1e-9);
-      } else {
-        r.time = 0;
-        this.resetReplayRunner();
-      }
-      // A long backward seek draws for several frames before it completes: show the restored
-      // battle at once rather than the pre-seek one.
-      if (this.replayRunner) this.battle = this.replayRunner.battle;
+    const backward = r.seekTarget < r.time - 1e-9;
+    let frame: (typeof this.replayKeyframes)[number] | undefined;
+    for (const key of this.replayKeyframes) {
+      if (key.time > r.seekTarget + 1e-9) break;
+      frame = key;
+    }
+    // Keyframes belong to the recording, so rewinding does not invalidate later frames.
+    // Continue from the current runner when it is already nearer the target.
+    if (frame && this.replayRunner && (backward || frame.time > r.time + 1e-9)) {
+      r.time = frame.time;
+      this.replayStep = frame.step;
+      this.replayAction = frame.action;
+      this.replayRunner.battle = structuredClone(frame.battle) as Battle;
+      this.replayRunner.state.nextId = frame.nextId;
+      this.battle = this.replayRunner.battle;
+    } else if (backward) {
+      r.time = 0;
+      // If the ring evicted the entire early interval, rebuild it as we replay from zero.
+      this.resetReplayRunner((this.replayKeyframes[0]?.time ?? 0) < 10);
+      this.battle = this.replayRunner!.battle;
     }
     this.applyReplayActions();
     this.advanceReplaySeek();

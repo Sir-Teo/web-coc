@@ -87,6 +87,30 @@ describe('replay seeking', () => {
     expect(m.seekReplay(NaN)).toBe(false);
     expect(m.seekReplay(Infinity)).toBe(false);
   });
+  it('reuses later snapshots after rewinding to zero and discards them on restart', () => {
+    const m = record();
+    m.returnHome();
+    m.startReplay(m.state.raidLog![0].id);
+    m.toggleReplay();
+    m.seekReplay(30);
+    settleSeek(m);
+    const at30 = battle(m);
+
+    m.seekReplay(0);
+    settleSeek(m);
+    expect(m.replay!.time).toBe(0);
+    m.seekReplay(30);
+    // At most 100 steps fit in the first update, so this requires a retained snapshot.
+    expect(m.replay!.time).toBeGreaterThan(20);
+    settleSeek(m);
+    expect(battle(m)).toEqual(at30);
+
+    expect(m.restartReplay()).toBe(true);
+    m.seekReplay(30);
+    expect(m.replay!.time).toBeLessThan(10);
+    settleSeek(m);
+    expect(battle(m)).toEqual(at30);
+  });
   it('resumes playing after a seek, supersedes pending requests, and cancels on exit', () => {
     const m = record();
     m.startReplay(m.state.raidLog![0].id);
