@@ -2,6 +2,20 @@ import { expect, test } from '@playwright/test';
 
 const profiles = [
   {
+    kind: 'lightning',
+    name: 'Lightning Spell',
+    max: 13,
+    targets: [
+      'Enemy buildings and ground or air defenders',
+      'Enemy buildings and ground or air defenders',
+    ],
+    tactic: 'Town Halls, Clan Castles, resource storages and traps are immune',
+    facts: [
+      ['Damage', '150', '720'],
+      ['Stun duration', '0.1 s', '0.1 s'],
+    ],
+  },
+  {
     kind: 'invisibility',
     name: 'Invisibility Spell',
     max: 4,

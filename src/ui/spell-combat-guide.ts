@@ -18,6 +18,16 @@ export function spellCombatGuide(kind: SpellKind, level: number): SpellCombatGui
   const row = nativeRow('spells', SPELL_SOURCE[kind], level);
   const hits = Math.max(1, num(row, 'NumberOfHits', 1));
   switch (kind) {
+    case 'lightning':
+      return {
+        targets: 'Enemy buildings and ground or air defenders',
+        facts: [
+          ['Damage', number(num(row, 'Damage'))],
+          ['Stun duration', `${number(seconds(row, 'StunTimeMS'))} s`],
+        ],
+        tactic:
+          'Aim at clustered defenses or defending troops. Town Halls, Clan Castles, resource storages and traps are immune.',
+      };
     case 'invisibility':
       return {
         targets: 'Friendly troops, defending troops and enemy buildings',

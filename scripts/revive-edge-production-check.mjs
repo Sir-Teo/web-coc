@@ -3,7 +3,8 @@ import { chromium, expect } from '@playwright/test';
 import { createServer, preview } from 'vite';
 import { mkdir } from 'node:fs/promises';
 
-const artifacts = 'output/rea-cloud-playtest/revive-edge';
+const direct = process.argv.includes('--direct');
+const artifacts = `output/rea-cloud-playtest/revive-${direct ? 'direct' : 'edge'}`;
 await mkdir(artifacts, { recursive: true });
 const modules = await createServer({
   server: { middlewareMode: true },
@@ -106,11 +107,25 @@ try {
       page.evaluate(() => {
         const { battle, replay } = window.qa.model;
         const queen = battle.units.find((unit) => unit.hero === 'queen');
+        const king = battle.units.find((unit) => unit.hero === 'king');
         const cast = battle.nativeSpells?.findLast((cast) => cast.name === 'Revive');
         return {
           at: battle.elapsed,
-          queen: queen && { x: queen.x, y: queen.y, hp: queen.hp, maxHp: queen.maxHp },
-          cast: cast && { id: cast.id, x: cast.x, y: cast.y, firstHit: cast.firstHit },
+          kingHp: king?.hp,
+          queen: queen && {
+            id: queen.id,
+            x: queen.x,
+            y: queen.y,
+            hp: queen.hp,
+            maxHp: queen.maxHp,
+          },
+          cast: cast && {
+            id: cast.id,
+            x: cast.x,
+            y: cast.y,
+            firstHit: cast.firstHit,
+            target: cast.reviveTargetId,
+          },
           remaining: battle.spells.revive,
           replay,
         };
@@ -128,14 +143,23 @@ try {
     const fallen = (await read()).queen;
     await saveShot('01-fallen');
     const distance = ({ x, y }) => Math.hypot(x - fallen.x, y - fallen.y);
-    await tap('spell:revive');
-    await tapField(fallen.x + pinned.radius + 0.5, fallen.y);
-    const boundary = await read();
-    if (boundary.cast) expect(distance(boundary.cast)).toBeGreaterThan(pinned.radius);
-    const missResolved = (boundary.cast?.firstHit ?? boundary.at + pinned.delay) + 0.1;
-    await expect.poll(async () => (await read()).at).toBeGreaterThan(missResolved);
-    expect((await read()).queen.hp).toBeLessThanOrEqual(0);
-    await saveShot('02-outside-radius');
+    let beforeRevival, boundary;
+    if (direct) {
+      await tap('hero-select:king');
+      await tapField(13, 20.5, true);
+      await expect
+        .poll(async () => (await read()).kingHp, { timeout: 40000 })
+        .toBeLessThanOrEqual(0);
+    } else {
+      await tap('spell:revive');
+      await tapField(fallen.x + pinned.radius + 0.5, fallen.y);
+      boundary = await read();
+      if (boundary.cast) expect(distance(boundary.cast)).toBeGreaterThan(pinned.radius);
+      const missResolved = (boundary.cast?.firstHit ?? boundary.at + pinned.delay) + 0.1;
+      await expect.poll(async () => (await read()).at).toBeGreaterThan(missResolved);
+      expect((await read()).queen.hp).toBeLessThanOrEqual(0);
+      await saveShot('02-outside-radius');
+    }
     await tap('spell:freeze');
     await tapField(19.5, 19.5);
     if (
@@ -144,14 +168,33 @@ try {
         .evaluate((button) => button.classList.contains('selected')))
     )
       await tap('spell:revive');
-    await tapField(fallen.x + pinned.radius - 0.5, fallen.y);
+    if (direct) {
+      const queen = page.locator('[data-action="hero-select:queen"]');
+      const king = page.locator('[data-action="hero-select:king"]');
+      await expect(queen).toHaveAccessibleName(/Revive Queen/);
+      await expect(king).toHaveAccessibleName(/Revive King/);
+      await saveShot('02-two-eligible-heroes');
+      beforeRevival = (await read()).at;
+      await queen.tap();
+    } else {
+      beforeRevival = (await read()).at;
+      await tapField(fallen.x + pinned.radius - 0.5, fallen.y);
+    }
     const inside = await read();
     expect(distance(inside.cast)).toBeLessThan(pinned.radius);
-    expect(inside.cast.id).not.toBe(boundary.cast?.id);
+    expect(inside.cast.id).not.toBe(boundary?.cast?.id);
+    if (direct) {
+      expect(inside.cast.target).toBe(fallen.id);
+      expect(inside.remaining).toBe(1);
+      await expect(page.locator('[data-action="hero-select:queen"]')).toHaveAccessibleName(
+        /Reviving/,
+      );
+    }
     await expect
       .poll(async () => (await read()).queen.hp)
       .toBeCloseTo(fallen.maxHp * pinned.health);
     const restored = await read();
+    if (direct) expect(restored.kingHp).toBeLessThanOrEqual(0);
     await saveShot('03-restored');
     await expect.poll(async () => (await read()).at).toBeGreaterThan(inside.cast.firstHit + 0.7);
     await tap('surrender');
@@ -182,13 +225,15 @@ try {
     expect(replayEnd.queen.hp).toBeCloseTo(restored.queen.hp);
     // Transport time includes the scouting interval; battle time begins at deployment.
     const scouting = replayEnd.replay.time - replayEnd.at;
-    await seek(missResolved + scouting);
+    await seek(beforeRevival + scouting);
     const replayFallen = await read();
     expect(replayFallen.queen.hp).toBeLessThanOrEqual(0);
+    if (direct) expect(replayFallen.kingHp).toBeLessThanOrEqual(0);
     await saveShot('04-replay-backward-fallen');
     await seek(end);
     const replayRestored = await read();
     expect(replayRestored.queen.hp).toBeCloseTo(restored.queen.hp);
+    if (direct) expect(replayRestored.kingHp).toBeLessThanOrEqual(0);
     await saveShot('05-replay-forward-restored');
     expect(errors).toEqual([]);
     console.log(
