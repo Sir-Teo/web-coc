@@ -439,6 +439,60 @@ for (const viewport of [
   });
 }
 
+for (const viewport of [
+  { width: 320, height: 568 },
+  { width: 568, height: 320 },
+]) {
+  test(`Meat Shield keeps its marked Heal tappable at ${viewport.width}×${viewport.height}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await boot(page, 6);
+    await page.locator('#campaign-stage-92 [data-action="attack:92"]').tap();
+    await page.waitForFunction(() => !window.__game.scene.scoutingArtNotice());
+
+    const state = () =>
+      page.evaluate(() => {
+        const { battle, practiceGuide } = window.__game.model;
+        return { index: practiceGuide?.index, heal: battle!.spells.heal };
+      });
+    const marker = (offset = 0) =>
+      page.evaluate((offset) => {
+        const { model, scene } = window.__game;
+        const spot = model.practiceGuide?.spot;
+        if (!spot) return null;
+        const point = scene.screenFor(spot.x + offset, spot.y);
+        return { ...point, clear: document.elementFromPoint(point.x, point.y) === scene.game.canvas };
+      }, offset);
+    for (const [index, count] of [[0, 1], [2, 3], [4, 13]]) {
+      await expect.poll(async () => (await state()).index, { timeout: 20_000 }).toBe(index);
+      await expect.poll(async () => (await marker())?.clear).toBe(true);
+      const point = (await marker())!;
+      for (let i = 0; i < count; i++) await page.touchscreen.tap(point.x, point.y);
+    }
+
+    await expect.poll(async () => (await state()).index, { timeout: 20_000 }).toBe(6);
+    await expect(page.locator('.practice-guide')).toContainText('Use a Heal Spell');
+    await expect.poll(async () => (await marker())?.clear).toBe(true);
+    const point = (await marker())!;
+    const outside = await marker(5);
+    const otherSide = outside?.clear ? outside : await marker(-5);
+    expect(otherSide?.clear).toBe(true);
+    await page.touchscreen.tap(otherSide!.x, otherSide!.y);
+    expect(await state()).toEqual({ index: 6, heal: 2 });
+    await page.touchscreen.tap(point.x, point.y);
+    expect(await state()).toEqual({ index: 7, heal: 1 });
+    await expect.poll(async () => (await state()).index).toBe(8);
+
+    await page.locator('[data-action="surrender"]').tap();
+    await page.locator('[data-action="end"]').tap();
+    await page.getByRole('button', { name: 'Watch replay', exact: true }).tap();
+    await page.getByRole('slider', { name: 'Replay position' }).press('End');
+    await expect(page.locator('.replay-status')).toContainText('Replay complete');
+    expect(await state()).toEqual({ index: undefined, heal: 1 });
+  });
+}
+
 test('full-map guide reaches the original Queen deployment beyond the old board edge', async ({
   page,
 }) => {

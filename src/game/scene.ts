@@ -5640,7 +5640,7 @@ export class VillageScene extends Phaser.Scene {
       ring(guide.spot.x, guide.spot.y, Math.max(0.8, step.radius), 0.14);
       // Each new step brings its spot into view, as the original's guide does; once only, so a
       // player panning away is not pulled back every frame.
-      const key = `${guide.index}:${guide.spot.x},${guide.spot.y}`;
+      const key = `${guide.index}:${guide.spot.x},${guide.spot.y}:${this.scale.width},${this.scale.height}`;
       if (key !== this.guideFocus) {
         this.guideFocus = key;
         const at = iso(guide.spot.x, guide.spot.y),
@@ -5655,6 +5655,10 @@ export class VillageScene extends Phaser.Scene {
           this.cameras.main.centerOn(at.x, at.y);
           this.clampCamera();
         }
+        requestAnimationFrame(() => {
+          if (this.guideFocus === key && this.model.practiceGuide === guide && guide.spot)
+            this.keepGuideSpotClear(guide.spot);
+        });
       }
     }
     const target = step.show ?? step.waitFor;
@@ -5663,6 +5667,47 @@ export class VillageScene extends Phaser.Scene {
       const size = BUILDINGS[v.kind].size;
       ring(v.x + size / 2, v.y + size / 2, Math.max(1, size * 0.75), 0.08);
     }
+  }
+  /** Frame a new guide spot outside the DOM HUD, while leaving manual panning intact. */
+  private keepGuideSpotClear(spot: { x: number; y: number }) {
+    const canvas = this.game.canvas.getBoundingClientRect();
+    const pad = 14;
+    const blockers = Array.from(
+      document.querySelectorAll(
+        '.practice-guide,.battle-enemy,.battle-clock,.destruction,.battle-bottom > button,.deploy-label,.army-tray',
+      ),
+      (element) => element.getBoundingClientRect(),
+    ).filter((rect) => rect.width && rect.height);
+    const clear = (x: number, y: number) =>
+      x >= canvas.left + pad &&
+      x <= canvas.right - pad &&
+      y >= canvas.top + pad &&
+      y <= canvas.bottom - pad &&
+      !blockers.some(
+        (r) => x > r.left - pad && x < r.right + pad && y > r.top - pad && y < r.bottom + pad,
+      );
+    const point = this.screenFor(spot.x, spot.y);
+    if (clear(point.x, point.y)) return;
+    const xs = [point.x, ...blockers.flatMap((r) => [r.left - pad, r.right + pad])];
+    const ys = [point.y, ...blockers.flatMap((r) => [r.top - pad, r.bottom + pad])];
+    const candidates = xs
+      .flatMap((x) => ys.map((y) => ({ x, y })))
+      .filter(({ x, y }) => clear(x, y))
+      .sort(
+        (a, b) =>
+          Math.hypot(a.x - point.x, a.y - point.y) - Math.hypot(b.x - point.x, b.y - point.y),
+      );
+    const camera = this.cameras.main;
+    const { scrollX, scrollY } = camera;
+    for (const target of candidates) {
+      camera.scrollX = scrollX + ((point.x - target.x) * this.scale.displayScale.x) / camera.zoomX;
+      camera.scrollY = scrollY + ((point.y - target.y) * this.scale.displayScale.y) / camera.zoomY;
+      this.clampCamera();
+      const framed = this.screenFor(spot.x, spot.y);
+      if (clear(framed.x, framed.y)) return;
+    }
+    camera.scrollX = scrollX;
+    camera.scrollY = scrollY;
   }
   private auraPoint = { x: 0, y: 0 };
   /** The guide step whose spot the camera last brought into view. */
