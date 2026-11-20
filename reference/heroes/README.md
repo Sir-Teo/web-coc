@@ -52,3 +52,19 @@ renderer may separately read original pixels for saturating source tints. This
 is presentation-only and adds no replay version or combat rule.
 
 All six home-village heroes are recorded: Barbarian King, Archer Queen, Grand Warden, Royal Champion, Minion Prince and Dragon Duke. The two Builder Base heroes in the same table — Battle Machine and Battle Copter — are deliberately absent, as the Builder Base is not modelled. Which of the recorded heroes the village actually offers is a separate decision recorded in [HERO-PROGRESSION.md](../../docs/HERO-PROGRESSION.md).
+
+## Deployment readiness in the Hero Hall
+
+The retained [hero rules](../official-wiki/heroes-pets/hero-hall.md) distinguish
+selection from attack availability during upgrades. The pinned
+[magic item catalog](../magic-items/catalog.json) gives Hero Potion its
+one-hour, Town Hall-level boost. The web Hero Hall counts ready heroes from
+the same lineup snapshot used to start a battle and reports the temporary
+deployment level alongside the permanent level for an available hero.
+Native screen layout and wording are unverified.
+
+After packaging, run
+`node scripts/hero-job-navigation-production-check.mjs --readiness` for the
+phone-sized touch check. It exercises a selected Grand Warden before and
+during an upgrade, with a Hero Potion active, then finishes the upgrade,
+reloads, deploys, and opens the recording.

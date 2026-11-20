@@ -3,10 +3,11 @@ import { chromium, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { createServer, preview } from 'vite';
 
-const baselineDist = process.argv[2];
+const baselineDist = process.argv.slice(2).find((arg) => !arg.startsWith('--'));
 const townHall = 12;
 const label = baselineDist ? 'baseline' : 'patched';
-const screenshots = 'output/rea-cloud-playtest/hero-job-navigation';
+const readiness = process.argv.includes('--readiness');
+const screenshots = `output/rea-cloud-playtest/${readiness ? 'hero-readiness' : 'hero-job-navigation'}`;
 await mkdir(screenshots, { recursive: true });
 
 const modules = await createServer({
@@ -43,6 +44,7 @@ try {
     heroLineup: ['warden'],
     gems: 1000,
   });
+  if (readiness) model.addMagicItem('hero-potion');
   model.state.settings.sound = false;
   model.state.settings.music = false;
   model.state.settings.manualHeroAbilities = true;
@@ -107,6 +109,8 @@ try {
           level, upgradeEnd,
           lineup: m.heroLineup,
           ready: m.heroSetups().some(hero => hero.kind === 'warden'),
+          readyCount: m.heroSetups().length,
+          ...(m.boostLeft('heroes') ? { battleLevel: m.battleHeroLevel('warden') } : {}),
           hero: hero && { level: hero.level, unit: hero.unitId },
           replay: replay && { time: replay.time, paused: replay.paused },
         };
@@ -124,14 +128,57 @@ try {
       await page.waitForFunction(() => window.qa?.scene.ready);
     };
     await ready();
+    if (readiness) {
+      await page.evaluate(() => {
+        const { scene } = window.qa;
+        const camera = scene.cameras.main;
+        const point = scene.screenFor(36, 33);
+        const canvas = scene.canvasPoint(point.x, point.y);
+        const world = camera.getWorldPoint(canvas.x, canvas.y);
+        camera.centerOn(world.x, world.y);
+      });
+      await fieldTap(36, 33);
+      await tap('magic-items');
+      await tap('item-potion:hero-potion');
+      await page.locator('.modal [data-action="close"]').tap();
+    }
     await page.locator('.train-add').tap();
     await page.locator('.modern-army-actions [data-action="heroes"]').tap();
+    const overview = page.locator('.hero-body > .hero-stats-note').first();
+    const warden = page.locator('.hero-section[data-hero="warden"]');
+    if (readiness) {
+      const buff = await read();
+      expect(buff.battleLevel).toBeGreaterThan(6);
+      expect(buff.readyCount).toBe(buff.lineup.length);
+      await expect(overview).toContainText(baselineDist ? '3 selected' : '3 selected · 3 ready to deploy');
+      if (baselineDist) await expect(warden.locator('.hero-battle-level')).toHaveCount(0);
+      else await expect(warden.locator('.hero-battle-level')).toHaveText(`Deploys at level ${buff.battleLevel} with Hero Potion`);
+      await warden.locator('.hero-overview').scrollIntoViewIfNeeded();
+      await shot('ready-before-upgrade');
+    }
     await tap('hero-upgrade:warden');
     const pending = await read();
     expect(pending).toMatchObject({ level:5, ready:false });
     expect(pending.upgradeEnd).toBeGreaterThan(Date.now());
+    if (readiness) {
+      expect(pending.readyCount).toBe(2);
+      await expect(overview).toContainText(baselineDist ? '3 selected' : '3 selected · 2 ready to deploy');
+      await expect(warden.locator('.hero-battle-level')).toHaveCount(0);
+      await warden.locator('.hero-overview').scrollIntoViewIfNeeded();
+      await shot('unavailable');
+    }
     await page.locator('.modal [data-action="close"]').tap();
     await tap('close-drawer');
+    if (readiness) {
+      await page.locator('.attack-btn').tap();
+      await tap('practice');
+      await page.waitForFunction(() => !window.qa.scene.battleArtPending());
+      await expect(page.locator('[data-action="hero-select:warden"]')).toHaveCount(0);
+      await expect(page.locator('[data-action="troop:giant"]')).toBeEnabled();
+      await expect(page.locator('.prep-banner [role="status"]')).toContainText('Deploy to start');
+      await shot('scouting-without-warden');
+      await tap('home');
+    }
     const counter = page.locator('.status-chips [data-action="builders"]');
     await counter.tap();
     const job = page.locator('.builder-option.working').filter({hasText:'Grand Warden'});
@@ -140,7 +187,7 @@ try {
     await job.tap();
     const finish = page.locator('[data-action="hero-finish:warden"]');
     await expect(finish).toBeVisible();
-    if (baselineDist) {
+    if (baselineDist && !readiness) {
       await expect(finish).not.toBeInViewport();
     } else {
       await expect(finish).toBeInViewport({ratio:1});
@@ -152,6 +199,15 @@ try {
     const completed = await read();
     expect(completed).toMatchObject({level:6, upgradeEnd:undefined, ready:true, lineup:pending.lineup});
     await shot('completed');
+    if (readiness) {
+      await expect(warden.locator('.hero-overview')).toContainText('Level 6');
+      if (!baselineDist) {
+        await expect(overview).toContainText('3 selected · 3 ready to deploy');
+        await expect(warden.locator('.hero-battle-level')).toContainText(`Deploys at level ${completed.battleLevel}`);
+      }
+      await warden.locator('.hero-overview').scrollIntoViewIfNeeded();
+      await shot('ready-after-upgrade');
+    }
     await page.reload();
     await ready();
     expect(await read()).toEqual(completed);
@@ -163,7 +219,7 @@ try {
     await fieldTap(17.5, 21.5);
     await steps(30);
     const live = await read();
-    expect(live.hero.level).toBe(6);
+    expect(live.hero.level).toBe(readiness ? completed.battleLevel : 6);
     expect(live.hero.unit).not.toBeNull();
     await shot('deployed');
     await tap('surrender');

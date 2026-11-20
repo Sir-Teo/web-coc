@@ -4368,10 +4368,11 @@ export class HUD {
       return `<div class="modal-body hero-body"><div class="hero-portrait"><img src="${hudAsset('king')}" alt="Barbarian King"></div><h2>Meet the Barbarian King</h2><p>Build a Hero Hall at Town Hall 4 to unlock your first hero. He fights without army housing and returns at full health for every attack.</p>${button('shop', 'Open the shop', 'game-btn green')}</div>`;
     const slots = nativeHeroSlots(hall.level);
     const lineup = m.heroLineup;
+    const ready = new Map(m.heroSetups().map(({ kind, level }) => [kind, level]));
     return `<div class="modal-body hero-body">
-      <p class="hero-stats-note">Hero Hall ${hall.level} · ${slots} battle slot${slots === 1 ? '' : 's'} · ${lineup.length} selected. Heroes use no army space and return at full health for every attack.</p>
+      <p class="hero-stats-note">Hero Hall ${hall.level} · ${slots} battle slot${slots === 1 ? '' : 's'} · ${lineup.length} selected · ${ready.size} ready to deploy. Heroes use no army space and return at full health for every attack.</p>
       ${m.boostLeft('heroes') ? `<p class="hero-stats-note potion-level">${icon('Sparkles', 14)} Hero Potion · <b data-boost-end="${m.state.boosts!.heroes!.end}">${time(m.boostLeft('heroes'))}</b> left · heroes and pets fight at their Town Hall maximum.</p>` : ''}
-      ${HERO_KINDS.map((kind) => this.heroRosterCard(kind)).join('')}
+      ${HERO_KINDS.map((kind) => this.heroRosterCard(kind, ready.get(kind))).join('')}
       ${button('practice', 'Practice with this army', 'game-btn blue', m.armyReady ? '' : 'disabled')}
     </div>`;
   }
@@ -4384,7 +4385,7 @@ export class HUD {
     return unavailable ?? lineup.at(-1);
   }
   /** One roster entry: unlock gate, native stats, equipment, pet, upgrade and lineup. */
-  private heroRosterCard(kind: HeroKind) {
+  private heroRosterCard(kind: HeroKind, battleLevel: number | undefined) {
     const m = this.model,
       hall = m.heroHall!,
       name = HERO_SOURCE[kind],
@@ -4461,7 +4462,7 @@ export class HUD {
       : this.heroCancelConfirm === kind
         ? `<p>Cancel this upgrade and recover ${n(cancellation.refund)} ${cancellation.resource === 'dark' ? 'dark elixir' : cancellation.resource}?</p><div class="confirm-actions">${button('hero-cancel-keep', 'Keep upgrading', 'game-btn stone')}${button(`hero-cancel-confirm:${kind}`, 'Confirm cancellation', 'game-btn red')}</div>`
         : button(`hero-cancel-request:${kind}`, 'Cancel upgrade', 'game-btn stone');
-    return `<section class="hero-section" data-hero="${kind}"><article class="hero-overview"><div class="hero-portrait"><img src="${isKing ? hudAsset('king') : heroPortrait(kind)}" alt="${name}"></div><div><span class="eyebrow">HERO HALL ${hall.level}${inLineup ? ` · SLOT ${lineup.indexOf(kind) + 1} OF ${nativeHeroSlots(hall.level)}` : ' · BENCHED'}</span><h2>${name}</h2><p>Level ${progress.level} / ${max} · ${progress.upgradeEnd ? 'Upgrading' : inLineup ? 'In battle lineup' : 'Benched'}${petStatus ? ` · ${petStatus}` : ''}</p></div></article>
+    return `<section class="hero-section" data-hero="${kind}"><article class="hero-overview"><div class="hero-portrait"><img src="${isKing ? hudAsset('king') : heroPortrait(kind)}" alt="${name}"></div><div><span class="eyebrow">HERO HALL ${hall.level}${inLineup ? ` · SLOT ${lineup.indexOf(kind) + 1} OF ${nativeHeroSlots(hall.level)}` : ' · BENCHED'}</span><h2>${name}</h2><p>Level ${progress.level} / ${max} · ${progress.upgradeEnd ? 'Upgrading' : inLineup ? 'In battle lineup' : 'Benched'}${petStatus ? ` · ${petStatus}` : ''}</p>${battleLevel !== undefined && battleLevel > progress.level ? `<p class="hero-battle-level">Deploys at level ${battleLevel} with Hero Potion</p>` : ''}</div></article>
       ${kind === 'warden' ? button('warden-mode', m.wardenMode === 'air' ? 'Air mode' : 'Ground mode', 'game-btn stone', `aria-label="Grand Warden mode: ${m.wardenMode}"`) : ''}
       ${`<div class="hero-stat-grid">${stat('Hitpoints', native.hp, upcoming?.hp)}${stat('Damage per second', native.dps, upcoming?.dps)}${stat('Damage per hit', native.damage, upcoming?.damage)}${stat('Attack interval', native.rate, undefined, 's')}${stat('Attack range', native.range, undefined, native.range === 1 ? ' tile' : ' tiles')}${stat('Movement', native.speed, undefined, ' tiles/s')}</div>
       ${scale < 1 ? `<p class="hero-scaling">Town Hall ${m.townhallLevel} strength: ${scale * 100}% health, damage and recovery. Full strength at Town Hall 6.</p>` : ''}
