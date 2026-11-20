@@ -5230,17 +5230,16 @@ export class HUD {
   private composition(
     army: import('../game/model').Army,
     spells: import('../game/model').SpellBook,
+    levels?: Pick<PracticeLevel, 'troopLevels' | 'spellLevels'>,
   ) {
+    const stack = (kind: TroopKind | SpellKind, name: string, count: number, level?: number) => {
+      const label = level ? `${name} · Level ${level}` : name;
+      return `<span title="${label}" aria-label="${count} ${label}"><img src="${hudAsset(kind)}" alt=""><b>×${count}</b>${level ? `<small class="composition-level">Lvl ${level}</small>` : ''}</span>`;
+    };
     return `<div class="composition">${TROOP_ORDER.filter((k) => army[k])
-      .map(
-        (k) =>
-          `<span title="${TROOPS[k].name}" aria-label="${army[k]} ${TROOPS[k].name}"><img src="${hudAsset(k)}" alt=""><b>×${army[k]}</b></span>`,
-      )
+      .map((k) => stack(k, TROOPS[k].name, army[k], levels?.troopLevels[k]))
       .join('')}${SPELL_ORDER.filter((k) => spells[k])
-      .map(
-        (k) =>
-          `<span title="${SPELLS[k].name}" aria-label="${spells[k]} ${SPELLS[k].name}"><img src="${hudAsset(k)}" alt=""><b>×${spells[k]}</b></span>`,
-      )
+      .map((k) => stack(k, SPELLS[k].name, spells[k], levels?.spellLevels[k]))
       .join('')}</div>`;
   }
   private castleComposition(castle?: ArmyRecipe['castle']) {
@@ -5414,9 +5413,13 @@ export class HUD {
               const retryReady = fixedArmy ? open : this.model.armyReady || prepare;
               const retryAction = r.practice
                 ? 'practice'
-                : `${prepare ? 'campaign-scout' : 'attack'}:${r.index}`;
-              const retryLabel = r.practice ? 'Practice again' : prepare ? 'Prepare army' : 'Attack village';
-              return `<article class="raid-record"><div class="raid-record-head"><div><small>${r.practice ? 'PRACTICE' : r.ladder ? 'LADDER' : 'CAMPAIGN'} · ${new Date(r.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} ${new Date(r.at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</small><h3>${r.practice ? 'Your village' : campaignStage(r.index, r.catalog).name}</h3></div><div class="raid-score"><b>${r.result.destruction}%</b><span aria-label="${r.result.stars} stars">${'★'.repeat(r.result.stars)}<i>${'★'.repeat(3 - r.result.stars)}</i></span></div></div><p class="raid-loot">${r.practice ? 'Practice · no army losses or rewards' : `${coin} ${n(r.result.gold)} ${elixir} ${n(r.result.elixir)}${r.result.dark !== undefined ? ` ${resource('dark')} ${n(r.result.dark)}` : ''} ${r.result.trophies ? `${icon('Trophy', 16)} ${r.result.trophies > 0 ? '+' : ''}${r.result.trophies}` : ''}`}<span>${time(r.duration)}</span></p><small class="deployed-label">TROOPS &amp; SPELLS DEPLOYED</small>${this.composition(r.deployed, r.spells)}${compatibleReplayVersion(r.replay?.version) ? button(`replay:${r.id}`, `${icon('Play', 16)} Watch replay`, 'game-btn blue replay-watch') + button(`replay-export:${r.id}`, `${icon('Download', 16)} Export replay`, 'game-btn stone') : `<p class="replay-unavailable">${r.replay ? 'Replay unavailable · Recorded before a combat update.' : r.replayUnavailable === 'limit' ? 'Replay unavailable · This attack exceeded the recording limit.' : 'Replay unavailable · Recordings kept for the latest five attacks.'}</p>`}${raidHeroes(
+                : `${prepare || fixedArmy ? 'campaign-scout' : 'attack'}:${r.index}`;
+              const retryLabel = r.practice
+                ? 'Practice again'
+                : fixedArmy
+                  ? 'Scout lesson'
+                  : prepare ? 'Prepare army' : 'Attack village';
+              return `<article class="raid-record"><div class="raid-record-head"><div><small>${r.practice || fixedArmy ? 'PRACTICE' : r.ladder ? 'LADDER' : 'CAMPAIGN'} · ${new Date(r.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} ${new Date(r.at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</small><h3>${r.practice ? 'Your village' : campaignStage(r.index, r.catalog).name}</h3></div><div class="raid-score"><b>${r.result.destruction}%</b><span aria-label="${r.result.stars} stars">${'★'.repeat(r.result.stars)}<i>${'★'.repeat(3 - r.result.stars)}</i></span></div></div><p class="raid-loot">${r.practice ? 'Practice · no army losses or rewards' : `${coin} ${n(r.result.gold)} ${elixir} ${n(r.result.elixir)}${r.result.dark !== undefined ? ` ${resource('dark')} ${n(r.result.dark)}` : ''} ${r.result.trophies ? `${icon('Trophy', 16)} ${r.result.trophies > 0 ? '+' : ''}${r.result.trophies}` : ''}`}<span>${time(r.duration)}</span></p><small class="deployed-label">TROOPS &amp; SPELLS DEPLOYED</small>${this.composition(r.deployed, r.spells)}${compatibleReplayVersion(r.replay?.version) ? button(`replay:${r.id}`, `${icon('Play', 16)} Watch replay`, 'game-btn blue replay-watch') + button(`replay-export:${r.id}`, `${icon('Download', 16)} Export replay`, 'game-btn stone') : `<p class="replay-unavailable">${r.replay ? 'Replay unavailable · Recorded before a combat update.' : r.replayUnavailable === 'limit' ? 'Replay unavailable · This attack exceeded the recording limit.' : 'Replay unavailable · Recordings kept for the latest five attacks.'}</p>`}${raidHeroes(
                   r,
                 )
                   .map(
@@ -5894,7 +5897,7 @@ export class HUD {
     const heroes = drill.heroes
       .map((hero) => `<b>${HERO_SOURCE[hero.kind]}</b> level ${hero.level}`)
       .join(' · ');
-    return `<h3>Army provided</h3><p class="campaign-scout-note">${PRACTICE_TEXTS.title} brings its own army at these levels; yours stays home.${drill.steps.length ? (firstAttempt ? ' Your first attack is guided step by step.' : '') : ''}</p>${this.composition(drill.army, drill.spells)}${heroes ? `<p class="preset-heroes">${icon('ShieldCheck', 14)} ${heroes}</p>` : ''}`;
+    return `<h3>Army provided</h3><p class="campaign-scout-note">${PRACTICE_TEXTS.title} brings its own army at these levels; yours stays home.${drill.steps.length ? (firstAttempt ? ' Your first attack is guided step by step.' : '') : ''}</p>${this.composition(drill.army, drill.spells, drill)}${heroes ? `<p class="preset-heroes">${icon('ShieldCheck', 14)} ${heroes}</p>` : ''}`;
   }
   private campaignScout() {
     const m = this.model,

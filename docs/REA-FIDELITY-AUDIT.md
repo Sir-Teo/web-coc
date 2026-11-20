@@ -88,6 +88,29 @@ anchor remain presentation choices pending a matched capture. Its separate
 NPC weapon and combat behavior are unchanged.
 [Cannon source and pose limits](../reference/cannon/README.md).
 
+## Village-to-replay sequence
+
+The retained sources establish the states below. The Chromium observations
+above are the web baseline. Package closure verifies the presence of files,
+while an observable match requires a corresponding pinned-client state.
+
+| Scene | Established by pinned evidence | Missing comparison |
+| --- | --- | --- |
+| Village | Building identities, tiers and prerequisites, plus individual HUD asset slots. | Initial camera and HUD composition after village entry. |
+| Army | Troop and spell eligibility, housing and fixed lesson levels. | Original Army entry, filters, readiness messaging and transition to Attack. |
+| Campaign / Practice select | Campaign layout and dependency records. Practice label, Town Hall gate and fixed army rows. | Original mode navigation, selected card, lock and army preview presentation. |
+| Scout | Payback and Giant Smash terrain and building placements. Giant Smash's first prompt and marked start position. | Original scouting entry, camera setup, control availability and appearance. |
+| Deploy | Giant Smash's first Giant and subsequent Wall Breaker instructions, counts and forced placement fields. | Matched frames before the tap, at acceptance and when the next instruction appears. |
+| Results | Practice closing question, saved best stars and finite loot rules. | Exact result transition, feedback, and original action order. |
+| Return / replay | Web save and replay checks preserve the army actually used and record the result once. | Original post-result navigation, mode history and replay controls. |
+
+The Practice scout now previews the levels actually supplied (Giant Smash
+brings 13 Giants, 2 Wall Breakers and 11 Goblins at level 2). The Web CoC
+Battle Log carries the Practice identity through reload and opens the same
+lesson preview. Returning restores focus to the originating action. The
+preview and log controls are web behavior and still need a native comparison.
+[Practice catalog and guide](PRACTICE-MODE.md) · [Campaign rules](CAMPAIGN-RULES.md).
+
 ## Remaining parity work by player impact
 
 | Priority | Gap against the pinned build | Comparison required |

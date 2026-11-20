@@ -33,6 +33,8 @@ test('a Practice level attacks with its own army and leaves the camps alone', as
   await card.locator(`[data-action="campaign-scout:${GIANT_SMASH}"]`).tap();
   await expect(page.locator('.campaign-scout')).toContainText('Army provided');
   await expect(page.locator('.campaign-scout .composition span')).toHaveCount(3);
+  await expect(page.locator('.campaign-scout .composition [aria-label$="Level 2"]')).toHaveCount(3);
+  await expect(page.locator('.campaign-scout .composition-level').first()).toBeVisible();
   await page.screenshot({ path: `output/playtest/practice-scout-390-${browserName}.png` });
   // No army is trained, yet the attack starts.
   await page.locator(`.campaign-scout [data-action="attack:${GIANT_SMASH}"]`).tap();
@@ -110,9 +112,17 @@ test('the Battle Log can retry a fixed-army Practice level with empty camps', as
   const record = page.locator('.raid-record').first();
   await expect(record.getByRole('heading', { name: 'Giant Smash' })).toBeVisible();
   await expect(record.getByRole('button', { name: 'Watch replay' })).toBeEnabled();
-  const retry = record.getByRole('button', { name: 'Attack village' });
+  await expect(record).toContainText('PRACTICE');
+  const retry = record.getByRole('button', { name: 'Scout lesson' });
   await expect(retry).toBeEnabled();
   await retry.tap();
+  const scout = page.locator('.campaign-scout');
+  await expect(scout).toContainText('Army provided');
+  expect(await page.evaluate(() => window.__game.model.battle)).toBeNull();
+  await scout.getByRole('button', { name: 'Back to battle log' }).tap();
+  await expect(retry).toBeFocused();
+  await retry.tap();
+  await scout.getByRole('button', { name: 'Attack', exact: true }).tap();
   await expect(page.locator('[data-action="troop:giant"]')).toBeVisible();
   expect(
     await page.evaluate(() => {
