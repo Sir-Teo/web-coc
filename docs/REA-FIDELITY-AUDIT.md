@@ -155,6 +155,31 @@ after its foreground mesh is removed.
 [Goblin building source](GOBLIN-BUILDINGS.md) ·
 [Web terrain and camera](TERRAIN-CAMERA.md)
 
+## Early Campaign prop coverage
+
+The pinned first four boards contain 175 buildings and traps and 217 prop
+placements. The renderer now selects a retained portrait when the exact
+export name and footprint agree. This preserves distinct stones, fallen
+trees, trunks, mushrooms, and the down-arrow flag in their recorded roles.
+
+| Board | Props | Retained portraits before | Retained portraits after |
+| --- | ---: | ---: | ---: |
+| Payback | 14 | 10 | 14 |
+| Goblin Forest | 13 | 13 | 13 |
+| Goblin Outpost | 91 | 72 | 82 |
+| Rocky Fort | 99 | 76 | 92 |
+
+An offline reference check covers 6,214 prop rows on all 107 retained layouts.
+Of these, 5,498 match a retained portrait by export and footprint. The early
+fallback rows are Tombstones, Dark Tombstones, and the Goblin Pole. No
+alternate facing was established for these prop placements. The retained
+down-arrow flag preserves its own artwork rather than using a mixed flag
+silhouette. Authored terrain, initial camera, and static prop registration
+remain web presentation.
+[Campaign layout provenance](../reference/campaign/README.md) ·
+[Retained obstacles](../reference/obstacles/catalog.json) ·
+[Retained decorations](../reference/decorations/catalog.json)
+
 ## Remaining parity work by player impact
 
 | Priority | Gap against the pinned build | Comparison required |
