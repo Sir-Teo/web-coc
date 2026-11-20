@@ -45,7 +45,7 @@ their tracks.
 
 | Rule | Implementation | Basis |
 | --- | --- | --- |
-| Trigger | Live, spawned, non-ejected attacker of either layer (Healers included) within 2 tiles of the 2×2 center, sampled after attacker movement; nearest eligible attacker recorded as target | Source radius/flags; Shrink Trap sampling convention |
+| Trigger | Live, spawned, non-ejected attacker that can trigger traps, of either layer (Healers included), within 2 tiles of the 2×2 center, sampled after attacker movement; nearest eligible attacker recorded as target | Source radius and layer flags, attacker `TriggersTraps` from replay version 260, and Shrink Trap sampling convention |
 | Spell deployment | Trigger + ActionFrame 14/24 fps (the last frame of the 14-frame trigger clip) | Shrink Trap convention; reconstruction tick quantization not modeled |
 | Hit | Once, at deployment + 10 ms | Source HitTimeMS/NumberOfHits; the reconstruction's 60-subtick conversion makes it immediate |
 | Area | Every live, spawned, non-ejected attacker within the **3.5-tile spell radius**, both layers, heroes and summoned troops included; never defenders or buildings | Spell radius (DamageRadius retained); reconstruction `AreaFreeze` skips the caster's team. [Clash of Clans Wiki](https://clashofclans.fandom.com/wiki/Freeze_Trap): freezes ground and air troops, heroes can still use abilities, their later spawns are not frozen |
@@ -57,6 +57,11 @@ their tracks.
 | Other effects | Tornado Traps still carry frozen attackers; Air Sweeper pushes and Spring Trap airtime keep their own clocks; the King's ability stays usable | Local; reconstruction pushes run independently of freeze |
 | One use | One trigger per attack; `battle.traps[id]` reveals the trap and resolves at the hit | Existing trap bookkeeping |
 | Results | Never delays the battle result (`freezeTrapPending` is false) | The freeze cannot damage buildings |
+
+Both Skeleton Spell character rows (`Spell Shielded Skeleton` and `Spell Unshielded Skeleton`)
+set `TriggersTraps=FALSE`. Version 260 applies that eligibility to activation only. Those units
+can still be frozen by the area hit after an eligible attacker triggers it. Version 259 and
+earlier recordings retain their original trigger rule.
 
 Freeze expiry is evaluated per 20 Hz step (at most one step of quantization). The
 [2016 community guide](https://clashfordummies.com/2016/12/28/clash-of-clans-new-freeze-trap-strategy/)

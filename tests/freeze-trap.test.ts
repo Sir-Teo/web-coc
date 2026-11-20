@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { GameModel, makeBuilding, makeNpcBuilding, type Battle } from '../src/game/model';
 import { spawnSkeleton } from '../src/game/defenders';
 import { nativeBuildings, nativeCampaignIssues } from '../src/game/native-campaign';
-import { validateReplay } from '../src/game/replay';
+import { replayBattle, REPLAY_VERSION, type ReplayData, validateReplay } from '../src/game/replay';
 import { validateSave } from '../src/game/save';
 import { lateUnitFrozen, lateUnitHeld, lateUnitTimeLost } from '../src/game/late-campaign';
 import { NPC_BUILDINGS } from '../src/game/npc-buildings';
@@ -18,7 +18,8 @@ import {
 } from '../src/game/freeze-trap';
 import { FREEZE_SPELL, FREEZE_TRAP, freezeDuration } from '../src/game/freeze-trap-stats';
 import { stepTornadoTrap } from '../src/game/tornado-trap';
-import { lateTrapArena } from './fixtures/late-trap-battle';
+import { initialNativeState } from '../src/game/native-troops';
+import { lateTrapArena, lateTrapVillage } from './fixtures/late-trap-battle';
 
 const trapAt = (x = 20, y = 20, id = 9000) => makeNpcBuilding(id, 'freeze-trap', x, y);
 const phase = (b: Battle, time: number, which: 'traps' | 'auras') => {
@@ -73,6 +74,53 @@ describe('campaign Goblin Freeze Trap', () => {
     );
     expect([0, 1.75, 3.5, 4].map(freezeDuration)).toEqual([5, 4.875, 4.5, 4.5]);
   });
+
+  it.each([
+    [REPLAY_VERSION, false],
+    [259, true],
+  ] as const)(
+    'respects version %s trigger eligibility without granting freeze immunity',
+    (version, skeletonTriggers) => {
+      const model = lateTrapVillage(64, { dragon: 1 });
+      const { recording } = model as unknown as { recording: ReplayData };
+      const battle = replayBattle(recording.initial, version);
+      const trap = battle.buildings.find(({ npc }) => npc === 'freeze-trap')!;
+      const x = trap.x + 1;
+      const y = trap.y + 1;
+      const base = {
+        x,
+        y,
+        hp: 100,
+        maxHp: 100,
+        cooldown: 0,
+        target: null,
+        path: [],
+        pathAt: 0,
+        attacking: false,
+      };
+      const skeleton = {
+        ...base,
+        id: 100_000,
+        kind: 'spellskeletonshielded' as const,
+        native: initialNativeState('spellskeletonshielded', 1),
+      };
+      battle.units.push(skeleton);
+      phase(battle, 0.05, 'traps');
+      expect(battle.traps[trap.id]?.targetId).toBe(skeletonTriggers ? skeleton.id : undefined);
+      const dragon = {
+        ...base,
+        id: 100_001,
+        x: x + 1,
+        kind: 'dragon' as const,
+        native: initialNativeState('dragon', 1),
+      };
+      battle.units.push(dragon);
+      phase(battle, 0.1, 'traps');
+      expect(battle.traps[trap.id]?.targetId).toBe(skeletonTriggers ? skeleton.id : dragon.id);
+      phase(battle, 0.75, 'auras');
+      expect(cast(battle, trap.id).frozen).toEqual([skeleton.id, dragon.id]);
+    },
+  );
 
   for (const kind of ['giant', 'dragon', 'healer'] as const)
     it(`conceals a passable trap and triggers for a live ${kind} at exactly two tiles`, () => {

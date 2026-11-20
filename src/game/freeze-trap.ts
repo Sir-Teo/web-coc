@@ -1,5 +1,6 @@
 import { BUILDINGS, TROOPS } from './data';
 import { distance2D } from './distance';
+import { unitTriggersTraps } from './native-status';
 import { FREEZE_SPELL, FREEZE_TRAP, freezeDuration } from './freeze-trap-stats';
 import type { LateCombatContext } from './late-campaign';
 import type { Battle, Building, Unit } from './model';
@@ -55,6 +56,7 @@ function triggerFreezeTraps(battle: Battle) {
     const nearby = battle.units.filter(
       (u) =>
         eligible(u, battle.elapsed) &&
+        (!battle.nativeFreezeTrapTriggerRules || unitTriggersTraps(u)) &&
         (u.hero ? 25 : TROOPS[u.kind].space) >= FREEZE_TRAP.minHousing &&
         (TROOPS[u.kind].flying ? FREEZE_TRAP.air : FREEZE_TRAP.ground) &&
         distance2D(u.x - c.x, u.y - c.y) <= FREEZE_TRAP.trigger,

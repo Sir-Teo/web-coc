@@ -946,6 +946,8 @@ export interface Battle {
   nativeTownHallDeathSplash?: true;
   /** Version 259: the Giga poison clouds use their explicit Hero movement modifier. */
   nativeTownHallHeroPoison?: true;
+  /** Version 260: Goblin Freeze Traps respect attacker trap-trigger eligibility. */
+  nativeFreezeTrapTriggerRules?: true;
   /** Version 100: native healing resolves through source projectile travel and chain hops. */
   nativeHealingProjectiles?: true;
   nativeHealingTotem?: true;
