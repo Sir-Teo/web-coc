@@ -128,6 +128,17 @@ describe('replay seeking', () => {
     expect(m.replay).toBe(null);
     expect(m.battle).toBe(null);
   });
+  it('keeps a running seek paused when a scrub starts before it completes', () => {
+    const m = record();
+    m.startReplay(m.state.raidLog![0].id);
+    m.seekReplay(50);
+    expect(m.replay!.seeking).toBe(true);
+    m.pauseReplayForScrub();
+    m.seekReplay(10);
+    settleSeek(m);
+    expect(m.replay!.paused).toBe(true);
+    expect(m.replay!.time).toBeCloseTo(10);
+  });
   it('jumps to the first deployment and restores replay selection after restarting', () => {
     const m = record();
     const id = m.state.raidLog![0].id;

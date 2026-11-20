@@ -293,6 +293,42 @@ test('a second finger lifting does not end the active replay scrub', async ({
   await expect.poll(scrubbing).toBe(false);
 });
 
+test.describe('rapid replay scrubbing', () => {
+  test.use({ hasTouch: true, isMobile: true });
+
+  test('a new touch seek replaces a pending seek on the timeline', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 650 });
+    await page.getByRole('button', { name: 'Watch replay', exact: true }).click();
+    await page.evaluate(() => {
+      window.__game.scene.paused = true;
+    });
+    const range = page.getByRole('slider', { name: 'Replay position' });
+    await expect(range).toBeVisible();
+    const box = (await range.boundingBox())!;
+    const tap = (fraction: number) =>
+      page.touchscreen.tap(box.x + fraction * box.width, box.y + box.height / 2);
+    const seek = () =>
+      page.evaluate(() => {
+        const { replay } = window.__game.model;
+        return { seeking: replay!.seeking, target: replay!.seekTarget };
+      });
+    await tap(0.9);
+    const first = await seek();
+    expect(first.seeking).toBe(true);
+    await expect(range).toBeEnabled();
+    await tap(0.2);
+    await expect.poll(async () => (await seek()).target).toBeLessThan(first.target / 2);
+    const { time, target, paused } = await page.evaluate(() => {
+      const { model } = window.__game;
+      while (model.replay!.seeking) model.step(0.05);
+      const { time, seekTarget: target, paused } = model.replay!;
+      return { time, target, paused };
+    });
+    expect(target - time).toBeLessThanOrEqual(0.051);
+    expect(paused).toBe(true);
+  });
+});
+
 test('a restored recording remains watchable after overlapping browser saves', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(async () => {

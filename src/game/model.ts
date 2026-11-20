@@ -8607,6 +8607,12 @@ export class GameModel {
         : Math.min(PREP_SECONDS, this.replay.duration),
     );
   }
+  pauseReplayForScrub() {
+    if (!this.replay) return;
+    this.replay.paused = true;
+    // A pending seek must not resume playback while the player holds the timeline.
+    this.replaySeekPaused = true;
+  }
   toggleReplay() {
     if (!this.replay || this.replay.complete || this.replay.seeking) return;
     this.replay.paused = !this.replay.paused;

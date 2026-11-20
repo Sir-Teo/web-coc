@@ -941,7 +941,7 @@ export class HUD {
           this.replayScrubPointer === null
         ) {
           this.replayScrubPointer = e.pointerId;
-          this.model.replay.paused = true;
+          this.model.pauseReplayForScrub();
         }
         const card = target.closest<HTMLElement>('[data-drag]');
         // The price button is a tap target; everything else on the tile is a drag handle.
@@ -4028,7 +4028,7 @@ export class HUD {
     </section>`;
     return `<section class="replay-controls replay-transport" aria-label="Replay playback">
       <div class="replay-status"><strong aria-live="polite">${this.replayStatusText()}</strong><span id="replay-time">${clock(r.time)} / ${clock(r.duration)}</span></div>
-      <input id="replay-progress" data-action="replay-position" type="range" aria-label="Replay position" aria-valuetext="${clock(r.time)}" min="0" max="${r.duration || 1}" step="any" value="${r.seeking ? r.seekTarget : r.time}" ${r.seeking || !r.duration ? 'disabled' : ''}><div class="replay-shortcuts">${button('replay-jump:-10', '−10s', 'replay-link', r.seeking ? 'disabled' : '')}${button('replay-jump:10', '+10s', 'replay-link', r.seeking ? 'disabled' : '')}${button('replay-skip', `${icon('SkipForward', 17)}<span class="replay-control-label">First deployment</span>`, 'replay-link', `${r.seeking ? 'disabled ' : ''}aria-label="First deployment" title="Jump to first deployment"`)}${button('replay-export', `${icon('Download', 17)}<span class="replay-control-label">Export replay</span>`, 'replay-link', 'aria-label="Export replay" title="Export replay"')}</div>
+      <input id="replay-progress" data-action="replay-position" type="range" aria-label="Replay position" aria-valuetext="${clock(r.time)}" min="0" max="${r.duration || 1}" step="any" value="${r.seeking ? r.seekTarget : r.time}" ${!r.duration ? 'disabled' : ''}><div class="replay-shortcuts">${button('replay-jump:-10', '−10s', 'replay-link', r.seeking ? 'disabled' : '')}${button('replay-jump:10', '+10s', 'replay-link', r.seeking ? 'disabled' : '')}${button('replay-skip', `${icon('SkipForward', 17)}<span class="replay-control-label">First deployment</span>`, 'replay-link', `${r.seeking ? 'disabled ' : ''}aria-label="First deployment" title="Jump to first deployment"`)}${button('replay-export', `${icon('Download', 17)}<span class="replay-control-label">Export replay</span>`, 'replay-link', 'aria-label="Export replay" title="Export replay"')}</div>
       <div class="replay-buttons">${button('replay-pause', `${icon(r.paused ? 'Play' : 'Pause', 17)}<span class="replay-control-label">${r.paused ? 'Play' : 'Pause'}</span>`, 'game-btn blue', `${r.complete || r.seeking ? 'disabled ' : ''}aria-label="${r.paused ? 'Play' : 'Pause'}" title="${r.paused ? 'Play' : 'Pause'}"`)}${button('replay-restart', `${icon('RotateCcw', 17)}<span class="replay-control-label">Restart</span>`, 'game-btn stone', 'aria-label="Restart" title="Restart replay"')}<div class="replay-speeds" role="group" aria-label="Playback speed">${[1, 2, 4].map((speed) => button(`replay-speed:${speed}`, `${speed}×`, `game-btn ${r.speed === speed ? 'green' : 'stone'}`, `aria-pressed="${r.speed === speed}"`)).join('')}</div>${button('replay-exit', `${icon('ArrowLeft', 17)}<span class="replay-control-label">Back to log</span>`, 'game-btn stone', 'aria-label="Back to log" title="Back to log"')}</div>
     </section>`;
   }
