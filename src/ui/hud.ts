@@ -5897,7 +5897,10 @@ export class HUD {
     const heroes = drill.heroes
       .map((hero) => `<b>${HERO_SOURCE[hero.kind]}</b> level ${hero.level}`)
       .join(' · ');
-    return `<h3>Army provided</h3><p class="campaign-scout-note">${PRACTICE_TEXTS.title} brings its own army at these levels; yours stays home.${drill.steps.length ? (firstAttempt ? ' Your first attack is guided step by step.' : '') : ''}</p>${this.composition(drill.army, drill.spells, drill)}${heroes ? `<p class="preset-heroes">${icon('ShieldCheck', 14)} ${heroes}</p>` : ''}`;
+    const cargo = drill.siegeCargo
+      ?.map(({ kind, count, level }) => `${count} × ${TROOPS[kind].name} · Level ${level}`)
+      .join(' · ');
+    return `<h3>Army provided</h3><p class="campaign-scout-note">${PRACTICE_TEXTS.title} brings its own army at these levels; yours stays home.${drill.steps.length ? (firstAttempt ? ' Your first attack is guided step by step.' : '') : ''}</p>${this.composition(drill.army, drill.spells, drill)}${cargo ? `<p><b>Battle Blimp cargo</b> · ${cargo}</p>` : ''}${heroes ? `<p class="preset-heroes">${icon('ShieldCheck', 14)} ${heroes}</p>` : ''}`;
   }
   private campaignScout() {
     const m = this.model,

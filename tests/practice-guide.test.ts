@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { GameModel } from '../src/game/model';
 import { PRACTICE_LEVELS, practiceLevelAt } from '../src/game/practice-mode';
 import { freshNativeCampaign } from '../src/game/native-campaign';
-import { validateReplay } from '../src/game/replay';
+import { replayBattle, validateReplay } from '../src/game/replay';
 
 /** Giant Smash, the first Practice level: campaign stage 91. */
 const GIANT_SMASH = 90;
@@ -151,6 +151,46 @@ describe('Practice Mode guide', () => {
     expect(m.activeTroop).toBe('hogrider');
   });
 
+  it('carries Electro Surgery’s higher-level reinforcements inside its Battle Blimp', () => {
+    const m = village();
+    const index = 100;
+    m.startCampaign(index, false);
+    const b = m.battle!;
+    expect(b.remaining).toMatchObject({ electrodragon: 8, balloon: 4, battleblimp: 1 });
+    expect(b.troopLevels).toMatchObject({ electrodragon: 2, balloon: 7 });
+    expect(b.siegeCargo?.troops).toEqual([
+      { kind: 'balloon', level: 8, count: 1 },
+      { kind: 'electrodragon', level: 3, count: 1 },
+    ]);
+    m.activeTroop = 'battleblimp';
+    expect(m.deploy(21, 50)).toBe(true);
+    expect(b.units.map((unit) => unit.kind)).toEqual(['battleblimp']);
+
+    const lesson = practiceLevelAt(index)!;
+    const release = lesson.steps.findIndex((step) => step.name === 'TH11_Edrag_Deploy_Blimp');
+    m.practiceGuide = { steps: lesson.steps, index: release, elapsed: 0, placed: 0 };
+    m.step(0.05);
+    expect(m.guideStep?.name).toBe('TH11_Edrag_Deploy_Blimp');
+    expect(m.endSiege()).toBe(true);
+    m.step(0.05);
+    expect(m.guideStep?.name).toBe('Wait_7500ms');
+    for (let i = 0; i < 10; i++) m.step(0.05);
+    expect(b.units.slice(1).map(({ kind, level }) => [kind, level])).toEqual([
+      ['balloon', 8], ['electrodragon', 3],
+    ]);
+    m.finishBattle();
+    const recording = m.state.raidLog![0].replay!;
+    expect(validateReplay(recording)).toBe(true);
+    expect(replayBattle(recording.initial, recording.version).siegeCargo?.troops).toEqual(b.siegeCargo?.troops);
+    const olderSetup = {
+      ...recording.initial,
+      army: { ...recording.initial.army, electrodragon: 9, balloon: 5 },
+    };
+    const older = replayBattle(olderSetup, 285);
+    expect(older.siegeCargo).toBeUndefined();
+    expect(older.remaining).toMatchObject({ electrodragon: 9, balloon: 5 });
+  });
+
   it('plays every fielded level’s guide through to its end', { timeout: 120_000 }, () => {
     for (const level of PRACTICE_LEVELS.filter((l) => l.stage)) {
       const m = village();
@@ -162,6 +202,7 @@ describe('Practice Mode guide', () => {
         const step = m.guideStep!;
         if (step.unit && !step.ability) expect(follow(m), `${level.name}: ${step.name}`).toBe(true);
         else {
+          if (step.ability && step.unit && 'troop' in step.unit) m.endSiege();
           if (step.ability && step.unit && 'hero' in step.unit)
             m.activateNativeHeroAbility(step.unit.hero);
           m.step(0.05);

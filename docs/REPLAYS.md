@@ -16,6 +16,12 @@ retain their text labels. This presentation change adds no recording version.
 
 `src/game/replay.ts` defines a versioned initial snapshot containing the actual enemy layout, defense levels and upgrade state, original army/spells, troop and spell research levels, King level/Town Hall, and starting unit identifier. A compact event stream records successful troop deployments, spell casts, hero deployment, manual hero activation, and battle termination, in order at simulation-step boundaries. Failed inputs and selection/camera movements are not recorded. The actual simulation deltas are preserved, including scouting time. Automatic hero activation, traps, mortar impacts, and combat outcomes are reproduced by the normal simulation.
 
+Version 286 separates Electro Surgery’s pinned Battle Blimp loadout from its
+deployable tray. Playback derives the two fixed reinforcements from that
+lesson’s identity and resolves release using the recorded siege action.
+Through version 285, Electro Surgery retains its original merged tray with
+no Blimp cargo. No save field was added.
+
 Version 248 captures the **Automatic Hero abilities** setting at attack entry.
 A manual-only recording carries that choice through export, import and seeking.
 Earlier recordings and recordings made with automatic activation enabled keep

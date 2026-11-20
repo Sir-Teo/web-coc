@@ -1,11 +1,12 @@
 import catalog from '../../reference/practice/catalog.json' with { type: 'json' };
 import { emptyArmy, emptySpells } from './army';
-import { SPELL_KEYS, TROOP_KEYS, type SpellKind, type TroopKind } from './data';
+import { SPELL_KEYS, TROOPS as TROOP_DEFINITIONS, TROOP_KEYS, type SpellKind, type TroopKind } from './data';
 import { HERO_SOURCE, heroDefaultItems, type HeroKind } from './native-hero-data';
 import type { HeroSetup } from './native-heroes';
 import { TROOP_SOURCE } from './native-units';
 import { SPELL_NAMES } from './troop-progression';
 import { BUILD_MIN } from './grid';
+import type { SiegeCargoEntry } from './siege-cargo';
 import type { Army, SpellBook } from './model';
 
 /**
@@ -23,7 +24,7 @@ export interface PracticeLevel {
   stage: number | null;
   gold: number;
   elixir: number;
-  /** Troops and siege machines, the Clan Castle's units among them. */
+  /** Troops and siege machines deployable directly from the tray. */
   army: Army;
   spells: SpellBook;
   troopLevels: Army;
@@ -31,6 +32,8 @@ export interface PracticeLevel {
   heroes: HeroSetup[];
   /** The units the client sends in the Clan Castle (they join `army` here). */
   castle: [TroopKind, number][];
+  /** Cargo explicitly assigned to the Battle Blimp by Electro Surgery’s guide. */
+  siegeCargo?: SiegeCargoEntry[];
   /** The first attempt's step-by-step guide (csv/deploy_steps.csv). */
   steps: PracticeStep[];
   /** Where each defending hero stands guard: the centre of its 2×2 hero flag. */
@@ -136,7 +139,8 @@ function level(row: (typeof catalog.levels)[number]): PracticeLevel {
   const troopLevels: Partial<Record<TroopKind, number>> = {},
     spellLevels: Partial<Record<SpellKind, number>> = {};
   const heroes: HeroSetup[] = [],
-    castle: [TroopKind, number][] = [];
+    castle: [TroopKind, number][] = [],
+    siegeCargo: SiegeCargoEntry[] = [];
   // The army's own units set a kind's level before the Clan Castle's (Bowling with Bats sends
   // P.E.K.K.A 6 in the army and P.E.K.K.A 8 in the castle).
   const units = [...(row.army as CatalogUnit[])].sort((a, b) => +!!a.castle - +!!b.castle);
@@ -151,6 +155,10 @@ function level(row: (typeof catalog.levels)[number]): PracticeLevel {
       spellLevels[kind] ??= unit.level;
     } else {
       const kind = TROOPS.get(unit.unit)!;
+      if (unit.castle && row.id === 'CHALLENGE_TH11_EDRAG') {
+        siegeCargo.push({ kind, count: unit.count, level: unit.level });
+        continue;
+      }
       army[kind] += unit.count;
       troopLevels[kind] ??= unit.level;
       if (unit.castle) castle.push([kind, unit.count]);
@@ -169,6 +177,13 @@ function level(row: (typeof catalog.levels)[number]): PracticeLevel {
     spellLevels: Object.fromEntries(SPELL_KEYS.map((k) => [k, spellLevels[k] ?? 1])) as SpellBook,
     heroes,
     castle,
+    ...(siegeCargo.length
+      ? {
+          siegeCargo: siegeCargo.sort(
+            (a, b) => TROOP_DEFINITIONS[a.kind].space - TROOP_DEFINITIONS[b.kind].space,
+          ),
+        }
+      : {}),
     steps: (row.steps as CatalogStep[]).map(step),
     heroFlags: (row.heroFlags as { hero: string; x: number; y: number }[]).map((flag) => ({
       kind: HEROES.get(flag.hero)!,

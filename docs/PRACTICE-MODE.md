@@ -78,8 +78,15 @@ The guide sits beside the battle, not in its replay setup. A frozen moment is si
 - **Waits that cannot end.** The original's scripted attack always brings a step's building down, but a player's may not. A `WaitUntilDestroyed` step therefore also ends when no attacker is alive or after 60 battle seconds (`GUIDE_WAIT_LIMIT`). Without that, a step refusing deploys could hold the player until they skip.
 - **Ability timing.** `KingHealthLow` asks for the King's ability straight away. Its pinned `deploy_steps.csv` row has no health threshold or condition; a different timing rule cannot be established from that table alone.
 
-- **Clan Castle units.** Four levels send units in the Clan Castle: Bowling with Bats, Electro Surgery, Lava & More Loons and Bowling with Witches. This game's attacks have no Clan Castle to release them (siege machines carry nothing), so they join the army's tray. A kind's level is the army's own, ahead of the castle's (Bowling with Bats sends P.E.K.K.A 6 in the army and P.E.K.K.A 8 in the castle).
+- **Clan Castle units.** Electro Surgery’s source assigns one level-8 Balloon and one level-3 Electro Dragon to the Clan Castle. Its guide explicitly calls for the Battle Blimp to carry and release them. From replay version 286, the direct tray starts with four level-7 Balloons and eight level-2 Electro Dragons, and the Blimp releases the two reinforcements once. The guide’s release prompt holds while the Blimp can still be ended. Older recordings retain the merged tray. The other five fielded lessons with Castle rows still merge those units into the tray, including the mixed P.E.K.K.A. tiers in Bowling with Bats.
 - **Withheld levels.** The two withheld Challenges stay out, for the reasons in [CAMPAIGN-RULES.md](CAMPAIGN-RULES.md). Their armies are in the catalog all the same.
+
+A read-only comparison of all 17 fielded starting rosters and guide step lists
+checked 144 roster rows and 354 ordered guide rows against the pinned catalog.
+The ordered step metadata matched. The Castle-row placement and merged troop
+tiers were inventory differences. Electro Surgery is the only lesson checked
+here whose source guide explicitly assigns those reinforcements to its Blimp.
+The original release button appearance and exact native timing remain unverified.
 
 ## Tests
 

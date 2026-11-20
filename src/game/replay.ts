@@ -1,3 +1,4 @@
+import { practiceLevelAt } from './practice-mode';
 import { prepareSiegeCargo, SIEGE_CARGO_REPLAY_VERSION, type SiegeCargoSetup } from './siege-cargo';
 import { defendingHero, type DefendingHeroSetup } from './defending-heroes';
 import { validLadderMatch, type LadderMatch } from './ladder';
@@ -67,7 +68,8 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 285;
+export const REPLAY_VERSION = 286;
+const ELECTRO_SURGERY_CARGO_VERSION = 286;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -476,6 +478,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 282 ||
   version === 283 ||
   version === 284 ||
+  version === 285 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -645,13 +648,21 @@ function fullMapPractice(
   );
 }
 export function replayBattle(setup: ReplaySetup, version = REPLAY_VERSION): Battle {
-  const cargo =
+  const practiceCargo =
     version >= SIEGE_CARGO_REPLAY_VERSION && setup.practice
-      ? prepareSiegeCargo(setup.siegeCargo)
+      ? prepareSiegeCargo(setup.siegeCargo)?.troops
       : undefined;
+  const lessonCargo =
+    version >= ELECTRO_SURGERY_CARGO_VERSION &&
+    setup.catalog === 'goblin-v1' &&
+    setup.fixedArmy &&
+    setup.army.battleblimp > 0
+      ? practiceLevelAt(setup.index)?.siegeCargo
+      : undefined;
+  const cargo = practiceCargo ?? lessonCargo;
   // Cargo enables the same per-troop combat rules as the army without adding deployable stock.
   const s = cargo ? { ...setup, army: { ...setup.army } } : setup;
-  if (cargo) for (const { kind, count } of cargo.troops) s.army[kind] += count;
+  if (cargo) for (const { kind, count } of cargo) s.army[kind] += count;
   const launcher = version >= 223 && s.army.trooplauncher > 0;
   const homeSpring =
     s.catalog !== 'goblin-v1' &&
@@ -713,7 +724,7 @@ export function replayBattle(setup: ReplaySetup, version = REPLAY_VERSION): Batt
     ...(version >= 270 && s.spells?.iceblock ? { independentIceBlockShield: true as const } : {}),
     ...(version >= 269 &&
     (s.army.healer > 0 ||
-      cargo?.troops.some(({ kind }) => kind === 'healer') ||
+      cargo?.some(({ kind }) => kind === 'healer') ||
       s.heroes?.some(({ items }) => items.some(({ slug }) => slug === 'healer-puppet')))
       ? { nativeHealerNearestTarget: true as const }
       : {}),
@@ -1305,7 +1316,7 @@ export function replayBattle(setup: ReplaySetup, version = REPLAY_VERSION): Batt
     ...(s.ladder ? { ladder: { ...s.ladder } } : {}),
     ...(s.fixedArmy ? { fixedArmy: true } : {}),
     buildings: structuredClone(s.buildings),
-    ...(cargo ? { siegeCargo: { troops: cargo.troops } } : {}),
+    ...(cargo ? { siegeCargo: { troops: cargo } } : {}),
     carriedArmy: { ...setup.army },
     remaining: { ...setup.army },
     carried: { ...s.spells },

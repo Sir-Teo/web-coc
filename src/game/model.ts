@@ -6273,6 +6273,8 @@ export class GameModel {
    */
   private guideStepDone(step: PracticeStep, b: Battle) {
     const g = this.practiceGuide!;
+    if (step.ability && step.unit && 'troop' in step.unit && step.unit.troop === 'battleblimp')
+      return !b.siegeCargo || !b.siegeDeployed || this.deployedSiege?.kind !== 'battleblimp';
     if (step.ability && step.unit && 'hero' in step.unit) {
       const kind = step.unit.hero;
       const hero = b.nativeHeroes?.find((h) => h.kind === kind);
