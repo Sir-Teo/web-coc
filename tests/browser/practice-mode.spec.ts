@@ -703,3 +703,43 @@ for (const [index, animation, count] of [
     }
     expect(errors).toEqual([]);
   });
+
+test('Electro Surgery frames its opening and Blimp targets in short landscape', async ({ page }) => {
+  test.setTimeout(150_000);
+  await page.setViewportSize({ width: 568, height: 320 });
+  await boot(page, 11);
+  await page.locator('[data-action="campaign-scout:100"]').tap();
+  await page.locator('.campaign-scout [data-action="attack:100"]').tap();
+  await page.waitForFunction(() => !window.__game.scene.scoutingArtNotice());
+
+  const target = () => page.evaluate(() => {
+    const { model, scene } = window.__game;
+    const spot = model.practiceGuide?.spot;
+    const point = spot && scene.screenFor(spot.x, spot.y);
+    return {
+      name: model.guideStep?.name,
+      spot,
+      point,
+      clear: !!point && document.elementFromPoint(point.x, point.y) === scene.game.canvas,
+    };
+  });
+  for (const [name, x, y] of [
+    ['TH11_Edrag_FunnelEdrag1', 39, 49],
+    ['TH11_Edrag_ArcherQueen', 30, 49],
+    ['TH11_Edrag_BattleBlimp', 21, 50],
+  ] as const) {
+    await expect.poll(target, { timeout: 65_000 }).toMatchObject({
+      name, spot: { x, y }, clear: true,
+    });
+    const { point } = await target();
+    await page.touchscreen.tap(point!.x, point!.y);
+  }
+  await expect.poll(() => page.evaluate(() => {
+    const battle = window.__game.model.battle;
+    return {
+      deployed: battle?.units.filter(({ kind }) => kind === 'battleblimp').length,
+      stock: battle?.remaining.battleblimp,
+      level: battle?.troopLevels.battleblimp,
+    };
+  })).toEqual({ deployed: 1, stock: 0, level: 3 });
+});

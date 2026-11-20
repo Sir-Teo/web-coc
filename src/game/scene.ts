@@ -5651,7 +5651,7 @@ export class VillageScene extends Phaser.Scene {
           this.clampCamera();
         }
         requestAnimationFrame(() => {
-          if (this.guideFocus === key && this.model.practiceGuide === guide && guide.spot)
+          if (!this.down && this.guideFocus === key && this.model.practiceGuide === guide && guide.spot)
             this.keepGuideSpotClear(guide.spot);
         });
       }
@@ -5666,43 +5666,53 @@ export class VillageScene extends Phaser.Scene {
   /** Frame a new guide spot outside the DOM HUD, while leaving manual panning intact. */
   private keepGuideSpotClear(spot: { x: number; y: number }) {
     const canvas = this.game.canvas.getBoundingClientRect();
-    const pad = 14;
     const blockers = Array.from(
       document.querySelectorAll(
         '.practice-guide,.battle-enemy,.battle-clock,.destruction,.battle-bottom > button,.deploy-label,.army-tray',
       ),
       (element) => element.getBoundingClientRect(),
     ).filter((rect) => rect.width && rect.height);
-    const clear = (x: number, y: number) =>
-      x >= canvas.left + pad &&
-      x <= canvas.right - pad &&
-      y >= canvas.top + pad &&
-      y <= canvas.bottom - pad &&
-      !blockers.some(
-        (r) => x > r.left - pad && x < r.right + pad && y > r.top - pad && y < r.bottom + pad,
-      );
     const point = this.screenFor(spot.x, spot.y);
-    if (clear(point.x, point.y)) return;
-    const xs = [point.x, ...blockers.flatMap((r) => [r.left - pad, r.right + pad])];
-    const ys = [point.y, ...blockers.flatMap((r) => [r.top - pad, r.bottom + pad])];
-    const candidates = xs
-      .flatMap((x) => ys.map((y) => ({ x, y })))
-      .filter(({ x, y }) => clear(x, y))
-      .sort(
-        (a, b) =>
-          Math.hypot(a.x - point.x, a.y - point.y) - Math.hypot(b.x - point.x, b.y - point.y),
-      );
     const camera = this.cameras.main;
     const { scrollX, scrollY } = camera;
-    for (const target of candidates) {
-      camera.scrollX = scrollX + ((point.x - target.x) * this.scale.displayScale.x) / camera.zoomX;
-      camera.scrollY = scrollY + ((point.y - target.y) * this.scale.displayScale.y) / camera.zoomY;
-      this.clampCamera();
-      const framed = this.screenFor(spot.x, spot.y);
-      if (clear(framed.x, framed.y)) return;
+    // Prefer enough clearance to read the marker. In short landscape the wider gap
+    // can disappear, even though a smaller gap still has a usable canvas target.
+    for (const pad of [14, 6]) {
+      const clear = (x: number, y: number) =>
+        x >= canvas.left + pad &&
+        x <= canvas.right - pad &&
+        y >= canvas.top + pad &&
+        y <= canvas.bottom - pad &&
+        !blockers.some(
+          (r) => x > r.left - pad && x < r.right + pad && y > r.top - pad && y < r.bottom + pad,
+        );
+      const tappable = ({ x, y }: { x: number; y: number }) =>
+        clear(x, y) && document.elementFromPoint(x, y) === this.game.canvas;
+      if (tappable(point)) return;
+      const xs = [
+        point.x, canvas.left + pad, canvas.right - pad,
+        ...blockers.flatMap((r) => [r.left - pad, r.right + pad]),
+      ];
+      const ys = [
+        point.y, canvas.top + pad, canvas.bottom - pad,
+        ...blockers.flatMap((r) => [r.top - pad, r.bottom + pad]),
+      ];
+      const candidates = xs
+        .flatMap((x) => ys.map((y) => ({ x, y })))
+        .filter(({ x, y }) => clear(x, y))
+        .sort(
+          (a, b) =>
+            Math.hypot(a.x - point.x, a.y - point.y) - Math.hypot(b.x - point.x, b.y - point.y),
+        );
+      for (const target of candidates) {
+        camera.scrollX = scrollX + ((point.x - target.x) * this.scale.displayScale.x) / camera.zoomX;
+        camera.scrollY = scrollY + ((point.y - target.y) * this.scale.displayScale.y) / camera.zoomY;
+        this.clampCamera();
+        if (tappable(this.screenFor(spot.x, spot.y))) return;
+      }
+      camera.scrollX = scrollX;
+      camera.scrollY = scrollY;
     }
-    camera.scrollX = scrollX;
-    camera.scrollY = scrollY;
   }
   private auraPoint = { x: 0, y: 0 };
   /** The guide step whose spot the camera last brought into view. */
