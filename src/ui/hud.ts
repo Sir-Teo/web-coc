@@ -728,6 +728,8 @@ type LiveRefs = {
   destructionValue: HTMLElement | null;
   destructionFill: HTMLElement | null;
   battleStars: HTMLElement | null;
+  surrenderDestruction: HTMLElement | null;
+  surrenderStars: HTMLElement | null;
   loot: Map<string, HTMLElement>;
   lootBars: Map<string, HTMLElement>;
 };
@@ -5670,7 +5672,7 @@ export class HUD {
   }
   private surrender() {
     const b = this.model.battle!;
-    return `<div class="modal-body confirm-body"><p class="confirm-line">${icon('TriangleAlert', 34)} You are at <b>${b.destruction}% destruction</b> with <b>${b.stars} ${b.stars === 1 ? 'star' : 'stars'}</b>. ${b.practice ? 'Ending now records this practice result without spending your army.' : 'Ending now keeps that result and any loot already taken.'}</p><div class="confirm-actions">${button('close', 'Keep fighting', 'game-btn stone')}${button('end', `${icon('Flag', 18)} End battle`, 'game-btn red')}</div></div>`;
+    return `<div class="modal-body confirm-body"><p class="confirm-line">${icon('TriangleAlert', 34)}<span>You are at <b data-surrender-destruction></b> with <b data-surrender-stars></b>. ${b.practice ? 'Ending now records this practice result without spending your army.' : 'Ending now keeps that result and any loot already taken.'}</span></p><div class="confirm-actions">${button('close', 'Keep fighting', 'game-btn stone')}${button('end', `${icon('Flag', 18)} End battle`, 'game-btn red')}</div></div>`;
   }
   private xbowModeOptions(b: Building) {
     return `<div class="xbow-mode-options" role="group" aria-label="X-Bow targeting">${(
@@ -6322,6 +6324,8 @@ export class HUD {
       destructionValue: one('#destruction-value'),
       destructionFill: one('#destruction-fill'),
       battleStars: one('#battle-stars'),
+      surrenderDestruction: one('[data-surrender-destruction]'),
+      surrenderStars: one('[data-surrender-stars]'),
       loot,
       lootBars,
     };
@@ -6584,6 +6588,10 @@ export class HUD {
         timedBattle(b) ? clock(b.started ? BATTLE_SECONDS - b.elapsed : b.prep) : '∞',
       );
       setText(refs.destructionValue, `${b.destruction}%`);
+      if (refs.surrenderDestruction) {
+        setText(refs.surrenderDestruction, `${b.destruction}% destruction`);
+        setText(refs.surrenderStars, `${b.stars} ${b.stars === 1 ? 'star' : 'stars'}`);
+      }
       const fill = refs.destructionFill;
       if (fill) {
         const next = fillScale(b.destruction);
