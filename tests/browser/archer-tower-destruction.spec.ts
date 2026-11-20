@@ -93,3 +93,44 @@ test('native tower destruction replaces generic effects and retires into the rui
   });
   await page.screenshot({ path: `output/playtest/archer-tower-destruction-${browserName}.png` });
 });
+
+test('Archer Tower construction and ruins draw when resident artwork is unavailable', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  const samples = await page.evaluate(async () => {
+    const { scene } = window.__game;
+    const { archerTowerBattle } = await import('/tests/fixtures/archer-tower-battle.ts');
+    const { iso } = await import('/src/game/scene.ts');
+    const renderer = scene.villageArcherTowers;
+    await renderer.prefetchLevels([1, 10]);
+    scene.paused = true;
+    renderer.residents.has = () => false;
+    return [1, 10].map((level) => {
+      const model = archerTowerBattle(level);
+      const tower = model.battle.buildings.find((b) => b.kind === 'archertower');
+      scene.model = model;
+      const sample = () => {
+        scene.sync();
+        renderer.render([tower], model.battle.elapsed, iso, model.battle.elapsed, false, model.battle);
+        const view = renderer.views.get(tower.id);
+        return {
+          body: !!view?.body.objects.length,
+          resident: !!view?.resident.objects.length,
+          proxyAlpha: scene.sprites.get(tower.id).alpha,
+        };
+      };
+      const ready = sample();
+      tower.constructing = true;
+      const constructing = sample();
+      tower.constructing = false;
+      tower.hp = 0;
+      const ruin = sample();
+      return { ready, constructing, ruin };
+    });
+  });
+  expect(samples).toEqual(Array(2).fill({
+    ready: { body: false, resident: false, proxyAlpha: 1 },
+    constructing: { body: true, resident: false, proxyAlpha: 0 },
+    ruin: { body: true, resident: false, proxyAlpha: 0 },
+  }));
+});

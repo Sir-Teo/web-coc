@@ -220,3 +220,11 @@ Campaign conversion now accepts all 21 captured Archer Tower tiers, backed by th
 The campaign test converts every tier without clamping, starts a campaign, exports its replay, validates the saved raid log, imports it independently, and verifies original HP/tier retention. It rejects malformed tier 22 and checks that version-41 validation does not admit the new tiers. Midnight Oil's resolved Archer Tower level-15 blocker is removed; its Inferno Tower blocker remains, so the village is not prematurely enabled.
 
 Complete natural level-15 and level-21 battles now join the export/import, backward-seek and home-isolation tests. Chromium and WebKit match Node at every complete state for both scenarios (878 and 900 states). Production build passes. The broad unit run passed 1,512 tests and found one stale Midnight Oil blocker assertion; that assertion was corrected, and all four focused campaign/Midnight Oil tests pass. Existing frozen replay evidence was unchanged and passed in the broad run. No new visual assets or projection changes were introduced here.
+
+## Construction and ruin with a missing resident page
+
+The retained construction and ruin compositions have no resident layer. The
+world renderer now draws these states as soon as the tower's body pages are
+ready. Ready and upgrading towers still wait for both sets of pages before
+replacing their fallback. The combat clock, attack pose, projectile and impact
+bindings are unchanged.

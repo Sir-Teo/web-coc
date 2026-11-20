@@ -58,7 +58,7 @@ for (const part of ['body', 'resident'])
           const { model, scene } = window.__game;
           const tower = model.buildings.find((building) => building.id === id);
           return {
-            native: scene.villageArcherTowers.drawsLevel(tower.level),
+            native: scene.villageArcherTowers.drawsBuilding(tower),
             alpha: scene.sprites.get(id)?.alpha,
           };
         }, id),
@@ -78,7 +78,7 @@ for (const part of ['body', 'resident'])
             const { model, scene } = window.__game;
             const tower = model.buildings.find((building) => building.id === id);
             return {
-              native: scene.villageArcherTowers.drawsLevel(tower.level),
+              native: scene.villageArcherTowers.drawsBuilding(tower),
               alpha: scene.sprites.get(id)?.alpha,
               visible: scene.children.list.some(
                 (object) =>

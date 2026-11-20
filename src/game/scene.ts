@@ -3712,7 +3712,7 @@ export class VillageScene extends Phaser.Scene {
     if (
       b.kind === 'archertower' &&
       (!this.model.battle || this.model.battle.nativeArcherTowers) &&
-      this.villageArcherTowers.drawsLevel(b.level)
+      this.villageArcherTowers.drawsBuilding(b)
     )
       im.setAlpha(0);
     this.syncBubble(b, p, im);

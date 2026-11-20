@@ -103,7 +103,7 @@ export class VillageArcherTowers {
   ghost?: { body: NativeSceneView; resident: NativeSceneView };
   /** Draws the placement preview natively; false when its level's pages are not in yet. */
   preview(building: Building | undefined, x = 0, y = 0, valid = true) {
-    if (!building || !this.drawsLevel(building.level)) {
+    if (!building || !this.drawsBuilding(building)) {
       this.ghost?.body.destroy();
       this.ghost?.resident.destroy();
       this.ghost = undefined;
@@ -152,9 +152,10 @@ export class VillageArcherTowers {
     return this.pages.revision + this.residents.revision;
   }
   /** Whether a tower of this level draws natively now; missing pages start loading. */
-  drawsLevel(level: number) {
+  drawsBuilding({ level, hp, constructing }: Building) {
     const body = this.pages.has(level);
-    return this.residents.has(level) && body;
+    // The source construction and ruin compositions have no roof resident.
+    return (hp <= 0 || constructing || this.residents.has(level)) && body;
   }
   /** Loads these levels' pages now (a new battle's towers while scouting); resolves when in. */
   prefetchLevels(levels: Iterable<number>) {
@@ -204,7 +205,7 @@ export class VillageArcherTowers {
     const wanted = new Set<number>();
     for (const b of buildings) {
       // Until its level's pages arrive, the scene shows the tower's fallback sprite.
-      if (b.kind !== 'archertower' || !this.drawsLevel(b.level)) continue;
+      if (b.kind !== 'archertower' || !this.drawsBuilding(b)) continue;
       wanted.add(b.id);
       let pair = this.views.get(b.id);
       if (!pair)
