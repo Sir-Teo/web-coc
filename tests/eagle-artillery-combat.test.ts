@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { makeBuilding, type Battle, type Building, type Unit } from '../src/game/model';
+import { GameModel, makeBuilding, type Battle, type Building, type Unit } from '../src/game/model';
 import { REPLAY_VERSION, replayBattle } from '../src/game/replay';
 import { SPELLS, TROOPS, TROOP_KEYS, SPELL_KEYS } from '../src/game/data';
 import { stepLateCampaign } from '../src/game/late-campaign';
@@ -293,3 +293,42 @@ it('counts each fielded roster hero once toward the campaign Eagle wake threshol
     expect(eagleArtilleryDeployedHousing(battle)).toBe(legacy ? 150 : 200);
   }
 });
+
+it.each([[264, true], [REPLAY_VERSION, false]] as const)(
+  'counts first deployments through Recall and siege at the threshold (replay %s, legacy %s)',
+  (version, legacy) => {
+    const setup = isolatedSetup(65, artillery(), { pekka: 7, giant: 2, archer: 4, wallwrecker: 1 }, { recall: 1 });
+    const model = new GameModel();
+    model['recordBattles'] = false;
+    model.state.army = { ...setup.army };
+    model.state.spells = { ...setup.spells };
+    model.state.nextId = setup.nextId;
+    const b = model.battle = replayBattle(setup, version);
+    const step = (seconds: number) => {
+      for (let at = 0; at < seconds - 1e-9; at += 0.05) model.step(0.05);
+    };
+    for (const [kind, count] of [['pekka', 7], ['giant', 2], ['archer', 4]] as const) {
+      model.activeTroop = kind;
+      for (let i = 0; i < count; i++) expect(model.deploy(35, 22)).toBe(true);
+    }
+    expect(eagleArtilleryDeployedHousing(b)).toBe(189);
+    model.activeSpell = 'recall';
+    expect(model.castSpell(35, 22)).toBe(true);
+    step(1);
+    const returned = b.remaining.archer + b.remaining.giant * 5 + b.remaining.pekka * 25;
+    expect(returned).toBeGreaterThan(0);
+    expect(eagleArtilleryDeployedHousing(b)).toBe(legacy ? 199 - returned : 199);
+    const redeploy = (['archer', 'giant', 'pekka'] as const).find((kind) => b.remaining[kind])!;
+    model.activeTroop = redeploy;
+    expect(model.deploy(35, 22)).toBe(true);
+    const stillRecalled = returned - TROOPS[redeploy].space;
+    expect(stillRecalled).toBeGreaterThan(0);
+    expect(eagleArtilleryDeployedHousing(b)).toBe(legacy ? 199 - stillRecalled : 199);
+    expect(tower(b).awakeAt).toBeUndefined();
+    model.activeTroop = 'wallwrecker';
+    expect(model.deploy(35, 22)).toBe(true);
+    step(2);
+    expect(eagleArtilleryDeployedHousing(b)).toBe(legacy ? 200 - stillRecalled : 200);
+    expect(tower(b).awakeAt !== undefined).toBe(!legacy);
+  },
+);

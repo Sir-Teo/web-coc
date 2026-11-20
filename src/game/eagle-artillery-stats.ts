@@ -73,13 +73,16 @@ export const EAGLE_ARTILLERY_HOUSING = housing;
 export function eagleArtilleryDeployedHousing(battle: Battle) {
   const g = housing.globals;
   let total = 0;
-  for (const kind of TROOP_KEYS)
+  for (const kind of TROOP_KEYS) {
+    // Recall increases remaining, but the returned units have already counted once.
+    const recalled = battle.nativeEagleRecallHousing ? (battle.recalledHp?.[kind]?.length ?? 0) : 0;
     total += Math.trunc(
       (g.UNIT_HOUSING_COST_MULTIPLIER *
         eagleArtilleryTroopHousing(kind) *
-        (battle.carriedArmy[kind] - battle.remaining[kind])) /
+        (battle.carriedArmy[kind] - battle.remaining[kind] + recalled)) /
         100,
     );
+  }
   const heroSpace = Math.trunc((g.HERO_HOUSING_COST_MULTIPLIER * housing.hero.housingSpace) / 100);
   if (battle.nativeEagleHeroHousing && battle.nativeHeroes) {
     for (const hero of battle.nativeHeroes) if (hero.deployed) total += heroSpace;

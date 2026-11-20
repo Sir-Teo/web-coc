@@ -956,6 +956,8 @@ export interface Battle {
   nativeJumpWallBreakerTargets?: true;
   /** Version 264: campaign Eagle Artillery counts each deployed roster hero once. */
   nativeEagleHeroHousing?: true;
+  /** Version 265: recalled troops keep their campaign Eagle deployment weight. */
+  nativeEagleRecallHousing?: true;
   /** Version 100: native healing resolves through source projectile travel and chain hops. */
   nativeHealingProjectiles?: true;
   nativeHealingTotem?: true;
