@@ -212,6 +212,7 @@ import {
   formatTime,
   BATTLE_SECONDS,
   DEPLOYMENT_BOUNDARY_WARNING,
+  SPELL_BOUNDARY_WARNING,
   timedBattle,
   EPIC_ITEM_GEMS,
   raidHeroes,
@@ -1131,7 +1132,8 @@ export class HUD {
     }, signal);
     model.onToast = (m) => this.toast(m);
     model.onBattlePlacement = () => {
-      if (this.root.querySelector('#toast.show')?.textContent === DEPLOYMENT_BOUNDARY_WARNING)
+      const warning = this.root.querySelector('#toast.show')?.textContent;
+      if (warning === DEPLOYMENT_BOUNDARY_WARNING || warning === SPELL_BOUNDARY_WARNING)
         this.toast('');
     };
     scene.onSelect = () => {
@@ -4027,7 +4029,7 @@ export class HUD {
       b = m.battle!;
     if (m.activeHeroKind) return this.nativeDeploymentHint(m.activeHeroKind);
     if (m.activeHero) return this.kingDeploymentHint();
-    if (m.activeSpell) return `Tap anywhere to cast ${SPELLS[m.activeSpell].name}`;
+    if (m.activeSpell) return `Tap the battlefield to cast ${SPELLS[m.activeSpell].name}`;
     if (!m.troopSelected) return 'Select a troop, hero or spell';
     if (isSplitHog(m.activeTroop))
       return `${TROOPS[m.activeTroop].name} · ${m.troopRemaining(m.activeTroop) ? 'Recalled · Tap, hold or drag to redeploy' : 'All redeployed'}`;

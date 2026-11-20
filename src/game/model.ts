@@ -1532,6 +1532,7 @@ export type FX = {
 export const PREP_SECONDS = 30;
 export const BATTLE_SECONDS = 180;
 export const DEPLOYMENT_BOUNDARY_WARNING = 'Deploy on the grass outside the red boundary.';
+export const SPELL_BOUNDARY_WARNING = 'Tap inside the battlefield to cast.';
 /** The opening Goblin raid: how many goblins, and the step its recording advances by. */
 export const GOBLIN_RAID_SIZE = 10;
 const GOBLIN_RAID_TICK = 0.05;
@@ -6704,8 +6705,10 @@ export class GameModel {
       y < 0 ||
       x > battleMapSize(b) ||
       y > battleMapSize(b)
-    )
+    ) {
+      this.notify(SPELL_BOUNDARY_WARNING);
       return false;
+    }
     this.recordAction({
       type: 'spell',
       kind: k,
