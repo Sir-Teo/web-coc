@@ -93,6 +93,7 @@ test('the Battle Log can retry a fixed-army Practice level with empty camps', as
   await boot(page, 4);
   await page.locator(`.campaign-list [data-action="attack:${GIANT_SMASH}"]`).tap();
   await expect(page.locator('.practice-guide')).toBeVisible();
+  await page.waitForFunction(() => !window.__game.scene.scoutingArtNotice());
   const point = await page.evaluate(() => {
     const { model, scene } = window.__game;
     const { x, y } = model.practiceGuide!.spot!;
@@ -361,7 +362,7 @@ test('full-map guide reaches the original Queen deployment beyond the old board 
     return { at: step.at, spot: m.practiceGuide!.spot, size: m.battle!.boardSize };
   });
   expect(source).toEqual({ at: { x: 51, y: 29 }, spot: { x: 51, y: 29 }, size: 52 });
-  await page.waitForTimeout(500);
+  await page.waitForFunction(() => !window.__game.scene.scoutingArtNotice());
   const point = await page.evaluate(() => window.__game.scene.screenFor(51, 29));
   expect(point.x).toBeGreaterThan(0);
   expect(point.x).toBeLessThan(390);

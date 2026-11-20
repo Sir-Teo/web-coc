@@ -58,14 +58,14 @@ test('selected troop and spell hints follow actual stock without replacing their
   ).toBe(true);
   const heal = page.locator('[data-action="spell:heal"]');
   await heal.click();
-  await expect(hint).toContainText('Tap anywhere to cast');
+  await expect(hint).toHaveText('Tap the battlefield to cast Healing Spell');
   expect(await page.evaluate(() => window.__game.model.castSpell(8, 8))).toBe(true);
   await expect(heal.locator('.troop-count')).toHaveText('x1');
   await page.evaluate(() => {
     window.__deploymentCard = document.querySelector('[data-action="spell:heal"]');
   });
   expect(await page.evaluate(() => window.__game.model.castSpell(8, 8))).toBe(true);
-  await expect(hint).toContainText('Tap anywhere to cast Rage');
+  await expect(hint).toHaveText('Tap the battlefield to cast Rage Spell');
   await expect(heal).toBeDisabled();
   expect(
     await page.evaluate(
