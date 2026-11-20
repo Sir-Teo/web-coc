@@ -77,6 +77,7 @@ import {
   STARTER_END_TOWN_HALL,
   STARTER_FIRST_TOWN_HALL,
   STARTER_TIERS,
+  STARTER_TIMED_STARS_SECONDS,
   type StarterChallenge,
   type StarterEvent,
   type StarterState,
@@ -1418,6 +1419,8 @@ export interface Battle {
   nativeSubtiles?: true;
   hero?: BattleHero;
   kingQuakes?: KingQuake[];
+  /** Peak live Ladder stars before the Starter Challenge deadline. */
+  timedStarterStars?: number;
   elapsed: number;
   /** Practice countdown. Campaign scouting has no deadline. */
   prep: number;
@@ -2592,6 +2595,7 @@ export class GameModel {
         subject: SOURCE_NAME[kind],
       });
     this.starterEvent({ type: 'GetHomeBattleStars', amount: b.stars });
+    this.starterEvent({ type: 'GetHomeStarsUnderTimeLimit', amount: b.timedStarterStars ?? 0 });
     this.starterEvent({ type: 'WinStarsUsingTroop', amount: b.stars, deployed });
     this.starterEvent({
       type: 'DeployTroopHousingSpace',
@@ -7955,6 +7959,14 @@ export class GameModel {
     }
     b.destruction = total ? Math.floor((dead / total) * 100) : 100;
     b.stars = Number(b.destruction >= 50) + Number(townHallDead) + Number(b.destruction === 100);
+    if (
+      this.recordBattles &&
+      b.ladder &&
+      b.started &&
+      b.elapsed < STARTER_TIMED_STARS_SECONDS &&
+      b.stars > (b.timedStarterStars ?? 0)
+    )
+      b.timedStarterStars = b.stars;
     if (revealTeslas(b, this.onEffect, (u) => this.teslaDiverts(b, u))) this.changed();
     if (b.practice) {
       b.loot = { gold: 0, elixir: 0 };

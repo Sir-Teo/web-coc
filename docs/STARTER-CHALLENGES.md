@@ -28,10 +28,7 @@ Each Town Hall reveals its challenges, and revealed challenges never expire. A c
 | Loot in a single battle                                                 | The best single raid. The client asks for a Multiplayer Battle, but ladder matches carry no loot here, so a campaign raid counts. |
 | Multiplayer stars, ruins, deployed housing, stars with a troop          | Ladder matches, this game's stand-in for Multiplayer Battles (as for the achievements).                                           |
 
-Five challenges cannot be completed here, and the panel says why:
-
-- the clan ones (join a clan, request reinforcements, donate troops and spells);
-- Speedy Stars, which needs stars earned within a battle's first minute (battles keep no star times).
+The four clan challenges remain unavailable (join a clan, request reinforcements, donate troops and spells). Speedy Stars counts stars earned in live Ladder matches before 60 seconds of combat simulation time, with progress awarded at settlement. Scouting, Campaign, Practice, and existing recordings give no Speedy Stars progress.
 
 The two Practice Mode ones ("Win 3x/9x total Stars from Practice Levels") count the best stars on each [Practice level](PRACTICE-MODE.md).
 

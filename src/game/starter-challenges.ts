@@ -16,6 +16,9 @@ export type StarterTier = (typeof catalog.tiers)[number] & {
   reward: { kind: 'gold' | 'elixir' | 'gems' | 'item'; item?: string; amount: number };
 };
 export const STARTER_CHALLENGES = catalog.challenges as StarterChallenge[];
+export const STARTER_TIMED_STARS_SECONDS = STARTER_CHALLENGES.find(
+  (c) => c.type === 'GetHomeStarsUnderTimeLimit',
+)!.quantity2!;
 export const STARTER_TIERS = catalog.tiers as StarterTier[];
 export const STARTER_TITLE = catalog.title;
 export const STARTER_END_TEXT = catalog.endText;
@@ -24,16 +27,12 @@ export const STARTER_FIRST_TOWN_HALL = Math.min(...STARTER_CHALLENGES.map((c) =>
 export const STARTER_END_TOWN_HALL = catalog.endTownHall;
 export const STARTER_MAX_POINTS = STARTER_TIERS.at(-1)!.score;
 
-/**
- * Task types this offline village cannot count: clans and their donations, and stars timed
- * within a battle's first minute (battles keep no star times).
- */
+/** Task types this offline village cannot count: clans and their donations. */
 const UNAVAILABLE: Record<string, string> = {
   HaveClan: 'Needs a clan',
   RequestDonations: 'Needs a clan',
   DonateTroopCapacity: 'Needs a clan',
   DonateSpellCapacity: 'Needs a clan',
-  GetHomeStarsUnderTimeLimit: 'Battles keep no star times',
 };
 /** Why a challenge cannot be completed here, or undefined when it can. */
 export const challengeUnavailable = (c: StarterChallenge) => UNAVAILABLE[c.type];

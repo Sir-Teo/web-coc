@@ -53,7 +53,6 @@ describe('Starter Challenges', () => {
       'Social_JoinClan',
       'Social_RequestTroops_TH3',
       'TH4_Home_DonateTroops',
-      'TH4_Win_StarsUnderTimeLimit',
       'TH5_Home_DonateSpells',
     ]);
   });
@@ -132,6 +131,76 @@ describe('Starter Challenges', () => {
     // Three stars with 15 Archers: the Archer challenge counts them.
     expect(progress(m, 'TH2_Win_StarsUsingArchers')).toBe(3);
     expect(save(m)).toBe(true);
+  });
+
+  it('settles only Ladder stars earned before 60 combat seconds and pays the tier once', () => {
+    const m = village(4);
+    const id = 'TH4_Win_StarsUnderTimeLimit';
+    m.state.starter = { counts: { [id]: 9 }, claimed: [] };
+    // An already completed building objective puts the first reward within reach.
+    m.state.buildings.find((b) => b.kind === 'goldstorage')!.level = 2;
+    m.state.army = { ...emptyArmy(), archer: 15 };
+    m.startLadder();
+    const b = m.battle!;
+    b.started = true;
+    b.elapsed = 59.95;
+    const hall = b.buildings.find((building) => building.kind === 'townhall')!;
+    m.damage(hall, hall.hp);
+    m.refreshBattleScore();
+    expect(b.stars).toBe(1);
+    expect(progress(m, id)).toBe(9);
+    const checkpoint = m.settledState();
+    expect(checkpoint.starter?.counts[id]).toBe(10);
+    expect(progress(m, id)).toBe(9);
+    b.elapsed = 61;
+    m.finishBattle();
+    m.finishBattle();
+    expect(progress(m, id)).toBe(10);
+    expect(m.state.raidLog).toHaveLength(1);
+    m.returnHome();
+    const elixir = m.state.elixir;
+    expect(m.claimStarterTier(0)).toBe(true);
+    const reloaded = new GameModel(structuredClone(m.state), m.clock);
+    expect(progress(reloaded, id)).toBe(10);
+    expect(reloaded.claimStarterTier(0)).toBe(false);
+    expect(reloaded.state.elixir).toBe(elixir + 2000);
+  });
+
+  it('does not add stars earned late in a Ladder match with an early star', () => {
+    const m = village(4);
+    m.state.army = { ...emptyArmy(), archer: 15 };
+    m.startLadder();
+    const b = m.battle!;
+    b.started = true;
+    b.elapsed = 30;
+    const hall = b.buildings.find((building) => building.kind === 'townhall')!;
+    m.damage(hall, hall.hp);
+    m.refreshBattleScore();
+    expect(b.stars).toBe(1);
+    b.elapsed = 70;
+    for (const building of b.buildings) m.damage(building, building.hp);
+    m.finishBattle();
+    expect(b.stars).toBe(3);
+    expect(progress(m, 'TH4_Win_StarsUnderTimeLimit')).toBe(1);
+  });
+
+  it.each([
+    ['Ladder at the cutoff', 60, 'ladder'],
+    ['Ladder after the cutoff', 60.05, 'ladder'],
+    ['Campaign before the cutoff', 5, 'campaign'],
+    ['Practice before the cutoff', 5, 'practice'],
+  ] as const)('does not count Speedy Stars in %s', (_name, elapsed, mode) => {
+    const m = village(4);
+    m.state.army = { ...emptyArmy(), archer: 15 };
+    if (mode === 'ladder') m.startLadder();
+    else m.startBattle(0, mode === 'practice');
+    const b = m.battle!;
+    b.started = true;
+    b.elapsed = elapsed;
+    for (const building of b.buildings) m.damage(building, building.hp);
+    m.finishBattle();
+    expect(b.stars).toBeGreaterThan(0);
+    expect(progress(m, 'TH4_Win_StarsUnderTimeLimit')).toBe(0);
   });
 
   it('claims tiers once their points are earned, never past full storages', () => {
