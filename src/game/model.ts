@@ -5,7 +5,7 @@ import {
 } from './native-angry-jelly';
 import { stepSpiritFox } from './native-spirit-fox';
 import { prepareSiegeCargo, type SiegeCargoEntry } from './siege-cargo';
-import { nativeGlobal } from './native-data';
+import { nativeGlobal, nativeRow, num } from './native-data';
 import { advanceBoostedHelper } from './helper-potion-timing';
 import { encodeArmy, decodeSharedArmy } from './army-share';
 import { siegeSelfDestructAbility } from './native-siege-release';
@@ -2228,6 +2228,13 @@ export class GameModel {
   get siegeCount() {
     return TROOP_KEYS.filter(isSiege).reduce((n, kind) => n + (this.state.army[kind] ?? 0), 0);
   }
+  get siegeCapacity() {
+    const workshop = facilityLevel(this.state.buildings, 'workshop');
+    return workshop ? num(nativeRow('buildings', 'Siege Workshop', workshop), 'HousingSpaceSiege') : 0;
+  }
+  private siegeCapacityMessage(capacity: number) {
+    return `The siege reserve holds ${capacity} machine${capacity === 1 ? '' : 's'}.`;
+  }
   get armyReady() {
     return this.armySize > 0 || this.siegeCount > 0 || this.heroReady;
   }
@@ -4131,11 +4138,8 @@ export class GameModel {
       return;
     const issue = this.troopTrainingIssue(kind);
     if (issue) return this.notify(issue.message);
-    if (
-      isSiege(kind) &&
-      TROOP_KEYS.filter(isSiege).reduce((n, k) => n + (this.state.army[k] ?? 0), count) > 3
-    )
-      return this.notify('The siege reserve holds three machines.');
+    if (isSiege(kind) && this.siegeCount + count > this.siegeCapacity)
+      return this.notify(this.siegeCapacityMessage(this.siegeCapacity));
     if (
       !isSiege(kind) &&
       this.armySize + this.queuedSize + TROOPS[kind].space * count > this.capacity
@@ -4166,10 +4170,10 @@ export class GameModel {
     this.state.spells[kind] += count;
     this.changed();
   }
-  /** How many more of a troop fit: the camps' housing, or the three-machine siege reserve. */
+  /** How many more of a troop fit: the camps' housing, or the Workshop's siege reserve. */
   troopRoom(kind: TroopKind) {
     if (this.battle || !TROOP_KEYS.includes(kind) || !this.troopUnlocked(kind)) return 0;
-    if (isSiege(kind)) return Math.max(0, 3 - this.siegeCount);
+    if (isSiege(kind)) return Math.max(0, this.siegeCapacity - this.siegeCount);
     return unitsThatFit(this.capacity - this.armySize - this.queuedSize, TROOPS[kind].space);
   }
   /** How many more of a spell fit in spell housing. */
@@ -4241,8 +4245,13 @@ export class GameModel {
   /** Shared validation for preparation controls and atomic composition changes. */
   armyPreparationIssue(army: Army, spells: SpellBook): string | null {
     if (this.battle) return 'Return home before preparing an army.';
-    if (TROOP_KEYS.filter(isSiege).reduce((n, k) => n + (army[k] ?? 0), 0) > 3)
-      return 'The siege reserve holds three machines.';
+    const siege = TROOP_KEYS.filter(isSiege);
+    const capacity = this.siegeCapacity;
+    if (
+      siege.reduce((count, kind) => count + (army[kind] ?? 0), 0) > capacity &&
+      siege.some((kind) => army[kind] > this.state.army[kind])
+    )
+      return this.siegeCapacityMessage(capacity);
     if (armySpace(army) > this.capacity || spellSpace(spells) > this.spellCapacity)
       return 'This army needs more troop or spell housing.';
     const troop = TROOP_KEYS.find((k) => army[k] > this.state.army[k] && !this.troopUnlocked(k));

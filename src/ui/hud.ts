@@ -4839,6 +4839,7 @@ export class HUD {
     const spellSpaceLeft = spellCapacity - m.spellHousing;
     const spellRoomSpace = spellSpaceLeft - m.queuedSpellHousing;
     const siegeCount = m.siegeCount;
+    const siegeCapacity = m.siegeCapacity;
     const overTroops = troopSpace < 0;
     const overSpells = spellRoomSpace < 0;
     const overCapacity = overTroops || overSpells;
@@ -4900,20 +4901,23 @@ export class HUD {
         m.battle || !unlocked
           ? 0
           : siege
-            ? Math.max(0, 3 - siegeCount)
+            ? Math.max(0, siegeCapacity - siegeCount)
             : unitsThatFit(troopSpace, TROOPS[k].space);
-      const blocked = !unlocked || (siege ? siegeCount >= 3 : d.space > troopSpace);
+      const blocked = !unlocked || (siege ? siegeCount >= siegeCapacity : d.space > troopSpace);
       const missingSpace = d.space - troopSpace;
-      const capacityLabel =
-        !siege && missingSpace > 0
+      const capacityLabel = siege
+        ? siegeCount >= siegeCapacity ? 'Reserve full' : null
+        : missingSpace > 0
           ? `${missingSpace} more space${missingSpace === 1 ? '' : 's'}`
           : null;
       const addHint =
         issue?.message ??
         (capacityLabel
-          ? 'Remove troops or upgrade an Army Camp to make room.'
+          ? siege
+            ? 'Remove a Siege Machine or upgrade the Workshop to make room.'
+            : 'Remove troops or upgrade an Army Camp to make room.'
           : 'Hold to keep adding');
-      return `<article class="shop-tile army-tile ${unlocked ? '' : 'army-locked'}" data-army-category="troops"><div class="shop-tile-art"${blocked ? '' : ` data-add="train:${k}" data-repeat`}><img src="${hudAsset(k)}" alt="" draggable="false">${d.flying ? '<span class="air-tag">AIR</span>' : ''}</div><h3>${d.name} ${level > researchLevel ? `<small class="potion-level" title="Power Potion">★${m.troopDisplayLevel(k) + level - researchLevel}</small>` : `<small>★${m.troopDisplayLevel(k)}</small>`}</h3>${button(`troop-info:${k}`, `${icon('Info', 13)} ${direct ? d.role : 'SUMMONER'}`, 'troop-info-button', `aria-label="About ${d.name}"`)}<small class="shop-count">${icon('Heart', 11)} ${d.hp} ${launcher ? `${icon('Sparkles', 11)} ${launcher.count} barrels` : direct ? `${icon('Swords', 11)} ${hit}` : `${icon('Sparkles', 11)} Summons`} ${icon('Users', 11)} ${d.space}</small>${boostStatus}${superOriginal(k) && !unlocked && m.magicItemCount('super-potion') ? button(`super-potion:${k}`, `Boost · Super Potion (${m.magicItemCount('super-potion')})`, 'game-btn blue shop-buy', boostCapacity || !boostRequirementsMet ? 'disabled' : '') : ''}${superOriginal(k) && !unlocked ? button(`boost-super:${k}`, `Boost · ${Number(superLicence(k)?.ResourceCost).toLocaleString()} dark · 3 days`, 'game-btn purple shop-buy', boostCapacity || !boostRequirementsMet ? 'disabled' : '') + `<small>TH${boostTownHall} · ${TROOPS[superOriginal(k)!].name} level ${superMinimum(k)}</small>` : ''}${boostCapacity ? `<small>${html(boostCapacity)}</small>` : ''}${button(`train:${k}`, issue ? `${icon('LockKeyhole', 13)} ${html(issue.label)}` : capacityLabel ?? '+ Add', `game-btn ${blocked ? 'stone' : 'green'} shop-buy`, `${blocked ? 'disabled' : ''} data-repeat title="${html(addHint)}"`)}<span class="army-bulk">${button(`train-five:${k}`, `×5`, 'game-btn stone shop-buy tiny', blocked || siege || d.space * 5 > troopSpace ? 'disabled' : '')}${fill(`train-fill:${k}`, room, `Fill: add ${room} ${d.name}${siege ? '' : `, ${room * d.space} housing space${room * d.space === 1 ? '' : 's'}`}`)}</span><span class="army-bulk">${button(`remove-troop:${k}`, `${icon('Minus', 12)} Remove`, 'army-remove', `aria-label="Remove one ${d.name}" data-repeat ${m.state.army[k] ? '' : 'disabled'}`)}${button(`remove-all-troop:${k}`, 'All', 'army-remove', `aria-label="Remove every ${d.name}" ${m.state.army[k] > 1 ? '' : 'disabled'}`)}</span><small class="shop-note"><b data-army-count="troop:${k}">${m.state.army[k]}</b> ready · ${siege ? `Siege reserve ${siegeCount}/3 · one per battle` : `${d.space} space${d.space === 1 ? '' : 's'}`}</small></article>`;
+      return `<article class="shop-tile army-tile ${unlocked ? '' : 'army-locked'}" data-army-category="troops"><div class="shop-tile-art"${blocked ? '' : ` data-add="train:${k}" data-repeat`}><img src="${hudAsset(k)}" alt="" draggable="false">${d.flying ? '<span class="air-tag">AIR</span>' : ''}</div><h3>${d.name} ${level > researchLevel ? `<small class="potion-level" title="Power Potion">★${m.troopDisplayLevel(k) + level - researchLevel}</small>` : `<small>★${m.troopDisplayLevel(k)}</small>`}</h3>${button(`troop-info:${k}`, `${icon('Info', 13)} ${direct ? d.role : 'SUMMONER'}`, 'troop-info-button', `aria-label="About ${d.name}"`)}<small class="shop-count">${icon('Heart', 11)} ${d.hp} ${launcher ? `${icon('Sparkles', 11)} ${launcher.count} barrels` : direct ? `${icon('Swords', 11)} ${hit}` : `${icon('Sparkles', 11)} Summons`} ${icon('Users', 11)} ${d.space}</small>${boostStatus}${superOriginal(k) && !unlocked && m.magicItemCount('super-potion') ? button(`super-potion:${k}`, `Boost · Super Potion (${m.magicItemCount('super-potion')})`, 'game-btn blue shop-buy', boostCapacity || !boostRequirementsMet ? 'disabled' : '') : ''}${superOriginal(k) && !unlocked ? button(`boost-super:${k}`, `Boost · ${Number(superLicence(k)?.ResourceCost).toLocaleString()} dark · 3 days`, 'game-btn purple shop-buy', boostCapacity || !boostRequirementsMet ? 'disabled' : '') + `<small>TH${boostTownHall} · ${TROOPS[superOriginal(k)!].name} level ${superMinimum(k)}</small>` : ''}${boostCapacity ? `<small>${html(boostCapacity)}</small>` : ''}${button(`train:${k}`, issue ? `${icon('LockKeyhole', 13)} ${html(issue.label)}` : capacityLabel ?? '+ Add', `game-btn ${blocked ? 'stone' : 'green'} shop-buy`, `${blocked ? 'disabled' : ''} data-repeat title="${html(addHint)}"`)}<span class="army-bulk">${button(`train-five:${k}`, `×5`, 'game-btn stone shop-buy tiny', blocked || siege || d.space * 5 > troopSpace ? 'disabled' : '')}${fill(`train-fill:${k}`, room, `Fill: add ${room} ${d.name}${siege ? '' : `, ${room * d.space} housing space${room * d.space === 1 ? '' : 's'}`}`)}</span><span class="army-bulk">${button(`remove-troop:${k}`, `${icon('Minus', 12)} Remove`, 'army-remove', `aria-label="Remove one ${d.name}" data-repeat ${m.state.army[k] ? '' : 'disabled'}`)}${button(`remove-all-troop:${k}`, 'All', 'army-remove', `aria-label="Remove every ${d.name}" ${m.state.army[k] > 1 ? '' : 'disabled'}`)}</span><small class="shop-note"><b data-army-count="troop:${k}">${m.state.army[k]}</b> ready · ${siege ? `Siege reserve ${siegeCount}/${siegeCapacity} · one per battle` : `${d.space} space${d.space === 1 ? '' : 's'}`}</small></article>`;
     };
     const spellTile = (k: SpellKind) => {
       const level = m.armySpellLevel(k),

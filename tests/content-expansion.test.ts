@@ -218,3 +218,33 @@ describe('equipment behaviors', () => {
     expect(m.battle!.buildings[1].hp).toBeLessThan(m.battle!.buildings[1].maxHp);
   });
 });
+
+it('uses completed Workshop capacity for direct and preset Siege Machine preparation', () => {
+  const m = new GameModel();
+  m.clearArmy();
+  const workshop = makeBuilding(90, 'workshop', 30, 30, 1);
+  m.state.buildings.push(workshop);
+  m.train('wallwrecker');
+  m.train('wallwrecker');
+  expect(m.state.army.wallwrecker).toBe(1);
+  expect(m.troopRoom('wallwrecker')).toBe(0);
+  expect(m.armyPreparationIssue({ ...m.state.army, wallwrecker: 2 }, m.state.spells)).toContain('1 machine');
+  workshop.level = 2;
+  expect(m.troopRoom('wallwrecker')).toBe(1);
+  m.train('battleblimp');
+  expect(m.state.army.battleblimp).toBe(1);
+  expect(m.troopRoom('battleblimp')).toBe(0);
+});
+
+it('keeps legacy Siege reserves available while blocking additions beyond Workshop capacity', () => {
+  const m = new GameModel();
+  m.clearArmy();
+  m.state.buildings.push(makeBuilding(90, 'workshop', 30, 30, 1));
+  m.state.army.wallwrecker = 2;
+  expect(m.armyPreparationIssue({ ...m.state.army }, m.state.spells)).toBeNull();
+  m.train('wallwrecker');
+  expect(m.state.army.wallwrecker).toBe(2);
+  m.startBattle(0, true);
+  m.activeTroop = 'wallwrecker';
+  expect(m.deploy(2, 2)).toBe(true);
+});
