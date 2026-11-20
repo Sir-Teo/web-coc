@@ -1,6 +1,11 @@
 import { expect, it } from 'vitest';
 import fs from 'node:fs';
 import { createHash } from 'node:crypto';
+import obstacleCatalog from '../reference/obstacles/catalog.json';
+import decorationCatalog from '../reference/decorations/catalog.json';
+import { nativeSceneryArt } from '../src/game/campaign-scenery';
+import { nativeScenery, NATIVE_SCENERY } from '../src/game/native-campaign';
+import { BUILD_MIN } from '../src/game/grid';
 
 const root = new URL('../reference/campaign/', import.meta.url);
 const read = (name: string) => fs.readFileSync(new URL(name, root), 'utf8');
@@ -64,5 +69,22 @@ it('detects reference drift offline against the committed source manifest', () =
   expect(Object.keys(provenance.sources)).toHaveLength(114);
   for (const [file, sha] of Object.entries(provenance.outputs)) {
     expect(createHash('sha256').update(read(file)).digest('hex'), file).toBe(sha);
+  }
+});
+
+it('binds every Goblin Forest prop to its retained export without changing the layout', () => {
+  const forest = layouts[1];
+  expect(forest.buildings).toHaveLength(17);
+  expect(forest.traps).toEqual([]);
+  const source = [...forest.obstacles, ...forest.decos];
+  expect(source).toHaveLength(13);
+  expect(nativeScenery(1)).toEqual(
+    source.map(({ data, x, y }: {data: number; x: number; y: number}) => ({ data, x: x + BUILD_MIN, y: y + BUILD_MIN })),
+  );
+  const portraits = [...obstacleCatalog.obstacles, ...decorationCatalog.decorations];
+  for (const { data } of source) {
+    const retained = portraits.find((p) => p.export === NATIVE_SCENERY[data].export);
+    expect(retained?.size).toBe(NATIVE_SCENERY[data].size);
+    expect(nativeSceneryArt(data)?.path).toBe(`/${retained?.art.path}`);
   }
 });

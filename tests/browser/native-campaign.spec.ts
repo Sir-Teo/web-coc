@@ -169,6 +169,10 @@ test('native scenery and Goblin Huts survive large-map and home transitions', as
       };
     }),
   ).toEqual({ texture: 'goblin-hut-native', hp: 250, homeFlags: false });
+  await expect.poll(() => page.evaluate(() => {
+    const props = window.__game.scene.campaignScenery;
+    return props.filter((im) => im.visible && /^(obstacle|decoration)-/.test(im.texture.key)).length;
+  })).toBe(13);
   await page.screenshot({ path: `output/playtest/native-forest-${browserName}.png` });
   await page.locator('[data-action="home"]').click();
   await expect.poll(() => page.evaluate(() => window.__game.scene.campaignScenery.length)).toBe(0);

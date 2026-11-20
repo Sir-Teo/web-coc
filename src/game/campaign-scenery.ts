@@ -1,4 +1,38 @@
 import { NATIVE_SCENERY } from './native-campaign';
+import { DECORATIONS, DECORATION_GROUND, DECORATION_SCALE } from './decorations';
+import { OBSTACLES } from './obstacles';
+
+const OBSTACLE_PORTRAITS: Partial<Record<number, string>> = {
+  8000000: 'pine-tree',
+  8000018: 'sharp-stone-3',
+  8000019: 'sharp-stone-4',
+  8000020: 'sharp-stone-5',
+};
+const DECORATION_PORTRAITS: Partial<Record<number, string>> = {
+  18000001: 'torch',
+  18000007: 'windmeter',
+};
+
+/** Matched retained exports. Registration follows the corresponding Home Village prop. */
+export function nativeSceneryArt(data: number) {
+  const decoration = DECORATION_PORTRAITS[data];
+  if (decoration) {
+    const { texture, art } = DECORATIONS[decoration];
+    return {
+      texture,
+      path: '/' + art.path,
+      width: art.width * DECORATION_SCALE,
+      height: art.height * DECORATION_SCALE,
+      originX: art.originX,
+      originY: art.originY + DECORATION_GROUND / art.height,
+    };
+  }
+  const obstacle = OBSTACLE_PORTRAITS[data];
+  if (obstacle) {
+    const { texture, art } = OBSTACLES[obstacle];
+    return { ...art, texture, path: '/' + art.path, originY: 0.88 };
+  }
+}
 export const SCENERY_SPRITES = [
   'pine',
   'rock',

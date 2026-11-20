@@ -145,7 +145,7 @@ import { preloadGoblinBuildings, GoblinBuildingPresentation } from './goblin-bui
 import { isGoblinBuilding } from './goblin-building-art';
 import { preloadDarkStorages, DarkStoragePresentation } from './dark-storage-scene';
 import { DARK_STORAGE_ART } from './dark-storage-art';
-import { sceneryAsset, sceneryArt, type ScenerySprite } from './campaign-scenery';
+import { nativeSceneryArt, sceneryAsset, sceneryArt, type ScenerySprite } from './campaign-scenery';
 import { NATIVE_SCENERY } from './native-campaign';
 import { npcArt } from './npc-buildings';
 import { PUMPKIN_ART, pumpkinFrame } from './pumpkin-bomb';
@@ -3876,11 +3876,22 @@ export class VillageScene extends Phaser.Scene {
     this.drawRuinGround();
     this.syncCount++;
   }
-  /** Shows each campaign scenery sprite whose texture is in; the rest start loading. */
+  /** Prefer retained props, with the previous artwork available while loading or offline. */
   private showScenery() {
     for (const im of this.campaignScenery) {
+      const data = im.getData('nativeScenery');
+      const native = nativeSceneryArt(data);
+      if (native && this.deferredArt.has(native.texture, native.path)) {
+        if (im.texture.key !== native.texture) {
+          im.setTexture(native.texture)
+            .setOrigin(native.originX, native.originY)
+            .setDisplaySize(native.width, native.height)
+            .setVisible(true);
+        }
+        continue;
+      }
       if (im.visible) continue;
-      const art = sceneryArt(im.getData('nativeScenery'));
+      const art = sceneryArt(data);
       if (
         !this.deferredArt.has(
           art.texture,

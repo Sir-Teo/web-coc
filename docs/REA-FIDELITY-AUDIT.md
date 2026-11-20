@@ -132,6 +132,29 @@ actually displayed.
 [Font source records](../reference/fonts/README.md) ·
 [Standalone roster exports](../reference/full-client/roster.json)
 
+## Goblin Forest battlefield
+
+The pinned stage-2 layout and the live battle agree on all 17 buildings:
+a 4×4 Goblin Town Hall, a 3×3 Archer Tower, fourteen 1×1 walls and a
+2×2 passive Goblin Hut. All are level one, and the layout has no traps.
+The board adds the existing two-tile coordinate offset. The retained
+placement rows specify no facing or starting ruin. The Hut's five Balloon
+entries are template data. The battle does not field them.
+
+All 13 props retain their pinned tiles and footprint sizes. Four pines,
+two of each of three Sharp Stones, two torches and one windmeter now use
+their corresponding retained exports. The authored silhouettes remain
+available while the source portraits load. Their render anchors and
+size follow the existing Home Village prop treatment. The web's alpha,
+camera and terrain backdrop remain local presentation. The precise
+original placement transforms, prop motion and destruction presentation
+are unverified. The Goblin Hut still uses the existing ruin treatment
+after its foreground mesh is removed.
+
+[Campaign layout provenance](../reference/campaign/README.md) ·
+[Goblin building source](GOBLIN-BUILDINGS.md) ·
+[Web terrain and camera](TERRAIN-CAMERA.md)
+
 ## Remaining parity work by player impact
 
 | Priority | Gap against the pinned build | Comparison required |
