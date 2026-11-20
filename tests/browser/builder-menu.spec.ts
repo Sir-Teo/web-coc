@@ -8,6 +8,43 @@ test.beforeEach(async ({ page }) => {
   await page.locator('[data-action="skip-tutorial"]').click();
 });
 
+test('a touch interrupted by the Builder menu cannot select a building after close', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium', 'Native touch injection requires CDP.');
+  await page.setViewportSize({ width: 390, height: 650 });
+  const { id, x, y } = await page.evaluate(() => {
+    const { model, scene, game } = window.__game;
+    for (const building of model.buildings) {
+      const point = scene.screenFor(building.x + 0.5, building.y + 0.5);
+      if (
+        point.y > 170 &&
+        point.y < 415 &&
+        document.elementFromPoint(point.x, point.y) === game.canvas
+      )
+        return { id: building.id, x: point.x, y: point.y };
+    }
+    throw Error('No visible building on the canvas');
+  });
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [{ id: 1, x, y }],
+  });
+  await page.getByRole('button', { name: /^Builders:/ }).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.builder-menu')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.builder-menu')).toHaveCount(0);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  // Wait for the scene to process the release before checking selection.
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
+  expect(await page.evaluate(() => window.__game.model.selected)).toBeNull();
+  await page.touchscreen.tap(x, y);
+  await expect.poll(() => page.evaluate(() => window.__game.model.selected)).toBe(id);
+});
+
 test('the builder counter opens the builder menu, whose suggestions show each building in turn', async ({
   page,
   browserName,

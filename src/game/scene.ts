@@ -752,7 +752,25 @@ export class VillageScene extends Phaser.Scene {
   private renderClock = 0;
   private focusKeys!: Record<string, Phaser.Input.Keyboard.Key>;
   private paused = false;
-  uiBlocked = false;
+  private mapInputBlocked = false;
+  get uiBlocked() {
+    return this.mapInputBlocked;
+  }
+  set uiBlocked(blocked: boolean) {
+    if (blocked === this.mapInputBlocked) return;
+    this.mapInputBlocked = blocked;
+    if (blocked) this.cancelMapGesture();
+  }
+  private cancelMapGesture = () => {
+    this.fling.stop();
+    this.model.endDrag(true);
+    this.down = undefined;
+    // A cancelled press breaks the sequence of consecutive deployment taps.
+    this.lastTap = undefined;
+    this.gesture = 'none';
+    this.dragged = false;
+    this.pinchDistance = 0;
+  };
   ready = false;
   onReady = () => {};
   onReveal = () => {};
@@ -1494,16 +1512,7 @@ export class VillageScene extends Phaser.Scene {
     this.input.on('pointerup', onPointerUp);
     // Phaser sends DOM releases through a separate event. A control can move
     // under a held pointer when a drawer opens or rerenders.
-    const cancelGesture = () => {
-      this.fling.stop();
-      this.model.endDrag(true);
-      this.down = undefined;
-      // A cancelled press breaks the sequence of consecutive deployment taps.
-      this.lastTap = undefined;
-      this.gesture = 'none';
-      this.dragged = false;
-      this.pinchDistance = 0;
-    };
+    const cancelGesture = this.cancelMapGesture;
     // The DOM can reach the HUD before Phaser updates the active pointer. Stop an
     // attack press at the actual touch position rather than keep deploying at its old tile.
     const cancelCoveredTouch = (event: TouchEvent) => {
