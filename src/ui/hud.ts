@@ -1333,8 +1333,10 @@ export class HUD {
         : undefined;
     // Another panel replaces an unanswered gem offer.
     if (panel !== 'shortfall') this.model.shortfall = null;
-    // The info sheet describes the selected building, so it is the one panel that
-    // must survive the cancel that clears placement state.
+    // Keep the selected building behind its Details or Hero Hall panel so the
+    // same context and launcher are available when the panel closes.
+    const preserveSelection =
+      panel === 'info' || (panel === 'heroes' && this.actionSource?.id === 'hero-hall-heroes');
     const selected = this.model.selected;
     // Mouse/touch activation does not necessarily focus a button (notably in
     // WebKit). Remember the actual launcher before cancellation can redraw it.
@@ -1349,7 +1351,7 @@ export class HUD {
     if (panel) {
       this.drawerPanel = null;
       this.model.cancel();
-      if (panel === 'info') this.model.selected = selected;
+      if (preserveSelection) this.model.selected = selected;
     }
     this.render();
     if (!this.model.battle) {
@@ -3814,7 +3816,7 @@ export class HUD {
           : gated
             ? `<span class="max-level locked">${icon('LockKeyhole', 14)} ${requiredTownHall(b.kind, b.level + 1) ? `Town Hall ${requiredTownHall(b.kind, b.level + 1)}` : 'Village tier maximum'}</span>`
             : this.upgradeControl(b)
-    }${this.itemButtons(b, capped || gated)}${b.kind === 'blacksmith' ? button('blacksmith', `${icon('Anvil', 20)} Equipment`, 'game-btn blue') : ''}${b.kind === 'clancastle' && !b.constructing && !b.npc ? button('treasury', `${icon('Landmark', 20)} Treasury${TREASURY_RESOURCES.some((k) => m.treasury[k] > 0 && m.treasury[k] >= m.treasuryCapacity[k]) ? '<span class="notification">!</span>' : ''}`, 'game-btn blue') : ''}${b.kind === 'herohall' ? button('heroes', `${icon('ShieldCheck', 20)} Heroes`, 'game-btn blue') : ''}${b.kind === 'herohall' && m.journeyOpen ? button('journey', `${icon('Map', 20)} Journey${m.journeyClaimable.length ? '<span class="notification">!</span>' : ''}`, 'game-btn orange') : ''}${b.kind === 'pethouse' ? button('pets', `${icon('PawPrint', 20)} Pets`, 'game-btn blue') : ''}${b.kind === 'helperhut' ? button('helpers', `${icon('Users', 20)} Helpers${m.helpersIdle ? '<span class="notification">!</span>' : ''}`, 'game-btn blue') : ''}${b.kind === 'townhall' ? button('progression', `${icon('Layers', 20)} Progression`, 'game-btn blue') : ''}${this.mergeButtons(b)}${this.guardianButtons(b)}${this.craftingButton(b)}${b.kind === 'townhall' && !b.upgradeEnd && townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1) ? button(`th-weapon:${b.id}`, `<span>${icon('Zap', 19)} Weapon ${(b.weaponLevel ?? 1) + 1}</span><small>${resource(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.resource)} ${n(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.cost)}</small>`, 'game-btn green') : ''}${b.kind === 'laboratory' ? button('research', `${icon('FlaskConical', 20)} Research`, 'game-btn blue') : ''}${b.kind === 'barracks' || b.kind === 'camp' || b.kind === 'spellfactory' ? button('army', `${icon('Swords', 20)} Train`, 'game-btn blue') : ''}${b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill' ? button(`collect-building:${b.id}`, `${coin} Collect`, 'game-btn gold') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close building">${icon('X', 18)}</button></div>`;
+    }${this.itemButtons(b, capped || gated)}${b.kind === 'blacksmith' ? button('blacksmith', `${icon('Anvil', 20)} Equipment`, 'game-btn blue') : ''}${b.kind === 'clancastle' && !b.constructing && !b.npc ? button('treasury', `${icon('Landmark', 20)} Treasury${TREASURY_RESOURCES.some((k) => m.treasury[k] > 0 && m.treasury[k] >= m.treasuryCapacity[k]) ? '<span class="notification">!</span>' : ''}`, 'game-btn blue') : ''}${b.kind === 'herohall' ? button('heroes', `${icon('ShieldCheck', 20)} Heroes`, 'game-btn blue', 'id="hero-hall-heroes"') : ''}${b.kind === 'herohall' && m.journeyOpen ? button('journey', `${icon('Map', 20)} Journey${m.journeyClaimable.length ? '<span class="notification">!</span>' : ''}`, 'game-btn orange') : ''}${b.kind === 'pethouse' ? button('pets', `${icon('PawPrint', 20)} Pets`, 'game-btn blue') : ''}${b.kind === 'helperhut' ? button('helpers', `${icon('Users', 20)} Helpers${m.helpersIdle ? '<span class="notification">!</span>' : ''}`, 'game-btn blue') : ''}${b.kind === 'townhall' ? button('progression', `${icon('Layers', 20)} Progression`, 'game-btn blue') : ''}${this.mergeButtons(b)}${this.guardianButtons(b)}${this.craftingButton(b)}${b.kind === 'townhall' && !b.upgradeEnd && townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1) ? button(`th-weapon:${b.id}`, `<span>${icon('Zap', 19)} Weapon ${(b.weaponLevel ?? 1) + 1}</span><small>${resource(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.resource)} ${n(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.cost)}</small>`, 'game-btn green') : ''}${b.kind === 'laboratory' ? button('research', `${icon('FlaskConical', 20)} Research`, 'game-btn blue') : ''}${b.kind === 'barracks' || b.kind === 'camp' || b.kind === 'spellfactory' ? button('army', `${icon('Swords', 20)} Train`, 'game-btn blue') : ''}${b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill' ? button(`collect-building:${b.id}`, `${coin} Collect`, 'game-btn gold') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close building">${icon('X', 18)}</button></div>`;
   }
 
   /**

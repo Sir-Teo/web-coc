@@ -590,6 +590,44 @@ test.describe('phone pet upgrade items', () => {
 test.describe('phone Hero Hall lineup', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
+  test('closing Heroes after a swap restores its Village or Army launcher', async ({ page }) => {
+    await boot(page);
+    const point = await page.evaluate(async () => {
+      const { makeBuilding } = await import('/src/game/model.ts');
+      const { model, scene } = window.__game;
+      model.townhall.level = 9;
+      model.state.obstacles = [];
+      model.state.buildings.push(makeBuilding(model.state.nextId++, 'herohall', 16, 20, 3));
+      model.state.heroes = { queen: { level: 1 }, prince: { level: 1 } };
+      model.tick(Date.now() + 1000);
+      if (!model.setHeroLineup(['king', 'queen'])) throw Error('Lineup setup failed');
+      scene.sync();
+      return scene.screenFor(17.5, 21.5);
+    });
+    await page.touchscreen.tap(point.x, point.y);
+    const context = page.locator('.building-context');
+    await expect(context.getByRole('heading')).toHaveText('Hero Hall');
+    const villageHeroes = context.getByRole('button', { name: 'Heroes', exact: true });
+    const close = page.getByRole('button', { name: 'Close dialog', exact: true });
+    await villageHeroes.tap();
+    await page.locator('[data-action="hero-lineup:prince"]').tap();
+    await expect(page.locator('[data-hero="prince"]')).toContainText('In battle lineup');
+    await close.tap();
+    await expect(villageHeroes).toBeFocused();
+
+    await context.getByRole('button', { name: 'Close building', exact: true }).tap();
+    await page.locator('.train-add').tap();
+    const armyHeroes = page.locator('.modern-army-actions').getByRole('button', {
+      name: 'Heroes',
+      exact: true,
+    });
+    await armyHeroes.tap();
+    await page.locator('[data-action="hero-lineup:queen"]').tap();
+    await expect(page.locator('[data-hero="queen"]')).toContainText('In battle lineup');
+    await close.tap();
+    await expect(armyHeroes).toBeFocused();
+  });
+
   test('an upgrade completed while away restores the selected hero to the next raid', async ({
     page,
   }, info) => {
