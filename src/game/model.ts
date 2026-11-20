@@ -985,6 +985,8 @@ export interface Battle {
   nativeLavaloonBombPups?: true;
   /** Version 280: Action Figure deploys its distinct Giant Giant. */
   nativeActionFigureSummon?: true;
+  /** Version 281: Giant Giant rages once after the source damage threshold. */
+  nativeGiantGiantRage?: true;
   nativeTotemTroopHealingImmunity?: true;
   /** Version 101: ground healing units follow allies around buildings, crossing jumpable walls. */
   nativeHealerRoutes?: true;

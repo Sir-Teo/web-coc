@@ -167,6 +167,7 @@ export interface NativeUnitState {
   effects?: UnitEffects;
   /** Hitpoints actually lost, for damage-triggered spawns. */
   damageTaken?: number;
+  giantGiantRaged?: true;
   deploymentAbility?: boolean;
   lastDamageSource?: number;
   /** Version 143: direct incoming hits awaiting Revenge Deck's passive upkeep. */

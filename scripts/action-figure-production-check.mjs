@@ -6,9 +6,10 @@ import { createServer, preview } from 'vite';
 const args = process.argv.slice(2);
 const baselineDist = args.find((arg) => !arg.startsWith('--'));
 const control = args.includes('--control');
+const rage = args.includes('--rage');
 const label = `${baselineDist ? 'baseline' : 'patched'}${control ? '-control' : ''}`;
 const item = control ? 'archer-puppet' : 'action-figure';
-const screenshots = 'output/rea-cloud-playtest/action-figure';
+const screenshots = `output/rea-cloud-playtest/${rage ? 'giant-giant-rage' : 'action-figure'}`;
 await mkdir(screenshots, { recursive: true });
 
 const modules = await createServer({
@@ -29,7 +30,10 @@ try {
     nextId: 100,
     buildings: [
       makeBuilding(1, 'townhall', 34, 31, 16),
-      makeBuilding(2, 'cannon', 21, 21, 8),
+      makeBuilding(2, 'cannon', 21, 21, rage ? 4 : 8),
+      ...(rage
+        ? [makeBuilding(10, 'giantbomb', 17, 18, 1), makeBuilding(11, 'giantbomb', 19, 18, 3)]
+        : []),
       makeBuilding(3, 'builder', 32, 29, 1),
       makeBuilding(4, 'camp', 26, 30, 7),
       makeBuilding(5, 'barracks', 34, 23, 10),
@@ -116,6 +120,8 @@ try {
             hp,
             maxHp,
             owner: native?.owner,
+            damageTaken: native?.damageTaken,
+            boost: native?.effects?.boost,
           })),
           target: b.defenseTargets[2],
           remainingFreeze: b.spells.freeze,
@@ -163,7 +169,7 @@ try {
     const summons = await read();
     const giant = summons.units.find(({ kind }) => kind === 'giantgiant');
     const queenUnit = summons.units.find(({ kind }) => kind === 'archerqueen');
-    if (baselineDist || control) expect(giant).toBeUndefined();
+    if ((baselineDist && !rage) || control) expect(giant).toBeUndefined();
     else {
       expect(giant).toMatchObject({ level: 1, maxHp: 800, owner: queenUnit.id });
       expect(giant.x).toBeGreaterThan(queenUnit.x);
@@ -180,6 +186,28 @@ try {
     }
     const after = await read();
     await shot('activation');
+    let damaged;
+    if (rage) {
+      await page.evaluate(() => {
+        const { model, scene } = window.qa;
+        const giant = model.battle.units.find(({ kind }) => kind === 'giantgiant');
+        for (let i = 0; i < 240 && (giant.native.damageTaken ?? 0) < 400 && giant.hp > 0; i++)
+          model.step(0.05);
+        scene.sync();
+        scene.drawOverlay(0);
+      });
+      damaged = await read();
+      const unit = damaged.units.find(({ kind }) => kind === 'giantgiant');
+      expect(unit.damageTaken).toBeGreaterThanOrEqual(400);
+      expect(unit.hp).toBeGreaterThan(0);
+      expect(damaged.units.find(({ kind }) => kind === 'archerqueen').boost).toBeUndefined();
+      if (baselineDist) expect(unit.boost).toBeUndefined();
+      else {
+        expect(unit.boost).toMatchObject({ damage: 0.5, speed: 1.5 });
+        expect(unit.boost.until - damaged.at).toBeGreaterThan(19.9);
+      }
+      await shot('threshold');
+    }
     await step(1);
     await tap('spell:freeze');
     await fieldTap(21.7, 21.7, false);
@@ -209,7 +237,7 @@ try {
     const duration = await page.evaluate(() => window.qa.model.replay.duration);
     await seek(duration);
     const scout = duration - (await read()).at;
-    for (const frame of [live, before, after]) {
+    for (const frame of [live, before, after, ...(damaged ? [damaged] : [])]) {
       await seek(scout + frame.at);
       expect(await read()).toEqual(frame);
     }
@@ -220,6 +248,9 @@ try {
       summon: giant,
       archers: summons.units.filter(({ kind }) => kind === 'archer').length,
       defenseHp: live.defenseHp,
+      ...(damaged
+        ? { thresholdFrame: damaged.units.find(({ kind }) => kind === 'giantgiant') }
+        : {}),
     });
   } finally {
     await browser.close();

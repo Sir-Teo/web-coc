@@ -1,6 +1,8 @@
 import type { Battle, Building, Unit } from './model';
-import { activeBoost, type NativeBoost } from './native-boost';
+import { activeBoost, mergeBoost, type NativeBoost } from './native-boost';
 import { healingEligible } from './friendly-unit';
+import { nativeRow, num, seconds, tiles } from './native-data';
+import { nativeUnitStats } from './native-units';
 
 /**
  * Version 45+ timed effects. Every field is a battle-clock deadline so replays, seeking and
@@ -197,9 +199,8 @@ export function hurtUnit(
     if (trap && e.rampage) amount *= Math.max(0, 1 - e.rampage.trapProtection);
     if ((e.immortalUntil ?? 0) > at + 1e-9) return 0;
     const shield = e.shield && e.shield.until > at + 1e-9 ? e.shield.percent : 0;
-    const iceBlock = e.iceBlockShield && e.iceBlockShield.until > at + 1e-9
-      ? e.iceBlockShield.percent
-      : 0;
+    const iceBlock =
+      e.iceBlockShield && e.iceBlockShield.until > at + 1e-9 ? e.iceBlockShield.percent : 0;
     amount *= Math.max(0, 1 - Math.max(shield, iceBlock));
     if (e.extraHp && e.extraHp.until > at + 1e-9 && e.extraHp.amount > 0) {
       const absorbed = Math.min(amount, e.extraHp.amount);
@@ -221,6 +222,31 @@ export function hurtUnit(
   )
     (state.revengeHits ??= []).push({ sourceId, at, x: unit.x, y: unit.y });
   unit.hp -= amount;
+  if (
+    battle.nativeGiantGiantRage &&
+    unit.kind === 'giantgiant' &&
+    unit.hp > 0 &&
+    state &&
+    !state.giantGiantRaged
+  ) {
+    const stats = nativeUnitStats(unit.kind, unit.level ?? 1);
+    const rage = nativeRow('abilities', stats.ability, stats.abilityLevel);
+    const threshold = num(rage, 'ActiveAfterTakingDamage');
+    if (threshold > 0 && (state.damageTaken ?? 0) >= threshold) {
+      state.giantGiantRaged = true;
+      const effects = unitEffects(unit);
+      effects.boost = mergeBoost(
+        effects.boost,
+        stats.ability,
+        {
+          until: at + seconds(rage, 'DeactivateAfterTime'),
+          speed: tiles(rage, 'SpeedBoost'),
+          damage: num(rage, 'BoostDamagePercentage') / 100,
+        },
+        at,
+      );
+    }
+  }
   return amount;
 }
 export function healUnit(battle: Battle, unit: Unit, amount: number, at = battle.elapsed) {

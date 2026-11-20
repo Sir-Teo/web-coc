@@ -131,3 +131,17 @@ Run `node scripts/action-figure-production-check.mjs` after packaging.
 Pass a packaged version 279 directory for baseline or add `--control` to
 verify Archer Puppet. Both use a disposable phone-sized touch raid and
 seek back across the activation.
+
+## Giant Giant rage in recording version 281
+
+The pinned `April25_GTG_DamageRage` rows set `MaxActivations=1`,
+`DeactivateAfterTime=20000`, `BoostDamagePercentage=50`, and
+`SpeedBoost=150`. Version 281 reads the tier's `ActiveAfterTakingDamage`
+field and triggers after a surviving Giant Giant has lost that much HP to
+damage. The web speed conversion is 1.5 tiles per second. Tier 3 uses
+1,600 damage, while its client info display attribute is 1,200. Earlier
+recordings retain their original behavior.
+
+Use `node scripts/action-figure-production-check.mjs --rage` after packaging
+to watch the trigger and seek across it. The portrait remains the battlefield
+fallback. Native animation and exact native tick ordering remain unverified.
