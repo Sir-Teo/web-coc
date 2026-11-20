@@ -96,15 +96,32 @@ for (const [width, height] of [
     await page.locator('[data-action="army-import"]').click();
     expect(await page.evaluate(() => window.__game.model.state.army.swordsman)).toBe(4);
     await expect(page.locator('#army-code')).toHaveValue('');
+    const roster = () =>
+      page.evaluate(() => {
+        const { army, spells, heroLineup, pets, gear } = window.__game.model.state;
+        return { army, spells, heroLineup, pets, gear };
+      });
+    const applied = await roster();
+    const preview = page.locator('.army-import-preview');
+    const use = preview.getByRole('button', { name: 'Use shared army' });
     await page.locator('#army-code').fill(shared(1000));
-    await expect(page.locator('.army-import-preview')).toContainText(
-      'needs more troop or spell housing',
-    );
-    await expect(page.locator('[data-action="army-import"]')).toBeDisabled();
+    await expect(preview).toHaveAttribute('aria-live', 'polite');
+    await expect(
+      preview.getByText('Troops need 1000 spaces, but your camps hold 30.', { exact: true }),
+    ).toBeVisible();
+    await expect(use).toBeDisabled();
+    expect(await roster()).toEqual(applied);
+
     await page.locator('#army-code').fill('https://example.test/#army=%ZZ');
-    await expect(page.locator('.army-import-preview')).toContainText('damaged or unsupported');
-    await expect(page.locator('[data-action="army-import"]')).toHaveCount(0);
-    expect(await page.evaluate(() => window.__game.model.state.army.swordsman)).toBe(4);
+    await expect(preview).toContainText('damaged or unsupported');
+    await expect(use).toHaveCount(0);
+    expect(await roster()).toEqual(applied);
+
+    await page.locator('#army-code').fill(shared(5));
+    await expect(use).toBeEnabled();
+    await use.click();
+    expect(await roster()).toEqual({ ...applied, army: { ...applied.army, swordsman: 5 } });
+    await expect(page.locator('#army-code')).toHaveValue('');
     expect(errors).toEqual([]);
   });
 }
