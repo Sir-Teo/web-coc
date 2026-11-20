@@ -1712,6 +1712,14 @@ export class HUD {
       case 'heroes':
         this.show('heroes');
         break;
+      case 'hero-builder-job': {
+        if (m.battle || !(HERO_KINDS as readonly string[]).includes(arg)) break;
+        this.show('heroes');
+        const finish = this.modalEl.querySelector<HTMLElement>(`[data-action="hero-finish:${arg}"]`);
+        finish?.scrollIntoView({ block: 'center' });
+        finish?.focus({ preventScroll: true });
+        break;
+      }
       case 'journey':
         this.show('journey');
         break;
@@ -4179,7 +4187,7 @@ export class HUD {
           .map(
             (j) =>
               `<li>${button(
-                j.id === undefined ? 'heroes' : `select-building:${j.id}`,
+                j.hero ? `hero-builder-job:${j.hero}` : `select-building:${j.id}`,
                 `${icon('Hammer', 18)}<span><b>${html(j.name)}</b><small>${html(j.detail)}</small></span><em data-boost-end="${j.end}">${time(Math.max(0, j.end - m.clock) / 1000)}</em>`,
                 'builder-option working',
               )}</li>`,
@@ -4460,7 +4468,7 @@ export class HUD {
           : ''
       }`}
       <p class="hero-stats-note">Pet: ${petStatus || 'none'} · ${button('pets', 'Manage pets', 'replay-link')}</p>
-      <div class="hero-upgrade"><p>${resource('dark')} <b data-resource="dark">${n(m.state.dark)}</b> dark elixir · ${resource('elixir')} <b data-resource="elixir">${n(m.state.elixir)}</b> elixir</p>${progress.upgradeEnd ? `<p>Upgrade completes in <b data-hero-timer="${kind}">${time((progress.upgradeEnd - m.clock) / 1000)}</b></p>${button(`hero-finish:${kind}`, `Finish ${gem} <span data-hero-gems="${kind}">${m.finishCost({ upgradeEnd: progress.upgradeEnd } as Building)}</span>`, 'game-btn green')}${m.booksFor({ hero: kind }).length ? button(`book-hero:${kind}`, `${icon('BookOpen', 17)} ${MAGIC_ITEMS[m.booksFor({ hero: kind })[0]].name}`, 'game-btn blue') : ''}${cancelUpgrade}` : capped ? `<p class="max-level">${isKing && m.townhallLevel < 7 ? 'Hero upgrades unlock at Town Hall 7' : missing.length ? `Upgrade to ${missing.join(' and ')}` : 'Maximum hero level'}</p>` : `${button(`hero-upgrade:${kind}`, upgradeCostText, 'game-btn green', upgradeDisabled ? 'disabled' : '')}${m.magicItemCount('hammer-of-heroes') ? button(`hammer-hero:${kind}`, `${icon('Hammer', 17)} Hammer of Heroes`, 'game-btn blue', m.busy >= m.builders ? 'disabled' : '') : ''}<p>${upgradeSecondsText} · Requires one free builder</p>`}</div>
+      <div class="hero-upgrade"><p>${resource('dark')} <b data-resource="dark">${n(m.state.dark)}</b> dark elixir · ${resource('elixir')} <b data-resource="elixir">${n(m.state.elixir)}</b> elixir</p>${progress.upgradeEnd ? `<p>${name} upgrade completes in <b data-hero-timer="${kind}">${time((progress.upgradeEnd - m.clock) / 1000)}</b></p>${button(`hero-finish:${kind}`, `Finish ${gem} <span data-hero-gems="${kind}">${m.finishCost({ upgradeEnd: progress.upgradeEnd } as Building)}</span>`, 'game-btn green')}${m.booksFor({ hero: kind }).length ? button(`book-hero:${kind}`, `${icon('BookOpen', 17)} ${MAGIC_ITEMS[m.booksFor({ hero: kind })[0]].name}`, 'game-btn blue') : ''}${cancelUpgrade}` : capped ? `<p class="max-level">${isKing && m.townhallLevel < 7 ? 'Hero upgrades unlock at Town Hall 7' : missing.length ? `Upgrade to ${missing.join(' and ')}` : 'Maximum hero level'}</p>` : `${button(`hero-upgrade:${kind}`, upgradeCostText, 'game-btn green', upgradeDisabled ? 'disabled' : '')}${m.magicItemCount('hammer-of-heroes') ? button(`hammer-hero:${kind}`, `${icon('Hammer', 17)} Hammer of Heroes`, 'game-btn blue', m.busy >= m.builders ? 'disabled' : '') : ''}<p>${upgradeSecondsText} · Requires one free builder</p>`}</div>
       ${inLineup ? '' : `<div class="hero-upgrade">${replace ? button(`hero-lineup:${kind}`, `Swap in for ${HERO_SOURCE[replace]}`, 'game-btn blue') : button(`hero-lineup:${kind}`, 'Add to lineup', 'game-btn blue')}</div>`}</section>`;
   }
   /** Pet House: research one pet at a time and assign one pet to each hero. */

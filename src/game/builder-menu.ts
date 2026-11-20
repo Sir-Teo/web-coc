@@ -11,14 +11,12 @@ import type { Building, GameModel } from './model';
  * upgrades" and "Other upgrades" (the client's TID_INFOBUBBLE_BUILDER_SUGGESTION and
  * _EXTRA_SUGGESTION). See docs/BUILDER-MENU.md.
  */
-export interface BuilderJob {
-  /** A building's id. Hero upgrades have no building id. */
-  id?: number;
+export type BuilderJob = {
   name: string;
   /** Construction or the next upgrade level. */
   detail: string;
   end: number;
-}
+} & ({ id: number; hero?: never } | { hero: HeroKind; id?: never });
 export interface BuilderOption {
   kind: BuildingKind;
   /** The level the buildings are at (0 for a new one from the Shop). */
@@ -76,6 +74,7 @@ export function builderMenu(m: GameModel) {
   for (const [kind, hero] of heroes)
     if (hero?.upgradeEnd)
       jobs.push({
+        hero: kind,
         name: HERO_SOURCE[kind],
         detail: `Level ${hero.level + 1}`,
         end: hero.upgradeEnd,

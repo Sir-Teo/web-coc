@@ -96,3 +96,15 @@ describe('builder menu', () => {
     expect(options.some((o) => o.ids.includes(cannon.id))).toBe(false);
   });
 });
+
+it('keeps each upgrading hero’s identity in the builder job list', () => {
+  const m = village();
+  m.state.heroes = {
+    warden: { level: 5, upgradeStart: m.clock, upgradeEnd: m.clock + 2000 },
+    queen: { level: 2, upgradeStart: m.clock, upgradeEnd: m.clock + 1000 },
+  };
+  expect(builderMenu(m).jobs).toEqual([
+    { hero: 'queen', name: 'Archer Queen', detail: 'Level 3', end: m.clock + 1000 },
+    { hero: 'warden', name: 'Grand Warden', detail: 'Level 6', end: m.clock + 2000 },
+  ]);
+});
