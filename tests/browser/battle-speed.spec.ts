@@ -5,7 +5,7 @@ for (const viewport of [
   { width: 844, height: 390 },
   { width: 1440, height: 960 },
 ]) {
-  test(`live attacks run at 1×, 2× and 4× at ${viewport.width}×${viewport.height}`, async ({
+  test(`scouting stays at 1× while live attacks can run at 2× and 4× at ${viewport.width}×${viewport.height}`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
@@ -15,7 +15,7 @@ for (const viewport of [
     await page.locator('#loading').waitFor({ state: 'detached' });
     await page.evaluate(() => {
       const m = window.__game.model;
-      m.startBattle(0, true); // Practice: timed, so the clock runs from the first frame.
+      m.startBattle(0, true); // Practice uses the same timed scouting phase as Ladder.
     });
     const speed = page.locator('[data-action="battle-speed"]');
     await expect(speed).toContainText('1×');
@@ -50,7 +50,10 @@ for (const viewport of [
     await speed.click();
     await expect(speed).toContainText('4×');
     await page.screenshot({ path: `output/playtest/battle-speed-${viewport.width}.png` });
-    // A slow capture may already have ended scouting; exercise the transition if it has not.
+    const fastScouting = await rate();
+    expect(fastScouting).toBeGreaterThan(normal * 0.7);
+    expect(fastScouting).toBeLessThan(normal * 1.35);
+    // Exercise the automatic transition after the timed scouting period.
     await page.evaluate(() => {
       const b = window.__game.model.battle!;
       if (!b.started) b.prep = 0.1;

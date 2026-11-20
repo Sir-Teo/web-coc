@@ -7257,8 +7257,9 @@ export class VillageScene extends Phaser.Scene {
     if (this.fling.active) this.stepFling();
     // A battle waiting for late campaign or deferred art keeps its clock, replay and deployments
     // on hold.
-    // A live attack at 2× or 4× runs more fixed steps per frame; recordings see the same steps.
-    const speed = this.model.battle && !this.model.battle.finished ? this.model.battleSpeed : 1;
+    // Keep scouting at normal speed. Once combat starts, recordings still see fixed steps.
+    const liveBattle = this.model.battle;
+    const speed = liveBattle?.started && !liveBattle.finished ? this.model.battleSpeed : 1;
     this.tick = this.battleArtPending() ? 0 : this.tick + dt * speed;
     // Battles trigger the deferred heavy art immediately so scout time covers it.
     if (this.model.battle && !this.heavyArtReady) void this.loadHeavyArt();
