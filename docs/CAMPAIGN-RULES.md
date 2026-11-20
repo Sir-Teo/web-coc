@@ -121,5 +121,8 @@ the player can confirm the attack once ready. Leaving before first deployment
 keeps the army and does not record a raid. Rows with a ready army keep their
 direct attack action, and Practice levels still provide their own armies.
 
+Escape from the scout screen follows its Back button to Campaign or Battle
+Log, restores the originating row focus, and preserves the list position.
+
 The pinned campaign records identify the village, layout, and Practice roster.
 They do not establish an original-client confirmation sequence or screen layout.

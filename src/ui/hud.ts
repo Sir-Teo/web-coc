@@ -1429,6 +1429,17 @@ export class HUD {
     if (log) log.scrollTop = previous.scroll;
     restoreFocusMark(previous.focus);
   }
+  private returnFromScout() {
+    const log = this.scoutLogReturn;
+    const campaignFocus = this.scoutCampaignFocus;
+    this.scoutLogReturn = undefined;
+    this.scoutCampaignFocus = null;
+    if (log) this.returnToBattleLog(log);
+    else {
+      this.show('campaign');
+      restoreFocusMark(campaignFocus);
+    }
+  }
   private restoreFocus() {
     restoreFocusMark(this.focusBefore);
   }
@@ -2085,16 +2096,14 @@ export class HUD {
       case 'campaign-scout':
         this.scoutLogReturn =
           this.panel === 'battle-log' ? this.captureBattleLogReturn() : undefined;
+        this.scoutCampaignFocus =
+          this.panel === 'campaign' ? focusMark(this.actionSource ?? document.activeElement) : null;
         this.scoutedStage = Math.max(0, Math.min(NATIVE_CAMPAIGN.length - 1, Number(arg) || 0));
         this.show('campaign-scout');
         break;
-      case 'scout-back-log': {
-        const previous = this.scoutLogReturn;
-        if (!previous) break;
-        this.scoutLogReturn = undefined;
-        this.returnToBattleLog(previous);
+      case 'scout-back-log':
+        this.returnFromScout();
         break;
-      }
       case 'campaign-continue':
         this.scrollToStage(this.nextCampaignStage(), true);
         break;
@@ -2431,7 +2440,8 @@ export class HUD {
         m.retrain();
         break;
       case 'campaign':
-        this.show('campaign');
+        if (this.panel === 'campaign-scout') this.returnFromScout();
+        else this.show('campaign');
         break;
       case 'settings':
         this.show('settings');
@@ -2942,7 +2952,9 @@ export class HUD {
       return;
     }
     if (e.key === 'Escape' && !result) {
-      if (this.panel) {
+      if (this.panel === 'campaign-scout') {
+        this.returnFromScout();
+      } else if (this.panel) {
         this.closePanel();
       } else if (this.drawerPanel) {
         this.closeDrawer();
@@ -5788,6 +5800,7 @@ export class HUD {
   /** The stage a scouting preview shows. */
   private scoutedStage = 0;
   private scoutLogReturn?: BattleLogReturn;
+  private scoutCampaignFocus: FocusMark | null = null;
   /**
    * An enlarged look at a campaign village before attacking: its layout, the defenses on show
    * (hidden Teslas and traps stay hidden, as in battle), the loot left and the suggested tier.

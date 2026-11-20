@@ -19,6 +19,7 @@ test('an empty-army campaign row preserves the opponent through preparation and 
   await expect(scout.getByRole('heading', { name: 'Payback' })).toBeVisible();
   await scout.getByRole('button', { name: 'Back to campaign' }).tap();
   await expect(rowAction).toHaveAccessibleName('Scout');
+  await expect(rowAction).toBeFocused();
   await rowAction.tap();
   const prepare = scout.getByRole('button', { name: 'Prepare army' });
   const offset = () => scout.evaluate((element) => element.scrollTop);
@@ -28,7 +29,10 @@ test('an empty-army campaign row preserves the opponent through preparation and 
   await prepare.tap();
   await expect(page.locator('.drawer-sheet')).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.__game.model.battle)).toBeNull();
-  await page.locator('[data-action="close-drawer"]').tap();
+  await page.locator('[data-action="army-presets"]').tap();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.drawer-sheet')).toBeVisible();
+  await page.keyboard.press('Escape');
   await expect(scout.getByRole('heading', { name: 'Payback' })).toBeVisible();
   expect(await offset()).toBe(before);
   await expect(prepare).toBeInViewport();
@@ -53,8 +57,9 @@ test('an empty-army campaign row preserves the opponent through preparation and 
   expect(await offset()).toBe(Math.min(secondOffset, maxScroll));
   await expect(attack).toBeInViewport();
   await expect(attack).toBeFocused();
-  await scout.getByRole('button', { name: 'Back to campaign' }).tap();
+  await page.keyboard.press('Escape');
   await expect(rowAction).toHaveAccessibleName('Attack');
+  await expect(rowAction).toBeFocused();
   await rowAction.tap();
   await expect(page.locator('.battle-enemy h2')).toHaveText('Payback');
   await expect(page.locator('.prep-banner')).toBeVisible();
@@ -104,7 +109,7 @@ test('an empty army can prepare a campaign rematch from the Battle Log', async (
   await expect(page.locator('.drawer-sheet')).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.__game.model.battle)).toBeNull();
   await page.locator('[data-action="close-drawer"]').tap();
-  await scout.getByRole('button', { name: 'Back to battle log', exact: true }).tap();
+  await page.keyboard.press('Escape');
   await expect(log).toBeVisible();
   await expect(retry).toBeFocused();
   expect(await log.evaluate((el) => el.scrollTop)).toBeCloseTo(logScroll, 0);
