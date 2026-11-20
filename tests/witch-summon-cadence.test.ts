@@ -39,7 +39,7 @@ for (const level of [1, 8])
       r.model.finishBattle();
       const viewer = new GameModel();
       expect(viewer.openReplay(r.model.state.raidLog![0].replay!)).toBe(true);
-      for (const { at, wave } of checkpoints.toReversed()) {
+      for (const { at, wave } of checkpoints.slice().reverse()) {
         viewer.seekReplay(at);
         while (viewer.replay!.seeking) viewer.step(0.05);
         expect(children(viewer)).toEqual(wave);
