@@ -211,6 +211,7 @@ import {
   GameModel,
   formatTime,
   BATTLE_SECONDS,
+  DEPLOYMENT_BOUNDARY_WARNING,
   timedBattle,
   EPIC_ITEM_GEMS,
   raidHeroes,
@@ -1129,6 +1130,10 @@ export class HUD {
       if (this.panel === 'settings') this.scheduleRender();
     }, signal);
     model.onToast = (m) => this.toast(m);
+    model.onBattlePlacement = () => {
+      if (this.root.querySelector('#toast.show')?.textContent === DEPLOYMENT_BOUNDARY_WARNING)
+        this.toast('');
+    };
     scene.onSelect = () => {
       this.panel = null;
       this.drawerPanel = null;

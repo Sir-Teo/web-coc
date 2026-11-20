@@ -1531,6 +1531,7 @@ export type FX = {
 };
 export const PREP_SECONDS = 30;
 export const BATTLE_SECONDS = 180;
+export const DEPLOYMENT_BOUNDARY_WARNING = 'Deploy on the grass outside the red boundary.';
 /** The opening Goblin raid: how many goblins, and the step its recording advances by. */
 export const GOBLIN_RAID_SIZE = 10;
 const GOBLIN_RAID_TICK = 0.05;
@@ -1642,6 +1643,7 @@ export class GameModel {
   onChange = (_passive = false) => {};
   onEffect = (_fx: FX) => {};
   onToast = (_message: string) => {};
+  onBattlePlacement = () => {};
   revision = 0;
   clock = Date.now();
   constructor(saved?: Save, now = Date.now()) {
@@ -6514,6 +6516,7 @@ export class GameModel {
       this.deploymentBatch.starting ||= starting;
       return;
     }
+    this.onBattlePlacement();
     this.changed(!starting);
   }
   deploy(x: number, y: number) {
@@ -6528,7 +6531,7 @@ export class GameModel {
     if (!spot) return false;
     ({ x, y } = spot);
     if (this.deployBlocked(x, y)) {
-      this.notify('Deploy on the grass outside the red boundary.');
+      this.notify(DEPLOYMENT_BOUNDARY_WARNING);
       return false;
     }
     this.recordAction({ type: 'troop', kind: k, x, y });
@@ -6600,7 +6603,7 @@ export class GameModel {
     )
       return false;
     if (this.deployBlocked(x, y)) {
-      this.notify('Deploy on the grass outside the red boundary.');
+      this.notify(DEPLOYMENT_BOUNDARY_WARNING);
       return false;
     }
     this.recordAction({ type: 'recalled-troop', kind, x, y });
