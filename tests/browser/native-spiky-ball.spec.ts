@@ -70,6 +70,10 @@ for (const { level, count, width } of [
     page.on('request', (request) => requests.push(new URL(request.url()).pathname));
     page.on('pageerror', (error) => errors.push(error.message));
     const r = await open(page, level);
+    // Frame pressure can omit the trail before the scene is paused.
+    await page.evaluate(() => {
+      window.__game.scene.detailLevel = 0;
+    });
     await expect
       .poll(() => requests)
       .toEqual(
@@ -108,6 +112,7 @@ for (const { level, count, width } of [
       .poll(() =>
         page.evaluate(() => {
           const scene = window.__game.scene;
+          scene.drawOverlay(0);
           return scene.children.list.some(
             (o) =>
               o.getData?.('nativeEffect') === 'football_shoot_trail' && o.visible && o.alpha > 0,

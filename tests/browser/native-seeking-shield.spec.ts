@@ -172,6 +172,50 @@ for (const { level, count, width } of [
     expect(errors).toEqual([]);
   });
 
+test('minimal detail retains the Seeking Shield and final impact without drawing a trail', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  const r = await open(page);
+  await page.evaluate(() => {
+    window.__game.scene.detailLevel = 2;
+  });
+
+  const bounce = await seek(page, r.bounce);
+  expect(bounce.battle).toBe(JSON.stringify(r.snapshots.find((s) => s.at === r.bounce)!.battle));
+  await expect.poll(() => body(page), { timeout: 30000 }).toBe(true);
+  expect(
+    await page.evaluate(() => {
+      const { model, scene } = window.__game;
+      return {
+        battle: JSON.stringify(model.battle),
+        trail: scene.children.list.some(
+          (o) => o.getData?.('nativeEffect') === 'shield_trail_glow' && o.visible && o.alpha > 0,
+        ),
+      };
+    }),
+  ).toEqual({ battle: bounce.battle, trail: false });
+
+  const final = r.shots.at(-1)!;
+  const contact = await seek(page, Math.ceil((final.impact + 0.05) * 20) / 20);
+  await expect
+    .poll(
+      () =>
+        page.evaluate((id) => {
+          const { scene } = window.__game;
+          scene.drawOverlay(0);
+          return [...scene.nativeProjectiles.layer.views].some(
+            ([key, view]) =>
+              key.includes(`${id}:hit:`) && view.objects.some((o) => o.visible && o.alpha > 0),
+          );
+        }, final.id),
+      { timeout: 30000 },
+    )
+    .toBe(true);
+  expect(await page.evaluate(() => JSON.stringify(window.__game.model.battle))).toBe(contact.battle);
+});
+
 test('the original shield finishes its pending throw after the recorded Champion is Recalled', async ({
   page,
 }) => {

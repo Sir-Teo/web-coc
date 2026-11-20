@@ -12,6 +12,8 @@ async function open(page: Page, level = 1, recall = false, version?: number, aud
       const { model, scene, audio } = window.__game;
       const { makeReplayFile, parseReplayFile } = await import('/src/game/replay-file.ts');
       scene.paused = true;
+      // A paused scene retains its last adaptive tier. Test the full-detail trail.
+      scene.detailLevel = 0;
       if (audioEnabled) {
         audio.enabled = true;
         audio.unlock();

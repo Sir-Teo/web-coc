@@ -14,6 +14,8 @@ for (const equipment of ['frost-charm', 'seeking-shield'] as const)
       const { model, scene } = window.__game;
       const { makeReplayFile, parseReplayFile } = await import('/src/game/replay-file.ts');
       scene.paused = true;
+      // A paused scene retains its last adaptive tier. Test the full-detail trail.
+      scene.detailLevel = 0;
       if (!model.openReplay(parseReplayFile(JSON.stringify(makeReplayFile(r.data)))))
         throw Error('Moving-target replay rejected');
       model.seekReplay(r.observation);
