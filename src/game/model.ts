@@ -960,6 +960,8 @@ export interface Battle {
   nativeEagleRecallHousing?: true;
   /** Version 266: a Greedy Raven stays on the field when its Hero is recalled. */
   nativeIndependentRavenRecall?: true;
+  /** Version 267: the Grand Warden needs his source group weight before following allies. */
+  nativeWardenGroupThreshold?: true;
   /** Version 100: native healing resolves through source projectile travel and chain hops. */
   nativeHealingProjectiles?: true;
   nativeHealingTotem?: true;

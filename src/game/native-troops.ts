@@ -819,6 +819,21 @@ function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats, following: boo
   }
   return best;
 }
+/** The Warden's follower threshold uses source group weights, not army housing. */
+function wardenHasGroup(battle: Battle, warden: Unit, stats: NativeUnitStats) {
+  let weight = 0;
+  for (const ally of battle.units) {
+    if (
+      ally.id === warden.id ||
+      !friendlyCombatant(ally, battle.elapsed) ||
+      distance2D(ally.x - warden.x, ally.y - warden.y) > stats.groupRange
+    )
+      continue;
+    weight += num(nativeUnitRow(ally.kind, unitLevel(battle, ally)), 'FriendlyGroupWeight');
+    if (weight >= stats.groupMinWeight) return true;
+  }
+  return false;
+}
 /**
  * The route list a unit searches on: the known buildings minus the walls it may cross (all of
  * them for a jumper, Jump-opened ones for walkers). Shared per context (one tick), so every
@@ -1459,7 +1474,10 @@ export function stepNativeUnit(
   }
   const distance = distanceTo(u, target);
   if (s.groups) {
-    const anchor = groupAnchor(battle, u, s, distance > s.range + 1e-9);
+    const following =
+      distance > s.range + 1e-9 &&
+      (!battle.nativeWardenGroupThreshold || u.hero !== 'warden' || wardenHasGroup(battle, u, s));
+    const anchor = groupAnchor(battle, u, s, following);
     if (anchor) {
       moveToward(
         u,
