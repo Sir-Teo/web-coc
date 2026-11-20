@@ -12,7 +12,7 @@ import { SPLIT_HOG_KINDS, isSplitHog, type DeployTroopKind } from '../game/recal
 import { archerTowerPortrait } from './archer-tower-portrait';
 import { positionBattleToast } from './battle-toast';
 import { visibleInterval } from './visible-interval';
-import { infernoStats, type InfernoMode } from '../game/inferno-weapon';
+import { infernoStats } from '../game/inferno-weapon';
 import { cannonIconAsset } from '../game/cannon-art';
 import { darkStorageCapacity } from '../game/dark-storage-stats';
 import { collectorProduction, isCollector } from '../game/collector-production';
@@ -26,7 +26,7 @@ import {
 } from '../game/native-campaign';
 import { sweeperStats } from '../game/air-control-stats';
 import { nativeRow, num as sourceNumber, tiles as sourceTiles } from '../game/native-data';
-import { XBOW, xbowRange, type XbowMode } from '../game/xbow-stats';
+import { XBOW, xbowRange } from '../game/xbow-stats';
 import {
   EQUIPMENT_LEVELS,
   oreCapacity,
@@ -219,6 +219,7 @@ import {
   type Save,
 } from '../game/model';
 import {
+  nativeWeapon,
   spellTowerModes,
   townHallWeaponUpgrade,
   type SpellTowerMode,
@@ -411,13 +412,8 @@ const html = (value: string) =>
   );
 const pct = (v: number) => `${Math.max(0, Math.min(100, Number.isNaN(v) ? 0 : v))}%`;
 /** The one place that says what a building level actually buys you. */
-function statRows(
-  kind: BuildingKind,
-  level: number,
-  xbowMode: XbowMode = 'ground',
-  infernoMode: InfernoMode = 'single',
-  supercharge = 0,
-): [string, string, string][] {
+function statRows(building: Building, level = building.level): [string, string, string][] {
+  const { kind, xbowMode = 'ground', infernoMode = 'single', supercharge = 0 } = building;
   const d = BUILDINGS[kind];
   const rows: [string, string, string][] = [['Heart', 'Hitpoints', n(buildingHp(kind, level))]];
   const trap = trapStats(kind, level);
@@ -481,7 +477,20 @@ function statRows(
       ['Radar', 'Targets', 'Ground & air'],
     );
   }
-  if (d.damage && kind !== 'inferno') {
+  const gearWeapon = kind === 'multigeartower'
+    ? nativeWeapon(kind, level, { mode: building.gearMode, supercharge })
+    : null;
+  if (gearWeapon) {
+    rows.push(
+      ['Swords', 'Damage per second', damageNumber(gearWeapon.damage * gearWeapon.burst / gearWeapon.interval)],
+      ['Swords', 'Damage per hit', damageNumber(gearWeapon.damage)],
+      ['Target', 'Range', `${gearWeapon.range} tiles`],
+      ['Gauge', 'Attack speed', gearWeapon.burst > 1 ? `${gearWeapon.burstDelay}s between shots` : `${gearWeapon.interval}s`],
+      ['Radar', 'Targets', gearWeapon.air && gearWeapon.ground ? 'Ground & air' : gearWeapon.air ? 'Air only' : 'Ground only'],
+    );
+    if (gearWeapon.burst > 1) rows.push(['Layers', 'Shots per burst', String(gearWeapon.burst)]);
+    if (gearWeapon.splash) rows.push(['Sparkles', 'Splash radius', `${gearWeapon.splash} tiles`]);
+  } else if (d.damage && kind !== 'inferno') {
     rows.push(['Swords', 'Damage per second', damageNumber(defenseDps(kind, level))]);
     rows.push(['Swords', 'Damage per hit', damageNumber(defenseDamage(kind, level))]);
     rows.push([
@@ -5535,10 +5544,8 @@ export class HUD {
     const d = BUILDINGS[b.kind];
     const capped = b.level >= d.maxLevel;
     const gated = !capped && b.level >= m.maxLevel(b.kind);
-    const now = statRows(b.kind, b.level, b.xbowMode, b.infernoMode, b.supercharge);
-    const next = capped
-      ? []
-      : statRows(b.kind, b.level + 1, b.xbowMode, b.infernoMode, b.supercharge);
+    const now = statRows(b);
+    const next = capped ? [] : statRows(b, b.level + 1);
     const townHallUpgrade = b.kind === 'townhall' && !capped && !b.upgradeEnd;
     const mergeBlocker = townHallUpgrade ? m.townHallMergeIssue(b.level) : null;
     const merges = townHallUpgrade ? townHallMergeInputs(b.level + 1) : [];
@@ -5554,6 +5561,7 @@ export class HUD {
           : [];
     return `<div class="modal-body info-body"><div class="info-hero"><img src="${hudAsset(b.kind, b.level, b.skeletonMode, b.xbowMode, b.infernoMode, b.spellMode ?? b.spellTowerWeapon, b.gearMode)}" alt=""><div><span class="eyebrow">${d.category.toUpperCase()} · LEVEL ${b.level} OF ${d.maxLevel}</span><h2>${d.name}</h2><p>${d.description}</p>${b.kind === 'skeletontrap' ? `<p class="trap-note"><b>${b.skeletonMode === 'air' ? 'Air mode' : 'Ground mode'}</b> · Skeletons pursue ${b.skeletonMode === 'air' ? 'flying' : 'ground'} troops.</p>` : ''}${d.trap ? '<p class="trap-note">Hidden from attackers until triggered. One use per attack; automatically armed for the next practice. Traps do not count toward destruction.</p>' : ''}<div class="info-levels">${Array.from({ length: d.maxLevel }, (_, i) => `<i class="${i < b.level ? 'on' : ''}"></i>`).join('')}</div></div></div>
  ${b.kind === 'xbow' && !b.constructing ? this.xbowModeOptions(b) : ''}
+ ${b.kind === 'multigeartower' ? `<p><b>${b.gearMode === 'fast' ? 'Fast Attack' : 'Long Range'} mode</b></p>` : ''}
  <table class="info-table"><thead><tr><th>Stat</th><th>Level ${b.level}</th><th>${capped ? 'Max' : `Level ${b.level + 1}`}</th></tr></thead><tbody>${now
    .map(([ic, label, value], i) => {
      const after = next[i]?.[2];

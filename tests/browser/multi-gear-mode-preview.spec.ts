@@ -77,6 +77,12 @@ for (const width of [1440, 390]) {
           .getByRole('button', { name: 'Info', exact: true })
           .click();
         await expect(page.locator('.info-hero img')).toHaveAttribute('src', portrait);
+        const range = page.locator('.info-table tr').filter({ hasText: /^\s*Range/ });
+        await expect(range.locator('td').nth(1)).toHaveText(mode === 'fast' ? '8 tiles' : '12 tiles');
+        const dps = page.locator('.info-table tr').filter({ hasText: /Damage per second/ });
+        await expect(dps.locator('td').nth(1)).toHaveText(
+          String((mode === 'fast' ? [650, 690, 710] : [350, 370, 390])[level - 1]),
+        );
         if (mode === 'fast' && level === 3)
           await page.screenshot({
             path: `output/playtest/multi-gear-info-${width}-${browserName}.png`,
