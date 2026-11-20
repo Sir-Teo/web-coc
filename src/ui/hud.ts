@@ -1,3 +1,4 @@
+import { eternalTomeRemaining } from './eternal-tome-feedback';
 import { siegeCargoCapacity, type SiegeCargoEntry } from '../game/siege-cargo';
 import { armyFromLink, armyLink, decodeSharedArmy } from '../game/army-share';
 import { flameFlingerBurstStats } from '../game/native-flame-flinger';
@@ -4013,15 +4014,18 @@ export class HUD {
     const battle = this.model.battle,
       hero = battle?.nativeHeroes?.find((h) => h.kind === kind),
       unit = battle?.units.find((u) => u.id === hero?.unitId);
+    const tome = battle && hero ? eternalTomeRemaining(battle, hero, unit) : 0;
     const name = HERO_SOURCE[kind];
     const status =
       !hero || hero.unitId === null
         ? 'Tap outside the red boundary to deploy'
         : unit && unit.hp <= 0
           ? 'Defeated · Returns next attack'
-          : hero.abilityUsed
-            ? 'Ability used · Fighting'
-            : `Tap ${kind === 'king' ? 'his' : 'its'} card or press H to activate`;
+          : tome
+            ? `Eternal Tome active · ${tome}s`
+            : hero.abilityUsed
+              ? 'Ability used · Fighting'
+              : `Tap ${kind === 'king' ? 'his' : 'its'} card or press H to activate`;
     return `${name} · ${status}`;
   }
   private kingDeploymentHint() {
@@ -4077,6 +4081,7 @@ export class HUD {
     const reviveReady = m.activeSpell === 'revive' && m.canReviveHero(kind);
     const disabled =
       (!reviveReady && (defeated || (!ready && !!hero.abilityUsed))) || pending || !!m.replay;
+    const tome = eternalTomeRemaining(battle, hero, unit);
     const name = HERO_SOURCE[hero.kind];
     const short = name
       .replace('Barbarian ', '')
@@ -4094,12 +4099,14 @@ export class HUD {
           : defeated
             ? 'Defeated'
             : hero.abilityUsed
-              ? phoenixLife === undefined
-                ? 'Ability used'
-                : 'Phoenix revival'
+              ? phoenixLife !== undefined
+                ? 'Phoenix revival'
+                : tome
+                  ? `Tome ${tome}s`
+                  : 'Ability used'
               : 'Activate ability';
     const selected = m.activeHeroKind === hero.kind;
-    return `<button class="troop-card hero-card ${selected ? 'selected' : ''}" data-hero-state="${hero.kind}:${ready}:${defeated}:${!!hero.abilityUsed}:${selected}${pending ? '|reviving' : ''}${phoenixLife === undefined ? '' : '|phoenix'}|revive:${reviveReady}|key:${hotkey}" data-action="hero-select:${hero.kind}" aria-label="${name}, ${label}" ${disabled ? 'disabled' : ''}>${hotkey ? '<kbd class="troop-key">H</kbd>' : ''}<img src="${heroPortrait(hero.kind)}" alt=""><span class="troop-level">★ ${hero.level}</span><span class="hero-health"><i style="width:${phoenixLife !== undefined ? pct(phoenixLife * 100) : unit ? pct((unit.hp / unit.maxHp) * 100) : '100%'}${phoenixLife === undefined ? '' : ';background:#fff2bf'}"></i></span><span class="troop-name">${label}</span></button>`;
+    return `<button class="troop-card hero-card${tome ? ' tome-active' : ''} ${selected ? 'selected' : ''}" data-hero-state="${hero.kind}:${ready}:${defeated}:${!!hero.abilityUsed}:${selected}${pending ? '|reviving' : ''}${phoenixLife === undefined ? '' : '|phoenix'}|tome:${!!tome}|revive:${reviveReady}|key:${hotkey}" data-action="hero-select:${hero.kind}" aria-label="${name}, ${tome ? `Eternal Tome active, ${tome} seconds remaining` : label}" ${disabled ? 'disabled' : ''}>${hotkey ? '<kbd class="troop-key">H</kbd>' : ''}<img src="${heroPortrait(hero.kind)}" alt=""><span class="troop-level">★ ${hero.level}</span><span class="hero-health"><i style="width:${phoenixLife !== undefined ? pct(phoenixLife * 100) : unit ? pct((unit.hp / unit.maxHp) * 100) : '100%'}${phoenixLife === undefined ? '' : ';background:#fff2bf'}"></i></span><span class="troop-name">${label}</span></button>`;
   }
   /** Home village tray: the saved lineup with levels; opens the Hero Hall. */
   private rosterCards() {
@@ -6207,7 +6214,8 @@ export class HUD {
           : hero.phoenix?.pausedRevive
             ? hero.phoenix.pausedRevive / hero.phoenix.reviveDuration!
             : undefined;
-        const state = `${hero.kind}:${hero.unitId === null}:${!!unit && unit.hp <= 0 && !pending}:${!!hero.abilityUsed}:${m.activeHeroKind === hero.kind}${pending ? '|reviving' : ''}${phoenixLife === undefined ? '' : '|phoenix'}|revive:${m.activeSpell === 'revive' && m.canReviveHero(kind)}|key:${this.nativeHeroHotkey(kind)}`;
+        const tome = eternalTomeRemaining(m.battle, hero, unit);
+        const state = `${hero.kind}:${hero.unitId === null}:${!!unit && unit.hp <= 0 && !pending}:${!!hero.abilityUsed}:${m.activeHeroKind === hero.kind}${pending ? '|reviving' : ''}${phoenixLife === undefined ? '' : '|phoenix'}|tome:${!!tome}|revive:${m.activeSpell === 'revive' && m.canReviveHero(kind)}|key:${this.nativeHeroHotkey(kind)}`;
         if (card.dataset.heroState !== state) {
           const focused = document.activeElement === card;
           card.outerHTML = this.nativeHeroCard(kind, this.nativeHeroHotkey(kind));
@@ -6218,6 +6226,11 @@ export class HUD {
               ?.focus({ preventScroll: true });
           setText(refs.deployLabel, this.deployHint());
         } else {
+          if (tome) {
+            setText(card.querySelector('.troop-name'), `Tome ${tome}s`);
+            const label = `${HERO_SOURCE[kind]}, Eternal Tome active, ${tome} seconds remaining`;
+            if (card.getAttribute('aria-label') !== label) card.setAttribute('aria-label', label);
+          }
           const health = card.querySelector<HTMLElement>('.hero-health i');
           if (health && unit) {
             const width = pct((phoenixLife ?? unit.hp / unit.maxHp) * 100);
