@@ -45,12 +45,12 @@ function unit(kind: Unit['kind'], id = 1000, x = 10): Unit {
     native: {},
   };
 }
-function arena(version = REPLAY_VERSION) {
+function arena(version = REPLAY_VERSION, haste = 0) {
   const model = new GameModel();
   model.state.obstacles = [];
   model.state.buildings = [makeBuilding(1, 'townhall', 36, 36, 18)];
   model.state.army = { ...emptyArmy(), giant: 1 };
-  model.state.spells = emptySpells();
+  model.state.spells = { ...emptySpells(), haste };
   model.state.king = undefined;
   model.startBattle(0, true);
   const data = (model as unknown as { recording: ReplayData }).recording;
@@ -116,6 +116,37 @@ it.each([
     expect(unitDamageScale(u, battle.elapsed)).toBe(1.65);
   },
 );
+
+it.each([274, 275])('applies the Haste movement rule for recording %i', (version) => {
+  const { battle, step } = arena(version, 1);
+  const units = [
+    unit('lavahound', 1),
+    unit('balloon', 2),
+    unit('minion', 3),
+    unit('grandwarden', 4),
+  ];
+  battle.units = units;
+  const haste = castNativeSpell(battle, 'Haste', 1, 'attack', 10, 10);
+  step(haste.firstHit);
+  const troopSpeed = version === 274 ? 1.75 : 3.5;
+  expect(units.map((u) => unitSpeedBonus(u, battle.elapsed))).toEqual([
+    troopSpeed,
+    troopSpeed,
+    3.5,
+    1.75,
+  ]);
+  expect(units.map((u) => unitDamageScale(u, battle.elapsed))).toEqual([1, 1, 1, 1]);
+
+  const rage = castNativeSpell(battle, 'Rage', 1, 'attack', 10, 10);
+  step(rage.firstHit);
+  expect(units.map((u) => unitSpeedBonus(u, battle.elapsed))).toEqual([
+    troopSpeed,
+    troopSpeed,
+    3.5,
+    1.75,
+  ]);
+  expect(unitDamageScale(units[0], battle.elapsed)).toBe(2.3);
+});
 
 it('does not prolong a departed Rage Spell while a weaker Rage Gem keeps pulsing', () => {
   const { battle, step } = arena();

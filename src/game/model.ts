@@ -927,6 +927,8 @@ export interface Battle {
   nativeInvisibilityTargets?: true;
   /** Version 93: source Rage coverage, movement, healing and independent boost expiries. */
   nativeRageRules?: true;
+  /** Version 275: Haste’s reduced speed column applies to heroes, regardless of troop targeting. */
+  nativeHasteTroopSpeed?: true;
   /** Version 94: per-target native troop damage stages against buildings and defenders. */
   nativeTroopDamageRamp?: true;
   /** Version 95: Phoenix waits as an Egg and grants its Hero one temporary revival. */

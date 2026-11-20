@@ -619,8 +619,10 @@ function supportAttackers(
       const hero = !!u.hero || isHeroUnitKind(u.kind);
       const stats =
         battle.nativeRageRules && !hero ? nativeUnitStats(u.kind, u.level ?? 1) : undefined;
+      const preferred = !!(stats?.preferredClass || stats?.preferredBuilding);
+      const fullHaste = battle.nativeHasteTroopSpeed && cast.name === 'Haste';
       const modifiers = battle.nativeRageRules
-        ? rageModifiers(row, hero, !!(stats?.preferredClass || stats?.preferredBuilding))
+        ? rageModifiers(row, hero, preferred && !fullHaste)
         : {
             speed: (num(row, 'SpeedBoost') / SPELL_SPEED_SCALE) * scale,
             damage: (num(row, 'DamageBoostPercent') / 100) * scale,

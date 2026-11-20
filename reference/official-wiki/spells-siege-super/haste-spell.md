@@ -61,3 +61,18 @@ Cells shown as `wiki (client X)` differ from the pinned client.
 **Notes, ambiguities and manual checks**
 
 - Client durations are 0.25 s longer than the wiki's (one extra pulse), same pattern as Jump.
+
+## Local raid and replay behavior
+
+The pinned level-one row gives ordinary troops `SpeedBoost=28` and heroes
+`SpeedBoost2=14`. Before recording version 275, the shared Rage adapter also
+selected the lower column for favorite-target troops, including Lava Hounds
+and Balloons. Version 275 gives those troops the same Haste movement bonus as
+Minions. Heroes retain their half bonus, while Rage keeps its own
+preferred-target rule. Overlapping spell movement takes the stronger bonus,
+and Haste adds no damage. Version 274 and earlier retain their recorded rules.
+
+The packaged raid check covers Army readiness, the Hound's Air Defense
+preference, the Balloons' nearer defense targets, Haste, a Minion cleanup wave,
+and replay seeking. References establish the movement bonus and targeting
+preferences. Exact native flight timing and visual effects remain unverified.
