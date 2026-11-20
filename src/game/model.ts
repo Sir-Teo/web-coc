@@ -75,6 +75,7 @@ import {
   eventProgress,
   STARTER_CHALLENGES,
   STARTER_END_TOWN_HALL,
+  STARTER_FIRST_TOWN_HALL,
   STARTER_TIERS,
   type StarterChallenge,
   type StarterEvent,
@@ -2455,7 +2456,12 @@ export class GameModel {
   }
   /** The Starter Challenges run until the Town Hall reaches 7, when every tier is granted. */
   get starterActive() {
-    return (this.townhall?.level ?? 1) < STARTER_END_TOWN_HALL && !this.state.starter?.ended;
+    const level = this.townhallLevel;
+    return (
+      level >= STARTER_FIRST_TOWN_HALL &&
+      level < STARTER_END_TOWN_HALL &&
+      !this.state.starter?.ended
+    );
   }
   /** A challenge's progress toward its quantity. */
   starterProgress(c: StarterChallenge) {

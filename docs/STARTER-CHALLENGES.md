@@ -1,6 +1,6 @@
 # Starter Challenges
 
-The live game gives Town Halls 2 to 6 a free reward track, which the wiki calls the [Starter Challenges](https://clashofclans.fandom.com/wiki/Starter_Challenges) (revision 615217, read through the MediaWiki API on October 6, 2026) and the client titles the **Starter Pass**. Completing challenges earns points, and points unlock 26 reward tiers that can be claimed at any time. It is not time-limited: it ends when the Town Hall reaches 7, and then every tier not yet claimed is granted, even if its points were never earned.
+The live game gives Town Halls 2 to 6 a free reward track, which the wiki calls the [Starter Challenges](https://clashofclans.fandom.com/wiki/Starter_Challenges) (revision 615217, read through the MediaWiki API on October 6, 2026) and the client titles the **Starter Pass**. Completing challenges earns points, and points unlock 26 reward tiers that can be claimed at any time. It is not time-limited: it ends when the Town Hall reaches 7, and then every tier not yet claimed is granted, even if its points were never earned. The pass first appears after the Town Hall 2 upgrade completes. [Supercell’s original release notes](https://supercell.com/en/games/clashofclans/blog/release-notes/full-patch-notes-th14-update/)
 
 ## Source
 

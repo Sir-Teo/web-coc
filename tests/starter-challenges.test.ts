@@ -58,6 +58,22 @@ describe('Starter Challenges', () => {
     ]);
   });
 
+  it('opens at Town Hall 2 only after the upgrade completes', () => {
+    const m = village(1);
+    expect(m.starterChallenges).toEqual([]);
+    expect(m.starterActive).toBe(false);
+    expect(m.starterTierIssue(0)).toBe('Unavailable');
+    m.state.gold = 3000;
+    m.upgrade(m.townhall!.id);
+    expect(m.townhall!.upgradeEnd).toBeGreaterThan(m.clock);
+    expect(m.starterActive).toBe(false);
+    const restored = new GameModel(structuredClone(m.state), m.townhall!.upgradeEnd!);
+    expect(restored.townhall!.level).toBe(2);
+    expect(restored.starterActive).toBe(true);
+    expect(restored.starterChallenges).toHaveLength(13);
+    expect(restored.starterTierIssue(0)).toBe('100 points');
+  });
+
   it('reads building challenges from the village and reveals each Town Hall’s set', () => {
     const m = village(2);
     expect(m.starterActive).toBe(true);

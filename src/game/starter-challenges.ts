@@ -19,6 +19,7 @@ export const STARTER_CHALLENGES = catalog.challenges as StarterChallenge[];
 export const STARTER_TIERS = catalog.tiers as StarterTier[];
 export const STARTER_TITLE = catalog.title;
 export const STARTER_END_TEXT = catalog.endText;
+export const STARTER_FIRST_TOWN_HALL = Math.min(...STARTER_CHALLENGES.map((c) => c.townhall));
 /** Reaching this Town Hall ends the Starter Challenges and grants every unclaimed tier. */
 export const STARTER_END_TOWN_HALL = catalog.endTownHall;
 export const STARTER_MAX_POINTS = STARTER_TIERS.at(-1)!.score;
