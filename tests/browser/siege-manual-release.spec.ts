@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { GameModel } from '../../src/game/model';
+import { REPLAY_VERSION } from '../../src/game/replay';
 import { makeReplayFile, parseReplayFile } from '../../src/game/replay-file';
 import { siegeReleaseBattle, type ReleaseSiegeKind } from '../fixtures/siege-release';
 
@@ -19,7 +20,7 @@ for (const [kind, level, name, width, height] of profiles) {
     page,
   }) => {
     test.setTimeout(180000);
-    const initial = siegeReleaseBattle(kind, level, 232).data.initial,
+    const initial = siegeReleaseBattle(kind, level, REPLAY_VERSION).data.initial,
       errors: string[] = [];
     const reserve = kind === 'wallwrecker' ? 'battleblimp' : 'wallwrecker';
     initial.army[reserve] = 1;
@@ -42,7 +43,8 @@ for (const [kind, level, name, width, height] of profiles) {
       model.state.troopLevels = { ...initial.troopLevels };
       model.startBattle(0, true);
       model.recording.initial = structuredClone(initial);
-      model.battle = replayBattle(initial, 232);
+      // Reconstruct the live fixture under the ruleset stamped by startBattle().
+      model.battle = replayBattle(initial, model.recording.version);
       model.activeHero = false;
       model.activeHeroKind = null;
       model.activeSpell = null;
@@ -99,6 +101,7 @@ for (const [kind, level, name, width, height] of profiles) {
       model.finishBattle();
       return { snapshots, data: JSON.parse(JSON.stringify(model.state.raidLog[0].replay)) };
     });
+    expect(record.data.version).toBe(REPLAY_VERSION);
     expect(record.data.actions.filter((action) => action.type === 'siege-end')).toHaveLength(1);
     const snapshots = [before, ...record.snapshots],
       viewer = new GameModel();
