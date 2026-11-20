@@ -9,7 +9,7 @@ test.beforeEach(async ({ page }) => {
   await page.locator('[data-action="skip-tutorial"]').click();
 });
 
-test('shop gates both defenses and loads every direction and mine state', async ({ page }) => {
+test('shop gates both defenses and their scene art loads on demand', async ({ page }) => {
   await page.locator('.shop-btn').click();
   await page.locator('[data-action="tab:Defenses"]').click();
   await expect(page.locator('[data-action="build:airsweeper"]')).toBeDisabled();
@@ -21,17 +21,47 @@ test('shop gates both defenses and loads every direction and mine state', async 
   await expect(page.locator('.shop-tile').filter({ hasText: 'Seeking Air Mine' })).toContainText(
     'Town Hall 7',
   );
-  const ready = await page.evaluate(() => {
-    const textures = window.__game.scene.textures;
-    return (
-      Array.from({ length: 56 }, (_, i) =>
-        textures.exists(`airsweeper-${Math.floor(i / 8) + 1}-${i % 8}`),
-      ).every(Boolean) &&
-      // The mine's base sprite loads when one is first drawn (only owned kinds load it at boot).
-      [1, 3, 5, 7].map((level) => `seeking-mine-setup-${level}`).every((k) => textures.exists(k))
+  const loaded = () =>
+    page.evaluate(() => {
+      const textures = window.__game.scene.textures;
+      return {
+        sweeper: Array.from({ length: 56 }, (_, i) =>
+          textures.exists(`airsweeper-${Math.floor(i / 8) + 1}-${i % 8}`),
+        ).filter(Boolean).length,
+        mine: [1, 3, 5, 7].filter((level) => textures.exists(`seeking-mine-setup-${level}`))
+          .length,
+      };
+    });
+  expect(await loaded()).toEqual({ sweeper: 0, mine: 0 });
+
+  // Shop thumbnails are independent of the battlefield textures.
+  await expect
+    .poll(() =>
+      page.locator('.shop-tile').filter({ hasText: 'Seeking Air Mine' }).locator('img')
+        .evaluate((image: HTMLImageElement) => image.naturalWidth),
+    )
+    .toBeGreaterThan(0);
+  await page.locator('[data-action="tab:Defenses"]').click();
+  await expect
+    .poll(() =>
+      page.locator('.shop-tile').filter({ hasText: 'Air Sweeper' }).locator('img')
+        .evaluate((image: HTMLImageElement) => image.naturalWidth),
+    )
+    .toBeGreaterThan(0);
+  await page.locator('[data-action="close-drawer"]').click();
+  await page.evaluate(async () => {
+    const { makeBuilding } = await import('/src/game/model.ts');
+    const { model, scene } = window.__game;
+    model.townhall.level = 7;
+    model.state.obstacles = [];
+    model.state.buildings.push(
+      makeBuilding(model.state.nextId++, 'airsweeper', 28, 21),
+      makeBuilding(model.state.nextId++, 'seekingairmine', 32, 23),
     );
+    model.changed();
+    scene.sync();
   });
-  expect(ready).toBe(true);
+  await expect.poll(loaded, { timeout: 15000 }).toEqual({ sweeper: 56, mine: 4 });
 });
 
 for (const width of [390, 320])
