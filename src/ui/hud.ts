@@ -110,6 +110,7 @@ import {
   itemRarity,
   itemStats as nativeItemStats,
   itemUpgradeCost,
+  itemUnlockBlacksmith,
   petLevelCap,
   petMaxLevel,
   petUnlockHouse,
@@ -4503,13 +4504,14 @@ export class HUD {
       cap = slug ? itemLevelCap(slug, m.blacksmithLevel) : 0,
       max = slug ? itemMaxLevel(slug) : 0,
       cost = owned && slug ? itemUpgradeCost(slug, level) : null;
+    const unlockLevel = !owned && rarity === 'COMMON' ? itemUnlockBlacksmith(slug) : 0;
     const purchase = this.nativeOrePurchase;
     const stats = slug ? nativeItemStats(slug, owned ? level : 1) : null;
     return `<div class="modal-body blacksmith-body">
       <div class="ore-wallet" aria-label="Ore storage">${ORE_KEYS.map((k) => `<div class="ore-balance ${k}">${gearImage(k)}<span>${ORES[k].name}<b>${n(m.ores[k])}<small> / ${n(m.oreCapacity[k])}</small></b></span></div>`).join('')}</div>
       ${this.smithTabs()}
       ${unlocked ? '' : `<div class="equipment-locked">${icon('LockKeyhole', 20)}<span>Build a Blacksmith at Town Hall 8 to equip and upgrade items. Your default equipment is ready for battle.</span>${button('shop', 'Shop', 'game-btn green')}</div>`}
-      <div class="king-loadout"><img class="loadout-portrait" src="${heroPortrait(hero)}" alt="${HERO_SOURCE[hero]}"><div class="loadout-label"><span class="eyebrow">${HERO_SOURCE[hero].toUpperCase()}</span><h2>Equipped abilities</h2><p>Both activate together, once per attack.</p></div><div class="equipment-slots">${[
+      <div class="king-loadout"><img class="loadout-portrait" src="${heroPortrait(hero)}" alt="${HERO_SOURCE[hero]}"><div class="loadout-label"><span class="eyebrow">${HERO_SOURCE[hero].toUpperCase()}</span><h2>Equipped abilities</h2><p>Active items trigger together when the hero uses their ability. Passive effects work while deployed.</p></div><div class="equipment-slots">${[
         0, 1,
       ]
         .map((slot) => {
@@ -4537,7 +4539,7 @@ export class HUD {
         .join('')}</div>
       ${
         slug
-          ? `<section class="equipment-detail" aria-label="${nativeItemName(slug)} details"><div class="equipment-detail-heading">${nativeItemImage(slug)}<div><span class="eyebrow">${rarity} · ${stats!.passive ? 'PASSIVE' : 'ACTIVE ABILITY'}</span><h2>${nativeItemName(slug)}</h2><p>${owned ? `Level ${level} / ${max}` : `${rarity} item · Not owned`}</p></div></div>
+          ? `<section class="equipment-detail" aria-label="${nativeItemName(slug)} details"><div class="equipment-detail-heading">${nativeItemImage(slug)}<div><span class="eyebrow">${rarity} · ${stats!.passive ? 'PASSIVE' : 'ACTIVE ABILITY'}</span><h2>${nativeItemName(slug)}</h2><p>${owned ? `Level ${level} / ${max}` : `${rarity} item · ${unlockLevel ? `Requires Blacksmith level ${unlockLevel}` : 'Not owned'}`}</p></div></div>
       ${
         stats
           ? `<table class="equipment-stats"><thead><tr><th>Attribute</th><th>${owned ? `Level ${level}` : 'Level 1'}</th></tr></thead><tbody>${[

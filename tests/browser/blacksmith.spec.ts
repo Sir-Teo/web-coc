@@ -127,6 +127,19 @@ test('locked and unaffordable upgrades are explained without losing resources', 
   expect(await page.evaluate(() => window.__game.model.kingEquipment.levels.puppet)).toBe(1);
 });
 
+test('locked Common equipment identifies the required Blacksmith tier', async ({ page }) => {
+  await boot(page);
+  await page.evaluate(() => {
+    const model = window.__game.model;
+    model.state.heroes = { queen: { level: 1 } };
+    model.changed();
+  });
+  await page.locator('[data-action="blacksmith-hero:queen"]').click();
+  await page.locator('[data-action="native-item:piercing-arrow"]').click();
+  await expect(page.locator('.equipment-detail')).toContainText('Requires Blacksmith level 2');
+  await expect(page.locator('[data-action^="native-equip:piercing-arrow"]')).toHaveCount(0);
+});
+
 test('Blacksmith scene sprite matches the shipped alpha asset and quake effects follow the battle clock', async ({
   page,
   browserName,
