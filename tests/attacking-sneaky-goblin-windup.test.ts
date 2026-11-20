@@ -31,6 +31,31 @@ for (let level = 1; level <= 6; level++)
       expect(target.hp).toBe(target.maxHp - 2 * damage);
     });
 
+it('starts concealment at carried deployment and preserves the previous recording deadline', () => {
+  const fresh = nativeDirectBattle('sneakygoblin', 1, 273, 6.9);
+  expect(unitInvisible(fresh.unit, 0)).toBe(true);
+  expect(fresh.unit.native?.effects?.invisibleUntil).toBe(5);
+  fresh.step();
+  expect(fresh.unit.native?.effects?.invisibleUntil).toBe(5);
+  expect(unitInvisible(fresh.unit, 4.95)).toBe(true);
+  expect(unitInvisible(fresh.unit, 5)).toBe(false);
+
+  const old = nativeDirectBattle('sneakygoblin', 1, 272, 6.9);
+  expect(unitInvisible(old.unit, 0)).toBe(false);
+  old.step();
+  expect(old.unit.native?.effects?.invisibleUntil).toBeCloseTo(5.05, 8);
+  expect(unitInvisible(old.unit, 5)).toBe(true);
+
+  const delayed = nativeDirectBattle('sneakygoblin', 1, 273, 6.9, 'storage', {}, {
+    beforeDeploy: ({ battle }) => {
+      battle.elapsed = 2;
+    },
+  });
+  expect(delayed.unit.native?.effects?.invisibleUntil).toBe(7);
+  expect(unitInvisible(delayed.unit, 6.95)).toBe(true);
+  expect(unitInvisible(delayed.unit, 7)).toBe(false);
+});
+
 it('a direct swing hits a ground defender once and ignores the air layer', () => {
   const r = nativeDirectBattle('sneakygoblin', 1, 196),
     ground = spawnGarrisonDefender(r.battle, 'golem', 8, 1, 12, 11.5, 0),

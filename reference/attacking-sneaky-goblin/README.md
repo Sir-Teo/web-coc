@@ -29,7 +29,7 @@ and original body offsets use the shared controller. Actual Angry Spell
 forced selection cancels the pending charge without a late resource hit.
 Trap eligibility remains unchanged during invisibility.
 
-Deployment invisibility retains its separate lifecycle clock. The current
+Deployment invisibility retains its separate lifecycle clock. The version-196
 ordinary-deployment adapter initializes it on the first simulation update,
 yielding a 5.05-second deadline for a time-zero drop at 20 Hz. Freeze does
 not extend or refresh it. Only a carried Sneaky Goblin enables the change.
@@ -63,3 +63,12 @@ invisibility, charge offsets, exact reverse seeks, read-only rendering, reduced
 motion, asset requests and WebGL health at phone and desktop widths. Two actual
 Angry Spell cases verify forced retargeting. Screenshots go to ignored
 `output/playtest/`.
+
+## Recording version 273
+
+Each fresh carried deployment starts the existing five-second Cloak at the
+deployment tick, before its first rendered frame or simulation update. Older
+recordings keep first-update initialization. Resource selection and charge timing
+remain the same. Recall, cargo and other deployment abilities keep their existing
+paths. The retained five-second description does not establish the original
+client’s tick rounding or feedback frames.

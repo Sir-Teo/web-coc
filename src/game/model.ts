@@ -422,6 +422,7 @@ import {
   type Resource,
 } from './data';
 import {
+  applyDeploymentAbilities,
   initialNativeState,
   nativeBehavior,
   resolveNativeDeath,
@@ -1159,6 +1160,7 @@ export interface Battle {
   nativeSuperBarbarianWindup?: true;
   /** Version 196: Sneaky Goblin charges independently of deployment invisibility. */
   nativeSneakyGoblinWindup?: true;
+  nativeSneakyGoblinDeploymentClock?: true;
   /** Version 197: carried Angry Spell discards pending troop charges when forcing defense selection. */
   nativeAngryChargeReset?: true;
   /** Version 198: Super Archer charges before releasing its existing piercing arrow. */
@@ -6569,6 +6571,10 @@ export class GameModel {
         ? { spawnedAt: b.elapsed }
         : {}),
     });
+    if (b.nativeSneakyGoblinDeploymentClock && k === 'sneakygoblin' && recalled === undefined) {
+      const unit = b.units.at(-1)!;
+      applyDeploymentAbilities(b, unit, statsFor(b, unit), b.elapsed);
+    }
     if (b.nativeYetiRecall && (k === 'yeti' || k === 'superyeti') && recalled !== undefined) {
       const stock = b.recalledYeti?.[k]?.shift();
       if (stock) Object.assign(b.units.at(-1)!.native!, stock);

@@ -2405,9 +2405,8 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
   }
 }
 
-/** Timers that run even while the unit is frozen. */
-function stepLifecycle(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: number) {
-  const battle = ctx.battle;
+/** Apply a unit's timed deployment abilities once, using its lifecycle origin. */
+export function applyDeploymentAbilities(battle: Battle, u: Unit, s: NativeUnitStats, at: number) {
   const state = (u.native ??= {});
   if (!state.deploymentAbility && isSiege(u.kind) === false && s.superLicence) {
     state.deploymentAbility = true;
@@ -2439,6 +2438,13 @@ function stepLifecycle(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at:
             };
     }
   }
+}
+
+/** Timers that run even while the unit is frozen. */
+function stepLifecycle(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: number) {
+  const battle = ctx.battle;
+  applyDeploymentAbilities(battle, u, s, at);
+  const state = u.native!;
   if (s.aura && state.aura === undefined) {
     const cast = castNativeSpell(battle, s.aura, s.auraLevel, 'attack', u.x, u.y, {
       at,
