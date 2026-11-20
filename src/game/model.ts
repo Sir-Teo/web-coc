@@ -4257,14 +4257,29 @@ export class GameModel {
         continue;
       }
       if (progress.upgradeEnd) changes.push(`${name} is unavailable while upgrading`);
-      const items = hero.items.filter(
-        (slug) =>
-          validItem(slug) && itemHero(slug) === hero.kind && gear.levels[slug] !== undefined,
-      );
-      for (const slug of hero.items)
-        if (!items.includes(slug))
-          changes.push(`${name} keeps the current item for ${itemName(slug)}`);
-      if (items.length && !this.blacksmith) changes.push(`${name}'s items need a Blacksmith`);
+      const ownsItem = (slug: string) =>
+        validItem(slug) && itemHero(slug) === hero.kind && gear.levels[slug] !== undefined;
+      const current = (gear.loadouts[hero.kind] ?? []).filter(ownsItem);
+      const reserved = new Set(hero.items.filter(ownsItem));
+      // Keep the requested items first. An unavailable slot can reuse only equipment the
+      // hero has equipped, and cannot take an item reserved for another requested slot.
+      const items = this.blacksmith
+        ? hero.items.flatMap((slug, index) => {
+            if (ownsItem(slug)) return [slug];
+            const fallback = [current[index], ...current].find(
+              (item) => item && !reserved.has(item),
+            );
+            if (!fallback) {
+              changes.push(`${name} skips unavailable ${itemName(slug)}`);
+              return [];
+            }
+            reserved.add(fallback);
+            changes.push(`${name} keeps ${itemName(fallback)} in place of ${itemName(slug)}`);
+            return [fallback];
+          })
+        : current;
+      if (hero.items.length && !this.blacksmith)
+        changes.push(`${name} keeps current equipment until a Blacksmith is available`);
       const pet = hero.pet && pets.levels[hero.pet] !== undefined ? hero.pet : undefined;
       if (hero.pet && !pet) changes.push(`${PET_DISPLAY[hero.pet]} is not researched yet`);
       else if (pet && !this.petHouse) changes.push(`${PET_DISPLAY[pet]} needs a Pet House`);

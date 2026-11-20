@@ -42,7 +42,7 @@ A recipe works like a Quick army, through the same rules:
 
 - Its troops, siege machines and spells replace the army, but only if the whole army can be trained here. That means enough troop and spell housing, unlocked troops and spells, and an active boost for any Super Troop.
 - If it cannot be trained, the card's button reads "You cannot train this army" and the reason shows beneath. The army is left as it was.
-- Heroes, items and pets go where the village has them. When substitutions or omissions are needed, **Use army** opens a confirmation listing the changes before the active army is replaced. Cancel returns to the same recipe. The pinned `TID_POPUP_CONFIRM_AUTOFIX_RECIPE_TEXT` supplies the warning. The web dialog's layout and button labels are local choices.
+- Heroes, items and pets go where the village has them. When substitutions or omissions are needed, **Use army** opens a confirmation listing the changes before the active army is replaced. Cancel returns to the same recipe. The pinned `TID_POPUP_CONFIRM_AUTOFIX_RECIPE_TEXT` supplies the warning. The web dialog's layout and button labels are local choices. When a requested item is unowned, the web loadout retains a compatible equipped item if one is free and names it in the preview. The pinned warning describes substitutions or removal. The original item priority is unverified.
 
 Each card shows:
 

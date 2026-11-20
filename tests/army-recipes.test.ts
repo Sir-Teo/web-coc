@@ -104,6 +104,35 @@ describe('army recipes', () => {
     expect(toasts.at(-1)).toContain('Barbarian King is not in this village');
   });
 
+  it('keeps compatible equipped items when a recipe requests unowned equipment', () => {
+    const m = village(10, 240);
+    m.state.buildings.push(
+      makeBuilding(m.state.nextId++, 'herohall', 8, 18, 4),
+      makeBuilding(m.state.nextId++, 'blacksmith', 16, 18, 3),
+    );
+    m.state.king = { level: 1 };
+    m.state.heroes = { queen: { level: 1 } };
+    m.state.heroLineup = ['king', 'queen'];
+    const defaults = m.gear;
+    defaults.loadouts.king = ['barbarian-puppet', 'rage-vial'];
+    defaults.loadouts.queen = ['archer-puppet', 'invisibility-vial'];
+    m.state.gear = defaults;
+
+    const recipe = armyRecipe('EV_TH10_HotHogSummer')!;
+    const before = structuredClone(defaults.loadouts);
+    const plan = m.presetHeroPlan(recipe);
+    expect(plan.changes).toEqual([
+      'Barbarian King keeps Barbarian Puppet in place of Spiky Ball',
+      'Archer Queen keeps Invisibility Vial in place of Action Figure',
+    ]);
+    expect(m.gear.loadouts).toEqual(before);
+    expect(m.useArmyRecipe(recipe.id)).toBe(true);
+    expect(m.heroSetups().map(({ kind, items }) => [kind, items.map(({ slug }) => slug)])).toEqual([
+      ['king', ['barbarian-puppet', 'earthquake-boots']],
+      ['queen', ['invisibility-vial', 'archer-puppet']],
+    ]);
+  });
+
   it('refuses a recipe the village cannot train, leaving the army as it was', () => {
     const m = village(10);
     for (const b of m.state.buildings) if (b.kind === 'camp') b.level = 1;

@@ -3,7 +3,7 @@ import { chromium, expect } from '@playwright/test';
 import { createServer, preview } from 'vite';
 import { mkdir } from 'node:fs/promises';
 
-const artifacts = 'output/rea-cloud-playtest/cookbook-confirm';
+const artifacts = 'output/rea-cloud-playtest/cookbook-equipment';
 const recipe = 'EV_TH10_HotHogSummer';
 const baseline = process.argv.includes('--baseline');
 
@@ -28,6 +28,8 @@ try {
     makeBuilding(4, 'spellfactory', 18, 24, maxLevelFor('spellfactory', 10)),
     makeBuilding(5, 'darkspellfactory', 10, 24, maxLevelFor('darkspellfactory', 10)),
     makeBuilding(10, 'builder', 38, 33, 1),
+    makeBuilding(11, 'herohall', 9, 33, maxLevelFor('herohall', 10)),
+    makeBuilding(12, 'blacksmith', 16, 33, maxLevelFor('blacksmith', 10)),
     ...[8, 14, 20, 26].map((x, i) => makeBuilding(6 + i, 'camp', x, 12, maxLevelFor('camp', 10))),
   ];
   fixture.state.nextId = 100;
@@ -37,6 +39,9 @@ try {
   fixture.state.spells = emptySpells();
   fixture.state.settings.sound = false;
   fixture.state.settings.music = false;
+  fixture.state.king = { level: 1 };
+  fixture.state.heroes = { queen: { level: 1 } };
+  fixture.state.heroLineup = ['king', 'queen'];
   fixture.train('swordsman', 3);
   expect(fixture.state.army.swordsman).toBe(3);
   expect(fixture.capacity).toBe(240);
@@ -98,6 +103,11 @@ try {
           army: composition(model.state.army),
           spells: composition(model.state.spells),
           lineup: model.state.heroLineup,
+          gear: model.gear.loadouts,
+          battleGear: model.battle?.nativeHeroes?.map(({ kind, items }) => [
+            kind,
+            items.map(({ slug }) => slug),
+          ]),
           remaining: model.battle && composition(model.battle.remaining),
           replay: model.state.raidLog?.[0]?.replay?.actions,
         };
@@ -110,46 +120,61 @@ try {
     const old = await read();
     expect(old.army).toEqual({ swordsman: 3 });
     await tap(`recipe-use:${recipe}`);
-    if (baseline) {
-      await expect(page.locator('#toast')).toContainText('set as active army');
-      expect((await read()).army.hogrider).toBe(16);
-      await shot('01-baseline-immediate-replacement');
-      console.log('Baseline: the first tap immediately replaced the active army.');
-    } else {
-      await expect(page.getByRole('heading', { name: 'Confirm recipe changes' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Confirm recipe changes' })).toBeVisible();
+    expect(await read()).toEqual(old);
+    await shot(baseline ? '01-baseline-confirmation' : '02-confirmation');
+    await tap('recipe-confirm-cancel');
+    await expect(page.locator('#modal-title')).toHaveText('Cookbook');
+    await expect(page.locator(`[data-action="recipe-use:${recipe}"]`)).toBeFocused();
+    expect(await read()).toEqual(old);
+    await tap(`recipe-use:${recipe}`);
+    if (!baseline) {
+      await expect(page.getByText(/keeps Barbarian Puppet in place of Spiky Ball/)).toBeVisible();
       await expect(
-        page.getByText('Unavailable Heroes, Pets, or Equipment will be swapped', { exact: false }),
+        page.getByText(/keeps Invisibility Vial in place of Action Figure/),
       ).toBeVisible();
-      expect(await read()).toEqual(old);
-      await shot('02-confirmation');
-      await tap('recipe-confirm-cancel');
-      await expect(page.locator('#modal-title')).toHaveText('Cookbook');
-      await expect(page.locator(`[data-action="recipe-use:${recipe}"]`)).toBeFocused();
-      expect(await read()).toEqual(old);
-      await tap(`recipe-use:${recipe}`);
-      await tap('recipe-confirm-use');
-      await expect(page.locator('#toast')).toContainText(
-        'Recipe Hot Hog Summer set as active army!',
-      );
-      expect((await read()).army).toEqual({ hogrider: 16, valkyrie: 16, wizard: 8 });
-      await tap('close');
-      await tap('close-drawer');
-      await page.locator('.attack-btn').tap();
-      await tap('attack:0');
-      await expect(page.locator('.battle-enemy h2')).toHaveText('Payback');
-      await tap('troop:hogrider');
-      await tapField(32, 26, true);
-      await expect.poll(async () => (await read()).remaining?.hogrider).toBe(15);
-      await shot('03-first-deployment');
-      await tap('surrender');
-      await tap('end');
-      await expect(page.getByRole('button', { name: 'Watch replay', exact: true })).toBeVisible();
-      expect((await read()).replay.filter(({ type }) => type === 'troop')).toEqual([
-        expect.objectContaining({ type: 'troop', kind: 'hogrider' }),
-      ]);
-      await page.getByRole('button', { name: 'Watch replay', exact: true }).tap();
-      await expect(page.getByRole('slider', { name: 'Replay position' })).toBeVisible();
     }
+    await tap('recipe-confirm-use');
+    await expect(page.locator('#toast')).toContainText('Recipe Hot Hog Summer set as active army!');
+    const prepared = await read();
+    expect(prepared.army).toEqual({ hogrider: 16, valkyrie: 16, wizard: 8 });
+    const king = baseline ? ['earthquake-boots'] : ['barbarian-puppet', 'earthquake-boots'];
+    const queen = baseline ? ['archer-puppet'] : ['invisibility-vial', 'archer-puppet'];
+    expect(prepared.gear.king).toEqual(king);
+    expect(prepared.gear.queen).toEqual(queen);
+    await tap('close');
+    await tap('close-drawer');
+    await page.locator('.attack-btn').tap();
+    await tap('attack:0');
+    await expect(page.locator('.battle-enemy h2')).toHaveText('Payback');
+    expect((await read()).battleGear).toEqual([
+      ['king', king],
+      ['queen', queen],
+    ]);
+    await tap('troop:hogrider');
+    await tapField(32, 26, true);
+    await expect.poll(async () => (await read()).remaining?.hogrider).toBe(15);
+    await tap('hero-select:king');
+    await tapField(32, 26, true);
+    await tap('hero-select:queen');
+    await tapField(32, 26, true);
+    await shot(baseline ? '01-baseline-battle' : '03-first-deployment');
+    await tap('surrender');
+    await tap('end');
+    await expect(page.getByRole('button', { name: 'Watch replay', exact: true })).toBeVisible();
+    expect((await read()).replay.filter(({ type }) => type === 'troop')).toEqual([
+      expect.objectContaining({ type: 'troop', kind: 'hogrider' }),
+    ]);
+    expect(
+      (await read()).replay.filter(({ type }) => type === 'hero').map(({ hero }) => hero),
+    ).toEqual(['king', 'queen']);
+    await page.getByRole('button', { name: 'Watch replay', exact: true }).tap();
+    await expect(page.getByRole('slider', { name: 'Replay position' })).toBeVisible();
+    expect((await read()).battleGear).toEqual([
+      ['king', king],
+      ['queen', queen],
+    ]);
+    console.log(JSON.stringify({ baseline, king, queen }));
     expect(errors).toEqual([]);
   } finally {
     await browser.close();
