@@ -127,6 +127,34 @@ it('selects a living replacement at release when the copied wind-up target has a
   expect(r.battle.nativeSeekingShieldCasts![0].shots[0].targetId).toBe(3);
 });
 
+it.each(['absent', 'destroyed'] as const)(
+  'uses only surviving defenses before falling back when another defense is %s',
+  (status) => {
+    const buildings = [
+      makeBuilding(1, 'townhall', 36, 36, 18),
+      makeBuilding(2, 'cannon', 13, 10, 21),
+      makeBuilding(3, 'airdefense', 20, 10, 13),
+      makeBuilding(5, 'goldmine', 10, 14, 16),
+      makeBuilding(6, 'wall', 9, 11, 18),
+    ];
+    if (status === 'destroyed') buildings.push(makeBuilding(4, 'cannon', 15, 14, 21));
+    const r = seekingShieldBattle(1, undefined, undefined, buildings);
+    const champion = holdChampion(r);
+    if (status === 'destroyed') {
+      champion.target = 4;
+      r.battle.buildings.find((building) => building.id === 4)!.hp = 0;
+    }
+    const wall = r.battle.buildings.find((building) => building.id === 6)!;
+    const wallHp = wall.hp;
+    expect(r.model.activateNativeHeroAbility('champion')).toBe(true);
+    r.until(3.5);
+    const shots = r.battle.nativeSeekingShieldCasts![0].shots;
+    expect(shots.map(({ targetId }) => targetId)).toEqual([2, 3, 5, 1]);
+    expect(shots.at(-1)?.native?.seekingShield?.continues).toBeUndefined();
+    expect(wall.hp).toBe(wallHp);
+  },
+);
+
 it('preserves launch-time damage and counts a dead or immune landing once before continuing', () => {
   for (const dead of [false, true]) {
     const r = seekingShieldBattle(18);

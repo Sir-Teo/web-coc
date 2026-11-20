@@ -66,3 +66,16 @@ recovery, historical playback and actual Web Audio gain/pitch.
 See [version 137 moving-target history](../../docs/NATIVE-HEROES.md#version-137-moving-equipment-flight-history)
 for dense/sparse rendering and real Clan Castle Dragon replay checks. Building-targeted legs
 carry no additional history arrays.
+
+## Two-defense Practice check
+
+On web checkpoint `01d8e921`, a 390×650 Chromium touch playthrough went from
+Army and Hero Hall into Practice, deployed the Royal Champion, and activated
+her level-one shield. The chain dealt 1,000 damage per contact and hit the Air
+Defense and Cannon before the Army Camp and Spell Factory. The wall kept its
+health. Seeking backward before activation and forward into flight and after
+the fourth contact reproduced the same shield and structure state. Model
+regressions also cover the same defense being absent or destroyed before the
+throw, including a stale copied target. The client rows establish the contact
+cap and defense preference. The exact ordering among fallback targets, original
+screen layout, and native visual timing remain unverified.
