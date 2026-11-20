@@ -969,6 +969,7 @@ export interface Battle {
   nativeHealerNearestTarget?: true;
   independentIceBlockShield?: true;
   overgrowthRevealsTesla?: true;
+  angrySpellEligibility?: true;
   /** Version 100: native healing resolves through source projectile travel and chain hops. */
   nativeHealingProjectiles?: true;
   nativeHealingTotem?: true;

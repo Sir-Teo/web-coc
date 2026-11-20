@@ -14,7 +14,7 @@ import { emptyArmy, emptySpells } from '../src/game/army';
 import { nativeRow, num, seconds } from '../src/game/native-data';
 import { SPELL_SOURCE, maxSpellLevel, spellFactory } from '../src/game/spell-progression';
 import { SPELL_UNLOCK } from '../src/game/army-unlocks';
-import { validateReplay } from '../src/game/replay';
+import { replayBattle, validateReplay, type ReplayData } from '../src/game/replay';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import { validateSave } from '../src/game/save';
 import { hurtUnit, unitEffects } from '../src/game/native-status';
@@ -289,6 +289,32 @@ describe('complete spell roster', () => {
     cast(m, 'angry', 3, 13);
     run(m, firstHit('angry', 1) + 0.2);
     expect(m.battle!.units[0].target).toBe(11);
+  });
+
+  it.each([271, 272])('Angry respects the Giant eligibility rule in replay version %i', (version) => {
+    const m = arena(
+      [['goldmine', 6, 12, 1], ['cannon', 20, 12, 1]],
+      { swordsman: 1, giant: 1 },
+      { angry: 1 },
+      1,
+    );
+    const { initial } = (m as unknown as { recording: ReplayData }).recording;
+    const battle = (m.battle = replayBattle(initial, version));
+    for (const kind of ['swordsman', 'giant'] as const) {
+      m.activeTroop = kind;
+      expect(m.deploy(3, 13)).toBe(true);
+    }
+    run(m, 0.3);
+    const [barbarian, giant] = battle.units;
+    expect(barbarian.target).toBe(10);
+    expect(giant.target).toBe(11);
+    cast(m, 'angry', 3, 13);
+    run(m, firstHit('angry', 1) + 0.2);
+    expect(barbarian.native?.angryUntil).toBeGreaterThan(battle.elapsed);
+    expect(barbarian.target).toBe(11);
+    if (version === 271) expect(giant.native?.angryUntil).toBeGreaterThan(battle.elapsed);
+    else expect(giant.native?.angryUntil).toBeUndefined();
+    expect(giant.target).toBe(11);
   });
 
   it('stuns defenses with the Totem Spell and leaves a draining Totem defenses can target', () => {

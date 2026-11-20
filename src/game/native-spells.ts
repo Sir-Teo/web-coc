@@ -191,6 +191,11 @@ export const footprintDistance = (x: number, y: number, b: Building) => {
   const size = BUILDINGS[b.kind].size;
   return distance2D(Math.max(b.x - x, 0, x - b.x - size), Math.max(b.y - y, 0, y - b.y - size));
 };
+// Retained Angry Spell exceptions. Lava and Ice Hounds still switch off Air Defenses.
+const angryImmuneKinds = new Set<Unit['kind']>([
+  'balloon', 'giant', 'golem', 'hogrider', 'rootrider', 'dragonrider',
+  'icegolem', 'bear', 'royalchampion', 'healer', 'druid', 'ruinwitch',
+]);
 const isTotem = (u: Unit) => u.kind === 'totem';
 const liveAttacker = (u: Unit, at: number) =>
   u.hp > 0 &&
@@ -706,6 +711,7 @@ function supportAttackers(
       };
     }
     if (given === 'AngrySpellAnger') {
+      if (battle.angrySpellEligibility && angryImmuneKinds.has(u.kind)) continue;
       if (cast.touched?.includes(u.id)) continue;
       (cast.touched ??= []).push(u.id);
       const ability = nativeRow('abilities', given, num(row, 'GivenSpecialAbilityLevel', 1) || 1);
