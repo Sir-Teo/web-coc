@@ -113,7 +113,8 @@ export const unitHidden = (unit: Unit, at: number) =>
     !!unit.native.recalled ||
     (unit.native.effects?.invisibleUntil ?? 0) > at + 1e-9);
 /** Burrowed movers and units whose client row disables trap triggers pass over armed traps. */
-export const unitTriggersTraps = (unit: Unit) => !unit.native?.burrowed && !unit.native?.noTraps;
+export const unitTriggersTraps = (unit: Unit) =>
+  !unit.native?.burrowed && !unit.native?.noTraps && unit.native?.jellyAttachedRange === undefined;
 export const unitFrozen = (unit: Unit, at: number) => {
   const e = unit.native?.effects;
   return !!e && ((e.frozenUntil ?? 0) > at + 1e-9 || (e.stunUntil ?? 0) > at + 1e-9);

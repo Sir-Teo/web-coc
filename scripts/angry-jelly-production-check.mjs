@@ -1,9 +1,9 @@
-// Exercise Angry Jelly unlock, reassignment, and hero target selection.
+// Exercise Angry Jelly from preparation through attachment, knockout and replay.
 import { chromium, expect } from '@playwright/test';
 import { createServer, preview } from 'vite';
 import { mkdir } from 'node:fs/promises';
 
-const artifacts = 'output/rea-cloud-playtest/angry-jelly';
+const artifacts = 'output/rea-cloud-playtest/angry-jelly-attachment';
 const now = Date.now();
 const baseline = process.argv.includes('--baseline');
 
@@ -31,6 +31,7 @@ try {
     makeBuilding(4, 'herohall', 32, 27, 3),
     makeBuilding(5, 'cannon', 18, 21, 21),
     makeBuilding(6, 'goldstorage', 25, 20, 15),
+    makeBuilding(7, 'airbomb', 22, 23, 1),
   ];
   fixture.state.nextId = 100;
   fixture.state.obstacles = [];
@@ -100,7 +101,18 @@ try {
         const owner = b?.nativeHeroes?.find(({ kind }) => kind === 'queen');
         const unit = (id) => {
           const u = b?.units.find((unit) => unit.id === id);
-          return u && { hp: u.hp, id, target: u.target };
+          return (
+            u && {
+              hp: u.hp,
+              id,
+              target: u.target,
+              x: u.x,
+              y: u.y,
+              cooldown: u.cooldown,
+              protected: !!u.native?.untargetable,
+              attached: u.native?.jellyAttachedRange ?? null,
+            }
+          );
         };
         return {
           houseLevel: model.petHouse.level,
@@ -111,6 +123,7 @@ try {
           hero: unit(owner?.unitId),
           jelly: unit(owner?.petId),
           expires: owner?.jellyBrainwashUntil,
+          airBombTarget: b?.traps[7]?.targetId,
           replay: model.replay,
         };
       });
@@ -152,13 +165,26 @@ try {
     await tap('hero-select:queen');
     await tapField(23, 22.5, true);
     await expect.poll(async () => !!(await read()).jelly).toBe(true);
-    await expect.poll(async () => (await read()).hero.target).toBe(baseline ? 6 : 5);
+    await expect.poll(async () => (await read()).hero.target).toBe(5);
+    await expect.poll(async () => (await read()).jelly.cooldown).toBeGreaterThan(0);
     const deployed = await read();
-    expect(deployed.expires).toBe(baseline ? undefined : 25);
-    await shot(baseline ? '02-baseline-storage' : '02-brainwashed-defense');
-    await expect.poll(async () => (await read()).hero.hp).toBeLessThanOrEqual(0);
+    expect(deployed.jelly).toMatchObject({
+      protected: !baseline,
+      attached: baseline ? null : 7,
+      target: 5,
+    });
+    expect(deployed.airBombTarget).toBe(baseline ? deployed.jelly.id : undefined);
+    if (!baseline) expect(deployed.jelly).toMatchObject({ x: deployed.hero.x, y: deployed.hero.y });
+    expect(deployed.expires).toBe(25);
+    await shot(baseline ? '02-baseline-independent' : '02-jelly-attached');
+    await expect
+      .poll(async () => (await read()).hero.hp, { timeout: 30_000 })
+      .toBeLessThanOrEqual(0);
     const fallen = await read();
-    expect(fallen.expires).toBe(baseline ? undefined : 0);
+    expect(fallen.expires).toBe(0);
+    expect(fallen.jelly).toMatchObject({ protected: false, attached: null });
+    await expect.poll(async () => (await read()).airBombTarget).toBe(fallen.jelly.id);
+    await shot(baseline ? '03-baseline-fallen' : '03-jelly-detached');
     await tap('surrender');
     await tap('end');
     await page.getByRole('button', { name: 'Watch replay', exact: true }).tap();
@@ -189,11 +215,16 @@ try {
     const early = await seek(1);
     expect(early.hero.target).toBe(deployed.hero.target);
     expect(early.expires).toBe(deployed.expires);
+    expect(early.airBombTarget).toBe(deployed.airBombTarget);
+    expect(early.jelly).toMatchObject({ protected: !baseline, attached: baseline ? null : 7 });
+    if (!baseline) expect(early.jelly).toMatchObject({ x: early.hero.x, y: early.hero.y });
     const replay = await seek(duration);
     await expect(page.locator('.replay-status')).toContainText('Replay complete');
     expect(replay.hero.hp).toBeLessThanOrEqual(0);
     expect(replay.expires).toBe(fallen.expires);
-    await shot(baseline ? '03-baseline-replay' : '03-replay');
+    expect(replay.airBombTarget).toBe(fallen.jelly.id);
+    expect(replay.jelly).toMatchObject({ protected: false, attached: null });
+    await shot(baseline ? '04-baseline-replay' : '04-replay');
     expect(errors).toEqual([]);
     console.log(JSON.stringify({ baseline, deployed, early, replay }));
   } finally {

@@ -46,7 +46,7 @@ import { nativeMiteJump } from './native-mite-jumps';
 import { superHogLanding, superHogSplitStats } from './native-super-hog';
 import { hogAttackKind } from './native-hog-attacks';
 import { SIEGE_BARRACKS_KINDS } from './native-siege-barracks';
-import { jellyHeroStats } from './native-angry-jelly';
+import { jellyHeroStats, updateJellyAttachment } from './native-angry-jelly';
 import { sneezyCombatStats, sneezySpawner, sneezySummon } from './native-sneezy';
 import { distance2D } from './distance';
 import { furnaceReleasePoint } from './native-furnace-geometry';
@@ -114,7 +114,7 @@ import {
   unitFrozen,
   type UnitEffects,
 } from './native-status';
-import { heroOf, heroStatsFor, petAnchor } from './native-heroes';
+import { heroOf, heroStatsFor, petAnchor, petOwner } from './native-heroes';
 import { resolvePhoenixRevive } from './native-phoenix';
 import {
   heroAttackInterval,
@@ -162,6 +162,8 @@ export interface NativeUnitState {
   phoenixWaiting?: true;
   phoenixEgg?: true;
   untargetable?: true;
+  /** Defense-only attack range while riding the Brainwashed hero. */
+  jellyAttachedRange?: number;
   effects?: UnitEffects;
   /** Hitpoints actually lost, for damage-triggered spawns. */
   damageTaken?: number;
@@ -931,6 +933,15 @@ export function stepNativeUnit(
   if (state.phoenixWaiting || state.phoenixEgg) {
     u.attacking = false;
     return;
+  }
+  if (state.jellyAttachedRange !== undefined) {
+    const owner = petOwner(battle, u);
+    const hero = battle.units.find((unit) => unit.id === owner?.unitId);
+    if (owner && hero) updateJellyAttachment(battle, owner, hero);
+    if (state.jellyAttachedRange !== undefined) {
+      stepAttachedJelly(ctx, u, s, boosted.damage, state.jellyAttachedRange);
+      return;
+    }
   }
   if (unitFrozen(u, at)) {
     u.attacking = false;
@@ -1726,6 +1737,40 @@ function releaseSuperDragonFlame(
   const state = unit.native!;
   state.lastAttackAt = at;
   state.attacks = (state.attacks ?? 0) + 1;
+}
+
+function stepAttachedJelly(
+  ctx: NativeTroopContext,
+  unit: Unit,
+  stats: NativeUnitStats,
+  damage: number,
+  range: number,
+) {
+  unit.attacking = false;
+  if (unitFrozen(unit, ctx.battle.elapsed)) return;
+  const eligible = (building: Building) =>
+    matchesPreferred(ctx.battle, stats, building) &&
+    (ctx.isTargetable?.(building) ?? targetableBuilding(ctx.battle, building)) &&
+    distanceTo(unit, building) <= range + 1e-9;
+  let target = ctx.buildingsById.get(unit.target ?? -1);
+  if (!target || !eligible(target)) {
+    let best = Infinity;
+    target = undefined;
+    for (const building of ctx.buildings) {
+      if (!eligible(building)) continue;
+      const distance = distanceTo(unit, building);
+      if (distance < best || (distance === best && target && building.id < target.id)) {
+        target = building;
+        best = distance;
+      }
+    }
+  }
+  unit.target = target?.id ?? null;
+  if (!target) return;
+  unit.attacking = true;
+  if (unit.cooldown > 0) return;
+  unit.cooldown = stats.rate;
+  strike(ctx, unit, stats, target, damage);
 }
 
 /** Resolve one attack against a building according to the unit's native attack shape. */

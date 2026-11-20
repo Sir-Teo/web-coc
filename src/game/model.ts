@@ -1,4 +1,8 @@
-import { startJellyBrainwash } from './native-angry-jelly';
+import {
+  startJellyBrainwash,
+  stepJellyAttachments,
+  updateJellyAttachment,
+} from './native-angry-jelly';
 import { stepSpiritFox } from './native-spirit-fox';
 import { prepareSiegeCargo, type SiegeCargoEntry } from './siege-cargo';
 import { nativeGlobal } from './native-data';
@@ -936,6 +940,8 @@ export interface Battle {
   nativeSpiritFox?: true;
   /** Version 256: Angry Jelly grants its assigned hero temporary defense preference. */
   nativeJellyBrainwash?: true;
+  /** Version 257: Jelly rides its hero, shoots defenses and ignores incoming attacks. */
+  nativeJellyAttachment?: true;
   /** Version 100: native healing resolves through source projectile travel and chain hops. */
   nativeHealingProjectiles?: true;
   nativeHealingTotem?: true;
@@ -5801,7 +5807,10 @@ export class GameModel {
         );
       }
     }
-    if (b.nativeJellyBrainwash) startJellyBrainwash(b, hero);
+    if (b.nativeJellyBrainwash) {
+      startJellyBrainwash(b, hero);
+      updateJellyAttachment(b, hero, b.units.find((u) => u.id === hero.unitId)!);
+    }
     if (b.nativeSpiritFox) stepSpiritFox(b, hero);
     hero.deployed = true;
     let passiveActivationId: string | undefined;
@@ -6929,6 +6938,7 @@ export class GameModel {
     const shared = this.sharedWalls(b);
     const native = b.nativeRoster ? this.nativeContext(b, shared) : null;
     if (native) stepPhoenix(native, dt);
+    stepJellyAttachments(b);
     // Shared per-tick A* budget, spent by native units first and the legacy
     // loop after. Only enforced for large battles so small-battle determinism
     // (historical hashes) is unchanged.
@@ -7506,6 +7516,7 @@ export class GameModel {
       b.separationCap ? SEPARATION_TILES_PER_SECOND * dt : undefined,
       battleMapSize(b),
     );
+    stepJellyAttachments(b);
     if (revealTeslas(b, this.onEffect, (u) => this.teslaDiverts(b, u))) this.changed();
     // A sprung trap only restyles itself and the HUD's live counters: a passive change, so
     // the scene skips the full building restyle (and the HUD its rebuild) a busy battle
@@ -7676,7 +7687,10 @@ export class GameModel {
         // A knocked-out hero fires its ability automatically (SimulatePlayerInputOnDeath).
         if (!b.manualHeroAbilities && unit.hp <= 0 && !unit.spent && !hero.abilityUsed)
           this.activateNativeHeroAbility(hero.kind, true);
-        if (unit.hp <= 0 && hero.jellyBrainwashUntil !== undefined) hero.jellyBrainwashUntil = 0;
+        if (unit.hp <= 0 && hero.jellyBrainwashUntil !== undefined) {
+          hero.jellyBrainwashUntil = 0;
+          updateJellyAttachment(b, hero, unit);
+        }
         hatchPhoenix(native, hero, unit);
         ragePetAfterHeroDeath(b, hero, unit);
         // Waves stop when the hero falls; the automatic activation above still fires once.
@@ -9117,7 +9131,14 @@ export function separateUnits(
   // Fewer than two living units cannot push each other; skip the collision rebuild.
   let living = 0;
   for (const u of units)
-    if (u.hp > 0 && !u.native?.phoenixWaiting && !u.native?.phoenixEgg && ++living > 1) break;
+    if (
+      u.hp > 0 &&
+      !u.native?.phoenixWaiting &&
+      !u.native?.phoenixEgg &&
+      u.native?.jellyAttachedRange === undefined &&
+      ++living > 1
+    )
+      break;
   if (living < 2) return;
   // Version-44 native campaign crowds use the same sub-tile building collision as routes.
   // Whole-tile battles read the route grid for the list: blocked or walled is solid.
@@ -9125,7 +9146,13 @@ export function separateUnits(
   const tiles = lanes ? undefined : tileGridFor(buildings, [], mapSize);
   const alive: Unit[] = [];
   for (const u of units)
-    if (u.hp > 0 && !u.native?.phoenixWaiting && !u.native?.phoenixEgg) alive.push(u);
+    if (
+      u.hp > 0 &&
+      !u.native?.phoenixWaiting &&
+      !u.native?.phoenixEgg &&
+      u.native?.jellyAttachedRange === undefined
+    )
+      alive.push(u);
   const count = alive.length;
   if (separationNext.length < count) {
     separationNext = new Int32Array(count * 2);
