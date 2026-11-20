@@ -16,6 +16,9 @@ async function openArmy(page: Page) {
   });
   await page.locator('.train-add').tap();
   await expect(page.locator('.army-tile').first()).toBeVisible();
+  await page.locator('.drawer-sheet').evaluate(async (sheet) => {
+    await Promise.all(sheet.getAnimations().map((animation) => animation.finished));
+  });
 }
 
 const barbarians = (page: Page) => page.evaluate(() => window.__game.model.state.army.swordsman);
@@ -69,6 +72,32 @@ test('holding a portrait keeps adding, and swiping the strip adds nothing', asyn
   await page.waitForTimeout(700);
   expect(await barbarians(page)).toBe(held);
   expect(await strip.evaluate((el) => el.scrollLeft)).toBeGreaterThan(before);
+});
+
+test('closing Army with Escape ends a held training touch before release', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium', 'Native touch injection requires CDP.');
+  await page.setViewportSize({ width: 320, height: 568 });
+  await openArmy(page);
+  const box = (await page.locator(portrait).boundingBox())!;
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [{ id: 1, x: box.x + box.width / 2, y: box.y + box.height / 2 }],
+  });
+  await expect.poll(() => barbarians(page)).toBeGreaterThan(0);
+  await page.keyboard.press('Escape');
+  const stopped = await barbarians(page);
+  await expect(page.locator('.drawer-sheet')).toHaveCount(0);
+  await page.waitForTimeout(600);
+  expect(await barbarians(page)).toBe(stopped);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await page.locator('.train-add').tap();
+  expect(await barbarians(page)).toBe(stopped);
+  await page.locator(portrait).tap();
+  expect(await barbarians(page)).toBe(stopped + 1);
 });
 
 for (const interruption of ['blur', 'hidden', 'destroy'] as const) {

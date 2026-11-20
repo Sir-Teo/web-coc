@@ -820,12 +820,14 @@ export class HUD {
   /** Hold-to-repeat on Add and Remove: a short delay, then steady repeats until release. */
   private repeatTimer?: ReturnType<typeof setTimeout>;
   private repeatPointer: number | null = null;
+  private repeatControl: HTMLElement | null = null;
   /** Releases from interrupted presses can still generate a browser click. */
   private cancelledActionPointers = new Set<number>();
   private repeatedClick = false;
   private startRepeat(control: HTMLElement, pointerId: number) {
     this.stopRepeat();
     this.repeatPointer = pointerId;
+    this.repeatControl = control;
     const action = (control.dataset.action ?? control.dataset.add)!;
     const tick = () => {
       if (!control.isConnected || control.matches(':disabled')) return this.stopRepeat();
@@ -840,6 +842,7 @@ export class HUD {
     clearTimeout(this.repeatTimer);
     this.repeatTimer = undefined;
     this.repeatPointer = null;
+    this.repeatControl = null;
     // The click that follows this release (if any) runs first; later clicks count again.
     if (this.repeatedClick) setTimeout(() => (this.repeatedClick = false), 0);
   }
@@ -1427,6 +1430,17 @@ export class HUD {
     this.render();
   }
   private closeDrawer() {
+    if (this.repeatPointer !== null) {
+      // The touch still ends on the detached control. Suppress the compatibility
+      // mouse events it would otherwise send to the newly exposed village canvas.
+      this.repeatControl?.addEventListener('touchend', (event) => event.preventDefault(), {
+        once: true,
+        passive: false,
+      });
+      this.cancelledActionPointers.add(this.repeatPointer);
+      this.pressedActions.delete(this.repeatPointer);
+      this.stopRepeat();
+    }
     const previous = this.drawerPanel === 'army' ? this.armyReturn : undefined;
     this.armyReturn = undefined;
     this.repeatAttack = undefined;
