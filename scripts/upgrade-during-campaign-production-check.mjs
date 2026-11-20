@@ -3,7 +3,8 @@ import { chromium, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { createServer, preview } from 'vite';
 
-const baselineDist = process.argv[2];
+const rotate = process.argv.includes('--rotate');
+const baselineDist = process.argv.slice(2).find((argument) => argument !== '--rotate');
 const townHall = 3;
 const label = baselineDist ? 'baseline' : 'current';
 const screenshots = 'output/rea-cloud-playtest/upgrade-during-payback';
@@ -34,7 +35,7 @@ try {
       makeBuilding(7, 'camp', 12, 29, 3),
       makeBuilding(8, 'barracks', 12, 24, 2),
     ],
-    army: { ...emptyArmy(), swordsman: 30 },
+    army: { ...emptyArmy(), swordsman: rotate ? 15 : 30, archer: rotate ? 15 : 0 },
     spells: emptySpells(),
     gold: 800,
     elixir: 800,
@@ -83,7 +84,7 @@ try {
     const tap = (action) => page.locator(`[data-action="${action}"]`).tap();
     const shot = (name) =>
       page.screenshot({
-        path: `${screenshots}/${label}-th${townHall}-${name}.png`,
+        path: `${screenshots}/${label}-th${townHall}${rotate ? '-rotate' : ''}-${name}.png`,
         animations: 'disabled',
       });
     const fieldTap = async (x, y) => {
@@ -105,6 +106,16 @@ try {
       await page.waitForFunction(() => window.qa?.scene.ready);
     };
 
+    const resize = async (width, height) => {
+      await page.setViewportSize({ width, height });
+      await page.waitForFunction(
+        ({ width, height }) => {
+          const canvas = window.qa.scene.game.canvas.getBoundingClientRect();
+          return canvas.width === width && canvas.height === height;
+        },
+        { width, height },
+      );
+    };
     const read = () =>
       page.evaluate(() => {
         const { model } = window.qa;
@@ -118,7 +129,8 @@ try {
           gold: state.gold,
           elixir: state.elixir,
           trophies: state.trophies,
-          army: state.army.swordsman,
+          swordsmen: state.army.swordsman,
+          archers: state.army.archer,
           raids: state.stats.raids,
           progress: state.nativeCampaign,
           records: (state.raidLog ?? []).map(({ result, deployed, replay }) => ({
@@ -157,7 +169,7 @@ try {
     await page.touchscreen.tap(drop.x, drop.y);
     await expect
       .poll(() => page.evaluate(() => window.qa.model.battle.remaining.swordsman))
-      .toBe(29);
+      .toBe(before.swordsmen - 1);
     expect(await read()).toMatchObject({ level: 1, busy: 1, end: booked.end });
     await page.clock.setFixedTime(booked.end + 1);
     await expect.poll(async () => (await read()).level).toBe(2);
@@ -170,21 +182,62 @@ try {
       .toBeGreaterThan(0);
     await shot('live');
 
+    if (rotate) {
+      await resize(568, 320);
+      const remaining = () =>
+        page.evaluate(() => {
+          const { swordsman, archer } = window.qa.model.battle.remaining;
+          return { swordsman, archer };
+        });
+      expect(await remaining()).toEqual({ swordsman: 14, archer: 15 });
+      await tap('troop:archer');
+      await expect(page.locator('.deploy-label')).toContainText('Archer');
+      const point = await page.evaluate(() => {
+        const { model, scene } = window.qa;
+        for (const y of [130, 100, 160, 80, 180])
+          for (const x of [284, 210, 360, 140, 428]) {
+            if (document.elementFromPoint(x, y) !== scene.game.canvas) continue;
+            const tile = scene.gridAtScreen(x, y);
+            if (!model.deployBlocked(tile.x, tile.y)) return { x, y };
+          }
+      });
+      expect(point).toBeTruthy();
+      await page.touchscreen.tap(point.x, point.y);
+      await expect.poll(remaining).toEqual({ swordsman: 14, archer: 14 });
+      await shot('landscape-live');
+    }
+
     await tap('surrender');
     await tap('end');
     const result = await page.evaluate(() => window.qa.model.battle.result);
     expect(result.gold).toBeGreaterThan(0);
+    if (rotate) {
+      await shot('landscape-result');
+      const cdp = await page.context().newCDPSession(page);
+      const swipe = (type, y) =>
+        cdp.send('Input.dispatchTouchEvent', {
+          type,
+          touchPoints: y === undefined ? [] : [{ x: 284, y }],
+        });
+      await swipe('touchStart', 266);
+      for (let y = 246; y >= 86; y -= 20) await swipe('touchMove', y);
+      await swipe('touchEnd');
+      const modal = page.locator('.result-modal');
+      await expect.poll(() => modal.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+      await resize(320, 568);
+    }
     await page.locator('.result-modal [data-action="home"]').tap();
     const settled = await read();
     expect(settled).toMatchObject({
       busy: 0,
       level: 2,
-      army: 29,
+      swordsmen: before.swordsmen - 1,
+      archers: before.archers - (rotate ? 1 : 0),
       raids: before.raids + 1,
       trophies: before.trophies,
       elixir: booked.elixir + result.elixir,
       gold: before.gold + result.gold,
-      records: [{ result, deployed: { swordsman: 1 }, hasReplay: true }],
+      records: [{ result, deployed: { swordsman: 1, archer: rotate ? 1 : 0 }, hasReplay: true }],
     });
     expect(settled.progress.remaining[0]).toMatchObject({
       gold: 500 - result.gold,
@@ -195,10 +248,32 @@ try {
     expect(await read()).toEqual(settled);
     await tap('battle-log');
     await page.getByRole('button', { name: 'Watch replay', exact: true }).tap();
+    if (rotate) {
+      await resize(568, 320);
+      const pause = page.getByRole('button', { name: 'Pause', exact: true });
+      if (await pause.isVisible()) await pause.tap();
+      const slider = page.getByRole('slider', { name: 'Replay position' });
+      await slider.tap({ trial: true });
+      const box = await slider.boundingBox();
+      await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+      await expect
+        .poll(() =>
+          page.evaluate(() => {
+            const { time, duration, seeking } = window.qa.model.replay;
+            return !seeking && time > duration * 0.3 && time < duration * 0.7;
+          }),
+        )
+        .toBe(true);
+    }
     await tap('replay-skip');
+    if (rotate) await page.getByRole('button', { name: 'Play', exact: true }).tap();
     await expect(page.locator('.replay-status')).toContainText('Replay complete');
     expect(await page.evaluate(() => window.qa.model.battle.result)).toEqual(result);
     await shot('replay');
+    if (rotate) {
+      await page.getByRole('button', { name: 'Back to log' }).tap();
+      await expect(page.getByRole('button', { name: 'Watch replay', exact: true })).toHaveCount(1);
+    }
     await page.reload();
     await ready();
     expect(await read()).toEqual(settled);
