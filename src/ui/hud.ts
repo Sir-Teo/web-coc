@@ -299,6 +299,7 @@ type Panel =
   | 'army-presets'
   | 'cookbook'
   | 'recipe-confirm'
+  | 'merge-confirm'
   | 'battle-log'
   | null;
 /** Shop and army live in a bottom sheet so the village stays visible and clickable. */
@@ -1313,6 +1314,10 @@ export class HUD {
     }
   }
   private closePanel() {
+    if (this.panel === 'merge-confirm' && this.pendingMerge) {
+      this.cancelMergePreview();
+      return;
+    }
     if (this.panel === 'recipe-confirm') {
       this.returnToRecipe();
       return;
@@ -1588,8 +1593,27 @@ export class HUD {
         this.model.toggleXbowMode();
         break;
       case 'merge': {
-        const [result, anchor] = arg.split('.');
-        if (m.merge(result as MergedKind, Number(anchor))) this.audio.play('build');
+        const [kind, id] = arg.split('.');
+        if (m.battle || !isMergedKind(kind as BuildingKind)) break;
+        const result = kind as MergedKind;
+        const anchor = Number(id);
+        const { inputs } = m.mergeCandidates(result, anchor);
+        if (!inputs?.some((input) => input.id === anchor)) break;
+        this.pendingMerge = { result, anchor, inputs: inputs.map((input) => input.id) };
+        this.show('merge-confirm');
+        break;
+      }
+      case 'merge-cancel':
+        if (this.panel === 'merge-confirm') this.cancelMergePreview();
+        break;
+      case 'merge-confirm': {
+        const pending = this.pendingMerge;
+        if (this.panel !== 'merge-confirm' || !pending) break;
+        if (m.merge(pending.result, pending.anchor, pending.inputs)) {
+          this.pendingMerge = undefined;
+          this.closePanel();
+          this.audio.play('build');
+        }
         break;
       }
       case 'guardian-next': {
@@ -3499,6 +3523,31 @@ export class HUD {
         : ''
     }`;
   }
+  private pendingMerge?: { result: MergedKind; anchor: number; inputs: number[] };
+  private cancelMergePreview() {
+    const pending = this.pendingMerge;
+    this.pendingMerge = undefined;
+    this.closePanel();
+    if (!pending) return;
+    const anchor = this.model.state.buildings.find(({ id }) => id === pending.anchor);
+    if (!anchor) return;
+    this.model.selected = anchor.id;
+    this.render();
+    this.contextEl
+      .querySelector<HTMLElement>(`[data-action="merge:${pending.result}.${anchor.id}"]`)
+      ?.focus({ preventScroll: true });
+  }
+  private mergePreview() {
+    const pending = this.pendingMerge;
+    if (!pending) return '';
+    const m = this.model;
+    const name = BUILDINGS[pending.result].name;
+    const { inputs, issue } = m.mergeCandidates(pending.result, pending.anchor, pending.inputs);
+    const quote = mergeQuote(pending.result);
+    const unavailable = issue ?? (m.busy >= m.builders ? 'All builders are busy.' : '');
+    const site = inputs?.[0];
+    return `<div class="modal-body confirm-body"><h2>${name}</h2><p>Starting this merge permanently consumes both defenses.${site ? ` The new defense will be built at tile ${site.x}, ${site.y}.` : ''}</p><ul class="merge-components">${(inputs ?? []).map((b) => `<li>${b.id === pending.anchor ? 'Selected' : 'Partner'} · Level ${b.level} ${BUILDINGS[b.kind].name} · Tile ${b.x}, ${b.y}</li>`).join('')}</ul><p class="merge-quote">${resource(quote.resource)} ${n(quote.cost)} · ${time(quote.seconds)} · One builder</p>${unavailable ? `<p role="status">${html(unavailable)}</p>` : ''}<div class="confirm-actions">${button('merge-cancel', 'Cancel', 'game-btn stone')}${button('merge-confirm', 'Start merge', 'game-btn green', unavailable ? 'disabled' : '')}</div></div>`;
+  }
   /** Merge and gear-up actions for maxed Cannons, Archer Towers, Mortars and Wizard Towers. */
   private mergeButtons(b: Building) {
     const m = this.model;
@@ -4848,6 +4897,7 @@ export class HUD {
       'army-presets': 'Quick armies',
       cookbook: ARMY_RECIPE_TEXTS.tab,
       'recipe-confirm': 'Confirm recipe changes',
+      'merge-confirm': 'Review defense merge',
       'battle-log': 'Battle log',
       blacksmith: 'Hero Equipment',
       heroes: 'Hero Hall',
@@ -4883,6 +4933,7 @@ export class HUD {
       'army-presets': 'Save a composition. Be ready in one tap.',
       cookbook: ARMY_RECIPE_TEXTS.info,
       'recipe-confirm': ARMY_RECIPE_TEXTS.autofix,
+      'merge-confirm': 'Check the two defenses and the cost before starting.',
       'battle-log': 'Your last twenty attacks, kept with your village.',
       blacksmith: 'Equip your heroes and upgrade their abilities.',
       heroes: 'A champion for every attack.',
@@ -4977,7 +5028,9 @@ export class HUD {
                                                                   ? this.practiceCargoPanel()
                                                                   : this.panel === 'recipe-confirm'
                                                                     ? this.confirmRecipe()
-                                                                    : this.help();
+                                                                    : this.panel === 'merge-confirm'
+                                                                      ? this.mergePreview()
+                                                                      : this.help();
     return `<div class="modal-backdrop"><section class="modal ${this.panel === 'campaign' ? 'campaign-modal' : ''} ${this.panel === 'surrender' ? 'small-modal' : this.panel === 'blacksmith' ? 'blacksmith-modal' : ''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header class="modal-header"><div><small>CROWN & CLAN</small><h1 id="modal-title">${titles[this.panel!]}</h1><p>${subtitles[this.panel!]}</p></div><button class="square-btn small close-btn" data-action="close" aria-label="Close dialog">${icon('X', 25)}</button></header>${content}</section></div>`;
   }
   private composition(

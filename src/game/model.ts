@@ -2028,7 +2028,7 @@ export class GameModel {
     );
   }
   /** Merge inputs available now for a merged defense, or the reason it cannot start. */
-  mergeCandidates(result: MergedKind, anchor?: number) {
+  mergeCandidates(result: MergedKind, anchor?: number, reviewed?: readonly number[]) {
     const quote = mergeQuote(result);
     const inputs = mergeInputs(result);
     if (this.townhallLevel < quote.townhall)
@@ -2036,7 +2036,7 @@ export class GameModel {
     if (this.countOf(result) >= this.maxCount(result)) return { issue: 'All merges built' };
     const chosen: Building[] = [];
     const pool = this.state.buildings
-      .filter((b) => !b.upgradeEnd && !b.constructing)
+      .filter((b) => !b.upgradeEnd && !b.constructing && (!reviewed || reviewed.includes(b.id)))
       .sort((a, b) => Number(b.id === anchor) - Number(a.id === anchor) || a.id - b.id);
     for (const input of inputs) {
       const match = pool.find(
@@ -2052,12 +2052,17 @@ export class GameModel {
         };
       chosen.push(match);
     }
+    if (
+      reviewed &&
+      (reviewed.length !== chosen.length || chosen.some((b, i) => b.id !== reviewed[i]))
+    )
+      return { issue: 'The reviewed merge components have changed.' };
     return { inputs: chosen, quote };
   }
   /** Merge two maxed defenses into one merged defense at the first input's position. */
-  merge(result: MergedKind, anchor?: number) {
+  merge(result: MergedKind, anchor?: number, reviewed?: readonly number[]) {
     if (this.battle) return false;
-    const candidates = this.mergeCandidates(result, anchor);
+    const candidates = this.mergeCandidates(result, anchor, reviewed);
     if (!candidates.inputs) {
       this.notify(candidates.issue!);
       return false;
@@ -2073,7 +2078,7 @@ export class GameModel {
         quote.cost,
         `You need ${quote.cost.toLocaleString()} ${quote.resource}.`,
         () => {
-          this.merge(result, anchor);
+          this.merge(result, anchor, reviewed);
         },
       );
       return false;

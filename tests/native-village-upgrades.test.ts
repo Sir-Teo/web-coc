@@ -80,6 +80,27 @@ describe('Town Hall 11-18 village upgrades', () => {
     expect(validateSave(m.state)).toBe(true);
   });
 
+  it('commits only the reviewed defenses when a new candidate becomes eligible', () => {
+    const extra = makeBuilding(10, 'cannon', 30, 30, 20);
+    const m = village(16, [
+      extra,
+      makeBuilding(11, 'cannon', 34, 30, 21),
+      makeBuilding(12, 'cannon', 38, 30, 21),
+    ]);
+    const reviewed = m.mergeCandidates('ricochetcannon', 12).inputs!.map(({ id }) => id);
+    expect(reviewed).toEqual([12, 11]);
+    extra.level = 21;
+    expect(m.mergeCandidates('ricochetcannon', 12).inputs!.map(({ id }) => id)).toEqual([12, 10]);
+    const before = m.state.gold;
+    expect(m.merge('ricochetcannon', 12, [12, 99])).toBe(false);
+    expect(m.state.gold).toBe(before);
+    expect(m.merge('ricochetcannon', 12, reviewed)).toBe(true);
+    expect(m.state.gold).toBe(before - 12_000_000);
+    expect(m.state.buildings.filter(({ kind }) => kind === 'cannon').map(({ id }) => id)).toEqual([
+      10,
+    ]);
+  });
+
   it('requires every Town Hall 16 merge before Town Hall 17 and merges the Eagle Artillery', () => {
     const m = village(16, [makeBuilding(10, 'eagleartillery', 30, 30, 7)]);
     m.upgrade(1);
