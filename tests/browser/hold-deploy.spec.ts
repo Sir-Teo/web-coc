@@ -21,20 +21,21 @@ async function grassPoint(page: Page) {
 
 test.use({ viewport: { width: 390, height: 844 } });
 
-async function startDeployment(page: Page, archers?: number) {
+async function startDeployment(page: Page, archers?: number, lightning = false) {
   await page.goto('/');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   await page.locator('#loading').waitFor({ state: 'detached' });
-  await page.evaluate((archers) => {
+  await page.evaluate(({ archers, lightning }) => {
     const m = window.__game.model;
     m.state.army.swordsman = 40;
     if (archers !== undefined) m.state.army.archer = archers;
+    if (lightning) m.state.spells.lightning = 1;
     m.changed();
     m.startCampaign(0);
     m.activeTroop = 'swordsman';
     m.changed();
-  }, archers);
+  }, { archers, lightning });
   await expect(page.locator('.battle-enemy')).toBeVisible();
   await expect
     .poll(() => page.evaluate(() => window.__game.scene.battleArtPending()), { timeout: 15000 })
@@ -281,6 +282,69 @@ test.describe('battle map multitouch', () => {
     expect(await remaining()).toBe(start - 2);
   });
 
+  test('a map hold cannot deploy behind a deployment card', async ({ page, browserName }) => {
+    test.skip(browserName !== 'chromium', 'Uses Chromium touch injection');
+    await page.setViewportSize({ width: 390, height: 650 });
+    await startDeployment(page);
+    await page.locator('[data-action="troop:swordsman"]').tap();
+    const grass = await grassPoint(page);
+    const covered = await page.evaluate(() => {
+      const { scene, model } = window.__game;
+      const card = document.querySelector('[data-action="troop:swordsman"]')!;
+      const box = card.getBoundingClientRect();
+      for (let y = box.top + 8; y < box.bottom - 8; y += 6)
+        for (let x = box.left + 8; x < box.right - 8; x += 6) {
+          const tile = scene.gridAtScreen(x, y);
+          if (card.contains(document.elementFromPoint(x, y)) && !model.deployBlocked(tile.x, tile.y))
+            return { x, y };
+        }
+      return null;
+    });
+    expect(covered).not.toBeNull();
+    const remaining = () => page.evaluate(() => window.__game.model.battle!.remaining.swordsman);
+    const start = await remaining();
+    const cdp = await page.context().newCDPSession(page);
+    const touch = (type: string, point?: { x: number; y: number }) =>
+      cdp.send('Input.dispatchTouchEvent', {
+        type,
+        touchPoints: point ? [{ x: point.x, y: point.y, id: 1 }] : [],
+      });
+    await touch('touchStart', grass);
+    await expect.poll(remaining, { intervals: [25] }).toBe(start - 1);
+    await touch('touchMove', covered!);
+    await page.waitForTimeout(550);
+    await touch('touchEnd');
+    expect(await remaining()).toBe(start - 1);
+    await page.touchscreen.tap(grass.x, grass.y);
+    expect(await remaining()).toBe(start - 2);
+  });
+
+  test('releasing a spell gesture over a troop card leaves the spell ready', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(browserName !== 'chromium', 'Uses Chromium touch injection');
+    await page.setViewportSize({ width: 390, height: 650 });
+    await startDeployment(page, undefined, true);
+    await page.locator('[data-action="spell:lightning"]').tap();
+    const grass = await grassPoint(page);
+    const box = (await page.locator('[data-action="troop:swordsman"]').boundingBox())!;
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: grass.x, y: grass.y, id: 1 }],
+    });
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x: box.x + box.width / 2, y: box.y + box.height / 2, id: 1 }],
+    });
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    const spells = () => page.evaluate(() => window.__game.model.battle!.spells.lightning);
+    expect(await spells()).toBe(1);
+    await page.touchscreen.tap(grass.x, grass.y);
+    expect(await spells()).toBe(0);
+  });
+
   test('a second finger on a troop card cannot redirect a map hold', async ({
     page,
     browserName,
@@ -355,7 +419,7 @@ test('switching troop cards starts a fresh deployment tap', async ({ page }) => 
 test.describe('phone campaign preparation', () => {
   test.use({ hasTouch: true, isMobile: true });
 
-  test('an unlocked attack opens army preparation when the army is empty', async ({ page }) => {
+  test('an unlocked village keeps its scout open after empty-army preparation', async ({ page }) => {
     await page.goto('/?lazyart');
     await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('[data-action="skip-tutorial"]').tap();
@@ -365,9 +429,11 @@ test.describe('phone campaign preparation', () => {
     await page.locator('[data-action="close-drawer"]').tap();
     await page.locator('.attack-btn').tap();
     await page.locator('[data-action="attack:0"]').tap();
+    const scout = page.locator('.campaign-scout');
+    await scout.getByRole('button', { name: 'Prepare army' }).tap();
     await expect(page.locator('[data-action="train:swordsman"]').first()).toBeVisible();
     await page.locator('[data-action="close-drawer"]').tap();
-    await expect(page.locator('[data-action="attack:0"]')).toBeVisible();
+    await expect(scout.getByRole('heading', { name: 'Payback' })).toBeVisible();
     expect(await page.evaluate(() => window.__game.model.battle)).toBeNull();
   });
 

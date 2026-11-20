@@ -717,6 +717,7 @@ export class VillageScene extends Phaser.Scene {
     t: number;
     id: number | null;
     artBlocked: boolean;
+    touchId?: number;
   };
   private dragged = false;
   /** Which role the current pointer gesture has committed to. */
@@ -1381,6 +1382,7 @@ export class VillageScene extends Phaser.Scene {
         t: performance.now(),
         id: held?.id ?? null,
         artBlocked: !!this.model.battle && this.battleArtPending(),
+        touchId: p.wasTouch ? p.identifier : undefined,
       };
       this.dragged = false;
       this.gesture = 'none';
@@ -1455,7 +1457,8 @@ export class VillageScene extends Phaser.Scene {
       const cancelled =
         this.uiBlocked || !down || p.downElement !== this.game.canvas || p.event.type.includes('cancel');
       // Touch keeps the canvas as its event target even when released over the HUD.
-      const droppedOnMap = gesture !== 'drag-building' || (!cancelled && this.pointerOverCanvas(p));
+      const needsMap = gesture === 'drag-building' || (gesture === 'none' && !!this.model.battle);
+      const droppedOnMap = !needsMap || (!cancelled && this.pointerOverCanvas(p));
       if (gesture === 'drag-building' && droppedOnMap) this.dragBuilding(p);
       this.down = undefined;
       // A touch pan glides on as phones scroll; a pinch, a cancel or reduced motion stops dead.
@@ -1501,6 +1504,24 @@ export class VillageScene extends Phaser.Scene {
       this.dragged = false;
       this.pinchDistance = 0;
     };
+    // The DOM can reach the HUD before Phaser updates the active pointer. Stop an
+    // attack press at the actual touch position rather than keep deploying at its old tile.
+    const cancelCoveredTouch = (event: TouchEvent) => {
+      const touchId = this.down?.touchId;
+      if (touchId === undefined || !this.model.battle || this.model.replay || this.gesture === 'pan')
+        return;
+      for (let i = 0; i < event.changedTouches.length; i++) {
+        const point = event.changedTouches.item(i);
+        if (point?.identifier !== touchId) continue;
+        if (document.elementFromPoint(point.clientX, point.clientY) !== this.game.canvas)
+          cancelGesture();
+        break;
+      }
+    };
+    document.addEventListener('touchmove', cancelCoveredTouch, { capture: true, passive: true });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      document.removeEventListener('touchmove', cancelCoveredTouch, true);
+    });
     this.input.on('pointerdownoutside', cancelGesture);
     this.input.on('pointerupoutside', cancelGesture);
     this.game.canvas.addEventListener('pointercancel', cancelGesture);
@@ -2798,10 +2819,12 @@ export class VillageScene extends Phaser.Scene {
       this.holdNext = now;
     }
     if (now < this.holdNext) return;
-    const grid = this.gridAtPointer(this.input.activePointer);
+    const pointer = this.input.activePointer;
     const held = now - down.t - HOLD_DEPLOY_DELAY_MS;
     this.holdNext =
       now + Math.max(HOLD_DEPLOY_FASTEST_MS, HOLD_DEPLOY_FIRST_MS - held * HOLD_DEPLOY_RAMP);
+    if (!this.pointerOverCanvas(pointer)) return;
+    const grid = this.gridAtPointer(pointer);
     if (this.model.deployBlocked(grid.x, grid.y)) return;
     if (this.model.deploy(grid.x, grid.y)) {
       this.lastDeploy = { x: grid.x, y: grid.y };
@@ -2810,6 +2833,7 @@ export class VillageScene extends Phaser.Scene {
     }
   }
   private dragDeploy(p: Phaser.Input.Pointer) {
+    if (!this.pointerOverCanvas(p)) return;
     const grid = this.gridAtPointer(p);
     if (Math.hypot(grid.x - this.lastDeploy.x, grid.y - this.lastDeploy.y) < 0.75) return;
     if (this.model.deployBlocked(grid.x, grid.y)) return;
