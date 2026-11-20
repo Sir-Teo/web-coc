@@ -934,6 +934,8 @@ function harmAttackers(
   const poison = num(row, 'PoisonDPS');
   const quake = num(row, 'TroopDamagePermil') / 1000;
   const interval = seconds(row, 'TimeBetweenHitsMS') || 0.4;
+  const townHallPoison =
+    battle.nativeTownHallHeroPoison && (cast.name === 'TH14 Poison' || cast.name === 'TH15 Poison');
   const groundOnly =
     text(row, 'TargetInfoString').includes('TYPE_GROUND') &&
     !text(row, 'TargetInfoString').includes('AIR');
@@ -966,7 +968,9 @@ function harmAttackers(
           : at + Math.max(seconds(row, 'BoostTimeMS'), interval),
         speed: Math.min(
           e.poison && e.poison.until > at ? e.poison.speed : 0,
-          poisonMoveBoost(battle, row, !!u.hero),
+          u.hero && townHallPoison
+            ? num(row, 'SpeedBoost2') / 100
+            : poisonMoveBoost(battle, row, !!u.hero),
         ),
         attackSpeed: Math.min(
           e.poison && e.poison.until > at ? e.poison.attackSpeed : 0,

@@ -20,7 +20,7 @@ import {
 } from '../src/game/native-defense-stats';
 import { REPLAY_VERSION, replayBattle, type ReplayData, validateReplay } from '../src/game/replay';
 import { validateSave } from '../src/game/save';
-import { unitEffects } from '../src/game/native-status';
+import { unitAttackIntervalScale, unitEffects, unitSpeedScale } from '../src/game/native-status';
 
 type Placement = [BuildingKind, number, number, number?, Partial<Building>?];
 function arena(
@@ -339,6 +339,44 @@ describe('native defense combat', () => {
         concealedDamage,
         0,
       ]);
+    },
+  );
+
+  it.each([
+    [14, REPLAY_VERSION, 1000, 0.5, 'TH14 Poison'],
+    [15, REPLAY_VERSION, 1000, 0.5, 'TH15 Poison'],
+    [16, REPLAY_VERSION, 1100, 0.5, 'TH15 Poison'],
+    [16, 258, 1100, 0.75, 'TH15 Poison'],
+  ] as const)(
+    'uses the pinned TH%s cloud movement rule in replay version %s',
+    (townhall, version, blastDamage, heroSpeed, cloudName) => {
+      const m = arena([['goldmine', 2, 2, 1]], { golem: 1, dragon: 1 }, { townhall });
+      if (version !== REPLAY_VERSION) {
+        const { recording } = m as unknown as { recording: ReplayData };
+        m.battle = replayBattle(recording.initial, version);
+      }
+      const b = m.battle!;
+      const th = b.buildings.find(({ kind }) => kind === 'townhall')!;
+      const hero = deploy(m, 'golem', 42.5, 46)[0];
+      hero.hero = 'king';
+      const air = deploy(m, 'dragon', 42.5, 45)[0];
+      for (const unit of [hero, air]) {
+        unit.hp = unit.maxHp = 10000;
+        unit.springUntil = 100;
+      }
+      th.hp = 0;
+      run(m, 1.7);
+      const cloud = b.nativeSpells!.find(({ name }) => name === cloudName)!;
+      expect([cloud.total, cloud.interval]).toEqual([30, 0.4]);
+      expect([hero, air].map(lost)).toEqual([blastDamage, blastDamage]);
+      run(m, 0.4);
+      expect([hero, air].map(lost)).toEqual([blastDamage + 72, blastDamage + 72]);
+      expect(unitSpeedScale(hero, b.elapsed)).toBe(heroSpeed);
+      expect(unitSpeedScale(air, b.elapsed)).toBe(0.5);
+      expect([hero, air].map((unit) => unitAttackIntervalScale(unit, b.elapsed))).toEqual([2, 2]);
+      run(m, 12.25);
+      expect(unitSpeedScale(hero, b.elapsed)).toBe(1);
+      expect(unitAttackIntervalScale(hero, b.elapsed)).toBe(1);
     },
   );
 

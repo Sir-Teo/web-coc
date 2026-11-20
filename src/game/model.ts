@@ -944,6 +944,8 @@ export interface Battle {
   nativeJellyAttachment?: true;
   /** Version 258: Town Hall death splash also damages concealed attackers. */
   nativeTownHallDeathSplash?: true;
+  /** Version 259: the Giga poison clouds use their explicit Hero movement modifier. */
+  nativeTownHallHeroPoison?: true;
   /** Version 100: native healing resolves through source projectile travel and chain hops. */
   nativeHealingProjectiles?: true;
   nativeHealingTotem?: true;
