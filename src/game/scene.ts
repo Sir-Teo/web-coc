@@ -1452,13 +1452,11 @@ export class VillageScene extends Phaser.Scene {
       const gesture = this.gesture;
       this.gesture = 'none';
       const down = this.down;
-      if (
-        gesture === 'drag-building' &&
-        !this.uiBlocked &&
-        p.downElement === this.game.canvas &&
-        !p.event.type.includes('cancel')
-      )
-        this.dragBuilding(p);
+      const cancelled =
+        this.uiBlocked || !down || p.downElement !== this.game.canvas || p.event.type.includes('cancel');
+      // Touch keeps the canvas as its event target even when released over the HUD.
+      const droppedOnMap = gesture !== 'drag-building' || (!cancelled && this.pointerOverCanvas(p));
+      if (gesture === 'drag-building' && droppedOnMap) this.dragBuilding(p);
       this.down = undefined;
       // A touch pan glides on as phones scroll; a pinch, a cancel or reduced motion stops dead.
       if (
@@ -1477,19 +1475,8 @@ export class VillageScene extends Phaser.Scene {
           t: performance.now(),
         };
       } else this.fling.stop();
-      this.model.endDrag(
-        this.uiBlocked ||
-          !down ||
-          p.downElement !== this.game.canvas ||
-          p.event.type.includes('cancel'),
-      );
-      if (
-        this.uiBlocked ||
-        !down ||
-        p.downElement !== this.game.canvas ||
-        p.event.type.includes('cancel')
-      )
-        return;
+      this.model.endDrag(cancelled || !droppedOnMap);
+      if (cancelled || !droppedOnMap) return;
       if (this.dragged || gesture !== 'none') {
         if (gesture === 'pan') this.lastTap = undefined;
         return;
@@ -2966,6 +2953,13 @@ export class VillageScene extends Phaser.Scene {
       x: ((clientX - rect.left) * this.scale.width) / rect.width,
       y: ((clientY - rect.top) * this.scale.height) / rect.height,
     };
+  }
+  private pointerOverCanvas(pointer: { x: number; y: number }) {
+    const canvas = this.game.canvas;
+    const rect = canvas.getBoundingClientRect();
+    const x = rect.left + (pointer.x * rect.width) / this.scale.width;
+    const y = rect.top + (pointer.y * rect.height) / this.scale.height;
+    return document.elementFromPoint(x, y) === canvas;
   }
   gridAtScreen(clientX: number, clientY: number) {
     return this.gridAtPointer(this.canvasPoint(clientX, clientY));

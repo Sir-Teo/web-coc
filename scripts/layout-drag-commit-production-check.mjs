@@ -114,6 +114,34 @@ try {
 
     await expect(page.locator('#loading')).toBeHidden({ timeout: 30000 });
     await tap('edit');
+    if (!baselineDist) {
+      await gesture('touchStart', original);
+      await gesture('touchMove', attempted);
+      await position(attempted);
+      const zoom = await page.locator('.camera-tools [data-action="zoom-in"]').boundingBox();
+      const x = zoom.x + zoom.width / 2;
+      const y = zoom.y + zoom.height / 2;
+      const clearTileBelow = await page.evaluate(
+        ({ x, y }) => {
+          const { model, scene } = window.qa;
+          const tile = scene.gridAtScreen(x, y);
+          return (
+            !!document.elementFromPoint(x, y)?.closest('[data-action="zoom-in"]') &&
+            model.canPlace('mortar', Math.round(tile.x - 1.5), Math.round(tile.y - 1.5), 2)
+          );
+        },
+        { x, y },
+      );
+      expect(clearTileBelow).toBe(true);
+      await touch.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x, y }],
+      });
+      await gesture('touchEnd');
+      await position(original);
+      expect((await read()).undo).toBe(false);
+      await shot('hud-drop-cancelled');
+    }
     await gesture('touchStart', original);
     await gesture('touchMove', attempted);
     await position(attempted);
