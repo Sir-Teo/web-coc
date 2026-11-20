@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 import { emptyArmy, emptySpells } from '../src/game/army';
 import { GameModel, makeBuilding } from '../src/game/model';
-import { replayBattle, validateReplay } from '../src/game/replay';
+import { replayBattle, REPLAY_VERSION, validateReplay } from '../src/game/replay';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import {
   prepareSiegeCargo,
@@ -99,7 +99,7 @@ it.each(['manual', 'objective'] as const)(
     expect(battle.units.slice(1).map(({ kind, level }) => [kind, level])).toEqual(expected);
     model.finishBattle();
     const replay = model.state.raidLog![0].replay!;
-    expect(replay.version).toBe(SIEGE_CARGO_REPLAY_VERSION);
+    expect(replay.version).toBe(REPLAY_VERSION);
     expect(validateReplay({ ...replay, version: SIEGE_CARGO_REPLAY_VERSION - 1 })).toBe(false);
     const badCastle = structuredClone(replay);
     badCastle.initial.siegeCargo!.castleLevel = 10;

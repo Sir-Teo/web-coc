@@ -1,3 +1,4 @@
+import { stepSpiritFox } from './native-spirit-fox';
 import { prepareSiegeCargo, type SiegeCargoEntry } from './siege-cargo';
 import { nativeGlobal } from './native-data';
 import { advanceBoostedHelper } from './helper-potion-timing';
@@ -930,6 +931,8 @@ export interface Battle {
   nativeHealerHeroScaling?: true;
   /** Version 99: Unicorn binds to its living Hero and uses single-target support rules. */
   nativeUnicornController?: true;
+  /** Version 255: Spirit Walk runs on the Fox’s own clock. */
+  nativeSpiritFox?: true;
   /** Version 100: native healing resolves through source projectile travel and chain hops. */
   nativeHealingProjectiles?: true;
   nativeHealingTotem?: true;
@@ -5795,6 +5798,7 @@ export class GameModel {
         );
       }
     }
+    if (b.nativeSpiritFox) stepSpiritFox(b, hero);
     hero.deployed = true;
     let passiveActivationId: string | undefined;
     if (b.nativeHeroPassives) {
@@ -6945,6 +6949,8 @@ export class GameModel {
         const unit = b.units.find((u) => u.id === hero.unitId);
         if (unit) refreshHeroPassives(native, hero, unit);
       }
+    if (b.nativeSpiritFox)
+      for (const hero of b.nativeHeroes ?? []) stepSpiritFox(b, hero);
     const defenses: NativeDefenseContext | null = native
       ? {
           ...native,
