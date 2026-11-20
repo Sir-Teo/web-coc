@@ -387,6 +387,58 @@ test('the guided Practice HUD keeps the clock and deployment controls readable o
   await expect(page.locator('#battle-timer')).toHaveText('∞');
 });
 
+for (const viewport of [
+  { width: 320, height: 568 },
+  { width: 568, height: 320 },
+]) {
+  test(`Giant Smash advances and restarts by touch at ${viewport.width}×${viewport.height}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await boot(page, 4);
+    await page.locator(`#campaign-stage-${GIANT_SMASH} [data-action="attack:${GIANT_SMASH}"]`).tap();
+    await page.waitForFunction(() => !window.__game.scene.scoutingArtNotice());
+    const guide = page.locator('.practice-guide');
+    const roster = () =>
+      page.evaluate(() => {
+        const { remaining, spells } = window.__game.model.battle!;
+        return { giant: remaining.giant, wallbreaker: remaining.wallbreaker, spells };
+      });
+    const deploymentSpot = () =>
+      page.evaluate(() => {
+        const { model, scene } = window.__game;
+        const spot = model.practiceGuide!.spot!;
+        const point = scene.screenFor(spot.x, spot.y);
+        return { ...point, clear: document.elementFromPoint(point.x, point.y) === scene.game.canvas };
+      });
+    const initial = await roster();
+    await expect(guide).toContainText('Deploy a Giant');
+    await expect.poll(async () => (await deploymentSpot()).clear).toBe(true);
+    const spot = await deploymentSpot();
+    await page.touchscreen.tap(spot.x, spot.y);
+    await expect(guide).toContainText('Quickly destroy Walls');
+    await expect.poll(async () => (await deploymentSpot()).clear).toBe(true);
+    const afterDeploy = { ...initial, giant: initial.giant - 1 };
+    expect(await roster()).toEqual(afterDeploy);
+
+    const skip = guide.getByRole('button', { name: 'Skip guide' });
+    if (viewport.width === 320) {
+      await skip.tap();
+    } else {
+      await skip.focus();
+      await page.keyboard.press('Enter');
+    }
+    await expect(guide).toHaveCount(0);
+    expect(await roster()).toEqual(afterDeploy);
+    await page.locator('[data-action="surrender"]').tap();
+    await page.locator('[data-action="end"]').tap();
+    await page.locator('[data-action="raid-again-guided"]').tap();
+    await expect(guide).toContainText('Deploy a Giant');
+    expect(await roster()).toEqual(initial);
+    await expect.poll(async () => (await deploymentSpot()).clear).toBe(true);
+  });
+}
+
 test('full-map guide reaches the original Queen deployment beyond the old board edge', async ({
   page,
 }) => {
