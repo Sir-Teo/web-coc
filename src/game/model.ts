@@ -2199,11 +2199,13 @@ export class GameModel {
     }
     return null;
   }
-  /** Town Hall 9 follows the Hero Hall tier that unlocks the Archer Queen. */
+  /** Early Town Hall milestones with a verified Hero Hall prerequisite. */
   private townHallHeroHallIssue(level: number) {
-    const requiredHall = heroUnlockHall('queen');
-    return level === heroUnlockTownHall('queen') && this.heroHallLevel < requiredHall
-      ? `Complete Hero Hall level ${requiredHall} to unlock the Archer Queen before upgrading the Town Hall.`
+    const hero = (['queen', 'prince'] as const).find((kind) => heroUnlockTownHall(kind) === level);
+    if (!hero) return null;
+    const requiredHall = heroUnlockHall(hero);
+    return this.heroHallLevel < requiredHall
+      ? `Complete Hero Hall level ${requiredHall} to unlock the ${HERO_SOURCE[hero]} before upgrading the Town Hall.`
       : null;
   }
   countOf(kind: BuildingKind) {

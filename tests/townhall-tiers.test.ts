@@ -271,6 +271,9 @@ describe('Town Hall tier village', () => {
     expect(restored.maxCount('xbow')).toBe(2);
     expect(restored.maxLevel('cannon')).toBe(11);
     expect(validateSave(restored.state)).toBe(true);
+    const heroHall = restored.heroHall!;
+    restored.upgrade(heroHall.id);
+    restored.tick(heroHall.upgradeEnd!);
     // The ladder keeps going, one tier at a time, to the catalog ceiling. Town Hall 17 is the
     // one rung that is not a plain upgrade: the source merges an Eagle Artillery into the hall's
     // own weapon, so the village has to own a maxed one first (docs/NATIVE-DEFENSES.md).
@@ -461,4 +464,32 @@ it('requires the completed Queen-unlocking Hero Hall before Town Hall 9', () => 
   m.tick(hall.upgradeEnd!);
   expect(m.heroSlotCount).toBe(2);
   expect(m.heroUnlocked('prince')).toBe(true);
+});
+
+it('requires Hero Hall 3 before Town Hall 10 and restores a saved second slot after completion', () => {
+  const m = village(9);
+  const townHall = m.townhall!;
+  const hall = makeBuilding(m.state.nextId++, 'herohall', 30, 30, 2);
+  m.state.buildings.push(hall);
+  m.tick(m.clock);
+  m.state.heroLineup = ['queen', 'king'];
+  const gold = m.state.gold;
+  expect(m.heroLineup).toEqual(['queen']);
+  expect(m.heroUnlocked('prince')).toBe(false);
+  expect(m.upgradeIssue(townHall)?.reason).toContain('Hero Hall level 3');
+  m.upgrade(townHall.id);
+  expect(townHall.upgradeEnd).toBeUndefined();
+  expect(m.state.gold).toBe(gold);
+
+  m.upgrade(hall.id);
+  expect(m.upgradeIssue(townHall)?.reason).toContain('Hero Hall level 3');
+  expect(m.heroSlotCount).toBe(1);
+  const restored = new GameModel(JSON.parse(JSON.stringify(m.state)));
+  restored.tick(hall.upgradeEnd!);
+  expect(restored.heroSlotCount).toBe(2);
+  expect(restored.heroLineup).toEqual(['queen', 'king']);
+  expect(restored.heroProgress('prince')?.level).toBe(1);
+  expect(restored.setHeroLineup(['queen', 'prince'])).toBe(true);
+  expect(restored.heroSetups().map(h => h.kind)).toEqual(['queen', 'prince']);
+  expect(restored.upgradeIssue(restored.townhall!)).toBeNull();
 });
