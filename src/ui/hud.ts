@@ -1441,8 +1441,12 @@ export class HUD {
     if (!this.model.placement) return;
     // The moving sheet must not retarget compatibility mouse events onto the map.
     event.preventDefault();
-    this.dragging = true;
-    document.querySelector('#drawer')?.classList.add('dragging');
+    const showDrag = () => {
+      this.dragging = true;
+      this.drawerEl.classList.add('dragging');
+    };
+    // Keep the touch scroll surface in place until the gesture heads out of the strip.
+    if (event.pointerType !== 'touch') showDrag();
     this.scene.trackGhost(event.clientX, event.clientY);
     const { pointerId, clientX: startX, clientY: startY } = event;
     let dragged = false;
@@ -1452,6 +1456,8 @@ export class HUD {
     const move = (e: PointerEvent) => {
       if (e.pointerId !== pointerId) return;
       dragged ||= movedFromPress(e);
+      if (!this.dragging && dragged && Math.abs(e.clientY - startY) > Math.abs(e.clientX - startX))
+        showDrag();
       this.scene.trackGhost(e.clientX, e.clientY);
     };
     const finish = () => {
@@ -1462,16 +1468,17 @@ export class HUD {
       this.dragging = false;
       this.scene.releaseGhost();
     };
-    const cancel = () => {
+    const cancel = (closeDrawer = true) => {
       finish();
+      if (closeDrawer) this.drawerPanel = null;
       this.model.cancel();
-      this.drawerPanel = null;
       this.render();
     };
     const up = (e: PointerEvent) => {
       if (e.pointerId !== pointerId) return;
       if (e.type === 'pointercancel') {
-        cancel();
+        // The browser cancels the tentative pickup when it takes over horizontal scrolling.
+        cancel(false);
         return;
       }
       dragged ||= movedFromPress(e);

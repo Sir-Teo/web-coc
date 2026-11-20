@@ -60,6 +60,41 @@ for (const interruption of ['blur', 'hidden', 'destroy'] as const) {
 test.describe('phone Shop drag', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
+  test('a horizontal Shop swipe keeps the drawer open and does not buy a building', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(browserName !== 'chromium', 'Uses Chromium touch injection');
+    const strip = page.locator('.shop-strip');
+    const tile = strip.locator('[data-drag] .shop-tile-art').nth(1);
+    await tile.scrollIntoViewIfNeeded();
+    const before = await strip.evaluate((element) => element.scrollLeft);
+    const box = (await tile.boundingBox())!;
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 2;
+    const cdp = await page.context().newCDPSession(page);
+    const touch = (type: string, offset?: number) =>
+      cdp.send('Input.dispatchTouchEvent', {
+        type,
+        touchPoints: offset === undefined ? [] : [{ x: x - offset, y }],
+      });
+    await touch('touchStart', 0);
+    for (let offset = 15; offset <= 150; offset += 15) await touch('touchMove', offset);
+    await touch('touchEnd');
+    await expect(strip).toBeVisible();
+    await expect.poll(() => strip.evaluate((element) => element.scrollLeft)).toBeGreaterThan(before);
+    expect(
+      await page.evaluate(() => {
+        const { model } = window.__game;
+        return {
+          elixir: model.state.elixir,
+          buildings: model.state.buildings.length,
+          placement: model.placement,
+        };
+      }),
+    ).toEqual({ elixir: 500000, buildings: 2, placement: null });
+  });
+
   test('resizing mid-drag prevents the old release from buying a building', async ({
     page,
     browserName,

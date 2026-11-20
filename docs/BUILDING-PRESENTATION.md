@@ -13,3 +13,10 @@ The browser audit compares all 23 building kinds at four requested levels (clamp
 The placement follow-up checks keyboard panning, zoom, resize, DOM pointer retention across a scene refresh, and release back to canvas input. Its economy clock is held to ensure a periodic refresh cannot mask a stale preview. See `output/playtest/placement-preview-verification.json` and `placement-camera-phone-webkit.png` for results and visual evidence.
 
 Most buildings still share two broad artwork tiers; several have only one sprite. Generic growth and warm tint remain local presentation choices. Full per-level native appearance and remaining catalog footprint parity remain open work. Cannon, Archer Tower and Mortar now use native 3×3 footprints; see [NATIVE-GRID.md](NATIVE-GRID.md).
+
+A horizontal touch swipe starting on Shop artwork scrolls the Shop. When the
+browser takes over the gesture, the pending pickup is cancelled and the Shop
+stays available. A deliberate placement is still required to buy the building.
+The pinned progression table lists the level-one Gold Mine at Town Hall 1,
+150 Elixir, and five seconds of construction. It does not establish the
+original client's Shop gesture or layout.
