@@ -54,7 +54,9 @@ Screenshots stay in ignored `output/playtest/`.
 
 Original-game imports use the pinned client's troop/spell GlobalIDs and original
 hero, equipment and pet record order. Unknown or unsupported units are rejected.
-Clan Castle troops/spells and Grand Warden ground/air mode appear as explicit
+Expand **Clan Castle · not used here** in an original-game preview to inspect
+the excluded troop and spell counts. Clan Castle troops/spells and Grand Warden
+ground/air mode appear as explicit
 exclusions before using the army and in the completion message; they are not
 silently applied or converted into ordinary troops. Newer original-game roster
 entries may remain unsupported until this pinned client is updated.

@@ -4904,6 +4904,14 @@ export class HUD {
       )
       .join('')}</div>`;
   }
+  private castleComposition(castle?: ArmyRecipe['castle']) {
+    if (!castle || (!castle.troops.length && !castle.spells.length)) return '';
+    const army = emptyArmy(),
+      spells = emptySpells();
+    for (const [kind, count] of castle.troops) army[kind] += count;
+    for (const [kind, count] of castle.spells) spells[kind] += count;
+    return `<details class="recipe-castle"><summary>${icon('ChevronRight', 15)} ${icon('Castle', 15)} Clan Castle · not used here</summary>${this.composition(army, spells)}</details>`;
+  }
   /** A Quick army's heroes, items and pets, and what loading it here would change. */
   private presetHeroes(preset: ArmyPreset, note = 'When used here:') {
     const plan = this.model.presetHeroPlan(preset);
@@ -4944,7 +4952,7 @@ export class HUD {
     if (!preset)
       return `<p class="layout-import-summary${code ? ' bad' : ''}">${code ? 'This army link is damaged or unsupported.' : 'Preview an army link here before using it.'}</p>`;
     const issue = this.model.armyPreparationIssue(preset.army, preset.spells);
-    return `<h4>${html(preset.name)}</h4><p class="layout-import-summary">${armySpace(preset.army)} troop spaces · ${spellSpace(preset.spells)} spell spaces${presetSiege(preset.army) ? ` · ${presetSiege(preset.army)} siege` : ''}</p>${this.composition(preset.army, preset.spells)}${preset.heroes?.length ? this.presetHeroes(preset) : ''}${decoded!.notes.length ? `<p class="preset-empty army-import-notes">${decoded!.notes.map(html).join(' · ')}.</p>` : ''}${issue ? `<p class="layout-import-summary bad">${html(issue)}</p>` : ''}${button('army-import', `${icon('Check', 16)} Use shared army`, 'game-btn green', issue ? 'disabled' : '')}`;
+    return `<h4>${html(preset.name)}</h4><p class="layout-import-summary">${armySpace(preset.army)} troop spaces · ${spellSpace(preset.spells)} spell spaces${presetSiege(preset.army) ? ` · ${presetSiege(preset.army)} siege` : ''}</p>${this.composition(preset.army, preset.spells)}${preset.heroes?.length ? this.presetHeroes(preset) : ''}${this.castleComposition(decoded?.castle)}${decoded!.notes.length ? `<p class="preset-empty army-import-notes">${decoded!.notes.map(html).join(' · ')}.</p>` : ''}${issue ? `<p class="layout-import-summary bad">${html(issue)}</p>` : ''}${button('army-import', `${icon('Check', 16)} Use shared army`, 'game-btn green', issue ? 'disabled' : '')}`;
   }
   private async shareArmy(slot?: number) {
     const code = this.model.armyShareCode(slot);
@@ -5008,11 +5016,6 @@ export class HUD {
   private recipeCard(recipe: ArmyRecipe) {
     const m = this.model,
       issue = m.armyPreparationIssue(recipe.army, recipe.spells);
-    const castleArmy = emptyArmy(),
-      castleSpells = emptySpells();
-    for (const [k, count] of recipe.castle.troops) castleArmy[k] += count;
-    for (const [k, count] of recipe.castle.spells) castleSpells[k] += count;
-    const castle = recipe.castle.troops.length + recipe.castle.spells.length;
     const siege = presetSiege(recipe.army);
     const creator = recipe.creator
       ? ARMY_RECIPE_TEXTS.creator.replace('<creator>', recipe.creator)
@@ -5035,7 +5038,7 @@ export class HUD {
             ),
           )
           .join('')}</span>`;
-    return `<article class="preset-card recipe-card" data-recipe="${recipe.id}"><div class="recipe-head"><h3>${html(recipe.name)}</h3><small>${html(creator)} · ${armySpace(recipe.army)} troop · ${spellSpace(recipe.spells)} spell spaces${siege ? ` · ${siege} siege` : ''}</small></div>${this.composition(recipe.army, recipe.spells)}${recipe.heroes.length ? this.presetHeroes(recipe, ARMY_RECIPE_TEXTS.autofix) : ''}${castle ? `<details class="recipe-castle"><summary>${icon('ChevronRight', 15)} ${icon('Castle', 15)} Clan Castle · not used here</summary>${this.composition(castleArmy, castleSpells)}</details>` : ''}<div class="preset-actions">${button(`recipe-use:${recipe.id}`, `${icon('Check', 16)} ${issue ? ARMY_RECIPE_TEXTS.cannotTrain : 'Use army'}`, 'game-btn green', issue ? 'disabled' : '')}${save}${recipe.guide ? `<a class="game-btn stone" href="${html(recipe.guide)}" target="_blank" rel="noopener noreferrer">${icon('Play', 16)} Watch guide</a>` : ''}</div>${issue ? `<p class="preset-empty">${html(issue)}</p>` : ''}</article>`;
+    return `<article class="preset-card recipe-card" data-recipe="${recipe.id}"><div class="recipe-head"><h3>${html(recipe.name)}</h3><small>${html(creator)} · ${armySpace(recipe.army)} troop · ${spellSpace(recipe.spells)} spell spaces${siege ? ` · ${siege} siege` : ''}</small></div>${this.composition(recipe.army, recipe.spells)}${recipe.heroes.length ? this.presetHeroes(recipe, ARMY_RECIPE_TEXTS.autofix) : ''}${this.castleComposition(recipe.castle)}<div class="preset-actions">${button(`recipe-use:${recipe.id}`, `${icon('Check', 16)} ${issue ? ARMY_RECIPE_TEXTS.cannotTrain : 'Use army'}`, 'game-btn green', issue ? 'disabled' : '')}${save}${recipe.guide ? `<a class="game-btn stone" href="${html(recipe.guide)}" target="_blank" rel="noopener noreferrer">${icon('Play', 16)} Watch guide</a>` : ''}</div>${issue ? `<p class="preset-empty">${html(issue)}</p>` : ''}</article>`;
   }
   private battleLog() {
     const log = this.model.state.raidLog ?? [];

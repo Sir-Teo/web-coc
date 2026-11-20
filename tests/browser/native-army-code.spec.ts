@@ -48,6 +48,10 @@ for (const [width, height] of [
       'Clan Castle troops and spells are not used here',
     );
     await expect(page.locator('.army-import-notes')).toContainText('ground/air mode');
+    const castle = page.locator('.army-import-preview .recipe-castle');
+    await castle.locator('summary').click();
+    await expect(castle.locator('[title="Barbarian"]')).toHaveText('×1');
+    await expect(castle.locator('[title="Healing Spell"]')).toHaveText('×1');
     await expect(page.locator('.army-import-preview')).toContainText(
       '4 troop spaces · 0 spell spaces',
     );
