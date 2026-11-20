@@ -18,6 +18,11 @@ research levels remain in effect; links carry no research or potion levels.
 Unavailable heroes, equipment and pets follow the same substitution rules and
 preview notes as saved Quick armies. The resulting army can be saved in a slot.
 
+A local Quick army restores the saved pet assignment for each listed hero,
+including a hero saved without a pet. An older preset without hero data leaves
+current assignments alone. An unavailable pet still follows the existing
+substitution notice.
+
 A link received during an attack waits for the player to return home and open
 Quick armies. It does not interrupt or alter combat. The link leaves the address
 after being offered, so reloading does not offer it repeatedly. Hosted subpaths

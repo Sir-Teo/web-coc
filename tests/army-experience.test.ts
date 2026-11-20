@@ -1,6 +1,6 @@
 import { developedSave } from './fixtures/developed-village';
 import { describe, it, expect } from 'vitest';
-import { GameModel, initialSave } from '../src/game/model';
+import { GameModel, initialSave, makeBuilding } from '../src/game/model';
 import { emptyArmy, emptySpells } from '../src/game/army';
 import { validateSave, migrateSave } from '../src/game/save';
 
@@ -148,6 +148,31 @@ describe('quick armies', () => {
     expect(restored.state.army).toEqual(original.army);
     expect(restored.state.spells).toEqual(original.spells);
     expect(validateSave(restored.state)).toBe(true);
+  });
+  it('restores saved pet assignments, including a hero saved without a pet', () => {
+    const m = new GameModel(developedSave());
+    m.townhall!.level = 16;
+    m.state.buildings.push(makeBuilding(m.state.nextId++, 'pethouse', 36, 32, 9));
+    m.state.buildings.push(makeBuilding(m.state.nextId++, 'herohall', 36, 24, 3));
+    m.state.heroes = { queen: { level: 1 } };
+    m.state.heroLineup = ['queen'];
+    m.state.pets = { levels: { fox: 1 }, assigned: {} };
+
+    m.saveArmyPreset(0, 'Queen alone');
+    expect(m.assignPet('queen', 'fox')).toBe(true);
+    m.saveArmyPreset(1, 'Queen and Fox');
+    const { heroes: _heroes, ...legacy } = m.state.armyPresets![0]!;
+    m.state.armyPresets![2] = legacy;
+    expect(validateSave(m.state)).toBe(true);
+
+    const restored = new GameModel(structuredClone(m.state));
+    restored.loadArmyPreset(2);
+    expect(restored.petProgress.assigned.queen).toBe('fox');
+    restored.loadArmyPreset(0);
+    expect(restored.petProgress.assigned.queen).toBeUndefined();
+    expect(restored.petProgress.levels.fox).toBe(1);
+    restored.loadArmyPreset(1);
+    expect(restored.petProgress.assigned.queen).toBe('fox');
   });
   it('rejects a preset as a whole when either housing limit is exceeded', () => {
     const m = new GameModel();

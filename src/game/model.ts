@@ -4467,12 +4467,12 @@ export class GameModel {
     const preset = this.state.armyPresets?.[slot];
     if (!preset) return this.notify('Save an army in this slot first.');
     if (!this.prepareArmy(preset.army, preset.spells)) return;
-    const changes = this.applyPresetHeroes(preset);
+    const changes = this.applyPresetHeroes(preset, true);
     if (changes.length) return this.notify(`Your army is ready · ${changes.join(' · ')}.`);
     this.notify('Your army is ready.');
   }
   /** Puts a preset's heroes, items and pets in place as `presetHeroPlan` allows; its notes. */
-  private applyPresetHeroes(preset: ArmyPreset) {
+  private applyPresetHeroes(preset: ArmyPreset, restoreUnassignedPets = false) {
     if (!preset.heroes?.length) return [];
     const { lineup, changes } = this.presetHeroPlan(preset);
     if (lineup.length) this.state.heroLineup = lineup.map((hero) => hero.kind);
@@ -4486,7 +4486,13 @@ export class GameModel {
     if (this.petHouse) {
       const pets = structuredClone(this.petProgress);
       for (const hero of lineup) {
-        if (!hero.pet) continue;
+        if (!hero.pet) {
+          // A saved slot can describe a hero without a pet. An unavailable requested pet
+          // still follows the existing substitution warning.
+          if (restoreUnassignedPets && preset.heroes.some((entry) => entry.kind === hero.kind && !entry.pet))
+            delete pets.assigned[hero.kind];
+          continue;
+        }
         for (const [other, assigned] of Object.entries(pets.assigned))
           if (assigned === hero.pet) delete pets.assigned[other as HeroKind];
         pets.assigned[hero.kind] = hero.pet;
