@@ -54,6 +54,7 @@ describe('Starter Challenges', () => {
       'Social_RequestTroops_TH3',
       'TH4_Home_DonateTroops',
       'TH5_Home_DonateSpells',
+      'TH5_Win_GoldTarget',
     ]);
   });
 
@@ -131,6 +132,39 @@ describe('Starter Challenges', () => {
     // Three stars with 15 Archers: the Archer challenge counts them.
     expect(progress(m, 'TH2_Win_StarsUsingArchers')).toBe(3);
     expect(save(m)).toBe(true);
+  });
+
+  it.each(['campaign', 'ladder', 'practice'] as const)(
+    'separates multiplayer-only loot from cumulative loot in %s',
+    (mode) => {
+      const m = village(5);
+      const total = 'TH2_Battle_LootGold';
+      const totalElixir = 'TH3_Battle_LootElixir';
+      const multiplayer = 'TH5_Win_GoldTarget';
+      m.state.starter = { counts: { [total]: 3900, [totalElixir]: 99900 }, claimed: [0] };
+      m.state.army = { ...emptyArmy(), archer: 15 };
+      if (mode === 'ladder') m.startLadder();
+      else m.startBattle(0, mode === 'practice', 'valley-v1');
+      for (const building of m.battle!.buildings) m.damage(building, building.hp);
+      m.finishBattle();
+      expect(progress(m, total)).toBe(mode === 'campaign' ? 4000 : 3900);
+      expect(progress(m, totalElixir)).toBe(mode === 'campaign' ? 100000 : 99900);
+      expect(progress(m, multiplayer)).toBe(0);
+      expect(m.state.starter.counts[multiplayer]).toBeUndefined();
+      expect(m.state.starter.claimed).toEqual([0]);
+      expect(save(m)).toBe(true);
+    },
+  );
+
+  it('retains legacy loot counts and claimed tiers without using invalid loot for points', () => {
+    const m = village(5);
+    const id = 'TH5_Win_GoldTarget';
+    m.state.starter = { counts: { [id]: 250000 }, claimed: [0] };
+    expect(save(m)).toBe(true);
+    const restored = new GameModel(structuredClone(m.state), m.clock);
+    expect(progress(restored, id)).toBe(0);
+    expect(restored.state.starter?.counts[id]).toBe(250000);
+    expect(restored.starterTierIssue(0)).toBe('Claimed');
   });
 
   it('settles only Ladder stars earned before 60 combat seconds and pays the tier once', () => {

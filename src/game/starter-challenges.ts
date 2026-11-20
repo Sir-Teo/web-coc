@@ -27,7 +27,7 @@ export const STARTER_FIRST_TOWN_HALL = Math.min(...STARTER_CHALLENGES.map((c) =>
 export const STARTER_END_TOWN_HALL = catalog.endTownHall;
 export const STARTER_MAX_POINTS = STARTER_TIERS.at(-1)!.score;
 
-/** Task types this offline village cannot count: clans and their donations. */
+/** Social task types this offline village cannot count. */
 const UNAVAILABLE: Record<string, string> = {
   HaveClan: 'Needs a clan',
   RequestDonations: 'Needs a clan',
@@ -35,7 +35,8 @@ const UNAVAILABLE: Record<string, string> = {
   DonateSpellCapacity: 'Needs a clan',
 };
 /** Why a challenge cannot be completed here, or undefined when it can. */
-export const challengeUnavailable = (c: StarterChallenge) => UNAVAILABLE[c.type];
+export const challengeUnavailable = (c: StarterChallenge) =>
+  c.id === 'TH5_Win_GoldTarget' ? 'Needs multiplayer raid loot' : UNAVAILABLE[c.type];
 
 const BUILDINGS_BY_NAME = Object.fromEntries(
   Object.entries(SOURCE_NAME).map(([kind, name]) => [name, kind]),

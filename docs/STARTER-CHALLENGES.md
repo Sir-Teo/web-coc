@@ -25,7 +25,7 @@ Each Town Hall reveals its challenges, and revealed challenges never expire. A c
 | Single Player stars                                                     | Stars on the Goblin campaign map, as the achievements count them.                                                                 |
 | Start building upgrades, research, wall upgrades, obstacles, collection | Each one as it happens, after the challenge is revealed.                                                                          |
 | Loot (total)                                                            | Gold and Elixir looted in campaign raids, before storage limits.                                                                  |
-| Loot in a single battle                                                 | The best single raid. The client asks for a Multiplayer Battle, but ladder matches carry no loot here, so a campaign raid counts. |
+| Loot in a single battle                                                 | Unavailable. The pinned objective requires loot from one Multiplayer Battle and local Ladder carries no loot. |
 | Multiplayer stars, ruins, deployed housing, stars with a troop          | Ladder matches, this game's stand-in for Multiplayer Battles (as for the achievements).                                           |
 
 The four clan challenges remain unavailable (join a clan, request reinforcements, donate troops and spells). Speedy Stars counts stars earned in live Ladder matches before 60 seconds of combat simulation time, with progress awarded at settlement. Scouting, Campaign, Practice, and existing recordings give no Speedy Stars progress.
