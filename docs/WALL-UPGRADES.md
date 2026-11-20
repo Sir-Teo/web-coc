@@ -19,6 +19,11 @@ Both new wall placement and gold/elixir upgrades require one available builder. 
 
 A bulk purchase validates IDs, duplicate selection, wall type, current levels, Town Hall ceiling, resource eligibility, builder availability and total affordability before spending anything. Capped or unfinished pieces in a row are left unchanged, and the card states how many selected pieces can upgrade. The chosen resource is charged once; every eligible piece gains exactly one level and its upgraded hitpoints. No gems are spent and no new wall timer is created. A batch emits one completion effect and sound rather than overlapping a sound for every piece.
 
+A gem shortfall offer covers the eligible pieces quoted when it opened. If the
+Town Hall finishes while the offer is open, newly eligible pieces require a
+separate upgrade. Confirmation rechecks the quoted pieces, total cost and
+builder availability before spending gems or resources.
+
 Upgraded rows remain selected. Selecting another object, returning home from combat, entering edit mode, opening another activity, or canceling discards the transient selection. Reloading retains upgrades and resource balances but does not persist an active selection. Home wall tools cannot alter a village during a battle.
 
 The card supports narrow phones and short landscape viewports, uses at least 44px targets for its controls, and exposes gold/elixir totals before purchase. It avoids the resource counter stack where the viewport has room and keeps the card inside the viewport. Existing individual-wall Move and Info controls remain available. Connected rows also support an atomic move/rotate preview in normal and edit modes; see [WALL-MOVEMENT.md](WALL-MOVEMENT.md).

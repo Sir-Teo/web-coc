@@ -131,6 +131,23 @@ describe('buying missing resources', () => {
     m.buyShortfall();
     expect(wall.level).toBe(level + 1);
   });
+  it('keeps both balances when a quoted wall upgrade no longer has a free builder', () => {
+    const m = village();
+    const wall = m.state.buildings.find((b) => b.kind === 'wall')!;
+    const level = wall.level;
+    m.state.gold = 100;
+    m.upgradeWalls([wall.id], 'gold');
+    expect(m.shortfallOffer).not.toBeNull();
+    const work = m.state.buildings.filter((b) => b.kind !== 'wall').slice(0, m.builders);
+    for (const building of work) building.upgradeEnd = m.clock + 60_000;
+
+    expect(m.buyShortfall()).toBe(false);
+    expect(m.state.gold).toBe(100);
+    expect(m.state.gems).toBe(500);
+    expect(wall.level).toBe(level);
+    expect(m.shortfallOffer).toBeNull();
+  });
+
 });
 
 describe('Treasure packs', () => {

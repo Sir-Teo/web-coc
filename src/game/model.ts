@@ -1609,7 +1609,12 @@ export class GameModel {
    * A price the village could not pay that the client offers to complete with gems: the
    * resource, the whole price and the action to retry once bought. The HUD asks first.
    */
-  shortfall: { resource: GemResource; cost: number; retry: () => unknown } | null = null;
+  shortfall: {
+    resource: GemResource;
+    cost: number;
+    retry: () => unknown;
+    recheck?: () => string | null;
+  } | null = null;
   moving: number | null = null;
   /** The obstacle a Shovel made movable that is being moved, if any. */
   movingObstacle: number | null = null;
@@ -1740,9 +1745,15 @@ export class GameModel {
    * Refuses a price the village lacks. While the price fits the storages the client offers the
    * missing amount for gems, then retries; otherwise (and for gem prices) it only says so.
    */
-  private lacking(resource: string, cost: number, message: string, retry: () => unknown) {
+  private lacking(
+    resource: string,
+    cost: number,
+    message: string,
+    retry: () => unknown,
+    recheck?: () => string | null,
+  ) {
     if (!this.battle && isGemResource(resource) && cost <= this.resourceCap(resource)) {
-      this.shortfall = { resource, cost, retry };
+      this.shortfall = { resource, cost, retry, recheck };
       this.changed();
     } else this.notify(message);
   }
@@ -1756,9 +1767,15 @@ export class GameModel {
   /** Buys the missing amount with gems and retries what was refused. */
   buyShortfall() {
     const offer = this.shortfallOffer,
-      retry = this.shortfall?.retry;
+      pending = this.shortfall;
     this.shortfall = null;
-    if (!offer || !retry || this.battle) return false;
+    if (!offer || !pending || this.battle) return false;
+    const issue = pending.recheck?.();
+    if (issue) {
+      this.notify(issue);
+      this.changed();
+      return false;
+    }
     if (this.state.gems < offer.gems) {
       this.notify(`${GEM_TEXTS.notEnoughGems}.`);
       this.changed();
@@ -1766,7 +1783,7 @@ export class GameModel {
     }
     this.state.gems -= offer.gems;
     this.state[offer.resource] += offer.missing;
-    retry();
+    pending.retry();
     this.changed();
     return true;
   }
@@ -3258,9 +3275,22 @@ export class GameModel {
   upgradeWalls(ids: readonly number[], resource: WallResource) {
     const quote = this.wallUpgradeQuote(ids, resource);
     if (quote.short) {
-      this.lacking(resource, quote.cost, quote.issue!, () => {
-        this.upgradeWalls(ids, resource);
-      });
+      // The Town Hall can finish upgrading while the offer is open. Keep the
+      // quoted pieces rather than adding newly eligible walls on confirmation.
+      const quotedIds = quote.walls.map((wall) => wall.id);
+      this.lacking(
+        resource,
+        quote.cost,
+        quote.issue!,
+        () => this.upgradeWalls(quotedIds, resource),
+        () => {
+          const current = this.wallUpgradeQuote(quotedIds, resource);
+          if (current.issue && !current.short) return current.issue;
+          return current.cost === quote.cost && current.walls.length === quotedIds.length
+            ? null
+            : 'The wall upgrade has changed. Select the walls again.';
+        },
+      );
       return false;
     }
     if (quote.issue) {

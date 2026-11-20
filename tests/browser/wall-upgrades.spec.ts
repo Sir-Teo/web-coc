@@ -393,3 +393,49 @@ test('Wall Rings fund a multi-wall upgrade on a phone with no free builders', as
     }, ids),
   ).toEqual({ levels: [3, 3], rings: 0, gold: 0, elixir: 0 });
 });
+
+test('an open wall offer keeps its quoted pieces when the Town Hall finishes', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 650 });
+  const now = Date.now();
+  await page.clock.setFixedTime(now);
+  await page.evaluate((now) => {
+    const { model } = window.__game;
+    const hall = model.townhall!;
+    hall.level = 3;
+    hall.upgradeEnd = now + 10000;
+    model.state.gold = 100;
+    model.state.gems = 100;
+    for (const wall of model.state.buildings.filter((b) => b.kind === 'wall')) {
+      wall.level = wall.x === 11 && wall.y === 19 ? 2 : 3;
+    }
+    model.changed();
+  }, now);
+  await selectWall(page);
+  await page.locator('[data-action="wall-row"]').tap();
+  await expect(page.locator('.wall-context h2')).toHaveText('5 Walls');
+  await page.locator('[data-action="wall-upgrade:gold"]').tap();
+  const buy = page.locator('[data-action="shortfall-buy"]');
+  await expect(buy).toHaveAccessibleName('Buy 4,900 Gold for 12 gems');
+
+  await page.clock.setFixedTime(now + 11000);
+  await expect.poll(() => page.evaluate(() => window.__game.model.townhallLevel)).toBe(4);
+  await expect(buy).toHaveAccessibleName('Buy 4,900 Gold for 12 gems');
+  await buy.tap();
+
+  const read = () =>
+    page.evaluate(() => {
+      const { model } = window.__game;
+      return {
+        gold: model.state.gold,
+        gems: model.state.gems,
+        levels: model.state.buildings.filter((b) => b.kind === 'wall').map((b) => b.level),
+      };
+    });
+  const after = await read();
+  expect(after.gold).toBe(0);
+  expect(after.gems).toBe(88);
+  expect(new Set(after.levels)).toEqual(new Set([3]));
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  expect(await read()).toEqual(after);
+});
