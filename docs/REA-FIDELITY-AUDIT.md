@@ -80,9 +80,12 @@ against the retained independent texture composition at one sampled pose, within
 its pixel tolerance. The state gallery covers normal setup, construction,
 upgrade and ruin across 21 levels, plus placement previews. The gallery now
 waits for all on-demand levels before it synchronously switches between them.
-The authored tutorial Cannon remains a confirmed web difference. Alternate
-bodies are retained, but exact geared behavior, all animated frames, native
-angle selection and camera composition remain gaps.
+Payback’s Tutorial Cannon (object 500000002 at source tile 21,22) names
+`basic_turret_lvl1` in the retained [NPC building table](../reference/campaign/npc-buildings.json).
+It now uses the retained normal level-one portrait with its frame-zero body
+and base. This verifies the body identity, while frame zero and the shared web
+anchor remain presentation choices pending a matched capture. Its separate
+NPC weapon and combat behavior are unchanged.
 [Cannon source and pose limits](../reference/cannon/README.md).
 
 ## Remaining parity work by player impact
@@ -90,5 +93,5 @@ angle selection and camera composition remain gaps.
 | Priority | Gap against the pinned build | Comparison required |
 | --- | --- | --- |
 | 1 | Village-to-battle and first-session UI. Web drawers, compact navigation, Campaign previews, deployment feedback and result/replay transport differ or lack native evidence. | An authorized version-matched capture from Village through Shop or Army, map selection, scouting, first deployment, results and replay. Include both phone orientations and preserve the labels, available actions and field framing at each state. |
-| 2 | Live unit, defense and terrain rendering. The tutorial Cannon is an authored substitution. The checked normal Cannon pose and state samples leave geared visuals, native aim, time-based effects, lighting and other families open. | Paired native and web frames at matching level, mode, aim, animation time and camera framing for setup, attack, hit and destruction. Record the source export and actual runtime atlas for each sample. |
+| 2 | Live unit, defense and terrain rendering. Payback’s Cannon body is identified, but its camera registration, initial aim, firing pose and destruction presentation remain unverified. Geared visuals, time-based effects, lighting and other families also remain open. | Start with pinned-client Payback captures of object 500000002 on entry, immediately before and during the first shot, and just after destruction. Match terrain, zoom and attacker location, and use the footprint and nearby terrain as registration landmarks. For other defenses, match level, mode and animation time and record the runtime atlas. |
 | 3 | Audio playback and mix. Three triggers are verified in the web graph. Native source identity does not establish mix or sequencing. | Synchronized native and web audio captures of equivalent inputs, including planning-to-combat and result transitions, plus mute and resume. Compare cue identity, onset, channel levels and loop or sting boundaries. |

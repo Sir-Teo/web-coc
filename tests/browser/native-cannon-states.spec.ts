@@ -1,21 +1,25 @@
 import { test, expect } from '@playwright/test';
 
-test('the tutorial Cannon retains its earlier image and distinct presentation', async ({
+test('Payback uses the pinned level-one Cannon art without a normal Cannon presentation', async ({
   page,
 }) => {
   await page.goto('/');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
+  await page.evaluate(() => {
+    const { model, scene } = window.__game;
+    scene.paused = true;
+    model.startCampaign(0);
+    scene.sync();
+  });
+  await page.waitForFunction(() => window.__game.scene.textures.exists('cannon-level-1'));
   const state = await page.evaluate(async () => {
     const { model: m, scene } = window.__game;
-    scene.paused = true;
-    m.startCampaign(0);
-    scene.sync();
     scene.drawOverlay();
     const npc = m.battle.buildings.find((b) => b.npc === 'tutorial-cannon'),
       sprite = scene.sprites.get(npc.id);
     const original = new Image();
-    original.src = '/assets/buildings/cannon.webp';
+    original.src = '/assets/buildings/cannon-native/level-1.png';
     await original.decode();
     const pixels = async (image: HTMLImageElement) => {
       const canvas = document.createElement('canvas');
@@ -39,9 +43,9 @@ test('the tutorial Cannon retains its earlier image and distinct presentation', 
       native: scene.cannonPresentation.towers.size,
     };
   });
-  expect(state).toMatchObject({ texture: 'cannon', alpha: 1, native: 0 });
+  expect(state).toMatchObject({ texture: 'cannon-level-1', alpha: 1, native: 0 });
   expect(state.source).toEqual(state.original);
-  expect(state.width).toBe(94);
+  expect(state.width).toBeCloseTo(205 * 1.2);
 });
 
 test('every original Cannon level retains its bounds, preview, scaffolds and rubble in the live scene', async ({

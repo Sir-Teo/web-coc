@@ -4040,14 +4040,9 @@ export class VillageScene extends Phaser.Scene {
         .setDisplaySize(art.width, (art.width * art.frameHeight) / art.frameWidth);
     }
     const npcVisual = npc && npcArt(npc);
-    if (npc === 'tutorial-cannon') {
-      const width = BUILDINGS.cannon.width;
-      return im
-        .setTexture('cannon')
-        .setOrigin(0.5, 0.88)
-        .setFlipX(false)
-        .setDisplaySize(width, (width * im.height) / im.width);
-    }
+    // Payback's NPC explicitly names the normal level-one body. Use its retained
+    // frame-zero portrait without opting the NPC into normal Cannon animation or combat.
+    if (npc === 'tutorial-cannon') return this.styleBuilding(im, 'cannon', 1);
     // A first offline raid can use the already loaded village portraits for Goblin targets.
     if (npcVisual && isGoblinBuilding(npc) && !this.textures.exists(npcVisual.texture))
       return this.styleBuilding(im, kind, 1);

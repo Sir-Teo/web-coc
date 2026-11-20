@@ -24,7 +24,7 @@ Foreground scale is uniformly 1.2, with source anchors `(0,80)` for the Hall and
 
 Flag playback follows battle time and freezes at frame zero for reduced motion. Idle scouting remains at time zero under the existing deterministic presentation convention. Render signatures avoid rebuilding static foundations or unchanged flag frames. Destruction removes the foreground mesh while retaining the foundation beneath existing generic ruins. Battle changes, replay seeks, return home and scene shutdown clean up retained meshes.
 
-The foreground/world scale, native Hall foundation association, ground projection, scouting/flag phase convention and foundation persistence after destruction are calibrated interpretations. Exact engine registration and native destruction/effects/audio still need verification or implementation. Tutorial Cannon artwork is still the earlier generated approximation. The retired generated Goblin art remains recorded under `art/source/goblin-buildings-v1/`; it is no longer used for placed Goblin buildings.
+The foreground/world scale, native Hall foundation association, ground projection, scouting/flag phase convention and foundation persistence after destruction are calibrated interpretations. Exact engine registration and native destruction/effects/audio still need verification or implementation. Payback uses the retained level-one Cannon portrait, matching the Tutorial Cannon row’s `basic_turret_lvl1` body. The exact native tutorial pose and registration remain unverified. The retired generated Goblin art remains recorded under `art/source/goblin-buildings-v1/`; it is no longer used for placed Goblin buildings.
 
 ## Persistence
 
