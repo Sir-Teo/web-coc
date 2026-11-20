@@ -9,6 +9,10 @@ for (const scenario of ['native', 'legacy', 'guide'] as const)
       await page.setViewportSize({ width, height: width === 1440 ? 960 : 844 });
       const errors: string[] = [];
       page.on('pageerror', (error) => errors.push(error.message));
+      if (scenario === 'native')
+        await page.route('**/assets/field-spells-native/poison/graph.json', (route) =>
+          route.abort(),
+        );
       await page.goto('/?lazyart');
       await page.waitForFunction(() => window.__game?.scene.artSettled);
       await page.locator('[data-action="skip-tutorial"]').click();
@@ -24,7 +28,8 @@ for (const scenario of ['native', 'legacy', 'guide'] as const)
         model.state.army = { ...emptyArmy(), giant: 1 };
         model.state.spells = { ...emptySpells(), poison: 1, rage: 1 };
         model.state.spellLevels = { ...defaultSpellLevels(), poison: 1, rage: 1 };
-        model.state.settings.reducedMotion = true;
+        model.state.settings.reducedMotion = scenario === 'guide';
+        model.state.settings.fullMotion = scenario !== 'guide';
         let x = 20,
           y = 20,
           radius = 4;

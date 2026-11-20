@@ -28,6 +28,11 @@ unit/footprint boundaries, defensive fields, following auras, retained strike sc
 backward seeks. `tests/browser/spell-area-centers.spec.ts` checks a real Rage boundary on desktop
 and reduced-motion phone views.
 
+The web fallback ring keeps its projected width and height tied to the spell’s
+gameplay radius. At full motion, the fill and stroke pulse in opacity while the
+boundary stays fixed. The packaged Poison check blocks only the effect graph
+request to exercise that fallback and compares live and replay ring dimensions.
+
 ## The Freeze Spell
 
 Added September 15, 2026, as **recording version 48**: no earlier recording may carry or cast one, and every archived battle before it stays byte-identical. The Spell Factory offers it at level 4, its own `SpellForgeLevel`, and it runs to level 8.
