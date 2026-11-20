@@ -36,8 +36,9 @@ Defender releases no longer create a generic bomb projectile. Existing
 building blast geometry and damage are unchanged by the extracted helper.
 
 Defense preference and flying Wall crossing retain their rules. Deployment
-boosters still expire four seconds after placement, including while Ice Block
-holds recovery. The separate death blast retains its 0.416 s source delay,
+boosters retain their four-second duration, including while Ice Block holds
+recovery. Through recording version 273 the ordinary deployment adapter starts
+that duration on the first simulation update. The separate death blast retains its 0.416 s source delay,
 ground-only 1.2-tile radius and per-tier damage, including defeat during Freeze.
 Its deadline is resolved by the existing fixed simulation steps.
 
@@ -63,3 +64,11 @@ offsets, exact reverse seeking, read-only drawing, reduced motion, asset
 requests and WebGL health. Additional cases cross actual Ice Block freezes,
 booster expiry, Monolith defeats and delayed death blasts. Screenshots go to
 ignored `output/playtest/`.
+
+## Recording version 274
+
+A freshly deployed, carried Rocket Balloon starts its existing booster timer at
+placement. The active speed bonus ends four combat seconds later, including
+during a freeze. Older recordings keep their first-update origin. Ordinary
+Balloons, recalled units and cargo keep their former paths. The source supports
+the duration. Booster speed conversion and native tick rounding remain unverified.

@@ -165,6 +165,30 @@ it('continues to prefer defenses and fly over intact Walls', () => {
   expect(walls.every((w) => w.hp === w.maxHp)).toBe(true);
 });
 
+it('starts carried boosters at placement and leaves older clocks and unboosted flight intact', () => {
+  const current = nativeDirectBattle('rocketballoon', 4, 274, 6.9);
+  const old = nativeDirectBattle('rocketballoon', 4, 273, 6.9);
+  const regular = nativeDirectBattle('balloon', 8, 274, 6.9);
+  const speed = unitSpeedBonus(current.unit, 0);
+  expect(speed).toBeGreaterThan(0);
+  expect(current.unit.native?.effects?.boost?.until).toBe(4);
+  expect(unitSpeedBonus(current.unit, 3.95)).toBe(speed);
+  expect(unitSpeedBonus(current.unit, 4)).toBe(0);
+  expect(unitSpeedBonus(old.unit, 0)).toBe(0);
+  old.step();
+  expect(old.unit.native?.effects?.boost?.until).toBeCloseTo(4.05, 8);
+  expect(unitSpeedBonus(old.unit, 4)).toBe(speed);
+  regular.step();
+  expect(unitSpeedBonus(regular.unit, regular.battle.elapsed)).toBe(0);
+
+  const delayed = nativeDirectBattle('rocketballoon', 4, 274, 6.9, 'storage', {}, {
+    beforeDeploy: ({ battle }) => {
+      battle.elapsed = 2;
+    },
+  });
+  expect(delayed.unit.native?.effects?.boost?.until).toBe(6);
+});
+
 it('deployment boosters expire after four seconds while the charge is frozen', () => {
   const r = nativeDirectBattle('rocketballoon');
   r.step();
