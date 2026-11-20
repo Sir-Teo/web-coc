@@ -115,3 +115,19 @@ Costs on a row are the price to reach that level (wiki convention). Values as di
 
 - `GiantGiant.rageThreshold` (level 3): wiki **at half health (1,200 damage of 2,400)** vs client **ActiveAfterTakingDamage 1600** — levels 1–2 and 10 are exactly half; 3–9 differ (L4 2150 vs 1600, L5 2750 vs 2500, L6 3500 vs 3600, L7 4500 vs 4650, L8 6250 vs 6400, L9 7500 vs 7600)
 - `GiantGiant.damageRadius`: wiki **range 1 tile, splash (radius not given)** vs client **DamageRadius 150 (1.5 tiles)** — wiki omits splash radius
+
+## Action Figure summon in recording version 280
+
+The pinned `AQSummonGiantGiant` ability creates one Giant Giant at the listed
+troop tier. Before version 280, the equipment could activate while its
+summon was skipped because the unit name had no battle roster entry.
+The current recording rule uses the pinned troop stats and existing
+equipment spawn path. The web offset uses the Queen's aim and the existing
+open-ground placement rule. Its exact distance and native animation remain
+unverified. The battlefield uses the retained roster portrait while a
+dedicated walk or attack animation is unavailable. The dedicated damage-triggered rage is outside this summon change.
+
+Run `node scripts/action-figure-production-check.mjs` after packaging.
+Pass a packaged version 279 directory for baseline or add `--control` to
+verify Archer Puppet. Both use a disposable phone-sized touch raid and
+seek back across the activation.

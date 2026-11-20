@@ -983,6 +983,8 @@ export interface Battle {
   nativeInvisibilityTotem?: true;
   /** Version 279: Warden LavaLoon bomb impacts trigger their source Pup spell. */
   nativeLavaloonBombPups?: true;
+  /** Version 280: Action Figure deploys its distinct Giant Giant. */
+  nativeActionFigureSummon?: true;
   nativeTotemTroopHealingImmunity?: true;
   /** Version 101: ground healing units follow allies around buildings, crossing jumpable walls. */
   nativeHealerRoutes?: true;

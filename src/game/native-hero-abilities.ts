@@ -8,7 +8,7 @@ import { launchSeekingShield } from './native-seeking-shield';
 import { captureElectroBootsActivation } from './native-electro-boots';
 import { itemName } from './native-hero-data';
 import { distance2D } from './distance';
-import { TROOPS, type UnitKind } from './data';
+import { BUILDINGS, TROOPS, type UnitKind } from './data';
 import { flag, nativeRow, num, seconds, text, tiles, type NativeRow } from './native-data';
 import { castNativeSpell } from './native-spells';
 import { healUnit, unitEffects } from './native-status';
@@ -180,6 +180,7 @@ export function releaseSpawns(
   const name = text(row, 'SpawnedTroop');
   const kind = unitKindForName(name) as UnitKind | undefined;
   if (!kind || !total || hero.abilityAt === undefined) return;
+  if (kind === 'giantgiant' && !ctx.battle.nativeActionFigureSummon) return;
   const perHit = Math.max(1, num(row, 'SpawnnedTroopsPerHit', total));
   const gap = seconds(row, 'SpawnDelayBetweenHitsMS');
   const spawned = (hero.spawned ??= {});
@@ -191,7 +192,9 @@ export function releaseSpawns(
     : num(row, 'TroopLevel', 1) || 1;
   for (let index = done; index < due; index++) {
     const when = hero.abilityAt + (gap > 0 ? Math.floor(index / perHit) * gap : 0);
-    const offset = spawnOffset(row, index, perHit);
+    const offset = kind === 'giantgiant' && text(row, 'SpawnPattern') === 'InFront'
+      ? actionFigureOffset(ctx, unit)
+      : spawnOffset(row, index, perHit);
     const spawn = ctx.spawn?.(kind, level, unit.x + offset.x, unit.y + offset.y, when, unit.id);
     if (!spawn) break;
     spawn.summoned = true;
@@ -206,6 +209,20 @@ export function releaseSpawns(
     spawned[ability.name] = index + 1;
   }
 }
+// Use the Queen's current aim, falling back to the usual diagonal before she acquires a target.
+function actionFigureOffset(ctx: NativeTroopContext, unit: Unit) {
+  const target = ctx.buildingsById.get(unit.native?.wallTarget ?? unit.target ?? -1);
+  const half = target ? BUILDINGS[target.kind].size / 2 : 0;
+  const aim = ctx.battle.defenders?.find((d) => d.id === unit.defenderTarget) ??
+    (target ? { x: target.x + half, y: target.y + half } : unit.path[0]);
+  const dx = aim ? aim.x - unit.x : 1;
+  const dy = aim ? aim.y - unit.y : 1;
+  const distance = distance2D(dx, dy);
+  return distance > EPS
+    ? { x: (dx / distance) * 0.8, y: (dy / distance) * 0.8 }
+    : { x: Math.SQRT1_2 * 0.8, y: Math.SQRT1_2 * 0.8 };
+}
+
 /** SpawnPattern places a semicircle in front of the hero; others land on its tile. */
 function spawnOffset(row: NativeRow, index: number, perHit: number) {
   if (text(row, 'SpawnPattern') !== 'SemiCircleInFront') return { x: 0, y: 0 };

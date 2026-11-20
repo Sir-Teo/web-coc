@@ -5995,6 +5995,15 @@ export class VillageScene extends Phaser.Scene {
         im.setTexture(`${u.kind}-walk`, 0)
           .setDisplaySize(width, width)
           .setData('isFallback', false);
+      if (
+        u.kind === 'giantgiant' &&
+        im.getData('isFallback') &&
+        this.deferredArt.has(
+          'giant-giant-portrait',
+          '/assets/catalog-native/roster/troop-giant-giant.png',
+        )
+      )
+        im.setTexture('giant-giant-portrait').setDisplaySize(width, width).setData('isFallback', false);
       const isFallback = !!im.getData('isFallback');
       if (u.hero && !battle.hero && im.texture.key === 'troop-fallback') {
         if (this.deferredArt.has(heroKey(u.hero), heroPortraitImage(u.hero)))

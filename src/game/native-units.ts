@@ -91,6 +91,7 @@ export const SPAWN_SOURCE = {
   superhog: 'Super Hog',
   superrider: 'Super Rider',
   bigboy: 'Big Boy',
+  giantgiant: 'Giant Giant',
   spellbat: 'Spell Bat',
   spellskeleton: 'Spell Unshielded Skeleton',
   spellskeletonshielded: 'Spell Shielded Skeleton',

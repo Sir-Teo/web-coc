@@ -117,3 +117,28 @@ it.each([278, 279])('uses the Lavaloon bomb Pup rule for recording %i', (version
     expect(pups.map((u) => u.level)).toEqual(version === 278 ? [] : Array(bomb).fill(2));
   }
 });
+
+it.each([1, 27])('Action Figure %i summons its pinned Giant Giant tier', (level) => {
+  const r = heroPuppetBattle({
+    kind: 'queen',
+    level: 20,
+    items: [{ slug: 'action-figure', level }],
+  });
+  expect(r.model.deployNativeHero('queen', 11.4, 11.5)).toBe(true);
+  expect(r.model.activateNativeHeroAbility('queen')).toBe(true);
+  const giants = r.battle.units.filter((u) => u.kind === 'giantgiant');
+  expect(giants.map((u) => [u.level, u.maxHp])).toEqual(level === 1 ? [[1, 800]] : [[10, 18500]]);
+});
+
+it('keeps the version 279 Action Figure activation without its new summon', () => {
+  const r = heroPuppetBattle(
+    { kind: 'queen', level: 20, items: [{ slug: 'action-figure', level: 1 }] },
+    {},
+    undefined,
+    279,
+  );
+  expect(r.model.deployNativeHero('queen', 11.4, 11.5)).toBe(true);
+  expect(r.model.activateNativeHeroAbility('queen')).toBe(true);
+  r.model.step(0.05);
+  expect(r.battle.units.some((u) => u.kind === 'giantgiant')).toBe(false);
+});
