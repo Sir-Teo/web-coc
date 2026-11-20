@@ -1230,6 +1230,8 @@ export interface Battle {
   nativeSiegeManualRelease?: true;
   /** Version 276: Battle Blimp releases at the Town Hall footprint. */
   nativeBlimpObjectiveRelease?: true;
+  /** Version 277: Wall Wrecker releases on reaching the Town Hall footprint. */
+  nativeWreckerObjectiveRelease?: true;
   /** Version 237: source Spring Trap pet damage uses the recovered integer percentage. */
   nativeSpringPetDamage?: true;
   /** Version 238: source ejection immunity and siege reduction in native home Spring Traps. */

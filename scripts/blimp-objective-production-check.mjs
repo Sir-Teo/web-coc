@@ -1,10 +1,16 @@
-// Exercise Blimp delivery in a disposable local Practice battle and its recording.
+// Exercise siege delivery in a disposable local Practice battle and its recording.
 import { chromium, expect } from '@playwright/test';
 import { createServer, preview } from 'vite';
 import { mkdir } from 'node:fs/promises';
 
-const baseline = process.argv[2];
-const artifacts = 'output/rea-cloud-playtest/blimp-objective';
+const args = process.argv.slice(2);
+const baseline = args.find((arg) => !arg.startsWith('--'));
+const wrecker = args.includes('--wall-wrecker');
+const manual = args.includes('--manual');
+const siege = wrecker ? 'wallwrecker' : 'battleblimp';
+const siegeName = wrecker ? 'Wall Wrecker' : 'Battle Blimp';
+const artifacts = `output/rea-cloud-playtest/${wrecker ? 'wrecker' : 'blimp'}-objective`;
+const captureLabel = manual ? 'manual' : baseline ? 'baseline' : 'patched';
 
 await mkdir(artifacts, { recursive: true });
 const modules = await createServer({
@@ -24,7 +30,7 @@ try {
   const fixture = new GameModel(initialSave());
   fixture.state.buildings = [
     makeBuilding(1, 'townhall', 24, 18, 12),
-    makeBuilding(2, 'cannon', 18, 18, 1),
+    makeBuilding(2, 'cannon', 18, wrecker ? 27 : 18, 1),
     makeBuilding(3, 'airdefense', 27, 23, 1),
     makeBuilding(4, 'workshop', 29, 28, 2),
     makeBuilding(5, 'builder', 37, 33, 1),
@@ -39,8 +45,8 @@ try {
   fixture.state.spells = emptySpells();
   fixture.state.settings.sound = false;
   fixture.state.settings.music = false;
-  fixture.train('battleblimp');
-  expect(fixture.state.army.battleblimp).toBe(1);
+  fixture.train(siege);
+  expect(fixture.state.army[siege]).toBe(1);
   expect(validateSave(fixture.state)).toBe(true);
   save = JSON.stringify(fixture.state);
 } finally {
@@ -118,8 +124,7 @@ try {
           actions: state.raidLog?.[0]?.replay?.actions,
         };
       });
-    const shot = (name) =>
-      page.screenshot({ path: `${artifacts}/${baseline ? 'baseline' : 'patched'}-${name}.png` });
+    const shot = (name) => page.screenshot({ path: `${artifacts}/${captureLabel}-${name}.png` });
     const village = await read();
     await page.locator('.attack-btn').tap();
     await tap('practice-cargo');
@@ -147,24 +152,24 @@ try {
         scene.sync();
         scene.drawOverlay(0);
       }, ticks);
-    await tap('troop:battleblimp');
+    await tap(`troop:${siege}`);
     await tapField(13.5, 18.5, true);
     await step(60);
     const flight = await read();
     expect(flight.units).toHaveLength(1);
-    expect(flight.units[0]).toMatchObject({ kind: 'battleblimp', target: 1 });
+    expect(flight.units[0]).toMatchObject({ kind: siege, target: 1 });
     expect(flight.units[0].hp).toBeGreaterThan(0);
     await shot('flight');
-    await step(45);
+    await step(manual ? 1 : wrecker ? 95 : 45);
     const objective = await read();
-    expect(objective.cannonHp).toBeLessThan(300);
-    if (baseline) {
+    if (!wrecker) expect(objective.cannonHp).toBeLessThan(300);
+    if (baseline || manual) {
       expect(objective.units).toHaveLength(1);
       expect(objective.units[0].x).toBeLessThan(24);
       expect(objective.units[0].hp).toBeGreaterThan(0);
       expect(objective.cargo.released).toBeUndefined();
-      await shot('stalled');
-      await page.getByRole('button', { name: 'End Battle Blimp', exact: true }).tap();
+      await shot(manual ? 'before-manual-release' : 'stalled');
+      await page.getByRole('button', { name: `End ${siegeName}`, exact: true }).tap();
       await step(5);
     } else {
       expect(objective.units[0].x).toBeCloseTo(24);
@@ -205,7 +210,7 @@ try {
     await seek(duration);
     const complete = await read();
     expect(complete.actions.filter(({ type }) => type === 'siege-end')).toHaveLength(
-      baseline ? 1 : 0,
+      baseline || manual ? 1 : 0,
     );
     const scout = duration - complete.at;
     for (const checkpoint of [released, flight, released]) {
@@ -225,6 +230,8 @@ try {
     console.log(
       JSON.stringify({
         baseline: !!baseline,
+        manual,
+        siege,
         objective: objective.units[0],
         cargo: released.units.slice(1),
       }),

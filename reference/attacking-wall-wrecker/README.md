@@ -45,3 +45,24 @@ scope. Original-body tests verify first/second contact poses, read-only sampling
 and reduced motion. Browser scenarios cover current/historical complete replay
 states, source poses, inspection and phone/desktop rendering; the existing siege
 Army preview scenarios cover phase values and navigation at three viewports.
+
+## Town Hall arrival in recording version 277
+
+The pinned Wall Wrecker row identifies the Town Hall as its movement
+destination and gives it the manual `SiegeMachineRamSelfDestruct` ability.
+The pinned `SIEGE_MACHINE_SELF_DESTRUCT_ON_REACHING_TARGET` global and
+[Supercell's siege introduction](https://supercell.com/en/games/clashofclans/blog/news/wall-wrecker-battle-blimp/)
+establish that the siege can also release by reaching the Town Hall.
+
+Previously, the Wrecker stopped at the 1.5-tile ram range and attacked the
+Hall, with its cargo aboard. The version 277 ground route continues to the
+edge of the Town Hall footprint and uses the existing casualty pass for a
+single release. The standing wall on that route still requires a ram.
+The footprint edge is a local arrival criterion. Exact native contact
+geometry, timing and detours remain unverified. Earlier recordings keep
+their rules, and Practice preparation remains local.
+
+Run the packaged check with
+`node scripts/blimp-objective-production-check.mjs --wall-wrecker`.
+Pass a packaged version 276 directory for the baseline or add `--manual`
+to exercise the separate player-triggered release.

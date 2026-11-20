@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest';
+import { MAP_SIZE } from '../src/game/grid';
 import { emptyArmy, emptySpells } from '../src/game/army';
 import { GameModel, makeBuilding } from '../src/game/model';
 import { replayBattle, REPLAY_VERSION, validateReplay } from '../src/game/replay';
@@ -144,4 +145,53 @@ it.each([275, 276])('handles Blimp objective arrival in recording version %i', (
     expect(battle.siegeCargo!.released).toBe(true);
     expect(battle.units.slice(1).map(({ kind }) => kind)).toEqual(['balloon']);
   }
+});
+
+it.each([276, 277])('handles Wall Wrecker arrival in recording version %i', (version) => {
+  const model = village();
+  model.state.buildings[0] = makeBuilding(1, 'townhall', 24, 18, 9);
+  model.state.army.wallwrecker = 1;
+  model.startBattle(0, true, 'valley-v1', undefined, [troops[0]]);
+  const initial = (
+    model as unknown as { recording: { initial: Parameters<typeof replayBattle>[0] } }
+  ).recording.initial;
+  const battle = replayBattle(initial, version);
+  model.battle = battle;
+  model.activeTroop = 'wallwrecker';
+  expect(model.deploy(13, 20)).toBe(true);
+  for (let i = 0; i < 170; i++) model.step(0.05);
+  const carrier = battle.units[0];
+  expect(carrier.target).toBe(1);
+  if (version === 276) {
+    expect(carrier.hp).toBe(5500);
+    expect(carrier.x).toBeLessThan(24);
+    expect(battle.siegeCargo!.released).toBeUndefined();
+  } else {
+    expect(carrier.hp).toBe(0);
+    expect(carrier.x).toBeCloseTo(24);
+    expect(battle.siegeCargo!.released).toBe(true);
+    expect(battle.units.slice(1).map(({ kind }) => kind)).toEqual(['balloon']);
+  }
+});
+
+it('rams the final blocking wall before releasing the Wall Wrecker cargo', () => {
+  const model = village();
+  model.state.buildings[0] = makeBuilding(1, 'townhall', 24, 18, 9);
+  model.state.buildings.push(
+    ...Array.from({ length: MAP_SIZE }, (_, y) => makeBuilding(10 + y, 'wall', 23, y, 1)),
+  );
+  model.state.army.wallwrecker = 1;
+  model.startBattle(0, true, 'valley-v1', undefined, [troops[0]]);
+  const battle = model.battle!;
+  model.activeTroop = 'wallwrecker';
+  expect(model.deploy(13, 20)).toBe(true);
+  const carrier = battle.units[0];
+  const breached = () => battle.buildings.some(({ kind, hp }) => kind === 'wall' && hp === 0);
+  for (let i = 0; i < 220 && !breached(); i++) model.step(0.05);
+  expect(breached()).toBe(true);
+  expect(carrier.hp).toBeGreaterThan(0);
+  expect(battle.siegeCargo?.released).toBeUndefined();
+  for (let i = 0; i < 120 && !battle.siegeCargo?.released; i++) model.step(0.05);
+  expect(carrier.x).toBeCloseTo(24);
+  expect(battle.units.slice(1).map(({ kind }) => kind)).toEqual(['balloon']);
 });

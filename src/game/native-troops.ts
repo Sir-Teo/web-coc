@@ -1489,7 +1489,11 @@ export function stepNativeUnit(
   }
   const blimpObjective =
     battle.nativeBlimpObjectiveRelease && u.kind === 'battleblimp' && target.kind === 'townhall';
-  if (blimpObjective && distance <= 1e-9) {
+  const wreckerObjective =
+    battle.nativeWreckerObjectiveRelease && u.kind === 'wallwrecker' && target.kind === 'townhall';
+  // The path endpoint stays in the last open subtile on either side of a footprint edge.
+  const wreckerReach = 1e-5;
+  if ((blimpObjective && distance <= 1e-9) || (wreckerObjective && distance <= wreckerReach)) {
     u.hp = 0;
     u.defeatedAt = at;
     return;
@@ -1519,7 +1523,7 @@ export function stepNativeUnit(
       strike(ctx, u, s, passing, damage);
     }
   }
-  if (!blimpObjective && distance <= s.range + 1e-6) {
+  if (!blimpObjective && !wreckerObjective && distance <= s.range + 1e-6) {
     if (attackDisabled) {
       u.attacking = false;
       return;
@@ -1598,7 +1602,7 @@ export function stepNativeUnit(
         u,
         target,
         routeBuildings(ctx, jumping),
-        s.range,
+        wreckerObjective ? wreckerReach : s.range,
         !!ctx.battle.nativeSubtiles,
         [],
         false,
@@ -1656,6 +1660,10 @@ export function stepNativeUnit(
       moveToward(u, p, travel);
       travel = 0;
     }
+  }
+  if (wreckerObjective && distanceTo(u, target) <= wreckerReach) {
+    u.hp = 0;
+    u.defeatedAt = at;
   }
 }
 function moveToward(u: Unit, point: { x: number; y: number }, travel: number) {
