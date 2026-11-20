@@ -193,12 +193,19 @@ export function releaseSpawns(
   for (let index = done; index < due; index++) {
     const when = hero.abilityAt + (gap > 0 ? Math.floor(index / perHit) * gap : 0);
     const pattern = text(row, 'SpawnPattern');
+    const rearFormation =
+      pattern === 'SemiCircleBehind' &&
+      ((ctx.battle.nativeHealerPuppetFormation && ability.name === 'ArcherQueenSpawnHealers') ||
+        (ctx.battle.nativeEquipmentFormation && ability.name === 'AQCloningCloak'));
+    const frontFormation =
+      ctx.battle.nativeEquipmentFormation &&
+      ability.name === 'MinionSummonAbility' &&
+      pattern === 'SemiCircleInFront';
     const offset =
       kind === 'giantgiant' && pattern === 'InFront'
         ? actionFigureOffset(ctx, unit)
-        : ctx.battle.nativeHealerPuppetFormation && ability.name === 'ArcherQueenSpawnHealers' &&
-            pattern === 'SemiCircleBehind'
-          ? healerPuppetOffset(ctx, unit, index, total)
+        : rearFormation || frontFormation
+          ? aimedSummonOffset(ctx, unit, index, total, rearFormation ? -1 : 1)
           : spawnOffset(row, index, perHit);
     const spawn = ctx.spawn?.(kind, level, unit.x + offset.x, unit.y + offset.y, when, unit.id);
     if (!spawn) break;
@@ -214,8 +221,8 @@ export function releaseSpawns(
     spawned[ability.name] = index + 1;
   }
 }
-// Use the Queen's current aim, falling back to the usual diagonal before she acquires a target.
-function queenAim(ctx: NativeTroopContext, unit: Unit) {
+// Use the hero's current aim, falling back to the usual diagonal before she acquires a target.
+function summonAim(ctx: NativeTroopContext, unit: Unit) {
   const target = ctx.buildingsById.get(unit.native?.wallTarget ?? unit.target ?? -1);
   const half = target ? BUILDINGS[target.kind].size / 2 : 0;
   const aim = ctx.battle.defenders?.find((d) => d.id === unit.defenderTarget) ??
@@ -229,16 +236,22 @@ function queenAim(ctx: NativeTroopContext, unit: Unit) {
 }
 
 function actionFigureOffset(ctx: NativeTroopContext, unit: Unit) {
-  const aim = queenAim(ctx, unit);
+  const aim = summonAim(ctx, unit);
   return { x: aim.x * 0.8, y: aim.y * 0.8 };
 }
 
-function healerPuppetOffset(ctx: NativeTroopContext, unit: Unit, index: number, total: number) {
-  const aim = queenAim(ctx, unit);
+function aimedSummonOffset(
+  ctx: NativeTroopContext,
+  unit: Unit,
+  index: number,
+  total: number,
+  direction: -1 | 1,
+) {
+  const aim = summonAim(ctx, unit);
   const angle = Math.PI * ((index + 0.5) / total - 0.5);
-  const back = -0.8 * Math.cos(angle);
+  const forward = direction * 0.8 * Math.cos(angle);
   const sideways = 0.8 * Math.sin(angle);
-  return { x: aim.x * back - aim.y * sideways, y: aim.y * back + aim.x * sideways };
+  return { x: aim.x * forward - aim.y * sideways, y: aim.y * forward + aim.x * sideways };
 }
 
 /** SpawnPattern places a semicircle in front of the hero; others land on its tile. */

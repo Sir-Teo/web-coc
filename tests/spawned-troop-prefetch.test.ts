@@ -170,3 +170,37 @@ it.each([281, 282])('uses the Healer Puppet rear formation in version %i', (vers
     ).toBe(true);
   }
 });
+
+it.each([
+  ['queen', 'magic-mirror', 'archerqueen', -1],
+  ['prince', 'henchmen-puppet', 'henchman', 1],
+] as const)('%s summons its two %s bodies in the pinned half-plane', (kind, slug, summon, sign) => {
+  const r = heroPuppetBattle({ kind, level: 20, items: [{ slug, level: 18 }] });
+  expect(r.model.deployNativeHero(kind, 11.4, 11.5)).toBe(true);
+  r.model.step(0.05);
+  const hero = r.battle.units.find((u) => u.hero === kind)!;
+  expect(r.model.activateNativeHeroAbility(kind)).toBe(true);
+  const bodies = r.battle.units.filter((u) => u.kind === summon && u.native?.owner === hero.id);
+  expect(bodies).toHaveLength(2);
+  const target = r.battle.buildings.find(({ id }) => id === hero.target)!;
+  for (const body of bodies)
+    expect(
+      sign *
+        ((body.x - hero.x) * (target.x + 1.5 - hero.x) +
+          (body.y - hero.y) * (target.y + 1.5 - hero.y)),
+    ).toBeGreaterThan(0);
+});
+
+it.each([
+  ['queen', 'archer-puppet', 'archer', 5, 5],
+  ['king', 'barbarian-puppet', 'swordsman', 5, 8],
+] as const)('%s preserves %s wave counts', (kind, slug, summon, first, total) => {
+  const r = heroPuppetBattle({ kind, level: 20, items: [{ slug, level: 1 }] }, { [summon]: 4 });
+  expect(r.model.deployNativeHero(kind, 11.4, 11.5)).toBe(true);
+  expect(r.model.activateNativeHeroAbility(kind)).toBe(true);
+  const bodies = () => r.battle.units.filter((u) => u.kind === summon);
+  expect(bodies()).toHaveLength(first);
+  for (let i = 0; i < 22; i++) r.model.step(0.05);
+  expect(bodies()).toHaveLength(total);
+  expect(bodies().every(({ level }) => level === 4)).toBe(true);
+});

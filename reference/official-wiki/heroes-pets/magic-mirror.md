@@ -86,3 +86,18 @@ Costs on a row are the price to reach that level (wiki convention). Values as di
 **Mismatches / ambiguities**
 
 - None found in the compared fields.
+
+## Shared formation audit in recording version 283
+
+The pinned Archer and Barbarian Puppet rows leave `SpawnPattern` blank.
+The web keeps their existing placement, wave counts and researched troop
+levels. `AQCloningCloak` explicitly specifies `SemiCircleBehind`, which the
+old web spawn path treated as the Queen's position. The Henchmen rows
+specify `SemiCircleInFront`, which formerly used a fixed map axis.
+Version 283 uses the hero's aim for these two formations. Web positions
+use evenly spaced slots within the relevant half-plane. Exact native
+spacing, animation and turn ordering remain unverified. Earlier recordings
+retain their old placement. Clone stats and lifetime are a separate audit.
+
+Run `node scripts/action-figure-production-check.mjs --mirror-formation`
+after packaging, or pass a packaged version 282 directory to compare.

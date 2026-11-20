@@ -8,9 +8,16 @@ const baselineDist = args.find((arg) => !arg.startsWith('--'));
 const control = args.includes('--control');
 const rage = args.includes('--rage');
 const healers = args.includes('--healer-formation');
+const mirror = args.includes('--mirror-formation');
 const label = `${baselineDist ? 'baseline' : 'patched'}${control ? '-control' : ''}`;
-const item = healers ? 'healer-puppet' : control ? 'archer-puppet' : 'action-figure';
-const screenshots = `output/rea-cloud-playtest/${healers ? 'healer-puppet-formation' : rage ? 'giant-giant-rage' : 'action-figure'}`;
+const item = mirror
+  ? 'magic-mirror'
+  : healers
+    ? 'healer-puppet'
+    : control
+      ? 'archer-puppet'
+      : 'action-figure';
+const screenshots = `output/rea-cloud-playtest/${mirror ? 'magic-mirror-formation' : healers ? 'healer-puppet-formation' : rage ? 'giant-giant-rage' : 'action-figure'}`;
 await mkdir(screenshots, { recursive: true });
 
 const modules = await createServer({
@@ -46,7 +53,7 @@ try {
     spells: emptySpells(),
     heroes: { queen: { level: 20 } },
     heroLineup: ['queen'],
-    gear: { levels: { [item]: healers ? 18 : 1 }, loadouts: { queen: [item] } },
+    gear: { levels: { [item]: healers || mirror ? 18 : 1 }, loadouts: { queen: [item] } },
   });
   model.brew('freeze');
   expect(model.state.spells.freeze).toBe(1);
@@ -142,7 +149,13 @@ try {
     const queen = page.locator('.hero-section[data-hero="queen"]');
     await queen
       .getByRole('heading', {
-        name: healers ? 'Healer Puppet' : control ? 'Archer Puppet' : 'Action Figure',
+        name: mirror
+          ? 'Magic Mirror'
+          : healers
+            ? 'Healer Puppet'
+            : control
+              ? 'Archer Puppet'
+              : 'Action Figure',
       })
       .scrollIntoViewIfNeeded();
     await shot('equipment');
@@ -172,14 +185,30 @@ try {
     const summons = await read();
     const giant = summons.units.find(({ kind }) => kind === 'giantgiant');
     const queenUnit = summons.units.find(({ kind }) => kind === 'archerqueen');
-    if ((baselineDist && !rage) || control || healers) expect(giant).toBeUndefined();
+    if ((baselineDist && !rage) || control || healers || mirror) expect(giant).toBeUndefined();
     else {
       expect(giant).toMatchObject({ level: 1, maxHp: 800, owner: queenUnit.id });
       expect(giant.x).toBeGreaterThan(queenUnit.x);
       expect(giant.y).toBeGreaterThan(queenUnit.y);
     }
     if (control) expect(summons.units.some(({ kind }) => kind === 'archer')).toBe(true);
-    const formation = summons.units.filter(({ kind }) => kind === 'healer');
+    const formation = summons.units.filter(({ kind, owner }) =>
+      mirror ? kind === 'archerqueen' && owner === queenUnit.id : kind === 'healer',
+    );
+    if (mirror) {
+      expect(formation).toHaveLength(2);
+      if (baselineDist)
+        expect(
+          formation.every(({ x, y }) => Math.hypot(x - queenUnit.x, y - queenUnit.y) < 0.4),
+        ).toBe(true);
+      else {
+        expect(new Set(formation.map(({ x, y }) => `${x},${y}`)).size).toBe(2);
+        for (const { x, y } of formation)
+          expect(
+            (x - queenUnit.x) * (22.5 - queenUnit.x) + (y - queenUnit.y) * (22.5 - queenUnit.y),
+          ).toBeLessThan(0);
+      }
+    }
     if (healers) {
       expect(formation.map(({ level }) => level)).toEqual([8, 8, 8]);
       if (baselineDist)
@@ -278,7 +307,7 @@ try {
       label,
       summon: giant,
       archers: summons.units.filter(({ kind }) => kind === 'archer').length,
-      ...(healers ? { formation } : {}),
+      ...(healers || mirror ? { formation } : {}),
       defenseHp: live.defenseHp,
       ...(damaged
         ? { thresholdFrame: damaged.units.find(({ kind }) => kind === 'giantgiant') }
