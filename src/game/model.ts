@@ -948,6 +948,8 @@ export interface Battle {
   nativeTownHallHeroPoison?: true;
   /** Version 260: Goblin Freeze Traps respect attacker trap-trigger eligibility. */
   nativeFreezeTrapTriggerRules?: true;
+  /** Version 261: legacy Goblin projectiles respect native damage protection. */
+  nativeLateProjectileProtection?: true;
   /** Version 100: native healing resolves through source projectile travel and chain hops. */
   nativeHealingProjectiles?: true;
   nativeHealingTotem?: true;

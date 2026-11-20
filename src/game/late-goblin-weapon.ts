@@ -1,4 +1,5 @@
 import { TROOPS } from './data';
+import { hurtUnit } from './native-status';
 import { distance2D } from './distance';
 import type { Battle, Unit } from './model';
 
@@ -150,9 +151,15 @@ function advance(battle: Battle, p: LateProjectile) {
 
 export interface LateProjectileHit {
   projectile: LateProjectile;
-  /** Attackers damaged by this impact. */
+  /** Attackers reached by this impact, including those whose protection absorbs it. */
   struck: Unit[];
 }
+function applyLateImpact(battle: Battle, unit: Unit, projectile: LateProjectile) {
+  if (battle.nativeLateProjectileProtection)
+    hurtUnit(battle, unit, projectile.damage, projectile.impact);
+  else unit.hp -= projectile.damage;
+}
+
 /** Resolve due projectiles once, in impact order, even if the source building has fallen. */
 export function stepLateProjectiles(battle: Battle, projectiles: LateProjectile[]) {
   for (const p of projectiles) advance(battle, p);
@@ -175,7 +182,7 @@ export function stepLateProjectiles(battle: Battle, projectiles: LateProjectile[
           !!TROOPS[unit.kind].flying === p.toAir &&
           distance2D(unit.x - p.x, unit.y - p.y) <= p.splash
         ) {
-          unit.hp -= p.damage;
+          applyLateImpact(battle, unit, p);
           struck.push(unit);
         }
     } else {
@@ -184,7 +191,7 @@ export function stepLateProjectiles(battle: Battle, projectiles: LateProjectile[
           u.id === p.targetId && u.hp > 0 && !u.ejected && (u.spawnedAt ?? 0) <= p.impact + 1e-9,
       );
       if (target) {
-        target.hp -= p.damage;
+        applyLateImpact(battle, target, p);
         struck.push(target);
       }
     }

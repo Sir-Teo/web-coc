@@ -5,7 +5,8 @@ import { spawnGarrisonDefender } from '../src/game/garrison-combat';
 import { garrisonPoisonOnHit, garrisonStats } from '../src/game/garrison-kinds';
 import { applyGarrisonPoison, stepGarrisonStatus } from '../src/game/garrison-status';
 import { startChain, stepChain, stepAura, stepDeathBolts } from '../src/game/garrison-abilities';
-import type { UnitEffects } from '../src/game/native-status';
+import { healUnit, type UnitEffects } from '../src/game/native-status';
+import { castNativeSpell, stepNativeSpells } from '../src/game/native-spells';
 
 function arena(effects: UnitEffects = {}, enabled = true) {
   const model = new GameModel();
@@ -131,4 +132,29 @@ it('suppressed Headhunter poison advances without becoming damage debt after pro
   r.battle.elapsed = 1.05;
   stepGarrisonStatus(r.battle);
   expect(r.unit.hp).toBeCloseTo(5000 - poison.dps * 0.05, 10);
+});
+
+it('refreshes Eternal Tome on entry, lets it linger on exit, and permits healing', () => {
+  const { battle, unit: caster, add } = arena();
+  const leaving = add(101, 11, 10);
+  const entering = add(102, 20, 10);
+  castNativeSpell(battle, 'Eternal Tome Aura', 1, 'attack', 10, 10, {
+    owner: caster.id,
+    follow: caster.id,
+    immediate: true,
+  });
+  const pulse = (at: number) => {
+    battle.elapsed = at;
+    stepNativeSpells({ battle, damageBuilding: () => {}, effect: () => {} });
+  };
+  pulse(0.1);
+  const linger = leaving.native!.effects!.shield!.until;
+  expect(entering.native?.effects?.shield).toBeUndefined();
+  leaving.x = 20;
+  entering.x = 19;
+  pulse(0.2);
+  expect(leaving.native!.effects!.shield!.until).toBe(linger);
+  expect(entering.native!.effects!.shield!.until).toBeCloseTo(1.2, 9);
+  entering.hp -= 100;
+  expect(healUnit(battle, entering, 100)).toBe(100);
 });

@@ -11,8 +11,12 @@ import {
 import { lateActivatedDefense } from '../src/game/late-campaign';
 import { lateGoblinBuildingsPending } from '../src/game/late-goblin-buildings';
 import { goblinHallFrame } from '../src/game/late-goblin-buildings-poses';
-import { weaponTickTime } from '../src/game/late-goblin-weapon';
-import { replayBattle, validateReplay } from '../src/game/replay';
+import {
+  launchLateProjectile,
+  stepLateProjectiles,
+  weaponTickTime,
+} from '../src/game/late-goblin-weapon';
+import { REPLAY_VERSION, replayBattle, validateReplay } from '../src/game/replay';
 import { lateGoblinLive, lateGoblinReplay } from './fixtures/late-goblin-battle';
 
 const hall2 = () => makeNpcBuilding(1000, 'goblin-hall', 20, 20, 2);
@@ -215,6 +219,57 @@ describe('late Goblin campaign building combat', () => {
     expect(splash).toBeGreaterThan(1);
     expect(weapon.shots.every((s) => !s.toAir)).toBe(true);
   });
+
+  it.each([
+    [REPLAY_VERSION, 0],
+    [260, 330],
+  ] as const)(
+    'resolves direct and splash hits against shields under replay version %s',
+    (version, protectedDamage) => {
+      const boss = makeNpcBuilding(1000, 'goblin-boss-th', 20, 20, 1);
+      const model = lateGoblinLive(
+        lateGoblinReplay(
+          89,
+          [
+            { step: 0, kind: 'giant', x: 16, y: 21 },
+            { step: 0, kind: 'giant', x: 16, y: 21.5 },
+          ],
+          { buildings: [boss], version },
+        ),
+        0,
+      );
+      const battle = model.battle!;
+      const [shielded, exposed] = battle.units;
+      shielded.native = { effects: { shield: { percent: 1, until: 2 } } };
+      const launch = (splash: number, launched: number) =>
+        launchLateProjectile({
+          sourceId: boss.id,
+          index: 0,
+          slot: 0,
+          targetId: shielded.id,
+          toAir: false,
+          fromX: 16,
+          fromY: 21,
+          x: 16,
+          y: 21,
+          launched,
+          damage: 330,
+          speed: 8,
+          tracking: false,
+          splash,
+        });
+      battle.elapsed = 1;
+      const bomb = stepLateProjectiles(battle, [launch(1, 0)]);
+      expect(bomb.hits[0].struck).toEqual([shielded, exposed]);
+      expect(exposed.maxHp - exposed.hp).toBe(330);
+      expect(shielded.maxHp - shielded.hp).toBe(protectedDamage);
+      stepLateProjectiles(battle, [launch(0, 0)]);
+      expect(shielded.maxHp - shielded.hp).toBe(protectedDamage * 2);
+      battle.elapsed = 3;
+      stepLateProjectiles(battle, [launch(1, 2)]);
+      expect(shielded.maxHp - shielded.hp).toBe(protectedDamage * 2 + 330);
+    },
+  );
 
   it('draws defense-preferring troops to the Goblin Hall only once its weapon is ready', () => {
     // A nearer Gold Storage wins until the hall's ActivatedCombatAddBuildingClass applies.
