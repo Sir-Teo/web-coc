@@ -160,6 +160,31 @@ test.describe('dense touch controls', () => {
       await page.locator('.train-add').scrollIntoViewIfNeeded();
       await page.locator('.train-add').tap();
       await expect(page.locator('.drawer-sheet')).toBeVisible();
+      const header = page.locator('.army-head');
+      const headerControls = header.locator('.army-category, input, select, .close-btn');
+      await expect(headerControls).toHaveCount(6);
+      await expect
+        .poll(() =>
+          headerControls.evaluateAll((controls) =>
+            controls.filter((control) => {
+              const box = control.getBoundingClientRect();
+              const hit = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
+              return !control.contains(hit);
+            }).length,
+          ),
+        )
+        .toBe(0);
+      if (width <= 700) {
+        await expect
+          .poll(() =>
+            header.evaluate((node) => {
+              const categories = node.querySelector('.army-categories')!.getBoundingClientRect();
+              const filters = node.querySelector('.army-filters')!.getBoundingClientRect();
+              return filters.top - categories.bottom;
+            }),
+          )
+          .toBeGreaterThanOrEqual(0);
+      }
       await page.locator('[data-action="close-drawer"]').tap();
       await page.locator('[data-action="edit"]').tap();
       await page.locator('[data-action="recenter"]').tap();

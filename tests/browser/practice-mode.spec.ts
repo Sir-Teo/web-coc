@@ -432,6 +432,12 @@ for (const viewport of [
     expect(await roster()).toEqual(afterDeploy);
     await page.locator('[data-action="surrender"]').tap();
     await page.locator('[data-action="end"]').tap();
+    if (viewport.width === 568) {
+      const actions = page.locator('.result-actions button');
+      await expect(actions).toHaveCount(4);
+      for (const button of await actions.all())
+        await expect(button).toBeInViewport({ ratio: 1 });
+    }
     await page.locator('[data-action="raid-again-guided"]').tap();
     await expect(guide).toContainText('Deploy a Giant');
     expect(await roster()).toEqual(initial);

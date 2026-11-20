@@ -5000,6 +5000,18 @@ h3 {
     width: auto;
     padding-inline: 10px;
   }
+  .result-actions:has(> [data-action="raid-again-guided"]) {
+    margin-top: 8px;
+  }
+  .result-actions:has(> [data-action="raid-again-guided"]) > .game-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 6px;
+    white-space: normal;
+  }
+  .result-actions:has(> [data-action="raid-again-guided"]) > .game-btn > svg {
+    flex-shrink: 0;
+  }
 }
 
 /* Keep all five shop categories reachable on narrow screens. */
@@ -6525,6 +6537,28 @@ body:has(#ui.drawer-open, #ui .battle-enemy, #ui .modal-backdrop) #update-ready 
   }
   .army-filters select {
     max-width: 120px;
+  }
+}
+
+@media (max-width: 700px) {
+  .drawer-head.army-head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    column-gap: 8px;
+    padding-inline: var(--hud-left) var(--hud-right);
+  }
+  .army-head .close-btn {
+    position: relative;
+    inset: auto;
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .army-head .army-filters {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .army-head .army-filters select {
+    max-width: none;
   }
 }
 
