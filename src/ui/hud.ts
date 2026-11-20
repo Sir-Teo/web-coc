@@ -5714,13 +5714,16 @@ export class HUD {
     const requiredLab = m.researchLaboratory(kind);
     const gated = !unlocked || !m.laboratory || m.laboratory.level < requiredLab;
     const researchResource = m.researchResource(kind);
+    const cost = m.researchCost(kind);
+    const short = m.state[researchResource] < cost;
+    const disabled = max || gated || !!m.state.research || (short && cost > m.resourceCap(researchResource));
     const label = max
       ? '★ Fully researched'
       : !unlocked
         ? `Requires ${spell ? spellUnlockLabel(kind) : `${BUILDINGS[troopFacility(kind)].name} ${TROOP_UNLOCK[kind]}`}`
         : gated
           ? `Requires laboratory ${requiredLab}`
-          : `Research ${researchResource === 'dark' ? 'Dark elixir' : elixir} ${n(m.researchCost(kind))}`;
+          : `Research ${researchResource === 'dark' ? 'Dark elixir' : elixir} ${n(cost)}`;
     let rows: [string, string, string, string][];
     if (isSpellKind(kind)) {
       const d = m.spellStats(kind),
@@ -5766,7 +5769,7 @@ export class HUD {
             : ['Swords', 'Damage', damageNumber(d.damage), damageNumber(next.damage)],
       ];
     }
-    return `<article class="training-card" data-research-kind="${kind}"><span class="role-tag">LEVEL ${level} OF ${maximum}${max ? ' · MAX' : ` → ${level + 1}`}</span><div class="training-art"><img src="${hudAsset(kind)}" alt=""></div><h3>${name.replace(' Spell', '')}</h3><div class="research-stats">${rows.map(([glyph, label, value, next]) => `<span>${icon(glyph, 16)} ${label} <b>${value}${max || value === next ? '' : ` <em>→ ${next}</em>`}</b></span>`).join('')}</div>${button(`research-start:${kind}`, label, 'game-btn ' + (max || gated ? 'stone' : 'green'), max || gated || !!m.state.research || m.state[researchResource] < m.researchCost(kind) ? 'disabled' : '')}${!max && !gated && m.magicItemCount(spell ? 'hammer-of-spells' : 'hammer-of-fighting') && m.state.research?.kind !== kind ? button(`hammer-research:${kind}`, `${icon('Hammer', 15)} Hammer`, 'game-btn blue', `aria-label="Upgrade ${name} instantly with the ${spell ? 'Hammer of Spells' : 'Hammer of Fighting'}"`) : ''}<small>${max ? 'Ready for the toughest battles' : `${time(m.researchSeconds(kind))} research · permanent upgrade`}</small></article>`;
+    return `<article class="training-card" data-research-kind="${kind}"><span class="role-tag">LEVEL ${level} OF ${maximum}${max ? ' · MAX' : ` → ${level + 1}`}</span><div class="training-art"><img src="${hudAsset(kind)}" alt=""></div><h3>${name.replace(' Spell', '')}</h3><div class="research-stats">${rows.map(([glyph, label, value, next]) => `<span>${icon(glyph, 16)} ${label} <b>${value}${max || value === next ? '' : ` <em>→ ${next}</em>`}</b></span>`).join('')}</div>${button(`research-start:${kind}`, label, 'game-btn ' + (disabled || short ? 'stone' : 'green'), disabled ? 'disabled' : '')}${!max && !gated && m.magicItemCount(spell ? 'hammer-of-spells' : 'hammer-of-fighting') && m.state.research?.kind !== kind ? button(`hammer-research:${kind}`, `${icon('Hammer', 15)} Hammer`, 'game-btn blue', `aria-label="Upgrade ${name} instantly with the ${spell ? 'Hammer of Spells' : 'Hammer of Fighting'}"`) : ''}<small>${max ? 'Ready for the toughest battles' : `${time(m.researchSeconds(kind))} research · permanent upgrade`}</small></article>`;
   }
   private research() {
     const m = this.model,

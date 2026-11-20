@@ -24,6 +24,10 @@ Speed-ups previously used this game's own curve, which rounded up and charged 13
 - **Phone input.** A tap on a Shop tile's price button or on an upgrade offers the purchase. Pressing a Shop tile to drag it out (or to scroll the sheet) never does; it only says what is missing. The dialog's buttons are at least 44 pixels tall.
 - **Battles.** Nothing is offered during a battle.
 
+An eligible Laboratory research button stays tappable when the price fits
+storage but the balance is short. It opens the same confirmation used for
+other resource shortfalls. Declining leaves the balance and queue unchanged.
+
 ## Treasure
 
 The Shop's **Treasure** tab (the client's `TID_SHOP_CATEGORY_TREASURE`) sells each resource the village can store in the client's three packs, priced from the same table:

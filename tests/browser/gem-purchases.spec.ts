@@ -134,3 +134,69 @@ test('a Builder suggestion charges its displayed gems once and persists one upgr
   await expect(page.locator('.builder-menu .working')).toHaveCount(1);
   await expect(page.locator(`.working[data-action="select-building:${target.id}"]`)).toBeVisible();
 });
+
+test.describe('early Laboratory research on a compact phone', () => {
+  test.use({ viewport: { width: 320, height: 568 }, isMobile: true });
+
+  test('a research shortfall can be declined or paid exactly once', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    await page.locator('[data-action="skip-tutorial"]').tap();
+    await page.evaluate(async () => {
+      const { makeBuilding } = await import('/src/game/model.ts');
+      const { model } = window.__game;
+      model.townhall!.level = 3;
+      model.state.buildings.push(makeBuilding(model.state.nextId++, 'laboratory', 32, 27, 1));
+      model.state.elixir = 5000;
+      model.state.gems = 100;
+      model.changed();
+    });
+
+    const read = () =>
+      page.evaluate(() => {
+        const { model } = window.__game;
+        return {
+          elixir: model.state.elixir,
+          gems: model.state.gems,
+          research: model.state.research,
+          level: model.troopLevel('swordsman'),
+        };
+      });
+    const openResearch = async () => {
+      const research = page.locator('[data-action="research"]');
+      if (!(await research.isVisible())) await page.locator('.train-add').tap();
+      await research.tap();
+    };
+    const start = page.locator('[data-action="research-start:swordsman"]');
+    const buy = page.locator('[data-action="shortfall-buy"]');
+
+    const before = await read();
+    await openResearch();
+    await expect(start).toContainText('10,000');
+    await start.tap();
+    await expect(page.locator('.shortfall-body')).toContainText('Buy the missing 5,000 Elixir?');
+    await expect(buy).toContainText('12');
+    await page.locator('.shortfall-body [data-action="close"]').tap();
+    expect(await read()).toEqual(before);
+
+    await openResearch();
+    await start.tap();
+    await buy.tap();
+    const paid = await read();
+    expect(paid).toMatchObject({
+      elixir: 0,
+      gems: 88,
+      research: { kind: 'swordsman' },
+      level: 1,
+    });
+    await page.reload();
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    expect(await read()).toEqual(paid);
+    await openResearch();
+    await expect(page.locator('[data-research]')).toBeVisible();
+    await expect(page.locator('[data-action="research-start:archer"]')).toBeDisabled();
+    await page.locator('[data-action="research-finish"]').tap();
+    expect(await read()).toMatchObject({ elixir: 0, gems: 78, level: 2 });
+    await expect(start).toHaveText('Requires laboratory 3');
+  });
+});

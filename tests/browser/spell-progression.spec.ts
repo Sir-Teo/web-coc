@@ -167,13 +167,24 @@ test.describe('phone Dark Spell research', () => {
     await expect(stats).toContainText('Up to 115 DPS · 30% slower');
     const research = page.locator('[data-action="research-start:poison"]');
     await expect(research).toHaveAccessibleName(/Dark elixir/);
-    await expect(research).toBeDisabled();
+    await research.tap();
+    await expect(page.locator('.shortfall-body')).toContainText(
+      `Buy the missing ${cost.toLocaleString('en-US')} Dark Elixir?`,
+    );
+    await page.locator('.shortfall-body [data-action="close"]').tap();
+    expect(
+      await page.evaluate(() => {
+        const { state } = window.__game.model;
+        return { research: state.research, dark: state.dark, elixir: state.elixir };
+      }),
+    ).toEqual({ research: undefined, dark: 0, elixir: 1_000_000 });
 
     await page.evaluate((amount) => {
-      const { model } = window.__game;
+      const { model, hud } = window.__game;
       model.state.elixir = 0;
       model.state.dark = amount;
       model.changed();
+      hud.show('research');
     }, cost);
     await expect(research).toBeEnabled();
     await research.tap();
