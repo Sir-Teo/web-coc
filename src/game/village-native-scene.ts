@@ -14,6 +14,8 @@ import { nativeTrapValues } from './native-traps';
 import { nativeExportBounds, type NativeGeometryExtent } from './native-geometry-bounds';
 import { cameraShakePadding } from './camera-shake-layer';
 import { DecodedImageCache } from './decoded-image-cache';
+import { goblinMap, NATIVE_CAMPAIGN } from './native-campaign';
+import { campaignStorageFill } from './campaign-storage-fill';
 import { runtimeBudget } from './runtime-budget';
 import progressionSource from '../../reference/full-client/progression.json' with { type: 'json' };
 const progression = progressionSource as unknown as {
@@ -463,6 +465,11 @@ export class VillageNativePresentation {
     sprites: Map<number, Phaser.GameObjects.Image>,
     projectInto?: (out: Point, x: number, y: number) => void,
   ) {
+    const goblinBattle =
+      battle?.catalog === 'goblin-v1' && !battle.practice && !battle.ladder &&
+      goblinMap(NATIVE_CAMPAIGN[battle.index])
+        ? battle
+        : null;
     this.frameSamples.clear();
     this.wantedPacks.clear();
     this.wantedLevels.clear();
@@ -667,14 +674,17 @@ export class VillageNativePresentation {
           field === 'ExportName' && body ? { ...body.controls } : {};
         const resource = nativeResourceFrames(graph);
         if (resource) {
-          const fraction =
-            b.kind === 'goldstorage' || b.kind === 'elixirstorage'
-              ? this.storageFill(b.kind === 'goldstorage' ? 'gold' : 'elixir')
-              : b.stored /
-                Math.max(
-                  1,
-                  progression.buildings[b.kind].levels[b.level - 1]?.productionCapacity ?? 1,
-                );
+          const storage =
+            b.kind === 'goldstorage' ? 'gold' : b.kind === 'elixirstorage' ? 'elixir' : null;
+          const fraction = storage
+            ? goblinBattle
+              ? campaignStorageFill(b, goblinBattle, storage)
+              : this.storageFill(storage)
+            : b.stored /
+              Math.max(
+                1,
+                progression.buildings[b.kind].levels[b.level - 1]?.productionCapacity ?? 1,
+              );
           controls.resource = Math.round(Math.max(0, Math.min(1, fraction)) * (resource - 1));
         }
         const key = `${packKey(b.kind, variant)}:${ref.scene}`;
