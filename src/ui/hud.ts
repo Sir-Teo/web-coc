@@ -1319,8 +1319,13 @@ export class HUD {
     const list = this.modalEl.querySelector<HTMLElement>('.campaign-list');
     if (!card || !list) return;
     list.scrollTop += card.getBoundingClientRect().top - list.getBoundingClientRect().top - 8;
-    if (focus)
-      card.querySelector<HTMLElement>('[data-action^="attack:"]')?.focus({ preventScroll: true });
+    if (!focus) return;
+    const attack = card.querySelector<HTMLButtonElement>('[data-action^="attack:"]');
+    if (!attack || attack.disabled) return;
+    // Compact screens can show the start of a row while its action is still clipped.
+    const overflow = attack.getBoundingClientRect().bottom - list.getBoundingClientRect().bottom;
+    if (overflow > 0) list.scrollTop += overflow;
+    attack.focus({ preventScroll: true });
   }
   private show(panel: Panel) {
     this.superCancelConfirm = null;
@@ -2154,9 +2159,16 @@ export class HUD {
       case 'scout-back-log':
         this.returnFromScout();
         break;
-      case 'campaign-continue':
-        this.scrollToStage(this.nextCampaignStage(), true);
+      case 'campaign-continue': {
+        const next = this.nextCampaignStage();
+        if (next === null) break;
+        if (!this.modalEl.querySelector(`#campaign-stage-${next}`)) {
+          this.campaignFilter = 'all';
+          this.render();
+        }
+        this.scrollToStage(next, true);
         break;
+      }
       case 'army-filter-clear':
         this.armyFilter = { query: '', show: 'all', family: 'all' };
         this.render();

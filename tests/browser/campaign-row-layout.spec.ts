@@ -38,3 +38,38 @@ for (const viewport of [
     await expect(page.locator('.campaign-scout h2')).toHaveText('Payback');
   });
 }
+
+test('Continue reveals the next encounter when the current Campaign filter hides it', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto('/?lazyart');
+  await page.locator('[data-action="skip-tutorial"]').tap();
+  await page.evaluate(async () => {
+    const { freshNativeCampaign } = await import('/src/game/native-campaign.ts');
+    const model = window.__game.model;
+    const progress = freshNativeCampaign();
+    progress.stars[0] = 3;
+    progress.remaining[0] = { gold: 0, elixir: 0, dark: 0 };
+    model.state.nativeCampaign = progress;
+    model.changed();
+  });
+  await page.locator('.attack-btn').tap();
+  const filter = page.getByLabel('Show villages');
+  const next = page.getByRole('button', { name: 'Continue · Goblin Forest' });
+  const attack = page.locator('#campaign-stage-1 [data-action="attack:1"]');
+
+  await filter.selectOption('open');
+  await next.tap();
+  await expect(filter).toHaveValue('open');
+  await expect(attack).toBeFocused();
+
+  await filter.selectOption('done');
+  await expect(attack).toHaveCount(0);
+  await next.tap();
+  await expect(filter).toHaveValue('all');
+  await expect(attack).toBeFocused();
+  await expect(attack).toBeInViewport({ ratio: 0.95 });
+  await page.locator('[data-action="campaign-scout:1"]').tap();
+  await expect(page.locator('.campaign-scout h2')).toHaveText('Goblin Forest');
+});
