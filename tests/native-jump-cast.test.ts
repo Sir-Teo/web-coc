@@ -1,3 +1,4 @@
+import { nativeDirectBattle } from './fixtures/native-direct-attacks';
 import { expect, it } from 'vitest';
 import { GameModel, makeBuilding } from '../src/game/model';
 import { emptyArmy, emptySpells } from '../src/game/army';
@@ -99,3 +100,47 @@ it('overlapping casts keep independent source timelines after live expiry', () =
     [2, secondAt, true],
   ]);
 });
+
+it('keeps an active Jump passage closed to a Wall Wrecker', () => {
+  const r = unitAtJump('wallwrecker', REPLAY_VERSION, true);
+  const control = unitAtJump('wallwrecker', REPLAY_VERSION, false);
+  r.until(5);
+  control.until(5);
+  expect(r.battle.buildings.map(({ hp }) => hp)).toEqual(
+    control.battle.buildings.map(({ hp }) => hp),
+  );
+  expect(r.battle.buildings[8].hp).toBeLessThan(r.battle.buildings[8].maxHp);
+  expect(r.unit.x).toBe(control.unit.x);
+  expect(r.unit.x).toBeLessThan(11);
+});
+
+it('keeps the 261 Wrecker traversal and lets ordinary ground troops use Jump in new recordings', () => {
+  const legacy = unitAtJump('wallwrecker', 261, true);
+  const walker = unitAtJump('swordsman', REPLAY_VERSION, true);
+  legacy.until(7);
+  walker.until(7);
+  expect(legacy.unit.x).toBeGreaterThan(12);
+  expect(walker.unit.x).toBeGreaterThan(12);
+  expect(legacy.battle.buildings[8].hp).toBe(legacy.battle.buildings[8].maxHp);
+  expect(walker.battle.buildings[8].hp).toBe(walker.battle.buildings[8].maxHp);
+});
+
+function unitAtJump(kind: 'wallwrecker' | 'swordsman', version: number, jump: boolean) {
+  return nativeDirectBattle(kind, 1, version, 8, 'storage', { jump: 1 }, {
+    layout: [
+      makeBuilding(1, 'townhall', 15, 10, 12),
+      makeBuilding(2, 'goldstorage', 36, 36, 18),
+      ...Array.from({ length: 11 }, (_, n) => makeBuilding(3 + n, 'wall', 11, 6 + n, 12)),
+    ],
+    beforeDeploy({ model, battle, step }) {
+      model.activeSpell = 'jump';
+      if (!jump) {
+        // Both simulations start combat at the same time, with the control field off the route.
+        expect(model.castSpell(30, 30)).toBe(true);
+      } else {
+        expect(model.castSpell(11.5, 11.5)).toBe(true);
+      }
+      while (battle.elapsed < 1.55) step();
+    },
+  });
+}

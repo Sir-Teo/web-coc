@@ -67,7 +67,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 261;
+export const REPLAY_VERSION = 262;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -452,6 +452,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 258 ||
   version === 259 ||
   version === 260 ||
+  version === 261 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -635,6 +636,9 @@ export function replayBattle(setup: ReplaySetup, version = REPLAY_VERSION): Batt
     s.buildings.some((building) => building.kind === 'airbomb' && !building.npc);
   const petSpring = version >= 237 && homeSpring && s.heroes?.some((hero) => hero.pet);
   return {
+    ...(version >= 262 && s.spells.jump > 0 && TROOP_KEYS.some((kind) => isSiege(kind) && s.army[kind] > 0)
+      ? { nativeJumpSiegeImmunity: true as const }
+      : {}),
     ...(version >= 261 &&
     s.buildings.some(
       (building) =>

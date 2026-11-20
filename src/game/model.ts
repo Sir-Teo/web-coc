@@ -950,6 +950,8 @@ export interface Battle {
   nativeFreezeTrapTriggerRules?: true;
   /** Version 261: legacy Goblin projectiles respect native damage protection. */
   nativeLateProjectileProtection?: true;
+  /** Version 262: siege machines route against walls even during a Jump Spell. */
+  nativeJumpSiegeImmunity?: true;
   /** Version 100: native healing resolves through source projectile travel and chain hops. */
   nativeHealingProjectiles?: true;
   nativeHealingTotem?: true;
@@ -7057,11 +7059,12 @@ export class GameModel {
         b.jumpVersion = jumpVersion;
         b.jumpSignature = String(jumpVersion);
         for (const u of b.units) {
-          if (TROOPS[u.kind].flying) continue;
+          if (TROOPS[u.kind].flying || (b.nativeJumpSiegeImmunity && isSiege(u.kind))) continue;
           u.pathAt = 0;
         }
       }
     }
+    let siegeRoutes: NativeTroopContext | undefined;
     // The legacy loop spends from the shared budget the native phase used first.
     const repathState = pathBudget ?? { count: 0, limit: Number.POSITIVE_INFINITY };
     // All-buildings scope (concealed included): distinct from the native maps above.
@@ -7206,7 +7209,16 @@ export class GameModel {
           (u.native ? unitSpeedScale(u, b.elapsed) : 1);
       if (native && nativeBehavior(b, u.kind)) {
         // Native rules read only the boosted damage, speed and heal: no copy of the stats row.
-        stepNativeUnit(native, u, { damage, speed, heal }, unitDt, actionDt * poison.attack);
+        const routes =
+          b.nativeJumpSiegeImmunity && native.passableWalls.size && isSiege(u.kind)
+            ? (siegeRoutes ??= {
+                ...native,
+                passableWalls: new Set(),
+                routableBuildings: undefined,
+                routeCache: undefined,
+              })
+            : native;
+        stepNativeUnit(routes, u, { damage, speed, heal }, unitDt, actionDt * poison.attack);
         continue;
       }
       const legacyAttack = !!(
