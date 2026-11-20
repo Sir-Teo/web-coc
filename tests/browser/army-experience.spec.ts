@@ -77,6 +77,34 @@ test('named quick armies save, safely render names, and restore after reload', a
   ).toEqual(original);
 });
 
+test('Quick armies and Cookbook tabs keep keyboard focus while switching', async ({ page }) => {
+  await page.locator('.train-add').click();
+  await page.locator('[data-action="army-presets"]').click();
+  const quick = page.getByRole('tab', { name: 'Quick armies' });
+  const cookbook = page.getByRole('tab', { name: 'Cookbook' });
+
+  await quick.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(cookbook).toBeFocused();
+  await expect(cookbook).toHaveAttribute('aria-selected', 'true');
+  await expect(quick).toHaveAttribute('tabindex', '-1');
+  await expect(page.getByRole('tabpanel', { name: 'Cookbook' })).toBeVisible();
+
+  await page.keyboard.press('Home');
+  await expect(quick).toBeFocused();
+  await expect(page.getByRole('tabpanel', { name: 'Quick armies' })).toBeVisible();
+  await page.keyboard.press('End');
+  await expect(cookbook).toBeFocused();
+  await page.keyboard.press('ArrowLeft');
+  await expect(quick).toBeFocused();
+
+  await cookbook.click();
+  await expect(cookbook).toBeFocused();
+  await expect(quick).toHaveAttribute('aria-selected', 'false');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('tabpanel')).toHaveCount(0);
+});
+
 test('undoing a Quick army overwrite restores its name before saving again', async ({ page }) => {
   await page.locator('.train-add').click();
   await page.locator('[data-action="army-presets"]').click();

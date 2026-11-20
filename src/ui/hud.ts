@@ -2153,11 +2153,12 @@ export class HUD {
         m.brew(arg as SpellKind, 5);
         break;
       case 'army-presets':
-        this.show('army-presets');
+      case 'cookbook': {
+        const fromTab = this.actionSource?.matches('.preset-tabs [role="tab"]');
+        this.show(verb);
+        if (fromTab) this.focusPresetTab();
         break;
-      case 'cookbook':
-        this.show('cookbook');
-        break;
+      }
       case 'recipe-use': {
         if (this.panel !== 'cookbook' || m.battle) break;
         const recipe = m.armyRecipes.find(({ id }) => id === arg);
@@ -2919,6 +2920,17 @@ export class HUD {
   }
   private keydown(e: KeyboardEvent) {
     if (this.root.inert) return;
+    if (
+      !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey &&
+      e.target instanceof HTMLElement && e.target.matches('.preset-tabs [role="tab"]') &&
+      ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)
+    ) {
+      e.preventDefault();
+      const quickArmies = e.key === 'Home' || (e.key !== 'End' && this.panel === 'cookbook');
+      this.show(quickArmies ? 'army-presets' : 'cookbook');
+      this.focusPresetTab();
+      return;
+    }
     // Results are modal even though they do not set this.panel.
     const result = !!this.model.battle?.finished && !this.model.replay;
     if (e.key === 'Escape' && !this.panel && !result && this.scene.keyCursor) {
@@ -5162,7 +5174,7 @@ export class HUD {
   }
   private armyPresets() {
     const m = this.model;
-    return `<div class="modal-body preset-body">${this.presetTabs()}<p class="preset-current">Current army: <b>${m.armySize}/${m.capacity}</b> troop spaces · <b>${m.spellHousing}/${m.spellCapacity}</b> spell spaces</p>${[
+    return `<div class="modal-body preset-body">${this.presetTabs()}<div id="preset-panel-${this.panel}" role="tabpanel" aria-labelledby="preset-tab-${this.panel}"><p class="preset-current">Current army: <b>${m.armySize}/${m.capacity}</b> troop spaces · <b>${m.spellHousing}/${m.spellCapacity}</b> spell spaces</p>${[
       0, 1, 2,
     ]
       .map((slot) => {
@@ -5174,7 +5186,7 @@ export class HUD {
       })
       .join(
         '',
-      )}<div class="preset-actions">${button('army-share:current', `${icon('Upload', 16)} Share current army`, 'game-btn stone', m.canSaveArmyPreset ? '' : 'disabled')}${button('army', `${icon('Swords', 17)} Edit current army`, 'game-btn blue')}</div><section class="layout-import army-import"><h3>${icon('Download', 18)} Shared army</h3><label for="army-code">Army link</label><input id="army-code" inputmode="url" autocomplete="off" spellcheck="false" maxlength="8192" placeholder="Paste a Crown &amp; Clan or Clash army link" value="${html(this.sharedArmyCode)}"><div class="army-import-preview" aria-live="polite">${this.sharedArmyPreview()}</div></section></div>`;
+      )}<div class="preset-actions">${button('army-share:current', `${icon('Upload', 16)} Share current army`, 'game-btn stone', m.canSaveArmyPreset ? '' : 'disabled')}${button('army', `${icon('Swords', 17)} Edit current army`, 'game-btn blue')}</div><section class="layout-import army-import"><h3>${icon('Download', 18)} Shared army</h3><label for="army-code">Army link</label><input id="army-code" inputmode="url" autocomplete="off" spellcheck="false" maxlength="8192" placeholder="Paste a Crown &amp; Clan or Clash army link" value="${html(this.sharedArmyCode)}"><div class="army-import-preview" aria-live="polite">${this.sharedArmyPreview()}</div></section></div></div>`;
   }
   private sharedArmyPreview() {
     const code = armyFromLink(this.sharedArmyCode) ?? this.sharedArmyCode.trim(),
@@ -5219,6 +5231,9 @@ export class HUD {
     }
     this.show('army-presets');
   }
+  private focusPresetTab() {
+    this.modalEl.querySelector<HTMLElement>('.preset-tabs [aria-selected="true"]')?.focus();
+  }
   /** Quick armies and the Cookbook, as the original's army screen tabs them. */
   private presetTabs() {
     const tab = (panel: Panel, label: string) =>
@@ -5226,7 +5241,7 @@ export class HUD {
         panel!,
         label,
         `tab ${this.panel === panel ? 'active' : ''}`,
-        `role="tab" aria-selected="${this.panel === panel}"`,
+        `id="preset-tab-${panel}" role="tab" aria-selected="${this.panel === panel}" tabindex="${this.panel === panel ? 0 : -1}" aria-controls="preset-panel-${panel}"`,
       );
     return `<div class="shop-tabs preset-tabs" role="tablist" aria-label="Army recipes">${tab('army-presets', 'Quick armies')}${tab('cookbook', ARMY_RECIPE_TEXTS.tab)}</div>`;
   }
@@ -5238,11 +5253,11 @@ export class HUD {
       m.townhallLevel < FIRST_RECIPE_TOWN_HALL
         ? `Featured and Creator recipes start appearing at Town Hall ${FIRST_RECIPE_TOWN_HALL}.`
         : `No recipes for Town Hall ${m.townhallLevel} yet.`;
-    return `<div class="modal-body preset-body cookbook-body">${this.presetTabs()}<p class="preset-current">Current army: <b>${m.armySize}/${m.capacity}</b> troop spaces · <b>${m.spellHousing}/${m.spellCapacity}</b> spell spaces</p>${
+    return `<div class="modal-body preset-body cookbook-body">${this.presetTabs()}<div id="preset-panel-${this.panel}" role="tabpanel" aria-labelledby="preset-tab-${this.panel}"><p class="preset-current">Current army: <b>${m.armySize}/${m.capacity}</b> troop spaces · <b>${m.spellHousing}/${m.spellCapacity}</b> spell spaces</p>${
       recipes.length
         ? recipes.map((recipe) => this.recipeCard(recipe)).join('')
         : `<p class="preset-empty">${empty} Save your own armies under Quick armies.</p>`
-    }</div>`;
+    }</div></div>`;
   }
   private recipeConfirmation?: { id: string; scroll: number };
   private returnToRecipe() {
