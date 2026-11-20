@@ -4,7 +4,9 @@ Baseline `c1f2a843`, pinned client 18.400.21, bundle
 `7f04bdfdc4124b1f49308423bb8f4aa8b137aae3`. The [asset guide](ASSETS.md) and
 [full-client index](../reference/full-client/README.md) identify which assets are sourced,
 authored or generated from retained project inputs. This audit used those retained
-references and the packaged web build.
+references and the packaged web build. The target is full observable parity
+with that pinned build. An intentional web difference still counts as a parity
+gap. Package integrity is a prerequisite for the visual and interaction checks.
 
 ## Asset coverage
 
@@ -13,7 +15,7 @@ references and the packaged web build.
 | Terrain and buildings | Scene texture paths close in the package. Inspected village terrain, buildings, build grid and Mortar pickup in portrait and landscape. Compared Shop and battlefield presentation with the existing asset ownership notes. | Exact native camera, lighting, placement ghost and Shop layout. The legacy/generated bodies and preview images documented in [Assets](ASSETS.md) and [the inventory](CONTENT-INVENTORY.md) still need individual state comparisons. |
 | Units, effects and portraits | The building/trap gallery has 552 referenced portraits and the roster gallery has 271. Observed Barbarian deployment and Giant Smash's Giant placement and Wall Breaker prompt. | All directional animation frames, effect timing and render tiers. A catalog portrait can exist while gameplay uses a separate source or authored fallback. |
 | HUD, icons and fonts | Confirmed the runtime loads the retained Campaign, Shop and Settings images in the village. Two WOFF2 files ship. [HUD](../reference/hud/README.md) identifies the source slots; [fonts](../reference/fonts/README.md) identifies the English source faces. | Native widget layout, typography per control, and uncaptured UI states. DOM controls, responsive safe areas and some auxiliary icons are web choices. |
-| Audio | Package integrity covers 496 Ogg and four MP3 files. Retained [village](VILLAGE-SOUNDS.md), [troop](TROOP-SOUNDS.md) and [music](../reference/music/README.md) evidence identifies source cue mappings. | Audio was muted during the touch flow. Per-cue playback, gain, pitch and mixing need a separate audible or instrumented comparison. |
+| Audio | Package integrity covers 496 Ogg and four MP3 files. Retained [village](VILLAGE-SOUNDS.md), [troop](TROOP-SOUNDS.md) and [music](../reference/music/README.md) evidence identifies source cue mappings. | Three triggers now have measured runtime output (below). Other cues, timing, gain, pitch and mixing still need comparison. |
 
 Baseline inventory found **3,929 physical files**, of which **3,918** live under
 `assets/`. The service-worker manifest's **3,927 URL entries** matched packaged SHA-256
@@ -54,3 +56,39 @@ The targeted [HUD regression](../tests/browser/hud-layout.spec.ts) and
 The packaged main stylesheet increased by **596 bytes before compression**.
 The changes are scoped to compact layout CSS. No new assets, per-frame work
 or simulation rules were added.
+
+## Runtime follow-up
+
+**Audio.** In packaged 390×844 Chromium a trusted touch unlocked a fresh audio
+context. Gold collection played decoded `coins_collect_01.ogg` (86,336 mono
+samples), and a Barbarian deployment played decoded `barb_deploy_11v3.ogg`
+(27,200 mono samples). The Home theme played `home_music_part_1.ogg` with the
+media clock advancing. A Web Audio analyser connected at the output measured
+non-zero peaks of approximately 0.0583, 0.0353 and 0.000142, respectively, in
+those observed windows. Music played with effects disabled. Disabling both
+suspended audio, and reload retained both mute settings and created no context
+before a gesture. This establishes measured signal from the application graph.
+Physical audibility and exact native mixing, cue onset, gain and pitch remain
+open. [Village cues](VILLAGE-SOUNDS.md) · [Troop cues](TROOP-SOUNDS.md) ·
+[Music source](../reference/music/README.md).
+
+**Cannon.** The normal family has distinct flattened preview/icon files and
+layered live bodies. Packaged Chromium decoded all 21 previews and 21 icons.
+A disposable level-ten village exercised the live body, then Practice deployment,
+a Cannon shot and replay. The browser suite compares all 21 normal live bodies
+against the retained independent texture composition at one sampled pose, within
+its pixel tolerance. The state gallery covers normal setup, construction,
+upgrade and ruin across 21 levels, plus placement previews. The gallery now
+waits for all on-demand levels before it synchronously switches between them.
+The authored tutorial Cannon remains a confirmed web difference. Alternate
+bodies are retained, but exact geared behavior, all animated frames, native
+angle selection and camera composition remain gaps.
+[Cannon source and pose limits](../reference/cannon/README.md).
+
+## Remaining parity work by player impact
+
+| Priority | Gap against the pinned build | Comparison required |
+| --- | --- | --- |
+| 1 | Village-to-battle and first-session UI. Web drawers, compact navigation, Campaign previews, deployment feedback and result/replay transport differ or lack native evidence. | An authorized version-matched capture from Village through Shop or Army, map selection, scouting, first deployment, results and replay. Include both phone orientations and preserve the labels, available actions and field framing at each state. |
+| 2 | Live unit, defense and terrain rendering. The tutorial Cannon is an authored substitution. The checked normal Cannon pose and state samples leave geared visuals, native aim, time-based effects, lighting and other families open. | Paired native and web frames at matching level, mode, aim, animation time and camera framing for setup, attack, hit and destruction. Record the source export and actual runtime atlas for each sample. |
+| 3 | Audio playback and mix. Three triggers are verified in the web graph. Native source identity does not establish mix or sequencing. | Synchronized native and web audio captures of equivalent inputs, including planning-to-combat and result transitions, plus mute and resume. Compare cue identity, onset, channel levels and loop or sting boundaries. |

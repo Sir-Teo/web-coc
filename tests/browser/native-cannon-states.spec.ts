@@ -55,6 +55,7 @@ test('every original Cannon level retains its bounds, preview, scaffolds and rub
     const { cannonVillage } = await import('/tests/fixtures/cannon-battle.ts');
     const { makeBuilding } = await import('/src/game/model.ts');
     const { cannonBounds } = await import('/src/game/cannon-poses.ts');
+    const { preloadCannons } = await import('/src/game/cannon-scene.ts');
     const { CANNON_ART, cannonTexture } = await import('/src/game/cannon-art.ts');
     const { iso } = await import('/src/game/scene.ts');
     const { model: m, scene } = window.__game;
@@ -62,6 +63,13 @@ test('every original Cannon level retains its bounds, preview, scaffolds and rub
     scene.tweens.pauseAll();
     m.state = cannonVillage();
     scene.sync();
+    // This gallery swaps through every level synchronously. Load its previews and
+    // mesh pages before checking states so it does not sample a loading fallback.
+    preloadCannons(scene, Array.from({ length: 21 }, (_, index) => index + 1));
+    await new Promise<void>((resolve) => {
+      scene.load.once('complete', resolve);
+      scene.load.start();
+    });
     scene.drawOverlay();
     const baseline = scene.game.renderer.listenerCount('losewebgl'),
       cases = [];
