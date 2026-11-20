@@ -297,6 +297,7 @@ type Panel =
   | 'spell-info'
   | 'army-presets'
   | 'cookbook'
+  | 'recipe-confirm'
   | 'battle-log'
   | null;
 /** Shop and army live in a bottom sheet so the village stays visible and clickable. */
@@ -1311,6 +1312,10 @@ export class HUD {
     }
   }
   private closePanel() {
+    if (this.panel === 'recipe-confirm') {
+      this.returnToRecipe();
+      return;
+    }
     this.superCancelConfirm = null;
     this.heroCancelConfirm = null;
     this.rememberCampaign();
@@ -2080,8 +2085,28 @@ export class HUD {
       case 'cookbook':
         this.show('cookbook');
         break;
-      case 'recipe-use':
-        m.useArmyRecipe(arg);
+      case 'recipe-use': {
+        if (this.panel !== 'cookbook' || m.battle) break;
+        const recipe = m.armyRecipes.find(({ id }) => id === arg);
+        if (!recipe || m.armyPreparationIssue(recipe.army, recipe.spells)) break;
+        if (!m.presetHeroPlan(recipe).changes.length) {
+          m.useArmyRecipe(arg);
+          break;
+        }
+        this.recipeConfirmation = {
+          id: recipe.id,
+          scroll: this.modalEl.querySelector('.modal-body')?.scrollTop ?? 0,
+        };
+        this.show('recipe-confirm');
+        break;
+      }
+      case 'recipe-confirm-cancel':
+        if (this.panel === 'recipe-confirm') this.returnToRecipe();
+        break;
+      case 'recipe-confirm-use':
+        if (this.panel !== 'recipe-confirm' || !this.recipeConfirmation) break;
+        if (m.useArmyRecipe(this.recipeConfirmation.id)) this.returnToRecipe();
+        else this.render();
         break;
       case 'guide-skip':
         m.skipPracticeGuide();
@@ -4821,6 +4846,7 @@ export class HUD {
       'spell-info': SPELLS[this.inspectedSpell].name,
       'army-presets': 'Quick armies',
       cookbook: ARMY_RECIPE_TEXTS.tab,
+      'recipe-confirm': 'Confirm recipe changes',
       'battle-log': 'Battle log',
       blacksmith: 'Hero Equipment',
       heroes: 'Hero Hall',
@@ -4855,6 +4881,7 @@ export class HUD {
       'spell-info': 'Place each spell where it makes the difference.',
       'army-presets': 'Save a composition. Be ready in one tap.',
       cookbook: ARMY_RECIPE_TEXTS.info,
+      'recipe-confirm': ARMY_RECIPE_TEXTS.autofix,
       'battle-log': 'Your last twenty attacks, kept with your village.',
       blacksmith: 'Equip your heroes and upgrade their abilities.',
       heroes: 'A champion for every attack.',
@@ -4947,7 +4974,9 @@ export class HUD {
                                                                 ? this.surrender()
                                                                 : this.panel === 'practice-cargo'
                                                                   ? this.practiceCargoPanel()
-                                                                  : this.help();
+                                                                  : this.panel === 'recipe-confirm'
+                                                                    ? this.confirmRecipe()
+                                                                    : this.help();
     return `<div class="modal-backdrop"><section class="modal ${this.panel === 'campaign' ? 'campaign-modal' : ''} ${this.panel === 'surrender' ? 'small-modal' : this.panel === 'blacksmith' ? 'blacksmith-modal' : ''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header class="modal-header"><div><small>CROWN & CLAN</small><h1 id="modal-title">${titles[this.panel!]}</h1><p>${subtitles[this.panel!]}</p></div><button class="square-btn small close-btn" data-action="close" aria-label="Close dialog">${icon('X', 25)}</button></header>${content}</section></div>`;
   }
   private composition(
@@ -5074,6 +5103,27 @@ export class HUD {
         ? recipes.map((recipe) => this.recipeCard(recipe)).join('')
         : `<p class="preset-empty">${empty} Save your own armies under Quick armies.</p>`
     }</div>`;
+  }
+  private recipeConfirmation?: { id: string; scroll: number };
+  private returnToRecipe() {
+    const pending = this.recipeConfirmation;
+    this.recipeConfirmation = undefined;
+    // Reset the confirmation body's scroll before restoring the Cookbook position.
+    this.show('cookbook');
+    if (!pending) return;
+    this.modalEl.querySelector('.modal-body')?.scrollTo(0, pending.scroll);
+    this.modalEl
+      .querySelector<HTMLElement>(`[data-action="recipe-use:${pending.id}"]`)
+      ?.focus({ preventScroll: true });
+  }
+  private confirmRecipe() {
+    const m = this.model;
+    const recipe = m.armyRecipes.find(({ id }) => id === this.recipeConfirmation?.id);
+    const issue = recipe
+      ? m.armyPreparationIssue(recipe.army, recipe.spells)
+      : 'This recipe is no longer available.';
+    const changes = recipe ? m.presetHeroPlan(recipe).changes : [];
+    return `<div class="modal-body confirm-body">${recipe ? `<h2>${html(recipe.name)}</h2><p>Using this recipe replaces your current army.</p>` : ''}${changes.length ? `<ul>${changes.map((change) => `<li>${html(change)}</li>`).join('')}</ul>` : ''}${issue ? `<p role="status">${html(issue)}</p>` : ''}<div class="confirm-actions">${button('recipe-confirm-cancel', 'Cancel', 'game-btn stone')}${button('recipe-confirm-use', 'Use army', 'game-btn green', issue ? 'disabled' : '')}</div></div>`;
   }
   private recipeCard(recipe: ArmyRecipe) {
     const m = this.model,

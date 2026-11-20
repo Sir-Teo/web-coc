@@ -1,6 +1,6 @@
 # Army recipes (Cookbook)
 
-The Quick armies window has a second tab, **Cookbook**, as the original's army screen does. It lists the ready-made Army Recipes for the village's Town Hall, and **Use army** makes one the active army in a single tap. The wiki's [Version History/2025](https://clashofclans.fandom.com/wiki/Version_History/2025) page (revision 624584, read through the MediaWiki API on October 6, 2026) describes the Cookbook this way:
+The Quick armies window has a second tab, **Cookbook**, as the original's army screen does. It lists the ready-made Army Recipes for the village's Town Hall, and **Use army** makes a recipe the active army after any required confirmation. The wiki's [Version History/2025](https://clashofclans.fandom.com/wiki/Version_History/2025) page (revision 624584, read through the MediaWiki API on October 6, 2026) describes the Cookbook this way:
 
 - "Starter Armies: Simple Army Recipe suggestions catered to your current Town Hall level."
 - "Featured/ Creator Armies: Time-limited Army Recipe suggestions based on an on-going Event or hand-crafted by a Creator."
@@ -42,7 +42,7 @@ A recipe works like a Quick army, through the same rules:
 
 - Its troops, siege machines and spells replace the army, but only if the whole army can be trained here. That means enough troop and spell housing, unlocked troops and spells, and an active boost for any Super Troop.
 - If it cannot be trained, the card's button reads "You cannot train this army" and the reason shows beneath. The army is left as it was.
-- Heroes, items and pets go where the village has them. A missing hero, item, pet, Blacksmith or Pet House is listed under the client's note, both on the card and in the message after Use.
+- Heroes, items and pets go where the village has them. When substitutions or omissions are needed, **Use army** opens a confirmation listing the changes before the active army is replaced. Cancel returns to the same recipe. The pinned `TID_POPUP_CONFIRM_AUTOFIX_RECIPE_TEXT` supplies the warning. The web dialog's layout and button labels are local choices.
 
 Each card shows:
 

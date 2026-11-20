@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
 
-test('the Cookbook lists its Town Hall’s recipes and makes one the army in a tap', async ({
+test('the Cookbook lists its Town Hall’s recipes and confirms substitutions before replacing the army', async ({
   page,
   browserName,
 }) => {
@@ -73,7 +73,24 @@ test('the Cookbook lists its Town Hall’s recipes and makes one the army in a t
     page.locator('[data-recipe="EV_TH10_June2025"] a[href*="youtube.com"]'),
   ).toHaveAttribute('target', '_blank');
   await page.screenshot({ path: `output/playtest/army-recipes-390-${browserName}.png` });
-  await hogs.locator('[data-action="recipe-use:EV_TH10_HotHogSummer"]').tap();
+  const useHogs = hogs.locator('[data-action="recipe-use:EV_TH10_HotHogSummer"]');
+  const cookbookBody = page.locator('.cookbook-body');
+  await useHogs.scrollIntoViewIfNeeded();
+  const sourceScroll = await cookbookBody.evaluate((body) => body.scrollTop);
+  const armyBefore = await page.evaluate(() => JSON.stringify(window.__game.model.state.army));
+  await useHogs.tap();
+  await expect(page.locator('#modal-title')).toHaveText('Confirm recipe changes');
+  expect(await page.evaluate(() => JSON.stringify(window.__game.model.state.army))).toBe(
+    armyBefore,
+  );
+  await page.getByRole('button', { name: 'Cancel', exact: true }).tap();
+  await expect(useHogs).toBeFocused();
+  expect(await cookbookBody.evaluate((body) => body.scrollTop)).toBe(sourceScroll);
+  expect(await page.evaluate(() => JSON.stringify(window.__game.model.state.army))).toBe(
+    armyBefore,
+  );
+  await useHogs.tap();
+  await page.getByRole('button', { name: 'Use army', exact: true }).tap();
   await expect(page.locator('#toast')).toContainText('Recipe Hot Hog Summer set as active army!');
   expect(
     await page.evaluate(() => {
