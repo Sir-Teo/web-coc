@@ -163,6 +163,12 @@ for (const cursorOn of [false, true])
     }, cursorOn);
     const dialog = page.getByRole('dialog');
     await expect(page.locator('#result-title')).toBeVisible();
+    await page.setViewportSize({ width: 568, height: 320 });
+    await expect(dialog.getByRole('button', { name: 'Return to village' })).toBeInViewport({
+      ratio: 1,
+    });
+    await expect(dialog.getByText('Gold received')).toBeInViewport({ ratio: 1 });
+    await expect(dialog.getByText('Elixir received')).toBeInViewport({ ratio: 1 });
     const snapshot = () =>
       page.evaluate(() => {
         const { scene } = window.__game;

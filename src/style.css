@@ -4981,6 +4981,18 @@ h3 {
     width: 560px;
     padding-inline: 12px;
   }
+  .result-loot > div {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 6px;
+    row-gap: 2px;
+  }
+  .result-loot .resource-icon {
+    grid-row: span 2;
+    width: 24px;
+    height: 27px;
+    font-size: 18px;
+  }
   .result-actions {
     flex-direction: row;
   }
