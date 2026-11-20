@@ -32,12 +32,12 @@ const attacker = (id: number, x: number, kind: Unit['kind'] = 'giant'): Unit => 
   spawnedAt: 0,
   native: {},
 });
-function arena(version = REPLAY_VERSION) {
+function arena(version = REPLAY_VERSION, withTotem = false) {
   const model = new GameModel();
   model.state.obstacles = [];
   model.state.buildings = [makeBuilding(1, 'townhall', 36, 36, 18)];
   model.state.army = { ...emptyArmy(), giant: 1 };
-  model.state.spells = emptySpells();
+  model.state.spells = { ...emptySpells(), ...(withTotem ? { totem: 1, invisibility: 1 } : {}) };
   model.state.king = undefined;
   model.startBattle(0, true);
   const data = (model as unknown as { recording: ReplayData }).recording;
@@ -363,3 +363,19 @@ it.each([
     if (mode === 'tower') expect(r.defenderHits.some((h) => h.hidden)).toBe(true);
   },
 );
+
+it.each([277, 278])('uses the Totem concealment rule for recording %i', (version) => {
+  const { battle, step, cast } = arena(version, true);
+  const totem = attacker(1003, 10, 'totem');
+  const outsideHero = { ...attacker(1004, 15, 'archerqueen'), hero: 'queen' as const };
+  battle.units.push(totem, outsideHero);
+  const invisibility = cast();
+  step(invisibility.firstHit);
+  expect(unitHidden(totem, battle.elapsed)).toBe(version >= 278);
+  expect(unitHidden(outsideHero, battle.elapsed)).toBe(false);
+  const rage = castNativeSpell(battle, 'Rage', 1, 'attack', 10, 10);
+  step(rage.firstHit);
+  expect(totem.native?.effects?.boost).toBeUndefined();
+  step(spellEndTime(invisibility) + 1);
+  expect(unitHidden(totem, battle.elapsed)).toBe(false);
+});

@@ -64,3 +64,19 @@ Cells shown as `wiki (client X)` differ from the pinned client.
 **Notes, ambiguities and manual checks**
 
 - The 0.2 s impact stun (`StunTimeMS` 200) is not stated on the wiki.
+
+## Invisibility interaction in recording version 278
+
+The pinned Invisibility row sets `ImmunityWalls` and
+`ImmunitySiegeMachines` and leaves `ImmunityTotems` unset. Rage, Haste
+and Ice Block explicitly set Totem immunity. This distinction and the
+retained [Invisibility targeting rule](invisibility-spell.md) support
+applying the normal concealment pulses to a Totem. Exact native visuals
+and the first defense shot after a retarget remain unverified.
+
+Web CoC previously skipped Totems before the Invisibility pulse could
+apply. Version 278 uses the existing concealment timer and defense
+targeting path. Older recordings retain the previous rule. The packaged
+phone check, `node scripts/totem-invisibility-production-check.mjs`, verifies
+Army spell stock, a Cannon firing at the Totem before the cast, an
+out-of-ring King as a valid target during concealment, expiry and replay.

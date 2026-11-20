@@ -67,7 +67,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 277;
+export const REPLAY_VERSION = 278;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -468,6 +468,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 274 ||
   version === 275 ||
   version === 276 ||
+  version === 277 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -655,6 +656,9 @@ export function replayBattle(setup: ReplaySetup, version = REPLAY_VERSION): Batt
   const campaignEagle =
     s.catalog === 'goblin-v1' && s.buildings.some(({ kind }) => kind === 'eagleartillery');
   return {
+    ...(version >= 278 && s.spells.totem > 0 && s.spells.invisibility > 0
+      ? { nativeInvisibilityTotem: true as const }
+      : {}),
     ...(version >= 277 && setup.army.wallwrecker > 0
       ? { nativeWreckerObjectiveRelease: true as const }
       : {}),

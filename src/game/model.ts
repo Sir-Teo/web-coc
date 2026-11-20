@@ -979,6 +979,8 @@ export interface Battle {
   /** Version 100: native healing resolves through source projectile travel and chain hops. */
   nativeHealingProjectiles?: true;
   nativeHealingTotem?: true;
+  /** Version 278: Invisibility can conceal a summoned Totem. */
+  nativeInvisibilityTotem?: true;
   nativeTotemTroopHealingImmunity?: true;
   /** Version 101: ground healing units follow allies around buildings, crossing jumpable walls. */
   nativeHealerRoutes?: true;
