@@ -180,6 +180,21 @@ remain web presentation.
 [Retained obstacles](../reference/obstacles/catalog.json) ·
 [Retained decorations](../reference/decorations/catalog.json)
 
+## Campaign selection and progression
+
+The runtime's 107 imported names and stage numbers match the pinned catalog.
+The audit also compared all 91 dependency edges and the source
+`AlwaysUnlocked` flags. Both Payback and Goblin Forest are open at the start,
+even though the latter has a dependency entry. Goblin Outpost requires a star
+in Goblin Forest, and Rocky Fort requires a star in Goblin Outpost.
+
+The map and scout preview now name the required village when a node is locked.
+Branch labels follow Web CoC's existing interpretation that a star in any
+listed predecessor opens the node. The source proves the edges and the
+early linear path, while the original branch policy, node layout, input
+sequence, star badge art, and action arrangement remain unverified.
+[Campaign source and interpretation boundaries](../reference/campaign/README.md).
+
 ## Remaining parity work by player impact
 
 | Priority | Gap against the pinned build | Comparison required |

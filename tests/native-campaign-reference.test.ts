@@ -106,3 +106,15 @@ it('uses a retained portrait only when the source export and footprint both matc
   }
   expect({ matched, placements }).toEqual({ matched: 5498, placements: 6214 });
 });
+
+it('preserves the pinned campaign names, stage order, and unlock graph in the runtime', () => {
+  const runtime = JSON.parse(read('runtime.json')).stages;
+  expect(runtime).toHaveLength(107);
+  expect(runtime.map(({ name, stage, dependencies, alwaysUnlocked }: {
+    name: string; stage: number; dependencies: number[]; alwaysUnlocked: boolean;
+  }) => ({ name, stage, dependencies, alwaysUnlocked }))).toEqual(
+    catalog.stages.map(({ name, stage, dependencies, nativeRows }: {
+      name: string; stage: number; dependencies: number[]; nativeRows: { AlwaysUnlocked?: string }[];
+    }) => ({ name, stage, dependencies, alwaysUnlocked: nativeRows[0].AlwaysUnlocked === 'TRUE' })),
+  );
+});
