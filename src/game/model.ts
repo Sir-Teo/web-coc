@@ -2697,12 +2697,16 @@ export class GameModel {
     return chiefProgress(this.state.xp);
   }
   /** Add experience, announcing each chief level it crosses. */
-  private gainXp(amount: number) {
+  private gainXp(amount: number, notices?: string[]) {
     if (!(amount > 0)) return;
     const before = this.chiefLevel;
     this.state.xp += amount;
     const after = this.chiefLevel;
-    if (after > before) this.notify(`Chief level ${after}!`);
+    if (after > before) {
+      const message = `Chief level ${after}!`;
+      if (notices) notices.push(message);
+      else this.notify(message);
+    }
   }
 
   get builders() {
@@ -2751,6 +2755,7 @@ export class GameModel {
     const inBattle = !!this.battle && !this.battle.finished;
     let changed = false;
     let structural = false;
+    const completed: string[] = [];
     if (
       !this.state.obstacles ||
       !this.state.obstacleGrowth ||
@@ -2866,8 +2871,8 @@ export class GameModel {
         b.maxHp = buildingMaxHp(b);
         b.hp = b.maxHp;
         structural = true;
-        this.notify(`${BUILDINGS[b.kind].name} is ready!${xp ? ` +${xp} XP` : ''}`);
-        this.gainXp(xp);
+        completed.push(`${BUILDINGS[b.kind].name} is ready!${xp ? ` +${xp} XP` : ''}`);
+        this.gainXp(xp, completed);
         this.onEffect({
           type: 'upgrade',
           building: b.kind,
@@ -2985,7 +2990,7 @@ export class GameModel {
     if (this.state.research && this.state.research.end <= now) {
       const { name, level } = this.raiseResearch(this.state.research.kind);
       delete this.state.research;
-      this.notify(`${name} upgraded to level ${level}!`);
+      completed.push(`${name} upgraded to level ${level}!`);
       this.finishedAt(this.laboratory, 'research');
       structural = true;
       changed = true;
@@ -2999,6 +3004,8 @@ export class GameModel {
         this.notify(`The ${TROOPS[kind].name} boost has ended.`);
       }
     this.state.lastTick = now;
+    // One toast slot covers the village, including when notices are deferred on results.
+    if (completed.length) this.notify(completed.join(' · '));
     if (changed) this.changed(!structural);
   }
   /** Collects from one building (`id`), one resource (`only`), or every collector. */

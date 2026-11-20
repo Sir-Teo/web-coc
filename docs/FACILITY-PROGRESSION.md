@@ -50,6 +50,11 @@ The [Spell Factory data table](https://goblinsfarm.com/wiki/buildings/spell-fact
 - Existing village building health is recalculated while preserving its damage fraction. New upgrades restore full destination-level health on completion. Legacy above-cap/count buildings remain usable, without allowing purchases beyond current Town Hall gates.
 - The highest completed Laboratory supports research during its own upgrade. Either timer can start first; research consumes no builder. Each timer completes independently, including offline or with gems. Research uses the completed laboratory level until construction finishes. First construction cannot research.
 
+Building and Laboratory research completions processed on the same tick
+share one notice, so the research message cannot replace the building
+names and XP awards. The active Research panel refreshes to show its next
+available job.
+
 Supercell's [December 2022 update](https://supercell.com/en/games/clashofclans/blog/release-notes/december-update-2022/) explicitly permits starting research while the building upgrades. Existing research also continues. The previous local guards blocked both start orders; both are removed. Free, instant preparation follows the [facility upgrade behavior audit](FACILITY-UPGRADES.md).
 
 Save version stays 4 and replay version stays 16. This pass changes the health assigned to newly created battles, not the combat engine's interpretation of an existing snapshot. A regression records the former 1,062.5-HP level-two Barracks, reloads a home village normalized to 200 HP, and reproduces the recorded battle's buildings, units and result without changing its saved health.

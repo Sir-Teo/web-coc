@@ -262,3 +262,76 @@ test('imported duplicate factories retain spells while using one factory capacit
   });
   await expect(page.locator('.army-over-capacity')).toContainText('troops and spells');
 });
+
+test.describe('simultaneous village completions on a compact phone', () => {
+  test.use({ viewport: { width: 320, height: 568 }, hasTouch: true, isMobile: true });
+
+  test('shows both construction notices and research while leaving the next job usable', async ({
+    page,
+  }) => {
+    const now = Date.now();
+    await page.clock.setFixedTime(now);
+    await boot(page);
+    await useDevelopedVillage(page);
+    await page.locator('[data-action="skip-tutorial"]').tap();
+    await page.evaluate((end) => {
+      const { model } = window.__game;
+      model.state.research = { kind: 'swordsman', end };
+      for (const [kind, duration] of [
+        ['cannon', 225000],
+        ['laboratory', 100000],
+      ] as const) {
+        const building = model.state.buildings.find((b) => b.kind === kind)!;
+        building.upgradeStart = end - duration;
+        building.upgradeEnd = end;
+      }
+      model.changed();
+    }, now + 15000);
+
+    const openResearch = async () => {
+      await page.locator('.train-add').tap();
+      await page.locator('[data-action="research"]').tap();
+    };
+    const read = () =>
+      page.evaluate(() => {
+        const { model } = window.__game;
+        return {
+          xp: model.state.xp,
+          busy: model.busy,
+          research: model.state.research,
+          barbarian: model.troopLevel('swordsman'),
+          laboratory: model.laboratory!.level,
+          cannon: model.state.buildings.find((b) => b.kind === 'cannon')!.level,
+        };
+      });
+
+    await openResearch();
+    await expect(page.locator('[data-research]')).toBeVisible();
+    const before = await read();
+    expect(before.busy).toBe(2);
+
+    await page.clock.setFixedTime(now + 16000);
+    const notice = page.locator('#toast.show');
+    await expect(notice).toContainText('Cannon is ready! +15 XP');
+    await expect(notice).toContainText('Laboratory is ready! +10 XP');
+    await expect(notice).toContainText('Barbarian upgraded to level 2!');
+    const archer = page.locator('[data-action="research-start:archer"]');
+    await expect(archer).toBeEnabled();
+    const completed = {
+      xp: before.xp + 25,
+      busy: 0,
+      research: undefined,
+      barbarian: 2,
+      laboratory: before.laboratory + 1,
+      cannon: before.cannon + 1,
+    };
+    expect(await read()).toEqual(completed);
+
+    await page.reload();
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    expect(await read()).toEqual(completed);
+    await openResearch();
+    await archer.tap();
+    expect(await read()).toMatchObject({ ...completed, research: { kind: 'archer' } });
+  });
+});

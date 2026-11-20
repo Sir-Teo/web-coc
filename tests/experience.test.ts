@@ -75,8 +75,9 @@ describe('chief experience', () => {
     m.upgrade(b.id);
     m.tick(b.upgradeEnd!);
     expect(m.chiefLevel).toBe(level + 1);
-    expect(toasts).toContain(`Chief level ${level + 1}!`);
-    expect(toasts.some((t) => /^Cannon is ready! \+\d+ XP$/.test(t))).toBe(true);
+    const completion = toasts.find((message) => message.startsWith('Cannon is ready!'));
+    expect(completion).toMatch(/Cannon is ready! \+\d+ XP/);
+    expect(completion).toContain(`Chief level ${level + 1}!`);
   });
 
   it('pays one point per Town Hall level destroyed in a raid, and nothing in practice', () => {
