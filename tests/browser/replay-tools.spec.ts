@@ -427,4 +427,36 @@ test.describe('phone replay history navigation', () => {
     await expect(watch).toBeFocused();
     await expect(log.locator('.raid-record')).toHaveCount(4);
   });
+
+  test('returning after rotation keeps the focused replay control on screen', async ({ page }) => {
+    await page.evaluate(() => {
+      const model = window.__game.model;
+      for (let i = 0; i < 6; i++) {
+        model.startBattle(0, true);
+        model.activeTroop = 'giant';
+        if (!model.deploy(1.2, 13)) throw Error('Practice fixture deployment refused');
+        model.step(0.05);
+        model.finishBattle();
+        model.returnHome();
+      }
+    });
+    const log = page.locator('.battle-log-body');
+    const watch = log.getByRole('button', { name: 'Watch replay', exact: true }).last();
+    await watch.evaluate((control) => {
+      const body = control.closest<HTMLElement>('.battle-log-body')!;
+      body.scrollTop +=
+        control.getBoundingClientRect().top -
+        body.getBoundingClientRect().top -
+        (body.clientHeight - 65);
+    });
+    await expect(watch).toBeInViewport({ ratio: 1 });
+    await watch.tap();
+    await expect(page.getByRole('slider', { name: 'Replay position' })).toBeVisible();
+    await page.setViewportSize({ width: 568, height: 320 });
+    await page.getByRole('button', { name: 'Back to log' }).tap();
+    await expect(watch).toBeFocused();
+    await expect(watch).toBeInViewport({ ratio: 1 });
+    await page.keyboard.press('Tab');
+    await expect(watch.locator('..').getByRole('button', { name: 'Export replay' })).toBeFocused();
+  });
 });

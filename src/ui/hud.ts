@@ -1493,6 +1493,14 @@ export class HUD {
     const log = this.modalEl.querySelector('.battle-log-body');
     if (log) log.scrollTop = previous.scroll;
     restoreFocusMark(previous.focus);
+    const control = document.activeElement;
+    if (previous.focus && control instanceof HTMLElement && log?.contains(control)) {
+      // Rotation can put the restored control outside the old scroll window.
+      const bounds = control.getBoundingClientRect();
+      const viewport = log.getBoundingClientRect();
+      if (bounds.top < viewport.top || bounds.bottom > viewport.bottom)
+        control.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
   }
   private returnFromScout() {
     const log = this.scoutLogReturn;
