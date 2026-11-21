@@ -32,6 +32,16 @@ alternate layout fields stay outside the simulation. This restores the
 authored facing for new raids. Replays read the facing in their own recorded
 building snapshots, including the default used by previous builds.
 
+### Geared weapons in Practice lessons
+
+Bowling with Bats and Bowling with Witches contain five active alternate
+weapons. Their rows mark both `gear = 1` and `attack_mode = true`. The
+scout lists distinguish these from the standard weapons. Version 300
+uses the existing alternate Cannon, Archer Tower and Mortar weapon
+tables for the five placements. Sixteen other gear-capable placements
+have the alternate mode off. Older recordings use their original
+combat rules.
+
 ### Inferno campaign support
 
 Source Inferno placements retain explicit single/multi mode and starting ammunition since battle/replay version 43, which admitted Midnight Oil, All Angle Attack, Burning Sensation and Teamwork Opportunity. See `reference/inferno/README.md` for source interpretation, runtime limitations and verification evidence.

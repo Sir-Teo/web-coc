@@ -2931,8 +2931,10 @@ export class VillageScene extends Phaser.Scene {
         const d = BUILDINGS[hit.kind];
         this.model.selected = hit.id;
         this.model.changed();
+        const geared = hit.geared && nativeDefense(this.model.battle, hit);
+        const mode = geared ? (hit.kind === 'archertower' ? ' · Fast Attack' : ' · Burst mode') : '';
         this.model.notify(
-          `${d.name} · Level ${hit.level}${hit.kind === 'archertower' && hit.geared && nativeDefense(this.model.battle, hit) ? ' · Fast Attack' : ''} · Range ${d.minRange ? `${d.minRange}–` : ''}${buildingRange(hit)} tiles${d.minRange ? ' · Orange ring = blind spot' : ''}${hit.kind === 'xbow' ? ` · ${hit.xbowMode === 'both' ? 'Ground & air' : 'Ground only'} · ${(this.model.battle.xbows?.[hit.id]?.ammunition ?? 1500).toLocaleString()} bolts` : ''}`,
+          `${d.name} · Level ${hit.level}${mode} · Range ${d.minRange ? `${d.minRange}–` : ''}${buildingRange(hit)} tiles${d.minRange ? ' · Orange ring = blind spot' : ''}${hit.kind === 'xbow' ? ` · ${hit.xbowMode === 'both' ? 'Ground & air' : 'Ground only'} · ${(this.model.battle.xbows?.[hit.id]?.ammunition ?? 1500).toLocaleString()} bolts` : ''}`,
         );
         return;
       }

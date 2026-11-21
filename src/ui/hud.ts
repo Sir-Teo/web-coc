@@ -6155,7 +6155,9 @@ export class HUD {
       const armedHut = b.kind === 'builder' && !b.npc && builderHutWeapon(b.level);
       if (!isDefense(b.kind) && !armedHut && !goblinWeaponFor(b)) continue;
       const name = b.npc ? NPC_BUILDINGS[b.npc].name : BUILDINGS[b.kind].name;
-      counts.set(name, (counts.get(name) ?? 0) + 1);
+      const mode = drill && b.geared ? (b.kind === 'archertower' ? ' · Fast Attack' : ' · Burst mode') : '';
+      const label = name + mode;
+      counts.set(label, (counts.get(label) ?? 0) + 1);
     }
     const defenses = [...counts].sort((a, b) => b[1] - a[1]);
     const attackLabel = locked

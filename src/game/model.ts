@@ -1447,6 +1447,7 @@ export interface Battle {
   nativeIceBlockBuildingImmunity?: true;
   nativeRecallPetCapacity?: true;
   nativeCampaignScattershotConcealment?: true;
+  nativeLessonGearedDefenses?: true;
   nativeCampaignInfernoProtection?: true;
   /** Original Drill destruction presentation, enabled by replay version 40. */
   drillDestructions?: Record<number, { at: number; x: number; y: number; level: number }>;

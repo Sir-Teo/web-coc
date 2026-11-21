@@ -100,15 +100,13 @@ const liveAttacker = (u: Unit, at: number) =>
   u.hp > 0 && !u.ejected && (u.spawnedAt ?? 0) <= at + EPS;
 const liveTarget = (u: Unit, at: number) => liveAttacker(u, at) && !unitHidden(u, at);
 
-/** Defenses the version 45 engine owns; campaign NPC archetypes keep their own rules. */
 /**
- * Defenses the version 51 engine owns. A campaign layout keeps the late families that have
- * always stepped it, so the two engines never step the same building.
+ * Campaign keeps its existing defense engines except for geared weapons in version 300 lessons.
  */
 export const nativeDefense = (battle: Battle, tower: Building): boolean =>
   !!battle.nativeRoster &&
   !tower.npc &&
-  battle.catalog !== 'goblin-v1' &&
+  (battle.catalog !== 'goblin-v1' || (!!battle.nativeLessonGearedDefenses && !!tower.geared)) &&
   // The Builder's Hut turret and its Defending Builder stay with the late family wherever that
   // family is running, so one hut is never armed and repaired by both engines.
   !(tower.kind === 'builder' && !!battle.late) &&

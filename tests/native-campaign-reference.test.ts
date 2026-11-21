@@ -4,8 +4,11 @@ import { createHash } from 'node:crypto';
 import obstacleCatalog from '../reference/obstacles/catalog.json';
 import decorationCatalog from '../reference/decorations/catalog.json';
 import { nativeSceneryArt } from '../src/game/campaign-scenery';
-import { nativeBuildings, nativeScenery, NATIVE_SCENERY } from '../src/game/native-campaign';
+import { freshNativeCampaign, nativeBuildings, nativeLayout, nativeScenery, NATIVE_SCENERY } from '../src/game/native-campaign';
 import { BUILD_MIN } from '../src/game/grid';
+import { nativeDefense, weaponFor } from '../src/game/native-defenses';
+import { GameModel, initialSave } from '../src/game/model';
+import { replayBattle } from '../src/game/replay';
 import { inSweeperRange } from '../src/game/air-sweeper';
 
 const root = new URL('../reference/campaign/', import.meta.url);
@@ -150,4 +153,66 @@ it('covers the authored approach to Burning Sensation but leaves the opposite la
   expect(inSweeperRange(tower, { x: tower.x + 1, y: tower.y - 6 })).toBe(true);
   expect(inSweeperRange(tower, { x: tower.x + 1, y: tower.y + 8 })).toBe(false);
   expect(inSweeperRange(tower, { x: tower.x + 8, y: tower.y + 1 })).toBe(false);
+});
+
+it('activates only the authored alternate weapons in Bowling with Bats', () => {
+  const save = initialSave();
+  save.buildings.find((b) => b.kind === 'townhall')!.level = 12;
+  save.nativeCampaign = freshNativeCampaign();
+  save.nativeCampaign.stars.fill(1);
+  const model = new GameModel(save);
+  model.startCampaign(99, false);
+  const battle = model.battle!;
+  const geared = battle.buildings.filter((b) => b.geared);
+  expect(geared.map((b) => [b.kind, nativeDefense(battle, b), weaponFor(b)?.burst])).toEqual([
+    ['cannon', true, 4], ['archertower', true, 1], ['mortar', true, 3],
+  ]);
+  expect(battle.buildings.some((b) => b.kind === 'cannon' && !b.geared && !nativeDefense(battle, b))).toBe(true);
+
+  model.activeTroop = 'bowler';
+  expect(model.deploy(39.75, 10.25)).toBe(true);
+  for (let i = 0; i < 30; i++) model.step(0.05);
+  const cannon = geared.find((b) => b.kind === 'cannon')!;
+  expect(battle.nativeDefenses?.[cannon.id]?.firedAt).toBeDefined();
+  model.finishBattle();
+  const record = model.state.raidLog![0];
+  const oldBattle = replayBattle(record.replay!.initial, 299);
+  expect(oldBattle.buildings.filter((b) => b.geared).every((b) => !nativeDefense(oldBattle, b))).toBe(true);
+
+  const endpoint = () => {
+    const { elapsed, nativeDefenses, units, result } = model.battle!;
+    return structuredClone({ elapsed, nativeDefenses, units, result });
+  };
+  const live = endpoint();
+  model.returnHome();
+  expect(model.startReplay(record.id)).toBe(true);
+  for (let i = 0; i < 100 && !model.replay!.complete; i++) model.step(0.05);
+  expect(model.replay!.complete).toBe(true);
+  expect(endpoint()).toEqual(live);
+});
+
+it('retains every supported X-Bow, Inferno, Skeleton Trap and active gear selector', () => {
+  const counts = { xbows: 0, infernos: 0, skeletonTraps: 0, geared: 0, standardGear: 0 };
+  for (const layout of layouts) {
+    const board = nativeLayout(layout.stage - 1);
+    const placements = [...layout.buildings, ...layout.traps];
+    for (const [i, row] of placements.entries()) {
+      const loaded = board[i];
+      if (row.data === 1000021) {
+        expect(loaded.xbowMode).toBe(row.attack_mode ? 'both' : 'ground');
+        counts.xbows++;
+      } else if (row.data === 1000027) {
+        expect(loaded.infernoMode).toBe(row.attack_mode ? 'multi' : 'single');
+        counts.infernos++;
+      } else if (row.data === 12000008) {
+        expect(loaded.skeletonMode).toBe(row.air_mode ? 'air' : 'ground');
+        counts.skeletonTraps++;
+      } else if (row.gear === 1) {
+        expect(!!loaded.geared).toBe(row.attack_mode);
+        if (row.attack_mode) counts.geared++;
+        else counts.standardGear++;
+      }
+    }
+  }
+  expect(counts).toEqual({ xbows: 154, infernos: 197, skeletonTraps: 664, geared: 5, standardGear: 16 });
 });
