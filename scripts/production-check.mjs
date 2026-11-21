@@ -1,8 +1,27 @@
 import { chromium, webkit, expect } from '@playwright/test';
+import { createServer } from 'vite';
 import fs from 'node:fs/promises';
 const baseURL = process.env.PRODUCTION_BASE_URL ?? 'http://127.0.0.1:4173';
 const nativeFonts = JSON.parse(await fs.readFile('reference/fonts/native.json', 'utf8')).fonts;
 const nativeHud = JSON.parse(await fs.readFile('reference/hud/native.json', 'utf8'));
+
+// Seed the unlocked Research check in its own profile. The primary profile stays fresh
+// for the onboarding lock, session handoff, replay and offline checks.
+const modules = await createServer({
+  server: { middlewareMode: true, hmr: false, ws: false },
+  appType: 'custom',
+});
+let researchSave;
+try {
+  const { developedSave } = await modules.ssrLoadModule('/tests/fixtures/developed-village.ts');
+  const { validateSave } = await modules.ssrLoadModule('/src/game/save.ts');
+  const save = developedSave();
+  save.tutorial = true;
+  expect(validateSave(save)).toBe(true);
+  researchSave = JSON.stringify(save);
+} finally {
+  await modules.close();
+}
 
 async function checkNativeHud(page, cached = false) {
   return page.evaluate(
@@ -337,9 +356,8 @@ for (const [name, engine] of Object.entries(engines)) {
   );
   await page.locator('.train-add').click();
   await page.locator('[data-action="research"]').click();
-  await page.locator('.research-banner').waitFor();
-  await page.waitForTimeout(250);
-  await page.screenshot({ path: `output/playtest/production-research-${name}.png` });
+  await expect(page.getByRole('heading', { name: 'Research unlocks at Town Hall 3' })).toBeVisible();
+  await expect(page.locator('.research-banner')).toHaveCount(0);
   await page.locator('[data-action="close"]').click();
   // Exercise the shipping replay UI without development globals or state writes.
   await expect(page.locator('[data-action="research"]')).toBeFocused();
@@ -567,6 +585,23 @@ for (const [name, engine] of Object.entries(engines)) {
     };
     expect(report.offline.nativeHud).toEqual(report[name].nativeHud);
     await context.setOffline(false);
+  }
+  const researchContext = await browser.newContext();
+  try {
+    await researchContext.addInitScript((save) => {
+      if (!localStorage.getItem('crown-clan-save-v1'))
+        localStorage.setItem('crown-clan-save-v1', save);
+    }, researchSave);
+    const research = await researchContext.newPage();
+    research.on('pageerror', (error) => errors.push(error.message));
+    await research.goto(baseURL);
+    await research.locator('#loading').waitFor({ state: 'hidden' });
+    await research.locator('.train-add').click();
+    await research.locator('[data-action="research"]').click();
+    await expect(research.locator('.research-banner')).toContainText('LABORATORY LEVEL 1');
+    await research.screenshot({ path: `output/playtest/production-research-${name}.png` });
+  } finally {
+    await researchContext.close();
   }
   await browser.close();
   if (errors.length) throw new Error(`${name}: ${errors.join('; ')}`);
