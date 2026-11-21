@@ -22,8 +22,9 @@ test('an empty-army campaign row preserves the opponent through preparation and 
   await expect(rowAction).toBeFocused();
   await rowAction.tap();
   const prepare = scout.getByRole('button', { name: 'Prepare army' });
-  const offset = () => scout.evaluate((element) => element.scrollTop);
-  await prepare.scrollIntoViewIfNeeded();
+  const details = scout.locator('.campaign-scout-content');
+  const offset = () => details.evaluate((element) => element.scrollTop);
+  await details.evaluate((element) => (element.scrollTop = element.scrollHeight));
   const before = await offset();
   expect(before).toBeGreaterThan(0);
   await prepare.tap();
@@ -37,7 +38,7 @@ test('an empty-army campaign row preserves the opponent through preparation and 
   expect(await offset()).toBe(before);
   await expect(prepare).toBeInViewport();
   await expect(prepare).toBeFocused();
-  await scout.evaluate((element) => {
+  await details.evaluate((element) => {
     document.addEventListener(
       'click',
       () => {
@@ -53,7 +54,7 @@ test('an empty-army campaign row preserves the opponent through preparation and 
   await page.locator('[data-action="close-drawer"]').tap();
   await expect(scout.getByRole('heading', { name: 'Payback' })).toBeVisible();
   const attack = scout.getByRole('button', { name: 'Attack', exact: true });
-  const maxScroll = await scout.evaluate((element) => element.scrollHeight - element.clientHeight);
+  const maxScroll = await details.evaluate((element) => element.scrollHeight - element.clientHeight);
   expect(await offset()).toBe(Math.min(secondOffset, maxScroll));
   await expect(attack).toBeInViewport();
   await expect(attack).toBeFocused();

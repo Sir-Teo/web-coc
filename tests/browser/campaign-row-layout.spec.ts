@@ -89,7 +89,9 @@ test('locked Campaign cards and scouting name the source prerequisite', async ({
   await outpost.getByRole('button', { name: 'Scout Goblin Outpost' }).tap();
   const scout = page.locator('.campaign-scout');
   await expect(scout).toContainText('Earn a star in Goblin Forest to unlock.');
-  await expect(scout.getByRole('button', { name: 'Locked' })).toBeDisabled();
+  const locked = scout.getByRole('button', { name: 'Locked' });
+  await expect(locked).toBeDisabled();
+  await expect(locked).toBeInViewport({ ratio: 1 });
   await scout.getByRole('button', { name: 'Back to campaign' }).tap();
   await expect(outpost.getByRole('button', { name: 'Scout Goblin Outpost' })).toBeFocused();
   await expect(page.locator('[data-action="attack:1"]')).toBeEnabled();
@@ -154,7 +156,14 @@ test('compact landscape reaches deployment, results and replay by touch', async 
   await page.locator('[data-action="close-drawer"]').tap();
   await page.locator('.attack-btn').tap();
   await page.locator('[data-action="campaign-scout:0"]').tap();
-  await page.locator('.campaign-scout').getByRole('button', { name: 'Attack', exact: true }).tap();
+  const scout = page.locator('.campaign-scout');
+  const attack = scout.getByRole('button', { name: 'Attack', exact: true });
+  await expect(attack).toHaveCount(1);
+  await expect(attack).toBeInViewport({ ratio: 1 });
+  await expect(scout.getByText('Defenses on show')).toBeInViewport({ ratio: 1 });
+  await expect(scout.locator('.campaign-scout-map')).toBeInViewport({ ratio: 1 });
+  const spot = (await attack.boundingBox())!;
+  await page.touchscreen.tap(spot.x + spot.width / 2, spot.y + spot.height / 2);
   await page.waitForFunction(() => !window.__game.scene.battleArtPending());
   await expect(page.locator('.deploy-tray [data-action="hero-select:king"] img')).toHaveAttribute(
     'src',
@@ -180,4 +189,36 @@ test('compact landscape reaches deployment, results and replay by touch', async 
   await expect(page.locator('#result-title')).toBeVisible();
   await page.getByRole('button', { name: 'Watch replay', exact: true }).tap();
   await expect(page.locator('.replay-status')).toBeVisible();
+});
+
+test('short landscape keeps Practice scout actions visible while details scroll', async ({ page }) => {
+  await page.setViewportSize({ width: 650, height: 390 });
+  await page.goto('/?lazyart');
+  await page.locator('[data-action="skip-tutorial"]').tap();
+  await page.evaluate(() => {
+    const { model } = window.__game;
+    model.townhall!.level = 8;
+    model.changed();
+  });
+  await page.locator('.attack-btn').tap();
+  const row = page.locator('[data-action="campaign-scout:92"]');
+  await row.tap();
+  const scout = page.locator('.campaign-scout');
+  await expect(scout.getByRole('heading', { name: 'Meat Shield' })).toBeVisible();
+  const attack = scout.getByRole('button', { name: 'Attack', exact: true });
+  const close = page.getByRole('button', { name: 'Close dialog' });
+  const content = scout.locator('.campaign-scout-content');
+  expect(await content.evaluate((el) => el.scrollTop)).toBe(0);
+  await expect(attack).toBeInViewport({ ratio: 1 });
+  await expect(close).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(attack).toBeFocused();
+  expect(await content.evaluate((el) => {
+    el.scrollTop = el.scrollHeight;
+    return el.scrollTop;
+  })).toBeGreaterThan(0);
+  await expect(attack).toBeInViewport({ ratio: 1 });
+  await expect(close).toBeInViewport({ ratio: 1 });
+  await page.keyboard.press('Escape');
+  await expect(row).toBeFocused();
 });

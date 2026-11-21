@@ -6543,6 +6543,11 @@ body:has(#ui.drawer-open, #ui .battle-enemy, #ui .modal-backdrop) #update-ready 
 }
 .campaign-scout {
   display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.campaign-scout-content {
+  display: flex;
   flex-wrap: wrap;
   gap: 16px;
   align-items: flex-start;
@@ -6569,6 +6574,34 @@ body:has(#ui.drawer-open, #ui .battle-enemy, #ui .modal-backdrop) #update-ready 
 .campaign-scout-note {
   color: #796d52;
   font-size: 12px;
+}
+.campaign-scout-actions {
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  margin-top: 0;
+}
+.campaign-scout-actions > button {
+  min-height: 44px;
+}
+@media (orientation: landscape) and (max-height: 400px) {
+  .modal:has(> .campaign-scout) .modal-header {
+    align-items: center;
+    padding: 6px 16px;
+  }
+  .modal:has(> .campaign-scout) .modal-header h1 {
+    margin: 0;
+  }
+  .campaign-scout-content {
+    flex-wrap: nowrap;
+    padding: 8px 16px;
+  }
+  .campaign-scout-map {
+    flex: 0 0 auto;
+    width: min(140px, 34%);
+  }
+  .campaign-scout-actions {
+    padding: 6px 16px;
+  }
 }
 
 /* Army tile bulk controls: ×5 / Fill and Remove / All share a row. */

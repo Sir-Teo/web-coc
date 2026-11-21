@@ -1428,7 +1428,7 @@ export class HUD {
           panel: this.panel === 'campaign-scout' ? 'campaign-scout' : 'campaign',
           focus: this.focusBefore,
           launcher: focusMark(this.actionSource ?? document.activeElement),
-          scoutScroll: this.modalEl.querySelector('.campaign-scout')?.scrollTop ?? 0,
+          scoutScroll: this.modalEl.querySelector('.campaign-scout-content')?.scrollTop ?? 0,
         }
       : drawer === 'army' && this.panel === 'battle-log'
         ? { panel: 'battle-log', ...this.captureBattleLogReturn() }
@@ -1464,7 +1464,7 @@ export class HUD {
     else {
       this.show(previous.panel);
       this.focusBefore = previous.focus;
-      const scout = this.modalEl.querySelector('.campaign-scout');
+      const scout = this.modalEl.querySelector('.campaign-scout-content');
       if (scout) scout.scrollTop = previous.scoutScroll;
       restoreFocusMark(previous.launcher);
     }
@@ -3214,8 +3214,11 @@ export class HUD {
           el.style.animation = 'none';
         });
       this.modalMarkup = modalMarkup;
-      // Awards and the Starter Pass have separate scroll positions.
-      const scroll = this.panel === 'starter' && !updatingOpenDialog ? 0 : modalScroll;
+      // A newly opened Scout or Starter Pass starts at the top of its own content.
+      const scroll =
+        !updatingOpenDialog && (this.panel === 'starter' || this.panel === 'campaign-scout')
+          ? 0
+          : modalScroll;
       root.querySelector('.modal-body')?.scrollTo(0, scroll);
       rebuilt = true;
     }
@@ -5973,7 +5976,7 @@ export class HUD {
     const back = this.scoutLogReturn
       ? button('scout-back-log', 'Back to battle log', 'game-btn stone')
       : button('campaign', 'Back to campaign', 'game-btn stone');
-    return `<div class="modal-body campaign-scout"><img class="campaign-scout-map" src="${campaignMapSource(i)}" alt="${html(v.name)} base layout" width="320" height="320"><div class="campaign-scout-info"><span class="eyebrow">STAGE ${v.stage}${v.family === 'forged' ? ' · FAN-MADE' : ''}${v.recommendedTownHall ? ` · SUGGESTED TOWN HALL ${v.recommendedTownHall}` : ''}</span><h2>${html(v.name)}</h2><p class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</p>${lockReason ? `<p class="campaign-scout-note">${html(lockReason)}</p>` : ''}${drill ? this.practiceArmy(drill, !(m.state.nativeCampaign?.stars[i] ?? 0)) : ''}<h3>Defenses on show</h3>${defenses.length ? `<ul class="campaign-scout-defenses">${defenses.map(([name, count]) => `<li><b>${count}×</b> ${html(name)}</li>`).join('')}</ul>` : '<p>No defenses in sight.</p>'}<p class="campaign-scout-note">Traps and hidden defenses are not shown until they trigger.</p><div class="confirm-actions">${back}${drill?.steps.length && !locked && (m.state.nativeCampaign?.stars[i] ?? 0) ? button(`attack-guided:${i}`, `${icon('Info', 17)} Guided attack`, 'game-btn blue') : ''}${button(`attack:${i}`, attackLabel, 'game-btn orange', locked ? 'disabled' : '')}</div></div></div>`;
+    return `<div class="campaign-scout"><div class="modal-body campaign-scout-content"><img class="campaign-scout-map" src="${campaignMapSource(i)}" alt="${html(v.name)} base layout" width="320" height="320"><div class="campaign-scout-info"><span class="eyebrow">STAGE ${v.stage}${v.family === 'forged' ? ' · FAN-MADE' : ''}${v.recommendedTownHall ? ` · SUGGESTED TOWN HALL ${v.recommendedTownHall}` : ''}</span><h2>${html(v.name)}</h2><p class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</p>${lockReason ? `<p class="campaign-scout-note">${html(lockReason)}</p>` : ''}${drill ? this.practiceArmy(drill, !(m.state.nativeCampaign?.stars[i] ?? 0)) : ''}<h3>Defenses on show</h3>${defenses.length ? `<ul class="campaign-scout-defenses">${defenses.map(([name, count]) => `<li><b>${count}×</b> ${html(name)}</li>`).join('')}</ul>` : '<p>No defenses in sight.</p>'}<p class="campaign-scout-note">Traps and hidden defenses are not shown until they trigger.</p></div></div><div class="modal-footer confirm-actions campaign-scout-actions">${back}${drill?.steps.length && !locked && (m.state.nativeCampaign?.stars[i] ?? 0) ? button(`attack-guided:${i}`, `${icon('Info', 17)} Guided attack`, 'game-btn blue') : ''}${button(`attack:${i}`, attackLabel, 'game-btn orange', locked ? 'disabled' : '')}</div></div>`;
   }
   private practiceCargo: SiegeCargoEntry[] = [];
   private practiceCargoTroops() {
