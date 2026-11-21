@@ -214,10 +214,10 @@ All 13 props retain their pinned tiles and footprint sizes. Four pines,
 two of each of three Sharp Stones, two torches and one windmeter now use
 their corresponding retained exports. The authored silhouettes remain
 available while the source portraits load. Their render anchors and
-size follow the existing Home Village prop treatment. The web's alpha,
-camera and terrain backdrop remain local presentation. The precise
-original placement transforms, prop motion and destruction presentation
-are unverified. The Goblin Hut still uses the existing ruin treatment
+size follow the existing Home Village prop treatment. Alpha, camera and
+terrain backdrop remain local presentation. The exact native map projection,
+prop motion and destruction presentation remain unverified. The Goblin Hut
+still uses the existing ruin treatment
 after its foreground mesh is removed.
 
 [Campaign layout provenance](../reference/campaign/README.md) ·
@@ -244,7 +244,11 @@ fallback rows are Tombstones, Dark Tombstones, and the Goblin Pole. No
 alternate facing was established for these prop placements. The retained
 down-arrow flag preserves its own artwork rather than using a mixed flag
 silhouette. Authored terrain, initial camera, and static prop registration
-remain web presentation.
+remain web presentation. The Campaign and Home Village renderers now use the
+same footprint-centred projection for 5,292 placements across 21 retained
+obstacle exports. Campaign had applied a fixed vertical origin of 88% even
+to crops with different recorded origins and footprint sizes. Prop tiles
+and depth keys still come from the existing layout projection.
 [Campaign layout provenance](../reference/campaign/README.md) ·
 [Retained obstacles](../reference/obstacles/catalog.json) ·
 [Retained decorations](../reference/decorations/catalog.json)

@@ -92,6 +92,7 @@ it('binds every Goblin Forest prop to its retained export without changing the l
 it('uses a retained portrait only when the source export and footprint both match', () => {
   const portraits = [...obstacleCatalog.obstacles, ...decorationCatalog.decorations];
   let matched = 0;
+  let registered = 0;
   let placements = 0;
   for (const layout of layouts) {
     for (const { data } of [...layout.obstacles, ...layout.decos]) {
@@ -100,10 +101,20 @@ it('uses a retained portrait only when the source export and footprint both matc
       expect(nativeSceneryArt(data)?.path, `stage ${layout.stage}, prop ${data}`).toBe(
         retained && `/${retained.art.path}`,
       );
+      const obstacle = obstacleCatalog.obstacles.find((p) => p.export === source.export && p.size === source.size);
+      if (obstacle) {
+        const art = nativeSceneryArt(data)!;
+        expect(art.width).toBeCloseTo(obstacle.art.width * 1.2);
+        expect(art.height).toBeCloseTo(obstacle.art.height * 1.2);
+        expect(art.originX).toBe(obstacle.art.originX);
+        expect((art.originY - obstacle.art.originY) * art.height).toBeCloseTo(32 * source.size);
+        registered++;
+      }
       if (retained) matched++;
       placements++;
     }
   }
+  expect(registered).toBe(5292);
   expect({ matched, placements }).toEqual({ matched: 5498, placements: 6214 });
 });
 

@@ -208,7 +208,7 @@ import { infernoDragonShake } from './inferno-dragon-effects';
 import { SPRING_AIRTIME } from './trap-stats';
 import { wallArt, wallTexture } from './wall-art';
 import { LazyTextures } from './lazy-textures';
-import { OBSTACLES } from './obstacles';
+import { OBSTACLES, obstacleArtPlacement } from './obstacles';
 import {
   DECORATIONS,
   DECORATION_GROUND,
@@ -4703,15 +4703,11 @@ export class VillageScene extends Phaser.Scene {
   }
   /** Register the cropped source art like a native building of the same footprint. */
   private styleObstacle(im: Phaser.GameObjects.Image, def: (typeof OBSTACLES)[string]) {
-    const { art, size, texture } = def;
+    const { art, texture } = def;
     const ready = this.deferredArt.has(texture, '/' + art.path);
     if (ready && im.texture.key !== texture) im.setTexture(texture);
-    const scale = 1.2;
-    const height = art.height * scale;
-    return im
-      .setOrigin(art.originX, art.originY + (32 * size) / height)
-      .setDisplaySize(art.width * scale, height)
-      .setVisible(ready);
+    const { width, height, originX, originY } = obstacleArtPlacement(def);
+    return im.setOrigin(originX, originY).setDisplaySize(width, height).setVisible(ready);
   }
   /**
    * A decoration's client portrait at the native buildings' scale, its footprint centre

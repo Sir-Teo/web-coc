@@ -2,11 +2,15 @@ import decorationCatalog from '../../reference/decorations/catalog.json' with { 
 import obstacleCatalog from '../../reference/obstacles/catalog.json' with { type: 'json' };
 import { NATIVE_SCENERY } from './native-campaign';
 import { DECORATIONS, DECORATION_GROUND, DECORATION_SCALE } from './decorations';
-import { OBSTACLES } from './obstacles';
+import { OBSTACLES, obstacleArtPlacement } from './obstacles';
 
 const portraitKey = (entry: { export: string; size: number }) => `${entry.export}:${entry.size}`;
-const obstaclePortraits = new Map(obstacleCatalog.obstacles.map((row) => [portraitKey(row), row.id]));
-const decorationPortraits = new Map(decorationCatalog.decorations.map((row) => [portraitKey(row), row.id]));
+const obstaclePortraits = new Map(
+  obstacleCatalog.obstacles.map((row) => [portraitKey(row), row.id]),
+);
+const decorationPortraits = new Map(
+  decorationCatalog.decorations.map((row) => [portraitKey(row), row.id]),
+);
 
 /** Matched retained exports. Registration follows the corresponding Home Village prop. */
 export function nativeSceneryArt(data: number) {
@@ -27,8 +31,8 @@ export function nativeSceneryArt(data: number) {
   }
   const obstacle = obstaclePortraits.get(key);
   if (obstacle) {
-    const { texture, art } = OBSTACLES[obstacle];
-    return { ...art, texture, path: '/' + art.path, originY: 0.88 };
+    const def = OBSTACLES[obstacle];
+    return { ...obstacleArtPlacement(def), texture: def.texture, path: '/' + def.art.path };
   }
 }
 export const SCENERY_SPRITES = [

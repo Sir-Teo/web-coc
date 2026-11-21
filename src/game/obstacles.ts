@@ -23,6 +23,18 @@ export interface ObstacleDef {
   art: { path: string; width: number; height: number; originX: number; originY: number };
   texture: string;
 }
+// Project the retained obstacle crop at the same footprint anchor in Village and Campaign.
+export function obstacleArtPlacement({ art, size }: ObstacleDef) {
+  const scale = 1.2;
+  const height = art.height * scale;
+  return {
+    width: art.width * scale,
+    height,
+    originX: art.originX,
+    originY: art.originY + (32 * size) / height,
+  };
+}
+
 /**
  * The client's Home Village obstacles (reference/obstacles, logic/obstacles.csv): the eight
  * kinds that regrow, the stones a new village starts with and the Gem Box. `trees` and `rocks`
