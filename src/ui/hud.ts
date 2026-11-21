@@ -165,7 +165,7 @@ import {
   type ModuleLevels,
 } from '../game/crafted-defenses';
 import { LEGACY_ITEM } from '../game/native-hero-village';
-import { heroAbilityHeal, heroStatsFor } from '../game/native-heroes';
+import { heroAbilityHeal, heroStatsFor, type NativeBattleHero } from '../game/native-heroes';
 import { BUILDING_LEVELS, requiredTownHall } from '../game/progression';
 import {
   armySpace,
@@ -224,6 +224,7 @@ import {
   type Battle,
   type Building,
   type Save,
+  type Unit,
 } from '../game/model';
 import {
   nativeGearedWeapon,
@@ -786,6 +787,10 @@ const RECALL_CARD_ART = {
   superrider: 'assets/recall-cards/superrider.png',
 } as const;
 type RepeatAttack = Pick<Battle, 'index' | 'catalog'> & { ladder: boolean };
+function heroRevivalPending(battle: Battle, hero: NativeBattleHero, unit?: Unit) {
+  return !!hero.phoenix?.pending || (!!unit && unit.hp <= 0 && pendingHeroRevive(battle, unit.id));
+}
+
 type BattleLogReturn = { scroll: number; focus: FocusMark | null; launcher: FocusMark | null };
 
 export class HUD {
@@ -4244,15 +4249,19 @@ export class HUD {
     const tome = battle && hero ? eternalTomeRemaining(battle, hero, unit) : 0;
     const name = HERO_SOURCE[kind];
     const status =
-      !hero || hero.unitId === null
+      !battle || !hero || hero.unitId === null
         ? 'Tap outside the red boundary to deploy'
-        : unit && unit.hp <= 0
-          ? 'Defeated · Returns next attack'
-          : tome
-            ? `Eternal Tome active · ${tome}s`
-            : hero.abilityUsed
-              ? 'Ability used · Fighting'
-              : `Tap ${kind === 'king' ? 'his' : 'its'} card or press H to activate`;
+        : heroRevivalPending(battle, hero, unit)
+          ? 'Reviving'
+          : unit && unit.hp <= 0
+            ? 'Defeated · Returns next attack'
+            : tome
+              ? `Eternal Tome active · ${tome}s`
+              : unit && phoenixLifeFraction(unit, battle.elapsed) !== undefined
+                ? `Phoenix revival · ${hero.abilityUsed ? 'Ability used' : 'Ability available'}`
+                : hero.abilityUsed
+                  ? 'Ability used · Fighting'
+                  : `Tap ${kind === 'king' ? 'his' : 'its'} card or press H to activate`;
     return `${name} · ${status}`;
   }
   private kingDeploymentHint() {
@@ -4296,8 +4305,7 @@ export class HUD {
       battle = m.battle!,
       hero = battle.nativeHeroes!.find((h) => h.kind === kind)!;
     const unit = battle.units.find((u) => u.id === hero.unitId);
-    const pending =
-      !!hero.phoenix?.pending || (!!unit && unit.hp <= 0 && pendingHeroRevive(battle, unit.id));
+    const pending = heroRevivalPending(battle, hero, unit);
     const phoenixLife = unit
       ? phoenixLifeFraction(unit, battle.elapsed)
       : hero.phoenix?.pausedRevive
@@ -6489,9 +6497,7 @@ export class HUD {
         const hero = m.battle.nativeHeroes.find((h) => h.kind === kind);
         if (!hero) continue;
         const unit = m.battle.units.find((u) => u.id === hero.unitId);
-        const pending =
-          !!hero.phoenix?.pending ||
-          (!!unit && unit.hp <= 0 && pendingHeroRevive(m.battle, unit.id));
+        const pending = heroRevivalPending(m.battle, hero, unit);
         const phoenixLife = unit
           ? phoenixLifeFraction(unit, m.battle.elapsed)
           : hero.phoenix?.pausedRevive

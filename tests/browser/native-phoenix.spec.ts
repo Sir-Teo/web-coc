@@ -33,6 +33,7 @@ async function seek(page: Page, at: number) {
       paused: owner.phoenix?.pausedRevive ?? null,
       shot: packet?.native?.name ?? null,
       text: card.querySelector('.troop-name').textContent,
+      hint: hud.nativeDeploymentHint('king'),
       width: parseFloat(bar.style.width),
       color: bar.style.backgroundColor,
     };
@@ -106,10 +107,12 @@ for (const { level, recall, width } of [
     expect(inFlight.shot).toBe('PhoenixResurrect');
     expect(inFlight.pending && inFlight.used && !inFlight.hasEgg).toBe(true);
     expect(inFlight.text).toBe('Reviving');
+    expect(inFlight.hint).toBe('Barbarian King · Reviving');
     const revived = await seek(page, r.revived);
     expect(revived.hp).toBe(1);
     expect(revived.life).toBeGreaterThan(0.95);
     expect(revived.text).toBe('Phoenix revival');
+    expect(revived.hint).toBe('Barbarian King · Phoenix revival · Ability used');
     expect(revived.color).toBe('rgb(255, 242, 191)');
     await expect
       .poll(() =>
