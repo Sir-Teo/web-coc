@@ -1009,6 +1009,8 @@ export interface Battle {
   nativeSingleUseMiteJumps?: true;
   /** Version 106: activated native weapons count for preferred targets and damage. */
   nativeActivatedPreference?: true;
+  /** Version 288: native troop targeting recognizes ready Campaign NPC weapons. */
+  nativeLateDefensePreference?: true;
   /** Version 107: source Electromite chain lightning, building damage and one-use cast. */
   nativeElectromites?: true;
   /** Version 108: source Meteor Golem throws split against defenders and retain clone lifetimes. */

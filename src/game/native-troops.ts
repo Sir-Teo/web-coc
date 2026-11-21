@@ -40,6 +40,7 @@ import {
 } from './native-electro-dragon';
 import { attackElectromite, stepElectromiteArcs } from './native-electromite';
 import { preferredDefense } from './native-defense-preference';
+import { lateActivatedDefense } from './late-campaign';
 import { monolithArrow, stepEquipmentDash } from './native-equipment-effects';
 import { isSiege } from './special-troops';
 import { nativeMiteJump } from './native-mite-jumps';
@@ -413,11 +414,15 @@ const BUILDING_NAME: Partial<Record<BuildingKind, string>> = {
   wall: 'Wall',
 };
 const buildingName = (kind: BuildingKind) => BUILDING_NAME[kind] ?? BUILDINGS[kind].name;
+const matchesDefensePreference = (battle: Battle, b: Building, at = battle.elapsed) =>
+  b.npc !== 'tutorial-cannon' &&
+  (preferredDefense(battle, b, at) ||
+    (!!battle.nativeLateDefensePreference && lateActivatedDefense(battle, b, at)));
 const matchesPreferred = (battle: Battle, s: NativeUnitStats, b: Building, at = battle.elapsed) =>
   s.preferredBuilding
     ? buildingName(b.kind) === s.preferredBuilding
     : s.preferredClass === 'Defense'
-      ? preferredDefense(battle, b, at) && b.npc !== 'tutorial-cannon'
+      ? matchesDefensePreference(battle, b, at)
       : s.preferredClass === 'Resource'
         ? preferredResource(battle, b)
         : s.preferredClass === 'Wall'
@@ -631,8 +636,7 @@ function chooseTarget(ctx: NativeTroopContext, u: Unit, base: NativeUnitStats) {
     }
     if (
       wantDefense &&
-      preferredDefense(battle, b) &&
-      b.npc !== 'tutorial-cannon' &&
+      matchesDefensePreference(battle, b) &&
       nearer(d, defenseDistance, b, defense)
     ) {
       defense = b;

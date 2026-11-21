@@ -216,10 +216,10 @@ export function builderHutDestroyed(context: LateCombatContext, building: Buildi
   if (hut) Object.assign(hut.slot, { targetId: null, chargeMs: 0 });
 }
 /** ActivatedCombatAddBuildingClass=Defense once the woken turret enters combat. */
-export function builderHutDefenseClass(battle: Battle, building: Building) {
+export function builderHutDefenseClass(battle: Battle, building: Building, at = battle.elapsed) {
   const hut = battle.late?.builderHut?.huts[building.id];
   return (
-    !!hut && building.hp > 0 && hut.readyAt !== undefined && hut.readyAt <= battle.elapsed + 1e-9
+    !!hut && building.hp > 0 && hut.readyAt !== undefined && hut.readyAt <= at + 1e-9
   );
 }
 /**

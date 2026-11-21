@@ -199,12 +199,16 @@ export function lateGoblinBuildingsDestroyed(
   if (weapon) for (const slot of weapon.slots) Object.assign(slot, { targetId: null, chargeMs: 0 });
 }
 /** ActivatedCombatAddBuildingClass=Defense: an active hall weapon attracts defense-targeting troops. */
-export function lateGoblinBuildingsDefenseClass(battle: Battle, building: Building) {
+export function lateGoblinBuildingsDefenseClass(
+  battle: Battle,
+  building: Building,
+  at = battle.elapsed,
+) {
   const weapon = battle.late?.goblinBuildings?.weapons[building.id];
   return (
     !!weapon &&
     building.hp > 0 &&
     weapon.readyAt !== undefined &&
-    weapon.readyAt <= battle.elapsed + 1e-9
+    weapon.readyAt <= at + 1e-9
   );
 }

@@ -237,9 +237,10 @@ export const lateLootHitpoints = (battle: Battle, building: Building) =>
   defendingBuilderLootHp(battle, building);
 /** ActivatedCombatAddBuildingClass=Defense: active hall weapons and woken Builder's Hut turrets
  * attract defense-targeting troops. Always false without `battle.late`. */
-export const lateActivatedDefense = (battle: Battle, building: Building) =>
+export const lateActivatedDefense = (battle: Battle, building: Building, at = battle.elapsed) =>
   !!battle.late &&
-  (lateGoblinBuildingsDefenseClass(battle, building) || builderHutDefenseClass(battle, building));
+  (lateGoblinBuildingsDefenseClass(battle, building, at) ||
+    builderHutDefenseClass(battle, building, at));
 
 export type SpellTowerWeapon = 'rage' | 'poison' | 'invisibility';
 /** Client weapon GlobalIDs selected by `attack_mode_weapon` on each campaign Spell Tower. */

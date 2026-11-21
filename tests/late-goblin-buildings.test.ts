@@ -314,6 +314,67 @@ describe('late Goblin campaign building combat', () => {
     expect(model.battle!.units[0].target).toBe(1001);
   });
 
+  for (const kind of ['balloon', 'dragonrider', 'lavahound'] as const)
+    it(`${kind} recognizes the armed Hall at acquisition without changing old recordings`, () => {
+      for (const [version, level, dropStep, expected] of [
+        [287, 2, 120, 1001],
+        [REPLAY_VERSION, 1, 120, 1001],
+        [REPLAY_VERSION, 2, 0, 1001],
+        [REPLAY_VERSION, 2, 120, 1000],
+      ]) {
+        const data = lateGoblinReplay(
+          73,
+          [
+            { step: 0, kind: 'archer', x: 22, y: 17 },
+            { step: dropStep, kind, x: 5, y: 21.5 },
+          ],
+          {
+            version,
+            buildings: [
+              makeNpcBuilding(1000, 'goblin-hall', 20, 20, level),
+              makeBuilding(1001, 'goldstorage', 8, 20, 1),
+            ],
+            steps: 200,
+            scenery: false,
+          },
+        );
+        const model = lateGoblinLive(data, dropStep + 2);
+        const battle = model.battle!;
+        expect(lateActivatedDefense(battle, battle.buildings[0])).toBe(level === 2 && dropStep > 0);
+        expect(battle.units.find((u) => u.kind === kind)?.target).toBe(expected);
+        model.returnHome();
+        expect(model.openReplay(data)).toBe(true);
+        model.seekReplay(battle.elapsed);
+        while (model.replay!.seeking) model.step(0.05);
+        expect(model.battle).toEqual(battle);
+      }
+    });
+
+  for (const [index, weapon] of [
+    [84, makeBuilding(1000, 'builder', 20, 20, 2)],
+    [89, makeNpcBuilding(1000, 'goblin-boss-th', 20, 20)],
+  ] as const)
+    it(`a Balloon recognizes the ready ${weapon.npc ?? 'armed Builder Hut'}`, () => {
+      const model = lateGoblinLive(
+        lateGoblinReplay(
+          index,
+          [
+            { step: 0, kind: 'archer', x: 22, y: 17 },
+            { step: 60, kind: 'balloon', x: 5, y: 21.5 },
+          ],
+          {
+            buildings: [weapon, makeBuilding(1001, 'goldstorage', 8, 20, 1)],
+            steps: 90,
+            scenery: false,
+          },
+        ),
+        62,
+      );
+      const battle = model.battle!;
+      expect(lateActivatedDefense(battle, battle.buildings[0])).toBe(true);
+      expect(battle.units.find((u) => u.kind === 'balloon')?.target).toBe(1000);
+    });
+
   it('keeps in-flight hall projectiles pending before results', () => {
     const model = lateGoblinLive(
       lateGoblinReplay(73, [{ step: 0, kind: 'pekka', x: 17, y: 22 }], {

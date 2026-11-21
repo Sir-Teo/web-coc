@@ -40,6 +40,16 @@ All identities use `Building Destroyed`. The Goblin Hall and Boss rows carry `Ac
 
 **Projectiles.** Speeds are source units divided by 100: 18 and 8 tiles/s. Damage per hit is `DPS × AttackSpeed / 1000`. Arrows track their target like the X-Bow bolts; one that loses its target lands without damage or hit effect. Bombs land at the target's launch-time position and damage every ground attacker within `DamageRadius/100 = 1` tile. Air attackers are never hit. Projectiles in flight resolve even after their hall falls, and battles wait for them before finishing.
 
+### Recording version 288
+
+The native troop selector now recognizes Campaign Hall and Builder Hut
+weapons after the existing ready boundary. Balloons and Dragon Riders can
+choose a ready Hall as a Defense, and Lava Hounds can choose it when they
+have no eligible Air Defense. Dormant and passive halls keep their previous
+classification. Version 287 and earlier retain their former selections.
+The pinned class field establishes eligibility while armed. Exact native
+activation and target tie-breaking remain unverified.
+
 ## Artwork and live presentation
 
 The building graph keeps **46 exports, 56 clips and 103 shapes** from `sc/buildings.sc`, sampled from eight losslessly cropped textures (`buildings_2`, `_5`, `_8`, `_13`, `_14`, `_25`, `_37`, `_39`). The arrow graph keeps one export, two clips and two shapes from `characters_7`. Normal and additive blends are retained. The closure contains six effects, eight emitters and six unchanged Ogg files with their volume, delay and pitch ranges. **20 shipped files total 1,201,021 bytes**: nine texture crops, five transparent previews at two pixels per native unit and six sounds.
