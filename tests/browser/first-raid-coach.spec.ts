@@ -1,4 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
+import { emptyArmy } from '../../src/game/army';
+import { initialSave } from '../../src/game/model';
 
 function goldMinePlacementPoint(page: Page) {
   return page.evaluate(() => {
@@ -205,4 +207,56 @@ test('starter huts reflect the first builder reservation before and after reload
   await expect.poll(signs).toEqual([true, false]);
   await page.clock.setFixedTime(deadline + 1);
   await expect.poll(hasIdleHuts).toBe(true);
+});
+
+test('a zero-star first raid resumes coaching and points to rearming on reload', async ({ page }) => {
+  test.setTimeout(90000);
+  const save = initialSave();
+  save.goblinRaidSeen = true;
+  save.stats.collected = 1;
+  save.stats.built = 1;
+  save.stats.trained = 1;
+  save.army = { ...emptyArmy(), swordsman: 1 };
+  await page.addInitScript((save) => {
+    if (!localStorage.getItem('crown-clan-save-v1'))
+      localStorage.setItem('crown-clan-save-v1', JSON.stringify(save));
+  }, save);
+  await page.goto('/?lazyart');
+  await expect(page.locator('#loading')).toBeHidden();
+  const coach = page.locator('.coach-banner');
+  await expect(coach).toContainText('earn a star in Payback');
+  await page.locator('.attack-btn').tap();
+  await page.locator('[data-action="attack:0"]').tap();
+  await page.waitForFunction(() => !window.__game.scene.scoutingArtNotice());
+  await page.locator('[data-action="troop:swordsman"]').tap();
+  const point = await page.evaluate(() => {
+    const { model, scene } = window.__game;
+    for (let y = 55; y < innerHeight - 85; y += 8)
+      for (let x = 35; x < innerWidth - 35; x += 8) {
+        if (document.elementFromPoint(x, y) !== scene.game.canvas) continue;
+        const tile = scene.gridAtScreen(x, y);
+        if (!model.deployBlocked(tile.x, tile.y)) return { x, y };
+      }
+    throw Error('No visible legal deployment point');
+  });
+  await page.touchscreen.tap(point.x, point.y);
+  await page.locator('[data-action="surrender"]').tap();
+  await page.locator('[data-action="end"]').tap();
+  await expect(page.locator('.result-modal')).toBeVisible();
+  await page.reload();
+  await expect(page.locator('#loading')).toBeHidden();
+  await expect(coach).toHaveAttribute('data-coach', '.train-add');
+  await expect(coach).toContainText('restore your last army');
+  expect(
+    await page.evaluate(() => {
+      const save = window.__game.model.state;
+      return [save.tutorial, save.stats.raids, save.nativeCampaign?.stars[0], save.raidLog?.length];
+    }),
+  ).toEqual([false, 1, 0, 1]);
+
+  await page.getByRole('button', { name: 'Train troops' }).tap();
+  await page.getByRole('button', { name: 'Last army' }).tap();
+  await page.locator('[data-action="close-drawer"]').tap();
+  await expect(coach).toHaveAttribute('data-coach', '.attack-btn');
+  await expect(coach).toContainText('earn a star in Payback');
 });

@@ -591,9 +591,8 @@ function statRows(building: Building, level = building.level): [string, string, 
   return rows;
 }
 /**
- * First-run coaching. Each step is satisfied by a counter that already exists in
- * the save, so a village part-way through the game opens with the tutorial already
- * finished rather than being told to do things it has done.
+ * First-run coaching is derived from saved progress, so reload resumes the first
+ * unfinished step.
  */
 const TUTORIAL: {
   title: string;
@@ -627,9 +626,9 @@ const TUTORIAL: {
   },
   {
     title: 'Raid the valley',
-    body: 'Tap Attack! and raid Payback, the first Goblin village.',
+    body: 'Tap Attack! and earn a star in Payback, the first Goblin village.',
     target: '.attack-btn',
-    done: (m) => m.state.stats.raids > 0,
+    done: (m) => m.goblinStars > 0 || m.state.stars.some((stars) => stars > 0),
   },
 ];
 /**
@@ -3481,7 +3480,12 @@ export class HUD {
     const index = this.coachStep;
     if (index < 0) return '';
     const step = TUTORIAL[index];
-    return `<div class="coach-banner" data-coach="${step.target}"><span class="coach-step">${index + 1}<i>/${TUTORIAL.length}</i></span><div><b>${step.title}</b><small>${step.body}</small></div>${step.target === '.coach-watch' ? button('goblin-raid', `${icon('Play', 16)} Watch`, 'game-btn orange coach-watch') : ''}${button('skip-tutorial', 'Skip', 'coach-skip')}</div>`;
+    const needsArmy = step.target === '.attack-btn' && !this.model.armyReady;
+    const target = needsArmy ? '.train-add' : step.target;
+    const body = needsArmy
+      ? 'Open Army to restore your last army or train more troops, then try Payback again.'
+      : step.body;
+    return `<div class="coach-banner" data-coach="${target}"><span class="coach-step">${index + 1}<i>/${TUTORIAL.length}</i></span><div><b>${step.title}</b><small>${body}</small></div>${step.target === '.coach-watch' ? button('goblin-raid', `${icon('Play', 16)} Watch`, 'game-btn orange coach-watch') : ''}${button('skip-tutorial', 'Skip', 'coach-skip')}</div>`;
   }
   /** Rings the control the current step is about, without touching its layout. */
   private markCoachTarget() {
