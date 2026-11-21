@@ -16,11 +16,12 @@ import {
 import type Phaser from 'phaser';
 import type { Battle, Building } from './model';
 import { battleTowerArcherPose } from './archer-tower-facing';
-import { ARCHER_TOWER_GRAPH, TOWER_ARCHER_GRAPH, archerTowerComposition } from './archer-tower-art';
+import { ARCHER_TOWER_GRAPH, TOWER_ARCHER_GRAPH, archerTowerComposition, archerTowerSource } from './archer-tower-art';
 import { NativeSceneView, quantizedDensity } from './native-scene-view';
 import { NativeEffectViews } from './native-effect-views';
 import { presentationLive, presentationTime } from './presentation-clock';
 import { registerCachedSample, type SampleCue } from './sample-audio';
+import { nativeDefense } from './native-defenses';
 import { guardRender } from './render-guard';
 import { NativeLevelPages } from './native-level-pages';
 import {
@@ -38,6 +39,10 @@ const transform = (poses: NativeScenePose[]): NativeScenePose[] =>
   );
 const towerState = (b: Building) =>
   b.hp <= 0 ? 'ruin' : b.constructing ? 'constructing' : b.upgradeEnd ? 'upgrading' : 'ready';
+/** An alternate body belongs to a tower actually using its geared weapon. */
+const alternateTower = (b: Building, battle?: Battle | null) =>
+  !!b.geared && (!battle || nativeDefense(battle, b)) && !!archerTowerSource(b.level).AlternateExportName;
+
 export function villageArcherTowerPoses(
   b: Building,
   seconds: number,
@@ -46,7 +51,7 @@ export function villageArcherTowerPoses(
   archer = battleTowerArcherPose(b, battle, seconds, reduced),
 ) {
   const state = towerState(b);
-  const poses = archerTowerComposition(b.level, state, seconds, false, archer, archer);
+  const poses = archerTowerComposition(b.level, state, seconds, alternateTower(b, battle), archer, archer);
   return { body: transform(poses.body), residents: transform(poses.residents) };
 }
 /** Bounds change slowly (aim sector, attack cycle, idle sway): cache by pose
@@ -62,7 +67,7 @@ export function villageArcherTowerBounds(
   const state =
     b.hp <= 0 ? 'ruin' : b.constructing ? 'constructing' : b.upgradeEnd ? 'upgrading' : 'ready';
   const pose = battleTowerArcherPose(b, battle, seconds, reduced);
-  const key = `${b.level}:${state}:${pose.direction}:${pose.flip ? 1 : 0}:${pose.action}:${Math.floor(seconds * 4)}:${reduced ? 1 : 0}`;
+  const key = `${b.level}:${alternateTower(b, battle)}:${state}:${pose.direction}:${pose.flip ? 1 : 0}:${pose.action}:${Math.floor(seconds * 4)}:${reduced ? 1 : 0}`;
   const hit = archerBoundsCache.get(key);
   if (hit) return hit;
   const poses = villageArcherTowerPoses(b, seconds, battle, reduced),
@@ -221,7 +226,7 @@ export class VillageArcherTowers {
       // Body clips run at 24 or 30 fps (nested 30 fps clips inside 24 fps parents), the
       // rooftop Archer at 24: redraw on those source frames only.
       const frame = (t: number, fps: number) => Math.floor(t * fps + 1e-9);
-      const signature = `${b.level}:${towerState(b)}:${archer.direction}:${archer.flip}:${archer.action}:${frame(archer.time, 24)}:${frame(seconds, 24)}:${frame(seconds, 30)}:${p.x}:${p.y}:${zoom}`;
+      const signature = `${b.level}:${alternateTower(b, battle)}:${towerState(b)}:${archer.direction}:${archer.flip}:${archer.action}:${frame(archer.time, 24)}:${frame(seconds, 24)}:${frame(seconds, 30)}:${p.x}:${p.y}:${zoom}`;
       if (this.signatures.get(b.id) === signature) continue;
       this.signatures.set(b.id, signature);
       const poses = guardRender(

@@ -77,3 +77,48 @@ test('Fast Attack and geared defenses show their actual selection ranges', async
   expect(errors).toEqual([]);
   await page.screenshot({ path: `output/playtest/geared-defense-range-${browserName}.png` });
 });
+
+test('gearing an Archer Tower swaps the rendered platform and resident without moving its tile', async ({ page }) => {
+  await page.goto('/?lazyart');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  await page.locator('[data-action="skip-tutorial"]').click();
+  const result = await page.evaluate(async () => {
+    const { model, scene } = window.__game;
+    const tower = model.state.buildings.find((b) => b.kind === 'archertower')!;
+    tower.level = 7;
+    model.changed();
+    scene.sync();
+    await scene.villageArcherTowers.prefetchLevels([7]);
+    scene.paused = true;
+    model.state.settings.reducedMotion = true;
+    scene.drawOverlay(0);
+    const presenter = scene.villageArcherTowers;
+    const view = presenter.views.get(tower.id)!;
+    const render = view.body.render;
+    let shapes: string[] = [];
+    view.body.render = function (poses, ...args) {
+      shapes = poses.map((pose) => JSON.stringify(pose));
+      return render.call(this, poses, ...args);
+    };
+    presenter.signatures.delete(tower.id);
+    scene.drawOverlay(0);
+    const sample = () => ({
+      bounds: scene.nativeBuildingBounds(tower),
+      shapes,
+      tile: [tower.x, tower.y],
+    });
+    const standard = sample();
+    tower.geared = true;
+    scene.drawOverlay(0);
+    const geared = sample();
+    tower.geared = undefined;
+    scene.drawOverlay(0);
+    return { standard, geared, reset: sample() };
+  });
+  expect(result.standard.shapes.length).toBeGreaterThan(0);
+  expect(result.geared.shapes.length).toBeGreaterThan(0);
+  expect(result.geared.tile).toEqual(result.standard.tile);
+  expect(result.geared.shapes).not.toEqual(result.standard.shapes);
+  expect(result.geared.bounds![1]).toBeGreaterThan(result.standard.bounds![1]);
+  expect(result.reset).toEqual(result.standard);
+});

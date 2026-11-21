@@ -1,3 +1,4 @@
+import { nativeDefense } from './native-defenses';
 import { isRecoverableBootImage, markRecoverableBootImage } from './image-decode';
 import { HEADING_FONT } from '../ui/fonts';
 import { FIELD_SPELL_PROFILES, fieldSpellPresentationName } from './field-spell-effects';
@@ -2922,7 +2923,7 @@ export class VillageScene extends Phaser.Scene {
         this.model.selected = hit.id;
         this.model.changed();
         this.model.notify(
-          `${d.name} · Level ${hit.level} · Range ${d.minRange ? `${d.minRange}–` : ''}${buildingRange(hit)} tiles${d.minRange ? ' · Orange ring = blind spot' : ''}${hit.kind === 'xbow' ? ` · ${hit.xbowMode === 'both' ? 'Ground & air' : 'Ground only'} · ${(this.model.battle.xbows?.[hit.id]?.ammunition ?? 1500).toLocaleString()} bolts` : ''}`,
+          `${d.name} · Level ${hit.level}${hit.kind === 'archertower' && hit.geared && nativeDefense(this.model.battle, hit) ? ' · Fast Attack' : ''} · Range ${d.minRange ? `${d.minRange}–` : ''}${buildingRange(hit)} tiles${d.minRange ? ' · Orange ring = blind spot' : ''}${hit.kind === 'xbow' ? ` · ${hit.xbowMode === 'both' ? 'Ground & air' : 'Ground only'} · ${(this.model.battle.xbows?.[hit.id]?.ammunition ?? 1500).toLocaleString()} bolts` : ''}`,
         );
         return;
       }
