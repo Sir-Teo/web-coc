@@ -275,3 +275,55 @@ test('an earlier tile Revive clears the busy Hero card even while a direct cast 
   ).toBeGreaterThan(0);
   await expect(page.locator('[data-action="hero-select:queen"]')).not.toContainText('Reviving');
 });
+
+test.describe('Revive tray eligibility on touch', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('reserves hero cards for eligible Revive targets until the player changes tools', async ({
+    page,
+  }) => {
+    test.setTimeout(120000);
+    await live(page);
+    await page.evaluate(() => {
+      const { model } = window.__game;
+      model.battle.nativeHeroes.push(
+        { kind: 'king', level: 1, items: [], unitId: null },
+        { kind: 'warden', level: 1, items: [], unitId: null },
+      );
+      if (!model.deployNativeHero('king', 5, 10)) throw Error('Control King deployment failed');
+    });
+    await redraw(page);
+    const king = page.locator('[data-action="hero-select:king"]');
+    const warden = page.locator('[data-action="hero-select:warden"]');
+    const queen = page.locator('[data-action="hero-select:queen"]');
+    await expect(king).toHaveAccessibleName('Barbarian King, Activate ability');
+    await page.locator('[data-action="spell:revive"]').tap();
+    for (const [card, name] of [
+      [king, 'Barbarian King'],
+      [warden, 'Grand Warden'],
+    ] as const) {
+      await expect(card).toHaveAccessibleName(`${name}, Cannot revive`);
+      await expect(card).toBeDisabled();
+      await card.scrollIntoViewIfNeeded();
+      const box = (await card.boundingBox())!;
+      await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+    }
+    expect(
+      await page.evaluate(() => {
+        const { model } = window.__game;
+        return {
+          count: model.battle.spells.revive,
+          selected: model.activeSpell,
+          ability: !!model.battle.nativeHeroes.find((hero) => hero.kind === 'king').abilityUsed,
+          warden: model.battle.nativeHeroes.find((hero) => hero.kind === 'warden').unitId,
+        };
+      }),
+    ).toEqual({ count: 2, selected: 'revive', ability: false, warden: null });
+    await queen.tap();
+    await expect(queen).toHaveAccessibleName('Archer Queen, Reviving');
+    expect(await page.evaluate(() => window.__game.model.battle.spells.revive)).toBe(1);
+    await page.locator('[data-action="troop:giant"]').tap();
+    await expect(king).toHaveAccessibleName('Barbarian King, Activate ability');
+    await expect(king).toBeEnabled();
+  });
+});
