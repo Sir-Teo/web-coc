@@ -4,9 +4,10 @@ import { wizardTowerVillage } from '../fixtures/wizard-tower-battle';
 
 test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-test('a Practice rematch starts at the first troop while a live HUD refresh preserves scroll', async ({
+test('a selected spell stays visible after rotation and a Practice rematch resets the tray', async ({
   page,
 }) => {
+  await page.setViewportSize({ width: 568, height: 320 });
   const save = wizardTowerVillage();
   save.buildings.push(makeBuilding(7, 'spellfactory', 9, 9, 3));
   save.nextId = 8;
@@ -34,9 +35,13 @@ test('a Practice rematch starts at the first troop while a live HUD refresh pres
   await tap('practice');
   await page.waitForFunction(() => !window.__game.scene.battleArtPending());
   const tray = page.locator('.deploy-tray .army-tray');
+  const rage = tray.locator('[data-action="spell:rage"]');
   const offset = () => tray.evaluate((el) => el.scrollLeft);
   await tap('spell:rage');
   await expect.poll(offset).toBeGreaterThan(30);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(rage).toHaveClass(/\bselected\b/);
+  await expect(rage).toBeInViewport({ ratio: 1 });
   const point = await page.evaluate(() => {
     const { scene, game } = window.__game;
     scene.paused = true;
@@ -54,7 +59,7 @@ test('a Practice rematch starts at the first troop while a live HUD refresh pres
     throw Error('No visible cast point');
   });
   await page.touchscreen.tap(point.x, point.y);
-  await expect(tray.locator('[data-action="spell:rage"]')).toBeDisabled();
+  await expect(rage).toBeDisabled();
   const scrolled = await offset();
   expect(scrolled).toBeGreaterThan(30);
   await page.evaluate(async () => {
@@ -67,7 +72,7 @@ test('a Practice rematch starts at the first troop while a live HUD refresh pres
   await tap('surrender');
   await tap('end');
   await tap('raid-again');
-  await expect(tray.locator('[data-action="spell:rage"]')).toBeEnabled();
+  await expect(rage).toBeEnabled();
   await expect.poll(offset).toBe(0);
   await expect(tray.locator('[data-action="troop:swordsman"]')).toBeInViewport({ ratio: 1 });
   expect(await page.evaluate(() => window.__game.model.battle!.started)).toBe(false);

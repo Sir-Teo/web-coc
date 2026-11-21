@@ -1028,6 +1028,17 @@ export class HUD {
           this.updateLive();
         }
         this.safeInsets = null;
+        // Narrowing the viewport can leave the selected deployment card offscreen.
+        // Move only the tray, keeping both the selection and the battlefield in place.
+        const tray = this.hudEl.querySelector<HTMLElement>('.deploy-tray .army-tray');
+        const selected = tray?.querySelector('.troop-card.selected:not(:disabled)');
+        if (tray && selected) {
+          const start = tray.getBoundingClientRect().left + tray.clientLeft;
+          const end = start + tray.clientWidth;
+          const { left, right } = selected.getBoundingClientRect();
+          if (left < start) tray.scrollLeft += left - start;
+          else if (right > end) tray.scrollLeft += right - end;
+        }
         // The card's size and the HUD floor are measured again on the next frame.
         this.anchorCard = null;
         this.markCoachTarget();
