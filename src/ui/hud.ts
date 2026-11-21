@@ -2094,6 +2094,7 @@ export class HUD {
         break;
       }
       case 'hero-select': {
+        if (m.battle) this.scene.interruptDeploymentInput();
         // Native battles (v51+) carry the whole roster; legacy battles carry one King.
         if (arg && (HERO_KINDS as string[]).includes(arg)) {
           const kind = arg as HeroKind;
@@ -2754,6 +2755,7 @@ export class HUD {
         break;
       case 'troop':
         if (!m.battle || !m.troopRemaining(arg as DeployTroopKind)) break;
+        this.scene.interruptDeploymentInput();
         m.activeHero = false;
         m.activeHeroKind = null;
         m.activeTroop = arg as DeployTroopKind;
@@ -2766,6 +2768,7 @@ export class HUD {
         break;
       case 'spell':
         if (!m.battle || !m.battle.spells[arg as SpellKind]) break;
+        this.scene.interruptDeploymentInput();
         m.activeHero = false;
         m.activeHeroKind = null;
         m.activeSpell = m.activeSpell === arg ? null : (arg as SpellKind);

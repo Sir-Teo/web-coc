@@ -859,3 +859,48 @@ test.describe('interrupted battle confirmation on touch', () => {
     });
   }
 });
+
+test.describe('deployment shortcuts on touch', () => {
+  test.use({ hasTouch: true, isMobile: true });
+
+  for (const viewport of [{ width: 390, height: 844 }, { width: 568, height: 320 }]) {
+    test(`shortcut selection ends the preceding map tap or hold at ${viewport.width}px`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await startDeployment(page, 8);
+      const grass = await grassPoint(page, true);
+      const stock = () => page.evaluate(() => {
+        const { remaining } = window.__game.model.battle!;
+        return { swordsman: remaining.swordsman, archer: remaining.archer };
+      });
+      const pressMap = () => page.touchscreen.tap(grass.x, grass.y);
+      await page.evaluate(() => {
+        const now = performance.now();
+        Object.defineProperty(performance, 'now', { value: () => now, configurable: true });
+      });
+      try {
+        await pressMap();
+        expect(await stock()).toEqual({ swordsman: 39, archer: 8 });
+        await page.keyboard.press('2');
+        await page.keyboard.press('1');
+        await pressMap();
+        expect(await stock()).toEqual({ swordsman: 38, archer: 8 });
+        // A genuine second rapid tap still deploys a squad.
+        await pressMap();
+        expect(await stock()).toEqual({ swordsman: 34, archer: 8 });
+      } finally {
+        await page.evaluate(() => Reflect.deleteProperty(performance, 'now'));
+      }
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [grass] });
+      await expect.poll(async () => (await stock()).swordsman).toBeLessThan(34);
+      await page.keyboard.press('2');
+      const afterSwitch = await stock();
+      await page.waitForTimeout(450);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      expect(await stock()).toEqual(afterSwitch);
+      expect(afterSwitch.archer).toBe(8);
+      await pressMap();
+      expect((await stock()).archer).toBe(7);
+    });
+  }
+});

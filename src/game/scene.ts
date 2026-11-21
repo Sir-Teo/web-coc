@@ -773,6 +773,10 @@ export class VillageScene extends Phaser.Scene {
     this.dragged = false;
     this.pinchDistance = 0;
   };
+  /** An explicit tray selection starts a new deployment gesture, including from a shortcut. */
+  interruptDeploymentInput() {
+    this.cancelMapGesture();
+  }
   ready = false;
   onReady = () => {};
   onReveal = () => {};
