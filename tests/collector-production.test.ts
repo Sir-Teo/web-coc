@@ -105,3 +105,37 @@ it.each(['goldmine', 'collector'] as const)(
     expect(again.state.buildings[0].stored).toBe(100_800);
   },
 );
+
+it.each([0, 25, 100])(
+  'reports only blocked gold when storage has room for %i gold',
+  (room) => {
+    const model = new GameModel();
+    const mine = model.state.buildings.find((b) => b.kind === 'goldmine')!;
+    const collector = model.state.buildings.find((b) => b.kind === 'collector')!;
+    for (const b of model.state.buildings) b.stored = 0;
+    mine.stored = 100;
+    collector.stored = 50;
+    model.state.gold = model.resourceCap('gold') - room;
+    model.state.elixir = 0;
+    const messages: string[] = [];
+    model.onToast = (message) => messages.push(message);
+
+    model.collect();
+
+    expect(model.state.gold).toBe(model.resourceCap('gold'));
+    expect(model.state.elixir).toBe(50);
+    expect(mine.stored).toBe(100 - room);
+    expect(collector.stored).toBe(0);
+    expect(messages).toEqual([
+      room < 100
+        ? `Collected ${room} gold · 50 elixir. Your gold storages are full.`
+        : `Collected ${room} gold · 50 elixir`,
+    ]);
+
+    if (room < 100) {
+      model.collect(mine.id);
+      expect(mine.stored).toBe(100 - room);
+      expect(messages.at(-1)).toBe('Your gold storages are full.');
+    }
+  },
+);

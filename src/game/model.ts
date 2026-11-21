@@ -3036,8 +3036,8 @@ export class GameModel {
     let gold = 0,
       elixir = 0,
       dark = 0;
-    // Why nothing came out, so a full storage never reads as an idle collector.
-    let full: Resource | null = null;
+    // Track resources left behind so a partial collection can explain the shortfall.
+    const full = new Set<Resource>();
     let unfinished = false;
     for (const b of this.state.buildings) {
       if (id !== undefined && b.id !== id) continue;
@@ -3048,11 +3048,10 @@ export class GameModel {
         unfinished = true;
         continue;
       }
-      const amount = Math.min(Math.floor(b.stored), this.resourceCap(k) - this.state[k]);
-      if (amount <= 0) {
-        full ??= k;
-        continue;
-      }
+      const available = Math.floor(b.stored);
+      const amount = Math.min(available, this.resourceCap(k) - this.state[k]);
+      if (amount < available) full.add(k);
+      if (amount <= 0) continue;
       this.state[k] += amount;
       b.stored -= amount;
       if (k === 'gold') gold += amount;
@@ -3066,17 +3065,23 @@ export class GameModel {
         text: `+${amount.toLocaleString()}`,
       });
     }
+    const needsDarkStorage = full.has('dark') && this.resourceCap('dark') === 0;
+    if (needsDarkStorage) full.delete('dark');
+    const storageNotice = [
+      full.size
+        ? `Your ${[...full].map((k) => (k === 'dark' ? 'dark elixir' : k)).join(' and ')} storages are full.`
+        : '',
+      needsDarkStorage ? 'Build a Dark Elixir Storage to hold what your drills bring up.' : '',
+    ].filter(Boolean).join(' ');
     if (gold + elixir + dark) {
       this.state.stats.collected += gold + elixir + dark;
       this.starterEvent({ type: 'CollectResources', amount: gold, subject: 'Gold' });
       this.starterEvent({ type: 'CollectResources', amount: elixir, subject: 'Elixir' });
       this.notify(
-        `Collected ${gold.toLocaleString()} gold · ${elixir.toLocaleString()} elixir${dark ? ` · ${dark.toLocaleString()} dark elixir` : ''}`,
+        `Collected ${gold.toLocaleString()} gold · ${elixir.toLocaleString()} elixir${dark ? ` · ${dark.toLocaleString()} dark elixir` : ''}${storageNotice ? `. ${storageNotice}` : ''}`,
       );
       this.changed();
-    } else if (full === 'dark' && this.resourceCap('dark') === 0)
-      this.notify('Build a Dark Elixir Storage to hold what your drills bring up.');
-    else if (full) this.notify(`Your ${full === 'dark' ? 'dark elixir' : full} storages are full.`);
+    } else if (storageNotice) this.notify(storageNotice);
     else if (unfinished) this.notify('That building keeps its resources until it is ready.');
     else this.notify('Your collectors are working. Come back in a moment.');
   }
