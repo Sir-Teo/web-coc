@@ -156,6 +156,14 @@ test('a sprung hero rises in place on battle time, pauses, and respects reduced 
       .map((child) => child.text),
   );
   expect(springLabels).toEqual(['SPRUNG!']);
+  const springBody = () =>
+    page.evaluate(() => {
+      const { scene } = window.__game;
+      scene.drawOverlay(0);
+      const entries = scene.villageNativePresentation.views.get(9001);
+      return entries && [...entries.values()].map((entry) => entry.signature.split('/')[1]);
+    });
+  await expect.poll(springBody).toEqual(['eject_trap_lvl1']);
   const advance = async (seconds: number) =>
     page.evaluate((seconds) => {
       const { model: m, scene } = window.__game;
@@ -193,6 +201,8 @@ test('a sprung hero rises in place on battle time, pauses, and respects reduced 
   expect(landed.lift).toBe(0);
   expect(landed.x).toBe(first.x);
   expect(landed.y).toBe(first.y);
+  await advance(0.4);
+  expect(await springBody()).toEqual(['eject_trap_lvl1_unarmed']);
 });
 
 test.describe('phone Bomb splash', () => {

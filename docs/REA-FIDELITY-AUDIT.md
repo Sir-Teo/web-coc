@@ -345,3 +345,30 @@ composition, reveal policy and timings remain outside the retained evidence.
 [Campaign layout](../reference/campaign/runtime.json) ·
 [Builder's Hut weapon rows](../reference/builder-hut/combat.json) ·
 [Goblin weapon rows](../reference/late-goblin-buildings/README.md).
+
+### Trap presentation audit
+
+The [pinned combat tables](../reference/full-client/combat.json) and the
+[village art index](../reference/full-client/village-art.json) establish source identity.
+All 165 armed, triggered, and spent references resolved across 55 level rows in
+the Bomb (14), Giant Bomb (12), Air Bomb (13), Spring Trap (13), and Tornado Trap
+(3) world packs.
+
+| Family | Runtime comparison | Evidence still needed |
+| --- | --- | --- |
+| Bomb and Giant Bomb | Shared renderer selects the three retained body exports. Impact still uses the web blast cue. Spring's instant-resolution issue does not apply to their timed fuses. | Version-matched impact and reveal assignments for the ordinary variants, and matched capture before changing fuse-to-animation synchronization. |
+| Spring Trap | Instant ejection used to skip the triggered body. All 13 levels now use the authored 22-frame, 24 fps timeline recorded in the [Spring Trap pack](../public/assets/village-native/springtrap/graph.json) before the spent export. The renderer reads the trigger time from battle state and the existing visibility filter still removes the body before activation. | Native composition, sound, and synchronization with ejection remain unverified. |
+| Air Bomb | The shared renderer binds the floor body states. All seven projectile variants in the [retained projectile index](../reference/full-client/projectile-art.json) have packs, but the trap simulation supplies no flight to the projectile renderer. | Qualify a presentation-only flight against the existing impact anchor, seek and legacy aim behavior before wiring it in. Native launch timing and composition are unverified. |
+| Skeleton Trap and Seeking Air Mine | Dedicated armed/body and trigger paths use the [coffin](../reference/skeleton-trap/native.json) and [mine](../reference/seeking-mine/native.json) references. The coffin expires by the existing presentation window. Mine combat eligibility was outside this pass. | Matched native captures for frame-by-frame timing. |
+| Tornado, Freeze, Ghost, Shrink, Santa, and Pumpkin Campaign variants | Separate runtime paths retain the variant-specific body, cast or spawn art, where available in [Campaign references](../reference/tornado-trap/README.md). Some transient effects are live-only under the existing presentation policy. | Verify matched native composition and the intended web seek behavior before changing transient effects. |
+| Giga Bomb | Previously qualified reveal, outside the patch. | Matched native fuse audio and effect composition. |
+
+The Spring change touches the renderer only. Trap state, ejection, damage, saves,
+and versioned recording rules use the existing model paths.
+
+Packaged Chromium touch checks at 390×844 and 568×320 deployed one Archer into
+a level-one Spring Trap from a disposable Practice village. At 0.30 seconds the
+baseline selected the spent export, while the candidate selected frame 6 of the
+triggered export in both live play and paused replay. The troop and trap states
+matched at that tick. The trap remained hidden while scouting and after seeking
+back before activation, and used the spent export after the clip.

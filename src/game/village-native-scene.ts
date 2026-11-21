@@ -11,6 +11,7 @@ import {
   type NativeMatrix,
 } from './native-mesh';
 import { hasNativeDefenseBody, nativeDefenseBody } from './native-defense-poses';
+import { nativeClipDuration } from './native-effects';
 import { nativeTrapValues } from './native-traps';
 import { nativeExportBounds, type NativeGeometryExtent } from './native-geometry-bounds';
 import { cameraShakePadding } from './camera-shake-layer';
@@ -562,10 +563,19 @@ export class VillageNativePresentation {
         b.kind === 'tornadotrap' &&
         trap &&
         seconds - trap.activatedAt < nativeTrapValues(b.kind, b.level).duration;
+      // Spring damage/ejection resolves at activation. The pinned triggered body
+      // still has a finite clip to play before switching to the spent export.
+      const spring = b.kind === 'springtrap' && level.refs.ExportNameTriggered;
+      const springAge = (battle?.elapsed ?? 0) - (trap?.activatedAt ?? 0);
+      const springing =
+        trap &&
+        spring &&
+        springAge >= 0 &&
+        springAge < nativeClipDuration(pack.scenes[spring.scene], spring.export);
       const fields =
         b.hp <= 0
           ? DAMAGED
-          : trap?.resolved && !spinning
+          : trap?.resolved && !spinning && !springing
             ? BROKEN
             : trap
               ? TRIGGERED
