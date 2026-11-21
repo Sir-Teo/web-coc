@@ -561,6 +561,13 @@ function preferenceIndex(
   preferenceIndexes.set(buildings, index);
   return index;
 }
+/** Retain the resource bonus for Home Clan Castles, with the historical NPC alias in old replays. */
+export function preferredResource(battle: Battle, building: Building) {
+  return (
+    isResourceBuilding(building.kind) &&
+    !(battle.nativeGoblinCastleClass && building.npc === 'goblin-castle')
+  );
+}
 /** Whether a preferred building still stands, or the unit's own building target does. */
 export function preferredOrCommitted(
   battle: Battle,

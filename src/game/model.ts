@@ -247,6 +247,7 @@ import {
   type DefenderFightTraits,
   type DefenderRoute,
   damageDefenders,
+  preferredResource,
   type Defender,
 } from './defenders';
 import { primeDeathBomb, stepDeathBombs, bombTowerDeathDamage, type DeathBomb } from './bomb-tower';
@@ -1172,6 +1173,8 @@ export interface Battle {
   nativeBarbarianWindup?: true;
   /** Version 193: ordinary Goblin source melee charge, preserving resource preference and bonus. */
   nativeGoblinWindup?: true;
+  /** The campaign Goblin Castle is an NPC bunker, unlike the Resource-class Clan Castle. */
+  nativeGoblinCastleClass?: true;
   /** Version 194: ordinary and Siege Barracks Wizards use source charges and fixed-aim fireballs. */
   nativeWizardWindup?: true;
   /** Version 195: Super Barbarian charges after engagement while its deployment Rage keeps its own clock. */
@@ -7542,7 +7545,7 @@ export class GameModel {
             continue;
           }
           const damage =
-            d.damage * (troop.prefersResources && isResourceBuilding(target.kind) ? 2 : 1);
+            d.damage * (troop.prefersResources && preferredResource(b, target) ? 2 : 1);
           if (u.kind === 'dragon') {
             const size = BUILDINGS[target.kind].size;
             const aim = {

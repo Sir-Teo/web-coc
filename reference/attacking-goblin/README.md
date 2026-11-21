@@ -36,6 +36,16 @@ release and their former state shape. Saves, numerical stats and assets do
 not change. Geometry, crowd separation and pathfinding remain local adapters;
 native pixel or executable parity is not claimed.
 
+## Recording version 287
+
+The Home Clan Castle row lists `SecondaryTargetingClass=Resource`. The
+[Goblin Castle](../late-goblin-buildings/native.json) is an NPC bunker and
+has no Resource targeting class. Goblin Capital now follows that distinction
+for Sneaky Goblin target selection and for both Goblins' damage bonuses.
+A Goblin Castle can still be attacked as a regular building. Older recordings
+preserve their original target and damage behavior. Native target tie-breaking
+and retarget timing remain unverified.
+
 ## Validation
 
 `tests/attacking-goblin-windup.test.ts` covers all ten tiers from near/far,

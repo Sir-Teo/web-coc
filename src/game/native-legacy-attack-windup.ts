@@ -1,5 +1,5 @@
-import { BUILDINGS, isResourceBuilding, type TroopKind } from './data';
-import { hurtDefender } from './defenders';
+import { BUILDINGS, type TroopKind } from './data';
+import { hurtDefender, preferredResource } from './defenders';
 import { nativeUnitStats } from './native-units';
 import { releaseDragonFlame } from './native-dragon-flame';
 import { releaseWizardShot } from './native-wizard-attack';
@@ -33,7 +33,7 @@ export function stepLegacyAttackWindup(
       const multiplier =
         ctx.battle.nativeGoblinWindup &&
         unit.kind === 'goblin' &&
-        isResourceBuilding(target.building.kind)
+        preferredResource(ctx.battle, target.building)
           ? source.preferredMultiplier
           : 1;
       ctx.damageBuilding(target.building, damage * multiplier, ctx.battle.elapsed);

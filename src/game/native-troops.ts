@@ -72,6 +72,7 @@ import {
   hurtDefender,
   hasDefenderCandidates,
   isGarrisonDefender,
+  preferredResource,
   stepAttackerVsDefenders,
   type DefenderFightTraits,
   type DefenderRoute,
@@ -418,7 +419,7 @@ const matchesPreferred = (battle: Battle, s: NativeUnitStats, b: Building, at = 
     : s.preferredClass === 'Defense'
       ? preferredDefense(battle, b, at) && b.npc !== 'tutorial-cannon'
       : s.preferredClass === 'Resource'
-        ? isResourceBuilding(b.kind)
+        ? preferredResource(battle, b)
         : s.preferredClass === 'Wall'
           ? b.kind === 'wall'
           : false;
