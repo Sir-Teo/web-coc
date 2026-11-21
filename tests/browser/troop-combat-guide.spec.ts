@@ -253,7 +253,7 @@ const cases = [
     target: 'Walls (40× damage)',
     tactic: 'both attack and death damage receive the Wall bonus',
     facts: {
-      'Contact damage vs walls': '5,560',
+      'Attack damage vs walls': '1,360',
       'Death damage vs walls': '4,200',
       'Attack splash': '0.8 tiles',
       'Death blast radius': '1.6 tiles',
@@ -473,7 +473,7 @@ const upgrades = [
     kind: 'wallbreaker',
     name: 'Super Wall Breaker',
     level: 14,
-    facts: { 'Contact damage vs walls': '23,320', 'Death damage vs walls': '16,520' },
+    facts: { 'Attack damage vs walls': '6,800', 'Death damage vs walls': '16,520' },
   },
   {
     kind: 'miner',

@@ -453,14 +453,6 @@ export function troopCombatGuide(
         ? 'Keep it on a single target to build damage. Changing targets restarts the ramp. It travels underground and leaves a delayed ground explosion when defeated.'
         : 'Keep its beam on a single target to build damage. Changing targets restarts the ramp. Protect it from Air Defenses while it locks on.';
   } else if (kind === 'superwallbreaker') {
-    const number = (value: number) => value.toLocaleString('en-US', { maximumFractionDigits: 2 });
-    facts.push(
-      [
-        'Contact damage vs walls',
-        number((stats.damage + stats.deathDamage) * stats.preferredMultiplier),
-      ],
-      ['Death damage vs walls', number(stats.deathDamage * stats.preferredMultiplier)],
-    );
     tactic =
       'Let a frontline draw fire while it opens walls. Its bomb explodes when it attacks or is defeated; both attack and death damage receive the Wall bonus.';
   } else if (kind === 'meteorgolem') {
