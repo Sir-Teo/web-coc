@@ -22,6 +22,16 @@ Current native layout files sometimes retain alternate-layout fields on individu
 
 Primary sources: [Single Player Attacks](https://support.supercell.com/clash-of-clans/en/articles/single-player-attacks-2.html) documents 90 villages, unlimited attack time, no trophy changes, and star-based progression. [December 2022 update](https://supercell.com/en/games/clashofclans/blog/release-notes/december-update-2022/) added the final 15 villages for TH13–15 and the Mega PEKKA achievement. [TH14 patch notes](https://supercell.com/en/games/clashofclans/blog/release-notes/full-patch-notes-th14-update/) describe displaying the remaining single-player loot in storage buildings.
 
+### Air Sweeper facing
+
+The runtime keeps the active main-layout `aim_angle` for all 71 imported
+Air Sweepers. The eight 45-degree values select the corresponding existing
+facing. High Pressure's four cardinal placements point outward from the
+centre, which also establishes the map-axis convention. Draft, war and
+alternate layout fields stay outside the simulation. This restores the
+authored facing for new raids. Replays read the facing in their own recorded
+building snapshots, including the default used by previous builds.
+
 ### Inferno campaign support
 
 Source Inferno placements retain explicit single/multi mode and starting ammunition since battle/replay version 43, which admitted Midnight Oil, All Angle Attack, Burning Sensation and Teamwork Opportunity. See `reference/inferno/README.md` for source interpretation, runtime limitations and verification evidence.

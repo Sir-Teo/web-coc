@@ -143,7 +143,7 @@ const GEARED_IDS = new Set([1000008, 1000009, 1000013]);
 export function nativeDefenseModes(stage: NativeStage) {
   const modes = new Map<
     string,
-    Pick<Building, 'xbowMode' | 'skeletonMode' | 'infernoMode' | 'infernoAmmo' | 'geared'>
+    Pick<Building, 'xbowMode' | 'skeletonMode' | 'infernoMode' | 'infernoAmmo' | 'geared' | 'direction'>
   >();
   const issues = new Set<string>();
   let infernos: ReturnType<typeof nativeInfernoStates> = [];
@@ -194,6 +194,14 @@ export function nativeDefenseModes(stage: NativeStage) {
       )
     )
       modes.set(key, { infernoMode: 'multi', infernoAmmo: v.ammo as number });
+    else if (
+      data === 1000028 &&
+      typeof v.aim_angle === 'number' &&
+      v.aim_angle >= 0 &&
+      v.aim_angle < 360 &&
+      v.aim_angle % 45 === 0
+    )
+      modes.set(key, { direction: v.aim_angle / 45 });
     else if (data === 12000008 && v.air_mode === true) modes.set(key, { skeletonMode: 'air' });
     else issues.add('Alternate defense modes');
   }

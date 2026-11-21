@@ -4,8 +4,9 @@ import { createHash } from 'node:crypto';
 import obstacleCatalog from '../reference/obstacles/catalog.json';
 import decorationCatalog from '../reference/decorations/catalog.json';
 import { nativeSceneryArt } from '../src/game/campaign-scenery';
-import { nativeScenery, NATIVE_SCENERY } from '../src/game/native-campaign';
+import { nativeBuildings, nativeScenery, NATIVE_SCENERY } from '../src/game/native-campaign';
 import { BUILD_MIN } from '../src/game/grid';
+import { inSweeperRange } from '../src/game/air-sweeper';
 
 const root = new URL('../reference/campaign/', import.meta.url);
 const read = (name: string) => fs.readFileSync(new URL(name, root), 'utf8');
@@ -128,4 +129,25 @@ it('preserves the pinned campaign names, stage order, and unlock graph in the ru
       name: string; stage: number; dependencies: number[]; nativeRows: { AlwaysUnlocked?: string }[];
     }) => ({ name, stage, dependencies, alwaysUnlocked: nativeRows[0].AlwaysUnlocked === 'TRUE' })),
   );
+});
+
+it('uses the retained active aim angle for every Campaign Air Sweeper', () => {
+  let placements = 0;
+  for (const layout of layouts) {
+    const rows = layout.buildings.filter((b: { data: number }) => b.data === 1000028);
+    if (!rows.length) continue;
+    const sweepers = nativeBuildings(layout.stage - 1).filter((b) => b.kind === 'airsweeper');
+    expect(sweepers.map((b) => [b.x - BUILD_MIN, b.y - BUILD_MIN, b.direction])).toEqual(
+      rows.map((b: { x: number; y: number; aim_angle: number }) => [b.x, b.y, b.aim_angle / 45]),
+    );
+    placements += sweepers.length;
+  }
+  expect(placements).toBe(71);
+});
+
+it('covers the authored approach to Burning Sensation but leaves the opposite lane open', () => {
+  const tower = nativeBuildings(60).find((b) => b.kind === 'airsweeper')!;
+  expect(inSweeperRange(tower, { x: tower.x + 1, y: tower.y - 6 })).toBe(true);
+  expect(inSweeperRange(tower, { x: tower.x + 1, y: tower.y + 8 })).toBe(false);
+  expect(inSweeperRange(tower, { x: tower.x + 8, y: tower.y + 1 })).toBe(false);
 });

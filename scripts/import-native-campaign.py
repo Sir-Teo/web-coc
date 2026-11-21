@@ -206,8 +206,11 @@ runtime = dict(stages=[dict(stage=s['stage'], name=s['name'], family=s['family']
                            # Inferno false mode flags and ammo are meaningful, not inactive metadata.
                            infernoStates=[b for b in v['buildings'] if b['data'] == 1000027],
                            # Keep active mode fields explicit; unsupported modes cannot silently vanish.
-                           activeModes=[b for b in v['buildings'] + v['traps']
-                                        if any(b.get(k) for k in ['attack_mode', 'air_mode', 'dir', 'direction'])],
+                           activeModes=[{k: b[k] for k in ['data', 'x', 'y', 'lvl', 'aim_angle']}
+                                        if b['data'] == 1000028 and 'aim_angle' in b else b
+                                        for b in v['buildings'] + v['traps']
+                                        if (b['data'] == 1000028 and 'aim_angle' in b) or
+                                        any(b.get(k) for k in ['attack_mode', 'air_mode', 'dir', 'direction'])],
                            # Late campaign weapons, ammunition and bunker modes. Only the current
                            # single-player selection is kept; war/draft alternatives are excluded.
                            lateStates=[{k: b[k] for k in LATE_STATE_FIELDS if k in b}
