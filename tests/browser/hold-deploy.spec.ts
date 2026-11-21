@@ -219,6 +219,46 @@ test('a rapid second map tap deploys four troops with one tray refresh', async (
 test.describe('battle map multitouch', () => {
   test.use({ hasTouch: true, isMobile: true });
 
+  test('rotation breaks a rapid deployment sequence before the next touch', async ({ page }) => {
+    await page.setViewportSize({ width: 568, height: 320 });
+    await startDeployment(page);
+    await page.evaluate(() => {
+      window.__game.scene.paused = true;
+      const now = performance.now();
+      Object.defineProperty(performance, 'now', { value: () => now, configurable: true });
+    });
+    const first = await page.evaluate(() => {
+      const { scene, model, game } = window.__game;
+      for (let y = 176; y < 195; y += 4)
+        for (let x = 170; x <= 400; x += 4) {
+          if (document.elementFromPoint(x, y) !== game.canvas) continue;
+          const tile = scene.gridAtScreen(x, y);
+          if (!model.deployBlocked(tile.x, tile.y)) return { x, y, tile };
+        }
+      throw Error('No exposed grass between the scouting HUD and the tray');
+    });
+    await page.touchscreen.tap(first.x, first.y);
+    const remaining = () =>
+      page.evaluate(() => window.__game.model.battle!.remaining.swordsman);
+    expect(await remaining()).toBe(39);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForFunction(() => {
+      const { game, scene } = window.__game;
+      return game.canvas.getBoundingClientRect().width === 390 &&
+        scene.cameraViewport.width === scene.cameras.main.width;
+    });
+    const next = await page.evaluate(({ x, y }) => {
+      const { scene, game } = window.__game;
+      scene.cameras.main.preRender();
+      const p = scene.screenFor(x, y);
+      if (document.elementFromPoint(p.x, p.y) !== game.canvas)
+        throw Error('The original tile is covered after rotation');
+      return p;
+    }, first.tile);
+    await page.touchscreen.tap(next.x, next.y);
+    expect(await remaining()).toBe(38);
+  });
+
   test('a two-finger gesture interrupts rapid deployment without spending troops', async ({
     page,
     browserName,

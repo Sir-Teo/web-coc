@@ -1345,7 +1345,6 @@ export class VillageScene extends Phaser.Scene {
     this.resetCamera();
     const onResize = () => {
       this.resourceFlights.clear();
-      this.fling.stop();
       this.resizeCamera();
     };
     this.scale.on('resize', onResize);
@@ -2719,7 +2718,8 @@ export class VillageScene extends Phaser.Scene {
     this.clampCamera();
   }
   private resizeCamera() {
-    this.model.endDrag(true);
+    // A new viewport invalidates both a held press and a pending rapid tap.
+    this.cancelMapGesture();
     const c = this.cameras.main;
     // Phaser has resized the viewport, but scroll still refers to its previous size.
     const x = c.scrollX + this.cameraViewport.width / 2;
@@ -2737,10 +2737,6 @@ export class VillageScene extends Phaser.Scene {
       c.centerOn(x, y);
       this.clampCamera();
     }
-    // A pointer's old screen coordinates no longer describe the resized playfield.
-    this.down = undefined;
-    this.gesture = 'none';
-    this.pinchDistance = 0;
     this.ghostPoint = undefined;
     // Reproject the last DOM position into the new buffer for a stationary cursor.
     const pointer = this.input.activePointer;
