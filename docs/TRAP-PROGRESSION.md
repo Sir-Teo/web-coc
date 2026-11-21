@@ -73,3 +73,13 @@ All four traps place immediately, without a free builder, as described by the [B
 Combat version 9 identifies these trap and stun changes. Older summaries remain readable; incompatible replays do not play under new rules. Tests cover exact resource boundaries, occupied builders, save/reload timers, every accepted damage tier, blast edges, vertical stun, half hero damage, healing during stun, battle-end cancellation, and browser placement/upgrade/presentation flows. Campaign viability and replay reproduction remain required.
 
 Still missing: per-level trap art, full trap roster, live asynchronous defensive re-arming, native flight/knockback measurements and physical-device comparison. This is a local battle implementation, not complete native parity.
+
+## Campaign Giant Bomb pushback
+
+The pinned Giant Bomb rows specify one tile of pushback with a three-space
+housing limit. Home Village battle rules already read these fields. The
+Campaign and lesson adapter previously dropped them for all 363 retained
+Giant Bomb placements. Recordings from version 301 apply the same
+wall-limited push to surviving eligible ground troops. The ground trigger,
+damage, blast radius and fuse still use their existing values. Version 300
+and older recordings keep their original positions and outcomes.

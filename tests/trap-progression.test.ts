@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { emptyArmy, emptySpells } from '../src/game/army';
+import { nativeBuildings } from '../src/game/native-campaign';
+import { nativeTrapValues } from '../src/game/native-traps';
 import { fundedVillage } from './fixtures/funded-village';
 import {
   BUILDINGS,
@@ -356,6 +358,50 @@ it.each([
     for (const unit of [outside, air, burrowed]) expect(unit.hp).toBe(unit.maxHp);
   },
 );
+
+it.each([300, 301])('keeps Rolling Terror’s Giant Bomb layer and housing limits in replay %i', (version) => {
+  const trap = nativeBuildings(46).find((b) => b.id === 1185)!;
+  const source = nativeTrapValues('giantbomb', trap.level);
+  expect(source).toMatchObject({ ground: true, air: false, pushback: 1, pushbackHousing: 3 });
+  const { b: template, u } = arena('giantbomb', 1);
+  const b = replayBattle({
+    index: 46,
+    catalog: 'goblin-v1',
+    practice: false,
+    buildings: [trap],
+    army: emptyArmy(),
+    spells: emptySpells(),
+    troopLevels: template.troopLevels,
+    nextId: 9004,
+  }, version);
+  b.started = true;
+  const x = trap.x + 1.5, y = trap.y + 1;
+  const flyer: Unit = { ...u, id: 9001, kind: 'dragon', x, y };
+  const giant: Unit = { ...u, id: 9002, kind: 'giant', x, y };
+  const small: Unit = { ...u, id: 9003, kind: 'swordsman', x, y };
+  b.units = [flyer];
+  b.elapsed = 0.05;
+  stepTraps(b, 0.05, () => {});
+  expect(b.traps[trap.id]).toBeUndefined();
+
+  b.units.push(giant, small);
+  b.elapsed = 0.1;
+  stepTraps(b, 0.05, () => {});
+  expect(b.traps[trap.id].targetId).toBe(giant.id);
+  b.elapsed += trapStats('giantbomb', trap.level)!.delay;
+  stepTraps(b, 0.05, () => {});
+  expect(b.traps[trap.id].resolved).toBe(true);
+  expect(small.hp).toBe(small.maxHp - source.damage);
+  expect(giant.hp).toBe(giant.maxHp - source.damage);
+  expect(flyer.hp).toBe(flyer.maxHp);
+  expect(giant.airPush).toBeUndefined();
+  expect(flyer.airPush).toBeUndefined();
+  if (version === 300) expect(small.airPush).toBeUndefined();
+  else {
+    expect(small.airPush).toMatchObject({ y: 0, remaining: 0.3 });
+    expect(small.airPush!.x * small.airPush!.remaining).toBeCloseTo(source.pushback);
+  }
+});
 
 it('Giant Bomb radius grows at levels 2 and 4', () => {
   expect([1, 2, 3, 4, 5].map((level) => trapStats('giantbomb', level)!.radius)).toEqual([
