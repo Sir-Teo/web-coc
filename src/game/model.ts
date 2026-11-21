@@ -1220,6 +1220,7 @@ export interface Battle {
   /** Version 216: render physical contact before a phased attack starts its next charge. */
   nativeAttackContactPose?: true;
   /** Version 217: spell-created Bats spend source melee charge and recovery. */
+  nativeSpellSummonGarrisonImmunity?: true;
   nativeSpellBatWindup?: true;
   /** Version 218: both Skeleton Spell bodies spend source melee phases. */
   nativeSpellSkeletonWindup?: true;

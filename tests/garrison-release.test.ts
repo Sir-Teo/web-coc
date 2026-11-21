@@ -1,11 +1,13 @@
 import { expect, it } from 'vitest';
+import { freshNativeCampaign } from '../src/game/native-campaign';
 import { GameModel, makeBuilding, type Unit } from '../src/game/model';
 import {
   initializeGarrison,
   stepGarrisonReleases,
   type GarrisonSetup,
 } from '../src/game/garrison-release';
-import { validateReplay } from '../src/game/replay';
+import { REPLAY_VERSION, replayBattle, validateReplay } from '../src/game/replay';
+import { nativeUnitRow } from '../src/game/native-units';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import { wizardTowerVillage } from './fixtures/wizard-tower-battle';
 
@@ -156,3 +158,60 @@ it('does not export unknown fields attached to imported garrison data', () => {
   Object.assign(replay.initial.garrisons![0].troops[0], { privateMemo: 'omit me too' });
   expect(JSON.stringify(makeReplayFile(replay))).not.toContain('privateMemo');
 });
+
+for (const spell of ['bat', 'skeleton'] as const) {
+  it(`keeps the Campaign reserve closed for ${spell} summons until an eligible troop arrives`, () => {
+    const save = wizardTowerVillage();
+    save.spells = { ...save.spells, [spell]: 1 };
+    save.nativeCampaign = freshNativeCampaign();
+    save.nativeCampaign.stars.fill(3, 0, 56);
+    const m = new GameModel(save);
+    m.startCampaign(56);
+    const battle = m.battle!;
+    const reserve = battle.garrisons![0];
+    const castle = battle.buildings.find((building) => building.id === reserve.castleId)!;
+    m.activeSpell = spell;
+    expect(m.castSpell(castle.x + 1.5, castle.y + 1.5)).toBe(true);
+    for (let tick = 0; tick < 60; tick++) m.step(0.05);
+    expect(
+      battle.units.some(
+        (unit) => unit.kind === (spell === 'bat' ? 'spellbat' : 'spellskeletonshielded'),
+      ),
+    ).toBe(true);
+    expect(reserve.released).toBe(0);
+    const spot = Array.from({ length: 81 }, (_, index) => ({
+      x: castle.x + 1.5 + (index % 9) - 4,
+      y: castle.y + 1.5 + Math.floor(index / 9) - 4,
+    })).find(({ x, y }) => !m.deployBlocked(x, y));
+    expect(spot).toBeDefined();
+    m.activeSpell = null;
+    m.activeTroop = 'giant';
+    expect(m.deploy(spot!.x, spot!.y)).toBe(true);
+    for (let tick = 0; tick < 60; tick++) m.step(0.05);
+    expect(reserve.released).toBeGreaterThan(0);
+    const snapshot = structuredClone(battle);
+    m.step(0.05);
+    m.finishBattle();
+    const replay = m.state.raidLog![0].replay!;
+    const viewer = new GameModel();
+    expect(viewer.openReplay(replay)).toBe(true);
+    viewer.seekReplay(snapshot.elapsed);
+    while (viewer.replay!.seeking) viewer.step(0.05);
+    expect(viewer.battle).toEqual(snapshot);
+  });
+}
+
+for (const kind of ['spellbat', 'spellskeletonshielded', 'spellskeleton'] as const) {
+  it(`honors pinned DoesNotOpenCC for ${kind} while preserving version 290`, () => {
+    expect(nativeUnitRow(kind)).toMatchObject({ DoesNotOpenCC: 'TRUE', TriggersTraps: 'FALSE' });
+    const { initial } = record();
+    initial.spells[kind === 'spellbat' ? 'bat' : 'skeleton'] = 1;
+    for (const version of [290, REPLAY_VERSION]) {
+      const battle = replayBattle(initial, version);
+      battle.units = [{ ...target(), kind }];
+      battle.elapsed = 1;
+      stepGarrisonReleases(battle);
+      expect(battle.garrisons![0].released > 0).toBe(version === 290);
+    }
+  });
+}

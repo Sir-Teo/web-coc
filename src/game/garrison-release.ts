@@ -63,6 +63,13 @@ export function stepGarrisonReleases(battle: Battle) {
   const targets: GarrisonTarget[] = [];
   for (const unit of battle.units)
     if (
+      // Pinned DoesNotOpenCC applies to the Bat and both phases of the spell Skeleton.
+      !(
+        battle.nativeSpellSummonGarrisonImmunity &&
+        (unit.kind === 'spellbat' ||
+          unit.kind === 'spellskeletonshielded' ||
+          unit.kind === 'spellskeleton')
+      ) &&
       unit.kind !== 'booger' &&
       unit.kind !== 'frostmite' &&
       !nativeMiteJump(battle, unit.kind) &&

@@ -59,3 +59,12 @@ read-only rendering. `tests/browser/attacking-spell-skeleton-windup.spec.ts` che
 complete Node/browser states, original meshes, contacts, historical imports,
 reverse seeks, assets and WebGL health on phone and desktop. Screenshots go to
 ignored `output/playtest/`.
+
+### Clan Castle release eligibility
+
+The pinned 18.400.21 character rows give `DoesNotOpenCC=TRUE` to Spell Bat,
+Spell Shielded Skeleton, and Spell Unshielded Skeleton. All three also set
+`TriggersTraps=FALSE`, a separate eligibility rule. Recording version 291
+excludes these summons from the reserve's trigger search. An eligible army
+unit can still pull the reserve in the same raid. Earlier recordings retain
+their original release behavior.
