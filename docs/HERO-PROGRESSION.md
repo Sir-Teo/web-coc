@@ -26,6 +26,12 @@ The initial combat estimates have been superseded by [KING-COMBAT.md](KING-COMBA
 
 Build the Hero Hall at TH4 to unlock a level-1 Barbarian King. Army → Heroes opens his panel. In an attack, select his card or press H, then tap clear ground outside the red boundary. Once deployed, tap his card or press H to activate both default items from TH4. They restore a fixed amount of health, grant 10 seconds of enhanced movement and damage to the King, and summon eight boosted Barbarians in two waves. Automatic activation occurs on lethal damage if the items are unused. Both items activate once per attack. Summons do not consume army housing or alter deployed-troop records.
 
+Before building a Blacksmith, the King's equipped items can be inspected
+from the Hero Hall. Barbarian Puppet shows the summon count and level rule.
+Rage Vial shows its damage bonus, movement bonus, and duration. These
+values come from the same pinned ability rows used in battle. The Details
+table is Web CoC's presentation.
+
 The King uses a shared portrait identity and four directional idle/walk/attack sets; see [KING-ART.md](KING-ART.md). The King is separate from the camp army and can attack alone. Defeat never removes him from the village; each fresh attack restores his health and ability. Practice uses the same deployment and combat rules while preserving home troops, spells, and resources. Result history records the hero level and whether his ability was used. Spring Traps deal half damage to heroes and cannot eject them.
 
 At TH7, build a Dark Elixir Drill and Storage. Drills use the pinned per-level production and internal capacity tables, pause while upgrading, and credit elapsed offline production until full (see [collector catch-up](TOWNHALL-TIERS.md#offline-collector-catch-up-november-17-2026)). Storage provides 10,000 capacity per level; uncollectable overflow remains in the drill. Hero upgrades consume dark elixir, occupy one builder, disable deployment while upgrading, and complete once even after reload. Gems can finish an upgrade immediately. The local King cap is 1 before TH7, 10 at TH7/Hero Hall 1, 20 at TH8/Hero Hall 2, 30 at TH9/Hero Hall 3 and 110 at TH18/Hero Hall 12.

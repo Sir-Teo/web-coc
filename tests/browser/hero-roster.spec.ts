@@ -894,3 +894,42 @@ test.describe('phone Quick Army hero readiness', () => {
     ]);
   });
 });
+
+test.describe('first King equipment', () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  test('default equipment explains the summon and rage before the Blacksmith unlocks', async ({
+    page,
+  }) => {
+    await boot(page);
+    await page.evaluate(async () => {
+      const { makeBuilding } = await import('/src/game/model.ts');
+      const { model } = window.__game;
+      model.townhall!.level = 4;
+      model.state.buildings.push(makeBuilding(model.state.nextId++, 'herohall', 30, 20));
+      model.tick(model.clock);
+      model.changed();
+    });
+    await page.getByRole('button', { name: 'Barbarian King, level 1' }).tap();
+    await page
+      .locator('[data-hero="king"] .hero-ability')
+      .filter({ hasText: 'Barbarian Puppet' })
+      .getByRole('button', { name: 'View equipment' })
+      .tap();
+    const puppet = page.getByRole('region', { name: 'Barbarian Puppet details' });
+    await expect(puppet.getByRole('row', { name: 'Barbarians summoned 8' })).toBeVisible();
+    await expect(
+      puppet.getByRole('row', { name: 'Summoned Barbarian level Matches your Barbarian level' }),
+    ).toBeVisible();
+    await expect(page.locator('.equipment-locked')).toContainText(
+      'Your default equipment is ready for battle',
+    );
+    await page.getByRole('button', { name: 'Slot 2: Rage Vial, level 1' }).tap();
+    const vial = page.getByRole('region', { name: 'Rage Vial details' });
+    await expect(vial.getByRole('row', { name: 'Damage boost +120%' })).toBeVisible();
+    await expect(
+      vial.getByRole('row', { name: 'Movement speed boost +2.25 tiles/s' }),
+    ).toBeVisible();
+    await expect(vial.getByRole('row', { name: 'Duration 10s' })).toBeVisible();
+  });
+});
