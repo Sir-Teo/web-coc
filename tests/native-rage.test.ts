@@ -17,6 +17,7 @@ import { createGuardian, guardianStats, stepGuardian } from '../src/game/native-
 import { skeletonStats } from '../src/game/skeleton-stats';
 import { defenderRageStats } from '../src/game/native-rage';
 import { activeBoost } from '../src/game/native-boost';
+import { unitStatusTint } from '../src/game/unit-status-tint';
 import type { NativeTroopContext } from '../src/game/native-troops';
 import { nativeRageRecording } from './fixtures/native-rage';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
@@ -156,11 +157,15 @@ it('does not prolong a departed Rage Spell while a weaker Rage Gem keeps pulsing
   castNativeSpell(battle, 'Rage Gem Aura', 1, 'attack', 10, 10);
   step(rage.firstHit + 0.1);
   expect(unitDamageScale(u, battle.elapsed)).toBe(2.3);
+  expect(unitStatusTint(u, battle)?.color).toBe(0xf2b3ff);
   u.x = 17;
+  step(rage.firstHit + 0.9);
+  expect(unitStatusTint(u, battle)?.color).toBe(0xf2b3ff);
   step(rage.firstHit + 1.05);
   expect(unitDamageScale(u, battle.elapsed)).toBe(1.15);
   expect(unitSpeedBonus(u, battle.elapsed)).toBe(0);
   const before = JSON.stringify(battle);
+  expect(unitStatusTint(u, battle)?.color).toBe(0xffbd76);
   activeBoost(u.native!.effects!.boost, battle.elapsed);
   expect(JSON.stringify(battle)).toBe(before);
 });

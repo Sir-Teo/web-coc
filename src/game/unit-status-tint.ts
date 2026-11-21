@@ -31,7 +31,7 @@ const tints = {
  */
 export function unitStatusTint(
   u: Unit,
-  battle: Pick<Battle, 'elapsed' | 'hero'>,
+  battle: Pick<Battle, 'elapsed' | 'hero' | 'nativeSpellCastHistory'>,
   rampage = false,
 ): UnitStatusTint | undefined {
   const at = battle.elapsed;
@@ -53,11 +53,21 @@ export function unitStatusTint(
     (frost && frost.until > at && frost.scale < 1)
   )
     return tints.frozen;
-  if ((u.spellRageUntil ?? 0) > at) return tints.spellRage;
+  const boost = e?.boost;
+  const sources = boost?.sources;
+  if (
+    (u.spellRageUntil ?? 0) > at ||
+    (sources &&
+      (boost?.until ?? 0) > at + 1e-9 &&
+      battle.nativeSpellCastHistory?.some(
+        (cast) => cast.name === 'Rage' && (sources[`spell:${cast.id}`]?.until ?? 0) > at + 1e-9,
+      ))
+  )
+    return tints.spellRage;
   if (
     (u.hero && (battle.hero?.rageUntil ?? 0) > at) ||
     (u.summoned && (u.rageUntil ?? 0) > at) ||
-    (e?.boost?.until ?? 0) > at ||
+    (boost?.until ?? 0) > at ||
     (rampage && !!e?.rampage)
   )
     return tints.rage;

@@ -13,7 +13,7 @@ async function seek(page: Page, at: number) {
     const defender = b.defenders?.find((d) => d.id === r.defenderId);
     const { unitDamageScale, unitSpeedBonus } = await import('/src/game/native-status.ts');
     const { activeBoost } = await import('/src/game/native-boost.ts');
-    const { defenderStatusTint } = await import('/src/game/unit-status-tint.ts');
+    const { defenderStatusTint, unitStatusTint } = await import('/src/game/unit-status-tint.ts');
     const { iso } = await import('/src/game/scene.ts');
     const p = iso(subject.x + 1, subject.y);
     scene.cameras.main.setZoom(innerWidth === 390 ? 0.85 : 1.4).centerOn(p.x, p.y - 40);
@@ -24,6 +24,7 @@ async function seek(page: Page, at: number) {
       hp: subject.hp,
       defenseBoost: defender ? activeBoost(defender.boost, b.elapsed) : undefined,
       tint: defender ? defenderStatusTint(defender, b.elapsed)?.color : undefined,
+      attackerTint: unitStatusTint(subject, b)?.color,
     };
   }, at);
 }
@@ -76,11 +77,13 @@ for (const { mode, width } of [
     } else {
       expect(boosted.damage).toBeCloseTo(2.3, 12);
       expect(boosted.speed).toBe(1.25);
+      expect(boosted.attackerTint).toBe(0xf2b3ff);
     }
     const later = await seek(page, r.later);
     if (mode === 'aura') {
       expect(later.damage).toBeCloseTo(1.15, 12);
       expect(later.speed).toBe(0);
+      expect(later.attackerTint).toBe(0xffbd76);
     }
     await page.screenshot({ path: `output/playtest/native-rage-${mode}-${width}.png` });
     if (r.expired !== undefined) {
