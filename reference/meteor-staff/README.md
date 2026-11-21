@@ -46,6 +46,15 @@ recordings use actual Invisibility inputs, with the building already hidden befo
 and inspect complete forward/backward snapshots. Browser checks cover desktop and phone,
 historical selectors, health changes, original Hero bodies and read-only reduced-motion redraws.
 
+## Version 289 Campaign targets
+
+The Staff's own `CastSpellTarget=Defense` rule now includes ready Campaign
+weapons with [the retained Defense class](../late-goblin-buildings/README.md#interpretations).
+In Dragon's Lair, that lets the meteor choose the nearer Goblin Hall after the
+Hall arms. A dormant Hall stays in the ordinary-building fallback pool.
+Visibility rules, spell timing and other abilities' selectors stay as before.
+Version 288 and earlier keep their original Staff target selection.
+
 ## Version 142 original presentation
 
 The [effect index](effects.json) records source fingerprints, every original phase, the impact

@@ -4,8 +4,42 @@ import { heroAbilities } from '../src/game/native-heroes';
 import { seconds } from '../src/game/native-data';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import { meteorStaffBattle, meteorStaffRecording } from './fixtures/meteor-staff';
+import { lateGoblinReplay } from './fixtures/late-goblin-battle';
+import { lateActivatedDefense } from '../src/game/late-campaign';
+import { meteorStaffTarget } from '../src/game/native-meteor-staff';
+import { REPLAY_VERSION, replayBattle } from '../src/game/replay';
 
 const meteors = (b: Battle) => b.nativeSpells?.filter((c) => c.name === 'MPMeteorStaffSpell') ?? [];
+
+it.each([
+  { version: 288, target: { x: 36, y: 8 } },
+  { version: REPLAY_VERSION, target: { x: 39, y: 9 } },
+])('Meteor Staff applies the armed Hall rule for recording $version', ({ version, target }) => {
+  const data = lateGoblinReplay(74, [], { version, steps: 140, scenery: false });
+  data.initial.army.archer = 1;
+  data.initial.heroes = [
+    { kind: 'prince', level: 80, items: [{ slug: 'meteor-staff', level: 27 }] },
+  ];
+  data.actions.unshift({ step: 0, type: 'hero', hero: 'prince', x: 39, y: 5 });
+  const live = new GameModel();
+  live.state.nextId = data.initial.nextId;
+  live.state.army = { ...data.initial.army };
+  const battle = (live.battle = replayBattle(data.initial, version));
+  expect(live.deployNativeHero('prince', 39, 5)).toBe(true);
+  const hall = battle.buildings.find((b) => b.npc === 'goblin-hall' && b.level === 2)!;
+  expect(lateActivatedDefense(battle, hall)).toBe(false);
+  expect(meteorStaffTarget(battle, battle.units[0], 0)?.kind).toBe('inferno');
+
+  while (battle.elapsed < 5.05 - 1e-9) live.step(0.05);
+  expect(lateActivatedDefense(battle, hall)).toBe(true);
+  expect(meteors(battle)[0]).toMatchObject(target);
+
+  const replay = new GameModel();
+  expect(replay.openReplay(parseReplayFile(JSON.stringify(makeReplayFile(data))))).toBe(true);
+  replay.seekReplay(battle.elapsed);
+  while (replay.replay!.seeking) replay.step(0.05);
+  expect(replay.battle).toEqual(battle);
+});
 const hold = (r: ReturnType<typeof meteorStaffBattle>) => {
   r.unit.native!.effects = { frozenUntil: 100 };
   return r;

@@ -1,4 +1,5 @@
 import { preferredDefense } from './native-defense-preference';
+import { lateActivatedDefense } from './late-campaign';
 import { targetableBuilding } from './hidden-tesla';
 import { distanceTo, type Battle, type Building, type Unit } from './model';
 
@@ -9,7 +10,10 @@ export function meteorStaffTarget(battle: Battle, unit: Unit, at: number) {
     distance = Infinity;
   for (const building of battle.buildings) {
     if (building.kind === 'wall' || !targetableBuilding(battle, building)) continue;
-    const preferred = preferredDefense(battle, building, at),
+    const preferred =
+        preferredDefense(battle, building, at) ||
+        (!!battle.nativeMeteorStaffArmedCampaignTargets &&
+          lateActivatedDefense(battle, building, at)),
       next = distanceTo(unit, building);
     if (
       !nearest ||
