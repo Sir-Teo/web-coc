@@ -1360,17 +1360,23 @@ export class VillageScene extends Phaser.Scene {
       [...CAMERA_KEYS.map((k) => k.toUpperCase()), 'UP', 'DOWN', 'LEFT', 'RIGHT'].join(','),
       false,
     ) as Record<string, Phaser.Input.Keyboard.Key>;
+    const pinchDistance = (first: Phaser.Input.Pointer, second: Phaser.Input.Pointer) =>
+      Math.hypot(
+        (first.x - second.x) / this.scale.displayScale.x,
+        (first.y - second.y) / this.scale.displayScale.y,
+      );
     const onPointerDown = (p: Phaser.Input.Pointer) => {
       // A finger on the map catches a gliding camera; a second one makes the gesture a pinch,
       // which clears the pan's samples so it ends without momentum.
       this.fling.stop();
       if (this.uiBlocked || this.contextGone()) return;
-      if (
-        p.wasTouch &&
-        this.input.manager.pointers.some((other) => other !== p && other.isDown && other.wasTouch)
-      ) {
-        // The second contact consumes the tap even if both fingers lift before moving.
+      const otherTouch = p.wasTouch
+        ? this.input.manager.pointers.find((other) => other !== p && other.isDown && other.wasTouch)
+        : undefined;
+      if (otherTouch) {
+        // Consume the tap and measure the spread before the first move samples it.
         cancelGesture();
+        this.pinchDistance = pinchDistance(otherTouch, p);
         return;
       }
       // Pointer input takes over from the keyboard map cursor.
@@ -1421,12 +1427,7 @@ export class VillageScene extends Phaser.Scene {
       const pointers = this.input.manager.pointers.filter((v) => v.isDown);
       if (pointers.length >= 2) {
         this.model.endDrag(true);
-        const dist = Phaser.Math.Distance.Between(
-          pointers[0].x / this.scale.displayScale.x,
-          pointers[0].y / this.scale.displayScale.y,
-          pointers[1].x / this.scale.displayScale.x,
-          pointers[1].y / this.scale.displayScale.y,
-        );
+        const dist = pinchDistance(pointers[0], pointers[1]);
         // Zoom about the pinch midpoint so the content between the fingers stays put.
         if (this.pinchDistance)
           this.zoomAt(

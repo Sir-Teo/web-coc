@@ -13,6 +13,51 @@ async function camera(page: Page) {
   });
 }
 
+test.describe('first-run touch zoom', () => {
+  test.use({ hasTouch: true, isMobile: true });
+
+  for (const [width, height] of [
+    [390, 844],
+    [568, 320],
+  ]) {
+    test(`the first pinch move changes zoom with coaching visible at ${width}×${height}`, async ({
+      page,
+      context,
+      browserName,
+    }) => {
+      test.skip(browserName !== 'chromium', 'Multi-touch injection requires CDP.');
+      await page.setViewportSize({ width, height });
+      await page.goto('/?lazyart');
+      await expect(page.locator('#loading')).toBeHidden({ timeout: 30000 });
+      const coach = page.locator('.coach-banner');
+      await expect(coach).toContainText('Goblins are raiding');
+      const midpoint = await page.evaluate(() => {
+        const canvas = window.__game.game.canvas;
+        for (let y = 50; y < innerHeight - 45; y++)
+          for (const x of [innerWidth / 2, innerWidth / 2 - 44, innerWidth / 2 + 44])
+            if (
+              [-95, -35, 35, 95].every((offset) => document.elementFromPoint(x + offset, y) === canvas)
+            )
+              return { x, y };
+        throw new Error('No unblocked two-finger gesture area');
+      });
+      const cdp = await context.newCDPSession(page);
+      const points = (spread: number) =>
+        [-spread, spread].map((offset, id) => ({ x: midpoint.x + offset, y: midpoint.y, id }));
+      const before = await camera(page);
+
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: points(35) });
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: points(95) });
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+
+      const after = await camera(page);
+      expect(after.zoom).toBeCloseTo(before.zoom * 2, 4);
+      await expect(coach).toContainText('Goblins are raiding');
+      expect(await page.evaluate(() => window.__game.model.selected)).toBeNull();
+    });
+  }
+});
+
 test('terrain covers every canvas edge through zoom, pan, aspect changes and battles', async ({
   page,
 }) => {

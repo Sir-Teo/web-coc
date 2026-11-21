@@ -304,12 +304,11 @@ test.describe('3x touch gestures', () => {
               ],
       });
     await touch('touchStart', 145, 245);
-    // The first movement establishes the pinch's starting distance.
     await touch('touchMove', 140, 250);
     await touch('touchMove', 110, 280);
     await touch('touchEnd', 0, 0);
     const after = await view(page);
-    expect(after.zoom).toBeCloseTo((before.zoom * 170) / 110, 5);
+    expect(after.zoom).toBeCloseTo((before.zoom * 170) / 100, 5);
     // Zoom anchors at the pinch midpoint (195, 430 CSS): the world point there stays put.
     const mid = await page.evaluate(() => {
       const r = window.__game.game.canvas.getBoundingClientRect();
