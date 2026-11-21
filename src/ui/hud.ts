@@ -1,5 +1,5 @@
 import { resourceBuildingPortrait } from './resource-building-art';
-import { rosterIcon } from './roster-art';
+import { heroRosterIcon, rosterIcon } from './roster-art';
 import { eternalTomeRemaining } from './eternal-tome-feedback';
 import { siegeCargoCapacity, type SiegeCargoEntry } from '../game/siege-cargo';
 import { armyFromLink, armyLink, decodeSharedArmy } from '../game/army-share';
@@ -4266,7 +4266,7 @@ export class HUD {
                   : 'Ability used'
               : 'Activate ability';
     const selected = m.activeHeroKind === hero.kind;
-    return `<button class="troop-card hero-card${tome ? ' tome-active' : ''} ${selected ? 'selected' : ''}" data-hero-state="${hero.kind}:${ready}:${defeated}:${!!hero.abilityUsed}:${selected}${pending ? '|reviving' : ''}${phoenixLife === undefined ? '' : '|phoenix'}|tome:${!!tome}|revive:${reviveReady}|key:${hotkey}" data-action="hero-select:${hero.kind}" aria-label="${name}, ${tome ? `Eternal Tome active, ${tome} seconds remaining` : label}" ${disabled ? 'disabled' : ''}>${hotkey ? '<kbd class="troop-key">H</kbd>' : ''}<img src="${heroPortrait(hero.kind)}" alt=""><span class="troop-level">★ ${hero.level}</span><span class="hero-health"><i style="width:${phoenixLife !== undefined ? pct(phoenixLife * 100) : unit ? pct((unit.hp / unit.maxHp) * 100) : '100%'}${phoenixLife === undefined ? '' : ';background:#fff2bf'}"></i></span><span class="troop-name">${label}</span></button>`;
+    return `<button class="troop-card hero-card${tome ? ' tome-active' : ''} ${selected ? 'selected' : ''}" data-hero-state="${hero.kind}:${ready}:${defeated}:${!!hero.abilityUsed}:${selected}${pending ? '|reviving' : ''}${phoenixLife === undefined ? '' : '|phoenix'}|tome:${!!tome}|revive:${reviveReady}|key:${hotkey}" data-action="hero-select:${hero.kind}" aria-label="${name}, ${tome ? `Eternal Tome active, ${tome} seconds remaining` : label}" ${disabled ? 'disabled' : ''}>${hotkey ? '<kbd class="troop-key">H</kbd>' : ''}<img src="${heroRosterIcon(hero.kind)}" alt=""><span class="troop-level">★ ${hero.level}</span><span class="hero-health"><i style="width:${phoenixLife !== undefined ? pct(phoenixLife * 100) : unit ? pct((unit.hp / unit.maxHp) * 100) : '100%'}${phoenixLife === undefined ? '' : ';background:#fff2bf'}"></i></span><span class="troop-name">${label}</span></button>`;
   }
   /** Home village tray: the saved lineup with levels; opens the Hero Hall. */
   private rosterCards() {
@@ -4303,7 +4303,7 @@ export class HUD {
         : h!.abilityUsed
           ? 'Ability used'
           : 'Activate ability';
-    return `<button class="troop-card hero-card ${m.activeHero ? 'selected' : ''}" data-hero-state="${ready}:${defeated}:${h!.abilityUsed}:${m.activeHero}" data-action="hero-select" aria-label="Barbarian King, ${label}" ${disabled ? 'disabled' : ''}><kbd class="troop-key">H</kbd><img src="${hudAsset('king')}" alt=""><span class="troop-level">★ ${h!.level}</span><span class="hero-health"><i style="width:${u ? pct((u.hp / u.maxHp) * 100) : '100%'}"></i></span><span class="troop-name">${label}</span></button>`;
+    return `<button class="troop-card hero-card ${m.activeHero ? 'selected' : ''}" data-hero-state="${ready}:${defeated}:${h!.abilityUsed}:${m.activeHero}" data-action="hero-select" aria-label="Barbarian King, ${label}" ${disabled ? 'disabled' : ''}><kbd class="troop-key">H</kbd><img src="${heroRosterIcon('king')}" alt=""><span class="troop-level">★ ${h!.level}</span><span class="hero-health"><i style="width:${u ? pct((u.hp / u.maxHp) * 100) : '100%'}"></i></span><span class="troop-name">${label}</span></button>`;
   }
   /** The client's builder menu: work under way, then suggested and other upgrades. */
   private builderMenu() {

@@ -3,7 +3,8 @@ import catalog from '../reference/full-client/roster.json';
 import { SPELL_KEYS, TROOP_KEYS, asset } from '../src/game/data';
 import { TROOP_SOURCE } from '../src/game/native-units';
 import { SPELL_NAMES } from '../src/game/troop-progression';
-import { rosterIcon } from '../src/ui/roster-art';
+import { HERO_KINDS, HERO_SOURCE, heroPortraitImage } from '../src/game/native-hero-data';
+import { heroRosterIcon, rosterIcon } from '../src/ui/roster-art';
 
 describe('standalone roster artwork', () => {
   it('binds every player troop and spell to its pinned UI export', () => {
@@ -16,6 +17,17 @@ describe('standalone roster artwork', () => {
         expect(source, kind).toMatchObject({ source: 'sc/ui.sc', frame: 0 });
         expect(rosterIcon(kind), kind).toBe(`/${source!.path}`);
       }
+    }
+  });
+
+  it('binds all six battle hero cards to standalone UI exports', () => {
+    for (const kind of HERO_KINDS) {
+      const source = catalog.portraits.find(
+        (p) => p.category === 'hero' && p.name === HERO_SOURCE[kind],
+      );
+      expect(source, kind).toMatchObject({ source: 'sc/ui.sc', frame: 0 });
+      expect(heroRosterIcon(kind), kind).toBe(`/${source!.path}`);
+      expect(heroRosterIcon(kind), kind).not.toBe(heroPortraitImage(kind));
     }
   });
 

@@ -116,3 +116,48 @@ test('scouting lists pinned armed buildings and keeps concealed defenses out', a
   await page.locator('[data-action="campaign-scout:1"]').tap();
   await expect(list.locator('li')).toHaveText(['1× Archer Tower']);
 });
+
+test('compact landscape reaches deployment, results and replay by touch', async ({ page }) => {
+  await page.setViewportSize({ width: 568, height: 320 });
+  await page.goto('/?lazyart');
+  await page.locator('[data-action="skip-tutorial"]').tap();
+  await page.evaluate(async () => {
+    const { makeBuilding } = await import('/src/game/model.ts');
+    const model = window.__game.model;
+    model.townhall!.level = 4;
+    model.state.buildings.push(makeBuilding(model.state.nextId++, 'herohall', 35, 20, 1));
+    model.state.king = { level: 1 };
+    model.state.heroLineup = ['king'];
+    model.changed();
+  });
+  await page.locator('.train-add').tap();
+  await page.locator('[data-action="close-drawer"]').tap();
+  await page.locator('.attack-btn').tap();
+  await page.locator('[data-action="campaign-scout:0"]').tap();
+  await page.locator('.campaign-scout').getByRole('button', { name: 'Attack', exact: true }).tap();
+  await page.waitForFunction(() => !window.__game.scene.battleArtPending());
+  await expect(page.locator('.deploy-tray [data-action="hero-select:king"] img')).toHaveAttribute(
+    'src',
+    '/assets/catalog-native/roster/hero-barbarian-king.png',
+  );
+  await page.locator('[data-action="troop:swordsman"]').tap();
+  const point = await page.evaluate(() => {
+    const { model, scene } = window.__game;
+    scene.cameras.main.preRender();
+    for (let y = 80; y < innerHeight - 90; y += 8) {
+      for (let x = 120; x < innerWidth - 130; x += 8) {
+        if (document.elementFromPoint(x, y) !== scene.game.canvas) continue;
+        const tile = scene.gridAtScreen(x, y);
+        if (!model.deployBlocked(tile.x, tile.y)) return { x, y };
+      }
+    }
+    throw Error('No visible legal deployment tile');
+  });
+  await page.touchscreen.tap(point.x, point.y);
+  await expect.poll(() => page.evaluate(() => window.__game.model.battle!.units.length)).toBe(1);
+  await page.locator('[data-action="surrender"]').tap();
+  await page.locator('[data-action="end"]').tap();
+  await expect(page.locator('#result-title')).toBeVisible();
+  await page.getByRole('button', { name: 'Watch replay', exact: true }).tap();
+  await expect(page.locator('.replay-status')).toBeVisible();
+});
