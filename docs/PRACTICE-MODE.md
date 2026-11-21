@@ -57,7 +57,10 @@ A level with no star yet starts with its guide. On a level with a star, the scou
 - **The battle's pace.** A step with `PauseGame` holds the battle until it is met: frozen, or at `SlowdownPercentage` of its speed (the Wall Breakers' 10%). A gold ring marks its spot, and the camera brings a new step's spot into view.
 - **Retry camera.** A fresh guided attempt brings its first deployment spot into view again, even if the previous attempt ended on that same step. Panning during a step stays under the player's control.
 - **Waits.** A wait runs its `Duration` in battle time, also during scouting, so opening words like Hot Stuff's Air Sweeper note play before the first deploy. A `WaitUntilDestroyed` step waits for the building with its `ObjectGID`; `ShowObject` rings the building it points out.
-- **Abilities.** A `UseAbility` step waits for the hero's ability.
+- **Abilities.** A `UseAbility` step waits for its named hero or siege action.
+  When the row also sets `ForceType`, another manual ability is refused
+  without spending it. Automatic abilities on defeat still run. Recordings
+  replay their accepted actions without the live guide.
 - **Moving on.** A step ends once its units are down, or when none of its unit is left to deploy. An ability step also ends when its hero cannot use the ability. When the last step ends, the player plays on freely.
 
 Whirl Power’s pinned opener calls for four Earthquakes at source tile (22, 27),

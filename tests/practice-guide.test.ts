@@ -191,6 +191,39 @@ describe('Practice Mode guide', () => {
     expect(older.remaining).toMatchObject({ electrodragon: 9, balloon: 5 });
   });
 
+  it('only accepts the named ability on the forced Lava & More Loons step', () => {
+    const m = village();
+    m.startCampaign(101);
+    for (let i = 0; i < 1000 && !m.guideStep?.ability; i++) {
+      if (m.guideStep?.unit) expect(follow(m)).toBe(true);
+      m.step(0.05);
+    }
+    expect(m.guideStep).toMatchObject({ unit: { hero: 'king' }, forceType: true, ability: true });
+    const queen = m.battle!.nativeHeroes!.find((hero) => hero.kind === 'queen')!;
+    expect(m.battle!.units.find((u) => u.id === queen.unitId)?.hp).toBeGreaterThan(0);
+    const prompt = m.guideStep;
+    expect(m.activateNativeHeroAbility('queen')).toBe(false);
+    expect(queen.abilityUsed).toBeFalsy();
+    expect(m.guideStep).toBe(prompt);
+    expect(m.activateNativeHeroAbility('king')).toBe(true);
+    m.step(0.05);
+    expect(m.guideStep?.name).toBe('Wait_1000ms');
+    m.skipPracticeGuide();
+    expect(m.activateNativeHeroAbility('queen')).toBe(true);
+    m.finishBattle();
+    const record = m.state.raidLog![0];
+    expect(
+      record
+        .replay!.actions.filter((action) => action.type === 'ability')
+        .map((action) => action.hero),
+    ).toEqual(['king', 'queen']);
+    m.returnHome();
+    expect(m.startReplay(record.id)).toBe(true);
+    for (let i = 0; i < 1000 && !m.replay!.complete; i++) m.step(0.05);
+    expect(m.replay!.complete).toBe(true);
+    expect(m.battle!.nativeHeroes!.find((hero) => hero.kind === 'queen')?.abilityUsed).toBe(true);
+  });
+
   it('plays every fielded level’s guide through to its end', { timeout: 120_000 }, () => {
     for (const level of PRACTICE_LEVELS.filter((l) => l.stage)) {
       const m = village();

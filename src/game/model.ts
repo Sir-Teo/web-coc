@@ -6090,7 +6090,7 @@ export class GameModel {
   /** Self-destruct bypasses damage protection; the shared casualty pass owns death effects. */
   endSiege() {
     const unit = this.deployedSiege;
-    if (!unit) return false;
+    if (!unit || !this.guideAllowsAbility({ troop: unit.kind as TroopKind })) return false;
     this.recordAction({ type: 'siege-end' });
     unit.hp = 0;
     unit.defeatedAt = this.battle!.elapsed;
@@ -6104,7 +6104,7 @@ export class GameModel {
     const hero = b?.nativeHeroes?.find((entry) => entry.kind === kind);
     const unit = b?.units.find((u) => u.id === hero?.unitId);
     if (!b || b.finished || !hero || !unit || hero.abilityUsed || unit.spent) return false;
-    if (!automatic && unit.hp <= 0) return false;
+    if (!automatic && (unit.hp <= 0 || !this.guideAllowsAbility({ hero: kind }))) return false;
     if (!automatic) this.recordAction({ type: 'ability', hero: kind });
     const native = this.nativeContext(b, this.sharedWalls(b));
     activateHero(
@@ -6419,6 +6419,13 @@ export class GameModel {
     }
     if (step.exact && ('spell' in unit || !this.deployBlocked(spot.x, spot.y))) return { ...spot };
     return { x, y };
+  }
+  /** A forced UseAbility row accepts only the named hero or siege action. */
+  private guideAllowsAbility(unit: PracticeUnit) {
+    const step = this.guideStep;
+    if (!step?.ability || !step.forceType || !step.unit || sameUnit(step.unit, unit)) return true;
+    this.notify(`Follow the guide: use ${practiceUnitName(step.unit)}’s ability now.`);
+    return false;
   }
   /** Counts a deploy toward the guide's step and moves on when it is met. */
   private guidePlaced(unit: PracticeUnit) {
