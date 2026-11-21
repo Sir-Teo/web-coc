@@ -3593,10 +3593,19 @@ export class HUD {
     const unavailable = count === 0 || siegeBlocked;
     const hotkey = isSplitHog(k) ? undefined : TROOP_HOTKEYS[TROOP_ORDER.indexOf(k)];
     const image = isSplitHog(k) ? RECALL_CARD_ART[k] : hudAsset(k);
-    return `<button class="troop-card ${isSplitHog(k) ? 'recalled-card' : ''} ${selected ? 'selected' : ''} ${unavailable ? 'empty' : ''}" data-action="${action}" aria-label="${this.troopCardLabel(k, count, siegeBlocked)}" ${isSplitHog(k) ? 'title="Recalled unit · this attack"' : ''} ${action.startsWith('troop') && unavailable ? 'disabled' : ''}><span class="troop-count">${siegeBlocked && count > 0 ? 'Locked' : `x${count}`}</span>${action.startsWith('troop:') && hotkey ? `<kbd class="troop-key">${hotkey.toUpperCase()}</kbd>` : ''}<img src="${image}" alt="" draggable="false">${flying}<span class="troop-level">★ ${this.model.troopDisplayLevel(k)}</span><span class="troop-name">${TROOPS[k].name}</span></button>`;
+    const bonus = !this.model.battle && !isSplitHog(k)
+      ? this.model.armyLevel(k) - this.model.troopLevel(k)
+      : 0;
+    const level = this.model.troopDisplayLevel(k) + bonus;
+    const levelHint = bonus > 0 ? `aria-description="Level ${level} with Power Potion"` : '';
+    return `<button class="troop-card ${isSplitHog(k) ? 'recalled-card' : ''} ${selected ? 'selected' : ''} ${unavailable ? 'empty' : ''}" data-action="${action}" aria-label="${this.troopCardLabel(k, count, siegeBlocked)}" ${levelHint} ${isSplitHog(k) ? 'title="Recalled unit · this attack"' : ''} ${action.startsWith('troop') && unavailable ? 'disabled' : ''}><span class="troop-count">${siegeBlocked && count > 0 ? 'Locked' : `x${count}`}</span>${action.startsWith('troop:') && hotkey ? `<kbd class="troop-key">${hotkey.toUpperCase()}</kbd>` : ''}<img src="${image}" alt="" draggable="false">${flying}<span class="troop-level"${bonus > 0 ? ' title="Power Potion"' : ''}>★ ${level}</span><span class="troop-name">${TROOPS[k].name}</span></button>`;
   }
   private spellCard(k: SpellKind, count: number, action: string, selected = false) {
-    return `<button class="troop-card spell-card ${selected ? 'selected' : ''} ${count === 0 ? 'empty' : ''}" data-action="${action}" aria-label="${SPELLS[k].name}, ${count} available" ${action.startsWith('spell') && count === 0 ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('spell:') && SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)] ? `<kbd class="troop-key">${SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)]}</kbd>` : ''}<img src="${hudAsset(k)}" alt="" draggable="false"><span class="troop-level">★ ${this.model.spellLevel(k)}</span><span class="troop-name">${SPELLS[k].name.replace(' Spell', '')}</span></button>`;
+    const recordedLevel = this.model.spellLevel(k);
+    const level = this.model.battle ? recordedLevel : this.model.armySpellLevel(k);
+    const boosted = level > recordedLevel;
+    const levelHint = boosted ? `aria-description="Level ${level} with Power Potion"` : '';
+    return `<button class="troop-card spell-card ${selected ? 'selected' : ''} ${count === 0 ? 'empty' : ''}" data-action="${action}" aria-label="${SPELLS[k].name}, ${count} available" ${levelHint} ${action.startsWith('spell') && count === 0 ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('spell:') && SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)] ? `<kbd class="troop-key">${SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)]}</kbd>` : ''}<img src="${hudAsset(k)}" alt="" draggable="false"><span class="troop-level"${boosted ? ' title="Power Potion"' : ''}>★ ${level}</span><span class="troop-name">${SPELLS[k].name.replace(' Spell', '')}</span></button>`;
   }
 
   private siegeHasCargo(id: number) {

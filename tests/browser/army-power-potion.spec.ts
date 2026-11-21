@@ -234,3 +234,43 @@ for (const viewport of [
     expect(errors).toEqual([]);
   });
 }
+
+for (const viewport of [{ width: 390, height: 844 }, { width: 568, height: 320 }]) {
+  test(`the Your Army tray reflects effective troop and spell tiers at ${viewport.width}×${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto('/?lazyart');
+    await page.locator('[data-action="skip-tutorial"]').click();
+    const home = page.locator('.bottom-center .army-tray');
+    const levels = () => home.locator('.troop-level').allTextContents();
+    await page.evaluate(() => {
+      const m = window.__game.model;
+      m.townhall.level = 8;
+      m.state.buildings.find((b) => b.kind === 'barracks').level = 8;
+      m.state.army.goblin = 1;
+      m.state.army.healer = 1;
+      m.state.spells.lightning = 1;
+      m.state.army.swordsman = m.state.army.archer = 0;
+      m.addMagicItem('power-potion');
+      m.changed();
+    });
+    await expect.poll(levels).toEqual(['★ 1', '★ 1', '★ 1']);
+    expect(await page.evaluate(() => window.__game.model.usePotion('power-potion'))).toBe(true);
+    await expect.poll(levels).toEqual(['★ 5', '★ 3', '★ 5']);
+    await expect(home.getByRole('button', { name: 'Goblin, 1 available' }))
+      .toHaveAccessibleDescription('Level 5 with Power Potion');
+    await page.locator('.attack-btn').click();
+    await page.locator('[data-action="attack:0"]').click();
+    const battle = page.locator('.deploy-tray .army-tray');
+    await expect(battle.locator('[data-action="troop:goblin"] .troop-level')).toHaveText('★ 5');
+    await expect(battle.locator('[data-action="troop:healer"] .troop-level')).toHaveText('★ 3');
+    await expect(battle.locator('[data-action="spell:lightning"] .troop-level')).toHaveText('★ 5');
+    await page.evaluate(() => {
+      const m = window.__game.model;
+      m.tick(m.clock + 3_601_000);
+    });
+    await expect(battle.locator('[data-action="troop:goblin"] .troop-level')).toHaveText('★ 5');
+    await expect(battle.locator('[data-action="spell:lightning"] .troop-level')).toHaveText('★ 5');
+    await page.locator('[data-action="home"]').click();
+    await expect.poll(levels).toEqual(['★ 1', '★ 1', '★ 1']);
+  });
+}
