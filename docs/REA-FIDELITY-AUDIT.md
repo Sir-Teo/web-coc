@@ -381,3 +381,30 @@ activation showed neither. Both builds emitted one splash at 0.95 seconds per
 raid, with matching trap and troop state. The interpolation follows Web CoC's
 existing fuse and aim. The retained rows establish the flight art and shadow,
 while the original-client trajectory and timing remain unverified.
+
+### Building destruction presentation
+
+The [Dark Elixir Storage rows](../reference/dark-storage/native.json) inherit
+`DestroyEffect: Elixir Storage Destroyed` across all 13 levels. The
+[retained effect graph](../public/assets/effects-native/elixir-storage-destroyed/graph.json)
+assigns storage debris, Smoke, and Grass. Its sound path, volume, pitch bounds,
+and delay match the existing destruction cue. Web CoC previously drew generic
+sparks and smoke here. It now samples the assigned effect from the battle-only
+destruction timestamp, including after replay seeks. While the effect art loads,
+the generic cue remains available. The existing ruin is retained because the
+named glass-pit export was referenced but its drawable graph was unavailable
+in this audit.
+
+The Cannon and Archer Tower have retained destruction assignments and dedicated
+render paths. The late Goblin Hall has a sampled collapse export and an assigned
+destruction effect. The early [Goblin Town Hall row](../reference/goblin-buildings/native.json)
+names `Town Hall Destroyed`, but that effect graph is missing from the packaged
+effect index. Castle ruin and original-client results composition remain unverified.
+The storage patch changes neither star calculation nor battle settlement.
+
+Packaged Chromium touch checks at 390×844 and 568×320 used two P.E.K.K.As in
+the same disposable Practice village. At 6.10 seconds both builds showed the
+storage destroyed and 16% destruction, with zero stars. The candidate showed
+the assigned debris in live play and a paused seek. The debris expired while
+the ruin remained, and rewinding restored the intact body with no debris.
+Both builds reached the same two-star, 50% result.

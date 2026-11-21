@@ -9,6 +9,11 @@ import { NativeSceneView, quantizedDensity } from './native-scene-view';
 import { castleGraph } from './castle-graph';
 import { nativeScenePoses, type NativeMatrix } from './native-mesh';
 import { guardRender } from './render-guard';
+import { NativeEffectLayer } from './native-effect-layer';
+import type { NativeArtPack, NativeArtPacks } from './native-art-pack';
+import { presentationLive, presentationTime } from './presentation-clock';
+
+const DESTROY_EFFECT = 'Elixir Storage Destroyed';
 
 /**
  * The Dark Elixir Storage source file has only its level bodies: no construction or upgrade
@@ -41,13 +46,23 @@ export class DarkStoragePresentation {
   /** Construction pile / upgrade scaffold views while a storage is being built or upgraded. */
   readonly sites = new Map<number, NativeSceneView>();
   private signatures = new Map<number, string>();
-  constructor(private scene: Phaser.Scene) {}
+  private destruction: NativeEffectLayer;
+  constructor(
+    private scene: Phaser.Scene,
+    effects: NativeArtPacks<NativeArtPack>,
+  ) {
+    this.destruction = new NativeEffectLayer(scene, effects, 'dark-storage-destruction');
+  }
+  coversDestruction() {
+    return this.destruction.status(DESTROY_EFFECT) === 'ready';
+  }
   clear() {
     for (const view of this.storages.values()) view.destroy();
     this.storages.clear();
     for (const view of this.sites.values()) view.destroy();
     this.sites.clear();
     this.signatures.clear();
+    this.destruction.clear();
   }
   destroy() {
     this.clear();
@@ -57,13 +72,33 @@ export class DarkStoragePresentation {
     battle: Battle | null,
     dark: number,
     capacity: number,
+    reduced: boolean,
     iso: (x: number, y: number) => { x: number; y: number },
   ) {
     const wanted = new Set<number>();
     const camera = this.scene.cameras.main;
     const zoom = quantizedDensity(Math.max(1, camera.zoomX, camera.zoomY));
+    this.destruction.begin();
+    const elapsed = battle && presentationLive(battle) ? presentationTime(battle) : Infinity;
     for (const storage of buildings) {
-      if (storage.kind !== 'darkstorage' || storage.hp <= 0) continue;
+      if (storage.kind !== 'darkstorage') continue;
+      if (battle && !storage.npc && !reduced && Number.isFinite(elapsed)) {
+        // Warm the assigned effect while the intact storage is still visible.
+        const duration = this.destruction.duration(DESTROY_EFFECT);
+        const at = battle.darkStorageDestroyedAt?.[storage.id];
+        if (at !== undefined && duration !== undefined && elapsed >= at && elapsed < at + duration)
+          this.destruction.play(
+            {
+              key: `dark-storage:${storage.id}`,
+              effect: DESTROY_EFFECT,
+              at,
+              ground: iso(storage.x + 1.5, storage.y + 1.5),
+            },
+            elapsed,
+            false,
+          );
+      }
+      if (storage.hp <= 0) continue;
       wanted.add(storage.id);
       let view = this.storages.get(storage.id);
       if (!view) {
@@ -108,6 +143,7 @@ export class DarkStoragePresentation {
         this.sites.delete(storage.id);
       }
     }
+    this.destruction.end();
     for (const [id, view] of this.storages)
       if (!wanted.has(id)) {
         view.destroy();

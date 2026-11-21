@@ -125,6 +125,7 @@ test('native storage drains with its own campaign loot and cleans meshes after d
   });
   expect(result).toEqual({ start: 79, damaged: 39, textures: Array(13).fill(true) });
   await page.screenshot({ path: `output/playtest/dark-storage-damaged-${browserName}.png` });
+  await page.waitForFunction(() => window.__game.scene.darkStoragePresentation.coversDestruction());
   const cleaned = await page.evaluate(() => {
     const { model: m, scene } = window.__game;
     m.damage(m.battle.buildings[0], 1e6);
@@ -132,11 +133,21 @@ test('native storage drains with its own campaign loot and cleans meshes after d
     scene.sync();
     scene.drawOverlay(0);
     const afterDeath = scene.darkStoragePresentation.storages.size;
+    const at = m.battle.darkStorageDestroyedAt[1000];
+    m.battle.elapsed = at + 0.2;
+    scene.drawOverlay(0);
+    const effect = [...scene.darkStoragePresentation.destruction.views.keys()];
     m.returnHome();
     scene.sync();
     scene.drawOverlay(0);
-    return { afterDeath, afterReturn: scene.darkStoragePresentation.storages.size };
+    return {
+      afterDeath,
+      effect,
+      afterReturn: scene.darkStoragePresentation.storages.size,
+      effectAfterReturn: scene.darkStoragePresentation.destruction.views.size,
+    };
   });
-  expect(cleaned).toEqual({ afterDeath: 0, afterReturn: 0 });
+  expect(cleaned).toMatchObject({ afterDeath: 0, afterReturn: 0, effectAfterReturn: 0 });
+  expect(cleaned.effect.some((key) => key.includes('dark-storage:1000'))).toBe(true);
   expect(errors).toEqual([]);
 });

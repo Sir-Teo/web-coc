@@ -1445,6 +1445,8 @@ export interface Battle {
   nativeInfernoAmmo?: true;
   /** Original Drill destruction presentation, enabled by replay version 40. */
   drillDestructions?: Record<number, { at: number; x: number; y: number; level: number }>;
+  /** Battle-only timestamp for the Dark Elixir Storage's destruction art. */
+  darkStorageDestroyedAt?: Record<number, number>;
   teslas?: Record<number, TeslaAttackState>;
   bombTowers?: Record<number, BombTowerAttackState>;
   wizardTowers?: Record<number, WizardTowerAttackState>;
@@ -8157,6 +8159,8 @@ export class GameModel {
         };
       if (b.kind === 'darkdrill' && this.battle?.drillDestructions)
         this.battle.drillDestructions[b.id] ??= { at, x: b.x + 1.5, y: b.y + 1.5, level: b.level };
+      if (b.kind === 'darkstorage' && !b.npc && this.battle)
+        (this.battle.darkStorageDestroyedAt ??= {})[b.id] = at;
       const tesla = b.kind === 'tesla' ? this.battle?.teslas?.[b.id] : undefined;
       if (tesla) tesla.destroyedAt = at;
       if (this.battle?.late)
@@ -8191,6 +8195,7 @@ export class GameModel {
         type: 'destroy',
         ...(b.kind === 'archertower' && this.battle?.nativeArcherTowers ? { sourceId: b.id } : {}),
         ...(b.kind === 'darkdrill' && this.battle?.drillDestructions ? { sourceId: b.id } : {}),
+        ...(b.kind === 'darkstorage' && !b.npc ? { sourceId: b.id } : {}),
         ...(b.kind === 'bombtower' ? { sourceId: b.id, weapon: 'towerbomb' as const } : {}),
         ...(b.kind === 'wizardtower' ? { sourceId: b.id, weapon: 'arcane' as const } : {}),
         ...(['airsweeper', 'mortar'].includes(b.kind) || (b.kind === 'cannon' && !b.npc)

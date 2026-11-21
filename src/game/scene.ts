@@ -1186,7 +1186,6 @@ export class VillageScene extends Phaser.Scene {
     this.santaPresentation = new SantaPresentation(this, this.audio);
     this.shrinkTrapPresentation = new ShrinkTrapPresentation(this, this.audio);
     this.goblinBuildingPresentation = new GoblinBuildingPresentation(this);
-    this.darkStoragePresentation = new DarkStoragePresentation(this);
     this.xbowPresentation = new XbowPresentation(this, this.audio);
     this.teslaPresentation = new TeslaPresentation(this, this.audio);
     this.bombTowerPresentation = new BombTowerPresentation(this, this.audio);
@@ -1196,6 +1195,7 @@ export class VillageScene extends Phaser.Scene {
       this.loadedFamilies.has(MORTAR_FAMILY),
     );
     this.nativeEffectPacks = new NativeArtPacks<NativeArtPack>(this);
+    this.darkStoragePresentation = new DarkStoragePresentation(this, this.nativeEffectPacks);
     this.garrisonPresentation = new GarrisonPresentation(this, this.audio, this.nativeEffectPacks);
     this.castlePresentation = new CastlePresentation(this);
     this.infernoPresentation = new InfernoPresentation(this, this.audio);
@@ -5359,6 +5359,7 @@ export class VillageScene extends Phaser.Scene {
       battle,
       this.model.state.dark,
       this.darkCap(),
+      reduced,
       iso,
     );
     const xbowCues = this.xbowPresentation.render(visible, battle, clock, reduced, iso, AIR_LIFT);
@@ -7031,9 +7032,18 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     if (fx.type === 'destroy') {
-      this.sparks(p.x, p.y - 15, 0xd9be8a, fx.major ? 34 : 16);
       if (this.fxSounded) this.audio.feedback('destroy');
       else this.audio.play('destroy');
+      this.ruinsDirty = true;
+      // Keep the existing sound and ruin path. The retained effect supplies its
+      // own smoke and debris once loaded, so avoid layering the generic burst.
+      if (
+        !this.model.reducedMotion &&
+        fx.sourceId !== undefined &&
+        this.model.battle?.darkStorageDestroyedAt?.[fx.sourceId] !== undefined &&
+        this.darkStoragePresentation.coversDestruction()
+      ) return;
+      this.sparks(p.x, p.y - 15, 0xd9be8a, fx.major ? 34 : 16);
       if (!this.model.reducedMotion)
         this.shakeCamera(fx.major ? 340 : 80, fx.major ? 0.006 : 0.001);
       const smoke = this.add.circle(p.x, p.y - 20, 18, 0xe4d3a8, 0.6).setDepth(8000);
@@ -7045,7 +7055,6 @@ export class VillageScene extends Phaser.Scene {
         duration: 650,
         onComplete: () => smoke.destroy(),
       });
-      this.ruinsDirty = true;
     } else if (
       fx.type !== 'spawn' ||
       !this.nativeProjectiles.coversAbilityActivation(
