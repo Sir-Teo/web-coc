@@ -682,3 +682,13 @@ Siege cargo that has entered combat is represented by ordinary unit kinds
 with their retained rows. The audit found no cargo-origin-specific flag and
 does not establish an additional native exception or trigger order. Older
 recordings keep their own eligibility rules.
+
+## Version 303: defending Witch summon eligibility
+
+The Witch's summon timer still checks the target held entering the simulation
+step. New recordings verify that the held attacker is active, visible and
+on a layer the Witch can attack before spawning a wave. In The Arena, when
+Invisibility took effect during the summon window, the Witch could previously
+raise four Skeletons after her only attacker became untargetable. An eligible
+target can still enable the same wave. Version 302 and earlier recordings
+retain the original held-ID check.

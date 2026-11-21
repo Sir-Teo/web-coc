@@ -394,9 +394,17 @@ export function stepGarrisonDefender(
   const moveDt = activeDt * poison.move * frost.move;
   const recoveryAtStart = defender.recovery ?? 0;
   if (stats.split) defender.recovery = Math.max(0, recoveryAtStart - attackDt);
+  const canTarget = (unit: Unit) =>
+    active(unit, battle.elapsed) &&
+    !untargetable(battle, unit) &&
+    (TROOPS[unit.kind].flying ? stats.airTargets : stats.groundTargets);
   if (stats.summon) {
     // The summon check reads the target held going into this step (a 50 ms local offset).
-    stepSummons(battle, defender, stats, attackDt, defender.target !== null, spawnGarrisonDefender);
+    const hasTarget =
+      defender.target !== null &&
+      (!battle.nativeWitchSummonTargetEligibility ||
+        battle.units.some((unit) => unit.id === defender.target && canTarget(unit)));
+    stepSummons(battle, defender, stats, attackDt, hasTarget, spawnGarrisonDefender);
     if (battle.elapsed + 1e-9 < defender.summon!.delayUntil) {
       // Summon attack delay: the Witch drops her target and neither moves nor attacks.
       defender.target = null;
@@ -412,12 +420,7 @@ export function stepGarrisonDefender(
   const longShot = !!long && (defender.longShots ?? 0) < long.count;
   const range = longShot ? long!.range : stats.range;
   if (!stats.flying) defender.pathAt -= activeDt;
-  const eligible = battle.units.filter(
-    (unit) =>
-      active(unit, battle.elapsed) &&
-      !untargetable(battle, unit) &&
-      (TROOPS[unit.kind].flying ? stats.airTargets : stats.groundTargets),
-  );
+  const eligible = battle.units.filter(canTarget);
   // PreferHeroes (Headhunter) restricts the candidate pool to Heroes whenever one is valid.
   const heroes = stats.preferHeroes ? eligible.filter((unit) => unit.hero) : [];
   const pool = heroes.length ? heroes : eligible;

@@ -68,7 +68,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 302;
+export const REPLAY_VERSION = 303;
 const ELECTRO_SURGERY_CARGO_VERSION = 286;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
@@ -495,6 +495,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 299 ||
   version === 300 ||
   version === 301 ||
+  version === 302 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -692,6 +693,10 @@ export function replayBattle(setup: ReplaySetup, version = REPLAY_VERSION): Batt
   const campaignEagle =
     s.catalog === 'goblin-v1' && s.buildings.some(({ kind }) => kind === 'eagleartillery');
   return {
+    ...(version >= 303 &&
+    s.garrisons?.some((reserve) => reserve.troops.some((troop) => troop.kind === 'witch'))
+      ? { nativeWitchSummonTargetEligibility: true as const }
+      : {}),
     ...(version >= 302 &&
     s.catalog === 'goblin-v1' &&
     !s.ladder &&

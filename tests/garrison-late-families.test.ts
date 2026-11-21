@@ -37,6 +37,8 @@ import {
   resolvedCampaignGarrison,
 } from '../src/game/garrison-campaign';
 import { nativeLayout } from '../src/game/native-campaign';
+import { replayBattle } from '../src/game/replay';
+import { nativeSetup } from './fixtures/late-trap-battle';
 
 function fixture() {
   const model = new GameModel();
@@ -608,6 +610,35 @@ it('Witches summon Skeleton waves on the source cycle, capped by SummonLimit', (
   expect(
     second.defenders!.filter((d) => d.kind === 'summonedskeleton').every((d) => d.hp === 0),
   ).toBe(true);
+});
+
+it.each([302, 303])('checks the defending Witch’s held target before summoning in replay %i', (version) => {
+  const setup = nativeSetup(69, { giant: 1, dragon: 1 });
+  setup.garrisons = campaignGarrisonSetup(69, setup.buildings);
+  const battle = replayBattle(setup, version);
+  battle.buildings = [];
+  const witch = spawnGarrisonDefender(battle, 'witch', 4, 1, 10, 10, 0);
+  const dragon = unit(1, 'dragon', 13, 10);
+  const giant = unit(2, 'giant', 13, 10);
+  battle.units = [dragon];
+  advance(battle, 0.85);
+  expect(witch.target).toBe(dragon.id);
+
+  // Invisibility takes effect immediately before the summon window.
+  dragon.invisibleUntil = 3;
+  step(battle);
+  const skeletons = () => battle.defenders!.filter((d) => d.kind === 'summonedskeleton');
+  expect(skeletons()).toHaveLength(version === 302 ? 4 : 0);
+  if (version === 302) return;
+
+  // An eligible ground attacker can be acquired and enables the same four-Skeleton wave.
+  battle.units.push(giant);
+  step(battle);
+  expect(witch.target).toBe(giant.id);
+  expect(skeletons()).toHaveLength(0);
+  step(battle);
+  expect(skeletons()).toHaveLength(4);
+  expect(skeletons().every((d) => d.mode === 'ground')).toBe(true);
 });
 
 it('Bowler boulders strike the target, then bounce four tiles further along the throw', () => {

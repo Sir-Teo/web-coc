@@ -1075,6 +1075,7 @@ export interface Battle {
   nativeMeteorStaffArmedCampaignTargets?: true;
   /** Shared defender damage protections: Castle setups from version 143; Ghost Traps from 147. */
   nativeGarrisonDamage?: true;
+  nativeWitchSummonTargetEligibility?: true;
   /** Version 143: Revenge Deck responds to individual direct hits with per-attacker cooldowns. */
   nativeRevengeDeck?: true;
   /** Version 144: Snake Bracelet retains cumulative damage through Recall body replacement. */
