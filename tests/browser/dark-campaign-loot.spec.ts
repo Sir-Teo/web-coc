@@ -4,6 +4,7 @@ for (const [width, height] of [
   [1440, 960],
   [390, 844],
   [844, 390],
+  [568, 320],
 ])
   test(`Dark Elixir loot, overflow and saved depletion at ${width}×${height}`, async ({
     page,
@@ -56,7 +57,11 @@ for (const [width, height] of [
     const dark = page.locator('.result-loot > div').filter({ hasText: 'Dark Elixir received' });
     await expect(dark).toBeVisible();
     await expect(dark.locator('b')).toHaveText('137');
-    await expect(page.locator('.loot-overflow-note')).toContainText('863 Dark Elixir');
+    const overflow = page.locator('.loot-overflow-note');
+    await expect(overflow).toContainText('863 Dark Elixir');
+    await expect(overflow).toBeInViewport({ ratio: 1 });
+    const home = page.getByRole('button', { name: 'Return to village', exact: true });
+    await expect(home).toBeInViewport({ ratio: 1 });
     await page.screenshot({ path: `output/playtest/dark-loot-result-${width}-${browserName}.png` });
     await page.waitForTimeout(1100);
     await page.reload();
