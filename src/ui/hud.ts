@@ -1454,7 +1454,14 @@ export class HUD {
       this.closeDrawer();
       return;
     }
-    if (fromCampaign) this.rememberCampaign();
+    if (fromCampaign) {
+      this.rememberCampaign();
+      if (drawer === 'army' && !this.model.armyReady) {
+        const trainable = TROOP_ORDER.filter((kind) => this.model.troopRoom(kind) > 0);
+        if (trainable.length && !trainable.some((kind) => this.armyShown(kind, false)))
+          this.armyFilter = { query: '', show: 'all', family: 'all' };
+      }
+    }
     this.armyReturn = fromCampaign
       ? {
           panel: this.panel === 'campaign-scout' ? 'campaign-scout' : 'campaign',

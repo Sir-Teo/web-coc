@@ -75,6 +75,55 @@ test('an empty-army campaign row preserves the opponent through preparation and 
     .toEqual({ troops: 1, raids: 0 });
 });
 
+for (const [width, height] of [
+  [390, 844],
+  [568, 320],
+]) {
+  test(`scout preparation reveals trainable troops with a stale search at ${width}×${height}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/?lazyart');
+    await expect(page.locator('#loading')).toBeHidden({ timeout: 30000 });
+    await page.locator('[data-action="skip-tutorial"]').tap();
+    const openArmy = () => page.getByRole('button', { name: 'Train troops', exact: true }).tap();
+    const closeArmy = () => page.getByRole('button', { name: 'Close', exact: true }).tap();
+    const search = page.getByRole('searchbox', { name: 'Search troops and spells' });
+    const barbarian = page.locator('[data-action="train:swordsman"]');
+
+    await openArmy();
+    await page.getByRole('button', { name: 'Clear army' }).tap();
+    await search.fill('Goblin');
+    await expect(page.locator('[data-action="train:goblin"]')).toBeDisabled();
+    await expect(barbarian).toHaveCount(0);
+    await closeArmy();
+    await openArmy();
+    await expect(search).toHaveValue('Goblin');
+    await closeArmy();
+
+    await page.locator('.attack-btn').tap();
+    await page.locator('#campaign-stage-0 [data-action="attack:0"]').tap();
+    const scout = page.locator('.campaign-scout');
+    const prepare = scout.getByRole('button', { name: 'Prepare army' });
+    await prepare.tap();
+    await expect(search).toHaveValue('');
+    await expect(barbarian).toBeEnabled();
+    await expect(page.locator('[data-action="train:goblin"]')).toBeDisabled();
+    await search.fill('Barbarian');
+    await closeArmy();
+    await prepare.tap();
+    await expect(search).toHaveValue('Barbarian');
+    await barbarian.tap();
+    await closeArmy();
+    await expect(scout.getByRole('heading', { name: 'Payback' })).toBeVisible();
+    await scout.getByRole('button', { name: 'Attack', exact: true }).tap();
+    await expect(page.locator('.battle-enemy h2')).toHaveText('Payback');
+    await expect(page.locator('[data-action="troop:swordsman"]')).toHaveAccessibleName(
+      'Barbarian, 1 available',
+    );
+  });
+}
+
 test('an empty army can prepare a campaign rematch from the Battle Log', async ({ page }, info) => {
   await page.goto('/?lazyart');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
