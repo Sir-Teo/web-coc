@@ -183,3 +183,55 @@ test.describe('compact portrait research', () => {
     await expect(page.locator('.research-body')).toHaveCount(0);
   });
 });
+
+test.describe('first Laboratory research entry', () => {
+  test.use({ viewport: { width: 568, height: 320 }, hasTouch: true, isMobile: true });
+
+  test('explains the Town Hall gate and opens research as the first Lab completes', async ({
+    page,
+  }) => {
+    await page.goto('/?lazyart');
+    await expect(page.locator('#loading')).toBeHidden({ timeout: 30000 });
+    await page.locator('[data-action="skip-tutorial"]').tap();
+    const open = async () => {
+      const research = page.locator('[data-action="research"]').last();
+      if (!(await research.isVisible())) await page.locator('.train-add').tap();
+      await research.tap();
+    };
+
+    await open();
+    const dialog = page.getByRole('dialog');
+    await expect(
+      dialog.getByRole('heading', { name: 'Research unlocks at Town Hall 3' }),
+    ).toBeVisible();
+    await expect(dialog.locator('[data-action^="research-start:"]')).toHaveCount(0);
+    await page.evaluate(() => {
+      const { model } = window.__game;
+      model.townhall.level = 3;
+      model.state.elixir = 14000;
+      model.changed();
+    });
+    await dialog.getByRole('button', { name: 'Open Army Shop' }).tap();
+    const buy = page.locator('[data-action="build:laboratory"]');
+    await expect(buy).toBeEnabled();
+    await expect(buy).toHaveText('5,000');
+    await buy.tap();
+    const end = await page.evaluate(() => {
+      const { model } = window.__game;
+      for (let y = 2; y < 30; y++)
+        for (let x = 2; x < 30; x++)
+          if (model.canPlace('laboratory', x, y) && model.place(x, y))
+            return model.state.buildings.find((b) => b.kind === 'laboratory').upgradeEnd;
+      throw Error('Laboratory fixture placement failed');
+    });
+    await open();
+    await expect(
+      dialog.getByRole('heading', { name: 'Laboratory under construction' }),
+    ).toBeVisible();
+    await expect(dialog.locator('[data-upgrade]')).toBeVisible();
+    await page.evaluate((end) => window.__game.model.tick(end), end);
+    const barbarian = dialog.locator('[data-action="research-start:swordsman"]');
+    await expect(barbarian).toBeEnabled();
+    await expect(barbarian).toContainText('10,000');
+  });
+});

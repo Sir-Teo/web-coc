@@ -2140,7 +2140,7 @@ export class HUD {
         break;
       }
       case 'shop':
-        this.tab = 'All';
+        this.tab = arg === 'Army' ? 'Army' : 'All';
         this.showDrawer('shop');
         break;
       case 'resource-shop':
@@ -5984,6 +5984,27 @@ export class HUD {
     const m = this.model,
       lab = m.laboratory,
       r = m.state.research;
+    if (!lab && !r) {
+      const building = m.state.buildings.find((b) => b.kind === 'laboratory' && b.constructing);
+      const required = unlockTownHall('laboratory');
+      const locked = m.townhallLevel < required;
+      const title = building
+        ? 'Laboratory under construction'
+        : locked
+          ? `Research unlocks at Town Hall ${required}`
+          : 'Build a Laboratory';
+      const detail = building?.upgradeEnd
+        ? `Research opens when construction finishes in <b data-upgrade="${building.id}">${time((building.upgradeEnd - m.clock) / 1000)}</b>.`
+        : locked
+          ? 'Upgrade your Town Hall, then build a Laboratory to research troop upgrades.'
+          : 'Find the Laboratory in the Army section of the Shop.';
+      const action = building
+        ? ''
+        : locked
+          ? button('progression', 'View Town Hall progression', 'game-btn blue')
+          : button('shop:Army', 'Open Army Shop', 'game-btn green');
+      return `<div class="modal-body confirm-body"><h2>${title}</h2><p>${detail}</p>${action}</div>`;
+    }
     const name = r
       ? isSpellKind(r.kind)
         ? SPELLS[r.kind].name.replace(' Spell', '')
