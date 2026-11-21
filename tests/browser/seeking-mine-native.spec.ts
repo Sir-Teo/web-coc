@@ -163,9 +163,16 @@ test('native campaign mine emergence, trail and impact rewind exactly and respec
               .get(id)
               ?.objects.map((o) => o.getData('nativeSeekingMineProjectile')) ?? [],
           state: structuredClone(m.battle.traps[id]),
-          effects: [...view.effects.values()].flatMap((v) =>
-            v.objects.map((o) => o.getData('nativeSeekingMineEffect')),
-          ),
+          // Pool insertion order reflects which particles were visible on previous frames.
+          // Compare effect identities and their actual render depths at the sampled time.
+          effects: [...view.effects.entries()]
+            .sort(([a], [b]) => a.localeCompare(b))
+            .flatMap(([, effect]) =>
+              effect.objects.map((object) => ({
+                ...object.getData('nativeSeekingMineEffect'),
+                depth: object.depth,
+              })),
+            ),
           gl: scene.game.renderer.gl.getError(),
         };
       },
