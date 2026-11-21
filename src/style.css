@@ -6370,6 +6370,36 @@ h3 {
   }
 }
 
+/* Keep the action buttons below the loot panel on short landscape screens. */
+@media (max-width: 700px) and (max-height: 420px) and (orientation: landscape) {
+  .battle-bottom {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  .battle-bottom > .battle-speed {
+    grid-column: 3;
+  }
+  .battle-bottom > .deploy-tray {
+    grid-row: 1;
+    grid-column: 2;
+  }
+  .battle-enemy .loot-capacity-note {
+    max-width: min(145px, calc(50vw - 135px));
+    margin-top: 3px;
+  }
+}
+@media (max-width: 700px) and (max-height: 300px) and (orientation: landscape) {
+  .deploy-tray .troop-card,
+  .deploy-tray .troop-card img {
+    height: 60px;
+  }
+  .deploy-tray .army-tray {
+    padding-top: 6px;
+  }
+  .deploy-label {
+    margin-bottom: 5px;
+  }
+}
+
 /* Service-worker update prompt (src/offline.ts). */
 #update-ready {
   position: fixed;

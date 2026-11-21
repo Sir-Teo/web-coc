@@ -290,3 +290,75 @@ test.describe('small portrait onboarding', () => {
     });
   }
 });
+
+test.describe('Campaign loot with compact battle controls', () => {
+  test.use({ hasTouch: true, viewport: { width: 568, height: 320 } });
+
+  test('short landscape actions leave loot readable and remain reachable by touch', async ({
+    page,
+  }) => {
+    await boot(page);
+    await page.evaluate(async () => {
+      const { freshNativeCampaign } = await import('/src/game/native-campaign.ts');
+      const { model } = window.__game;
+      model.state.nativeCampaign = freshNativeCampaign();
+      model.state.nativeCampaign.stars.fill(1);
+      model.startCampaign(61);
+    });
+    await expect(page.locator('.loot-capacity-note')).toBeVisible();
+    await page.waitForFunction(() => !window.__game.scene.battleArtPending());
+    await page.locator('[data-action="troop:swordsman"]').tap();
+
+    const point = await page.evaluate(() => {
+      const { model, scene } = window.__game;
+      for (let y = 65; y < innerHeight - 130; y += 12)
+        for (let x = 35; x < innerWidth - 35; x += 15) {
+          if (document.elementFromPoint(x, y) !== scene.game.canvas) continue;
+          const tile = scene.gridAtScreen(x, y);
+          if (!model.deployBlocked(tile.x, tile.y)) return { x, y };
+        }
+      throw Error('No visible legal deployment tile');
+    });
+    await page.touchscreen.tap(point.x, point.y);
+    const surrender = page.getByRole('button', { name: 'Surrender', exact: true });
+    await expect(surrender).toBeVisible();
+
+    for (const [width, height] of [
+      [568, 320],
+      [667, 375],
+      [390, 844],
+    ]) {
+      await page.setViewportSize({ width, height });
+      const collisions = await page.evaluate(() => {
+        const obstacles = ['.loot-bars', '.loot-capacity-note', '.army-tray'];
+        return ['.end-battle', '.battle-speed'].flatMap((selector) => {
+          const button = document.querySelector(selector)!;
+          const rect = button.getBoundingClientRect();
+          return obstacles
+            .filter((obstacle) => {
+              const other = document.querySelector(obstacle)!.getBoundingClientRect();
+              return (
+                rect.left < other.right &&
+                rect.right > other.left &&
+                rect.top < other.bottom &&
+                rect.bottom > other.top
+              );
+            })
+            .map((obstacle) => `${selector} overlaps ${obstacle}`);
+        });
+      });
+      expect(collisions, `${width}×${height}`).toEqual([]);
+      for (const button of [surrender, page.locator('.battle-speed')]) {
+        const bounds = (await button.boundingBox())!;
+        expect(bounds.height).toBeGreaterThanOrEqual(44);
+        await button.tap({ trial: true });
+      }
+    }
+
+    await page.setViewportSize({ width: 568, height: 320 });
+    await page.locator('.battle-speed').tap();
+    await expect(page.locator('.battle-speed')).toContainText('2×');
+    await surrender.tap();
+    await expect(page.locator('[data-action="end"]')).toBeVisible();
+  });
+});
