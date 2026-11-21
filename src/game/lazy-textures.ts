@@ -24,6 +24,10 @@ export class LazyTextures {
   loading(key: string) {
     return this.pending.has(key);
   }
+  /** The last attempt failed, so callers may need to fetch a stand-in. */
+  failed(key: string) {
+    return this.retryAt.has(key);
+  }
   /** Share a preview already being decoded without starting another request. */
   whenSettled(key: string): Promise<void> {
     return this.pending.get(key) ?? Promise.resolve();
@@ -77,6 +81,7 @@ export class LazyTextures {
         if (sheet) this.scene.textures.addSpriteSheet(key, image, sheet);
         else this.scene.textures.addImage(key, image);
       }
+      this.retryAt.delete(key);
       this.revision++;
     } catch (error) {
       // A texture that fails is asked for again after five seconds.

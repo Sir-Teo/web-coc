@@ -153,6 +153,28 @@ for (const viewport of [
   });
 }
 
+test('Campaign scenery fetches a fallback only for a failed preferred texture', async ({ page }) => {
+  const fallbacks: string[] = [];
+  page.on('request', (request) => {
+    const path = new URL(request.url()).pathname;
+    if (path.startsWith('/assets/environment/campaign/')) fallbacks.push(path);
+  });
+  await page.route('**/assets/decorations-native/windmeter.*', (route) => route.abort());
+  await page.goto('/?lazyart');
+  await page.locator('[data-action="skip-tutorial"]').click();
+  await page.locator('.attack-btn').click();
+  await page.locator('.campaign-list [data-action="attack:1"]').click();
+  await expect.poll(() => page.evaluate(() =>
+    window.__game.scene.campaignScenery.filter((image) => image.visible).length,
+  )).toBe(13);
+  expect(fallbacks).toEqual(['/assets/environment/campaign/windmeter-v1.webp']);
+  expect(await page.evaluate(() =>
+    window.__game.scene.campaignScenery.some((image) =>
+      image.visible && image.texture.key === 'campaign-windmeter',
+    ),
+  )).toBe(true);
+});
+
 test('native scenery and Goblin Huts survive large-map and home transitions', async ({
   page,
   browserName,

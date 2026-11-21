@@ -3878,7 +3878,8 @@ export class VillageScene extends Phaser.Scene {
     this.drawRuinGround();
     this.syncCount++;
   }
-  /** Prefer retained props, with the previous artwork available while loading or offline. */
+  private readonly pendingSceneryFallbacks = new Set<string>();
+  /** Use a resident stand-in immediately. Fetch a new one only if the preferred art fails. */
   private showScenery() {
     for (const im of this.campaignScenery) {
       const data = im.getData('nativeScenery');
@@ -3894,6 +3895,16 @@ export class VillageScene extends Phaser.Scene {
       }
       if (im.visible) continue;
       const art = sceneryArt(data);
+      if (native && !this.textures.exists(art.texture) && !this.deferredArt.failed(native.texture)) {
+        if (!this.pendingSceneryFallbacks.has(native.texture)) {
+          this.pendingSceneryFallbacks.add(native.texture);
+          void this.deferredArt.whenSettled(native.texture).then(() => {
+            this.pendingSceneryFallbacks.delete(native.texture);
+            if (this.deferredArt.failed(native.texture) && this.sys.isActive()) this.showScenery();
+          });
+        }
+        continue;
+      }
       if (
         !this.deferredArt.has(
           art.texture,
