@@ -2344,6 +2344,9 @@ export class HUD {
           this.drawerPanel = null;
           this.resultShown = false;
           this.render();
+          const position = this.hudEl.querySelector<HTMLElement>('#replay-progress:enabled');
+          (position ?? this.hudEl.querySelector<HTMLElement>('[data-action="replay-exit"]'))
+            ?.focus({ preventScroll: true });
         }
         break;
       case 'replay-pause':
@@ -2379,6 +2382,7 @@ export class HUD {
         break;
       case 'replay-exit': {
         const raid = m.goblinRaid;
+        const recordId = m.replay?.recordId;
         const previous = this.replayLogReturn;
         this.replayLogReturn = undefined;
         m.returnHome();
@@ -2388,7 +2392,17 @@ export class HUD {
           this.panel = null;
           this.render();
         } else if (previous) this.returnToBattleLog(previous);
-        else this.show('battle-log');
+        else {
+          this.show('battle-log');
+          if (recordId != null) {
+            const watch = this.modalEl.querySelector<HTMLElement>(`[data-action="replay:${recordId}"]`);
+            if (watch) {
+              this.focusBefore = focusMark(this.hudEl.querySelector('[data-action="battle-log"]'));
+              watch.scrollIntoView({ block: 'nearest' });
+              watch.focus({ preventScroll: true });
+            }
+          }
+        }
         break;
       }
       case 'goblin-raid':

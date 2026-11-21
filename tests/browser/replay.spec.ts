@@ -58,6 +58,7 @@ for (const mobile of [false, true])
     });
     await page.getByRole('button', { name: 'Watch replay' }).click();
     await expect(page.locator('.battle-enemy')).toContainText('ATTACK REPLAY');
+    await expect(page.getByRole('slider', { name: 'Replay position' })).toBeFocused();
     await expect(page.locator('.deploy-tray')).toHaveCount(0);
     await page.evaluate(() => window.advanceTime(3000));
     await page.locator('[data-action="replay-pause"]').click();
@@ -90,6 +91,7 @@ for (const mobile of [false, true])
     await expect(page.locator('.replay-status')).toContainText('Watching replay');
     await page.locator('[data-action="replay-exit"]').click();
     await expect(page.locator('.battle-log-body')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Watch replay' })).toBeFocused();
     expect(
       await page.evaluate(() => {
         const s = window.__game.model.state;
@@ -206,6 +208,7 @@ test.describe('tick-zero replay deployment audio', () => {
     await tap('surrender');
     await tap('end');
     await page.getByRole('button', { name: 'Watch replay', exact: true }).tap();
+    await expect(page.getByRole('slider', { name: 'Replay position' })).toBeFocused();
     expect(await page.evaluate(() => window.__game.model.replayRecording().actions[0])).toMatchObject(
       { type: 'troop', kind: 'swordsman', step: 0 },
     );
@@ -222,5 +225,11 @@ test.describe('tick-zero replay deployment audio', () => {
     await tap('replay-restart');
     await expect(page.locator('.replay-status')).toContainText('Replay complete');
     expect(await starts()).toEqual([0, 0]);
+    await tap('replay-exit');
+    const watch = page.getByRole('button', { name: 'Watch replay', exact: true });
+    await expect(watch).toBeFocused();
+    await expect(watch).toBeInViewport({ ratio: 1 });
+    await page.getByRole('button', { name: 'Close dialog' }).tap();
+    await expect(page.locator('[data-action="battle-log"]')).toBeFocused();
   });
 });
