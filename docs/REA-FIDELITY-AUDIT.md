@@ -399,6 +399,14 @@ the generic cue remains available. The existing ruin is retained because the
 named glass-pit export was referenced but its drawable graph was unavailable
 in this audit.
 
+The [Wizard Tower](../reference/wizard-tower/body.json) and
+[Bomb Tower](../reference/bombtower/body.json) assign a damaged export
+across 17 and 13 levels respectively. Each family's ruins use its
+retained texture page 25. If that page is unavailable, Web CoC keeps
+local rubble visible, then replaces it with the authored meshes when
+the page arrives. This also applies to paused replays after an asset
+retry.
+
 The Cannon and Archer Tower have retained destruction assignments and dedicated
 render paths. The late Goblin Hall has a sampled collapse export and an assigned
 destruction effect. The early [Goblin Town Hall row](../reference/goblin-buildings/native.json)

@@ -20,7 +20,7 @@ import {
 import Phaser from 'phaser';
 import type { Battle, Building } from './model';
 import { NativeSceneView, quantizedDensity } from './native-scene-view';
-import { preloadNativeMeshes } from './native-mesh-scene';
+import { nativePoseReady, preloadNativeMeshes } from './native-mesh-scene';
 import { BOMB_TOWER_ART_LEVELS, bombTowerAsset, bombTowerTexture } from './bomb-tower-art';
 import {
   bombTowerArtLoaded,
@@ -81,6 +81,16 @@ export class BombTowerPresentation {
       if (this.homeEffects.length > 16) this.homeEffects.shift();
     }
   }
+  drawsRuin(level: number) {
+    return (
+      bombTowerArtLoaded() &&
+      nativePoseReady(
+        this.scene,
+        'bombtower',
+        guardRender('bombtower ruin', () => bombTowerPoses(level, 'ruin'), []),
+      )
+    );
+  }
   clear() {
     for (const map of [this.towers, this.defenders, this.bombs, this.projectiles, this.shadows]) {
       for (const view of map.values()) view.destroy();
@@ -135,12 +145,13 @@ export class BombTowerPresentation {
       const key = `tower:${tower.id}`,
         signature = `${tower.level}:${state}:${p.x}:${p.y}:${zoom}`;
       if (this.signatures.get(key) !== signature) {
+        const poses = guardRender(
+          `Bomb Tower level ${tower.level}`,
+          () => bombTowerPoses(tower.level, state),
+          [],
+        );
         view.render(
-          guardRender(
-            `Bomb Tower level ${tower.level}`,
-            () => bombTowerPoses(tower.level, state),
-            [],
-          ),
+          state === 'ruin' && !nativePoseReady(this.scene, 'bombtower', poses) ? [] : poses,
           p.x,
           p.y,
           p.y + (state === 'ruin' ? -2 : 0),

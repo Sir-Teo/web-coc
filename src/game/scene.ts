@@ -4325,7 +4325,11 @@ export class VillageScene extends Phaser.Scene {
       im.setCrop().setPosition(p.x, p.y).setAlpha(0);
       return;
     }
-    if (b.kind === 'tesla' || b.kind === 'bombtower' || b.kind === 'wizardtower') {
+    if (
+      b.kind === 'tesla' ||
+      (b.kind === 'bombtower' && this.bombTowerPresentation.drawsRuin(b.level)) ||
+      (b.kind === 'wizardtower' && this.wizardTowerPresentation.drawsRuin(b.level))
+    ) {
       im.setCrop()
         .setPosition(p.x, p.y)
         .setAlpha(0)

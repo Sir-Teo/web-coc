@@ -34,6 +34,22 @@ export function nativeMeshesReady(scene: Phaser.Scene, graph: NativeMeshGraph, p
   );
 }
 
+/** All leaves of a sampled pose must be available before it replaces a fallback. */
+export function nativePoseReady(
+  scene: Phaser.Scene,
+  prefix: string,
+  poses: readonly NativeScenePose[],
+): boolean {
+  return (
+    poses.length > 0 &&
+    poses.every((pose) =>
+      'group' in pose
+        ? nativePoseReady(scene, prefix, pose.group)
+        : scene.textures.exists(nativeMeshTexture(prefix, pose.texture)),
+    )
+  );
+}
+
 // Tiny additive pages amplify browser image-premultiplication rounding. Keep the correction
 // at most 16K texels per page; larger pages retain their existing upload path.
 const MAX_ADDITIVE_SOURCE_BYTES = 64 << 10;

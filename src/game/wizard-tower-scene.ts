@@ -19,7 +19,7 @@ import {
 import Phaser from 'phaser';
 import type { Battle, Building } from './model';
 import { NativeSceneView, effectSceneView, quantizedDensity } from './native-scene-view';
-import { preloadNativeMeshes } from './native-mesh-scene';
+import { nativePoseReady, preloadNativeMeshes } from './native-mesh-scene';
 import { WIZARD_TOWER_ART_LEVELS, wizardTowerAsset, wizardTowerTexture } from './wizard-tower-art';
 import {
   wizardTowerArtLoaded,
@@ -79,6 +79,16 @@ export class WizardTowerPresentation {
       if (this.homeEffects.length > 16) this.homeEffects.shift();
     }
   }
+  drawsRuin(level: number) {
+    return (
+      wizardTowerArtLoaded() &&
+      nativePoseReady(
+        this.scene,
+        'wizardtower',
+        guardRender('wizardtower ruin', () => wizardTowerPoses(level, 'ruin'), []),
+      )
+    );
+  }
   clear() {
     this.fx.clear();
     for (const map of [this.towers, this.defenders, this.projectiles]) {
@@ -133,12 +143,13 @@ export class WizardTowerPresentation {
       const key = `tower:${tower.id}`,
         signature = `${tower.level}:${state}:${p.x}:${p.y}:${zoom}`;
       if (this.signatures.get(key) !== signature) {
+        const poses = guardRender(
+          `Wizard Tower level ${tower.level}`,
+          () => wizardTowerPoses(tower.level, state),
+          [],
+        );
         view.render(
-          guardRender(
-            `Wizard Tower level ${tower.level}`,
-            () => wizardTowerPoses(tower.level, state),
-            [],
-          ),
+          state === 'ruin' && !nativePoseReady(this.scene, 'wizardtower', poses) ? [] : poses,
           p.x,
           p.y,
           p.y + (state === 'ruin' ? -2 : 0),
