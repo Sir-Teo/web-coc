@@ -3817,7 +3817,8 @@ export class HUD {
   }
   private context() {
     const m = this.model;
-    if (m.battle) return '';
+    // The card can appear over the finger before the first move on compact screens.
+    if (m.battle || m.holdingBuildingForEdit) return '';
     if (m.wallMove) return this.wallMoveContext();
     if (m.placement) {
       return `<div class="placement-banner">${icon('Move', 23)}<div><b>${m.moving ? 'Move' : 'Place'} ${BUILDINGS[m.placement].name}</b><small>Drop it on a clear green tile</small></div>${button('cancel', icon('X', 20), 'square-btn small', 'aria-label="Cancel placement"')}</div>`;

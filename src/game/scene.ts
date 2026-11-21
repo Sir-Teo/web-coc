@@ -716,7 +716,7 @@ export class VillageScene extends Phaser.Scene {
     cx: number;
     cy: number;
     t: number;
-    id: number | null;
+    building?: { id: number; offsetX: number; offsetY: number };
     artBlocked: boolean;
     touchId?: number;
   };
@@ -1399,7 +1399,9 @@ export class VillageScene extends Phaser.Scene {
         cx: this.cameras.main.scrollX,
         cy: this.cameras.main.scrollY,
         t: performance.now(),
-        id: held?.id ?? null,
+        building: held
+          ? { id: held.id, offsetX: held.x - grid.x, offsetY: held.y - grid.y }
+          : undefined,
         artBlocked: !!this.model.battle && this.battleArtPending(),
         touchId: p.wasTouch ? p.identifier : undefined,
       };
@@ -2784,7 +2786,7 @@ export class VillageScene extends Phaser.Scene {
   /** Decides once per gesture whether a drag pans, deploys, or moves a building. */
   private classifyDrag(p: Phaser.Input.Pointer): 'pan' | 'deploy' | 'drag-building' | 'drag-wall' {
     if (this.model.wallMove) return this.wallDragOffset ? 'drag-wall' : 'pan';
-    if (this.model.editing && this.down?.id != null) return 'drag-building';
+    if (this.model.editing && this.down?.building?.id != null) return 'drag-building';
     if (this.canHoldDeploy()) {
       // A deliberate press then drag paints troops; a quick flick still pans.
       const deliberate = performance.now() - (this.down?.t ?? 0) >= 160;
@@ -2850,13 +2852,15 @@ export class VillageScene extends Phaser.Scene {
     }
   }
   private dragBuilding(p: Phaser.Input.Pointer) {
-    const id = this.down?.id;
-    if (id == null) return;
-    const b = this.model.state.buildings.find((v) => v.id === id);
-    if (!b) return;
-    const grid = this.gridAtPointer(p),
-      size = BUILDINGS[b.kind].size;
-    this.model.dragTo(id, Math.round(grid.x - size / 2), Math.round(grid.y - size / 2));
+    const held = this.down?.building;
+    if (!held) return;
+    const grid = this.gridAtPointer(p);
+    // Preserve the picked point even when the finger lands on the edge or roof.
+    this.model.dragTo(
+      held.id,
+      Math.round(grid.x + held.offsetX),
+      Math.round(grid.y + held.offsetY),
+    );
   }
   private tap(p: Phaser.Input.Pointer) {
     const world = this.cameras.main.getWorldPoint(p.x, p.y),

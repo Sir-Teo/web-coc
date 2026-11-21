@@ -1685,6 +1685,9 @@ export class GameModel {
   private dragGesture = false;
   private dragOrigin: { x: number; y: number; size: number } | null = null;
   private dragBlocked = false;
+  get holdingBuildingForEdit() {
+    return this.dragGesture;
+  }
   get hasBuildingDrag() {
     return this.dragOrigin !== null;
   }
@@ -3898,12 +3901,16 @@ export class GameModel {
     const b = this.state.buildings.find((b) => b.id === this.draggedBuilding);
     const origin = this.dragOrigin;
     const blocked = this.dragBlocked;
+    const wasHeld = this.dragGesture;
     this.draggedBuilding = null;
     this.dragOpen = false;
     this.dragGesture = false;
     this.dragOrigin = null;
     this.dragBlocked = false;
-    if (!b) return;
+    if (!b) {
+      if (wasHeld) this.changed();
+      return;
+    }
     const discard = cancelled || (origin !== null && blocked);
     if (origin) {
       if (discard) {
