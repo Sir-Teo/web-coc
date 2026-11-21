@@ -5716,19 +5716,21 @@ export class VillageScene extends Phaser.Scene {
       g.strokeEllipse(p.x, p.y, w, h);
     };
     const deployment = step.unit && !step.ability ? guide.spot : undefined;
-    if (deployment)
-      ring(deployment.x, deployment.y, Math.max(0.8, step.radius), 0.14);
+    const deploymentRadius = Math.max(0.8, step.radius);
+    if (deployment) ring(deployment.x, deployment.y, deploymentRadius, 0.14);
     const target = step.show ?? step.waitFor;
     const v = target && this.model.guideBuilding(target);
-    let indicated: { x: number; y: number } | undefined;
+    let indicated: { x: number; y: number; radius: number } | undefined;
     if (v && v.hp > 0) {
       const size = BUILDINGS[v.kind].size;
-      indicated = { x: v.x + size / 2, y: v.y + size / 2 };
-      ring(indicated.x, indicated.y, Math.max(1, size * 0.75), 0.08);
+      indicated = { x: v.x + size / 2, y: v.y + size / 2, radius: Math.max(1, size * 0.75) };
+      ring(indicated.x, indicated.y, indicated.radius, 0.08);
     }
     // Frame instructional targets as well as deployment spots. Passive waits
     // still highlight their building without taking over the player's camera.
-    const marker = deployment ?? (step.show ? indicated : undefined);
+    const marker = deployment
+      ? { ...deployment, radius: deploymentRadius }
+      : step.show ? indicated : undefined;
     if (!marker) return;
     const key = `${guide.index}:${marker.x},${marker.y}:${this.scale.width},${this.scale.height}`;
     if (key === this.guideFocus) return;
@@ -5755,7 +5757,7 @@ export class VillageScene extends Phaser.Scene {
     });
   }
   /** Frame a new guide spot outside the DOM HUD, while leaving manual panning intact. */
-  private keepGuideSpotClear(spot: { x: number; y: number }) {
+  private keepGuideSpotClear(spot: { x: number; y: number; radius: number }) {
     const canvas = this.game.canvas.getBoundingClientRect();
     const blockers = Array.from(
       document.querySelectorAll(
@@ -5766,27 +5768,40 @@ export class VillageScene extends Phaser.Scene {
     const point = this.screenFor(spot.x, spot.y);
     const camera = this.cameras.main;
     const { scrollX, scrollY } = camera;
-    // Prefer enough clearance to read the marker. In short landscape the wider gap
-    // can disappear, even though a smaller gap still has a usable canvas target.
-    for (const pad of [14, 6]) {
+    // Allow for the ring's largest pulse and its stroke. When the whole
+    // ring cannot fit, keep the center reachable using the usual margins.
+    const extent = spot.radius * 32 * Math.SQRT2 * 1.06 + 1.5;
+    const gaps = [
+      {
+        x: Math.max(14, (extent * camera.zoomX) / this.scale.displayScale.x + 1),
+        y: Math.max(14, (extent * camera.zoomY) / (2 * this.scale.displayScale.y) + 1),
+      },
+      { x: 14, y: 14 },
+      { x: 6, y: 6 },
+    ];
+    for (const { x: padX, y: padY } of gaps) {
       const clear = (x: number, y: number) =>
-        x >= canvas.left + pad &&
-        x <= canvas.right - pad &&
-        y >= canvas.top + pad &&
-        y <= canvas.bottom - pad &&
+        x >= canvas.left + padX &&
+        x <= canvas.right - padX &&
+        y >= canvas.top + padY &&
+        y <= canvas.bottom - padY &&
         !blockers.some(
-          (r) => x > r.left - pad && x < r.right + pad && y > r.top - pad && y < r.bottom + pad,
+          (r) =>
+            x > r.left - padX &&
+            x < r.right + padX &&
+            y > r.top - padY &&
+            y < r.bottom + padY,
         );
       const tappable = ({ x, y }: { x: number; y: number }) =>
         clear(x, y) && document.elementFromPoint(x, y) === this.game.canvas;
       if (tappable(point)) return;
       const xs = [
-        point.x, canvas.left + pad, canvas.right - pad,
-        ...blockers.flatMap((r) => [r.left - pad, r.right + pad]),
+        point.x, canvas.left + padX + 1, canvas.right - padX - 1,
+        ...blockers.flatMap((r) => [r.left - padX - 1, r.right + padX + 1]),
       ];
       const ys = [
-        point.y, canvas.top + pad, canvas.bottom - pad,
-        ...blockers.flatMap((r) => [r.top - pad, r.bottom + pad]),
+        point.y, canvas.top + padY + 1, canvas.bottom - padY - 1,
+        ...blockers.flatMap((r) => [r.top - padY - 1, r.bottom + padY + 1]),
       ];
       const candidates = xs
         .flatMap((x) => ys.map((y) => ({ x, y })))

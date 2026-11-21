@@ -188,3 +188,14 @@ during the opening and a Minion during the Balloon step without spending
 stock. All 43 prescribed troop, hero, and spell actions completed the
 guide. The recording retained all 43 actions and a replay seek to the
 end matched the live result.
+
+### Guide ring clearance on compact viewports
+
+The [pinned Practice rows](../reference/practice/catalog.json) supply the
+Air Raid building target and the Heavy Hitters and Meat Shield deployment
+positions and radii. In packaged Chromium the centers remained tappable
+while the ring edge was covered by the speed button, clock, or guide
+banner. Guide framing now gives the whole projected ring clearance first,
+with the existing reachable-center fallback when space is tight. This
+is a Web CoC viewport adjustment. Guide targets, legal placement, and
+replay recording rules are unchanged.

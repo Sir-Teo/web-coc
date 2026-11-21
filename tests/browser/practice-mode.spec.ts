@@ -768,3 +768,31 @@ test('Air Raid exposes the opening Air Sweeper highlight above the compact HUD',
   await expect.poll(marker).toEqual({ tile: [25, 27], canvas: true });
   expect(await page.evaluate(() => window.__game.model.battle.units.length)).toBe(0);
 });
+
+for (const [width, height, stage, name, x, y, radius] of [
+  [568, 320, 97, 'TH8_Gowipe_Earthquake', 30, 22, 2],
+  [667, 375, 93, 'TH6_Giwiwa_Giant1', 19, 38, 1.5],
+  [667, 375, 96, 'TH7_Minion_Info_AirSweeper', 26, 28, 1.5],
+] as const) {
+  test(`exposes the full ${name} ring at ${width}×${height}`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await boot(page, 8);
+    await page.locator(`[data-action="campaign-scout:${stage - 1}"]`).tap();
+    await page.locator(`.campaign-scout [data-action="attack:${stage - 1}"]`).tap();
+    await expect.poll(() =>
+      page.evaluate(({ name, x, y, radius }) => {
+        const { model, scene } = window.__game;
+        if (model.guideStep?.name !== name) return 0;
+        const blockers = [...document.querySelectorAll(
+          '.practice-guide,.battle-enemy,.battle-clock,.destruction,.battle-bottom > button,.deploy-label,.army-tray',
+        )].map((el) => el.getBoundingClientRect()).filter((r) => r.width && r.height);
+        return Array.from({ length: 16 }, (_, index) => {
+          const radians = index * Math.PI / 8;
+          const p = scene.screenFor(x + radius * Math.cos(radians), y + radius * Math.sin(radians));
+          return document.elementFromPoint(p.x, p.y) === scene.game.canvas &&
+            !blockers.some((r) => p.x >= r.left && p.x <= r.right && p.y >= r.top && p.y <= r.bottom);
+        }).filter(Boolean).length;
+      }, { name, x, y, radius }),
+    ).toBe(16);
+  });
+}
