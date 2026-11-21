@@ -259,7 +259,7 @@ import { defeatPose } from './unit-defeat';
 import { EffectTimeline, type EffectTween } from './effect-timeline';
 import { heroStats } from './heroes';
 import { unitDepth } from './unit-depth';
-import { mergeEdges } from './boundary-edges';
+import { deploymentBoundary, DEPLOY_CELLS_PER_TILE } from './boundary-edges';
 import { defenderIndex, unitIndex } from './battle-index';
 import {
   presentationLive,
@@ -739,8 +739,8 @@ export class VillageScene extends Phaser.Scene {
   /** Press-and-hold deployment: when the next troop of the held stream drops. */
   private holdNext = 0;
   private boundary: { signature: number; edges: number[][] } = { signature: -1, edges: [] };
-  /** Tile raster of the no-deploy zone, rebuilt with `boundary`. */
-  private blockedGrid = new Uint8Array(FULL_MAP_SIZE * FULL_MAP_SIZE);
+  /** Half-tile raster of the no-deploy zone, rebuilt with `boundary`. */
+  private blockedGrid = new Uint8Array((FULL_MAP_SIZE * DEPLOY_CELLS_PER_TILE) ** 2);
   private terrain?: Phaser.GameObjects.Image;
   private terrainMapSize = MAP_SIZE;
   private get worldBounds() {
@@ -3054,8 +3054,7 @@ export class VillageScene extends Phaser.Scene {
     return this.ghostPoint ?? this.input.activePointer;
   }
   /**
-   * The outline of every tile a troop may not be dropped on. Cached against the
-   * set of surviving structures, because it only changes when one falls.
+   * The outline of the structure exclusion zone. Cached until a structure falls or reveals.
    */
   private battleBoundary() {
     const b = this.model.battle;
@@ -3074,31 +3073,10 @@ export class VillageScene extends Phaser.Scene {
       signature = ((signature * 31 + v.id) | 0) ^ (concealedTesla(b, v) ? 1 : 0);
     }
     if (signature === this.boundary.signature) return this.boundary.edges;
-    // Rasterize the no-deploy zone once per change with deployBlocked's rule (a tile center
-    // within 1.5 tiles of a standing, revealed, non-wall, non-trap building) instead of asking
-    // deployBlocked, an O(buildings) scan, for every tile and each of its neighbors.
-    const grid = this.blockedGrid;
-    grid.fill(0);
-    for (const v of b.buildings) {
-      if (v.hp <= 0 || v.kind === 'wall' || isTrap(v.kind) || concealedTesla(b, v)) continue;
-      const size = BUILDINGS[v.kind].size;
-      const x0 = Math.max(0, Math.floor(v.x - 2) + 1),
-        x1 = Math.min(mapSize - 1, Math.ceil(v.x + size + 1) - 1);
-      const y0 = Math.max(0, Math.floor(v.y - 2) + 1),
-        y1 = Math.min(mapSize - 1, Math.ceil(v.y + size + 1) - 1);
-      for (let y = y0; y <= y1; y++) grid.fill(1, y * mapSize + x0, y * mapSize + x1 + 1);
-    }
-    const blocked = (x: number, y: number) =>
-      x < 1 || y < 1 || x > mapSize - 2 || y > mapSize - 2 || grid[y * mapSize + x] === 1;
-    const edges: number[][] = [];
-    for (let x = 1; x <= mapSize - 2; x++)
-      for (let y = 1; y <= mapSize - 2; y++) {
-        if (!blocked(x, y)) continue;
-        if (!blocked(x - 1, y)) edges.push([x, y, x, y + 1]);
-        if (!blocked(x + 1, y)) edges.push([x + 1, y, x + 1, y + 1]);
-        if (!blocked(x, y - 1)) edges.push([x, y, x + 1, y]);
-        if (!blocked(x, y + 1)) edges.push([x, y + 1, x + 1, y + 1]);
-      }
+    const footprints = b.buildings
+      .filter((v) => v.hp > 0 && v.kind !== 'wall' && !isTrap(v.kind) && !concealedTesla(b, v))
+      .map((v) => ({ x: v.x, y: v.y, size: BUILDINGS[v.kind].size }));
+    const edges = deploymentBoundary(footprints, mapSize, this.blockedGrid);
     this.boundary = { signature, edges };
     return edges;
   }
@@ -5671,8 +5649,8 @@ export class VillageScene extends Phaser.Scene {
   private boundarySignature = NaN;
   /**
    * The red deploy boundary, painted on the grass under the base. It is re-recorded only when
-   * its outline changes (a structure falls or a Tesla is revealed), with collinear tile edges
-   * merged into long segments. Spell rings share the frame's aura pass.
+   * its outline changes (a structure falls or a Tesla is revealed). Collinear edges are merged.
+   * Spell rings share the frame's aura pass.
    */
   private drawGroundMarks(battle: GameModel['battle']) {
     const active = battle && !battle.finished;
@@ -5683,7 +5661,7 @@ export class VillageScene extends Phaser.Scene {
       const g = this.groundMarks.clear();
       if (edges) {
         g.lineStyle(2.5, 0xff4d42, 0.92);
-        for (const [x0, y0, x1, y1] of mergeEdges(edges)) {
+        for (const [x0, y0, x1, y1] of edges) {
           g.lineBetween(
             WORLD.ox + (x0 - y0) * 32,
             WORLD.oy + (x0 + y0) * 16,

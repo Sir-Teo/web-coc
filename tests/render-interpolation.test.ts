@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RenderInterpolation, TELEPORT_TILES } from '../src/game/render-interpolation';
-import { mergeEdges } from '../src/game/boundary-edges';
+import { deploymentBoundary, mergeEdges } from '../src/game/boundary-edges';
 import { combineShakes } from '../src/game/camera-shake-layer';
 
 const project = (x: number, y: number, out: { x: number; y: number }) => {
@@ -94,5 +94,35 @@ describe('camera shake', () => {
         { x: -2, y: -1 },
       ]),
     ).toEqual({ x: 1, y: 0 });
+  });
+});
+
+describe('deployment exclusion outline', () => {
+  it('keeps half-tile sides and removes interior edges between overlapping footprints', () => {
+    const grid = new Uint8Array(32 * 32);
+    expect(
+      deploymentBoundary(
+        [
+          { x: 4, y: 4, size: 3 },
+          { x: 8, y: 4, size: 3 },
+        ],
+        16,
+        grid,
+      ),
+    ).toEqual([
+      [2.5, 2.5, 12.5, 2.5],
+      [2.5, 8.5, 12.5, 8.5],
+      [2.5, 2.5, 2.5, 8.5],
+      [12.5, 2.5, 12.5, 8.5],
+    ]);
+    expect(deploymentBoundary([], 16, grid)).toEqual([]);
+  });
+
+  it('clips a rectangle at the playable margin without drawing an internal half-cell', () => {
+    expect(deploymentBoundary([{ x: 2, y: 3, size: 2 }], 16, new Uint8Array(32 * 32))).toEqual([
+      [1, 1.5, 5.5, 1.5],
+      [1, 6.5, 5.5, 6.5],
+      [5.5, 1.5, 5.5, 6.5],
+    ]);
   });
 });

@@ -292,6 +292,7 @@ import {
   MAP_SIZE,
   FULL_MAP_SIZE,
   battleMapSize,
+  DEPLOY_MARGIN,
   BUILD_MIN,
   BUILD_MAX,
   type BattleMapSize,
@@ -6617,10 +6618,10 @@ export class GameModel {
         v.kind !== 'wall' &&
         !isTrap(v.kind) &&
         !concealedTesla(b, v) &&
-        x > v.x - 1.5 &&
-        x < v.x + BUILDINGS[v.kind].size + 1.5 &&
-        y > v.y - 1.5 &&
-        y < v.y + BUILDINGS[v.kind].size + 1.5,
+        x > v.x - DEPLOY_MARGIN &&
+        x < v.x + BUILDINGS[v.kind].size + DEPLOY_MARGIN &&
+        y > v.y - DEPLOY_MARGIN &&
+        y < v.y + BUILDINGS[v.kind].size + DEPLOY_MARGIN,
     );
   }
   /**
