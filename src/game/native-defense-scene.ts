@@ -109,6 +109,7 @@ export function nativeDefenseEffects(pack: NativeDefensePack, tower: Building) {
     attackAlt: columns.AttackEffectAlt,
     hit: weaponRow?.HitEffect ?? columns.HitEffect,
     activation: weaponRow?.ActivationEffect ?? columns.CombatActivationEffect,
+    appear: columns.AppearEffect,
     death: weaponRow?.DieDamageEffect ?? columns.DieDamageEffect,
     beamStart: columns.ExportNameBeamStart,
     beamEnd: columns.ExportNameBeamEnd,
@@ -379,6 +380,23 @@ export class NativeDefensePresentation {
       // visible beam endpoint must still run its beam passes.
       if (towerOut && !this.beamOnScreen(tower, battle, elapsed, iso, view!)) continue;
       const effects = this.effectsFor(pack, tower);
+      if (battle && effects.appear) {
+        // Warm the retained reveal art while scouting. Read activation from the
+        // trap state so a paused replay seek can draw the same source frame.
+        const duration = this.layer.duration(effects.appear);
+        const trap = battle.traps[tower.id];
+        if (trap && duration !== undefined && clock < trap.activatedAt + duration)
+          this.layer.play(
+            {
+              key: `${tower.id}:appear`,
+              effect: effects.appear,
+              at: trap.activatedAt,
+              ground: point,
+            },
+            clock,
+            reduced,
+          );
+      }
       const state = battle?.nativeDefenses?.[tower.id];
       const target = live ? nativeDefenseTarget(battle, tower) : undefined;
       const aim = target

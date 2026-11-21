@@ -126,6 +126,24 @@ alongside other effects remain unverified.
 [Independent death-frame witness](../reference/garrison/README.md#original-dragon-death-timeline) ·
 [Troop sound assignments](TROOP-SOUNDS.md)
 
+A TH6 Practice stress run used three 45-Archer waves and reached 86
+casualties. Each wave began with a real touch, followed by a fixed roster
+batch and 70 deterministic ticks sampled in compact landscape. Across three
+packaged runs per build, the median wave frame interval was 16.7 ms with
+a 16.8 ms p95. Median presentation work changed from 2.2 to 2.3 ms and its
+p95 from 4.4 to 4.5 ms. Longer-tail spikes varied by run. The comparison
+uses cloud Chromium, fixed full detail and manual ticks. It does not
+measure physical-device input latency.
+
+## Giga Bomb reveal
+
+All four pinned Giga Bomb levels name `Giga Bomb Appear`. Its retained
+effect row binds `gen_appear_fx` and the Grass emitter. The web renderer
+now draws that effect from the trap’s recorded activation state, including
+at the same instant when seeking in replay. The reveal follows the existing
+web simulation clock. The native runtime onset, interaction with other
+layers, and fuse audio playback remain outside this comparison.
+
 ## First-session Builder’s Huts
 
 The retained starting grant, Campaign records, Practice instructions and HUD

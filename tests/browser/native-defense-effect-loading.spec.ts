@@ -138,3 +138,50 @@ for (const chain of [false, true]) {
     expect(errors).toEqual([]);
   });
 }
+
+test('Giga Bomb reveal draws the pinned appear effect from the recorded trap state', async ({ page }) => {
+  await page.setViewportSize({ width: 568, height: 320 });
+  await page.goto('/?lazyart');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  await page.locator('[data-action="skip-tutorial"]').click();
+  const id = await page.evaluate(async () => {
+    const { makeBuilding } = await import('/src/game/model.ts');
+    const { emptyArmy } = await import('/src/game/army.ts');
+    const { iso } = await import('/src/game/scene.ts');
+    const { model, scene } = window.__game;
+    const trap = makeBuilding(model.state.nextId++, 'gigabomb', 15, 22, 1);
+    model.state.buildings = [
+      makeBuilding(1, 'townhall', 24, 24, 17),
+      makeBuilding(2, 'builder', 21, 33, 1),
+      trap,
+    ];
+    model.state.obstacles = [];
+    model.state.army = { ...emptyArmy(), giant: 6 };
+    model.startBattle(0, true);
+    scene.paused = true;
+    scene.sync();
+    const p = iso(16, 23);
+    scene.cameras.main.centerOn(p.x, p.y);
+    return trap.id;
+  });
+  await page.waitForFunction(() => {
+    const { nativeDefenses } = window.__game.scene;
+    return nativeDefenses.covers('gigabomb') &&
+      nativeDefenses.layer.status('Giga Bomb Appear') === 'ready';
+  });
+  const observed = await page.evaluate((id) => {
+    const { model, scene } = window.__game;
+    const drawn = () => [...scene.nativeDefenses.layer.views.entries()].some(
+      ([key, view]) => key.includes(`${id}:appear:0:timeline`) &&
+        view.objects.some((object) => object.visible),
+    );
+    scene.drawOverlay(0);
+    const before = drawn();
+    model.activeTroop = 'giant';
+    if (model.deployMany(13.5, 22.5, 4) !== 4) throw Error('Could not deploy Giants');
+    for (let i = 0; i < 6; i++) model.step(0.05);
+    scene.drawOverlay(0);
+    return { before, after: drawn(), resolved: model.battle.traps[id]?.resolved };
+  }, id);
+  expect(observed).toEqual({ before: false, after: true, resolved: false });
+});
