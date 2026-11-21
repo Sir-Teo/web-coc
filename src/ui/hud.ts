@@ -1480,10 +1480,12 @@ export class HUD {
       restoreFocusMark(previous.launcher);
     }
   }
-  private captureBattleLogReturn(): BattleLogReturn {
+  private captureBattleLogReturn(
+    source = this.actionSource ?? document.activeElement,
+  ): BattleLogReturn {
     return {
       scroll: this.modalEl.querySelector('.battle-log-body')?.scrollTop ?? 0,
-      focus: focusMark(this.actionSource ?? document.activeElement),
+      focus: focusMark(source),
       launcher: this.focusBefore,
     };
   }
@@ -2870,9 +2872,14 @@ export class HUD {
       if (file.size > MAX_REPLAY_FILE_BYTES)
         throw Error('Replay files must be smaller than 512 KB.');
       const replay = parseReplayFile(await file.text());
+      // The file picker may take focus away from its launcher.
+      const previous =
+        this.panel === 'battle-log'
+          ? this.captureBattleLogReturn(this.modalEl.querySelector('[data-action="replay-import"]'))
+          : undefined;
       if (!this.model.openReplay(replay))
         throw Error('Finish your current attack before opening a replay.');
-      this.replayLogReturn = undefined;
+      this.replayLogReturn = previous;
       this.panel = null;
       this.drawerPanel = null;
       this.resultShown = false;

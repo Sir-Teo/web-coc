@@ -211,6 +211,11 @@ test('downloads a recording, opens it without replacing the village, and rejects
   await page.locator('[data-action="replay-restart"]').click();
   await expect(page.locator('.replay-status')).toContainText('Watching replay');
   await page.locator('[data-action="replay-exit"]').click();
+  await expect(page.getByRole('button', { name: 'Open shared replay' })).toBeFocused();
+  await page.getByRole('button', { name: 'Close dialog' }).click();
+  const battleLog = page.getByRole('button', { name: 'Battle log', exact: true });
+  await expect(battleLog).toBeFocused();
+  await battleLog.click();
   expect(
     await page.evaluate(() => {
       const s = window.__game.model.state;
