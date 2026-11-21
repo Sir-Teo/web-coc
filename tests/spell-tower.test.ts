@@ -20,10 +20,13 @@ import {
   spellTowerTimeScale,
 } from '../src/game/spell-tower';
 import type { Battle } from '../src/game/model';
+import { REPLAY_VERSION, replayBattle } from '../src/game/replay';
+import { nativeRow } from '../src/game/native-data';
 import {
   attacker,
   isolatedBattle,
   lateBuilding,
+  lateSetup,
   stepFamilies,
 } from './fixtures/late-defense-battle';
 
@@ -366,3 +369,45 @@ describe('Spell Tower destruction', () => {
     ]);
   });
 });
+
+it.each(['rage', 'poison', 'invisibility'] as const)(
+  'keeps a Totem alone from triggering a Campaign %s tower',
+  (mode) => {
+    expect(nativeRow('buildings', 'Spell Tower', 3).TargetingImmunityTotems).toBe('TRUE');
+    const setup = lateSetup(87, { giant: 1 }, [
+      lateBuilding(1, 'spelltower', 20, 20, 3, mode),
+      lateBuilding(2, 'goldstorage', 23, 20, 10),
+    ]);
+    setup.spells.totem = 1;
+
+    for (const version of [295, REPLAY_VERSION]) {
+      const battle = replayBattle(setup, version);
+      battle.started = true;
+      battle.units = [{ ...attacker(3, 'giant', 25, 21), kind: 'totem' }];
+      for (let i = 0; i < 40; i++) stepFamilies(battle);
+      const tower = battle.late!.spellTower!.towers[1];
+      const legacyProximity = version === 295 && mode !== 'invisibility';
+      expect(tower.casts).toBe(legacyProximity ? 1 : 0);
+      if (legacyProximity) continue;
+      expect(tower.targetId).toBeNull();
+
+      const giant = attacker(4, 'giant', 25, 21);
+      battle.units.push(giant);
+      if (mode === 'invisibility') {
+        for (let i = 0; i < 40; i++) stepFamilies(battle);
+        expect(tower.casts).toBe(0);
+        giant.attacking = true;
+        giant.target = 2;
+        battle.buildings[1].hp -= 100;
+      }
+      for (let i = 0; i < 40; i++) stepFamilies(battle);
+      expect(battle.late!.spellTower!.casts[0]).toMatchObject({ targetId: 4, onDeath: false });
+    }
+
+    const destroyed = replayBattle(setup, REPLAY_VERSION);
+    destroyed.started = true;
+    destroyed.units = [{ ...attacker(3, 'giant', 25, 21), kind: 'totem' }];
+    destroy(destroyed, 1);
+    expect(destroyed.late!.spellTower!.casts[0]).toMatchObject({ onDeath: true });
+  },
+);

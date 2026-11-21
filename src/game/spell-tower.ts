@@ -232,6 +232,7 @@ function stepTowers({ battle, dt }: LateCombatContext) {
     const c = center(tower);
     const eligible = (unit: Unit) =>
       active(unit, battle.elapsed) &&
+      !(battle.nativeCampaignSpellTowerTotemImmunity && unit.kind === 'totem') &&
       (TROOPS[unit.kind].flying ? stats.airTargets : stats.groundTargets);
     const inRange = (unit: Unit) =>
       eligible(unit) &&

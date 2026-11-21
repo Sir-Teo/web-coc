@@ -128,3 +128,14 @@ weapon-field rejection) and
   placements) are not modelled; the unreferenced `spell_tower_<color>` exports are not imported.
 - The battle range ring and tooltip show the weapon activation range (4.5 or 9 tiles), not the
   spell radius.
+
+### Campaign Totem detection (recording version 296)
+
+The pinned Spell Tower building row has `TargetingImmunityTotems=TRUE`.
+The retained Totem mechanics also distinguish tower detection from normal
+defenses attacking the Totem. Web CoC's Home tower controller already
+excludes Totems. Campaign Rage and Poison previously accepted the stationary
+Totem as a proximity trigger. Version 296 applies the exclusion in the
+Campaign detection search, including its retained target. Invisibility still
+requires an attacker on a damaged building, and a loaded tower still casts
+on destruction. Earlier recordings use their original detection rules.

@@ -1265,6 +1265,7 @@ export interface Battle {
   /** Version 238: source ejection immunity and siege reduction in native home Spring Traps. */
   nativeSpringEjection?: true;
   exactCampaignDestruction?: true;
+  nativeCampaignSpellTowerTotemImmunity?: true;
   nativeSeekingMineAirSieges?: true;
   nativeAirBombFixedAim?: true;
   nativeAirBombSplashEligibility?: true;
