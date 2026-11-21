@@ -177,6 +177,9 @@ import {
 } from '../game/army';
 import { ARMY_RECIPE_TEXTS, FIRST_RECIPE_TOWN_HALL, type ArmyRecipe } from '../game/army-recipes';
 import { PRACTICE_TEXTS, practiceLevelAt, type PracticeLevel } from '../game/practice-mode';
+import { builderHutWeapon } from '../game/builder-hut-stats';
+import { goblinWeaponFor } from '../game/late-goblin-buildings-stats';
+import { NPC_BUILDINGS } from '../game/npc-buildings';
 import {
   BUILDINGS,
   buildPrice,
@@ -5929,11 +5932,13 @@ export class HUD {
     const loot = m.campaignLoot(i, 'goblin-v1');
     const drill = practiceLevelAt(i);
     const counts = new Map<string, number>();
-    for (const b of nativeBuildings(i))
-      if (isDefense(b.kind) && b.kind !== 'tesla') {
-        const name = BUILDINGS[b.kind].name;
-        counts.set(name, (counts.get(name) ?? 0) + 1);
-      }
+    for (const b of nativeBuildings(i)) {
+      if (b.kind === 'tesla') continue;
+      const armedHut = b.kind === 'builder' && !b.npc && builderHutWeapon(b.level);
+      if (!isDefense(b.kind) && !armedHut && !goblinWeaponFor(b)) continue;
+      const name = b.npc ? NPC_BUILDINGS[b.npc].name : BUILDINGS[b.kind].name;
+      counts.set(name, (counts.get(name) ?? 0) + 1);
+    }
     const defenses = [...counts].sort((a, b) => b[1] - a[1]);
     const attackLabel = locked
       ? 'Locked'

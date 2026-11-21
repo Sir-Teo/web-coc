@@ -254,3 +254,15 @@ state when seeking backward and forward.
 | 1 | Village-to-battle and first-session UI. Web drawers, compact navigation, Campaign previews, deployment feedback and result/replay transport differ or lack native evidence. | An authorized version-matched capture from Village through Shop or Army, map selection, scouting, first deployment, results and replay. Include both phone orientations and preserve the labels, available actions and field framing at each state. |
 | 2 | Live unit, defense and terrain rendering. Payback’s Cannon body is identified, but its camera registration, initial aim, firing pose and destruction presentation remain unverified. Geared visuals, time-based effects, lighting and other families also remain open. | Start with pinned-client Payback captures of object 500000002 on entry, immediately before and during the first shot, and just after destruction. Match terrain, zoom and attacker location, and use the footprint and nearby terrain as registration landmarks. For other defenses, match level, mode and animation time and record the runtime atlas. |
 | 3 | Audio playback and mix. Three triggers are verified in the web graph. Native source identity does not establish mix or sequencing. | Synchronized native and web audio captures of equivalent inputs, including planning-to-combat and result transitions, plus mute and resume. Compare cue identity, onset, channel levels and loop or sting boundaries. |
+
+### Campaign scout defense summary
+
+Builderopolis places 44 Builder's Huts and one level-2 Goblin Hall. The
+pinned weapon rows identify 36 armed huts and an armed Hall. The web scout
+summary now includes those weapons and uses the Goblin Hall identity.
+Passive huts, Hidden Teslas and traps stay outside the summary. This is a
+correction to the web preview's layout data. The native scout panel's exact
+composition, reveal policy and timings remain outside the retained evidence.
+[Campaign layout](../reference/campaign/runtime.json) ·
+[Builder's Hut weapon rows](../reference/builder-hut/combat.json) ·
+[Goblin weapon rows](../reference/late-goblin-buildings/README.md).

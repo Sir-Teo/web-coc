@@ -94,3 +94,25 @@ test('locked Campaign cards and scouting name the source prerequisite', async ({
   await expect(outpost.getByRole('button', { name: 'Scout Goblin Outpost' })).toBeFocused();
   await expect(page.locator('[data-action="attack:1"]')).toBeEnabled();
 });
+
+test('scouting lists pinned armed buildings and keeps concealed defenses out', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/?lazyart');
+  await page.locator('[data-action="skip-tutorial"]').tap();
+  await page.evaluate(async () => {
+    const { freshNativeCampaign } = await import('/src/game/native-campaign.ts');
+    const model = window.__game.model;
+    model.state.nativeCampaign = freshNativeCampaign();
+    model.state.nativeCampaign.stars.fill(1, 0, 84);
+    model.changed();
+  });
+  await page.locator('.attack-btn').tap();
+  await page.locator('[data-action="campaign-scout:84"]').tap();
+  const list = page.locator('.campaign-scout-defenses');
+  await expect(list.getByText('36× Builder’s Hut', { exact: true })).toBeVisible();
+  await expect(list.getByText('1× Goblin Hall', { exact: true })).toBeVisible();
+  await expect(list).not.toContainText(/Tesla|Trap/);
+  await page.getByRole('button', { name: 'Back to campaign' }).tap();
+  await page.locator('[data-action="campaign-scout:1"]').tap();
+  await expect(list.locator('li')).toHaveText(['1× Archer Tower']);
+});
