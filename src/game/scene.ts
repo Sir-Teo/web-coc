@@ -718,6 +718,7 @@ export class VillageScene extends Phaser.Scene {
     t: number;
     building?: { id: number; offsetX: number; offsetY: number };
     artBlocked: boolean;
+    guideStep: GameModel['guideStep'];
     touchId?: number;
   };
   private dragged = false;
@@ -1409,6 +1410,7 @@ export class VillageScene extends Phaser.Scene {
           ? { id: held.id, offsetX: held.x - grid.x, offsetY: held.y - grid.y }
           : undefined,
         artBlocked: !!this.model.battle && this.battleArtPending(),
+        guideStep: this.model.guideStep,
         touchId: p.wasTouch ? p.identifier : undefined,
       };
       this.dragged = false;
@@ -1502,6 +1504,11 @@ export class VillageScene extends Phaser.Scene {
       } else this.fling.stop();
       this.model.endDrag(cancelled || !droppedOnMap);
       if (cancelled || !droppedOnMap) return;
+      // A new Practice objective can select a different unit while this pointer is down.
+      if (down.guideStep !== this.model.guideStep) {
+        this.lastTap = undefined;
+        return;
+      }
       if (this.dragged || gesture !== 'none') {
         if (gesture === 'pan') this.lastTap = undefined;
         return;
@@ -2802,6 +2809,7 @@ export class VillageScene extends Phaser.Scene {
     return (
       !!b &&
       !this.down?.artBlocked &&
+      this.down?.guideStep === this.model.guideStep &&
       !this.model.replay &&
       !b.finished &&
       !this.model.placement &&
@@ -2843,7 +2851,7 @@ export class VillageScene extends Phaser.Scene {
     }
   }
   private dragDeploy(p: Phaser.Input.Pointer) {
-    if (!this.pointerOverCanvas(p)) return;
+    if (this.down?.guideStep !== this.model.guideStep || !this.pointerOverCanvas(p)) return;
     const grid = this.gridAtPointer(p);
     if (Math.hypot(grid.x - this.lastDeploy.x, grid.y - this.lastDeploy.y) < 0.75) return;
     if (this.model.deployBlocked(grid.x, grid.y)) return;

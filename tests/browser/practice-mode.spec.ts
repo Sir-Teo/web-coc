@@ -796,3 +796,79 @@ for (const [width, height, stage, name, x, y, radius] of [
     ).toBe(16);
   });
 }
+
+for (const lesson of [
+  {
+    index: 102,
+    first: 'TH12_Bowigi_Balloon1',
+    wait: 'Wait_2500ms',
+    next: 'TH12_Bowigi_Healers',
+    target: { x: 2, y: 42, radius: 1.5 },
+    rotated: { width: 844, height: 390 },
+  },
+  {
+    index: 153,
+    first: 'TH12_Yeti_GrandWarden',
+    wait: 'Wait_1000ms',
+    next: 'TH12_Yeti_Healers',
+    target: { x: 50, y: 50, radius: 2 },
+    rotated: { width: 320, height: 568 },
+  },
+]) {
+  test(`a touch held across the Practice wait at stage ${lesson.index + 1} cannot spend Healers`, async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    await boot(page, 12);
+    await page.locator(`[data-action="campaign-scout:${lesson.index}"]`).tap();
+    await page.locator(`.campaign-scout [data-action="attack:${lesson.index}"]`).tap();
+    await page.waitForFunction(() => !window.__game.scene.scoutingArtNotice());
+    await page.setViewportSize(lesson.rotated);
+    const state = () =>
+      page.evaluate(() => {
+        const { model, scene } = window.__game;
+        const spot = model.practiceGuide?.spot;
+        const point = spot && scene.screenFor(spot.x, spot.y);
+        return {
+          name: model.guideStep?.name,
+          point,
+          clear: !!point && document.elementFromPoint(point.x, point.y) === scene.game.canvas,
+          stock: model.battle?.remaining.healer,
+          elapsed: model.battle?.elapsed,
+        };
+      });
+    await expect.poll(state).toMatchObject({ name: lesson.first, clear: true, stock: 5 });
+    const first = (await state()).point!;
+    await page.touchscreen.tap(first.x, first.y);
+    await expect.poll(state).toMatchObject({ name: lesson.wait });
+    // Put the upcoming marker on open canvas so a blocked control cannot mask a stale press.
+    const destination = await page.evaluate((target) => {
+      const { scene } = window.__game;
+      scene.cameras.main.centerOn(
+        896 + (target.x - target.y) * 32,
+        112 + (target.x + target.y) * 16,
+      );
+      scene.clampCamera();
+      scene.keepGuideSpotClear(target);
+      return scene.screenFor(target.x, target.y);
+    }, lesson.target);
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [destination] });
+    await page.waitForFunction(() => !!window.__game.scene.down);
+    await expect.poll(state, { timeout: 15_000 }).toMatchObject({ name: lesson.next });
+    const frozen = (await state()).elapsed;
+    // Long enough for the ordinary hold stream to fire, even if the prompt
+    // appeared just after the touch began.
+    await page.waitForTimeout(350);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect.poll(state).toMatchObject({ name: lesson.next, clear: true, stock: 5, elapsed: frozen });
+    const point = (await state()).point!;
+    await page.touchscreen.tap(point.x, point.y);
+    await expect.poll(state).toMatchObject({ name: lesson.next, stock: 4, elapsed: frozen });
+    await page.locator('[data-action="surrender"]').tap();
+    await page.locator('[data-action="end"]').tap();
+    await expect(page.locator('#result-title')).toBeVisible();
+    await page.locator('[data-action="raid-again-guided"]').tap();
+    await expect.poll(state).toMatchObject({ name: lesson.first, stock: 5, clear: true });
+  });
+}
