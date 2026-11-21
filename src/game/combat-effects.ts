@@ -145,8 +145,11 @@ export class CombatEffects {
     return this.shapes.shape(`weapon:${weapon}`, -26, -14, 44, 28, (g) => {
       const color = COLORS[weapon];
       if (weapon === 'healing') {
-        g.fillStyle(color, 0.2).fillEllipse(-5, 0, 22, 12);
-        g.fillStyle(color, 0.85).fillCircle(0, 0, 4);
+        // Keep the healing direction readable when the authored emitter is skipped.
+        // The streak and head share the same baked quad as the other fallback shots.
+        g.fillStyle(0x675125, 0.65).fillTriangle(-23, 0, 1, -5, 1, 5);
+        g.fillStyle(color, 0.9).fillTriangle(-21, 0, 1, -2.5, 1, 2.5);
+        g.fillStyle(color).fillCircle(0, 0, 4);
         g.fillStyle(0xfffff0).fillCircle(0, 0, 2);
       } else if (weapon === 'arrow') {
         g.lineStyle(2, 0x67442a).lineBetween(-12, 0, 8, 0);

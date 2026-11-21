@@ -68,7 +68,9 @@ previously displayed its drawn green projectile for these friendly casts. It
 now samples the retained trail along each in-flight Healer shot, including
 when a replay seeks into the flight. The drawn projectile remains visible
 when no native trail draws, including while art is unavailable or at lower
-detail. Healing impact feedback uses the existing path. Projectile timing,
-healing eligibility, hitpoints, saves and replay rules are unchanged.
+detail. Its directional streak and bright head use one baked sprite. This
+is a web rendering fallback that preserves flight direction. Healing impact
+feedback uses the existing path. Projectile timing, healing eligibility,
+hitpoints, saves and replay rules are unchanged.
 Original-client layering and particle motion relative to the body remain
 uncaptured.
