@@ -164,3 +164,27 @@ or nonliteral grid definition requires an explicit audit update. The raw files r
 ignored `output/native-campaign-source/`. `tests/native-layout-bounds.test.ts` exercises the
 real Whirl Power hut overrun, all four boundaries, malformed coordinates, missing source
 stats, all 154 villages, original guide targets and the report's grid/coverage identity.
+
+## Air Raid's opening marker
+
+The [pinned lesson catalog](../reference/practice/catalog.json) assigns Air
+Raid's opening `ShowObject` to the Air Sweeper at source tile (23, 25),
+board tile (25, 27). This opening is a five-second, forced-type information
+step. The roster is 30 level-4 Balloons, 25 level-2 Minions, a level-5
+Barbarian King, and three level-4 Rage Spells. The following guide calls
+for 15 Balloons, Rage, the King, 25 Minions, and another Rage, with waits
+between those actions.
+
+At 568×320, the target ring's center fell inside the deployment tray.
+Web CoC now applies the existing one-time guide framing to the
+`ShowObject` target, including after a resize. A passive
+`WaitUntilDestroyed` highlight still leaves the camera under player
+control. The retained UI exports establish art identity for the existing
+[HUD controls](../reference/hud/README.md). They leave native lesson
+composition and camera choreography unverified.
+
+Packaged phone touch runs at 390×844 and 568×320 refused a deployment
+during the opening and a Minion during the Balloon step without spending
+stock. All 43 prescribed troop, hero, and spell actions completed the
+guide. The recording retained all 43 actions and a replay seek to the
+end matched the live result.

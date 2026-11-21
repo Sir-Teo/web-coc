@@ -743,3 +743,28 @@ test('Electro Surgery frames its opening and Blimp targets in short landscape', 
     };
   })).toEqual({ deployed: 1, stock: 0, level: 3 });
 });
+
+test('Air Raid exposes the opening Air Sweeper highlight above the compact HUD', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 568, height: 320 });
+  await boot(page, 7);
+  await page.locator('[data-action="campaign-scout:95"]').tap();
+  await expect(page.locator('.campaign-scout')).toContainText('Air Raid');
+  await page.locator('.campaign-scout [data-action="attack:95"]').tap();
+  await expect(page.locator('.practice-guide')).toContainText('Approach the base from behind');
+  const marker = () =>
+    page.evaluate(() => {
+      const { model, scene } = window.__game;
+      const target = model.guideStep?.show;
+      const building = target && model.guideBuilding(target);
+      if (!building || building.kind !== 'airsweeper') return null;
+      const p = scene.screenFor(building.x + 1, building.y + 1);
+      return {
+        tile: [building.x, building.y],
+        canvas: document.elementFromPoint(p.x, p.y) === scene.game.canvas,
+      };
+    });
+  await expect.poll(marker).toEqual({ tile: [25, 27], canvas: true });
+  expect(await page.evaluate(() => window.__game.model.battle.units.length)).toBe(0);
+});

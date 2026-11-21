@@ -5715,37 +5715,44 @@ export class VillageScene extends Phaser.Scene {
       g.lineStyle(3, GUIDE_COLOR, 0.95);
       g.strokeEllipse(p.x, p.y, w, h);
     };
-    if (guide.spot && step.unit && !step.ability) {
-      ring(guide.spot.x, guide.spot.y, Math.max(0.8, step.radius), 0.14);
-      // Each new step brings its spot into view, as the original's guide does; once only, so a
-      // player panning away is not pulled back every frame.
-      const key = `${guide.index}:${guide.spot.x},${guide.spot.y}:${this.scale.width},${this.scale.height}`;
-      if (key !== this.guideFocus) {
-        this.guideFocus = key;
-        const at = iso(guide.spot.x, guide.spot.y),
-          view = this.cameras.main.worldView,
-          inset = Math.min(view.width, view.height) * 0.18;
-        if (
-          at.x < view.x + inset ||
-          at.x > view.right - inset ||
-          at.y < view.y + inset ||
-          at.y > view.bottom - inset
-        ) {
-          this.cameras.main.centerOn(at.x, at.y);
-          this.clampCamera();
-        }
-        requestAnimationFrame(() => {
-          if (!this.down && this.guideFocus === key && this.model.practiceGuide === guide && guide.spot)
-            this.keepGuideSpotClear(guide.spot);
-        });
-      }
-    }
+    const deployment = step.unit && !step.ability ? guide.spot : undefined;
+    if (deployment)
+      ring(deployment.x, deployment.y, Math.max(0.8, step.radius), 0.14);
     const target = step.show ?? step.waitFor;
     const v = target && this.model.guideBuilding(target);
+    let indicated: { x: number; y: number } | undefined;
     if (v && v.hp > 0) {
       const size = BUILDINGS[v.kind].size;
-      ring(v.x + size / 2, v.y + size / 2, Math.max(1, size * 0.75), 0.08);
+      indicated = { x: v.x + size / 2, y: v.y + size / 2 };
+      ring(indicated.x, indicated.y, Math.max(1, size * 0.75), 0.08);
     }
+    // Frame instructional targets as well as deployment spots. Passive waits
+    // still highlight their building without taking over the player's camera.
+    const marker = deployment ?? (step.show ? indicated : undefined);
+    if (!marker) return;
+    const key = `${guide.index}:${marker.x},${marker.y}:${this.scale.width},${this.scale.height}`;
+    if (key === this.guideFocus) return;
+    this.guideFocus = key;
+    const at = iso(marker.x, marker.y),
+      view = this.cameras.main.worldView,
+      inset = Math.min(view.width, view.height) * 0.18;
+    if (
+      at.x < view.x + inset ||
+      at.x > view.right - inset ||
+      at.y < view.y + inset ||
+      at.y > view.bottom - inset
+    ) {
+      this.cameras.main.centerOn(at.x, at.y);
+      this.clampCamera();
+    }
+    requestAnimationFrame(() => {
+      if (
+        !this.down &&
+        this.guideFocus === key &&
+        this.model.practiceGuide === guide &&
+        this.model.guideStep === step
+      ) this.keepGuideSpotClear(marker);
+    });
   }
   /** Frame a new guide spot outside the DOM HUD, while leaving manual panning intact. */
   private keepGuideSpotClear(spot: { x: number; y: number }) {
