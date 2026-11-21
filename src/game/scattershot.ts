@@ -3,6 +3,7 @@ import type { Battle, Building, Unit } from './model';
 import { TROOPS } from './data';
 import { spellTowerDefenseBoost } from './spell-tower';
 import { nativeOwned } from './native-ownership';
+import { unitInvisible } from './native-status';
 import {
   SCATTERSHOT,
   SCATTERSHOT_NATIVE_TILE,
@@ -98,6 +99,9 @@ const native = (tiles: number) => Math.floor((tiles + NATIVE_OFFSET) * SCATTERSH
 const flying = (u: Unit) => (!u.hero || u.kind === 'grandwardenair') && !!TROOPS[u.kind].flying;
 const available = (u: Unit, at: number) =>
   u.hp > 0 && !u.ejected && (u.spawnedAt ?? 0) <= at + 1e-9;
+// Concealment prevents acquisition, while existing projectiles and splash can still hit.
+const targetable = (battle: Battle, u: Unit, at: number) =>
+  available(u, at) && !(battle.nativeCampaignScattershotConcealment && unitInvisible(u, at));
 const centerTiles = (b: Building) => ({
   x: b.x + SCATTERSHOT.size / 2,
   y: b.y + SCATTERSHOT.size / 2,
@@ -193,13 +197,13 @@ function tick(
   }
   // RefreshTarget: keep a valid target; otherwise search the nearest at most every 500 ms.
   let target = s.targetId === null ? undefined : battle.units.find((u) => u.id === s.targetId);
-  if (target && !(available(target, at) && inRange(tower, target))) target = undefined;
+  if (target && !(targetable(battle, target, at) && inRange(tower, target))) target = undefined;
   if (!target) {
     s.targetId = null;
     if (s.searchMs === 0) {
       let best = Infinity;
       for (const u of battle.units)
-        if (available(u, at) && inRange(tower, u)) {
+        if (targetable(battle, u, at) && inRange(tower, u)) {
           const d = distance(tower, u);
           if (d < best) {
             best = d;

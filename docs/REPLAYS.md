@@ -2027,3 +2027,13 @@ its existing candidate order and redeployment states. Version 297 and earlier
 retain their original costs.
 
 See the retained [Recall mechanics](../reference/official-wiki/spells-siege-super/recall-spell.md).
+
+## Version 299: Campaign Scattershot and concealed attackers
+
+Campaign Scattershots drop concealed targets and skip them during acquisition.
+A shot already in flight still lands, and its splash and fragments still hit
+concealed attackers on the struck layer. Version 298 and earlier retain their
+original target selection.
+
+See the retained [Invisibility rules](../reference/official-wiki/spells-siege-super/invisibility-spell.md)
+and [Scattershot rules](../reference/official-wiki/defenses/scattershot.md).

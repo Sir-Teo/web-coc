@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { makeBuilding, type Battle, type Building, type Unit } from '../src/game/model';
-import { replayBattle } from '../src/game/replay';
+import { REPLAY_VERSION, replayBattle } from '../src/game/replay';
 import { TROOP_KEYS } from '../src/game/data';
 import { stepLateCampaign } from '../src/game/late-campaign';
 import { NATIVE_COMBAT } from '../src/game/native-campaign';
@@ -174,4 +174,42 @@ describe('Scattershot impact', () => {
     expect(beyond.hp).toBe(1000);
     expect(scattershotPending(battle)).toBe(false);
   });
+});
+
+it.each([
+  { version: REPLAY_VERSION, retargets: true },
+  { version: 298, retargets: false },
+])('checks Scattershot concealment in recording version ', ({ version, retargets }) => {
+  const battle = replayBattle(
+    isolatedSetup(75, scattershot(), { giant: 2, balloon: 1 }, { invisibility: 1 }),
+    version,
+  );
+  battle.started = true;
+  const giant = unit('giant', center.x + 6, center.y, 1000);
+  const other = unit('giant', center.x + 6, center.y + 0.6, 1000);
+  const balloon = unit('balloon', center.x + 6, center.y + 0.75, 1000);
+  giant.native = { effects: { invisibleUntil: 8 } };
+  battle.units.push(giant, other, balloon);
+  advance(battle, 1.3);
+  expect(tower(battle).targetId).toBe(retargets ? other.id : giant.id);
+  expect(giant.hp).toBeLessThan(1000);
+  expect(other.hp).toBeLessThan(1000);
+  expect(balloon.hp).toBe(1000);
+});
+
+it('drops a newly invisible target without cancelling the Scattershot already in flight', () => {
+  const battle = replayBattle(
+    isolatedSetup(75, scattershot(), { giant: 1, balloon: 1 }, { invisibility: 1 }),
+  );
+  battle.started = true;
+  const giant = unit('giant', center.x + 6, center.y, 1000);
+  const balloon = unit('balloon', center.x + 6, center.y + 0.4, 1000);
+  battle.units.push(giant, balloon);
+  advance(battle, 0.65);
+  expect(tower(battle).targetId).toBe(giant.id);
+  giant.native = { effects: { invisibleUntil: 8 } };
+  advance(battle, 0.65);
+  expect(tower(battle).targetId).toBe(balloon.id);
+  expect(giant.hp).toBeLessThan(1000);
+  expect(balloon.hp).toBe(1000);
 });
