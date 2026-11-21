@@ -301,6 +301,7 @@ const DOT_RADIUS = 8;
 const NO_CUES: SampleCue[] = [];
 const ZERO = Object.freeze({ x: 0, y: 0 });
 const LOADING_LATE_ART = 'Loading village art…';
+export const BATTLE_READY_RETRY = 'Battle ready. Tap the battlefield again.';
 const OFFLINE_LATE_ART = 'Reconnect to download this village’s art.';
 /** Press and hold: the first troop drops after this still press, the stream then speeds up. */
 export const HOLD_DEPLOY_DELAY_MS = 260;
@@ -1522,6 +1523,13 @@ export class VillageScene extends Phaser.Scene {
       // The art gate opening must not turn an earlier press into a deployment.
       if (down.artBlocked) {
         if (this.battleArtPending()) this.model.notify(this.battleArtWaitMessage());
+        else if (
+          this.model.battle &&
+          !this.model.replay &&
+          !this.model.battle.finished &&
+          this.model.deploymentSelected
+        )
+          this.model.notify(BATTLE_READY_RETRY);
         return;
       }
       this.tap(p);

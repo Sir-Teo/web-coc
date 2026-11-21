@@ -254,7 +254,7 @@ const SPELL_TOWER_LABEL: Record<SpellTowerMode, string> = {
   invisibility: 'Invisibility',
   earthquake: 'Earthquake',
 };
-import { VillageScene } from '../game/scene';
+import { BATTLE_READY_RETRY, VillageScene } from '../game/scene';
 import { AudioManager } from '../game/audio';
 import {
   saveFileName,
@@ -1156,7 +1156,11 @@ export class HUD {
     model.onToast = (m) => this.toast(m);
     model.onBattlePlacement = (spell) => {
       const warning = this.root.querySelector('#toast.show')?.textContent;
-      if (warning === DEPLOYMENT_BOUNDARY_WARNING || warning === SPELL_BOUNDARY_WARNING)
+      if (
+        warning === DEPLOYMENT_BOUNDARY_WARNING ||
+        warning === SPELL_BOUNDARY_WARNING ||
+        warning === BATTLE_READY_RETRY
+      )
         this.toast('');
       if (!spell || model.battle?.spells[spell] !== 0) return;
       const action = model.activeSpell
