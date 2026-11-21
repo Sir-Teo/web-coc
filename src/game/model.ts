@@ -2281,9 +2281,7 @@ export class GameModel {
   }
   /** Verified prerequisites tied to a hero unlock. Cap-only Hall tiers are separate. */
   private townHallHeroHallIssue(level: number) {
-    const hero = (['queen', 'prince', 'warden', 'champion', 'duke'] as const).find(
-      (kind) => heroUnlockTownHall(kind) === level,
-    );
+    const hero = HERO_KINDS.find((kind) => heroUnlockTownHall(kind) === level);
     if (!hero) return null;
     const requiredHall = heroUnlockHall(hero);
     return this.heroHallLevel < requiredHall

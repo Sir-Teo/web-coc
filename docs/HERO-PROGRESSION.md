@@ -51,10 +51,11 @@ The retained [Hero Hall dossier](../reference/official-wiki/heroes-pets/hero-hal
 
 | Town Hall upgrade | Completed Hero Hall | Hero unlocked | Active attack slots before → after |
 | --- | ---: | --- | --- |
+| 4 → 5 | 1 | Barbarian King | 0 → 1 |
 | 8 → 9 | 2 | Archer Queen | 1 → 1 |
 | 9 → 10 | 3 | Minion Prince | 1 → 2 |
 | 11 → 12 | 5 | Grand Warden | 2 → 3 |
 | 13 → 14 | 7 | Royal Champion | 3 → 4 |
 | 15 → 16 | 9 | Dragon Duke | 4 → 4 |
 
-Hero Hall 1 is available at Town Hall 4 and unlocks the Barbarian King and first attack slot. This audit covers the five progression gates above. A separate Town Hall gate for the first Hall or cap-only Hall tiers, Hero Banner placement requirements, and native UI layout remain outside the verified implementation.
+Hero Hall 1 is available at Town Hall 4 and unlocks the Barbarian King and first attack slot. The first Hall must finish construction before the Town Hall can advance to level 5. The pinned rows establish the Hall and King unlock, and the retained dossier describes the prerequisite for heroes available at the current Town Hall. Cap-only Hall tiers, Hero Banner placement requirements, and native UI layout remain outside the verified implementation.

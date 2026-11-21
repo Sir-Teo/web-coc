@@ -535,3 +535,58 @@ it.each([
   restored.upgrade(restored.townhall!.id);
   expect(restored.townhall!.upgradeEnd).toBeDefined();
 });
+
+it('requires the completed King-unlocking Hero Hall before Town Hall 5', () => {
+  const m = village(2);
+  const townHall = m.townhall!;
+  for (const level of [3, 4]) {
+    expect(m.upgradeIssue(townHall)).toBeNull();
+    m.upgrade(townHall.id);
+    expect(m.maxCount('herohall')).toBe(0);
+    m.tick(townHall.upgradeEnd!);
+    expect(m.townhallLevel).toBe(level);
+  }
+  expect(m.maxCount('herohall')).toBe(1);
+  const gold = m.state.gold;
+  const blocked = () => {
+    expect(m.upgradeIssue(townHall)).toMatchObject({ requiredBuilding: 'herohall' });
+    m.upgrade(townHall.id);
+    expect(townHall.upgradeEnd).toBeUndefined();
+    expect(m.state.gold).toBe(gold);
+    expect(m.heroUnlocked('king')).toBe(false);
+  };
+  blocked();
+  m.beginBuild('herohall');
+  expect(m.place(30, 30)).toBe(true);
+  blocked();
+  m.addMagicItem('hammer-of-building');
+  expect(m.useHammer('hammer-of-building', { building: townHall.id })).toBe(false);
+  expect(m.magicItemCount('hammer-of-building')).toBe(1);
+
+  const hall = m.state.buildings.find((b) => b.kind === 'herohall')!;
+  const pending = structuredClone(m.state);
+  expect(validateSave(pending)).toBe(true);
+  const restored = new GameModel(pending, hall.upgradeEnd! - 1);
+  expect(restored.heroUnlocked('king')).toBe(false);
+  expect(restored.upgradeIssue(restored.townhall!)).toMatchObject({ requiredBuilding: 'herohall' });
+  restored.tick(hall.upgradeEnd!);
+  expect(restored.heroUnlocked('king')).toBe(true);
+  expect(restored.heroReady).toBe(true);
+  expect(restored.heroSlotCount).toBe(1);
+  expect(restored.upgradeIssue(restored.townhall!)).toBeNull();
+  restored.upgrade(restored.townhall!.id);
+  expect(restored.townhall!.upgradeEnd).toBeDefined();
+});
+
+it('settles a Town Hall 5 timer already paid in an older village without a Hero Hall', () => {
+  const m = village(4);
+  const oldEnd = m.clock + 1000;
+  m.townhall!.upgradeStart = m.clock;
+  m.townhall!.upgradeEnd = oldEnd;
+  const oldSave = structuredClone(m.state);
+  expect(validateSave(oldSave)).toBe(true);
+  const restored = new GameModel(oldSave, oldEnd);
+  expect(restored.townhallLevel).toBe(5);
+  expect(restored.state.gold).toBe(oldSave.gold);
+  expect(restored.heroUnlocked('king')).toBe(false);
+});

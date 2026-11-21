@@ -465,3 +465,40 @@ test.describe('active building work in Details', () => {
       .toMatchObject({ level: 2, busy: 0, elixir: working.elixir, gems: working.gems - quote });
   });
 });
+
+test.describe('first Hero Hall prerequisite', () => {
+  test.use({ viewport: { width: 568, height: 320 }, isMobile: true, hasTouch: true });
+
+  test('Town Hall Details keeps level 5 locked until the first Hero Hall completes', async ({
+    page,
+  }) => {
+    await boot(page);
+    await page.locator('[data-action="skip-tutorial"]').tap();
+    const { hall, townHall } = await page.evaluate(async () => {
+      const { makeBuilding } = await import('/src/game/model.ts');
+      const { model } = window.__game;
+      model.townhall!.level = 4;
+      model.state.gold = 150_000;
+      model.state.gems = 200;
+      const hall = makeBuilding(model.state.nextId++, 'herohall', 31, 31);
+      hall.constructing = true;
+      hall.upgradeStart = model.clock;
+      hall.upgradeEnd = model.clock + 3_600_000;
+      model.state.buildings.push(hall);
+      model.changed();
+      return { hall: hall.id, townHall: model.townhall!.id };
+    });
+    await select(page, 'townhall');
+    await page.locator('.building-context [data-action="info"]').tap();
+    const upgrade = page.locator(`.info-upgrade [data-action="upgrade:${townHall}"]`);
+    await expect(upgrade).toBeDisabled();
+    await expect(upgrade).toHaveAccessibleDescription(/Complete Hero Hall level 1.*Barbarian King/);
+    await page.getByRole('button', { name: 'Close dialog' }).tap();
+    await page.locator(`[data-action="select-building:${hall}"]`).tap();
+    await page.locator(`[data-action="finish:${hall}"]`).tap();
+    await expect.poll(() => page.evaluate(() => window.__game.model.heroReady)).toBe(true);
+    await select(page, 'townhall');
+    await page.locator('.building-context [data-action="info"]').tap();
+    await expect(upgrade).toBeEnabled();
+  });
+});
