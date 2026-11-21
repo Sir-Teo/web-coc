@@ -419,3 +419,49 @@ test.describe('building inspection on a compact phone', () => {
     }
   });
 });
+
+test.describe('active building work in Details', () => {
+  test.use({ viewport: { width: 568, height: 320 }, isMobile: true, hasTouch: true });
+
+  test('Details reflects the running upgrade and finishes the selected job once', async ({
+    page,
+  }) => {
+    await boot(page);
+    await useDevelopedVillage(page);
+    await page.locator('[data-action="skip-tutorial"]').tap();
+    await page.evaluate(() => {
+      const { model } = window.__game;
+      model.state.elixir = 250_000;
+      model.state.gems = 200;
+      model.changed();
+    });
+    const id = await select(page, 'laboratory');
+    await page.locator('.building-context [data-action="info"]').tap();
+    const footer = page.locator('.info-upgrade');
+    await footer.locator(`[data-action="upgrade:${id}"]`).tap();
+    await expect(footer).toContainText('Upgrading to level 2');
+    await expect(footer.locator(`[data-upgrade="${id}"]`)).toBeVisible();
+    await expect(footer.locator('[data-action^="upgrade:"]')).toHaveCount(0);
+    const finish = footer.locator(`[data-action="finish:${id}"]`);
+    const quote = Number(await finish.locator('[data-finish]').textContent());
+    const state = () =>
+      page.evaluate((id) => {
+        const { model } = window.__game;
+        const building = model.buildings.find((item) => item.id === id)!;
+        return {
+          level: building.level,
+          end: building.upgradeEnd,
+          busy: model.busy,
+          elixir: model.state.elixir,
+          gems: model.state.gems,
+        };
+      }, id);
+    const working = await state();
+    expect(working).toMatchObject({ level: 1, busy: 1, elixir: 225_000 });
+    await finish.tap();
+    await expect(finish).toHaveCount(0);
+    await expect
+      .poll(state)
+      .toMatchObject({ level: 2, busy: 0, elixir: working.elixir, gems: working.gems - quote });
+  });
+});

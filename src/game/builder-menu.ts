@@ -32,7 +32,7 @@ export const BUILDER_MENU_TEXTS = catalog.texts;
 /** How many affordable options the menu suggests; the rest are "Other upgrades". */
 export const SUGGESTED = 5;
 
-function buildingJobDetail(b: Building) {
+export function buildingJobDetail(b: Building) {
   if (b.constructing) return 'Construction';
   switch (b.improving) {
     case 'gearup':

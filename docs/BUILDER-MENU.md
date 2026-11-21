@@ -10,6 +10,11 @@ Buildings of one kind at one level share a row (for instance "Cannon ×2 · Leve
 
 The headings and the hint under the title are the client's strings (`TID_RESEARCHER_MENU_IN_PROGRESS`, `TID_INFOBUBBLE_BUILDER_SUGGESTION`, `TID_INFOBUBBLE_BUILDER_EXTRA_SUGGESTION`, `TID_SPECIAL_FTUE_TUTORIAL_BUILDER_MENU`), imported by `python3 scripts/import-native-builder-menu.py` into `reference/builder-menu/catalog.json` (`--check` verifies it reproduces).
 
+Building Details shows the active job and its remaining time. Its Finish
+button uses the same gem quote and completion action as the village card.
+After the job completes, Details shows the building's resulting level and
+the available next action. This is Web CoC's Details behavior.
+
 ## Choices
 
 The client's tables do not say which upgrades its menu suggests; these rules are this game's:
