@@ -5031,16 +5031,16 @@ h3 {
     width: auto;
     padding-inline: 10px;
   }
-  .result-actions:has(> [data-action="raid-again-guided"]) {
+  .result-actions:has(> [data-action="raid-again-guided"], > [data-action="campaign-next"]) {
     margin-top: 8px;
   }
-  .result-actions:has(> [data-action="raid-again-guided"]) > .game-btn {
+  .result-actions:has(> [data-action="raid-again-guided"], > [data-action="campaign-next"]) > .game-btn {
     flex: 1 1 0;
     min-width: 0;
     padding: 6px;
     white-space: normal;
   }
-  .result-actions:has(> [data-action="raid-again-guided"]) > .game-btn > svg {
+  .result-actions:has(> [data-action="raid-again-guided"], > [data-action="campaign-next"]) > .game-btn > svg {
     flex-shrink: 0;
   }
 }

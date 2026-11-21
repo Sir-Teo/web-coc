@@ -278,3 +278,31 @@ it('moves the last ranged attacker into range when only its tile center can reac
   expect(distanceTo(wizard, hall)).toBeLessThanOrEqual(range);
   expect(hall.hp).toBeLessThan(hall.maxHp);
 });
+
+it('unlocks Outpost on a partial Forest win and pays only the remaining loot on the rematch', () => {
+  let m = new GameModel();
+  expect(m.campaignOpen(2)).toBe(false);
+  m.startCampaign(1);
+  m.discardRecording();
+  for (const target of m.battle!.buildings)
+    if (target.kind === 'archertower' || target.kind === 'builder') m.damage(target, target.hp);
+  m.finishBattle();
+  const first = m.battle!.result!;
+  expect(first.stars).toBe(1);
+  expect(m.campaignOpen(2)).toBe(true);
+  const remaining = m.campaignLoot(1, 'goblin-v1');
+  expect(remaining.gold).toBeGreaterThan(0);
+  expect(first.gold + remaining.gold).toBe(500);
+  expect(first.elixir + remaining.elixir).toBe(500);
+
+  m = reload(m);
+  expect(m.campaignOpen(2)).toBe(true);
+  m.startCampaign(1);
+  expect(m.battle!.availableLoot).toEqual(remaining);
+  clear(m);
+  expect(m.battle!.result).toMatchObject({ gold: remaining.gold, elixir: remaining.elixir, stars: 3 });
+  expect(m.campaignLoot(1, 'goblin-v1')).toEqual({ gold: 0, elixir: 0 });
+  const settled = structuredClone(m.state);
+  m.finishBattle();
+  expect(m.state).toEqual(settled);
+});

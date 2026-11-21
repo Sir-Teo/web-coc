@@ -23,6 +23,7 @@ import { campaignAmount, campaignResourceKeys, type CampaignResource } from '../
 import {
   NATIVE_CAMPAIGN,
   NATIVE_COMBAT,
+  goblinMap,
   nativeBuildings,
   nativeCampaignPending as campaignPending,
 } from '../game/native-campaign';
@@ -1337,6 +1338,13 @@ export class HUD {
     );
     return open.find((i) => !stars[i]) ?? open.find((i) => (stars[i] ?? 0) < 3) ?? null;
   }
+  private revealCampaignStage(index: number) {
+    if (!this.modalEl.querySelector(`#campaign-stage-${index}`)) {
+      this.campaignFilter = 'all';
+      this.render();
+    }
+    this.scrollToStage(index, true);
+  }
   /** Opens the list where the player left it, or at the next village on a first visit. */
   private positionCampaign() {
     const list = this.modalEl.querySelector<HTMLElement>('.campaign-list');
@@ -1525,12 +1533,15 @@ export class HUD {
   private returnFromScout() {
     const log = this.scoutLogReturn;
     const campaignFocus = this.scoutCampaignFocus;
+    const fromResult = this.scoutFromResult;
+    this.scoutFromResult = false;
     this.scoutLogReturn = undefined;
     this.scoutCampaignFocus = null;
     if (log) this.returnToBattleLog(log);
     else {
       this.show('campaign');
-      restoreFocusMark(campaignFocus);
+      if (fromResult) this.revealCampaignStage(this.scoutedStage);
+      else restoreFocusMark(campaignFocus);
     }
   }
   private restoreFocus() {
@@ -2204,6 +2215,7 @@ export class HUD {
         this.show('buildings');
         break;
       case 'campaign-scout':
+        this.scoutFromResult = false;
         this.scoutLogReturn =
           this.panel === 'battle-log' ? this.captureBattleLogReturn() : undefined;
         this.scoutCampaignFocus =
@@ -2214,14 +2226,22 @@ export class HUD {
       case 'scout-back-log':
         this.returnFromScout();
         break;
+      case 'campaign-next': {
+        const next = this.nextGoblinScout();
+        if (next === undefined) break;
+        m.returnHome();
+        this.resultShown = false;
+        this.scoutedStage = next;
+        this.scoutLogReturn = undefined;
+        this.scoutCampaignFocus = null;
+        this.scoutFromResult = true;
+        this.show('campaign-scout');
+        this.focusBefore = focusMark(this.hudEl.querySelector('.attack-btn'));
+        break;
+      }
       case 'campaign-continue': {
         const next = this.nextCampaignStage();
-        if (next === null) break;
-        if (!this.modalEl.querySelector(`#campaign-stage-${next}`)) {
-          this.campaignFilter = 'all';
-          this.render();
-        }
-        this.scrollToStage(next, true);
+        if (next !== null) this.revealCampaignStage(next);
         break;
       }
       case 'army-filter-clear':
@@ -6055,6 +6075,7 @@ export class HUD {
   private scoutedStage = 0;
   private scoutLogReturn?: BattleLogReturn;
   private scoutCampaignFocus: FocusMark | null = null;
+  private scoutFromResult = false;
   /**
    * An enlarged look at a campaign village before attacking: its layout, the defenses on show
    * (hidden Teslas and traps stay hidden, as in battle), the loot left and the suggested tier.
@@ -6406,9 +6427,27 @@ export class HUD {
   private help() {
     return `<div class="modal-body help-body"><div class="guide-hero"><img src="${asset('swordsman')}" alt="Your Barbarian guide"><div><h2>Good to see you, Chief!</h2><p>The builders are ready, the gold is flowing, and your troops are itching for an adventure. Let's make this village a kingdom.</p></div></div><div class="help-steps"><article><b>1</b><div><h3>Build and rearrange</h3><p>Open the Shop and drag a building straight onto the village. Use Edit mode to drag anything already built — with undo, redo and three saved layouts.</p></div></article><article><b>2</b><div><h3>Grow past the Town Hall</h3><p>Buildings have distinct Town Hall requirements. Open Progression from the Army drawer to see the level caps and unlocks for each tier. Collectors keep working while you're away, up to 8 hours.</p></div></article><article><b>3</b><div><h3>Raise an army. Raid the valley.</h3><p>Prepare troops and spells instantly for free, save Quick armies, then attack. Practice against your own village from Army or the campaign map, and review your attacks in the Battle log. Campaign attacks have no time limit or trophy changes. Ladder matches, this game's own stand-in for multiplayer, pit you against a native layout for trophies: 30 seconds to scout, three minutes to attack, no loot. Each village has a finite supply of loot; any loot beyond your storage capacity is lost. Practice gives you 30 seconds to scout and three minutes to attack. Balloons fly over walls; Archer Towers and Air Defenses can hit them. Send Giants first, Wall Breakers to open a breach, then Goblins to steal resources. Mortars cannot fire within 4 tiles; moving troops can dodge their shells. Wizard Towers splash one troop layer at a time. Buy hidden traps from the Shop, place them in likely approaches, and test them in Practice. Traps are armed again for each new attack.</p></div></article></div><div class="help-controls"><span>Drag <b>Move camera</b></span><span>Hold <b>Stream troops</b></span><span>Hold &amp; drag <b>Spread troops</b></span><span>Double-tap <b>Deploy five</b></span><span>Esc <b>Close / cancel</b></span><span>M <b>Map cursor · Enter acts</b></span><span>B <b>Building list</b></span></div>${button('tutorial', `Let's build ${icon('ArrowRight', 19)}`, 'game-btn green start-btn')}</div>`;
   }
+  private nextGoblinScout() {
+    const b = this.model.battle;
+    if (!b?.finished || !b.result?.stars || b.practice || b.ladder || b.catalog !== 'goblin-v1')
+      return;
+    if (!NATIVE_CAMPAIGN[b.index] || !goblinMap(NATIVE_CAMPAIGN[b.index])) return;
+    const stars = this.model.state.nativeCampaign?.stars ?? [];
+    const next = NATIVE_CAMPAIGN.findIndex(
+      (stage, index) =>
+        goblinMap(stage) &&
+        !stage.alwaysUnlocked &&
+        stage.dependencies.includes(b.index + 1) &&
+        !stars[index] &&
+        this.model.campaignOpen(index) &&
+        !campaignPending(index),
+    );
+    return next < 0 ? undefined : next;
+  }
   private result() {
     const b = this.model.battle!,
-      r = b.result!;
+      r = b.result!,
+      next = this.nextGoblinScout();
     return `<div class="modal-backdrop result-backdrop"><section class="result-modal" role="dialog" aria-modal="true" aria-labelledby="result-title"><div class="result-summary"><div class="result-rays"></div><span class="result-eyebrow">BATTLE COMPLETE</span><h1 id="result-title" tabindex="-1">${b.practice ? 'Practice complete' : r.stars ? 'Victory!' : 'A brave attempt'}</h1><div class="result-stars" role="img" aria-label="${starCountLabel(r.stars)}">${[0, 1, 2].map((i) => `<span class="${i < r.stars ? 'earned' : ''}">★</span>`).join('')}</div><p>${r.destruction}% destruction <span>·</span> ${b.practice ? 'Your village' : campaignStage(b.index, b.catalog).name}</p>${
       b.practice
         ? '<p class="practice-result-note">Your village, troops and spells are unchanged.<br>Rearrange your defenses and try a different approach.</p>'
@@ -6425,7 +6464,7 @@ export class HUD {
                     .join(', ')} could not be stored.</p>`
                 : ''
             }`
-    }${b.fixedArmy && r.stars === 3 ? `<p class="practice-result-note">${html(PRACTICE_TEXTS.repeatQuestion)}</p>` : ''}${b.ladder ? `<p class="ladder-result">${icon('Trophy', 20)} <b>${r.trophies > 0 ? '+' : ''}${r.trophies}</b> trophies · now ${n(this.model.state.trophies)} · ${this.model.league.name}</p>` : ''}</div><div class="result-actions">${this.model.state.raidLog?.[0]?.replay ? button(`replay:${this.model.state.raidLog[0].id}`, `${icon('Play', 18)} Watch replay`, 'game-btn stone') : ''}${button('raid-again', `${icon('RotateCcw', 18)} ${b.fixedArmy ? 'Attack without guide' : b.practice ? 'Practice again' : b.ladder ? 'Next ladder match' : 'Prepare & attack again'}`, 'game-btn blue')}${b.fixedArmy ? button('raid-again-guided', `${icon('Info', 18)} Guided attack`, 'game-btn stone') : ''}${button('home', `${icon('House', 22)} Return to village`, 'game-btn green')}</div><small class="result-note">${b.fixedArmy ? 'The level provides your army. Your troops and spells stay home. Loot does not replenish.' : b.practice ? 'Practice never consumes your army.' : b.ladder ? 'Undeployed troops return home. Ladder matches are this game’s own stand-in for multiplayer.' : 'Undeployed troops return home. Loot does not replenish.'}</small></section></div>`;
+    }${b.fixedArmy && r.stars === 3 ? `<p class="practice-result-note">${html(PRACTICE_TEXTS.repeatQuestion)}</p>` : ''}${b.ladder ? `<p class="ladder-result">${icon('Trophy', 20)} <b>${r.trophies > 0 ? '+' : ''}${r.trophies}</b> trophies · now ${n(this.model.state.trophies)} · ${this.model.league.name}</p>` : ''}</div><div class="result-actions">${this.model.state.raidLog?.[0]?.replay ? button(`replay:${this.model.state.raidLog[0].id}`, `${icon('Play', 18)} Watch replay`, 'game-btn stone') : ''}${button('raid-again', `${icon('RotateCcw', 18)} ${b.fixedArmy ? 'Attack without guide' : b.practice ? 'Practice again' : b.ladder ? 'Next ladder match' : 'Prepare & attack again'}`, 'game-btn blue')}${b.fixedArmy ? button('raid-again-guided', `${icon('Info', 18)} Guided attack`, 'game-btn stone') : ''}${next === undefined ? '' : button('campaign-next', `${icon('Map', 18)} Scout ${html(NATIVE_CAMPAIGN[next].name)}`, 'game-btn blue')}${button('home', `${icon('House', 22)} Return to village`, 'game-btn green')}</div><small class="result-note">${b.fixedArmy ? 'The level provides your army. Your troops and spells stay home. Loot does not replenish.' : b.practice ? 'Practice never consumes your army.' : b.ladder ? 'Undeployed troops return home. Ladder matches are this game’s own stand-in for multiplayer.' : 'Undeployed troops return home. Loot does not replenish.'}</small></section></div>`;
   }
   /** Runs the result screen's loot numbers up from zero, once. */
   private countUp() {

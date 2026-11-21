@@ -222,3 +222,37 @@ test('short landscape keeps Practice scout actions visible while details scroll'
   await page.keyboard.press('Escape');
   await expect(row).toBeFocused();
 });
+
+for (const viewport of [{ width: 390, height: 844 }, { width: 568, height: 320 }]) {
+  test(`a Goblin Forest win leads to the opened Outpost scout at ${viewport.width}×${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto('/?lazyart');
+    const action = (name: string) => page.locator(`[data-action="${name}"]`);
+    await action('skip-tutorial').tap();
+    await page.locator('.attack-btn').tap();
+    await expect(action('attack:2')).toBeDisabled();
+    await action('attack:1').tap();
+    const before = await page.evaluate(() => {
+      const m = window.__game.model;
+      m.discardRecording();
+      m.battle.started = true;
+      for (const target of m.battle.buildings)
+        if (target.kind === 'archertower' || target.kind === 'builder') m.damage(target, target.hp);
+      m.finishBattle();
+      return { gold: m.state.gold, elixir: m.state.elixir, progress: m.state.nativeCampaign };
+    });
+    await expect(page.locator('.result-stars')).toHaveAttribute('aria-label', '1 of 3 stars');
+    const next = page.getByRole('button', { name: 'Scout Goblin Outpost', exact: true });
+    await expect(next).toBeInViewport({ ratio: 1 });
+    await expect(action('raid-again')).toBeInViewport({ ratio: 1 });
+    await expect(action('home')).toBeInViewport({ ratio: 1 });
+    await next.tap();
+    await expect(page.getByRole('heading', { name: 'Goblin Outpost', exact: true })).toBeVisible();
+    expect(await page.evaluate(() => {
+      const m = window.__game.model;
+      return { gold: m.state.gold, elixir: m.state.elixir, progress: m.state.nativeCampaign };
+    })).toEqual(before);
+    await page.locator('.campaign-scout').getByRole('button', { name: 'Back to campaign' }).tap();
+    await expect(action('attack:2')).toBeInViewport();
+  });
+}
