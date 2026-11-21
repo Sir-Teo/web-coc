@@ -382,7 +382,18 @@ try {
           continue;
         }
 
+        const paybackAtlases = [
+          '/assets/buildings/goblin-native/texture-8.webp',
+          '/assets/buildings/goblin-native/texture-37.webp',
+        ];
+        expect(
+          await page.evaluate(
+            async (urls) => Promise.all(urls.map(async (url) => (await caches.match(url))?.ok)),
+            paybackAtlases,
+          ),
+        ).toEqual([true, true]);
         await enter(0, 'Payback');
+        expect([...misses].filter((url) => paybackAtlases.includes(url))).toEqual([]);
         await deploy();
         if (!(await snapshot()).battle.units)
           throw Error(

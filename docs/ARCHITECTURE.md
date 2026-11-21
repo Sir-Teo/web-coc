@@ -452,9 +452,11 @@ The repository, the dev server and the specs keep reading the PNGs. The producti
 and a content-hashed manifest. The service
 worker precaches the application shell (the page and only the bundles its entry imports
 statically, read from Vite's build manifest; lazy chunks such as the late campaign scene and
-the developer panel are cached when first used), warms assets observed during boot and caches
-other assets as they are fetched. Offline availability therefore depends on what
-has already been loaded; it does not mean every campaign asset is downloaded at install.
+the developer panel are cached when first used). It also installs two atlas pages for
+Payback's Goblin landmarks under a separate 128 KiB budget. The worker warms assets
+observed during boot and caches other files as they are fetched. On a first offline visit
+to Payback, other scene art can still use fallbacks. Later boards may require a connection
+to download their scene before players can deploy.
 
 Each worker serves one release: navigations get the `index.html` its own cache holds, and a
 runtime fetch is cached only when its bytes match that release's manifest hash (a host

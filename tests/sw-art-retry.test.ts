@@ -14,7 +14,10 @@ let manifest: string;
 beforeAll(async () => {
   directory = await fs.mkdtemp(path.join(os.tmpdir(), 'art-retry-worker-'));
   await fs.mkdir(path.join(directory, '.vite'));
-  await fs.mkdir(path.join(directory, 'assets'));
+  const goblinArt = path.join(directory, 'assets/buildings/goblin-native');
+  await fs.mkdir(goblinArt, { recursive: true });
+  await fs.writeFile(path.join(goblinArt, 'texture-8.webp'), 'first atlas page');
+  await fs.writeFile(path.join(goblinArt, 'texture-37.webp'), 'second atlas page');
   await fs.writeFile(path.join(directory, 'index.html'), '<html></html>');
   await fs.writeFile(path.join(directory, 'assets/main.js'), 'export {};');
   await fs.writeFile(path.join(directory, 'assets/late.js'), code);

@@ -1,10 +1,9 @@
 // Generates the offline service worker for a production build.
 //
-// Only the application shell (HTML, the JS/CSS bundles and the favicon) is
-// precached, and a failed shell download fails the install so the previous
-// complete cache keeps serving. The art a player's boot actually used is sent
-// by the page (see src/offline.ts) and cached best-effort before activation;
-// everything else is cached the first time it is fetched. Every build file has
+// The application shell and the two Payback landmark atlas pages are precached.
+// The previous complete cache keeps serving if a required download fails.
+// The page sends the art it used during boot (see src/offline.ts) for best-effort
+// caching before activation. Other files are cached the first time they are fetched. Every build file has
 // a content hash in the manifest, so an update copies unchanged files from the
 // previous cache instead of downloading them again.
 //
@@ -91,9 +90,25 @@ if (shellBytes > STARTUP_BUDGET)
       'Move data only some villages draw behind a dynamic import.',
   );
 
+// Payback permits deployment on a first offline visit. These two pages cover
+// both Goblin landmarks and their bases. Keep the rest of the raid art on demand.
+const starterArt = [
+  '/assets/buildings/goblin-native/texture-8.webp',
+  '/assets/buildings/goblin-native/texture-37.webp',
+];
+let starterArtBytes = 0;
+for (const url of starterArt) {
+  if (!hashes[url]) throw new Error(`Starter raid art ${url} is missing from ${dist}.`);
+  starterArtBytes += (await fs.stat(path.join(dist, url))).size;
+}
+if (starterArtBytes > 128 * 1024)
+  throw new Error('Payback atlas pages exceed the 128 KiB offline budget.');
+
+// A policy-only change must install beside the active cache, even with identical assets.
+const required = [...shell, ...starterArt];
 const version = crypto
   .createHash('sha256')
-  .update(JSON.stringify(hashes))
+  .update(JSON.stringify({ hashes, required }))
   .digest('hex')
   .slice(0, 12);
 const manifestUrl = `/sw-manifest.${version}.json`;
@@ -104,7 +119,7 @@ const VERSION = ${JSON.stringify(version)};
 const CACHE = 'crown-clan-' + VERSION;
 const MANIFEST_URL = ${JSON.stringify(manifestUrl)};
 const MANIFEST_KEY = '/__crown-sw-manifest';
-const SHELL = ${JSON.stringify(shell)};
+const REQUIRED = ${JSON.stringify(required)};
 const BOOT_LIST_WAIT = 3000;
 
 let manifest;
@@ -202,9 +217,9 @@ self.addEventListener('install', (event) => {
           if (response) await cache.put(url, response);
         }
       }
-      // The shell is required: any failure rejects the install and the previous
+      // The shell and starter art are required: a failure rejects the install and the previous
       // worker and its complete cache stay in charge.
-      await inBatches(SHELL, 6, async (url) => {
+      await inBatches(REQUIRED, 6, async (url) => {
         if (!(await cache.match(url))) await cache.put(url, await download(url, hashes[url]));
       });
       const urls = await Promise.race([
@@ -320,6 +335,6 @@ self.addEventListener('fetch', (event) => {
 await fs.writeFile(path.join(dist, 'sw.js'), worker);
 const mb = (bytes) => `${(bytes / 1048576).toFixed(1)} MB`;
 console.log(
-  `Offline shell: ${shell.length} files, ${mb(shellBytes)} precached; ` +
+  `Offline shell: ${shell.length} files, ${mb(shellBytes)}; Payback art: ${starterArtBytes} bytes precached; ` +
     `${Object.keys(hashes).length - 1} files (${mb(totalBytes)}) hashed for runtime caching; cache crown-clan-${version}`,
 );
