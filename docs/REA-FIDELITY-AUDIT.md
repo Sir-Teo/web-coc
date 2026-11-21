@@ -239,6 +239,16 @@ full level-2 tank to frame 40 in Home and Practice. The tank now uses frame
 [Building exports](../reference/full-client/catalog.json) ·
 [Terrain and camera](TERRAIN-CAMERA.md) · [Collection sounds](VILLAGE-SOUNDS.md).
 
+The Home Village's Barracks, Laboratory, and Spell Factory already use the
+retained level-specific world bodies and bases. Their selection and Details
+portraits for levels 1–8 previously fell back to generic or tier-group art.
+The HUD now uses the matching static body/base portraits at those 24 levels
+and continues to resolve the other 20 to their existing catalog portraits.
+During a Barracks upgrade the world draws the pinned upgrade layer over the
+current body. The portrait advances with the completed level. The source establishes
+these asset identities. The original interaction layout, camera and upgrade
+animation timing still need a matched capture.
+
 The Barbarian and Archer Army cards resolve to the retained standalone UI
 icons. Their combat packs match the pinned hashes, with 243 directional
 walk, idle and attack references across 27 level rows. In a paused replay,

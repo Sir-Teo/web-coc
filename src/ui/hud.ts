@@ -1,4 +1,4 @@
-import { resourceBuildingPortrait } from './resource-building-art';
+import { buildingPortrait } from './building-portrait-art';
 import { heroRosterIcon, rosterIcon } from './roster-art';
 import { eternalTomeRemaining } from './eternal-tome-feedback';
 import { siegeCargoCapacity, type SiegeCargoEntry } from '../game/siege-cargo';
@@ -6630,5 +6630,5 @@ export class HUD {
 function hudAsset(...args: Parameters<typeof asset>) {
   if (args[0] === 'archertower') return archerTowerPortrait(args[1] ?? 1);
   if (args[0] === 'cannon') return cannonIconAsset(args[1] ?? 1);
-  return resourceBuildingPortrait(args[0], args[1] ?? 1) ?? rosterIcon(args[0]) ?? asset(...args);
+  return buildingPortrait(args[0], args[1] ?? 1) ?? rosterIcon(args[0]) ?? asset(...args);
 }
