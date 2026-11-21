@@ -665,6 +665,9 @@ for (const { name, path, heldEffect, otherEffect } of [
     await boot(page, r);
     await expect.poll(() => requested).toBeGreaterThan(0);
     await open(page);
+    // Draw the opening cast at tick zero, before seeking past its transient fallback.
+    // Otherwise the step-zero FX can stay queued and take its birth time from the seek target.
+    await page.evaluate(() => window.__game.scene.drawOverlay(0));
     const recoveryAt = name === 'Healing' ? r.pulsing : r.landing,
       before = await seek(page, recoveryAt);
     if (otherEffect)
@@ -680,6 +683,11 @@ for (const { name, path, heldEffect, otherEffect } of [
         const { model, scene } = window.__game,
           { name, key } = window.__field,
           view = scene.fieldSpellPresentations.get(name);
+        const fallbackLayers = () =>
+          scene.children.list
+            .filter((o) => o.active && o.getData?.('nativeSpellFallback') === name)
+            .map((o) => o.type);
+        const afterSeek = fallbackLayers();
         scene.effect({ type: 'spell', spell: key, x: 11.5, y: 11.5, radius: 5 });
         scene.drainEffects();
         if (name === 'Totem Spell') {
@@ -689,15 +697,20 @@ for (const { name, path, heldEffect, otherEffect } of [
         return {
           ready: view.hasArt(model.battle, false),
           views: view.layer.views.size,
-          rings: scene.children.list.filter(
-            (o) => o.active && o.getData?.('nativeSpellFallback') === name,
-          ).length,
+          afterSeek,
+          layers: fallbackLayers(),
         };
       }),
     ).toEqual({
       ready: false,
       views: 0,
-      rings: name === 'Lightning' || name === 'Totem Spell' ? 2 : 1,
+      afterSeek: [],
+      layers:
+        name === 'Lightning'
+          ? ['Ellipse', 'Graphics']
+          : name === 'Totem Spell'
+            ? ['Ellipse', 'Ellipse']
+            : ['Ellipse'],
     });
     // Exercise the real frame cache while the replay is paused; no forced draw after recovery.
     await page.evaluate(() => {

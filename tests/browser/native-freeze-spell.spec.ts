@@ -206,17 +206,16 @@ test('Freeze cast fallback survives held and failed downloads and hands off afte
   await boot(page, r);
   await expect.poll(() => requested).toBeGreaterThan(0);
   await open(page);
+  // The opening Freeze cast owns the fallback at the bottle checkpoint.
+  await page.evaluate(() => window.__game.scene.drawOverlay(0));
   const before = await seek(page, r.bottle);
   expect(
-    await page.evaluate(() => {
-      const { scene } = window.__game;
-      scene.effect({ type: 'spell', spell: 'freeze', x: 11.5, y: 11.5, radius: 3.5 });
-      scene.drainEffects();
-      return scene.children.list.filter(
-        (o) => o.active && o.getData?.('nativeSpellFallback') === 'Freeze',
-      ).length;
-    }),
-  ).toBe(1);
+    await page.evaluate(() =>
+      window.__game.scene.children.list
+        .filter((o) => o.active && o.getData?.('nativeSpellFallback') === 'Freeze')
+        .map((o) => o.type),
+    ),
+  ).toEqual(['Ellipse']);
   release();
   await page.waitForFunction(
     () => window.__game.scene.freezeSpellPresentation.layer.status('Freeze predeploy') === 'none',
