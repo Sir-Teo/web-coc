@@ -111,6 +111,23 @@ lesson preview. Returning restores focus to the originating action. The
 preview and log controls are web behavior and still need a native comparison.
 [Practice catalog and guide](PRACTICE-MODE.md) · [Campaign rules](CAMPAIGN-RULES.md).
 
+## First-session Builder’s Huts
+
+The retained starting grant, Campaign records, Practice instructions and HUD
+exports do not establish the original opening dialogue or scene sequence.
+The first-run watch, collect, build and train coach remains the web flow.
+
+The retained level-one `worker_building` root contains the named
+`builder_out` sign and separate sleep markers. Home used to sample both
+without selecting a state. Idle huts now hide the absent-builder sign.
+Each active builder reservation shows one sign on the awake frame, without
+sleep markers. Home assigns those visuals in the order of completed huts
+because the save records a reservation count and has no worker identity.
+The original allocation and animation timing remain unverified.
+
+[Builder’s Hut slots and states](../reference/builder-hut/README.md) ·
+[Starting grant](../reference/townhall/README.md)
+
 ## Results and Army spell details
 
 The web result uses a text heading and CSS rays for the banner, three styled

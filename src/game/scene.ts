@@ -3403,7 +3403,9 @@ export class VillageScene extends Phaser.Scene {
       if (heroes.size) this.heroNativePresentation?.prefetch(heroes);
     }
   }
+  private homeBusyBuilders = 0;
   sync() {
+    this.homeBusyBuilders = this.model.battle ? 0 : this.model.busy;
     // Traps whose state this full sync draws; ones that fire later reveal through syncTraps.
     this.trapsSynced = new Set(Object.keys(this.model.battle?.traps ?? {}).map(Number));
     if (this.lateAssetsPending())
@@ -5388,6 +5390,7 @@ export class VillageScene extends Phaser.Scene {
       iso,
       this.sprites,
       isoInto,
+      this.homeBusyBuilders,
     );
     this.nativeDefenses.render(visible, battle, clock, reduced, iso, AIR_LIFT);
     const drillCues = this.darkDrillPresentation.render(

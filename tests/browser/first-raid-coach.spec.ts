@@ -1,4 +1,22 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+function goldMinePlacementPoint(page: Page) {
+  return page.evaluate(() => {
+    const { model, scene, game } = window.__game;
+    for (let x = 2; x < 43; x++)
+      for (let y = 2; y < 43; y++) {
+        if (!model.canPlace('goldmine', x, y)) continue;
+        const p = scene.screenFor(x + 0.5, y + 0.5);
+        if (
+          p.y > innerHeight * 0.25 &&
+          p.y < innerHeight * 0.65 &&
+          document.elementFromPoint(p.x, p.y) === game.canvas
+        )
+          return p;
+      }
+    throw Error('No usable placement point');
+  });
+}
 
 test.use({ viewport: { width: 320, height: 568 }, hasTouch: true, isMobile: true });
 test('a compact phone completes and rearms after its first campaign raid', async ({
@@ -17,21 +35,7 @@ test('a compact phone completes and rearms after its first campaign raid', async
   await expect(coach).toContainText('Put up a new building');
   await page.locator('.shop-btn').tap();
   await page.locator('[data-action="build:goldmine"]').tap();
-  const point = await page.evaluate(() => {
-    const { model, scene, game } = window.__game;
-    for (let x = 2; x < 43; x++)
-      for (let y = 2; y < 43; y++) {
-        if (!model.canPlace('goldmine', x, y)) continue;
-        const p = scene.screenFor(x + 0.5, y + 0.5);
-        if (
-          p.y > innerHeight * 0.25 &&
-          p.y < innerHeight * 0.65 &&
-          document.elementFromPoint(p.x, p.y) === game.canvas
-        )
-          return p;
-      }
-    throw Error('No usable placement point');
-  });
+  const point = await goldMinePlacementPoint(page);
   await page.touchscreen.tap(point.x, point.y);
   await expect(coach).toContainText('Train a troop');
   const train = page.getByRole('button', { name: 'Train troops' });
@@ -160,4 +164,45 @@ test('a compact phone completes and rearms after its first campaign raid', async
   expect(await page.evaluate(() => window.__game.model.battle?.remaining)).toEqual(original.army);
   await page.getByRole('button', { name: 'Return home' }).tap();
   expect(await state()).toEqual({ ...settled, tutorial: true, army: original.army });
+});
+
+test('starter huts reflect the first builder reservation before and after reload', async ({ page }) => {
+  await page.setViewportSize({ width: 568, height: 320 });
+  await page.clock.setFixedTime(Date.now());
+  await page.goto('/?lazyart');
+  await expect(page.locator('#loading')).toBeHidden({ timeout: 30000 });
+  const signs = () =>
+    page.evaluate(() => {
+      const { model, scene } = window.__game;
+      return model.state.buildings
+        .filter((b) => b.kind === 'builder')
+        .map((b) => [...scene.villageNativePresentation.views.get(b.id)?.values() ?? []]
+          .some((view) => view.signature?.includes('builder_out=0') ?? false));
+    });
+  const hasIdleHuts = () =>
+    page.evaluate(() => {
+      const { model, scene } = window.__game;
+      return model.state.buildings.filter((b) => b.kind === 'builder').every((b) =>
+        [...scene.villageNativePresentation.views.get(b.id)?.values() ?? []]
+          .some((view) => view.signature?.includes('builder_out=false')));
+    });
+  await expect.poll(hasIdleHuts).toBe(true);
+  await page.locator('.coach-banner').getByRole('button', { name: 'Watch' }).tap();
+  await page.getByRole('button', { name: 'Back to village' }).tap();
+  await page.locator('.collect-btn').tap();
+  await page.locator('.shop-btn').tap();
+  await page.locator('[data-action="build:goldmine"]').tap();
+  const point = await goldMinePlacementPoint(page);
+  await page.touchscreen.tap(point.x, point.y);
+  await expect(page.locator('.coach-banner')).toContainText('Train a troop');
+  await expect.poll(signs).toEqual([true, false]);
+  const deadline = await page.evaluate(() =>
+    window.__game.model.state.buildings.find((b) => b.kind === 'goldmine' && b.constructing)!.upgradeEnd!,
+  );
+  await page.reload();
+  await expect(page.locator('#loading')).toBeHidden({ timeout: 30000 });
+  await expect(page.locator('.coach-banner')).toContainText('Train a troop');
+  await expect.poll(signs).toEqual([true, false]);
+  await page.clock.setFixedTime(deadline + 1);
+  await expect.poll(hasIdleHuts).toBe(true);
 });

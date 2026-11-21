@@ -454,6 +454,7 @@ export class VillageNativePresentation {
     iso: (x: number, y: number) => { x: number; y: number },
     sprites: Map<number, Phaser.GameObjects.Image>,
     projectInto?: (out: Point, x: number, y: number) => void,
+    homeBusy = 0,
   ) {
     const goblinBattle =
       battle?.catalog === 'goblin-v1' && !battle.practice && !battle.ladder &&
@@ -493,9 +494,15 @@ export class VillageNativePresentation {
         cameraShakePadding(cam)
       : 0;
     const count = buildings.length + (this.placement ? 1 : 0);
+    // Home saves track reservations, not the identity of the worker. Use completed
+    // huts in village order, before viewport culling, so panning cannot move a sign.
+    let remainingBusyHuts = homeBusy;
     for (let i = 0; i < count; i++) {
       const b = i < buildings.length ? buildings[i] : this.placement!.building;
       if (!hasVillageNativeArt(b.kind) || b.npc) continue;
+      const homeHut = !battle && b.kind === 'builder';
+      const builderOut = homeHut && b.id !== -1 && !b.constructing && remainingBusyHuts > 0;
+      if (builderOut) remainingBusyHuts--;
       const size = BUILDINGS[b.kind].size;
       const pack = this.packs.get(b.kind);
       const level = pack ? levelRow(pack, b.level) : undefined;
@@ -653,7 +660,8 @@ export class VillageNativePresentation {
         const clock =
           field === 'ExportNameBase' ||
           field === 'ExportNameDamaged' ||
-          field === 'ExportNameBroken'
+          field === 'ExportNameBroken' ||
+          (field === 'ExportName' && builderOut)
             ? 0
             : field === 'ExportName' && body?.clock !== undefined
               ? body.clock
@@ -662,6 +670,7 @@ export class VillageNativePresentation {
                 : seconds;
         const controls: Record<string, number | false> =
           field === 'ExportName' && body ? { ...body.controls } : {};
+        if (field === 'ExportName' && homeHut) controls.builder_out = builderOut ? 0 : false;
         const resource = nativeResourceFrames(graph, ref.export);
         if (resource) {
           const storage =
