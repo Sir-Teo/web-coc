@@ -14,7 +14,7 @@ import { GameModel, makeBuilding, type Unit } from '../src/game/model';
 import { NATIVE_COMBAT, nativeBuildings, nativeCampaignIssues } from '../src/game/native-campaign';
 import { stepTraps } from '../src/game/traps';
 import { validateSave } from '../src/game/save';
-import { REPLAY_VERSION, validateReplay } from '../src/game/replay';
+import { REPLAY_VERSION, replayBattle, validateReplay } from '../src/game/replay';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 
 // Independently inherit original sparse CSV rows, without reading the runtime projection.
@@ -144,3 +144,48 @@ it('keeps v32 results readable while refusing playback under the changed release
   expect(restored.startReplay(record.id)).toBe(false);
   expect(restored.battle).toBeNull();
 });
+
+for (const kind of ['battleblimp', 'stoneslammer'] as const) {
+  it(`lets a Seeking Air Mine strike a ${kind} without counting nearby Minions`, () => {
+    const state = new GameModel().state;
+    const setup = {
+      index: 0,
+      practice: true,
+      townhall: 13,
+      buildings: [makeBuilding(1, 'seekingairmine', 10, 10)],
+      army: { ...state.army, minion: 3, [kind]: 1 },
+      spells: state.spells,
+      troopLevels: state.troopLevels,
+      nextId: 10,
+    };
+    const unit = (id: number, kind: Unit['kind']): Unit => ({
+      id,
+      kind,
+      x: 11,
+      y: 10.5,
+      hp: 3000,
+      maxHp: 3000,
+      cooldown: 0,
+      target: null,
+      path: [],
+      pathAt: 0,
+      attacking: false,
+    });
+    for (const version of [291, REPLAY_VERSION]) {
+      const battle = replayBattle(setup, version);
+      battle.units = [unit(2, 'minion'), unit(3, 'minion'), unit(4, 'minion')];
+      stepTraps(battle, 0.05, () => {});
+      expect(battle.traps[1]).toBeUndefined();
+      const siege = unit(5, kind);
+      battle.units.push(siege);
+      for (let tick = 0; tick < 20; tick++) {
+        battle.elapsed += 0.05;
+        stepTraps(battle, 0.05, () => {});
+      }
+      if (version === 291) expect(battle.traps[1]).toBeUndefined();
+      else expect(battle.traps[1]).toMatchObject({ targetId: 5, mine: { hit: true } });
+      expect(siege.hp).toBe(version === 291 ? 3000 : 1500);
+      expect(battle.units.slice(0, 3).map((unit) => unit.hp)).toEqual([3000, 3000, 3000]);
+    }
+  });
+}

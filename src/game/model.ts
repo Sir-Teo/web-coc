@@ -1262,6 +1262,7 @@ export interface Battle {
   nativeSpringPetDamage?: true;
   /** Version 238: source ejection immunity and siege reduction in native home Spring Traps. */
   nativeSpringEjection?: true;
+  nativeSeekingMineAirSieges?: true;
   nativeAirBombFixedAim?: true;
   nativeAirBombSplashEligibility?: true;
   /** Version 251: a Home Bomb can splash ground units that cannot trigger it. */

@@ -52,3 +52,13 @@ The ground reveal plays its complete 75-frame timeline independently of impact. 
 Trail births interpolate positions along each simulation step at the source-derived 0.1225-second interval and retain at most eight live points. Looping broken-hatch smoke samples only its current lifetime window; `SpawnLimit=30` is interpreted as an active-instance cap. Completed battles and reduced motion remove projectiles, shadows, particles, flashes and shake; reduced motion holds activated hatches at their spent frame. These choices do not alter combat damage or replay inputs.
 
 Local registration uses scale 0.8 and a 32-source-unit ground anchor. The shared activation clock, 0.5-second rise to a 46-pixel air height, pairing of reveal effects, particle altitude conversion of 0.46, damping/bounce equations and interpretation of particle variants are unverified against the native executable. The source camera strength maps to a 16-pixel local shake over 500 ms. Projectile `StartOffset=20` and `StartHeight=0` remain retained but their full interaction with native animation is not reproduced. The original source pixels and sampled clip transforms are verified separately from these presentation choices.
+
+### Flying siege eligibility
+
+The [retained mine mechanics reference](../official-wiki/defenses/seeking-air-mine.md)
+explicitly includes flying siege machines. The pinned Battle Blimp and Stone
+Slammer rows identify flying siege machines that trigger traps, but give each
+one housing space. Recording version 292 applies the documented exception to
+the mine's five-space threshold for these two machines. Earlier recordings
+retain the literal housing check. The pinned trap row does not establish how
+the original engine implements the exception or breaks simultaneous target ties.

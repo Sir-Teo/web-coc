@@ -186,10 +186,13 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       x: trap.x + BUILDINGS[trap.kind].size / 2,
       y: trap.y + BUILDINGS[trap.kind].size / 2,
     };
+    const mineTargetsSieges =
+      trap.kind === 'seekingairmine' && battle.nativeSeekingMineAirSieges;
     const canHit = (u: Unit) =>
       u.hp > 0 &&
       (trap.npc !== 'shrink-trap' || (!u.ejected && (u.spawnedAt ?? 0) <= battle.elapsed)) &&
-      (u.hero ? 25 : TROOPS[u.kind].space) >= (d.minHousing ?? 0) &&
+      ((u.hero ? 25 : TROOPS[u.kind].space) >= (d.minHousing ?? 0) ||
+        (mineTargetsSieges && (u.kind === 'battleblimp' || u.kind === 'stoneslammer'))) &&
       (!d.springCapacity || (u.springUntil ?? 0) <= battle.elapsed) &&
       (mode === 'both' || !!TROOPS[u.kind].flying === (mode === 'air'));
     const eligible = (u: Unit) => canHit(u) && unitTriggersTraps(u);

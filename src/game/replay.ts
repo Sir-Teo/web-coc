@@ -68,7 +68,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 291;
+export const REPLAY_VERSION = 292;
 const ELECTRO_SURGERY_CARGO_VERSION = 286;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
@@ -484,6 +484,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 288 ||
   version === 289 ||
   version === 290 ||
+  version === 291 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -760,6 +761,11 @@ export function replayBattle(setup: ReplaySetup, version = REPLAY_VERSION): Batt
       : {}),
     ...(version >= 264 && campaignEagle && s.heroes?.length
       ? { nativeEagleHeroHousing: true as const }
+      : {}),
+    ...(version >= 292 &&
+    s.buildings.some(({ kind }) => kind === 'seekingairmine') &&
+    (s.army.battleblimp > 0 || s.army.stoneslammer > 0)
+      ? { nativeSeekingMineAirSieges: true as const }
       : {}),
     ...(version >= 291 && s.garrisons?.length && (s.spells.bat > 0 || s.spells.skeleton > 0)
       ? { nativeSpellSummonGarrisonImmunity: true as const }
