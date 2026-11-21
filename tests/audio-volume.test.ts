@@ -241,3 +241,60 @@ it('keeps media playback and live volume available when a media source cannot be
   expect(el.volume).toBe(0.9);
   expect(el.play).toHaveBeenCalledOnce();
 });
+
+it('keeps a saved zero-volume Music switch quiet and pauses the loop when lowered again', async () => {
+  const { ctx, sources } = graph();
+  const context = vi.fn(function () {
+    return ctx;
+  });
+  const el = {
+    src: '',
+    currentTime: 0,
+    volume: 1,
+    paused: true,
+    play: vi.fn(async () => {
+      el.paused = false;
+    }),
+    pause: vi.fn(() => {
+      el.paused = true;
+    }),
+    addEventListener: vi.fn(),
+  };
+  vi.stubGlobal('AudioContext', context);
+  vi.stubGlobal('Audio', function () {
+    return el;
+  });
+  const fetcher = vi.fn(async () => ({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) }));
+  vi.stubGlobal('fetch', fetcher);
+  const audio = new AudioManager();
+  audio.enabled = false;
+  audio.musicVolume = 0;
+  audio.musicScene('home');
+  audio.music(true);
+  await flush();
+  expect(context).not.toHaveBeenCalled();
+  expect(fetcher).not.toHaveBeenCalled();
+  expect(el.play).not.toHaveBeenCalled();
+
+  audio.musicVolume = 0.5;
+  await flush();
+  expect(audio.tracks.playing).toBe(true);
+  expect(fetcher).toHaveBeenCalledOnce();
+  el.currentTime = 12;
+  audio.musicVolume = 0;
+  expect(audio.tracks.playing).toBe(false);
+  expect(ctx.suspend).toHaveBeenCalledOnce();
+  audio.musicVolume = 0.5;
+  await flush();
+  expect(audio.tracks.playing).toBe(true);
+  expect(el.currentTime).toBe(12);
+  expect(fetcher).toHaveBeenCalledOnce();
+
+  audio.musicScene('defeat');
+  audio.musicVolume = 0;
+  await flush();
+  expect(sources).toHaveLength(0);
+  audio.musicVolume = 0.5;
+  await flush();
+  expect(sources).toHaveLength(0);
+});

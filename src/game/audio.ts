@@ -31,7 +31,7 @@ export class AudioManager {
   private effectsLevel = 1;
   private effectsGain: GainNode | null = null;
   /** The original client's Home and battle music; plays only while music is on. */
-  readonly tracks = new MusicPlayer(() => (this.musicOn ? this.context : null));
+  readonly tracks = new MusicPlayer(() => (this.musicAudible ? this.context : null));
   private lastPlay: Partial<Record<string, number>> = {};
   /** The village sounds load once, after the first gesture with sound on (about 200 KB). */
   private villageLoad?: Promise<void>;
@@ -68,7 +68,11 @@ export class AudioManager {
     return this.tracks.volume;
   }
   set musicVolume(value: number) {
+    const wasAudible = this.musicAudible;
     this.tracks.setVolume(value);
+    if (wasAudible === this.musicAudible) return;
+    this.updateContext();
+    this.tracks.setEnabled(this.musicAudible);
   }
   private effectsOutput(ctx: AudioContext) {
     if (!this.effectsGain) {
@@ -81,8 +85,11 @@ export class AudioManager {
   /** True while anything may be heard: sound effects or music, on a visible page. */
   private get audible() {
     return (
-      (this.effectsAudible || this.musicOn) && !(typeof document !== 'undefined' && document.hidden)
+      (this.effectsAudible || this.musicAudible) && !(typeof document !== 'undefined' && document.hidden)
     );
+  }
+  private get musicAudible(): boolean {
+    return this.musicOn && this.tracks.volume > 0;
   }
   private get effectsAudible() {
     return this.soundOn && this.effectsLevel > 0;
@@ -151,7 +158,7 @@ export class AudioManager {
   effect(effect: VillageEffect, tone: Tone) {
     this.feedback(tone);
     if (!this.effectsAudible) {
-      if (this.musicOn) this.unlock();
+      if (this.musicAudible) this.unlock();
       return;
     }
     if (this.throttled(effect, 50)) return;
@@ -169,7 +176,7 @@ export class AudioManager {
   play(kind: Tone) {
     this.feedback(kind);
     if (!this.effectsAudible) {
-      if (this.musicOn) this.unlock();
+      if (this.musicAudible) this.unlock();
       return;
     }
     // Battles can emit dozens of blips per second; throttle per kind
@@ -234,7 +241,7 @@ export class AudioManager {
     this.musicOn = on;
     if (on) this.unlock();
     else this.updateContext();
-    this.tracks.setEnabled(on);
+    this.tracks.setEnabled(this.musicAudible);
   }
   /** Follow the screen: Home, battle planning, combat, or the result's sting. */
   musicScene(scene: MusicScene) {

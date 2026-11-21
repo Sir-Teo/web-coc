@@ -15,7 +15,7 @@ Campaign raids, ladder matches, practice attacks and replays all follow the same
 
 ## Playback
 
-- Music is off by default, as before, and nothing is downloaded until it is turned on.
+- Music is off by default. Tracks are fetched only when the switch is on and Music volume is above zero.
 - A saved Music preference starts on the first pointer gesture, printable key, Tab or Enter.
   Modifiers, Escape, browser chords and key repeat leave that activation available. Music-only
   playback can also recover its audio context through feedback while effects stay muted.
@@ -44,7 +44,8 @@ its volume prepared before turning it on. Zero remains zero through reload and i
 
 Positive volume changes update active sounds without restarting them. Setting effects to
 zero releases their voices and skips new playback/decoding work until raised; the effects
-switch and haptic feedback keep their own state. Native shots, battle loops and
+switch and haptic feedback keep their own state. Zero Music volume pauses the current loop and
+stops or cancels short stings while keeping the Music switch on. Native shots, battle loops and
 fallback tones share the effects output; the streamed music loop and stings share the music
 output. Live gain changes avoid invalid exponential ramps. Each long track remains streamed
 rather than decoded as a complete Web Audio buffer.
