@@ -403,6 +403,56 @@ it.each([300, 301])('keeps Rolling Terror’s Giant Bomb layer and housing limit
   }
 });
 
+it.each([301, 302])('keeps ordinary Campaign Bomb reach and housing rules in replay %i', (version) => {
+  const trap = nativeBuildings(2).find((b) => b.id === 1070)!;
+  const source = nativeTrapValues('bomb', trap.level);
+  expect(source).toMatchObject({
+    damage: 20, trigger: 1.5, radius: 3, ground: true, air: false,
+    pushback: 1, pushbackHousing: 3,
+  });
+  const { b: template, u } = arena('bomb', 1);
+  const b = replayBattle({
+    index: 2,
+    catalog: 'goblin-v1',
+    practice: false,
+    buildings: [trap, makeBuilding(9010, 'wall', trap.x + 2, trap.y)],
+    army: emptyArmy(),
+    spells: emptySpells(),
+    troopLevels: template.troopLevels,
+    nextId: 9020,
+  }, version);
+  b.started = true;
+  const x = trap.x + 0.5, y = trap.y + 0.5;
+  const flyer: Unit = { ...u, id: 9001, kind: 'dragon', x, y };
+  const outsideTrigger: Unit = { ...u, id: 9002, kind: 'swordsman', x: x - 1.6, y };
+  const giant: Unit = { ...u, id: 9003, kind: 'giant', x: x + 0.9, y };
+  const obstructed: Unit = { ...u, id: 9004, kind: 'swordsman', x: x + 0.9, y };
+  const outsideBlast: Unit = { ...u, id: 9005, kind: 'swordsman', x: x - 3.1, y };
+  b.units = [flyer, outsideTrigger, outsideBlast];
+  b.elapsed = 0.05;
+  stepTraps(b, 0.05, () => {});
+  expect(b.traps[trap.id]).toBeUndefined();
+
+  b.units.push(giant, obstructed);
+  b.elapsed = 0.1;
+  stepTraps(b, 0.05, () => {});
+  expect(b.traps[trap.id].targetId).toBe(giant.id);
+  b.elapsed += trapStats('bomb', trap.level)!.delay;
+  stepTraps(b, 0.05, () => {});
+  expect(b.traps[trap.id].resolved).toBe(true);
+  for (const unit of [outsideTrigger, obstructed, giant])
+    expect(unit.hp).toBe(unit.maxHp - source.damage);
+  for (const unit of [flyer, outsideBlast]) expect(unit.hp).toBe(unit.maxHp);
+  for (const unit of [giant, flyer, outsideBlast]) expect(unit.airPush).toBeUndefined();
+  if (version === 301) {
+    expect(outsideTrigger.airPush).toBeUndefined();
+    expect(obstructed.airPush).toBeUndefined();
+  } else {
+    expect(outsideTrigger.airPush!.x * outsideTrigger.airPush!.remaining).toBeCloseTo(-1);
+    expect(obstructed.airPush!.x * obstructed.airPush!.remaining).toBeCloseTo(0.6);
+  }
+});
+
 it('Giant Bomb radius grows at levels 2 and 4', () => {
   expect([1, 2, 3, 4, 5].map((level) => trapStats('giantbomb', level)!.radius)).toEqual([
     3, 3.5, 3.5, 4, 4,

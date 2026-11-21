@@ -40,7 +40,12 @@ export function battleTrapStats(trap: Pick<Building, 'kind' | 'level' | 'npc'>, 
   if (base && trap.npc === 'pumpkin-bomb') return { ...base, ...PUMPKIN_BOMB };
   if (base && trap.npc === 'santa-trap') return { ...base, ...SANTA_TRAP };
   if (base && trap.npc === 'shrink-trap') return { ...base, ...SHRINK_TRAP };
-  if (base && battle?.nativeCampaignGiantBombPushback && trap.kind === 'giantbomb' && !trap.npc) {
+  if (
+    base &&
+    !trap.npc &&
+    ((trap.kind === 'bomb' && battle?.nativeCampaignBombPushback) ||
+      (trap.kind === 'giantbomb' && battle?.nativeCampaignGiantBombPushback))
+  ) {
     const { pushback, pushbackHousing } = nativeTrapValues(trap.kind, trap.level);
     return { ...base, pushback, pushbackHousing };
   }

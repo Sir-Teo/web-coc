@@ -1274,6 +1274,7 @@ export interface Battle {
   nativeBombSplashEligibility?: true;
   /** Version 252: a Home Giant Bomb can splash ground units that cannot trigger it. */
   nativeGiantBombSplashEligibility?: true;
+  nativeCampaignBombPushback?: true;
   nativeCampaignGiantBombPushback?: true;
   /** Version239: source Seeking Shield/Spiky Ball bounce stop counters hold movement. */
   nativeProjectileBouncePause?: true;

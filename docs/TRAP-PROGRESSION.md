@@ -83,3 +83,12 @@ Giant Bomb placements. Recordings from version 301 apply the same
 wall-limited push to surviving eligible ground troops. The ground trigger,
 damage, blast radius and fuse still use their existing values. Version 300
 and older recordings keep their original positions and outcomes.
+
+## Campaign Bomb pushback
+
+Version 302 also restores the pinned one-tile, three-housing-space pushback
+for ordinary Campaign Bombs. They trigger on ground units within 1.5 tiles
+and damage ground units within three tiles. In comparison, a Giant Bomb
+triggers at two tiles and its blast radius grows with level. Both use the
+existing collision-limited push for surviving units. Ordinary Bombs in
+version 301 and older recordings retain their original behavior.
