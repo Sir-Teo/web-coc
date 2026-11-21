@@ -5925,9 +5925,22 @@ export class VillageScene extends Phaser.Scene {
   }
   private gustPoints = Array.from({ length: 21 }, () => new Phaser.Math.Vector2());
   private drawGusts(battle: GameModel['battle'], reduced: boolean) {
-    if (!battle || battle.finished || reduced) return;
+    if (!battle || battle.finished) return;
     const points = this.gustPoints;
     for (const gust of battle.gusts ?? []) {
+      if (reduced) {
+        // Mark the shot direction without moving the indicator with the gust.
+        const { x, y, directionX: dx, directionY: dy } = gust;
+        const tail = isoInto(points[0], x + dx * 1.2, y + dy * 1.2);
+        const tip = isoInto(points[1], x + dx * 3, y + dy * 3);
+        const left = isoInto(points[2], x + dx * 2.3 - dy * 0.45, y + dy * 2.3 + dx * 0.45);
+        const right = isoInto(points[3], x + dx * 2.3 + dy * 0.45, y + dy * 2.3 - dx * 0.45);
+        this.detail.lineStyle(3, 0xe4fbff, 0.85);
+        this.detail.lineBetween(tail.x, tail.y - AIR_LIFT, tip.x, tip.y - AIR_LIFT);
+        this.detail.lineBetween(left.x, left.y - AIR_LIFT, tip.x, tip.y - AIR_LIFT);
+        this.detail.lineBetween(right.x, right.y - AIR_LIFT, tip.x, tip.y - AIR_LIFT);
+        continue;
+      }
       const half = Math.min(
         SWEEPER.waveCone / 2,
         Math.asin(Math.min(1, SWEEPER.halfWidth / gust.radius)),

@@ -160,6 +160,31 @@ for (const [width, height] of [
     expect(audio.muted).toEqual([]);
     expect(audio.resumed).toEqual(audio.playing);
     expect(audio.reduced).toEqual({ effects: 0, loading: 0 });
+    const reducedGustLines = async (at: number) => {
+      const state = await seek(at);
+      const lines = await page.evaluate(() => {
+        const { model, scene } = window.__game;
+        const graphics = scene.detail;
+        const drawLine = graphics.lineBetween;
+        const drawn: number[][] = [];
+        graphics.lineBetween = (...points: number[]) => {
+          drawn.push(points);
+          return graphics;
+        };
+        try {
+          scene.drawGusts(model.battle, true);
+        } finally {
+          graphics.lineBetween = drawLine;
+        }
+        return drawn;
+      });
+      expect(state.gusts).toEqual(phases.get(at)!.gusts);
+      return lines;
+    };
+    const direction = await reducedGustLines(0.75);
+    expect(direction).toHaveLength(3);
+    expect(await reducedGustLines(1)).toEqual(direction);
+    expect(await reducedGustLines(0.3)).toEqual([]);
     const death = await page.evaluate(() => window.__sweeperAudit.final.airSweepers[6].destroyedAt);
     expect(death).toBeGreaterThan(0);
     const rubble = await seek(Math.round((death + 0.2) * 20) / 20);
@@ -181,10 +206,13 @@ for (const [width, height] of [
       m.returnHome();
       scene.sync();
       scene.drawOverlay();
+      // The save queue can stamp metadata between the live snapshot and replay exit.
+      const { saveRevision: _currentRevision, ...home } = m.state;
+      const { saveRevision: _savedRevision, ...expected } = window.__sweeperAudit.home;
       return {
         same,
-        home: m.state,
-        expected: window.__sweeperAudit.home,
+        home,
+        expected,
         effects: scene.sweeperPresentation.effects.size,
         active: audio.samples.active.size,
         listeners: game.renderer.listenerCount('losewebgl'),
