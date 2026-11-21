@@ -159,7 +159,7 @@ it('does not export unknown fields attached to imported garrison data', () => {
   expect(JSON.stringify(makeReplayFile(replay))).not.toContain('privateMemo');
 });
 
-for (const spell of ['bat', 'skeleton'] as const) {
+for (const spell of ['bat', 'skeleton', 'totem'] as const) {
   it(`keeps the Campaign reserve closed for ${spell} summons until an eligible troop arrives`, () => {
     const save = wizardTowerVillage();
     save.spells = { ...save.spells, [spell]: 1 };
@@ -175,7 +175,9 @@ for (const spell of ['bat', 'skeleton'] as const) {
     for (let tick = 0; tick < 60; tick++) m.step(0.05);
     expect(
       battle.units.some(
-        (unit) => unit.kind === (spell === 'bat' ? 'spellbat' : 'spellskeletonshielded'),
+        (unit) =>
+          unit.kind ===
+          (spell === 'totem' ? 'totem' : spell === 'bat' ? 'spellbat' : 'spellskeletonshielded'),
       ),
     ).toBe(true);
     expect(reserve.released).toBe(0);
@@ -215,3 +217,16 @@ for (const kind of ['spellbat', 'spellskeletonshielded', 'spellskeleton'] as con
     }
   });
 }
+
+it('honors the Totem DoesNotOpenCC row without changing version 293 releases', () => {
+  expect(nativeUnitRow('totem')).toMatchObject({ DoesNotOpenCC: 'TRUE' });
+  const { initial } = record();
+  initial.spells.totem = 1;
+  for (const version of [293, REPLAY_VERSION]) {
+    const battle = replayBattle(initial, version);
+    battle.units = [{ ...target(), kind: 'totem' }];
+    battle.elapsed = 1;
+    stepGarrisonReleases(battle);
+    expect(battle.garrisons![0].released).toBe(version === 293 ? 3 : 0);
+  }
+});

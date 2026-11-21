@@ -63,7 +63,8 @@ export function stepGarrisonReleases(battle: Battle) {
   const targets: GarrisonTarget[] = [];
   for (const unit of battle.units)
     if (
-      // Pinned DoesNotOpenCC applies to the Bat and both phases of the spell Skeleton.
+      // Pinned DoesNotOpenCC excludes the Totem, Bat, and both spell Skeleton phases.
+      !(battle.nativeTotemGarrisonImmunity && unit.kind === 'totem') &&
       !(
         battle.nativeSpellSummonGarrisonImmunity &&
         (unit.kind === 'spellbat' ||

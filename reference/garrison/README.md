@@ -658,3 +658,11 @@ Bane of the Ring remains withheld because its guide waits for absent source obje
 `500000108`; the updated readiness report distinguishes that issue from the
 completed defender capture. Current campaign indices and all earlier rosters stay
 unchanged, and version 234 remains accepted.
+
+### Totem release eligibility (recording version 294)
+
+The pinned `Totem` character row has `DoesNotOpenCC=TRUE`, independently of
+`TriggersTraps=FALSE`. A Totem can appear within the release radius without
+opening the reserve. Ordinary eligible attackers still open it. The change
+applies to the release search. Earlier recordings preserve their existing
+Totem behavior.

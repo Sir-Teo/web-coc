@@ -1221,6 +1221,7 @@ export interface Battle {
   nativeAttackContactPose?: true;
   /** Version 217: spell-created Bats spend source melee charge and recovery. */
   nativeSpellSummonGarrisonImmunity?: true;
+  nativeTotemGarrisonImmunity?: true;
   nativeSpellBatWindup?: true;
   /** Version 218: both Skeleton Spell bodies spend source melee phases. */
   nativeSpellSkeletonWindup?: true;
