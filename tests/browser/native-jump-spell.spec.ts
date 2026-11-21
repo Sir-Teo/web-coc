@@ -224,16 +224,14 @@ test('Jump cast fallback survives held and failed downloads and hands off after 
   await expect.poll(() => requested).toBeGreaterThan(0);
   await open(page);
   const before = await seek(page, r.bottle);
-  expect(
-    await page.evaluate(() => {
-      const { scene } = window.__game;
-      scene.effect({ type: 'spell', spell: 'jump', x: 11.5, y: 11.5, radius: 3.5 });
-      scene.drainEffects();
-      return scene.children.list.filter(
+  const fallbackCount = () =>
+    page.evaluate(() =>
+      window.__game.scene.children.list.filter(
         (o) => o.active && o.getData?.('nativeSpellFallback') === 'Jump',
-      ).length;
-    }),
-  ).toBe(1);
+      ).length,
+    );
+  // Seeking across the recorded cast already creates its fallback.
+  expect(await fallbackCount()).toBe(1);
   release();
   await page.waitForFunction(
     () => window.__game.scene.jumpSpellPresentation.layer.status('Jump predeploy') === 'none',
@@ -244,13 +242,45 @@ test('Jump cast fallback survives held and failed downloads and hands off after 
   await ready(page);
   expect((await seek(page, r.bottle)).battle).toBe(before.battle);
   await visible(page, ['jump_bottleDrop']);
-  expect(
-    await page.evaluate(
-      () =>
-        window.__game.scene.children.list.filter(
-          (o) => o.active && o.getData?.('nativeSpellFallback') === 'Jump',
-        ).length,
-    ),
-  ).toBe(0);
+  expect(await fallbackCount()).toBe(0);
   expect(errors).toEqual([]);
+});
+
+test('Jump marks an open wall only between the physical opening and expiry', async ({ page }) => {
+  const recording = nativeJumpRecording(1);
+  await page.setViewportSize({ width: 568, height: 320 });
+  await boot(page, recording);
+  await open(page);
+  await ready(page);
+  const markers = () => page.evaluate(() => {
+    const { scene } = window.__game;
+    const draw = scene.detail.strokePoints;
+    let count = 0;
+    scene.detail.strokePoints = function (...args) {
+      count++;
+      return draw.apply(this, args);
+    };
+    try {
+      scene.drawOverlay(0);
+      return count;
+    } finally {
+      scene.detail.strokePoints = draw;
+    }
+  });
+  for (const [at, expected] of [
+    [recording.landing, 0],
+    [recording.beforeHit, 0],
+    [recording.pulsing, 1],
+    [recording.beforeExpiry, 1],
+    [recording.afterExpiry, 0],
+    [recording.pulsing, 1],
+  ]) {
+    await seek(page, at);
+    expect(await markers()).toBe(expected);
+  }
+  await page.evaluate(() => window.__game.model.toggleReducedMotion());
+  expect(await markers()).toBe(1);
+  await open(page, 115);
+  await seek(page, recording.pulsing);
+  expect(await markers()).toBe(0);
 });

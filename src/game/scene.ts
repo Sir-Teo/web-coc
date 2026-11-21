@@ -7,6 +7,7 @@ import { NativeRecallPresentation } from './native-recall-scene';
 import { needsRecallPresentation } from './native-recall';
 import { ReviveTargetPresentation } from './revive-target-scene';
 import { JumpSpellPresentation } from './jump-spell-scene';
+import { jumpWalls } from './native-spells';
 import { FreezeSpellPresentation } from './freeze-spell-scene';
 import { OvergrowthPresentation } from './overgrowth-scene';
 import { bowlerImpactArtNeeded, garrisonBowlerContactEffect } from './bowler-impact-effects';
@@ -5859,12 +5860,19 @@ export class VillageScene extends Phaser.Scene {
   /** Health and upgrade bars, skeleton coffins, and frozen or rooted footprints. */
   private drawBuildingDetail(battle: GameModel['battle'], reduced: boolean) {
     this.detail.clear();
+    // The source particles start before the first pulse and outlive the open route.
+    const jumpPassages =
+      battle?.nativeRoster && !battle.finished && battle.nativeSpellArt?.includes('Jump')
+        ? jumpWalls(battle)
+        : undefined;
     for (const v of this.model.buildings) {
       const shown = this.model.visibleBuilding(v);
       if (v.kind === 'skeletontrap') this.sprites.get(v.id)?.setVisible(shown);
       if (v.hp <= 0 || !shown) continue;
       const im = this.sprites.get(v.id);
       if (!im) continue;
+      if (jumpPassages?.has(v.id))
+        this.diamond(this.detail, v.x, v.y, 1, NATIVE_SPELL_COLOR.Jump, 0.18);
       if (v.kind === 'skeletontrap') {
         const state = battle?.traps[v.id];
         if (im.texture.key === skeletonTrapArt(v.level).texture)
