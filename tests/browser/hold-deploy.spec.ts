@@ -1,8 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
 
 /** An open grass point near the middle of the screen, where a finger could deploy. */
-async function grassPoint(page: Page) {
-  return page.evaluate(() => {
+async function grassPoint(page: Page, unobscured = false) {
+  return page.evaluate((unobscured) => {
     const { scene, model } = window.__game;
     const w = innerWidth,
       h = innerHeight;
@@ -12,11 +12,12 @@ async function grassPoint(page: Page) {
         if (model.deployBlocked(x, y)) continue;
         const p = scene.screenFor(x, y);
         if (p.x < 40 || p.x > w - 40 || p.y < h * 0.3 || p.y > h * 0.6) continue;
+        if (unobscured && document.elementFromPoint(p.x, p.y) !== scene.game.canvas) continue;
         const d = Math.hypot(p.x - w / 2, p.y - h / 2);
         if (!best || d < best.d) best = { x: p.x, y: p.y, d };
       }
     return best!;
-  });
+  }, unobscured);
 }
 
 test.use({ viewport: { width: 390, height: 844 } });
@@ -787,6 +788,30 @@ test.describe('full deployment tray on touch', () => {
     await refresh();
     expect(await offset()).toBeCloseTo(spellOffset, 0);
     expect(await state()).toEqual(spent);
+  });
+
+  test('reveals the next spell when the spent card was scrolled far away', async ({ page }) => {
+    await page.setViewportSize({ width: 568, height: 320 });
+    await startDeployment(page);
+    await page.evaluate(() => {
+      const { model, scene } = window.__game;
+      scene.paused = true;
+      const battle = model.battle!;
+      for (const key of Object.keys(battle.carried) as (keyof typeof battle.carried)[])
+        battle.carried[key] = battle.spells[key] = 1;
+      model.changed();
+    });
+    const tray = page.locator('.deploy-tray .army-tray');
+    const first = tray.locator('[data-action="spell:rage"]');
+    const last = tray.locator('[data-action="spell:bat"]');
+    await last.tap();
+    await expect(first).not.toBeInViewport();
+    const target = await grassPoint(page, true);
+    await page.touchscreen.tap(target.x, target.y);
+    await expect(last).toBeDisabled();
+    await expect(first).toHaveClass(/selected/);
+    await expect(first).toBeInViewport({ ratio: 1 });
+    expect(await page.evaluate(() => window.__game.model.battle!.spells.rage)).toBe(1);
   });
 });
 

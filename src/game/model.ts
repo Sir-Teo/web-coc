@@ -1694,7 +1694,7 @@ export class GameModel {
   onChange = (_passive = false) => {};
   onEffect = (_fx: FX) => {};
   onToast = (_message: string) => {};
-  onBattlePlacement = () => {};
+  onBattlePlacement: (spell?: SpellKind) => void = () => {};
   revision = 0;
   clock = Date.now();
   constructor(saved?: Save, now = Date.now()) {
@@ -6620,12 +6620,12 @@ export class GameModel {
    * still needs a full render.
    */
   private deploymentBatch: { starting: boolean } | undefined;
-  private deployChanged(starting: boolean) {
+  private deployChanged(starting: boolean, spell?: SpellKind) {
     if (this.deploymentBatch) {
       this.deploymentBatch.starting ||= starting;
       return;
     }
-    this.onBattlePlacement();
+    this.onBattlePlacement(spell);
     this.changed(!starting);
   }
   deploy(x: number, y: number) {
@@ -6972,7 +6972,7 @@ export class GameModel {
     } else startSpellAura(b, k as AuraSpell, x, y);
     if (b.spells[k] <= 0) this.activeSpell = SPELL_KEYS.find((s) => b.spells[s] > 0) ?? null;
     this.guidePlaced({ spell: k });
-    this.deployChanged(starting);
+    this.deployChanged(starting, k);
     return true;
   }
   /** Ordinary Healers cannot hold the battle open; Druid and native Unicorn have explicit rules. */

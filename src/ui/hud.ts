@@ -1157,10 +1157,26 @@ export class HUD {
       if (this.panel === 'settings') this.scheduleRender();
     }, signal);
     model.onToast = (m) => this.toast(m);
-    model.onBattlePlacement = () => {
+    model.onBattlePlacement = (spell) => {
       const warning = this.root.querySelector('#toast.show')?.textContent;
       if (warning === DEPLOYMENT_BOUNDARY_WARNING || warning === SPELL_BOUNDARY_WARNING)
         this.toast('');
+      if (!spell || model.battle?.spells[spell] !== 0) return;
+      const action = model.activeSpell
+        ? `spell:${model.activeSpell}`
+        : !model.activeHero && !model.activeHeroKind &&
+          model.troopSelected && model.troopRemaining(model.activeTroop) > 0
+          ? `troop:${model.activeTroop}`
+          : null;
+      if (!action) return;
+      const tray = this.hudEl.querySelector('.deploy-tray .army-tray');
+      const card = tray?.querySelector<HTMLElement>(`[data-action="${action}"]`);
+      if (!tray || !card) return;
+      // Revealing an offscreen selection does not move a tray that already shows it.
+      const visible = tray.getBoundingClientRect();
+      const next = card.getBoundingClientRect();
+      if (next.right <= visible.left || next.left >= visible.right)
+        card.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     };
     scene.onSelect = () => {
       this.panel = null;
