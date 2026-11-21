@@ -1,6 +1,7 @@
 import { buildingPortrait } from './building-portrait-art';
 import { heroRosterIcon, rosterIcon } from './roster-art';
 import { eternalTomeRemaining } from './eternal-tome-feedback';
+import { rageVialRemaining } from './rage-vial-feedback';
 import { siegeCargoCapacity, type SiegeCargoEntry } from '../game/siege-cargo';
 import { armyFromLink, armyLink, decodeSharedArmy } from '../game/army-share';
 import { flameFlingerBurstStats } from '../game/native-flame-flinger';
@@ -4286,6 +4287,7 @@ export class HUD {
       hero = battle?.nativeHeroes?.find((h) => h.kind === kind),
       unit = battle?.units.find((u) => u.id === hero?.unitId);
     const tome = battle && hero ? eternalTomeRemaining(battle, hero, unit) : 0;
+    const vial = battle ? rageVialRemaining(battle, unit) : 0;
     const name = HERO_SOURCE[kind];
     const status =
       !battle || !hero || hero.unitId === null
@@ -4298,9 +4300,11 @@ export class HUD {
               ? `Eternal Tome active · ${tome}s`
               : unit && phoenixLifeFraction(unit, battle.elapsed) !== undefined
                 ? `Phoenix revival · ${hero.abilityUsed ? 'Ability used' : 'Ability available'}`
-                : hero.abilityUsed
-                  ? 'Ability used · Fighting'
-                  : `Tap ${kind === 'king' ? 'his' : 'its'} card or press H to activate`;
+                : vial
+                  ? 'Rage Vial active'
+                  : hero.abilityUsed
+                    ? 'Ability used · Fighting'
+                    : `Tap ${kind === 'king' ? 'his' : 'its'} card or press H to activate`;
     return `${name} · ${status}`;
   }
   private kingDeploymentHint() {
@@ -4370,6 +4374,7 @@ export class HUD {
       pending ||
       !!m.replay;
     const tome = eternalTomeRemaining(battle, hero, unit);
+    const vial = rageVialRemaining(battle, unit);
     const name = HERO_SOURCE[hero.kind];
     const short = name
       .replace('Barbarian ', '')
@@ -4393,10 +4398,18 @@ export class HUD {
                   ? 'Phoenix revival'
                   : tome
                     ? `Tome ${tome}s`
-                    : 'Ability used'
+                    : vial
+                      ? `Vial ${vial}s`
+                      : 'Ability used'
                 : 'Activate ability';
     const selected = m.activeHeroKind === hero.kind;
-    return `<button class="troop-card hero-card${tome ? ' tome-active' : ''} ${selected ? 'selected' : ''}" data-hero-state="${hero.kind}:${ready}:${defeated}:${!!hero.abilityUsed}:${selected}${pending ? '|reviving' : ''}${phoenixLife === undefined ? '' : '|phoenix'}|tome:${!!tome}|revive:${revive}|key:${hotkey}" data-action="hero-select:${hero.kind}" aria-label="${name}, ${tome && revive === 'off' ? `Eternal Tome active, ${tome} seconds remaining` : label}" ${disabled ? 'disabled' : ''}>${hotkey ? '<kbd class="troop-key">H</kbd>' : ''}<img src="${heroRosterIcon(hero.kind)}" alt=""><span class="troop-level">★ ${hero.level}</span><span class="hero-health"><i style="width:${pct((phoenixLife ?? health) * 100)}${phoenixLife === undefined ? '' : ';background:#fff2bf'}"></i></span><span class="troop-name">${label}</span></button>`;
+    const vialActive = !!vial && revive === 'off' && phoenixLife === undefined;
+    const accessibleLabel = tome && revive === 'off'
+      ? `Eternal Tome active, ${tome} seconds remaining`
+      : vialActive
+        ? `Rage Vial active, ${vial} seconds remaining`
+        : label;
+    return `<button class="troop-card hero-card${tome ? ' tome-active' : vialActive ? ' vial-active' : ''} ${selected ? 'selected' : ''}" data-hero-state="${hero.kind}:${ready}:${defeated}:${!!hero.abilityUsed}:${selected}${pending ? '|reviving' : ''}${phoenixLife === undefined ? '' : '|phoenix'}|tome:${!!tome}|vial:${!!vial}|revive:${revive}|key:${hotkey}" data-action="hero-select:${hero.kind}" aria-label="${name}, ${accessibleLabel}" ${disabled ? 'disabled' : ''}>${hotkey ? '<kbd class="troop-key">H</kbd>' : ''}<img src="${heroRosterIcon(hero.kind)}" alt=""><span class="troop-level">★ ${hero.level}</span><span class="hero-health"><i style="width:${pct((phoenixLife ?? health) * 100)}${phoenixLife === undefined ? '' : ';background:#fff2bf'}"></i></span><span class="troop-name">${label}</span></button>`;
   }
   /** Home village tray: the saved lineup with levels; opens the Hero Hall. */
   private rosterCards() {
@@ -6612,8 +6625,9 @@ export class HUD {
             ? hero.phoenix.pausedRevive / hero.phoenix.reviveDuration!
             : undefined;
         const tome = eternalTomeRemaining(m.battle, hero, unit);
+        const vial = rageVialRemaining(m.battle, unit);
         const revive = this.reviveTrayState(kind);
-        const state = `${hero.kind}:${hero.unitId === null}:${!!unit && unit.hp <= 0 && !pending}:${!!hero.abilityUsed}:${m.activeHeroKind === hero.kind}${pending ? '|reviving' : ''}${phoenixLife === undefined ? '' : '|phoenix'}|tome:${!!tome}|revive:${revive}|key:${this.nativeHeroHotkey(kind)}`;
+        const state = `${hero.kind}:${hero.unitId === null}:${!!unit && unit.hp <= 0 && !pending}:${!!hero.abilityUsed}:${m.activeHeroKind === hero.kind}${pending ? '|reviving' : ''}${phoenixLife === undefined ? '' : '|phoenix'}|tome:${!!tome}|vial:${!!vial}|revive:${revive}|key:${this.nativeHeroHotkey(kind)}`;
         if (card.dataset.heroState !== state) {
           const focused = document.activeElement === card;
           card.outerHTML = this.nativeHeroCard(kind, this.nativeHeroHotkey(kind));
@@ -6627,6 +6641,11 @@ export class HUD {
           if (tome && revive === 'off') {
             setText(card.querySelector('.troop-name'), `Tome ${tome}s`);
             const label = `${HERO_SOURCE[kind]}, Eternal Tome active, ${tome} seconds remaining`;
+            if (card.getAttribute('aria-label') !== label) card.setAttribute('aria-label', label);
+          }
+          if (vial && revive === 'off' && phoenixLife === undefined) {
+            setText(card.querySelector('.troop-name'), `Vial ${vial}s`);
+            const label = `${HERO_SOURCE[kind]}, Rage Vial active, ${vial} seconds remaining`;
             if (card.getAttribute('aria-label') !== label) card.setAttribute('aria-label', label);
           }
           const health = card.querySelector<HTMLElement>('.hero-health i');

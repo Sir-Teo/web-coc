@@ -5076,13 +5076,13 @@ h3 {
   border-color: #be83dc;
   background: linear-gradient(#faeaff, #baa1cc);
 }
-.hero-card.tome-active {
+.hero-card:is(.tome-active, .vial-active) {
   filter: none;
   opacity: 1;
   border-color: #ffe78e;
   box-shadow: 0 0 0 2px #ffe78e70;
 }
-.hero-card.tome-active .troop-name {
+.hero-card:is(.tome-active, .vial-active) .troop-name {
   background: #66471b;
   color: #fff5c2;
   font-variant-numeric: tabular-nums;
