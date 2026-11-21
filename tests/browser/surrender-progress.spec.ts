@@ -88,3 +88,63 @@ for (const practice of [false, true]) {
     });
   });
 }
+
+for (const viewport of [
+  { width: 390, height: 844 },
+  { width: 568, height: 320 },
+]) {
+  test.describe(`battle confirmation at ${viewport.width}×${viewport.height}`, () => {
+    test.use({ viewport, hasTouch: true, isMobile: true });
+
+    test('a viewport resize cancels a held End Battle touch', async ({ page, browserName }) => {
+      test.skip(browserName !== 'chromium', 'Held touch requires CDP');
+      await page.goto('/');
+      await expect(page.locator('#loading')).toBeHidden();
+      const action = (name: string) => page.locator(`[data-action="${name}"]`);
+      await action('skip-tutorial').tap();
+      await page.locator('.attack-btn').tap();
+      await action('attack:0').tap();
+      await page.waitForFunction(() => !window.__game.scene.battleArtPending());
+      await action('troop:swordsman').tap();
+      const drop = await page.evaluate(() => {
+        const { model, scene } = window.__game;
+        for (let y = 112; y < innerHeight - 104; y += 10) {
+          for (let x = 118; x < innerWidth - 112; x += 10) {
+            if (document.elementFromPoint(x, y) !== scene.game.canvas) continue;
+            const tile = scene.gridAtScreen(x, y);
+            if (!model.deployBlocked(tile.x, tile.y)) return { x, y };
+          }
+        }
+        throw Error('No visible legal deployment tile');
+      });
+      await page.touchscreen.tap(drop.x, drop.y);
+      await expect.poll(() => page.evaluate(() => window.__game.model.battle!.started)).toBe(true);
+
+      await action('surrender').tap();
+      const end = action('end');
+      await expect(end).toBeVisible();
+      const box = (await end.boundingBox())!;
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x: box.x + box.width / 2, y: box.y + box.height / 2 }],
+      });
+      // A small resize leaves the original button under the touch so Chromium still clicks it.
+      const heightAfterResize = viewport.height - 1;
+      await page.evaluate((height) => {
+        document.documentElement.removeAttribute('data-resize-observed');
+        window.addEventListener('resize', () => {
+          if (innerHeight === height) document.documentElement.dataset.resizeObserved = 'true';
+        }, { once: true });
+      }, heightAfterResize);
+      await page.setViewportSize({ width: viewport.width, height: heightAfterResize });
+      await expect(page.locator('html')).toHaveAttribute('data-resize-observed', 'true');
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+
+      await expect(end).toBeVisible();
+      expect(await page.evaluate(() => window.__game.model.battle!.finished)).toBe(false);
+      await end.tap();
+      await expect(page.locator('#result-title')).toBeVisible();
+    });
+  });
+}

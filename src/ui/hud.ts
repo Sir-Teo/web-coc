@@ -1004,13 +1004,8 @@ export class HUD {
     window.addEventListener(
       'resize',
       () => {
-        this.cancelDrawerDrag?.();
-        if (this.repeatPointer !== null) {
-          // Releasing a held touch over the resized control can still dispatch a click.
-          this.cancelledActionPointers.add(this.repeatPointer);
-          this.stopRepeat();
-        }
-        if (this.replayScrubPointer !== null) {
+        const scrubbing = this.replayScrubPointer !== null;
+        if (scrubbing) {
           const progress = this.hudEl.querySelector<HTMLInputElement>('#replay-progress');
           if (progress) {
             // Detach the old range so its native drag cannot commit after it moves.
@@ -1020,8 +1015,10 @@ export class HUD {
             if (focused) replacement.focus({ preventScroll: true });
             this.liveRefs = null;
           }
-          this.pressedActions.delete(this.replayScrubPointer);
-          finishScrub();
+        }
+        // A touch released after reflow can still deliver a click to its original control.
+        cancelActions();
+        if (scrubbing) {
           this.replayInputAt = -Infinity;
           this.updateLive();
         }
