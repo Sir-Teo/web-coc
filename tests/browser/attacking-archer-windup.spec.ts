@@ -143,3 +143,51 @@ for (const c of [
     expect(await page.evaluate(() => window.__game.game.renderer.gl.getError())).toBe(0);
     expect(errors).toEqual([]);
   });
+
+test('decoded Archer art replaces its fallback while a cold Freeze replay stays paused', async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 390, height: 844 });
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => (release = resolve));
+  await page.route('**/assets/troops-native/archer/graph.json', async (route) => {
+    await held;
+    await route.continue();
+  });
+  try {
+    await page.goto('/?lazyart');
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    await page.locator('[data-action="skip-tutorial"]').click();
+    const r = frozenDragonArcherRecording(3);
+    await page.evaluate(({ data, first, id }) => {
+      const { model, scene } = window.__game;
+      if (!model.openReplay(data)) throw Error('Replay rejected');
+      model.replay.paused = true;
+      model.seekReplay(first);
+      while (model.replay.seeking) model.step(0.05);
+      const u = model.battle.units.find((unit: { id: number }) => unit.id === id);
+      scene.cameras.main.centerOn(896 + (u.x - u.y) * 32, 112 + (u.x + u.y) * 16);
+    }, r);
+    const pose = () =>
+      page.evaluate((id) => {
+        const { model, scene } = window.__game;
+        return {
+          time: model.replay.time,
+          paused: model.replay.paused,
+          native: scene.troopNativePresentation.views.get(id)?.sample?.name ?? null,
+          fallback: scene.unitSprites.get(id)?.visible ?? false,
+        };
+      }, r.id);
+    await expect.poll(pose).toMatchObject({ paused: true, native: null, fallback: true });
+    const time = (await pose()).time;
+    release();
+    // Let only the ordinary render loop run. A camera move or forced overlay redraw would
+    // conceal a missed invalidation on either graph or texture readiness.
+    await expect
+      .poll(pose, { timeout: 20_000 })
+      .toMatchObject({ time, paused: true, native: /^archer2_attack/, fallback: false });
+  } finally {
+    release();
+  }
+});

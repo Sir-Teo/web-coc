@@ -99,6 +99,8 @@ export class TroopNativePresentation {
   private point = { x: 0, y: 0 };
   /** Units drawn from a kept pose this frame (LOD), for probes. */
   lodFrozen = 0;
+  /** A frozen replay must redraw when either the graph or its level pages become ready. */
+  artRevision = 0;
   constructor(private scene: Phaser.Scene) {}
   /** Prefetch packs and level pages for the carried army when it changes, not on first deploy. */
   prefetch(kinds: Iterable<string>, levelOf: (kind: string) => number | readonly number[]) {
@@ -148,6 +150,7 @@ export class TroopNativePresentation {
       if (current()) {
         this.packs.set(kind, pack);
         this.packRetryAt.delete(kind);
+        this.artRevision++;
       }
     } catch (error) {
       if (current()) {
@@ -192,6 +195,7 @@ export class TroopNativePresentation {
       if (current()) {
         if (!this.levelsReady.has(kind)) this.levelsReady.set(kind, new Set());
         this.levelsReady.get(kind)!.add(level);
+        this.artRevision++;
       }
     } catch (error) {
       if (current()) {

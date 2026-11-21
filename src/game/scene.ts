@@ -4872,6 +4872,7 @@ export class VillageScene extends Phaser.Scene {
     this.drainEffects();
     this.present(time, false);
   }
+  private troopArtSeen = -1;
   private present(_time: number, live: boolean) {
     // Culling (here and in every presentation) reads worldView: refresh it for this frame's
     // scroll and zoom instead of using the one left by the previous render.
@@ -4886,7 +4887,11 @@ export class VillageScene extends Phaser.Scene {
     this.fxDrained = false;
     if (unchanged) this.renderSanta(this.lastCues);
     else this.drawWorld();
-    if (!unchanged || !live || this.interpolation.moved) this.drawUnits();
+    const troopArt = this.troopNativePresentation.artRevision;
+    if (!unchanged || !live || this.interpolation.moved || this.troopArtSeen !== troopArt) {
+      this.troopArtSeen = troopArt;
+      this.drawUnits();
+    }
   }
   /**
    * `iso` for moving things: a unit's or defender's simulated position maps to the screen

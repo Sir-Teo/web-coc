@@ -239,6 +239,14 @@ battle. The brief deployment particles are Web CoC feedback. A paused seek
 reconstructs retained projectile and battle state without replaying these
 one-shot particles.
 
+A cold portable replay with a level-3 Archer and an active level-7 Freeze
+field exposed a second problem. The Archer stayed on its fallback sprite
+after the combat graph arrived, until the viewer moved the camera or the
+replay clock. Graph and level-page readiness now refresh the unit layer
+at the same replay tick. Freeze bottle and frost use their retained cast
+state when seeking backward and forward.
+[Freeze effect rows](../reference/freeze-spell/effects.json).
+
 ## Remaining parity work by player impact
 
 | Priority | Gap against the pinned build | Comparison required |
