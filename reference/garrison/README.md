@@ -666,3 +666,19 @@ The pinned `Totem` character row has `DoesNotOpenCC=TRUE`, independently of
 opening the reserve. Ordinary eligible attackers still open it. The change
 applies to the release search. Earlier recordings preserve their existing
 Totem behavior.
+
+### Roster-wide release eligibility (recording version 295)
+
+The retained roster exposes 57 army kinds (including eight siege machines),
+24 spawned kinds, seven hero modes and 13 pet forms. Checking every inherited
+row finds no affirmative `DoesNotOpenCC` on the direct army or hero rows.
+Four spell summons (Bat, both spell Skeleton forms and Totem), five troop
+children (Skeleton, Firemite, Icemite, Yetimite and Electromite), the Snake
+Bracelet child and the Phoenix Egg carry it. The current release search reads
+that flag on the materialized unit, independently of `TriggersTraps`.
+The existing Booger exception is retained.
+
+Siege cargo that has entered combat is represented by ordinary unit kinds
+with their retained rows. The audit found no cargo-origin-specific flag and
+does not establish an additional native exception or trigger order. Older
+recordings keep their own eligibility rules.

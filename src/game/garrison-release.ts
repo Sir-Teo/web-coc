@@ -1,5 +1,7 @@
 import { BUILDINGS, TROOPS } from './data';
 import { nativeMiteJump } from './native-mite-jumps';
+import { flag } from './native-data';
+import { nativeUnitRow } from './native-units';
 import type { Battle, Building } from './model';
 import { spawnGarrisonDefender } from './garrison-combat';
 import {
@@ -63,7 +65,11 @@ export function stepGarrisonReleases(battle: Battle) {
   const targets: GarrisonTarget[] = [];
   for (const unit of battle.units)
     if (
-      // Pinned DoesNotOpenCC excludes the Totem, Bat, and both spell Skeleton phases.
+      !(
+        battle.nativeGarrisonReleaseEligibility &&
+        flag(nativeUnitRow(unit.kind, unit.level), 'DoesNotOpenCC')
+      ) &&
+      // Keep the versioned rule checks for historical recordings.
       !(battle.nativeTotemGarrisonImmunity && unit.kind === 'totem') &&
       !(
         battle.nativeSpellSummonGarrisonImmunity &&

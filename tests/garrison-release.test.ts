@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest';
+import { TROOPS, type UnitKind } from '../src/game/data';
 import { freshNativeCampaign } from '../src/game/native-campaign';
 import { GameModel, makeBuilding, type Unit } from '../src/game/model';
 import {
@@ -7,7 +8,7 @@ import {
   type GarrisonSetup,
 } from '../src/game/garrison-release';
 import { REPLAY_VERSION, replayBattle, validateReplay } from '../src/game/replay';
-import { nativeUnitRow } from '../src/game/native-units';
+import { nativeUnitLevels, nativeUnitRow } from '../src/game/native-units';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import { wizardTowerVillage } from './fixtures/wizard-tower-battle';
 
@@ -230,3 +231,48 @@ it('honors the Totem DoesNotOpenCC row without changing version 293 releases', (
     expect(battle.garrisons![0].released).toBe(version === 293 ? 3 : 0);
   }
 });
+
+it('uses the explicit release flag across the full supported roster', () => {
+  const { initial } = record();
+  const blocked = new Set<UnitKind>([
+    'skeleton',
+    'firemite',
+    'frostmite',
+    'yetimite',
+    'electromite',
+    'spellbat',
+    'spellskeleton',
+    'spellskeletonshielded',
+    'totem',
+    'snake',
+    'phoenixegg',
+  ]);
+  for (const kind of Object.keys(TROOPS) as UnitKind[]) {
+    const levelCount = nativeUnitLevels(kind);
+    expect(levelCount, kind).toBeGreaterThan(0);
+    for (let level = 1; level <= levelCount; level++)
+      expect(nativeUnitRow(kind, level).DoesNotOpenCC === 'TRUE', `${kind} ${level}`).toBe(
+        blocked.has(kind),
+      );
+
+    const battle = replayBattle(initial);
+    battle.units = [{ ...target(), kind, x: 19, y: 19 }];
+    battle.elapsed = 0.05;
+    stepGarrisonReleases(battle);
+    // Boogers already have their own exclusion based on their documented jump behavior.
+    expect(battle.garrisons![0].released, kind).toBe(
+      blocked.has(kind) || kind === 'booger' ? 0 : 1,
+    );
+  }
+});
+
+for (const kind of ['skeleton', 'snake', 'phoenixegg'] as const) {
+  it(`preserves the prior release for ${kind} in version 294`, () => {
+    const { initial } = record();
+    const battle = replayBattle(initial, 294);
+    battle.units = [{ ...target(), kind, x: 19, y: 19 }];
+    battle.elapsed = 0.05;
+    stepGarrisonReleases(battle);
+    expect(battle.garrisons![0].released).toBe(1);
+  });
+}
