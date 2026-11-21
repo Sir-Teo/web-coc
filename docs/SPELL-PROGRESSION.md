@@ -125,3 +125,18 @@ The original spell-vial SVGs now use the native hue families: blue Lightning, ye
 `node scripts/spell-assets.mjs` deterministically regenerates the three 256×256 transparent WebPs; `--check` verifies the shipped bytes and runs in CI. The main artwork pipeline imports this generator. Versioned `-v2` URLs avoid stale cached colors, and the superseded files are removed from the build. All three images retain a complete 0–255 alpha range and together occupy 14,002 bytes.
 
 Lightning now draws a single forked graphic with a blue glow and white core, replacing three rectangular strips. It fades over 260ms on the existing simulation-driven effect timeline, freezes with paused combat and is destroyed on exit. This is a local visual improvement; the native bottle descent, impact staging and particle timings remain unfinished. Browser captures verify both aura colors, the bolt, half-opacity at 130ms and cleanup on returning home.
+
+## Version 304 Earthquake damage on defending troops
+
+The retained [Earthquake reference](../reference/official-wiki/spells-siege-super/earthquake-spell.md)
+documents diminishing damage on repeated ground-defender hits. The 18.400.21
+rows give Earthquake levels 6–8 a total of 5%, 10%, or 14.5% of a defender's
+maximum HP over five pulses. Levels 1–5 deal no troop damage and do not count
+toward the sequence. The [Boots reference](../reference/official-wiki/heroes-pets/earthquake-boots.md)
+documents the shared sequence in either cast order.
+
+Each defender now ranks the casts that actually reach it. The first counts
+in full, the second at one third, and the third at one fifth. All pulses from
+one cast use its rank. Air defenders, building and wall damage, and the
+defensive Spell Tower path keep their existing rules. Version 303 and older
+recordings retain their former ground-defender damage.

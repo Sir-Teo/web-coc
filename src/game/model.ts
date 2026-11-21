@@ -941,6 +941,7 @@ export interface Battle {
   nativePetCloneImmunity?: true;
   /** Version 96: waiting/recalled allies and native healing immunity share eligibility rules. */
   nativeFriendlyEligibility?: true;
+  nativeDefenderQuakeFalloff?: true;
   /** Version 97: Mighty Yak uses its source BoostSelf once when its own Hero falls. */
   nativeYakMasterRage?: true;
   /** Version 98: Healer pulses capture their source level's Hero healing ratio. */

@@ -18,6 +18,8 @@ import { replayBattle, validateReplay, type ReplayData } from '../src/game/repla
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import { validateSave } from '../src/game/save';
 import { hurtUnit, unitEffects } from '../src/game/native-status';
+import { spawnSkeleton } from '../src/game/defenders';
+import { castNativeSpell } from '../src/game/native-spells';
 
 type Placement = [BuildingKind, number, number, number?];
 function arena(
@@ -152,6 +154,38 @@ describe('complete spell roster', () => {
     cast(m, 'earthquake', 13.5, 11.5);
     run(m, 5);
     expect(wall.hp).toBe(0);
+  });
+
+  it.each([303, 304])('tracks a ground defender’s quake contacts per cast in version %i', (version) => {
+    const m = arena([], { giant: 1 }, { earthquake: 2 }, 8);
+    m.battle = replayBattle(m['recording']!.initial, version);
+    const b = m.battle;
+    m.activeTroop = 'giant';
+    expect(m.deploy(4, 4)).toBe(true);
+    const coffin = makeBuilding(40, 'skeletontrap', 20, 20);
+    const ground = spawnSkeleton(b, coffin, 0, 0);
+    const air = spawnSkeleton(b, { ...coffin, skeletonMode: 'air' }, 0, 0);
+    const outside = spawnSkeleton(b, { ...coffin, x: 30 }, 0, 0);
+    for (const defender of [ground, air, outside]) defender.stunnedUntil = 99;
+
+    castNativeSpell(b, 'Earthquake', 5, 'attack', 20.5, 20.5);
+    run(m, 4);
+    expect(ground.hp).toBe(ground.maxHp);
+
+    castNativeSpell(b, 'Earthquake', 8, 'attack', 20.5, 20.5);
+    run(m, 4);
+    expect(ground.hp).toBeCloseTo(ground.maxHp * (1 - 0.145), 8);
+
+    // Boots and spells share the sequence. Further pulses of a cast keep the same rank.
+    castNativeSpell(b, 'Earthquake Boots Spell', 1, 'attack', 20.5, 20.5);
+    castNativeSpell(b, 'Earthquake', 8, 'attack', 20.5, 20.5);
+    run(m, 4);
+    const subsequent = version === 304 ? 0.05 / 3 + 0.145 / 5 : 0.05 + 0.145;
+    expect(ground.hp).toBeCloseTo(ground.maxHp * (1 - 0.145 - subsequent), 8);
+    for (const unaffected of [air, outside]) {
+      expect(unaffected.hp).toBe(unaffected.maxHp);
+      expect(unaffected.quakeCasts).toBeUndefined();
+    }
   });
 
   it('clones troops within its housing budget and lets copies expire without death effects', () => {

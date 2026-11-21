@@ -62,6 +62,8 @@ interface DefenderState {
   /** Walking out of poison, or waiting clear of a poisoned home point. */
   avoidingPoison?: true;
   defeatedAt?: number;
+  /** Ground-damaging Earthquakes that have reached this defender, in contact order. */
+  quakeCasts?: number[];
   stunnedUntil?: number;
   /** Version 68: full Freeze cue, separate from Lightning and other short stuns. */
   frozenUntil?: number;

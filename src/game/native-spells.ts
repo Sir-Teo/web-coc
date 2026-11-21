@@ -468,7 +468,16 @@ function harmDefense(
       !overgrowth
     )
       d.frozenUntil = Math.max(d.frozenUntil ?? 0, at + freeze);
-    if (quakeTroop > 0 && d.mode === 'ground') hurtDefender(battle, d, d.maxHp * quakeTroop);
+    if (quakeTroop > 0 && d.mode === 'ground' && d.kind !== 'repairer') {
+      let damage = d.maxHp * quakeTroop;
+      if (battle.nativeDefenderQuakeFalloff) {
+        const seen = (d.quakeCasts ??= []);
+        let index = seen.indexOf(cast.id);
+        if (index === -1) index = seen.push(cast.id) - 1;
+        damage /= 2 * index + 1;
+      }
+      hurtDefender(battle, d, damage);
+    }
     if (poison > 0 && (!groundPoison || d.mode === 'ground')) {
       poisonDefender(battle, d, row, at, cast.interval);
       if (
