@@ -825,11 +825,12 @@ function cloneUnits(
 /** Recall prefers heroes, then the largest housing, then the earliest deployment. */
 function recallUnits(ctx: NativeSpellContext, cast: NativeSpellCast, at: number, radius: number) {
   if (!ctx.recall) return;
-  const candidates = ctx.battle.units
+  const { battle } = ctx;
+  const candidates = battle.units
     .filter(
       (u) =>
         liveAttacker(u, at) &&
-        (deployable(u) || (ctx.battle.nativeSplitRecall && isSplitHog(u.kind))) &&
+        (deployable(u) || (battle.nativeSplitRecall && isSplitHog(u.kind))) &&
         !isTotem(u) &&
         !u.native?.siege &&
         !u.native?.cloneUntil &&
@@ -843,7 +844,18 @@ function recallUnits(ctx: NativeSpellContext, cast: NativeSpellCast, at: number,
         a.id - b.id,
     );
   for (const u of candidates) {
-    const space = housing(u);
+    const hero =
+      battle.nativeRecallPetCapacity && u.hero
+        ? battle.nativeHeroes?.find(({ unitId }) => unitId === u.id)
+        : undefined;
+    const pet = hero?.petId == null ? undefined : battle.units.find(({ id }) => id === hero.petId);
+    // The attached Jelly returns for free, and an independent Raven stays on the field.
+    const carriesPet =
+      pet &&
+      liveAttacker(pet, at) &&
+      !(battle.nativeIndependentRavenRecall && pet.kind === 'greedyraven') &&
+      pet.native?.jellyAttachedRange === undefined;
+    const space = housing(u) + (carriesPet ? 20 : 0);
     if (space > (cast.budget ?? 0)) continue;
     cast.budget! -= space;
     ctx.recall(u, at);

@@ -2017,3 +2017,13 @@ tower freeze and damage behavior. The spell's effect on defending troops is outs
 this correction.
 
 See the retained [Ice Block mechanics](../reference/official-wiki/spells-siege-super/ice-block-spell.md).
+
+## Version 298: Recall housing for accompanying pets
+
+A living pet that returns with its Hero takes 20 housing in the same Recall cast.
+The Hero still costs 25. An attached Angry Jelly travels free, and a Greedy Raven
+that remains on the field takes no capacity from its Hero's return. Recall keeps
+its existing candidate order and redeployment states. Version 297 and earlier
+retain their original costs.
+
+See the retained [Recall mechanics](../reference/official-wiki/spells-siege-super/recall-spell.md).
