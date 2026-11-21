@@ -4321,7 +4321,9 @@ export class VillageScene extends Phaser.Scene {
   }
   private renderRuin(b: Building, im: Phaser.GameObjects.Image) {
     const p = iso(b.x + BUILDINGS[b.kind].size / 2, b.y + BUILDINGS[b.kind].size / 2);
-    if (b.kind === 'cannon' && !b.npc) {
+    // Keep the local rubble visible when the same Cannon pages used by the intact body
+    // are unavailable. The normal art revision pass restyles it when those pages arrive.
+    if (b.kind === 'cannon' && !b.npc && this.cannonPresentation.drawsLevel(b.level)) {
       im.setCrop().setPosition(p.x, p.y).setAlpha(0).setData('nativeCannonRuin', true);
       return;
     }
