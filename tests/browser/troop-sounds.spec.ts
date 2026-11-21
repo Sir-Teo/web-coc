@@ -68,7 +68,24 @@ test('troops deploy and fall with their own sounds, fetched only for the army th
   await expect.poll(() => playing(`troop:${ids[0]}:die`), { timeout: 5000 }).toBe(true);
   // A Barbarian set beside the Town Hall swings and lands its blows with its own impact.
   const fighter = await page.evaluate(() => {
-    const m = window.__game.model;
+    const { model: m, scene } = window.__game;
+    const active = (scene.audio.samples as unknown as {
+      active: Map<string, { source: AudioBufferSourceNode }>;
+    }).active;
+    const starts = new Set<string>();
+    (window as typeof window & { troopHitStarts: Set<string> }).troopHitStarts = starts;
+    // A short hit can finish between browser polls. Observe the actual buffer start.
+    const set = active.set.bind(active);
+    active.set = (key, voice) => {
+      if (key.includes(':hit:')) {
+        const start = voice.source.start.bind(voice.source);
+        voice.source.start = (...args) => {
+          start(...args);
+          starts.add(key);
+        };
+      }
+      return set(key, voice);
+    };
     m.activeTroop = 'swordsman';
     for (const [x, y] of [
       [2, 24],
@@ -88,10 +105,8 @@ test('troops deploy and fall with their own sounds, fetched only for the army th
     .poll(
       () =>
         page.evaluate((id) => {
-          const samples = window.__game.scene.audio.samples as unknown as {
-            active: Map<string, unknown>;
-          };
-          return [...samples.active.keys()].some((k) => k.startsWith(`troop:${id}:hit:`));
+          const { troopHitStarts } = window as typeof window & { troopHitStarts: Set<string> };
+          return [...troopHitStarts].some((k) => k.startsWith(`troop:${id}:hit:`));
         }, fighter),
       { timeout: 10_000 },
     )

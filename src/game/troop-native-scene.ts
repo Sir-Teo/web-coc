@@ -76,6 +76,13 @@ const LOD_HYSTERESIS = 1.25;
 const LOD_CLOSE_ZOOM = 1.15;
 /** Distant units resample their pose every Nth frame (staggered by id). */
 const LOD_RESAMPLE_EVERY = 4;
+const COMMON_DEATH_EXPORT = 'barbarian_death_1';
+// The retained common clip plays at 24 fps. Its final empty frames start at frame 138.
+const COMMON_DEATH_SECONDS = 138 / 24;
+const OTHER_DEATH_SECONDS = 1.5;
+const deathDuration = (name: string | undefined) =>
+  name === COMMON_DEATH_EXPORT ? COMMON_DEATH_SECONDS : OTHER_DEATH_SECONDS;
+
 export class TroopNativePresentation {
   private packs = new Map<string, Pack>();
   private pending = new Map<string, AbortController>();
@@ -375,7 +382,7 @@ export class TroopNativePresentation {
           // Off-screen: leave the (now invisible) fallback as-is; it is off screen.
           continue;
         }
-        if (lodActive && kept && kept.kind === u.kind) {
+        if (lodActive && kept && kept.kind === u.kind && (kept.state === 'die') === (u.hp <= 0)) {
           const dx = point.x - cx;
           const dy = point.y - cy;
           const radius = lodRadius * LOD_HYSTERESIS;
@@ -388,7 +395,7 @@ export class TroopNativePresentation {
             // The kept mesh stands in for the fallback sprite on these frames too.
             sprites.get(u.id)?.setVisible(false);
             const deathAge = elapsed - (u.defeatedAt ?? elapsed);
-            if (u.hp <= 0 && deathAge > 1.5) {
+            if (u.hp <= 0 && deathAge >= deathDuration(kept.sample?.name)) {
               for (const object of kept.view.objects) if (object.visible) object.setVisible(false);
             } else
               follow(kept, point.x, point.y - (air ? lift : 0), unitDepth(point.y, u.id, air, 1));
@@ -520,10 +527,6 @@ export class TroopNativePresentation {
       const state = level.states[requested] ?? level.states.idle ?? level.states.walk;
       if (!state) continue;
       const deathAge = elapsed - (u.defeatedAt ?? elapsed);
-      if (u.hp <= 0 && deathAge > 1.5) {
-        sprites.get(u.id)?.setVisible(false);
-        continue;
-      }
       const sx = facing.dx - facing.dy,
         sy = (facing.dx + facing.dy) / 2,
         slope = sy / Math.max(1e-9, Math.abs(sx));
@@ -543,6 +546,10 @@ export class TroopNativePresentation {
       const name = state.exports[bucket],
         graph = pack.scenes[state.scene],
         clip = graph.clips[graph.exports[name]];
+      if (u.hp <= 0 && deathAge >= deathDuration(name)) {
+        sprites.get(u.id)?.setVisible(false);
+        continue;
+      }
       let seconds: number;
       if (reduced) seconds = 0;
       else if (u.hp <= 0) seconds = deathAge;
@@ -644,7 +651,9 @@ export class TroopNativePresentation {
         owned.x,
         owned.y,
         owned.depth,
-        (u.hp <= 0 ? Math.max(0, 1 - deathAge / 1.5) : 1) *
+        (u.hp <= 0 && name !== COMMON_DEATH_EXPORT
+          ? Math.max(0, 1 - deathAge / OTHER_DEATH_SECONDS)
+          : 1) *
           ((u.native?.effects?.invisibleUntil ?? 0) > elapsed ? 0.35 : 1),
       );
       applyStatusTint(owned.view, u.hp > 0 ? unitStatusTint(u, battle!) : undefined);

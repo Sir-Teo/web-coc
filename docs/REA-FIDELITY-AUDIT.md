@@ -111,6 +111,21 @@ lesson preview. Returning restores focus to the originating action. The
 preview and log controls are web behavior and still need a native comparison.
 [Practice catalog and guide](PRACTICE-MODE.md) · [Campaign rules](CAMPAIGN-RULES.md).
 
+## Shared attacker death art
+
+The Archer and other attacking troops assigned to `barbarian_death_1`
+now show its later frames in live combat and replay. The generic 1.5-second
+fade previously cut off the shared clip around frame 36. The retained
+24-fps clip has 143 frames and the final structurally empty run starts at
+frame 138. All 513 referencing rows across 59 retained troop packs agree.
+The renderer now uses the source opacity and retires the pose at that
+empty run. The battle clock, result grace, combat state and sound assignments
+keep their existing behavior. Native runtime lifetime and composition
+alongside other effects remain unverified.
+
+[Independent death-frame witness](../reference/garrison/README.md#original-dragon-death-timeline) ·
+[Troop sound assignments](TROOP-SOUNDS.md)
+
 ## First-session Builder’s Huts
 
 The retained starting grant, Campaign records, Practice instructions and HUD

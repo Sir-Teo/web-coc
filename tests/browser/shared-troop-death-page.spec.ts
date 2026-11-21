@@ -208,3 +208,30 @@ test('cancelling one troop load keeps the skull page needed by a retained pendin
     release();
   }
 });
+
+test('an Archer draws the shared death frames after the old cutoff and retires on empty frames', async ({
+  page,
+}) => {
+  await boot(page);
+  await warm(page, ['archer']);
+  const samples = await page.evaluate(() => {
+    const { model, scene } = window.__game;
+    model.startBattle(0);
+    model.activeTroop = 'archer';
+    if (!model.deploy(4, 11)) throw Error('Invalid test deployment');
+    const battle = model.battle!;
+    const unit = battle.units[0];
+    unit.hp = 0;
+    unit.defeatedAt = battle.elapsed;
+    const sample = (age: number) => {
+      battle.elapsed = unit.defeatedAt + age;
+      scene.drawOverlay(0);
+      const view = scene.troopNativePresentation.views.get(unit.id);
+      return view?.view.objects.some((object) => object.visible)
+        ? [view.sample?.name, view.sample?.frame]
+        : null;
+    };
+    return [sample(54 / 24), sample(138 / 24)];
+  });
+  expect(samples).toEqual([['barbarian_death_1', 54], null]);
+});
