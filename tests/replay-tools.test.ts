@@ -128,6 +128,25 @@ describe('replay seeking', () => {
     expect(m.replay).toBe(null);
     expect(m.battle).toBe(null);
   });
+  it.each([false, true])(
+    'honors playback requested during a pending seek (canceled: %s)',
+    (cancel) => {
+      const m = record();
+      m.startReplay(m.state.raidLog![0].id);
+      m.pauseReplayForScrub();
+      m.seekReplay(50);
+      expect(m.replay!.seeking).toBe(true);
+      m.toggleReplay();
+      expect(m.replayPlaybackPaused).toBe(false);
+      expect(m.replay!.paused).toBe(true);
+      if (cancel) m.toggleReplay();
+      settleSeek(m);
+      expect(m.replay!.paused).toBe(cancel);
+      expect(m.replay!.time).toBeCloseTo(50);
+      m.step(0.05);
+      expect(m.replay!.time).toBeCloseTo(cancel ? 50 : 50.05);
+    },
+  );
   it('keeps a running seek paused when a scrub starts before it completes', () => {
     const m = record();
     m.startReplay(m.state.raidLog![0].id);

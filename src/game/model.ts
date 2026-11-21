@@ -8695,9 +8695,15 @@ export class GameModel {
     // A pending seek must not resume playback while the player holds the timeline.
     this.replaySeekPaused = true;
   }
+  /** During reconstruction, the control shows the playback state requested for arrival. */
+  get replayPlaybackPaused() {
+    return this.replay?.seeking ? this.replaySeekPaused : (this.replay?.paused ?? true);
+  }
   toggleReplay() {
-    if (!this.replay || this.replay.complete || this.replay.seeking) return;
-    this.replay.paused = !this.replay.paused;
+    const replay = this.replay;
+    if (!replay || replay.complete) return;
+    if (replay.seeking) this.replaySeekPaused = !this.replaySeekPaused;
+    else replay.paused = !replay.paused;
     this.replayBudget = 0;
     this.changed();
   }

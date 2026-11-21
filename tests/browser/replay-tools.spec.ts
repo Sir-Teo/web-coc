@@ -327,6 +327,26 @@ test.describe('rapid replay scrubbing', () => {
     expect(target - time).toBeLessThanOrEqual(0.051);
     expect(paused).toBe(true);
   });
+
+  test('an immediate Play tap queues playback at the end of a touch seek', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 650 });
+    await page.getByRole('button', { name: 'Watch replay', exact: true }).tap();
+    await page.evaluate(() => {
+      window.__game.scene.paused = true;
+    });
+    const range = page.getByRole('slider', { name: 'Replay position' });
+    const box = (await range.boundingBox())!;
+    await page.touchscreen.tap(box.x + 0.9 * box.width, box.y + box.height / 2);
+    await expect(page.locator('.replay-status')).toContainText('Seeking');
+    await page.getByRole('button', { name: 'Play', exact: true }).tap();
+    await expect(page.locator('.replay-status')).toContainText('then playing');
+    await page.setViewportSize({ width: 568, height: 320 });
+    await page.evaluate(() => {
+      window.__game.scene.paused = false;
+    });
+    await expect(page.locator('.replay-status')).toContainText('Watching replay');
+    await expect(page.getByRole('button', { name: 'Pause', exact: true })).toBeEnabled();
+  });
 });
 
 test('a restored recording remains watchable after overlapping browser saves', async ({ page }) => {
