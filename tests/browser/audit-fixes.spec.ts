@@ -264,7 +264,7 @@ test('the campaign list fetches map thumbnails only as they scroll into view', a
       async () => (await import('/src/game/native-campaign.ts')).NATIVE_CAMPAIGN.length,
     ),
   );
-  // Generated SVG thumbnails: a lazy one outside the view is not decoded yet.
+  // Offscreen SVG thumbnails should not be generated or decoded yet.
   const fetched = () =>
     page.evaluate(
       () =>
@@ -272,11 +272,14 @@ test('the campaign list fetches map thumbnails only as they scroll into view', a
           (img) => img.complete && img.naturalWidth > 0,
         ).length,
     );
-  await page.waitForTimeout(1500);
+  await expect.poll(fetched).toBeGreaterThan(0);
   const first = await fetched();
   expect(first).toBeLessThan(40);
-  await page.locator('.campaign-card').last().scrollIntoViewIfNeeded();
-  await expect.poll(fetched).toBeGreaterThan(first);
+  const last = page.locator('.campaign-card').last().locator('img.campaign-map');
+  await expect(last).not.toHaveAttribute('src', /.+/);
+  await last.scrollIntoViewIfNeeded();
+  await expect.poll(() => last.evaluate((img: HTMLImageElement) => img.naturalWidth))
+    .toBeGreaterThan(0);
 });
 
 test('a recording survives reload though the village is saved without it', async ({ page }) => {

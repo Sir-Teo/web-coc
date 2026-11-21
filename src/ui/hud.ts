@@ -752,7 +752,7 @@ const campaignPending = (index: number) =>
   (campaignPendingCache[index] ??= nativeCampaignIssues(index).length > 0);
 let campaignMapCache: string[] | null = null;
 /** The minimap SVG, rendered once per stage into an image URL instead of inline DOM. */
-function campaignMapSource(index: number) {
+export function campaignMapSource(index: number) {
   campaignMapCache ??= [];
   let url = campaignMapCache[index];
   if (url) return url;
@@ -1170,6 +1170,7 @@ export class HUD {
     this.trackAnchor();
   }
   destroy() {
+    this.campaignMapObserver?.disconnect();
     this.stopRepeat();
     this.cancelDrawerDrag?.();
     this.stopLiveTimer?.();
@@ -3206,6 +3207,7 @@ export class HUD {
         !this.patchCampaign(modalMarkup)
       )
         root.innerHTML = modalMarkup;
+      this.observeCampaignMaps();
       // Updating research, settings or results must not fade/shrink an already open dialog.
       if (updatingOpenDialog)
         root.querySelectorAll<HTMLElement>('.modal, .modal-backdrop').forEach((el) => {
@@ -5887,7 +5889,33 @@ export class HUD {
     return `<div class="modal-body research-body"><div class="research-banner"><img src="${hudAsset('laboratory', lab?.level ?? 1)}" alt=""><div><span class="eyebrow">LABORATORY LEVEL ${lab?.level ?? 0}</span><h2>${r ? `${name} research` : 'Strengthen your army'}</h2><p>${r ? 'Your next upgrade is on its way.' : 'Research permanently improves troops and spells. Upgrade the laboratory to unlock higher levels.'}</p>${lab?.upgradeEnd ? `<p class="facility-research-note">Upgrading to level ${lab.level + 1}. Research remains available at level ${lab.level}.</p>` : ''}${r ? `<div class="research-status"><strong data-research>${time((r.end - m.clock) / 1000)}</strong>${button('research-finish', `Finish ${gem} <span data-research-cost>${m.finishCost({ upgradeEnd: r.end } as Building)}</span>`, 'game-btn green')}${m.booksFor({ research: true }).length ? button('book-research', `${icon('BookOpen', 17)} ${MAGIC_ITEMS[m.booksFor({ research: true })[0]].name}`, 'game-btn blue') : ''}</div>` : ''}</div></div><div class="training-grid research-grid">${[...TROOP_ORDER, ...SPELL_ORDER].map((kind) => this.researchCard(kind)).join('')}</div></div><footer class="modal-footer">${elixir} ${n(m.state.elixir)} elixir available <span>One research project at a time</span></footer>`;
   }
   private campaignMap(index: number) {
-    return `<button class="campaign-map-button" data-action="campaign-scout:${index}" aria-label="Scout ${html(NATIVE_CAMPAIGN[index].name)}"><img class="campaign-map" src="${campaignMapSource(index)}" alt="${html(NATIVE_CAMPAIGN[index].name)} base layout" width="94" height="94" loading="lazy" decoding="async" draggable="false"></button>`;
+    return `<button class="campaign-map-button" data-action="campaign-scout:${index}" aria-label="Scout ${html(NATIVE_CAMPAIGN[index].name)}"><img class="campaign-map" data-campaign-map="${index}" alt="${html(NATIVE_CAMPAIGN[index].name)} base layout" width="94" height="94" decoding="async" draggable="false"></button>`;
+  }
+  private campaignMapObserver?: IntersectionObserver;
+  private observeCampaignMaps() {
+    this.campaignMapObserver?.disconnect();
+    const list = this.modalEl.querySelector('.campaign-list');
+    if (!list) return;
+    const images = list.querySelectorAll<HTMLImageElement>('img[data-campaign-map]:not([src])');
+    const load = (image: HTMLImageElement) =>
+      (image.src = campaignMapSource(Number(image.dataset.campaignMap)));
+    if (typeof IntersectionObserver !== 'function') {
+      images.forEach(load);
+      return;
+    }
+    // Native lazy loading postpones decoding, but building every blob still blocks Attack.
+    const observer = new IntersectionObserver(
+      (entries, observer) => {
+        for (const { isIntersecting, target } of entries) {
+          if (!isIntersecting || !list.contains(target) || !list.isConnected) continue;
+          observer.unobserve(target);
+          load(target as HTMLImageElement);
+        }
+      },
+      { root: list, rootMargin: '160px 0px' },
+    );
+    this.campaignMapObserver = observer;
+    images.forEach((image) => observer.observe(image));
   }
   /** The stage a scouting preview shows. */
   private scoutedStage = 0;

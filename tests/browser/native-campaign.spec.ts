@@ -31,13 +31,19 @@ for (const viewport of [
     await expect(page.locator('#campaign-stage-102 .campaign-fan-made')).toHaveCount(0);
     await expect(page.locator('#campaign-stage-103 .campaign-fan-made')).toHaveCount(1);
     // Scouting thumbnails must conceal native Tesla placements as well as traps.
-    // Each minimap is one cached SVG image rather than inline DOM; count its tiles.
+    // Check the mounted thumbnail and the same generator for every offscreen layout.
+    const firstMap = page.locator('img.campaign-map').first();
+    await expect.poll(() => firstMap.evaluate((img: HTMLImageElement) => img.naturalWidth))
+      .toBeGreaterThan(0);
     const thumbnails = await page.evaluate(async () => {
       const { NATIVE_CAMPAIGN } = await import('/src/game/native-campaign.ts');
-      const maps = Array.from(
-        document.querySelectorAll<HTMLImageElement>('.campaign-card img.campaign-map'),
+      const { campaignMapSource } = await import('/src/ui/hud.ts');
+      const first = document.querySelector<HTMLImageElement>('.campaign-card img.campaign-map')!;
+      const svgs = await Promise.all(
+        NATIVE_CAMPAIGN.map((_, i) =>
+          fetch(i === 0 ? first.src : campaignMapSource(i)).then((r) => r.text()),
+        ),
       );
-      const svgs = await Promise.all(maps.map((img) => fetch(img.src).then((r) => r.text())));
       return NATIVE_CAMPAIGN.map((s, i) => ({
         actual: (svgs[i]?.match(/<rect /g)?.length ?? 0) - 1,
         expected: s.buildings.filter(([id]) => id !== 1000019).length,
@@ -65,6 +71,11 @@ for (const viewport of [
       const { model, scene } = window.__game;
       return model.battle?.buildings.every((building) => scene.sprites.has(building.id));
     });
+    await page.waitForFunction(() => {
+      const { model, scene } = window.__game;
+      const cannon = model.battle?.buildings.find((b) => b.npc === 'tutorial-cannon');
+      return cannon && scene.sprites.get(cannon.id)?.texture.key === 'cannon-level-1';
+    });
     const native = await page.evaluate(() => {
       const { model: m, scene } = window.__game;
       return {
@@ -81,7 +92,7 @@ for (const viewport of [
       ['tutorial-cannon', 23, 24, 250],
     ]);
     expect(native.scenery).toBe(14);
-    expect(native.textures).toEqual(['goblin-townhall-native', 'cannon']);
+    expect(native.textures).toEqual(['goblin-townhall-native', 'cannon-level-1']);
     await page.screenshot({
       animations: 'disabled',
       path: `output/playtest/native-payback-${viewport.width}-${browserName}.png`,

@@ -224,12 +224,13 @@ test('campaign overview hides traps and scouting shows the new Wizard Tower', as
   });
   expect(stage).toBeGreaterThan(0);
   await page.locator('.attack-btn').click();
-  const rects = await page
-    .locator(`#campaign-stage-${stage} .campaign-map`)
-    .evaluate(
-      async (img: HTMLImageElement) =>
-        (await fetch(img.src).then((r) => r.text())).split('<rect ').length - 1,
-    );
+  const thumbnail = page.locator(`#campaign-stage-${stage} .campaign-map`);
+  await thumbnail.scrollIntoViewIfNeeded();
+  await expect(thumbnail).toHaveAttribute('src', /^(blob:|data:image)/);
+  const rects = await thumbnail.evaluate(
+    async (img: HTMLImageElement) =>
+      (await fetch(img.src).then((r) => r.text())).split('<rect ').length - 1,
+  );
   await page.locator(`[data-action="attack:${stage}"]`).first().click();
   const counts = await page.evaluate(() => {
     const m = window.__game.model;

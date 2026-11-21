@@ -6486,6 +6486,9 @@ body:has(#ui.drawer-open, #ui .battle-enemy, #ui .modal-backdrop) #update-ready 
   border-radius: 13px;
   box-shadow: 0 3px 0 #b5a68a;
 }
+.campaign-map-button > .campaign-map:not([src]) {
+  opacity: 0;
+}
 @media (max-width: 700px) {
   .campaign-map-button > .campaign-map {
     width: 64px;
