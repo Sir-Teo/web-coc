@@ -121,3 +121,33 @@ test('troops deploy and fall with their own sounds, fetched only for the army th
   await expect.poll(() => playing(`spell:${cast}:preDeploy`), { timeout: 5000 }).toBe(true);
   expect(errors).toEqual([]);
 });
+
+test.describe('Campaign scouting audio', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('keeps the click cue and reserves deployment audio for the battlefield', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    await page.locator('[data-action="skip-tutorial"]').tap();
+    await page.waitForFunction(() =>
+      window.__game.scene.audio.samples.has('village-button_click.ogg'),
+    );
+    await page.locator('.attack-btn').tap();
+    await page.evaluate(() => {
+      const audio = window.__game.scene.audio;
+      const original = audio.play.bind(audio);
+      const cues: string[] = [];
+      (window as typeof window & { scoutAudio: string[] }).scoutAudio = cues;
+      audio.play = (kind) => {
+        cues.push(kind);
+        original(kind);
+      };
+    });
+    await page.locator('[data-action="attack:0"]').tap();
+    const state = await page.evaluate(() => ({
+      cues: (window as typeof window & { scoutAudio: string[] }).scoutAudio,
+      units: window.__game.model.battle?.units.length,
+    }));
+    expect(state).toEqual({ cues: ['click'], units: 0 });
+  });
+});

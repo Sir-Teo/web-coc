@@ -2280,7 +2280,7 @@ export class HUD {
           this.panel = null;
           this.drawerPanel = null;
           this.resultShown = false;
-          this.audio.play('deploy');
+          this.audio.feedback('deploy');
         }
         this.render();
         break;
@@ -2406,7 +2406,7 @@ export class HUD {
           this.panel = null;
           this.drawerPanel = null;
           this.resultShown = false;
-          this.audio.play('deploy');
+          this.audio.feedback('deploy');
         }
         this.render();
         break;
@@ -2670,7 +2670,7 @@ export class HUD {
           this.panel = null;
           this.drawerPanel = null;
           this.resultShown = false;
-          this.audio.play('deploy');
+          this.audio.feedback('deploy');
         }
         this.render();
         break;

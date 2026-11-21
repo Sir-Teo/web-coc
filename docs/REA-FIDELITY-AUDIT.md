@@ -408,3 +408,22 @@ storage destroyed and 16% destruction, with zero stars. The candidate showed
 the assigned debris in live play and a paused seek. The debris expired while
 the ruin remained, and rewinding restored the intact body with no debris.
 Both builds reached the same two-star, 50% result.
+
+### Scouting and first live deployment audio
+
+In a fresh packaged Payback flow, the retained [interface cue](VILLAGE-SOUNDS.md)
+started once for each tested Village selection, Army opening, training tap and
+troop selection. Entering scouting started the same click and an extra
+generated deployment tone in the baseline, with zero units on the field.
+Campaign, guided Campaign, and Ladder entry now reserve deployment audio for
+actual field actions. Their existing haptic feedback remains in place.
+
+Trusted touch at 390×844 and 568×320 started one `barb_deploy_11v3.ogg` buffer
+on the accepted field tap in both builds, followed by a pinned Barbarian swing
+take and `barbarian_hit_stuff2.ogg`. All named buffers in the trace had nonzero
+decoded samples. Sound effects stayed muted after reload and a Settings tap
+started no audio. In the landscape replay, later attack and hit buffers matched
+across both builds, while the first deployment at replay time zero started no
+Barbarian buffer in either. That existing replay case is separate from this
+scout-entry fix. The retained [battle cue rows](TROOP-SOUNDS.md) identify the
+assets and do not establish original-client scout onset or mix.
