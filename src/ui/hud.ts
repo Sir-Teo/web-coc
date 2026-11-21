@@ -12,7 +12,7 @@ import { phoenixLifeFraction } from '../game/native-status';
 import { nativeUnitStats } from '../game/native-units';
 import { SPLIT_HOG_KINDS, isSplitHog, type DeployTroopKind } from '../game/recalled-split-troops';
 import { archerTowerPortrait } from './archer-tower-portrait';
-import { positionBattleToast } from './battle-toast';
+import { positionHudToast } from './hud-toast';
 import { visibleInterval } from './visible-interval';
 import { infernoStats } from '../game/inferno-weapon';
 import { cannonIconAsset } from '../game/cannon-art';
@@ -1302,7 +1302,7 @@ export class HUD {
   }
   private scheduleToastPosition() {
     cancelAnimationFrame(this.toastFrame);
-    this.toastFrame = requestAnimationFrame(() => positionBattleToast(this.root, this.insets()));
+    this.toastFrame = requestAnimationFrame(() => positionHudToast(this.root, this.insets()));
   }
   private saveOk: boolean | undefined;
   setSaveState(ok: boolean) {

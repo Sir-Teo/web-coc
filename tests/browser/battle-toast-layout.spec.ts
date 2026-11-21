@@ -138,7 +138,7 @@ test('a visible battle notification follows resize, safe insets and returning ho
     model.changed();
     model.notify('Village notification');
   });
-  await expect(page.locator('#toast')).not.toHaveAttribute('data-battle-anchor');
+  await expect(page.locator('#toast')).not.toHaveAttribute('data-toast-anchor');
   await expect(page.locator('#toast')).toHaveCSS('top', '116px');
   expect(await page.evaluate(() => window.__game.game.renderer.gl.getError())).toBe(0);
 });

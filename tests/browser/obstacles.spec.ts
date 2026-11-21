@@ -340,3 +340,33 @@ test('placed obstacles and move previews preserve the source crop registration',
   await page.keyboard.press('Escape');
   expect(await page.evaluate(() => window.__game.model.movingObstacle)).toBeNull();
 });
+
+test('clearing feedback leaves the obstacle card readable after rotation', async ({ page }) => {
+  await page.setViewportSize({ width: 568, height: 320 });
+  const id = await page.evaluate(() => window.__game.model.obstacles.find((o) => o.x === 24)!.id);
+  await selectTree(page, id);
+  await page.locator(`[data-action="obstacle-remove:${id}"]`).tap();
+  const toast = page.locator('#toast');
+  const card = page.locator('.obstacle-context');
+  await expect(toast).toContainText('Clearing tree');
+  await expect(card.locator('[data-obstacle-time]')).toBeVisible();
+  const overlaps = () =>
+    page.evaluate(() => {
+      const toast = document.querySelector('#toast')!.getBoundingClientRect();
+      const card = document.querySelector('.obstacle-context')!.getBoundingClientRect();
+      return (
+        toast.left < card.right &&
+        toast.right > card.left &&
+        toast.top < card.bottom &&
+        toast.bottom > card.top
+      );
+    });
+  await expect.poll(overlaps).toBe(false);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(toast).toHaveClass('show');
+  await expect.poll(overlaps).toBe(false);
+  await card.locator(`[data-action="obstacle-cancel:${id}"]`).tap();
+  await expect(toast).toContainText('refunded');
+  await expect.poll(overlaps).toBe(false);
+});

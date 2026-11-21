@@ -7,12 +7,20 @@ const overlaps = (a: Box, b: Box) =>
   a.top < b.bottom + GAP &&
   a.bottom > b.top - GAP;
 
-/** Find space for a transient message without covering the battle's labels or controls. */
-export function positionBattleToast(root: HTMLElement, insets: Insets) {
+/** Find space for a transient message without covering the active HUD labels or controls. */
+export function positionHudToast(root: HTMLElement, insets: Insets) {
   const toast = root.querySelector<HTMLElement>('#toast');
   if (!toast) return;
-  toast.removeAttribute('data-battle-anchor');
-  if (!toast.classList.contains('show') || !root.querySelector('.battle-clock')) return;
+  toast.removeAttribute('data-toast-anchor');
+  if (!toast.classList.contains('show')) return;
+  const battle = root.querySelector('.battle-clock');
+  const obstacle = root.querySelector('.obstacle-context:not(.decoration-context)');
+  if (!battle && !obstacle) return;
+  const protectedHud = battle
+    ? '.battle-enemy,.battle-clock,.destruction,.prep-banner,.practice-guide,' +
+      '.battle-bottom > button,.deploy-tray,.replay-controls'
+    : '.obstacle-context,.player-hud,.village-status,.resources,.left-tools,.right-tools,' +
+      '.bottom-left,.bottom-right,.bottom-center';
   const bounds = root.getBoundingClientRect();
   const area: Box = {
     left: insets.left + GAP,
@@ -20,28 +28,28 @@ export function positionBattleToast(root: HTMLElement, insets: Insets) {
     right: bounds.width - insets.right - GAP,
     bottom: bounds.height - insets.bottom - GAP,
   };
-  const blockers = Array.from(
-    root.querySelectorAll<HTMLElement>(
-      '.battle-enemy,.battle-clock,.destruction,.prep-banner,.practice-guide,' +
-        '.battle-bottom > button,.deploy-tray,.replay-controls',
-    ),
-  ).flatMap((element): Box[] => {
-    const rect = element.getBoundingClientRect();
-    const style = getComputedStyle(element);
-    return !rect.width || !rect.height || style.visibility === 'hidden' || style.display === 'none'
-      ? []
-      : [
-          {
-            left: rect.left - bounds.left,
-            right: rect.right - bounds.left,
-            top: rect.top - bounds.top,
-            bottom: rect.bottom - bounds.top,
-          },
-        ];
-  });
+  const blockers = Array.from(root.querySelectorAll<HTMLElement>(protectedHud)).flatMap(
+    (element): Box[] => {
+      const rect = element.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      return !rect.width ||
+        !rect.height ||
+        style.visibility === 'hidden' ||
+        style.display === 'none'
+        ? []
+        : [
+            {
+              left: rect.left - bounds.left,
+              right: rect.right - bounds.left,
+              top: rect.top - bounds.top,
+              bottom: rect.bottom - bounds.top,
+            },
+          ];
+    },
+  );
   const preferredTop = parseFloat(getComputedStyle(toast).top) || area.top;
   const originalWidth = Math.min(toast.getBoundingClientRect().width, area.right - area.left);
-  toast.dataset.battleAnchor = '';
+  toast.dataset.toastAnchor = '';
   for (const width of new Set([
     originalWidth,
     ...[320, 260, 200, 180, 160].map((n) => Math.min(n, originalWidth)),
@@ -83,5 +91,5 @@ export function positionBattleToast(root: HTMLElement, insets: Insets) {
     }
   }
   // An unusually tall guide can leave no free box; retain the normal notification layout.
-  toast.removeAttribute('data-battle-anchor');
+  toast.removeAttribute('data-toast-anchor');
 }
