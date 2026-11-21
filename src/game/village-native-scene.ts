@@ -5,6 +5,7 @@ import { NativeSceneView, quantizedDensity } from './native-scene-view';
 import { nativeMeshTexture } from './native-mesh-scene';
 import {
   nativeScenePoses,
+  nativeResourceFrames,
   type NativeMeshGraph,
   type NativeScenePose,
   type NativeMatrix,
@@ -162,7 +163,11 @@ function stillFields(pack: Pack, level: Pack['levels'][number], fields: readonly
       const ref = level.refs[field];
       if (!ref) continue;
       const graph = pack.scenes[ref.scene];
-      if (!graph || !nativeStaticExport(graph, ref.export) || nativeResourceFrames(graph)) {
+      if (
+        !graph ||
+        !nativeStaticExport(graph, ref.export) ||
+        nativeResourceFrames(graph, ref.export)
+      ) {
         still = false;
         break;
       }
@@ -171,21 +176,6 @@ function stillFields(pack: Pack, level: Pack['levels'][number], fields: readonly
   }
   return still;
 }
-/** Frame count of a graph's `resource` slot (storage fill), or 0 without one. Cached per graph. */
-const resourceFrames = new WeakMap<NativeMeshGraph, number>();
-export function nativeResourceFrames(graph: NativeMeshGraph) {
-  let frames = resourceFrames.get(graph);
-  if (frames === undefined) {
-    frames = 0;
-    // Same resolution as before: the last `resource` slot found wins.
-    for (const clip of Object.values(graph.clips))
-      for (const [slot, name] of clip.names.entries())
-        if (name === 'resource') frames = graph.clips[clip.children[slot]]?.timeline.length ?? 1;
-    resourceFrames.set(graph, frames);
-  }
-  return frames;
-}
-
 /**
  * True when every clip reachable from the export has a single frame: its pose is then the same
  * at every clock (controls still apply and are part of the render signature).
@@ -672,7 +662,7 @@ export class VillageNativePresentation {
                 : seconds;
         const controls: Record<string, number | false> =
           field === 'ExportName' && body ? { ...body.controls } : {};
-        const resource = nativeResourceFrames(graph);
+        const resource = nativeResourceFrames(graph, ref.export);
         if (resource) {
           const storage =
             b.kind === 'goldstorage' ? 'gold' : b.kind === 'elixirstorage' ? 'elixir' : null;

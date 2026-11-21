@@ -212,6 +212,11 @@ A selected producer's Collect button now uses the corresponding web resource
 glyph. The prior button showed a gold coin for Elixir and Dark Elixir too.
 Resource art and selection behavior remain web presentation, while the
 resource-specific audio mappings are retained separately.
+The world renderer now reads the fill timeline from each building export.
+Elixir Storage levels 2–4 have 100 fill frames in the retained graph, while
+the other levels have 141. Using the shared atlas's longer range wrapped a
+full level-2 tank to frame 40 in Home and Practice. The tank now uses frame
+99 at full capacity without changing resource balances or footprints.
 [Building exports](../reference/full-client/catalog.json) ·
 [Terrain and camera](TERRAIN-CAMERA.md) · [Collection sounds](VILLAGE-SOUNDS.md).
 

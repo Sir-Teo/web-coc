@@ -22,6 +22,35 @@ export interface NativeMeshGraph {
   /** `levels`: a level page (scripts/native-pages.mjs) drawn only by these pack levels. */
   textures: Record<string, { path: string; width: number; height: number; levels?: number[] }>;
 }
+/** Frame count of the resource slot reachable from this export, or 0 without one. */
+const resourceFrames = new WeakMap<NativeMeshGraph, Map<string, number>>();
+export function nativeResourceFrames(graph: NativeMeshGraph, name: string) {
+  let counts = resourceFrames.get(graph);
+  if (!counts) resourceFrames.set(graph, (counts = new Map()));
+  const cached = counts.get(name);
+  if (cached !== undefined) return cached;
+
+  const root = graph.exports[name];
+  const pending = root === undefined ? [] : [root];
+  const seen = new Set<number>();
+  while (pending.length) {
+    const id = pending.pop()!;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const clip = graph.clips[id];
+    if (!clip) continue;
+    const slot = clip.names.indexOf('resource');
+    if (slot >= 0) {
+      const count = graph.clips[clip.children[slot]]?.timeline.length ?? 1;
+      counts.set(name, count);
+      return count;
+    }
+    pending.push(...clip.children);
+  }
+  counts.set(name, 0);
+  return 0;
+}
+
 export type NativeMatrix = [number, number, number, number, number, number];
 export type NativeBlend = 0 | 3 | 4 | 8;
 export interface NativeMeshPose {
