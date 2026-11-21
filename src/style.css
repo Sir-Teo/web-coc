@@ -6470,6 +6470,50 @@ body:has(#ui.drawer-open, #ui .battle-enemy, #ui .modal-backdrop) #update-ready 
   white-space: nowrap;
 }
 
+@media (orientation: landscape) and (max-height: 400px) {
+  .campaign-modal .modal-header {
+    align-items: center;
+    padding: 6px 16px;
+  }
+  .campaign-modal .modal-header > div {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 10px;
+  }
+  .campaign-modal .modal-header h1 {
+    margin: 0;
+  }
+  .campaign-modal .modal-header p {
+    flex-basis: 100%;
+  }
+  .campaign-modal .campaign-summary {
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 4px 16px;
+  }
+  .campaign-modal .campaign-summary > b {
+    white-space: nowrap;
+  }
+  .campaign-modal .campaign-summary .game-btn {
+    padding-inline: 7px;
+  }
+  .campaign-modal .campaign-nav {
+    flex-wrap: nowrap;
+    padding-bottom: 6px;
+  }
+  .campaign-modal .campaign-nav select {
+    min-width: 0;
+    max-width: 38%;
+  }
+  .campaign-modal .campaign-rules {
+    padding-block: 4px;
+  }
+  .campaign-modal .campaign-list {
+    padding-block: 8px;
+  }
+}
+
 /* Campaign thumbnails open a scouting preview. */
 .campaign-map-button {
   flex: 0 0 auto;

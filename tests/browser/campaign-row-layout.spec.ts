@@ -95,6 +95,26 @@ test('locked Campaign cards and scouting name the source prerequisite', async ({
   await expect(page.locator('[data-action="attack:1"]')).toBeEnabled();
 });
 
+test('short landscape leaves room to scroll and restores a distant scout row', async ({ page }) => {
+  await page.setViewportSize({ width: 568, height: 320 });
+  await page.goto('/?lazyart');
+  await page.locator('[data-action="skip-tutorial"]').tap();
+  await page.locator('.attack-btn').tap();
+  const list = page.locator('.campaign-list');
+  const scout = list.locator('[data-action="campaign-scout:107"]');
+  expect(await list.evaluate((el) => el.clientHeight)).toBeGreaterThanOrEqual(100);
+  await expect(scout.locator('img')).not.toHaveAttribute('src', /.+/);
+  await scout.scrollIntoViewIfNeeded();
+  await expect(scout.locator('img')).toHaveAttribute('src', /^(blob:|data:image)/);
+  const scroll = await list.evaluate((el) => el.scrollTop);
+  await scout.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.campaign-scout h2')).toHaveText('Gravelmarch');
+  await page.keyboard.press('Escape');
+  await expect(scout).toBeFocused();
+  expect(await list.evaluate((el) => el.scrollTop)).toBe(scroll);
+});
+
 test('scouting lists pinned armed buildings and keeps concealed defenses out', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/?lazyart');
