@@ -13,7 +13,15 @@
 - **Regrowth.** Each eight-hour opportunity picks a kind by the client's `RespawnWeight` among the kinds with room, then a free site for its footprint (2×2 or 3×3) with the one-tile buffer. A field with room only for 2×2 growth never grows a 3×3 tree.
 - **Gem Box.** One appears per `AppearancePeriodHours` (168: weekly) on a free 2×2 site, never two at a time; clearing one schedules the next no sooner than `MinRespawnTimeHours` (24) later. It pays its own 25 gems and leaves the reward cycle where it was. Its appearances run in the same time-ordered pass as regrowth and removals, so offline catch-up matches live ticks. Saves from before the Gem Box schedule their first one a week after loading. The client gives the period and minimum but not how it picks the moment within the week; one exactly per period is this game's reading.
 - **Starting village.** A new village's eight 2×2 obstacles are now a mix of the client's kinds (Pine Trees, Square Bush, Fallen Tree, Mushrooms, three Small Stones) where the first village had trees and rocks. Older saves keep `trees` and `rocks`, which name the Pine Tree and Small Stone 1 rows.
-- **Art.** Each obstacle draws the client portrait at source scale, centered on its export's origin line and anchored 88% down like the earlier sprites; the village's own kinds load at boot and a regrown kind's portrait when it first draws.
+- **Art.** Placed obstacles and move previews draw the retained export crop with its
+  source origin on both axes. They use the Web CoC native-building projection
+  (1.2× source scale and 32 world pixels of vertical offset per footprint
+  tile). This replaces the uniform 88% portrait baseline. The scene still
+  sorts foreground obstacles at their footprint centres and uses their
+  registered sprite bounds for taps. The source crops establish asset
+  identity and registration. The native opening camera and map composition
+  remain unverified. The village's own kinds load at boot and a regrown
+  kind's portrait loads when it first draws.
 
 `tests/obstacle-catalog.test.ts` covers the imported rows, the regrowth weights (within 3% over 4,000 seeds), 3×3 sites, the Gem Box schedule and reward, Sharp Stones and save validation.
 

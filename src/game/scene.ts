@@ -2951,10 +2951,7 @@ export class VillageScene extends Phaser.Scene {
         if (
           im.visible &&
           (!obstacle || im.depth > obstacle[1].depth) &&
-          world.x > im.x - im.displayWidth * 0.4 &&
-          world.x < im.x + im.displayWidth * 0.4 &&
-          world.y > im.y - im.displayHeight * 0.83 &&
-          world.y < im.y + im.displayHeight * 0.06
+          im.getBounds().contains(world.x, world.y)
         )
           obstacle = entry;
       }
@@ -3559,21 +3556,14 @@ export class VillageScene extends Phaser.Scene {
     for (const o of this.model.obstacles) {
       const d = OBSTACLES[o.kind],
         p = iso(o.x + d.size / 2, o.y + d.size / 2);
-      // The client's portrait at source scale; a kind the boot did not load (a regrown one)
-      // stays hidden until its portrait arrives.
-      const ready = this.deferredArt.has(d.texture, '/' + d.art.path);
       let im = this.obstacleSprites.get(o.id);
       if (!im) {
         im = this.add.image(p.x, p.y, '__DEFAULT');
         this.obstacleSprites.set(o.id, im);
       }
-      if (ready && im.texture.key !== d.texture) im.setTexture(d.texture);
-      im.setOrigin(d.art.originX, 0.88)
-        .setPosition(p.x, p.y)
-        .setDisplaySize(d.art.width, d.art.height)
-        .setDepth(p.y)
-        .setVisible(ready && !this.model.battle)
-        .setAlpha(o.removeEnd ? 0.65 : this.model.movingObstacle === o.id ? 0.4 : 1);
+      this.styleObstacle(im, d).setPosition(p.x, p.y).setDepth(p.y);
+      if (this.model.battle) im.setVisible(false);
+      im.setAlpha(o.removeEnd ? 0.65 : this.model.movingObstacle === o.id ? 0.4 : 1);
     }
     this.syncDecorations();
     this.syncVillageObjects();
@@ -3625,10 +3615,7 @@ export class VillageScene extends Phaser.Scene {
     if (moving) {
       const d = OBSTACLES[moving.kind];
       this.obstacleGhost ??= this.add.image(0, 0, '__DEFAULT').setDepth(6600);
-      if (this.deferredArt.has(d.texture, '/' + d.art.path))
-        this.obstacleGhost.setTexture(d.texture).setVisible(true);
-      else this.obstacleGhost.setVisible(false);
-      this.obstacleGhost.setOrigin(d.art.originX, 0.88).setDisplaySize(d.art.width, d.art.height);
+      this.styleObstacle(this.obstacleGhost, d);
       this.updateObstacleGhost(this.pointerScreen());
     } else {
       this.obstacleGhost?.destroy();
@@ -4689,6 +4676,18 @@ export class VillageScene extends Phaser.Scene {
         this.paintWallLink(g, p, q, level, nextLevel, blocked);
       }
     }
+  }
+  /** Register the cropped source art like a native building of the same footprint. */
+  private styleObstacle(im: Phaser.GameObjects.Image, def: (typeof OBSTACLES)[string]) {
+    const { art, size, texture } = def;
+    const ready = this.deferredArt.has(texture, '/' + art.path);
+    if (ready && im.texture.key !== texture) im.setTexture(texture);
+    const scale = 1.2;
+    const height = art.height * scale;
+    return im
+      .setOrigin(art.originX, art.originY + (32 * size) / height)
+      .setDisplaySize(art.width * scale, height)
+      .setVisible(ready);
   }
   /**
    * A decoration's client portrait at the native buildings' scale, its footprint centre

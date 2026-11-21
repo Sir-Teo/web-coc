@@ -300,3 +300,43 @@ test('phone tree clearing can open the in-game Elixir shortfall offer', async ({
   await page.waitForFunction(() => window.__game.scene.artSettled);
   expect(await read()).toMatchObject({ elixir: 0, busy: fixture.busy, present: false });
 });
+
+test('placed obstacles and move previews preserve the source crop registration', async ({ page }) => {
+  await page.setViewportSize({ width: 568, height: 320 });
+  const id = await page.evaluate(() => {
+    const tree = window.__game.model.obstacles.find((o) => o.kind === 'pine-tree' && o.x === 24)!;
+    tree.movable = true;
+    return tree.id;
+  });
+  const art = await page.evaluate(async (id) => {
+    const { model, scene } = window.__game;
+    const { OBSTACLES } = await import('/src/game/obstacles.ts');
+    const o = model.obstacles.find((o) => o.id === id)!;
+    const { art, size } = OBSTACLES[o.kind];
+    const im = scene.obstacleSprites.get(id)!;
+    return {
+      expected: [art.originX, art.originY * art.height * 1.2 + 32 * size, art.width * 1.2],
+      actual: [im.originX, im.originY * im.displayHeight, im.displayWidth],
+      depth: im.depth,
+      y: im.y,
+    };
+  }, id);
+  expect(art.actual).toEqual(art.expected.map((value) => expect.closeTo(value, 5)));
+  expect(art.depth).toBe(art.y);
+  await selectTree(page, id);
+  await page.locator(`[data-action="obstacle-move:${id}"]`).tap();
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const ghost = window.__game.scene.obstacleGhost;
+        return ghost?.visible && [
+          ghost.originX,
+          ghost.originY * ghost.displayHeight,
+          ghost.displayWidth,
+        ];
+      }),
+    )
+    .toEqual(art.actual);
+  await page.keyboard.press('Escape');
+  expect(await page.evaluate(() => window.__game.model.movingObstacle)).toBeNull();
+});
