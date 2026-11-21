@@ -126,3 +126,13 @@ Log, restores the originating row focus, and preserves the list position.
 
 The pinned campaign records identify the village, layout, and Practice roster.
 They do not establish an original-client confirmation sequence or screen layout.
+
+### Exact whole-percent destruction
+
+Graduation Ceremony has 50 countable buildings. Its 243 wall segments, 31
+traps and 68 scenery objects are outside that total. With 29 buildings down,
+the previous division-first calculation displayed 57% because its floating
+point intermediate fell just below 58. Campaign replay version 293 scales the
+integer count before division and displays 58%. Earlier recordings retain
+their original score calculation. This preserves the established Web CoC
+floor policy and the existing Town Hall, 50% and 100% star thresholds.

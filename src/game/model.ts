@@ -1262,6 +1262,7 @@ export interface Battle {
   nativeSpringPetDamage?: true;
   /** Version 238: source ejection immunity and siege reduction in native home Spring Traps. */
   nativeSpringEjection?: true;
+  exactCampaignDestruction?: true;
   nativeSeekingMineAirSieges?: true;
   nativeAirBombFixedAim?: true;
   nativeAirBombSplashEligibility?: true;
@@ -8060,7 +8061,10 @@ export class GameModel {
         if (v.kind === 'townhall') townHallDead = true;
       }
     }
-    b.destruction = total ? Math.floor((dead / total) * 100) : 100;
+    // Scale the integer count first so an exact percentage cannot round below itself.
+    b.destruction = total
+      ? Math.floor(b.exactCampaignDestruction ? (dead * 100) / total : (dead / total) * 100)
+      : 100;
     b.stars = Number(b.destruction >= 50) + Number(townHallDead) + Number(b.destruction === 100);
     if (
       this.recordBattles &&

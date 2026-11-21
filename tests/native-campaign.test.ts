@@ -12,10 +12,10 @@ import {
   validNativeCampaign,
   NATIVE_SCENERY,
 } from '../src/game/native-campaign';
-import { BUILDINGS } from '../src/game/data';
+import { BUILDINGS, isTrap } from '../src/game/data';
 import { freshCampaignLoot } from '../src/game/campaign-loot';
 import { validateSave } from '../src/game/save';
-import { validateReplay } from '../src/game/replay';
+import { REPLAY_VERSION, replayBattle, validateReplay } from '../src/game/replay';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 
 const layouts = fs
@@ -301,4 +301,50 @@ it('preserves current X-Bow and Skeleton Trap modes using exact source placement
   expect([...nativeDefenseModes(stage).issues]).toContain('Unmatched or duplicate defense mode');
   stage.activeModes = [{ ...mode, ammo: 1400 }];
   expect([...nativeDefenseModes(stage).issues]).toContain('Alternate defense modes');
+});
+
+it('scores exact whole percentages on Graduation Ceremony and keeps version 292 playback', () => {
+  const model = new GameModel();
+  const index = 57;
+  const setup = {
+    index,
+    practice: false,
+    catalog: 'goblin-v1' as const,
+    townhall: 18,
+    buildings: nativeBuildings(index),
+    army: model.state.army,
+    spells: model.state.spells,
+    troopLevels: model.state.troopLevels,
+    nextId: 1000,
+  };
+  const objects = NATIVE_CAMPAIGN[index];
+  expect([objects.name, objects.traps.length, objects.obstacles.length]).toEqual([
+    'Graduation Ceremony',
+    31,
+    68,
+  ]);
+
+  for (const version of [292, REPLAY_VERSION]) {
+    const battle = (model.battle = replayBattle(setup, version));
+    const counted = battle.buildings.filter((b) => b.kind !== 'wall' && !isTrap(b.kind));
+    const hall = counted.find((b) => b.kind === 'townhall')!;
+    const rest = counted.filter((b) => b !== hall);
+    expect(counted).toHaveLength(50);
+    const score = (percentage: number, stars: number) => {
+      model.refreshBattleScore();
+      expect([battle.destruction, battle.stars]).toEqual([percentage, stars]);
+    };
+    for (const b of battle.buildings) if (!counted.includes(b)) b.hp = 0;
+    score(0, 0);
+    for (const b of rest.slice(0, 24)) b.hp = 0;
+    score(48, 0);
+    rest[24].hp = 0;
+    score(50, 1);
+    for (const b of rest.slice(25, 29)) b.hp = 0;
+    score(version === 292 ? 57 : 58, 1);
+    hall.hp = 0;
+    score(60, 2);
+    for (const b of rest) b.hp = 0;
+    score(100, 3);
+  }
 });
