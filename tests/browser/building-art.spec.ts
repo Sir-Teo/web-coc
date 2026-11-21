@@ -180,3 +180,66 @@ test('a paid upgrade completing during a move refreshes preview size without cha
   expect(after.width).toBeGreaterThan(before.width);
   expect(after).toEqual(await appearance(page, id));
 });
+
+test.describe('Eagle Artillery move preview', () => {
+  test.use({ hasTouch: true, isMobile: true });
+
+  for (const { width, height, level } of [
+    { width: 390, height: 844, level: 1 },
+    { width: 568, height: 320, level: 3 },
+  ]) {
+    test(`uses a single level-${level} body at ${width}×${height}`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      const id = await page.evaluate(async (level) => {
+        const { makeBuilding } = await import('/src/game/model.ts');
+        const { model, scene } = window.__game;
+        const eagle = makeBuilding(model.state.nextId++, 'eagleartillery', 17, 17, level);
+        model.townhall.level = 12;
+        model.townhall.x = 23;
+        model.townhall.y = 17;
+        model.state.buildings = [model.townhall, eagle];
+        model.state.obstacles = [];
+        model.state.settings.reducedMotion = true;
+        model.changed();
+        scene.cameras.main.centerOn(896, 700);
+        return eagle.id;
+      }, level);
+      const point = (x: number, y: number) =>
+        page.evaluate(([x, y]) => window.__game.scene.screenFor(x, y), [x, y]);
+      const source = await point(18.4, 18.4);
+      await page.touchscreen.tap(source.x, source.y);
+      await page.locator(`[data-action="move:${id}"]`).tap();
+      const target = await point(15.4, 19.4);
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [target],
+      });
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: target.x + 4, y: target.y + 1 }],
+      });
+      await expect.poll(() =>
+        page.evaluate((id) => {
+          const { scene } = window.__game;
+          const p = scene.villageNativePresentation;
+          const entries = [...(p.views.get(-1)?.values() ?? [])];
+          return {
+            placedDuplicate: p.views.has(id),
+            fallbackAlpha: scene.ghost?.alpha,
+            shown: entries.some(({ view }) => view.objects.some((object) => object.visible)),
+            level: p.placement?.building.level,
+            readyLevels: [...(p.levelsReady.get('eagle') ?? [])],
+          };
+        }, id),
+      ).toEqual({
+        placedDuplicate: false,
+        fallbackAlpha: 0,
+        shown: true,
+        level,
+        readyLevels: expect.arrayContaining([level]),
+      });
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+    });
+  }
+});

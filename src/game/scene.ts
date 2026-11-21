@@ -5449,6 +5449,9 @@ export class VillageScene extends Phaser.Scene {
     const villageBodies = this.villageBodyScratch;
     villageBodies.length = 0;
     for (const b of visible) {
+      // Placed Eagles have their own presentation, including the active turret in battle.
+      // The shared village pack supplies only the placement preview.
+      if (b.kind === 'eagleartillery') continue;
       if (b.kind === 'builder' && this.lateCampaign.handles(b)) continue;
       if (this.model.wallMove?.source.some((wall) => wall.id === b.id)) continue;
       villageBodies.push(b);

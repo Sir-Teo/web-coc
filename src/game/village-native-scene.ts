@@ -292,7 +292,7 @@ export class VillageNativePresentation {
         : undefined;
     return (
       !!building &&
-      this.packs.has(building.kind) &&
+      this.packs.has(packKey(building.kind)) &&
       this.ready(packKey(building.kind), building.level)
     );
   }
@@ -505,7 +505,7 @@ export class VillageNativePresentation {
       const builderOut = homeHut && b.id !== -1 && !b.constructing && remainingBusyHuts > 0;
       if (builderOut) remainingBusyHuts--;
       const size = BUILDINGS[b.kind].size;
-      const pack = this.packs.get(b.kind);
+      const pack = this.packs.get(packKey(b.kind));
       const level = pack ? levelRow(pack, b.level) : undefined;
       // Viewport cull before pose sampling; retain hidden views so scrolling
       // back never reallocates their RenderTextures.
