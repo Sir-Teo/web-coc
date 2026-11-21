@@ -268,6 +268,14 @@ export function nativeCampaignIssues(index: number): string[] {
   }
   return [...issues];
 }
+/** Share the shipped boards' availability checks between the Campaign list and Ladder preview.
+ * Battle entry still validates the actual layout and can report the specific issues. */
+const pendingCampaignStages: (boolean | undefined)[] = [];
+export function nativeCampaignPending(index: number): boolean {
+  if (!NATIVE_CAMPAIGN[index]) return true;
+  return (pendingCampaignStages[index] ??= nativeCampaignIssues(index).length > 0);
+}
+
 export function nativeBuildings(index: number): Building[] {
   const issues = nativeCampaignIssues(index);
   if (issues.length) throw Error(`Village is not implemented: ${issues.join(', ')}`);

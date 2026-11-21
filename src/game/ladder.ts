@@ -1,4 +1,4 @@
-import { NATIVE_CAMPAIGN, nativeCampaignIssues } from './native-campaign';
+import { NATIVE_CAMPAIGN, nativeCampaignPending } from './native-campaign';
 
 /**
  * Ladder matches: this project's own stand-in for multiplayer, so trophies and leagues can
@@ -56,7 +56,7 @@ function ladderVillages() {
     // Full-map additions use Practice's 52-cell board; ladder retains its 48-cell era.
     stage.stage <= 150 &&
     stage.recommendedTownHall !== null &&
-    !nativeCampaignIssues(index).length
+    !nativeCampaignPending(index)
       ? [index]
       : [],
   ));
