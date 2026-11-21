@@ -299,6 +299,8 @@ export class TroopNativePresentation {
     projectInto?: (out: { x: number; y: number }, x: number, y: number) => void,
     /** Presentation detail (RenderDetail): reduced levels widen and strengthen the LOD. */
     detail = 0,
+    /** A paused replay may draw only once after a seek, so every visible pose must be current. */
+    pausedReplay = false,
   ) {
     this.frame++;
     const scratch = this.point;
@@ -327,6 +329,7 @@ export class TroopNativePresentation {
     // Reduced detail applies it at any zoom, with a smaller close radius (none at level 2).
     const lodActive =
       culling &&
+      !pausedReplay &&
       (detail > 0 || (total > LOD_UNIT_THRESHOLD && this.viewZoom(cam) < LOD_CLOSE_ZOOM));
     const lodRadius = !lodActive
       ? 0

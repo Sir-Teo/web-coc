@@ -683,6 +683,23 @@ describe('troop native presentation', () => {
       expect(viewsOf(p).get(1)!.state).toBe('walk');
     }
   });
+  it('refreshes a paused replay pose on a frame that would stagger a live troop', () => {
+    const point = iso(10, 10);
+    const worldView = { centerX: point.x, centerY: point.y, width: 800, height: 600 };
+    const p = troops(fakeScene(0.5, worldView));
+    const u = unit(1, 10, 10);
+    u.path = [{ x: 11, y: 10 }];
+    const battle = battleOf([u]);
+    const sprites = new Map();
+    p.render(battle, false, iso, 70, sprites, undefined, undefined, 1, true);
+    expect(viewsOf(p).get(u.id)?.state).toBe('walk');
+
+    battle.elapsed += 0.05;
+    u.attacking = true;
+    p.render(battle, false, iso, 70, sprites, undefined, undefined, 1, true);
+    expect(viewsOf(p).get(u.id)?.state).toBe('attack');
+    expect(p.lodFrozen).toBe(0);
+  });
   it('gives overlapping units distinct depths', () => {
     const p = troops();
     const a = unit(1, 10, 10),

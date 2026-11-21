@@ -220,6 +220,16 @@ full level-2 tank to frame 40 in Home and Practice. The tank now uses frame
 [Building exports](../reference/full-client/catalog.json) ·
 [Terrain and camera](TERRAIN-CAMERA.md) · [Collection sounds](VILLAGE-SOUNDS.md).
 
+The Barbarian and Archer Army cards resolve to the retained standalone UI
+icons. Their combat packs match the pinned hashes, with 243 directional
+walk, idle and attack references across 27 level rows. In a paused replay,
+adaptive rendering could leave the preceding walk pose on screen after
+seeking to an attack. The paused redraw now samples the current pose.
+This verifies the selected exports and the Web CoC replay transition.
+Original-client pose timing and facing thresholds remain unverified.
+[Roster icons](../reference/full-client/roster.json) ·
+[Combat pack index](../reference/full-client/troop-art.json).
+
 ## Remaining parity work by player impact
 
 | Priority | Gap against the pinned build | Comparison required |

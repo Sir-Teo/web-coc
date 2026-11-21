@@ -5910,6 +5910,7 @@ export class VillageScene extends Phaser.Scene {
       battle ? this.buildingMap(battle.buildings) : undefined,
       this.projectInto,
       this.detailLevel,
+      this.model.replay?.paused,
     );
     this.drawDefenders();
     this.heroNativePresentation.render(
