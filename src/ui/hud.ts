@@ -4313,6 +4313,12 @@ export class HUD {
         : undefined;
     const defeated = !!unit && unit.hp <= 0 && !pending;
     const ready = hero.unitId === null;
+    const recalledHp = ready ? hero.recalledHp : undefined;
+    const health = unit
+      ? unit.hp / unit.maxHp
+      : recalledHp !== undefined
+        ? recalledHp / heroStatsFor(hero, battle.townhall ?? m.townhallLevel).hp
+        : 1;
     const reviveReady = m.activeSpell === 'revive' && m.canReviveHero(kind);
     const disabled =
       (!reviveReady && (defeated || (!ready && !!hero.abilityUsed))) || pending || !!m.replay;
@@ -4328,7 +4334,7 @@ export class HUD {
     const label = reviveReady
       ? `Revive ${short}`
       : ready
-        ? `Deploy ${short}`
+        ? `${recalledHp === undefined ? 'Deploy' : 'Redeploy'} ${short}`
         : pending
           ? 'Reviving'
           : defeated
@@ -4341,7 +4347,7 @@ export class HUD {
                   : 'Ability used'
               : 'Activate ability';
     const selected = m.activeHeroKind === hero.kind;
-    return `<button class="troop-card hero-card${tome ? ' tome-active' : ''} ${selected ? 'selected' : ''}" data-hero-state="${hero.kind}:${ready}:${defeated}:${!!hero.abilityUsed}:${selected}${pending ? '|reviving' : ''}${phoenixLife === undefined ? '' : '|phoenix'}|tome:${!!tome}|revive:${reviveReady}|key:${hotkey}" data-action="hero-select:${hero.kind}" aria-label="${name}, ${tome ? `Eternal Tome active, ${tome} seconds remaining` : label}" ${disabled ? 'disabled' : ''}>${hotkey ? '<kbd class="troop-key">H</kbd>' : ''}<img src="${heroRosterIcon(hero.kind)}" alt=""><span class="troop-level">★ ${hero.level}</span><span class="hero-health"><i style="width:${phoenixLife !== undefined ? pct(phoenixLife * 100) : unit ? pct((unit.hp / unit.maxHp) * 100) : '100%'}${phoenixLife === undefined ? '' : ';background:#fff2bf'}"></i></span><span class="troop-name">${label}</span></button>`;
+    return `<button class="troop-card hero-card${tome ? ' tome-active' : ''} ${selected ? 'selected' : ''}" data-hero-state="${hero.kind}:${ready}:${defeated}:${!!hero.abilityUsed}:${selected}${pending ? '|reviving' : ''}${phoenixLife === undefined ? '' : '|phoenix'}|tome:${!!tome}|revive:${reviveReady}|key:${hotkey}" data-action="hero-select:${hero.kind}" aria-label="${name}, ${tome ? `Eternal Tome active, ${tome} seconds remaining` : label}" ${disabled ? 'disabled' : ''}>${hotkey ? '<kbd class="troop-key">H</kbd>' : ''}<img src="${heroRosterIcon(hero.kind)}" alt=""><span class="troop-level">★ ${hero.level}</span><span class="hero-health"><i style="width:${pct((phoenixLife ?? health) * 100)}${phoenixLife === undefined ? '' : ';background:#fff2bf'}"></i></span><span class="troop-name">${label}</span></button>`;
   }
   /** Home village tray: the saved lineup with levels; opens the Hero Hall. */
   private rosterCards() {

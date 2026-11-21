@@ -125,3 +125,28 @@ for (const { width, level } of [
     expect(errors).toEqual([]);
   });
 }
+
+test('the battle tray shows retained hero health while the hero waits to redeploy', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/?lazyart');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  await page.locator('[data-action="skip-tutorial"]').click();
+  await page.evaluate(async () => {
+    const { petSummonRecallRecording } = await import('/tests/fixtures/pet-summon-recall.ts');
+    const { heroStatsFor } = await import('/src/game/native-heroes.ts');
+    const { model, scene } = window.__game;
+    const r = petSummonRecallRecording();
+    scene.paused = true;
+    model.battle = structuredClone(r.snapshots.find(({ at }) => at === r.recalled)!.battle);
+    const king = model.battle.nativeHeroes[0];
+    king.recalledHp = heroStatsFor(king, model.battle.townhall ?? model.townhallLevel).hp / 2;
+    model.changed();
+    scene.sync();
+  });
+  const card = page.getByRole('button', { name: 'Barbarian King, Redeploy King', exact: true });
+  await expect(card).toBeEnabled();
+  await expect(card.locator('.troop-name')).toHaveText('Redeploy King');
+  await expect(card.locator('.hero-health i')).toHaveAttribute('style', 'width:50%');
+});
