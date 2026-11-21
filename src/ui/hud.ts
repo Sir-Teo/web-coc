@@ -2793,6 +2793,8 @@ export class HUD {
       case 'import-cancel':
         this.pendingImport = null;
         this.show('settings');
+        this.modalEl.querySelector('.settings-body')?.scrollTo(0, this.backupSettingsScroll);
+        this.modalEl.querySelector<HTMLButtonElement>('[data-action="import"]')?.focus();
         break;
       case 'import-confirm': {
         const data = this.pendingImport;
@@ -2876,6 +2878,7 @@ export class HUD {
   }
   /** A parsed backup waiting for the player to confirm it replaces this village. */
   private pendingImport: Save | null = null;
+  private backupSettingsScroll = 0;
   private async import(file: File) {
     let data: Save | null = null;
     try {
@@ -2890,6 +2893,7 @@ export class HUD {
       return;
     }
     // Review before anything is replaced.
+    this.backupSettingsScroll = this.modalEl.querySelector('.settings-body')?.scrollTop ?? 0;
     this.pendingImport = data;
     this.show('import-confirm');
   }
