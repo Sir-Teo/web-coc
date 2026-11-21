@@ -387,16 +387,25 @@ const nativeItemImage = (slug: string, cls = '') =>
   `<img class="${cls}" src="/assets/catalog-native/roster/equipment-${slug}.png" alt="">`;
 const time = (seconds: number) => formatTime(seconds);
 const clock = (seconds: number) => {
-  const s = Math.max(0, Math.ceil(seconds));
+  // Keep fractional combat and scouting ticks on the timeline without rounding up elapsed time.
+  const s = Math.max(0, Math.floor(seconds + 1e-9));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };
 const starCountLabel = (stars: number) => `${stars} of 3 stars`;
 const battleClockLabel = (battle: Battle) =>
-  !timedBattle(battle)
-    ? 'NO TIME LIMIT'
-    : battle.started
-      ? 'BATTLE ENDS IN'
-      : 'SCOUTING — BATTLE BEGINS IN';
+  battle.finished
+    ? 'TIME ELAPSED'
+    : !timedBattle(battle)
+      ? 'NO TIME LIMIT'
+      : battle.started
+        ? 'BATTLE ENDS IN'
+        : 'SCOUTING — BATTLE BEGINS IN';
+const battleClockValue = (battle: Battle) =>
+  battle.finished
+    ? clock(battle.elapsed)
+    : timedBattle(battle)
+      ? clock(Math.ceil((battle.started ? BATTLE_SECONDS - battle.elapsed : battle.prep) - 1e-9))
+      : '∞';
 /** 1.5M, 10K: an amount short enough for a stat box. */
 const short = (v: number) =>
   v >= 1e6 ? `${+(v / 1e6).toFixed(2)}M` : v >= 1e4 ? `${+(v / 1e3).toFixed(1)}K` : n(v);
@@ -4206,7 +4215,7 @@ export class HUD {
     const lootBar = (k: CampaignResource) =>
       `<div class="loot-row ${k}" aria-label="${k === 'dark' ? 'Dark Elixir' : k} remaining">${resource(k)}<div class="loot-track"><i data-lootbar="${k}" style="transform:${fillScale((lootLeft(k) / Math.max(1, campaignAmount(v, k))) * 100)}"></i></div><b data-loot="${k}">${n(lootLeft(k))}</b></div>`;
     return `<div class="battle-enemy"><span class="eyebrow">${m.goblinRaid ? 'GOBLIN RAID' : m.replay ? (m.replay.recordId === null ? 'SHARED REPLAY' : 'ATTACK REPLAY') : b.practice ? 'PRACTICE ATTACK' : b.ladder ? 'LADDER MATCH' : 'ENEMY VILLAGE'}</span><h2>${v.name}</h2>${m.goblinRaid ? '<small class="practice-note">Goblins are raiding your village!<br>Watch your defenses fight back.</small>' : m.replay ? '<small class="practice-note">Recorded attack · Watch &amp; learn</small>' : b.practice ? '<small class="practice-note">Your village and army are safe.<br>No loot or trophies at stake.</small>' : b.ladder ? `<small class="ladder-stake">${icon('Trophy', 15)} ${n(b.ladder.opponent)} · Win <b>+${b.ladder.win}</b> · Defeat <b>−${b.ladder.loss}</b></small><small class="practice-note">No loot at stake.</small>` : `<small>AVAILABLE LOOT</small><div class="loot-bars">${lootKeys.map(lootBar).join('')}</div>${limitedStorage ? '<small class="loot-capacity-note">Loot beyond your storage capacity will be lost.</small>' : ''}`}</div>
- <div class="battle-clock ${b.started ? '' : 'prep'}"><span>${battleClockLabel(b)}</span><b id="battle-timer">${timedBattle(b) ? clock(b.started ? BATTLE_SECONDS - b.elapsed : b.prep) : '∞'}</b></div>
+ <div class="battle-clock ${b.started ? '' : 'prep'}"><span>${battleClockLabel(b)}</span><b id="battle-timer">${battleClockValue(b)}</b></div>
  <div class="destruction"><span>Total destruction</span><div id="battle-stars" class="battle-stars" role="img" aria-label="${starCountLabel(b.stars)}" data-stars="${b.stars}">${'★'.repeat(b.stars)}<span>${'★'.repeat(3 - b.stars)}</span></div><b id="destruction-value">${b.destruction}%</b><div class="destruction-bar"><i id="destruction-fill" style="transform:${fillScale(b.destruction)}"></i><span class="notch half" style="left:50%"></span><span class="notch full" style="left:100%"></span></div><small>★ 50% <i>·</i> ★ Town Hall <i>·</i> ★ 100%</small></div>
  ${m.practiceGuide && !m.replay ? this.practiceGuideBanner() : !b.started && !m.replay ? `<div class="prep-banner">${icon('Timer', 20)}<div><b>Scout the base</b><small role="status"></small></div></div>` : ''}
   ${
@@ -6825,10 +6834,7 @@ export class HUD {
     if (b) {
       setText(refs.battlePhase, battleClockLabel(b));
       refs.battlePhase?.parentElement?.classList.toggle('prep', !b.started);
-      setText(
-        refs.battleTimer,
-        timedBattle(b) ? clock(b.started ? BATTLE_SECONDS - b.elapsed : b.prep) : '∞',
-      );
+      setText(refs.battleTimer, battleClockValue(b));
       setText(refs.destructionValue, `${b.destruction}%`);
       if (refs.surrenderDestruction) {
         setText(refs.surrenderDestruction, `${b.destruction}% destruction`);
