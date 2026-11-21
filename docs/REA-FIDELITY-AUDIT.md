@@ -230,6 +230,15 @@ Original-client pose timing and facing thresholds remain unverified.
 [Roster icons](../reference/full-client/roster.json) ·
 [Combat pack index](../reference/full-client/troop-art.json).
 
+The Payback and Home Village Practice replay checks follow Archer deployment,
+arrow flight, and the first post-flight tick in live combat, continuous
+playback, and a paused seek after rewinding. The scene now retains the
+opening deployment cue from continuous playback when the first action is
+recorded at step zero. It still discards queued effects from the preceding
+battle. The brief deployment particles are Web CoC feedback. A paused seek
+reconstructs retained projectile and battle state without replaying these
+one-shot particles.
+
 ## Remaining parity work by player impact
 
 | Priority | Gap against the pinned build | Comparison required |

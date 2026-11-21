@@ -116,3 +116,48 @@ for (const mobile of [false, true])
     }
     expect(errors).toEqual([]);
   });
+
+test('the opening replay keeps deployment feedback from its first recorded step', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('.train-add').click();
+  await page.evaluate(() => {
+    // Freeze the renderer's clock so the real Practice entry records no scouting ticks.
+    window.__game.scene.paused = true;
+  });
+  await page.locator('[data-action="practice"]').click();
+  const feedback = await page.evaluate(() => {
+    const { model } = window.__game;
+    model.activeTroop = 'archer';
+    for (let y = 9; y < 25; y++) {
+      for (let x = 9; x < 25; x++) {
+        if (!model.deployBlocked(x, y) && model.deploy(x, y)) {
+          return { x, y };
+        }
+      }
+    }
+    throw Error('No legal Archer deployment ground');
+  });
+  await page.evaluate(() => {
+    for (let i = 0; i < 4; i++) window.__game.model.step(0.05);
+  });
+  await page.locator('[data-action="surrender"]').click();
+  await page.locator('[data-action="end"]').click();
+  await page.getByRole('button', { name: 'Watch replay', exact: true }).click();
+  expect(
+    await page.evaluate(({ x, y }) => {
+      const { model, scene } = window.__game;
+      scene.sync();
+      scene.cameras.main.centerOn(896 + (x - y) * 32, 112 + (x + y) * 16);
+      scene.drawOverlay(0);
+      return {
+        at: model.replay.time,
+        deployment: model.replayRecording().actions[0],
+        sparks: [...scene.liveSparks].filter(
+          (spark: { active: boolean; visible: boolean }) => spark.active && spark.visible,
+        ).length,
+      };
+    }, feedback),
+  ).toMatchObject({ at: 0, deployment: { type: 'troop', step: 0, kind: 'archer' }, sparks: 5 });
+});

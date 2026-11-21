@@ -829,6 +829,7 @@ export class VillageScene extends Phaser.Scene {
   /** Revision of the last `changed(true)` (resource ticks), for the cheap idle-village path. */
   private passiveRevision = -1;
   private pendingFx: FX[] = [];
+  private pendingFxBattle: GameModel['battle'] = null;
   private armyPrefetchSignature = '';
   private projectilePrefetchSignature = '';
   private heroPrefetchSignature = '';
@@ -3537,7 +3538,7 @@ export class VillageScene extends Phaser.Scene {
       this.ruinSynced.clear();
       this.clearRuinGround();
       this.interpolation.reset();
-      this.pendingFx.length = 0;
+      if (this.pendingFxBattle !== this.model.battle) this.pendingFx.length = 0;
       this.mode = mode;
       // The ruin layer's texture is allocated during scouting, not on the first destroyed
       // building mid-fight (a framebuffer completeness check stalls that frame).
@@ -6417,6 +6418,10 @@ export class VillageScene extends Phaser.Scene {
   }
   effect(fx: FX) {
     if (!this.ready) return;
+    if (this.pendingFxBattle !== this.model.battle) {
+      this.pendingFx.length = 0;
+      this.pendingFxBattle = this.model.battle;
+    }
     // Queued and drained once per frame: hundreds of combat events share one
     // building lookup instead of scanning per event inside the sim tick.
     if (this.pendingFx.length < 4000) this.pendingFx.push(fx);
@@ -6430,6 +6435,12 @@ export class VillageScene extends Phaser.Scene {
   private fxDrained = false;
   private drainEffects() {
     if (!this.pendingFx.length) return;
+    if (this.pendingFxBattle !== this.model.battle) {
+      this.pendingFx.length = 0;
+      return;
+    }
+    // The opening actions can emit effects before the replay has rebuilt its scene.
+    if (this.model.battle && this.renderedBattle !== this.model.battle) return;
     this.fxBuildings = this.buildingMap(this.model.buildings);
     this.fxDrained = true;
     for (const fx of this.pendingFx) this.renderEffect(fx);
@@ -7407,7 +7418,6 @@ export class VillageScene extends Phaser.Scene {
       }
     }
     const battle = this.model.battle;
-    this.drainEffects();
     // A Cannon or Archer Tower level's pages arrived: restyle so its fallback sprite gives way
     // to native art.
     const pages =
@@ -7424,6 +7434,7 @@ export class VillageScene extends Phaser.Scene {
       else if (this.battlePassiveOnly()) this.syncTraps();
       else this.sync();
     }
+    this.drainEffects();
     if (
       battle &&
       (this.ruinsDirty ||
