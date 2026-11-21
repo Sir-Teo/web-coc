@@ -37,6 +37,8 @@ export function tickInfernoCombat(
   native?: Battle,
   /** Late campaign defensive Rage multiplier at this tick; exactly one elsewhere. */
   damageScale = 1,
+  /** Campaign beams keep their own tower scaling but share attacker protection. */
+  protection = native,
 ): InfernoHit[] {
   if (!Number.isFinite(at) || at < 0) throw new Error('Invalid Inferno combat time');
   const stats = infernoStats(state.level);
@@ -92,12 +94,14 @@ export function tickInfernoCombat(
       damage +=
         ([charged.dps, charged.dpsLv2, charged.dpsLv3][pulse.stage] * pulse.intervalMs) / 1000;
       damage *= buildingDamageScale(native, tower as Building, at);
+    }
+    if (protection) {
       hurtUnit(
-        native,
+        protection,
         target,
         damage,
         at,
-        native.nativeRevengeDeck ? (tower as Building).id : undefined,
+        protection.nativeRevengeDeck ? (tower as Building).id : undefined,
       );
       killed = target.hp <= 0;
       if (killed) target.hp = 0;

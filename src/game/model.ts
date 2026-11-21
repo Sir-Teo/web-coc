@@ -1443,6 +1443,8 @@ export interface Battle {
   xbows?: Record<number, XbowState>;
   infernos?: Record<number, InfernoBattleState>;
   nativeInfernoAmmo?: true;
+  nativeIceBlockBuildingImmunity?: true;
+  nativeCampaignInfernoProtection?: true;
   /** Original Drill destruction presentation, enabled by replay version 40. */
   drillDestructions?: Record<number, { at: number; x: number; y: number; level: number }>;
   /** Battle-only timestamp for the Dark Elixir Storage's destruction art. */

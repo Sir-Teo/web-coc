@@ -2005,3 +2005,15 @@ The [original ARM64 fixture reference](../reference/native-projectile-step-18.40
 records 18 speed/distance/counter cases. This ports the verified stop branch into
 the browser's continuous flight model; complete native position and arrival
 quantization remain separate work.
+
+
+## Version 297: Ice Block and Campaign Inferno damage
+
+Ice Block's attack-side freeze leaves enemy buildings active. Its damage reduction
+applies to eligible friendly troops, while ordinary Freeze can still stop an
+Inferno Tower. Campaign Inferno beams now use the shared attacker protection path
+without changing their tower scaling. Version 296 and earlier retain their original
+tower freeze and damage behavior. The spell's effect on defending troops is outside
+this correction.
+
+See the retained [Ice Block mechanics](../reference/official-wiki/spells-siege-super/ice-block-spell.md).

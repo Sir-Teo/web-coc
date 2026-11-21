@@ -63,6 +63,7 @@ export function stepInfernos(battle: Battle, dt: number) {
         battle.late && battle.catalog === 'goblin-v1'
           ? lateDefenseBoost(battle, tower, at).damage
           : 1,
+        battle.nativeCampaignInfernoProtection ? battle : undefined,
       );
       state.hits.push(...hits);
       state.scheduler.slots.forEach((slot, index) => {

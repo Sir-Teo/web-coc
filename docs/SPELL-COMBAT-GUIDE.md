@@ -23,7 +23,7 @@ are unchanged.
 | Bat | Summon count, first group, spawn duration, ground/air attack targets, HP, DPS, hit damage and attack interval; protect the defense-seeking swarm from area defenses. |
 | Totem | Chained summon HP and initial stun; a stationary decoy draws fire while losing health. |
 | Overgrowth | Root duration, no damage, building-only targets and the rooted buildings' temporary immunity. |
-| Ice Block | Freeze duration and ability-tier damage protection; friendly troops pause and nearby enemies freeze. |
+| Ice Block | Freeze duration and ability-tier damage protection; friendly troops pause and take reduced damage. Enemy buildings stay active from replay version 297 onward. |
 | Angry | Ability-tier Defense priority duration; redirect troops toward defenses without changing wall movement. |
 
 Haste's pulse window is the span between its first and last pulse, excluding cast

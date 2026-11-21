@@ -345,6 +345,10 @@ function harmDefense(
     cast.name === 'FireSpiritExplosion' &&
     text(row, 'PreferredTarget') === 'Wall';
   const overgrowth = flag(row, 'Overgrowth');
+  const freezeBuildings =
+    freeze > 0 &&
+    !overgrowth &&
+    !(battle.nativeIceBlockBuildingImmunity && cast.name === 'Ice Block');
   const invisible =
     battle.nativeInvisibilityTargets && !overgrowth ? seconds(row, 'InvisibilityTime') : 0;
   if (poison > 0)
@@ -364,7 +368,7 @@ function harmDefense(
     freezeDefendingBuilders(battle, x, y, radius, at, freeze);
   if (
     damage > 0 ||
-    (freeze > 0 && !overgrowth) ||
+    freezeBuildings ||
     stun > 0 ||
     quakeBuilding > 0 ||
     poison > 0 ||
@@ -405,7 +409,7 @@ function harmDefense(
         }
       }
       if (quakeBuilding > 0) quake(ctx, cast, row, b, quakeBuilding, at);
-      if (freeze > 0 && !overgrowth) {
+      if (freezeBuildings) {
         const e = buildingEffects(battle, b);
         if (freezePercent > 0)
           e.chill = { until: Math.max(e.chill?.until ?? 0, at + freeze), percent: freezePercent };
