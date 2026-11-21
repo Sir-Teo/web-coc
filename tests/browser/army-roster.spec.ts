@@ -117,3 +117,20 @@ test('locked catalog portraits stay inspectable and legacy prepared spells remai
   await wizard.locator('[data-action="troop-info:wizard"]').click();
   await expect(page.locator('.troop-stats')).toContainText('Barracks 7');
 });
+
+test('spell details display the same sourced icon as the Army card', async ({ page }) => {
+  await page.locator('.train-add').click();
+  const about = page.getByRole('button', { name: 'About Lightning Spell', exact: true });
+  const card = page.locator('.army-tile').filter({ has: about }).locator('.shop-tile-art img');
+  const source = await card.getAttribute('src');
+  expect(source).toMatch(/\/roster\/spell-lightning\.png$/);
+  await about.click();
+  const portrait = page.locator('.spell-info-body .troop-info-hero img');
+  await expect(portrait).toHaveAttribute('src', source!);
+  expect(
+    await portrait.evaluate(async (image: HTMLImageElement) => {
+      await image.decode();
+      return image.naturalWidth;
+    }),
+  ).toBeGreaterThan(0);
+});

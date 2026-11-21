@@ -111,6 +111,25 @@ lesson preview. Returning restores focus to the originating action. The
 preview and log controls are web behavior and still need a native comparison.
 [Practice catalog and guide](PRACTICE-MODE.md) · [Campaign rules](CAMPAIGN-RULES.md).
 
+## Results and Army spell details
+
+The web result uses a text heading and CSS rays for the banner, three styled
+star glyphs, CSS resource badges, and SVG button icons. The retained HUD
+exports do not identify matching result-specific frames or establish native
+replay handoff controls. The pinned music catalog does identify both outcome
+stings. The web Music channel selects `winwinwin.mp3` for a starred result and
+`battle_lost_02.mp3` for zero stars. The separate web victory effects tone,
+native cue onset and native audio mix have no matched capture.
+
+The 18 playable spell rows in the pinned roster specify the same export for
+`BigPicture` and the roster icon. Spell details now use that retained export
+through the same resolver as the Army card. Troop details have a separate
+source convention. Dragon, for example, names `unit_dragon_big` in
+`sc/info_dragon.sc`; its detail art is outside this comparison.
+
+[Outcome music catalog](../reference/music/catalog.json) ·
+[Standalone roster exports](../reference/full-client/roster.json)
+
 ## Shared HUD art bindings
 
 | Runtime control or state | Asset used | Pinned comparison |

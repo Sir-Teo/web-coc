@@ -15,6 +15,9 @@ describe('standalone roster artwork', () => {
       for (const [kind, name] of rows) {
         const source = catalog.portraits.find((p) => p.category === category && p.name === name);
         expect(source, kind).toMatchObject({ source: 'sc/ui.sc', frame: 0 });
+        if (category === 'spell') {
+          expect(source?.artReferences.BigPicture, kind).toBe(source?.exports[0]);
+        }
         expect(rosterIcon(kind), kind).toBe(`/${source!.path}`);
       }
     }
