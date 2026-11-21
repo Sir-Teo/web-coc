@@ -1605,24 +1605,20 @@ export class HUD {
       }
       dragged ||= movedFromPress(e);
       finish();
-      const overDrawer = document
-        .elementFromPoint(e.clientX, e.clientY)
-        // Only controls count as "over the HUD": releasing over an info panel (which
-        // now catches taps itself) still drops the building on the village beneath.
-        ?.closest('#drawer, #hud button, #hud input, .modal-backdrop');
-      if (!dragged || overDrawer) {
-        // Treated as a plain pick-up: close the sheet and let them tap the map.
-        this.drawerPanel = null;
-        if (!dragged && e.pointerType === 'touch') {
-          // Keep the press target mounted through touchend so Phaser clears the touch.
-          // Chromium can still retarget its follow-up click to a HUD button.
-          this.cancelledActionPointers.add(pointerId);
-          this.scheduleRender();
+      if (dragged && this.scene.isMapScreenPoint(e.clientX, e.clientY)) {
+        const g = this.scene.gridAtScreen(e.clientX, e.clientY);
+        if (this.scene.placeBuilding(Math.floor(g.x), Math.floor(g.y))) {
+          this.render();
           return;
         }
-      } else {
-        const g = this.scene.gridAtScreen(e.clientX, e.clientY);
-        if (!this.scene.placeBuilding(Math.floor(g.x), Math.floor(g.y))) this.drawerPanel = null;
+      }
+      // Keep the building picked up after a tap or rejected drop.
+      this.drawerPanel = null;
+      if (e.pointerType === 'touch') {
+        // Keep the press target mounted through touchend so Phaser clears the touch.
+        this.cancelledActionPointers.add(pointerId);
+        this.scheduleRender();
+        return;
       }
       this.render();
     };

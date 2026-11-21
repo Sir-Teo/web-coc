@@ -3005,7 +3005,10 @@ export class VillageScene extends Phaser.Scene {
     const rect = canvas.getBoundingClientRect();
     const x = rect.left + (pointer.x * rect.width) / this.scale.width;
     const y = rect.top + (pointer.y * rect.height) / this.scale.height;
-    return document.elementFromPoint(x, y) === canvas;
+    return this.isMapScreenPoint(x, y);
+  }
+  isMapScreenPoint(clientX: number, clientY: number) {
+    return document.elementFromPoint(clientX, clientY) === this.game.canvas;
   }
   gridAtScreen(clientX: number, clientY: number) {
     return this.gridAtPointer(this.canvasPoint(clientX, clientY));
@@ -4846,12 +4849,14 @@ export class VillageScene extends Phaser.Scene {
     if (this.decorationGhost) return this.updateDecorationGhost(p);
     if (!this.ghost || !this.model.placement) return;
     const point = this.cameras.main.getWorldPoint(p.x, p.y),
-      grid = this.keyCursor ?? uniso(point.x, point.y),
+      grid = (this.ghostPoint ? null : this.keyCursor) ?? uniso(point.x, point.y),
       x = Math.floor(grid.x),
       y = Math.floor(grid.y),
       s = BUILDINGS[this.model.placement].size,
       screen = iso(x + s / 2, y + s / 2),
-      valid = this.model.canPlace(this.model.placement, x, y, this.model.moving ?? undefined);
+      valid =
+        (!this.ghostPoint || this.pointerOverCanvas(p)) &&
+        this.model.canPlace(this.model.placement, x, y, this.model.moving ?? undefined);
     this.ghost.setPosition(screen.x, screen.y);
     if (this.model.placement !== 'darkdrill') this.darkDrillPresentation.preview(undefined);
     if (this.model.placement !== 'archertower') this.villageArcherTowers.preview(undefined);

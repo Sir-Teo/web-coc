@@ -141,3 +141,66 @@ test('another pointer cannot finish a Shop drag', async ({ page }) => {
   await expect.poll(() => page.evaluate(() => window.__game.model.state.buildings.length)).toBe(3);
   expect(await page.evaluate(() => window.__game.model.state.elixir)).toBe(499850);
 });
+
+test.describe('phone Shop drop preview', () => {
+  test.use({ isMobile: true, hasTouch: true });
+
+  for (const { width, height, kind, resource } of [
+    { width: 390, height: 844, kind: 'goldmine', resource: 'elixir' },
+    { width: 568, height: 320, kind: 'collector', resource: 'gold' },
+  ] as const) {
+    test(`the ${kind} preview rejects HUD drops and charges once on clear ground`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      const art = page.locator(`[data-drag="${kind}"] .shop-tile-art`);
+      await art.scrollIntoViewIfNeeded();
+      const box = (await art.boundingBox())!;
+      const { x, y } = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+      const cdp = await page.context().newCDPSession(page);
+      const send = (type: 'touchStart' | 'touchMove' | 'touchEnd', point?: { x: number; y: number }) =>
+        cdp.send('Input.dispatchTouchEvent', { type, touchPoints: point ? [{ ...point, id: 1 }] : [] });
+      await send('touchStart', { x, y });
+      await send('touchMove', { x, y: y - 36 });
+      await expect(page.locator('#drawer')).toHaveClass(/dragging/);
+      const spot = (hud: boolean) => page.evaluate(({ hud, kind }) => {
+        const { model, scene } = window.__game;
+        for (let y = hud ? 24 : Math.round(innerHeight * 0.4); y < innerHeight - 24; y += 6) {
+          for (let x = hud ? 24 : 64; x < innerWidth - 24; x += 6) {
+            const hit = document.elementFromPoint(x, y);
+            if (hud ? !hit?.closest('#hud button') : hit !== scene.game.canvas) continue;
+            const g = scene.gridAtScreen(x, y);
+            if (model.canPlace(kind, Math.floor(g.x), Math.floor(g.y))) return { x, y };
+          }
+        }
+      }, { hud, kind });
+      const hud = await spot(true);
+      expect(hud).toBeDefined();
+      await send('touchMove', hud);
+      const valid = () => page.evaluate(() => {
+        const { scene } = window.__game;
+        return scene.updateGhost(scene.ghostPoint)?.valid;
+      });
+      await expect.poll(valid).toBe(false);
+      const clear = await spot(false);
+      expect(clear).toBeDefined();
+      await send('touchMove', clear);
+      await expect.poll(valid).toBe(true);
+      await send('touchMove', hud);
+      await expect.poll(valid).toBe(false);
+      await send('touchEnd');
+      expect(await purchaseState(page)).toEqual({ ...pickedUp, placement: kind });
+
+      // Wait for the drawer to leave the hit-tested surface before finding the map tap.
+      await expect(page.locator('#drawer .drawer-sheet')).toHaveCount(0);
+      await expect(page.locator('.placement-banner')).toBeVisible();
+      const next = await spot(false);
+      expect(next).toBeDefined();
+      await page.touchscreen.tap(next!.x, next!.y);
+      await expect.poll(() => purchaseState(page)).toEqual({
+        ...pickedUp,
+        placement: null,
+        [resource]: 499850,
+        buildings: 3,
+      });
+    });
+  }
+});
