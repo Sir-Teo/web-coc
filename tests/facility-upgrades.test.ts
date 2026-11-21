@@ -1,5 +1,5 @@
 import { developedSave } from './fixtures/developed-village';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { GameModel } from '../src/game/model';
 import { emptyArmy, emptySpells } from '../src/game/army';
 import { validateSave } from '../src/game/save';
@@ -41,6 +41,42 @@ describe('army preparation during facility upgrades', () => {
     expect(m.state.spells.heal).toBe(1);
     expect(m.busy).toBe(0);
   });
+
+  it.each(['live', 'scout'] as const)(
+    'settles facility upgrades during %s battle without home effects',
+    (phase) => {
+      const { model, barracks, factory } = upgradeFacilities();
+      const deadline = Math.max(barracks.upgradeEnd!, factory.upgradeEnd!);
+      const home = new GameModel(structuredClone(model.state), model.clock);
+      const homeEffects = vi.fn();
+      const battleEffects = vi.fn();
+      home.onEffect = homeEffects;
+      model.startCampaign(0);
+      if (phase === 'live') expect(model.deploy(1, 13)).toBe(true);
+      expect(model.battle).toBeTruthy();
+      model.onEffect = (effect) => {
+        if (effect.type === 'upgrade') battleEffects(effect);
+      };
+
+      home.tick(deadline);
+      model.tick(deadline);
+      expect(homeEffects).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'upgrade', building: 'barracks' }),
+      );
+      expect(homeEffects).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'upgrade', building: 'spellfactory' }),
+      );
+      expect(homeEffects).toHaveBeenCalledTimes(2);
+      expect(battleEffects).not.toHaveBeenCalled();
+      expect([barracks.level, factory.level, model.busy]).toEqual([8, 3, 0]);
+      expect(model.state.xp).toEqual(home.state.xp);
+      expect(model.state.elixir).toBe(home.state.elixir);
+
+      model.tick(deadline + 1000);
+      expect(model.state.xp).toEqual(home.state.xp);
+      expect(battleEffects).not.toHaveBeenCalled();
+    },
+  );
 
   it('preserves the upgrade timers and preparation access when reloading a village', () => {
     const { model, barracks, factory } = upgradeFacilities();

@@ -2897,12 +2897,7 @@ export class GameModel {
         structural = true;
         completed.push(`${BUILDINGS[b.kind].name} is ready!${xp ? ` +${xp} XP` : ''}`);
         this.gainXp(xp, completed);
-        this.onEffect({
-          type: 'upgrade',
-          building: b.kind,
-          x: b.x + BUILDINGS[b.kind].size / 2,
-          y: b.y + BUILDINGS[b.kind].size / 2,
-        });
+        this.finishedAt(b);
         changed = true;
       }
       if (isCollector(b.kind) && !b.upgradeEnd) {
@@ -5373,11 +5368,16 @@ export class GameModel {
         .map((h) => timer(h!)),
     ];
   }
-  /** Marks a finished hero upgrade or research at the building that did it (home only). */
-  private finishedAt(b: Building | undefined, finished: 'hero' | 'research') {
+  /** Marks a completed upgrade or research at its building in the Home Village. */
+  private finishedAt(b: Building | undefined, finished?: 'hero' | 'research') {
     if (!b || this.battle) return;
     const size = BUILDINGS[b.kind].size;
-    this.onEffect({ type: 'upgrade', x: b.x + size / 2, y: b.y + size / 2, finished });
+    this.onEffect({
+      type: 'upgrade',
+      x: b.x + size / 2,
+      y: b.y + size / 2,
+      ...(finished ? { finished } : { building: b.kind }),
+    });
   }
   // ------------------------------------------------------------ Helper Hut
   get helperHut() {
