@@ -634,6 +634,8 @@ export interface ReplayPlayback {
   recordId: number | null;
   seeking: boolean;
   seekTarget: number;
+  /** Presentation revision, including seeks completed within the initiating call. */
+  seekRevision?: number;
   paused: boolean;
   speed: 1 | 2 | 4;
   time: number;

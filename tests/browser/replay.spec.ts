@@ -161,3 +161,66 @@ test('the opening replay keeps deployment feedback from its first recorded step'
     }, feedback),
   ).toMatchObject({ at: 0, deployment: { type: 'troop', step: 0, kind: 'archer' }, sparks: 5 });
 });
+
+test.describe('tick-zero replay deployment audio', () => {
+  test.use({ viewport: { width: 568, height: 320 }, hasTouch: true, isMobile: true });
+
+  test('starts a Barbarian buffer once on playback and once per restart, with silent seeking', async ({
+    page,
+  }) => {
+    const tap = (action: string) => page.locator(`[data-action="${action}"]`).tap();
+    await page.evaluate(() => {
+      const { scene } = window.__game;
+      const trace: number[] = [];
+      (window as typeof window & { deployStarts: number[] }).deployStarts = trace;
+      const start = AudioBufferSourceNode.prototype.start;
+      AudioBufferSourceNode.prototype.start = function (...args) {
+        Reflect.apply(start, this, args);
+        const buffers = scene.audio.samples.buffers as Map<string, AudioBuffer>;
+        for (const [key, buffer] of buffers)
+          if (key.startsWith('troop-barb_deploy_') && buffer === this.buffer)
+            trace.push(args[1] ?? 0);
+      };
+    });
+    await page.locator('.attack-btn').tap();
+    await tap('attack:0');
+    await tap('troop:swordsman');
+    await page.waitForFunction(() => !window.__game.scene.battleArtPending());
+    const point = await page.evaluate(() => {
+      const { model, scene } = window.__game;
+      scene.paused = true;
+      for (let y = 6.5; y < 31; y++)
+        for (let x = 6.5; x < 31; x++) {
+          const p = scene.screenFor(x, y);
+          if (!model.deployBlocked(x, y) && document.elementFromPoint(p.x, p.y) === scene.game.canvas)
+            return p;
+        }
+      throw Error('No exposed tile for a touch deployment');
+    });
+    await page.touchscreen.tap(point.x, point.y);
+    await page.evaluate(() => {
+      const { model } = window.__game;
+      if (model.battle.units.length !== 1) throw Error('Opening touch did not deploy one troop');
+      for (let i = 0; i < 35; i++) model.step(0.05);
+    });
+    await tap('surrender');
+    await tap('end');
+    await page.getByRole('button', { name: 'Watch replay', exact: true }).tap();
+    expect(await page.evaluate(() => window.__game.model.replayRecording().actions[0])).toMatchObject(
+      { type: 'troop', kind: 'swordsman', step: 0 },
+    );
+    const starts = () =>
+      page.evaluate(() => (window as typeof window & { deployStarts: number[] }).deployStarts);
+    expect(await starts()).toEqual([]);
+    await page.evaluate(() => (window.__game.scene.paused = false));
+    await expect.poll(starts).toEqual([0]);
+    await tap('replay-pause');
+    await tap('replay-jump:-10');
+    await tap('replay-pause');
+    await expect(page.locator('.replay-status')).toContainText('Replay complete');
+    expect(await starts()).toEqual([0]);
+    await tap('replay-restart');
+    await expect(page.locator('.replay-status')).toContainText('Replay complete');
+    expect(await starts()).toEqual([0, 0]);
+  });
+});

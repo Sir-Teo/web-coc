@@ -6694,7 +6694,7 @@ export class GameModel {
     this.onEffect(
       recalled !== undefined && recordRecallEvent(b, b.units.at(-1)!, 'redeploy')
         ? { type: 'recall-unit', sourceId: b.units.at(-1)!.id, text: 'redeploy', x, y }
-        : { type: 'spawn', x, y },
+        : { type: 'spawn', sourceId: b.units.at(-1)!.id, x, y },
     );
     this.guidePlaced({ troop: k });
     this.deployChanged(starting);
@@ -8589,6 +8589,7 @@ export class GameModel {
     const r = this.replay;
     if (!r || !Number.isFinite(seconds)) return false;
     if (!r.seeking) this.replaySeekPaused = r.paused;
+    r.seekRevision = (r.seekRevision ?? 0) + 1;
     r.seekTarget = Math.max(0, Math.min(r.duration, seconds));
     r.seeking = true;
     this.replayBudget = 0;

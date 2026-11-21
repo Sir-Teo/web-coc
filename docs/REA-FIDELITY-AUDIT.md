@@ -427,3 +427,27 @@ across both builds, while the first deployment at replay time zero started no
 Barbarian buffer in either. That existing replay case is separate from this
 scout-entry fix. The retained [battle cue rows](TROOP-SOUNDS.md) identify the
 assets and do not establish original-client scout onset or mix.
+
+### Tick-zero replay deployment audio
+
+Checkpoint `64b5926c` retained the opening spawn event across a replay scene
+rebuild. Its regression measured five Archer spawn sparks at step zero. In
+Payback, the event and troop survived that rebuild, but the troop sound log
+first saw the ordinary Barbarian already on the field. Its implicit arrival
+clock therefore suppressed the opening voice.
+
+Current playback carries the deployed actor ID on the existing spawn event.
+Autoplay at recording time zero queues the pinned Barbarian take once for that
+playback. The sample may begin at offset zero when decoded within a two-second
+playback window. A seek, mute, or session change discards pending sound.
+Restart creates its own opening. Later combat audio and normal explicit
+birth-time cues stay on the existing timeline. This is Web CoC replay
+consistency. The [retained troop rows](TROOP-SOUNDS.md) establish the source
+sample identity. Original-client replay onset and mix remain unverified.
+
+Packaged Chromium at 390×844 and 568×320 reproduced zero Barbarian buffer
+starts in warm and cold baseline replays. The candidate started one
+`barb_deploy_11v3.ogg` buffer at offset zero in each case, including when its
+request was held until 0.8 seconds of playback. A touch restart started one
+new buffer. A paused seek to zero with a pending decode stayed silent after
+resume, as did playback with Sound effects muted after reload.

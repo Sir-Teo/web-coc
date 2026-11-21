@@ -234,7 +234,7 @@ import {
   type BuildingKind,
 } from './data';
 import { GameModel, makeBuilding, type Battle, type Building, type FX } from './model';
-import { registerCachedSample, type SampleCue } from './sample-audio';
+import { cueAudible, registerCachedSample, type SampleCue } from './sample-audio';
 import { ShapeAtlas, ShapePool, applyShape, type BakedShape } from './shape-atlas';
 import { RenderInterpolation } from './render-interpolation';
 import { AudioManager } from './audio';
@@ -5258,10 +5258,62 @@ export class VillageScene extends Phaser.Scene {
       this.audio.enabled && this.audio.effectsVolume > 0 && this.audio.context?.state === 'running'
     );
   }
+  private openingReplayAudio?: {
+    replay: NonNullable<GameModel['replay']>;
+    cues: SampleCue[];
+  };
+  private openingReplaySerial = 0;
+  private recordOpeningDeployment(fx: FX) {
+    const { battle, replay } = this.model;
+    if (
+      fx.type !== 'spawn' ||
+      fx.sourceId === undefined ||
+      !battle ||
+      !replay ||
+      replay.time !== 0 ||
+      replay.seekRevision ||
+      !this.audio.enabled ||
+      this.audio.effectsVolume <= 0
+    ) return;
+    const unit = battle.units.find((u) => u.id === fx.sourceId);
+    // Actors with their own birth time already reach troopSoundCues directly.
+    if (!unit || unit.spawnedAt !== undefined) return;
+    const cue = troopCue(battle, unit, 'deploy', `troop:${unit.id}:deploy`, battle.elapsed);
+    if (!cue) return;
+    if (this.openingReplayAudio?.replay !== replay)
+      this.openingReplayAudio = { replay, cues: [] };
+    this.openingReplayAudio.cues.push({
+      ...cue,
+      key: `replay-opening:${++this.openingReplaySerial}:${cue.key}`,
+      opening: {},
+    });
+  }
   private renderSanta(cues: SampleCue[]) {
     if (this.model.battle && this.audible()) {
       this.needTroopSounds(this.model.battle);
       this.troopSoundLoader.retry();
+    }
+    const opening = this.openingReplayAudio;
+    if (opening) {
+      const { replay } = this.model;
+      // Bound late decoding to the opening and discard pending sound on seek,
+      // mute or session change, including when a seek finishes synchronously.
+      if (
+        replay !== opening.replay ||
+        replay.seekRevision ||
+        !this.audio.enabled ||
+        this.audio.effectsVolume <= 0
+      ) this.openingReplayAudio = undefined;
+      else {
+        opening.cues = opening.cues.filter(
+          (cue) =>
+            cue.opening?.startedAt === undefined
+              ? replay.time <= cue.at + 2
+              : cueAudible(cue.opening.startedAt, replay.time),
+        );
+        if (opening.cues.length) cues = [...cues, ...opening.cues];
+        else this.openingReplayAudio = undefined;
+      }
     }
     this.santaPresentation.render(
       this.model.battle,
@@ -6431,6 +6483,7 @@ export class VillageScene extends Phaser.Scene {
   }
   effect(fx: FX) {
     if (!this.ready) return;
+    this.recordOpeningDeployment(fx);
     if (this.pendingFxBattle !== this.model.battle) {
       this.pendingFx.length = 0;
       this.pendingFxBattle = this.model.battle;

@@ -165,3 +165,23 @@ it('starts a cue at zero offset across clock roundoff, while keeping genuinely f
   expect(sources).toHaveLength(1);
   expect(sources[0].start).toHaveBeenCalledWith(0, 0);
 });
+
+it('starts a delayed replay opening sample at offset zero once per opening', async () => {
+  const { samples, context, sources, cue, unlock } = audio();
+  const opening = { ...cue, at: 0, opening: {} };
+  samples.sync([opening], 0.75, 1, true);
+  expect(sources).toHaveLength(0);
+  await unlock();
+  samples.sync([opening], 0.8, 1, false);
+  expect(sources).toHaveLength(0);
+  samples.sync([opening], 0.8, 1, true);
+  expect(sources[0].start).toHaveBeenCalledWith(0, 0);
+  context.currentTime = 0.05;
+  samples.sync([opening], 0.85, 1, true);
+  samples.stop();
+  samples.sync([opening], 0.9, 1, true);
+  expect(sources).toHaveLength(1);
+  samples.sync([{ ...opening, opening: {} }], 0, 1, true);
+  expect(sources).toHaveLength(2);
+  expect(sources[1].start).toHaveBeenCalledWith(0, 0);
+});

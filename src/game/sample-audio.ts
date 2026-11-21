@@ -5,6 +5,8 @@ export interface SampleCue {
   volume: number;
   pitch: number;
   loop?: boolean;
+  /** A replay opening cue may wait for decode, then starts once in its playback session. */
+  opening?: { startedAt?: number };
 }
 
 /**
@@ -174,8 +176,8 @@ export class SampleAudio {
       voices.set(node.sample, (voices.get(node.sample) ?? 0) + 1);
     for (const cue of cues) {
       const buffer = this.buffers.get(cue.sample),
-        delta = elapsed - cue.at,
-        age = Math.max(0, delta * cue.pitch);
+        delta = elapsed - (cue.opening?.startedAt ?? cue.at),
+        age = cue.opening && cue.opening.startedAt === undefined ? 0 : Math.max(0, delta * cue.pitch);
       if (!buffer || delta < -1e-9 || (!cue.loop && age >= buffer.duration) || buffer.duration <= 0)
         continue;
       wanted.add(cue.key);
@@ -183,6 +185,7 @@ export class SampleAudio {
       if (this.ended.has(cue.key)) continue;
       let node = this.active.get(cue.key);
       if (!node) {
+        if (cue.opening?.startedAt !== undefined) continue;
         const playing = voices.get(cue.sample) ?? 0;
         // Big battles stack dozens of identical impacts: cap them rather than the mixer.
         if (playing >= MAX_VOICES_PER_SAMPLE || this.active.size >= MAX_VOICES) continue;
@@ -205,6 +208,7 @@ export class SampleAudio {
           gain.disconnect();
         };
         source.start(0, cue.loop ? age % buffer.duration : age);
+        if (cue.opening) cue.opening.startedAt = elapsed;
       } else {
         node.source.playbackRate.value = cue.pitch * speed;
         if (cue.loop) node.gain.gain.value = cue.volume * 0.12;
