@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { GameModel } from '../../src/game/model';
+import { GameModel, makeBuilding } from '../../src/game/model';
 import { REPLAY_VERSION } from '../../src/game/replay';
 import { makeReplayFile, parseReplayFile } from '../../src/game/replay-file';
 import { siegeReleaseBattle, type ReleaseSiegeKind } from '../fixtures/siege-release';
@@ -24,6 +24,13 @@ for (const [kind, level, name, width, height] of profiles) {
       errors: string[] = [];
     const reserve = kind === 'wallwrecker' ? 'battleblimp' : 'wallwrecker';
     initial.army[reserve] = 1;
+    const loaded = kind === 'stoneslammer';
+    if (loaded) {
+      initial.practice = true;
+      initial.catalog = 'valley-v1';
+      initial.buildings.push(makeBuilding(3, 'clancastle', 36, 30, 6));
+      initial.siegeCargo = { castleLevel: 6, troops: [{ kind: 'giant', level: 1, count: 2 }] };
+    }
     page.on('pageerror', (error) => errors.push(error.message));
     await page.setViewportSize({ width, height });
     await page.goto('/?lazyart');
@@ -62,10 +69,16 @@ for (const [kind, level, name, width, height] of profiles) {
     await page.evaluate(() => {
       if (!window.__game.model.deploy(11.4, 11.5)) throw Error('Siege deployment failed');
     });
-    const end = page.getByRole('button', { name: `End ${name}`, exact: true });
+    const end = page.getByRole('button', {
+      name: `End ${name}${loaded ? ' and release cargo' : ''}`,
+      exact: true,
+    });
     await expect(end).toBeVisible();
+    await expect(end.locator('.troop-name')).toHaveText(loaded ? 'Release cargo' : 'End siege');
     expect((await end.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-    await expect(page.locator(`[data-action="troop:${reserve}"]`)).toBeDisabled();
+    const reserveCard = page.locator(`[data-action="troop:${reserve}"]`);
+    await expect(reserveCard).toBeDisabled();
+    await expect(reserveCard.locator('.troop-count')).toHaveText('Locked');
     const before = await page.evaluate(() => {
       const { model, scene } = window.__game;
       while (model.battle.elapsed < 4.95 - 1e-9) model.step(0.05);
@@ -102,6 +115,11 @@ for (const [kind, level, name, width, height] of profiles) {
       return { snapshots, data: JSON.parse(JSON.stringify(model.state.raidLog[0].replay)) };
     });
     expect(record.data.version).toBe(REPLAY_VERSION);
+    if (loaded) {
+      const after = record.snapshots.at(-1)!.battle;
+      expect(after.siegeCargo.released).toBe(true);
+      expect(after.units.filter((unit) => unit.kind === 'giant')).toHaveLength(2);
+    }
     expect(record.data.actions.filter((action) => action.type === 'siege-end')).toHaveLength(1);
     const snapshots = [before, ...record.snapshots],
       viewer = new GameModel();

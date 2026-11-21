@@ -3576,16 +3576,25 @@ export class HUD {
     const unavailable = count === 0 || siegeBlocked;
     const hotkey = isSplitHog(k) ? undefined : TROOP_HOTKEYS[TROOP_ORDER.indexOf(k)];
     const image = isSplitHog(k) ? RECALL_CARD_ART[k] : hudAsset(k);
-    return `<button class="troop-card ${isSplitHog(k) ? 'recalled-card' : ''} ${selected ? 'selected' : ''} ${unavailable ? 'empty' : ''}" data-action="${action}" aria-label="${this.troopCardLabel(k, count, siegeBlocked)}" ${isSplitHog(k) ? 'title="Recalled unit · this attack"' : ''} ${action.startsWith('troop') && unavailable ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('troop:') && hotkey ? `<kbd class="troop-key">${hotkey.toUpperCase()}</kbd>` : ''}<img src="${image}" alt="" draggable="false">${flying}<span class="troop-level">★ ${this.model.troopDisplayLevel(k)}</span><span class="troop-name">${TROOPS[k].name}</span></button>`;
+    return `<button class="troop-card ${isSplitHog(k) ? 'recalled-card' : ''} ${selected ? 'selected' : ''} ${unavailable ? 'empty' : ''}" data-action="${action}" aria-label="${this.troopCardLabel(k, count, siegeBlocked)}" ${isSplitHog(k) ? 'title="Recalled unit · this attack"' : ''} ${action.startsWith('troop') && unavailable ? 'disabled' : ''}><span class="troop-count">${siegeBlocked && count > 0 ? 'Locked' : `x${count}`}</span>${action.startsWith('troop:') && hotkey ? `<kbd class="troop-key">${hotkey.toUpperCase()}</kbd>` : ''}<img src="${image}" alt="" draggable="false">${flying}<span class="troop-level">★ ${this.model.troopDisplayLevel(k)}</span><span class="troop-name">${TROOPS[k].name}</span></button>`;
   }
   private spellCard(k: SpellKind, count: number, action: string, selected = false) {
     return `<button class="troop-card spell-card ${selected ? 'selected' : ''} ${count === 0 ? 'empty' : ''}" data-action="${action}" aria-label="${SPELLS[k].name}, ${count} available" ${action.startsWith('spell') && count === 0 ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('spell:') && SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)] ? `<kbd class="troop-key">${SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)]}</kbd>` : ''}<img src="${hudAsset(k)}" alt="" draggable="false"><span class="troop-level">★ ${this.model.spellLevel(k)}</span><span class="troop-name">${SPELLS[k].name.replace(' Spell', '')}</span></button>`;
   }
 
+  private siegeHasCargo(id: number) {
+    const cargo = this.model.battle?.siegeCargo;
+    return cargo?.carrierId === id && !cargo.released;
+  }
   private siegeReleaseCard(unit: NonNullable<GameModel['deployedSiege']>) {
     const name = TROOPS[unit.kind].name,
       level = unit.level ?? this.model.troopLevel(unit.kind as TroopKind);
-    return `<button class="troop-card siege-release-card" data-action="siege-end" data-siege-kind="${unit.kind}" aria-label="End ${name}" title="Destroy ${name} now. Already released troops and shots remain active."><span class="troop-count">${icon('Bomb', 14)}</span><img src="${hudAsset(unit.kind)}" alt="" draggable="false"><span class="troop-level">★ ${level}</span><span class="hero-health"><i style="width:${pct((unit.hp / unit.maxHp) * 100)}"></i></span><span class="troop-name">End siege</span></button>`;
+    const loaded = this.siegeHasCargo(unit.id);
+    const label = loaded ? 'Release cargo' : 'End siege';
+    const title = loaded
+      ? `Destroy ${name} now and deploy its cargo.`
+      : `Destroy ${name} now. Already released troops and shots remain active.`;
+    return `<button class="troop-card siege-release-card" data-action="siege-end" data-siege-kind="${unit.kind}" aria-label="End ${name}${loaded ? ' and release cargo' : ''}" title="${title}"><span class="troop-count">${icon('Bomb', 14)}</span><img src="${hudAsset(unit.kind)}" alt="" draggable="false"><span class="troop-level">★ ${level}</span><span class="hero-health"><i style="width:${pct((unit.hp / unit.maxHp) * 100)}"></i></span><span class="troop-name">${label}</span></button>`;
   }
   /** Town Hall 18: Guardian choice and upgrades. */
   /** The Crafting Station card opens its panel. */
@@ -4234,8 +4243,11 @@ export class HUD {
     if (!m.troopSelected) return 'Select a troop, hero or spell';
     if (isSplitHog(m.activeTroop))
       return `${TROOPS[m.activeTroop].name} · ${m.troopRemaining(m.activeTroop) ? 'Recalled · Tap, hold or drag to redeploy' : 'All redeployed'}`;
-    if (m.deployedSiege?.kind === m.activeTroop)
-      return `${TROOPS[m.activeTroop].name} · End siege destroys this machine`;
+    const siege = m.deployedSiege;
+    if (siege?.kind === m.activeTroop)
+      return this.siegeHasCargo(siege.id)
+        ? `${TROOPS[siege.kind].name} · Release cargo destroys the machine and deploys its troops`
+        : `${TROOPS[siege.kind].name} · End siege destroys this machine`;
     if (this.siegeUnavailable(m.activeTroop))
       return `${TROOPS[m.activeTroop].name} · Only one siege machine per attack`;
     if (b.remaining[m.activeTroop] <= 0)
@@ -6618,7 +6630,7 @@ export class HUD {
         const selected = troop
           ? m.troopSelected && !m.activeHero && !m.activeHeroKind && !m.activeSpell && m.activeTroop === troop
           : m.activeSpell === spell;
-        setText(el.querySelector('.troop-count'), `x${count}`);
+        setText(el.querySelector('.troop-count'), siegeBlocked && count > 0 ? 'Locked' : `x${count}`);
         if (el.classList.contains('empty') !== unavailable) el.classList.toggle('empty');
         if (el.classList.contains('selected') !== selected) el.classList.toggle('selected');
         if (el.disabled !== unavailable) el.disabled = unavailable;
