@@ -106,13 +106,19 @@ it('reconstructs The Arena roster mechanics across portable backward seeks', () 
 }, 120000);
 
 it('reconstructs Ring of Power, Path to Pain, M.O.M.M.A and the Golden Dragon deterministically', () => {
-  const ring = expectPortableSeeks(
-    garrisonRecording(76, { pekka: 10, dragon: 12, wizard: 12, archer: 12, healer: 4 }, 420),
-    [40, 180, 415],
-  );
+  const army = { pekka: 10, dragon: 12, wizard: 12, archer: 12, healer: 4 };
+  const west = expectPortableSeeks(garrisonRecording(76, army, 420), [40, 180, 415]);
+  expect(late(west).find((d) => d.kind === 'lavahound')!.hp).toBeGreaterThan(0);
+  expect(late(west).filter((d) => d.kind === 'lavapup')).toHaveLength(0);
+
+  // The east entry keeps enough anti-air attackers alive to finish the Hound.
+  // Sample the same version-44 recording on both sides of the actual split.
+  const ring = expectPortableSeeks(garrisonRecording(76, army, 240, 9), [180, 216, 217, 239]);
   const hound = late(ring).find((d) => d.kind === 'lavahound')!;
-  expect(hound.hp).toBe(0);
-  expect(late(ring).filter((d) => d.kind === 'lavapup')).toHaveLength(13);
+  expect(hound).toMatchObject({ hp: 0, split: true, deathResolved: true });
+  const pups = late(ring).filter((d) => d.kind === 'lavapup');
+  expect(pups).toHaveLength(13);
+  expect(pups.every((pup) => pup.spawnedAt === hound.defeatedAt && pup.mode === 'air')).toBe(true);
   const titans = expectPortableSeeks(
     garrisonRecording(83, { pekka: 10, dragon: 8, wizard: 12, archer: 10 }, 200),
     [30, 120, 195],
