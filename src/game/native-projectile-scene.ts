@@ -71,6 +71,10 @@ interface Snapshot {
   landingAt?: number;
 }
 
+const HEALER_FLIGHT = 'HealerEnergy';
+const HEALER_PACK = nativeProjectilePack(HEALER_FLIGHT);
+const HEALER_TRAIL = 'healer_projectile_trail';
+
 /** World pixels around the camera view within which shots are still sampled and drawn. */
 const SHOT_MARGIN = 360;
 /** Stable parity of a shot id, to trail every other shot under reduced detail. */
@@ -107,6 +111,7 @@ export class NativeProjectilePresentation {
     for (const name of names) {
       const path = nativeProjectilePack(name);
       if (path) paths.add(path);
+      if (name === HEALER_FLIGHT) this.layer.prefetchEmitter(HEALER_TRAIL);
     }
     for (const path of paths) this.packs.get(path);
   }
@@ -192,6 +197,27 @@ export class NativeProjectilePresentation {
   private running(effect: string, at: number, elapsed: number) {
     const duration = this.layer.duration(effect);
     return duration === undefined || elapsed - at <= duration + 1e-6;
+  }
+  /** HealerEnergy's body is a dummy; the trail is the visible flight. */
+  private drawHealerFlight(
+    shot: CombatProjectile,
+    elapsed: number,
+    iso: (x: number, y: number) => Point,
+    airLift: number,
+  ) {
+    const row = HEALER_PACK ? this.packs.get(HEALER_PACK)?.projectiles[HEALER_FLIGHT] : undefined;
+    if (!row?.ParticleEmitter) return false;
+    const options = { iso, airLift };
+    return this.layer.emitterTrail(
+      row.ParticleEmitter,
+      `${shot.id}:healer`,
+      { launched: shot.launched, end: shot.impact },
+      (at) => nativeProjectileFlight(row, shot, at, options),
+      elapsed,
+      false,
+      undefined,
+      FLIGHT_DEPTH - 1,
+    );
   }
   private drawAirBombs(
     battle: Battle,
@@ -331,6 +357,16 @@ export class NativeProjectilePresentation {
       ...(battle.nativeSuperHogFlights ?? []).filter((shot) => elapsed <= shot.impact + AFTERLIFE),
       ...(battle.projectiles ?? []),
     ]) {
+      if (p.weapon === 'healing') {
+        if (
+          detail < 2 &&
+          (detail === 0 || (hashId(p.id) & 1) === 0) &&
+          unitIndex(battle).get(p.sourceId)?.kind === 'healer' &&
+          this.drawHealerFlight(p, elapsed, iso, airLift)
+        )
+          covered.add(p.id);
+        continue;
+      }
       if (p.weapon === 'rocket') {
         // The existing rocket homes on its recorded target. Rebuild the cached
         // flight points when the simulation advances that target.

@@ -58,3 +58,17 @@ version-97 comparison retains matching launch times. Current cast tests
 separately retain tier-specific healing packets and impacts.
 Screenshots go to ignored `output/playtest/`; viewport checks do not
 measure physical phone performance.
+
+## Authored healing flight
+
+All eleven retained Healer tiers use `HealerEnergy`. Its projectile export is
+`dummy_particle`, and the drawable flight comes from the
+`healer_projectile_trail` emitter and `HealSpell_lightbeam` export. Web CoC
+previously displayed its drawn green projectile for these friendly casts. It
+now samples the retained trail along each in-flight Healer shot, including
+when a replay seeks into the flight. The drawn projectile remains visible
+when no native trail draws, including while art is unavailable or at lower
+detail. Healing impact feedback uses the existing path. Projectile timing,
+healing eligibility, hitpoints, saves and replay rules are unchanged.
+Original-client layering and particle motion relative to the body remain
+uncaptured.

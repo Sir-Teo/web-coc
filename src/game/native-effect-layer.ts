@@ -186,8 +186,18 @@ export class NativeEffectLayer {
     const path = nativeEmitterPack(emitter);
     const pack = path ? this.packs.get(path) : undefined;
     if (!path || !pack) return false;
-    this.trailPoses(path, pack, emitter, key, span, pointAt, elapsed, reduced, facing, depth);
-    return true;
+    return this.trailPoses(
+      path,
+      pack,
+      emitter,
+      key,
+      span,
+      pointAt,
+      elapsed,
+      reduced,
+      facing,
+      depth,
+    );
   }
   /** An AttachToParent effect (e.g. Artillery Trail): every emitter row trails the moving parent. */
   effectTrail(
@@ -243,7 +253,7 @@ export class NativeEffectLayer {
     options?: { scale: number; timeScale: number },
   ) {
     const rows = pack.emitters[emitter];
-    if (!rows || reduced) return;
+    if (!rows || reduced) return false;
     let points = this.trailPoints.get(key);
     if (!points) this.trailPoints.set(key, (points = new Map()));
     this.usedTrails.add(key);
@@ -266,7 +276,7 @@ export class NativeEffectLayer {
     }
     // Births older than the oldest live one never come back.
     for (const index of points.keys()) if (index < oldest) points.delete(index);
-    if (!births.length) return;
+    if (!births.length) return false;
     const poses = nativeTrailPoses(
       pack,
       emitter,
@@ -280,6 +290,7 @@ export class NativeEffectLayer {
     );
     if (depth === undefined) this.draw(path, poses);
     else this.drawBatched(path, key, poses);
+    return poses.length > 0;
   }
   private sceneView(key: string, prefix: string) {
     this.used.add(key);

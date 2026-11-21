@@ -118,3 +118,55 @@ async function check(
   expect(await page.evaluate(() => window.__game.game.renderer.gl.getError())).toBe(0);
   expect(errors).toEqual([]);
 }
+
+test('a Healer replay replaces its drawn flight once the authored trail is ready', async ({
+  page,
+}) => {
+  test.setTimeout(120000);
+  const r = healerRecording(1, 210, 8);
+  let releaseTrail!: () => void;
+  const held = new Promise<void>((resolve) => {
+    releaseTrail = resolve;
+  });
+  await page.route('**/emitter-healer-projectile-trail/graph.json', async (route) => {
+    await held;
+    await route.continue();
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page, r.data);
+  const shot = r.shots[0];
+  const at = r.first + 0.1;
+  expect(at).toBeLessThan(shot.impact);
+  const current = await seek(page, at, r.id);
+  const shotId = await page.evaluate(() =>
+    window.__game.model.battle.projectiles.find((p) => p.weapon === 'healing')?.id,
+  );
+  expect(shotId).toBeDefined();
+  const art = (detail = 0) =>
+    page.evaluate(
+      ({ id, detail }) => {
+        const { scene } = window.__game;
+        scene['detailLevel'] = detail as typeof scene['detailLevel'];
+        scene['drawProjectiles']();
+        return {
+          native: scene.children.list.some(
+            (object) => object.visible && object.data?.values.nativeEffect === 'healer_projectile_trail',
+          ),
+          fallback: scene['combatEffects']['flights'].has(id),
+        };
+      },
+      { id: shotId, detail },
+    );
+  try {
+    expect(await art()).toEqual({ native: false, fallback: true });
+  } finally {
+    releaseTrail();
+  }
+  await expect.poll(() => art(), { timeout: 30000 }).toEqual({ native: true, fallback: false });
+  expect(await art(2)).toEqual({ native: false, fallback: true });
+  expect(await page.evaluate(() => JSON.stringify(window.__game.model.battle))).toBe(current.battle);
+  await seek(page, r.born, r.id);
+  expect(await art()).toEqual({ native: false, fallback: false });
+  expect((await seek(page, at, r.id)).battle).toBe(current.battle);
+  expect(await art()).toEqual({ native: true, fallback: false });
+});
