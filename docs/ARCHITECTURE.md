@@ -39,6 +39,11 @@ Short filenames in a row are siblings of its first file.
 
 ## Simulation and rendering
 
+Entering a raid or replay holds the village camera's world center and CSS zoom
+in the scene. Returning restores that view within the current viewport bounds,
+including after rotation. Raids still frame their own map on entry. Reloading
+starts with the usual village framing.
+
 Combat advances at a fixed 20 Hz. Presentation can interpolate positions and animate
 between steps, but must not change simulation results. Replay seeking reconstructs
 state from recorded inputs, so a mechanic's timing and random choices must be

@@ -709,6 +709,7 @@ export class VillageScene extends Phaser.Scene {
   private wallGhostLinks?: Phaser.GameObjects.Graphics;
   private wallDragOffset?: { x: number; y: number };
   private mode = '';
+  private homeCamera?: { x: number; y: number; zoom: number };
   private renderedBattle: GameModel['battle'] = null;
   private renderedReplay: GameModel['replay'] = null;
   private lastRevision = -1;
@@ -2741,6 +2742,17 @@ export class VillageScene extends Phaser.Scene {
     this.cameras.main.centerOn(p.x, p.y);
     this.clampCamera();
   }
+  /** Restore the village view against the current viewport after a raid or replay. */
+  private restoreHomeCamera() {
+    const view = this.homeCamera;
+    if (!view || this.viewportEmpty) return;
+    this.homeCamera = undefined;
+    this.updateBaseZoom();
+    this.rememberViewport();
+    this.setZoom(view.zoom);
+    this.cameras.main.centerOn(view.x, view.y);
+    this.clampCamera();
+  }
   private resizeCamera() {
     // A new viewport invalidates both a held press and a pending rapid tap.
     this.cancelMapGesture();
@@ -2751,6 +2763,8 @@ export class VillageScene extends Phaser.Scene {
     const zoom = this.viewZoom;
     if (this.viewportEmpty) {
       // Nothing to frame yet; keep the last view.
+    } else if (this.mode === 'home' && this.homeCamera) {
+      this.restoreHomeCamera();
     } else if (!this.cameraFramed || ![x, y, zoom].every(Number.isFinite) || !(zoom > 0)) {
       // The canvas had no area when the camera was last framed: frame it now.
       this.resetCamera();
@@ -3431,6 +3445,14 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.reducedMotion) this.resourceFlights.clear();
     const mode = this.model.battle ? 'battle' : 'home';
     if (mode !== this.mode || this.renderedBattle !== this.model.battle) {
+      if (this.mode === 'home' && mode === 'battle' && this.cameraFramed && !this.homeCamera) {
+        const c = this.cameras.main;
+        this.homeCamera = {
+          x: c.scrollX + this.cameraViewport.width / 2,
+          y: c.scrollY + this.cameraViewport.height / 2,
+          zoom: this.viewZoom,
+        };
+      }
       this.lastTap = undefined;
       // A retry starts on the same guide step, but its camera has been framed afresh.
       this.guideFocus = '';
@@ -3556,7 +3578,8 @@ export class VillageScene extends Phaser.Scene {
         this.resetRuinDecals().setVisible(false);
         this.ruinStamped.clear();
       }
-      if (!keepCamera) this.resetCamera();
+      if (mode === 'home' && this.homeCamera) this.restoreHomeCamera();
+      else if (!keepCamera) this.resetCamera();
     }
     this.prefetchArmyArt();
     const obstacleIds = new Set(this.model.obstacles.map((o) => o.id));

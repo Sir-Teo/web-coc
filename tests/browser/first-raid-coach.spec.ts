@@ -46,6 +46,19 @@ test('a compact phone completes and rearms after its first campaign raid', async
   await page.locator('[data-action="train:swordsman"]').tap();
   await page.locator('[data-action="close-drawer"]').tap();
   await expect(coach).toContainText('Raid the valley');
+  const homeCamera = () =>
+    page.evaluate(() => {
+      const scene = window.__game.scene;
+      const c = scene.cameras.main;
+      return { x: c.scrollX + c.width / 2, y: c.scrollY + c.height / 2, zoom: scene.viewZoom };
+    });
+  await page.evaluate(() => {
+    const scene = window.__game.scene;
+    scene.setZoom(0.65);
+    scene.cameras.main.centerOn(950, 640);
+    scene.clampCamera();
+  });
+  const villageView = await homeCamera();
   const original = await page.evaluate(() => {
     const s = window.__game.model.state;
     return { gold: s.gold, elixir: s.elixir, army: s.army };
@@ -141,12 +154,20 @@ test('a compact phone completes and rearms after its first campaign raid', async
   const home = result.getByRole('button', { name: 'Return to village' });
   await expect(home).toBeFocused();
   await home.tap();
+  await expect.poll(homeCamera).toEqual(villageView);
   await expect(page.locator('#toast.show')).toHaveText(completion);
   await page.setViewportSize({ width: 320, height: 568 });
   await expect(coach).toHaveCount(0);
   await page.reload();
   await expect(page.locator('#loading')).toBeHidden({ timeout: 30000 });
   expect(await state()).toEqual({ ...settled, tutorial: true });
+  await page.evaluate(() => {
+    const scene = window.__game.scene;
+    scene.zoomBy(1.4);
+    scene.cameras.main.centerOn(830, 600);
+    scene.clampCamera();
+  });
+  const replayReturnView = await homeCamera();
   await page.locator('[data-action="battle-log"]').tap();
   await page.getByRole('button', { name: 'Watch replay' }).tap();
   const progress = page.getByRole('slider', { name: 'Replay position' });
@@ -156,6 +177,7 @@ test('a compact phone completes and rearms after its first campaign raid', async
   expect(await page.evaluate(() => window.__game.model.battle?.result)).toEqual(record.result);
   await page.getByRole('button', { name: 'Back to log' }).tap();
   await page.getByRole('button', { name: 'Close dialog' }).tap();
+  await expect.poll(homeCamera).toEqual(replayReturnView);
   expect(await state()).toEqual({ ...settled, tutorial: true });
   await train.tap();
   await page.getByRole('button', { name: 'Last army' }).tap();
