@@ -46,7 +46,7 @@ import {
 } from './village-native-scene';
 import { NativeArtPacks, type NativeArtPack } from './native-art-pack';
 import { NativeProjectilePresentation } from './native-projectile-scene';
-import { airDefenseProjectileName } from './native-projectile-poses';
+import { airBombProjectileName, airDefenseProjectileName } from './native-projectile-poses';
 import { nativeUnitStats } from './native-units';
 import { superMinionLongShot } from './native-super-minion';
 import { heroProjectileNames } from './hero-projectile-prefetch';
@@ -3441,8 +3441,13 @@ export class VillageScene extends Phaser.Scene {
       if (mode === 'battle' && !reduced)
         this.nativeProjectiles.prefetch(
           this.model.buildings
-            .filter((b) => b.kind === 'airdefense')
-            .map((b) => airDefenseProjectileName(b.level)),
+            .flatMap((b) =>
+              b.kind === 'airdefense'
+                ? [airDefenseProjectileName(b.level)]
+                : b.kind === 'airbomb' && !b.npc
+                  ? [airBombProjectileName(b.level)]
+                  : [],
+            ),
         );
       if (this.cannonPresentation.artReady)
         void this.cannonPresentation.prefetchLevels(

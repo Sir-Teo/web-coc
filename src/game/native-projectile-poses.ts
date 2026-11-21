@@ -59,6 +59,10 @@ export const nativeProjectilePack = (name: string | undefined) => {
 export const airDefenseProjectileName = (level: number) =>
   nativeRow('buildings', 'Air Defense', level).Projectile;
 
+/** The pinned trap levels share seven Air Bomb projectile exports. */
+export const airBombProjectileName = (level: number) =>
+  nativeRow('traps', 'Air Bomb', level).Projectile;
+
 const num = (value: string | undefined, fallback = 0) => {
   const parsed = Number(value);
   return value === undefined || value === '' || !Number.isFinite(parsed) ? fallback : parsed;

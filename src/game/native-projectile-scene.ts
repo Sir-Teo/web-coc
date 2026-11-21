@@ -17,6 +17,7 @@ import { NativeSceneView, effectSceneView } from './native-scene-view';
 import { NativeArtPacks, nativePackPrefix, type NativeArtPack } from './native-art-pack';
 import { NativeEffectLayer, nativeEffectPack } from './native-effect-layer';
 import {
+  airBombProjectileName,
   airDefenseProjectileName,
   nativeProjectileFlight,
   nativeProjectilePack,
@@ -26,7 +27,8 @@ import {
   type NativeProjectileRow,
 } from './native-projectile-poses';
 import { weaponFor } from './native-defenses';
-import { buildingIndex } from './battle-index';
+import { BUILDINGS } from './data';
+import { buildingIndex, unitIndex } from './battle-index';
 
 type Point = { x: number; y: number };
 const FLIGHT_DEPTH = 8000;
@@ -191,6 +193,69 @@ export class NativeProjectilePresentation {
     const duration = this.layer.duration(effect);
     return duration === undefined || elapsed - at <= duration + 1e-6;
   }
+  private drawAirBombs(
+    battle: Battle,
+    iso: (x: number, y: number) => Point,
+    airLift: number,
+    shown: Set<string>,
+  ) {
+    if (battle.finished) return;
+    for (const id in battle.traps) {
+      const state = battle.traps[id];
+      if (state.resolved) continue;
+      const trap = buildingIndex(battle).get(Number(id));
+      if (trap?.kind !== 'airbomb' || trap.npc) continue;
+      const name = airBombProjectileName(trap.level);
+      const packPath = nativeProjectilePack(name);
+      const pack = packPath && this.packs.get(packPath);
+      if (!packPath || !pack) continue;
+      const row = pack.projectiles[name];
+      if (!row) continue;
+
+      // The model resolves damage and its blast on the fuse tick. Render only
+      // pending flights, from the same target the model uses for that version.
+      const target = state.impact ?? unitIndex(battle).get(state.targetId) ?? state;
+      const flight = nativeProjectileFlight(
+        row,
+        {
+          fromX: state.x,
+          fromY: state.y,
+          x: target.x,
+          y: target.y,
+          launched: state.activatedAt,
+          impact: state.activatedAt + BUILDINGS.airbomb.trap!.delay,
+          toAir: true,
+        },
+        battle.elapsed,
+        { iso, airLift },
+      );
+      if (!this.layer.visible(flight.x, flight.y, SHOT_MARGIN)) continue;
+      const art = nativeProjectilePoses(pack, row, flight, battle.elapsed, state.activatedAt);
+      const key = `airbomb:${id}`;
+      if (art.poses.length)
+        shown.add(
+          this.draw(
+            key,
+            nativePackPrefix(packPath, art.scene),
+            art.poses,
+            flight.x,
+            flight.y,
+            FLIGHT_DEPTH,
+          ),
+        );
+      if (art.shadow?.poses.length)
+        shown.add(
+          this.draw(
+            `${key}:shadow`,
+            nativePackPrefix(packPath, art.shadow.scene),
+            art.shadow.poses,
+            flight.ground.x,
+            flight.ground.y,
+            SHADOW_DEPTH,
+          ),
+        );
+    }
+  }
   render(
     battle: Battle | null,
     reduced: boolean,
@@ -214,6 +279,7 @@ export class NativeProjectilePresentation {
       this.layer.end();
       return covered;
     }
+    this.drawAirBombs(battle, iso, airLift, shown);
     for (const event of garrisonBowlerImpactEvents(battle, iso, elapsed, (name) =>
       this.layer.duration(name),
     ))

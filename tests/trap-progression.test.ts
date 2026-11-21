@@ -12,10 +12,22 @@ import {
   type TroopKind,
 } from '../src/game/data';
 import { GameModel, makeBuilding, type Unit } from '../src/game/model';
+import { airBombProjectileName, nativeProjectilePack } from '../src/game/native-projectile-poses';
 import { initialNativeState } from '../src/game/native-troops';
 import { validateSave } from '../src/game/save';
 import { REPLAY_VERSION, compatibleReplayVersion, replayBattle } from '../src/game/replay';
 import { stepTraps } from '../src/game/traps';
+
+it('resolves every Air Bomb level to the pinned flight variant', () => {
+  const variants = [1, 1, 3, 3, 5, 5, 6, 6, 8, 8, 11, 11, 13];
+  for (const [index, variant] of variants.entries()) {
+    const name = airBombProjectileName(index + 1);
+    const suffix = variant === 1 ? '' : `_lvl${variant}`;
+    const pack = variant === 1 ? 'airtrapballoon' : `airtrapballoon-lvl${variant}`;
+    expect(name).toBe(`AirTrapBalloon${suffix}`);
+    expect(nativeProjectilePack(name)).toBe(`assets/projectiles-native/${pack}/graph.json`);
+  }
+});
 
 const expected = {
   bomb: {
