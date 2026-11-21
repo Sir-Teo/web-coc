@@ -68,7 +68,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 289;
+export const REPLAY_VERSION = 290;
 const ELECTRO_SURGERY_CARGO_VERSION = 286;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
@@ -482,6 +482,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 286 ||
   version === 287 ||
   version === 288 ||
+  version === 289 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -758,6 +759,9 @@ export function replayBattle(setup: ReplaySetup, version = REPLAY_VERSION): Batt
       : {}),
     ...(version >= 264 && campaignEagle && s.heroes?.length
       ? { nativeEagleHeroHousing: true as const }
+      : {}),
+    ...(version >= 290 && (s.army.wallwrecker > 0 || s.army.loglauncher > 0)
+      ? { nativeSiegeWallDamageOnly: true as const }
       : {}),
     ...(version >= 263 && s.spells.jump > 0 ? { nativeJumpWallBreakerTargets: true as const } : {}),
     ...(version >= 262 && s.spells.jump > 0 && TROOP_KEYS.some((kind) => isSiege(kind) && s.army[kind] > 0)

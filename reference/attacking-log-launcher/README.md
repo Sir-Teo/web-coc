@@ -65,3 +65,12 @@ are excluded. Old event-log sounds remain in place for version 223 and earlier.
 Focused model and Web Audio browser checks cover reconstruction, playback rate,
 read-only sampling and historical controls. This audio repair changes no combat
 state or replay version.
+
+## Recording version 290
+
+Since version 290, the Log Launcher and Wall Wrecker honor their retained
+`PreferredTargetNoTargeting=TRUE` when acquiring a target after the Town Hall
+falls. Their Wall multipliers still apply to hits on blocking walls. A Wall
+Breaker can still seek a breach. The fallback uses Web CoC's ordinary building
+selection. Original fallback ordering is unverified. Recordings through
+version 289 retain their old wall preference.

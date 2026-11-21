@@ -588,14 +588,14 @@ function chooseTarget(ctx: NativeTroopContext, u: Unit, base: NativeUnitStats) {
   const battle = ctx.battle;
   const angry = (u.native?.angryUntil ?? 0) > battle.elapsed + 1e-9 && base.heal <= 0;
   const s = angry ? { ...base, preferredClass: 'Defense', preferredBuilding: '' } : base;
-  if (
-    isSiege(u.kind) &&
-    text(nativeRow('characters', s.name, s.level), 'PreferredMovementTarget') === 'Town Hall'
-  ) {
+  const siegeRow = isSiege(u.kind) ? nativeRow('characters', s.name, s.level) : undefined;
+  if (siegeRow && text(siegeRow, 'PreferredMovementTarget') === 'Town Hall') {
     const hall = ctx.buildings.find((b) => b.kind === 'townhall' && b.hp > 0);
     if (hall) return hall;
   }
-  if (s.preferredClass === 'Wall') {
+  const wallDamageOnly =
+    battle.nativeSiegeWallDamageOnly && siegeRow && flag(siegeRow, 'PreferredTargetNoTargeting');
+  if (s.preferredClass === 'Wall' && !wallDamageOnly) {
     const ignoresJumpWalls =
       battle.nativeJumpWallBreakerTargets &&
       (u.kind === 'wallbreaker' || u.kind === 'superwallbreaker');

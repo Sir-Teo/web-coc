@@ -964,6 +964,8 @@ export interface Battle {
   nativeJumpSiegeImmunity?: true;
   /** Version 263: Wall Breakers choose breaches on routes opened by Jump. */
   nativeJumpWallBreakerTargets?: true;
+  /** Version 290: Siege wall bonuses do not make walls preferred movement targets. */
+  nativeSiegeWallDamageOnly?: true;
   /** Version 264: campaign Eagle Artillery counts each deployed roster hero once. */
   nativeEagleHeroHousing?: true;
   /** Version 265: recalled troops keep their campaign Eagle deployment weight. */
