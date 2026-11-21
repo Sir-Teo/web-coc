@@ -51,3 +51,21 @@ The starter's building counts and levels are checked against the progression tab
 Unit coverage checks every supported troop and spell threshold, upgrade completion, first construction, research, atomic preset/repeat rejection, existing prepared units, starter legality, and opening-raid viability. Browser coverage walks the phone Barracks upgrade through reload and completes all three factory levels. The Chromium regression suite, selected WebKit checks, and production/offline checks cover the surrounding experience.
 
 The subsequent [Healer, Dragon and P.E.K.K.A expansion](LATE-TROOPS.md) extends this sequence through Barracks 10, for ten troops and three spells. Later troops, later spells, the complete building catalog, exact live-game economic values, and networked village progression remain unfinished. The local starter is a playable early village, not a recreation of the official tutorial or its initial economy.
+
+## Training and Research explanations
+
+A comparison against the pinned roster found matching production building and
+level for 40 trainable troops outside the Super Troop system and all 18
+playable spells. Laboratory level, cost and duration matched 310 supported
+troop research destinations and 114 spell research destinations.
+
+Army, preparation, and rejected research now name the same completed
+facility. Earthquake requires Dark Spell Factory level 2, and the pinned
+destination row for Earthquake level 2 requires Laboratory level 6,
+6,000 Dark Elixir and 12 hours. The factory upgrade leaves Earthquake locked
+while it runs. Super Troop cards explain which original troop to research
+instead of offering a separate research upgrade. These are Web CoC labels.
+The retained rows establish requirements, while the original wording and
+panel arrangement remain unverified.
+
+[Pinned roster and destination-row conventions](../reference/troops/README.md)

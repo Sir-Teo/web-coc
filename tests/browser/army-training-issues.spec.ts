@@ -89,3 +89,43 @@ for (const width of [390, 1440])
     await expect(wizard).toHaveText('+ Add');
     expect(errors).toEqual([]);
   });
+
+test('Army and Research agree on the completed dark facility and Super Troop research', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 568, height: 320 });
+  await page.goto('/?lazyart');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  await page.locator('[data-action="skip-tutorial"]').click();
+  const laboratory = await page.evaluate(async () => {
+    const { model, scene } = window.__game;
+    const { makeBuilding } = await import('/src/game/model.ts');
+    const lab = makeBuilding(model.state.nextId++, 'laboratory', 27, 27, 6);
+    model.state.buildings.push(lab, makeBuilding(model.state.nextId++, 'darkspellfactory', 31, 27));
+    scene.paused = true;
+    model.changed();
+    return lab.id;
+  });
+  await page.locator('.train-add').click();
+  await page.locator('#army-search').fill('Earthquake');
+  const brew = page.locator('[data-action="brew:earthquake"]');
+  await expect(brew).toBeDisabled();
+  await expect(brew).toHaveText('Dark Spell Factory 2');
+  await expect(brew).toHaveAttribute(
+    'title',
+    'Earthquake Spell requires a completed level 2 Dark Spell Factory.',
+  );
+  await page.locator('[data-action="close-drawer"]').click();
+  await page.evaluate((id) => {
+    const model = window.__game.model;
+    model.selected = id;
+    model.changed();
+  }, laboratory);
+  await page.locator('.context-actions [data-action="research"]').click();
+  const earthquake = page.locator('[data-action="research-start:earthquake"]');
+  await expect(earthquake).toBeDisabled();
+  await expect(earthquake).toHaveText('Requires Dark Spell Factory 2');
+  const superMinion = page.locator('[data-research-kind="superminion"]');
+  await expect(superMinion).toContainText('Research Minion to upgrade this Super Troop.');
+  await expect(superMinion.getByRole('button')).toHaveCount(0);
+});

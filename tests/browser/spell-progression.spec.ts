@@ -114,7 +114,7 @@ for (const viewport of [
     });
     await page.locator('.train-add').click();
     for (const [kind, name, expected] of [
-      ['lightning', 'Lightning Spell', ['270', '0.1s', 'Town Halls']],
+      ['lightning', 'Lightning Spell', ['270', '0.1 s', 'Town Halls']],
       ['heal', 'Healing Spell', ['1,435', '789.25', '41 · every 0.3s']],
       ['rage', 'Rage Spell', ['+170%', '+3.5 tiles/s', '18s', '50%']],
     ] as const) {

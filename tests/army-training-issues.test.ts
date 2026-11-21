@@ -145,3 +145,45 @@ it('reports each housing shortfall and preserves the active army on refusal', ()
   m.loadArmyPreset(0);
   expect(m.state).toEqual(before);
 });
+
+it('reports the completed dark facility for preparation and research until its upgrade finishes', () => {
+  const m = village();
+  const factory = makeBuilding(5, 'darkspellfactory', 18, 18, 1);
+  m.state.buildings.push(
+    factory,
+    makeBuilding(6, 'laboratory', 26, 18, 6),
+    makeBuilding(7, 'spellfactory', 30, 18, 3),
+    makeBuilding(8, 'builder', 33, 18),
+  );
+  m.state.elixir = 1000000;
+  m.upgrade(factory.id);
+  expect(factory.upgradeEnd).toBeGreaterThan(m.clock);
+  const messages: string[] = [];
+  const darkBefore = m.state.dark;
+  m.onToast = (message) => messages.push(message);
+  const spellIssue = 'Earthquake Spell requires a completed level 2 Dark Spell Factory.';
+  expect(m.spellTrainingIssue('earthquake')).toEqual({
+    label: 'Dark Spell Factory 2',
+    message: spellIssue,
+  });
+  m.brew('earthquake');
+  m.research('earthquake');
+  m.research('hogrider');
+  expect(messages).toEqual([
+    spellIssue,
+    spellIssue,
+    'Hog Rider requires a completed level 2 Dark Barracks.',
+  ]);
+  expect(m.state.spells.earthquake).toBe(0);
+  expect(m.state.dark).toBe(darkBefore);
+  expect(m.state.research).toBeUndefined();
+  const prepared = { ...emptySpells(), earthquake: 1 };
+  expect(m.armyPreparationIssue(emptyArmy(), prepared)).toBe(spellIssue);
+  m.tick(factory.upgradeEnd!);
+  expect(m.spellTrainingIssue('earthquake')).toBeNull();
+  m.brew('earthquake');
+  expect(m.state.spells.earthquake).toBe(1);
+  m.research('earthquake');
+  expect(m.state.research).toEqual({ kind: 'earthquake', end: m.clock + 43200000 });
+  expect(m.state.dark).toBe(darkBefore - 6000);
+});

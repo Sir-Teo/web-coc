@@ -5069,10 +5069,11 @@ export class HUD {
     const spellTile = (k: SpellKind) => {
       const level = m.armySpellLevel(k),
         d = m.spellStats(k, level);
-      const unlocked = m.spellUnlocked(k);
+      const issue = m.spellTrainingIssue(k);
+      const unlocked = !issue;
       const room = m.battle || !unlocked ? 0 : unitsThatFit(spellRoomSpace, SPELLS[k].space);
       const blocked = !unlocked || d.space > spellSpaceLeft;
-      return `<article class="shop-tile army-tile ${unlocked ? '' : 'army-locked'}" data-army-category="spells"><div class="shop-tile-art"${blocked || !spellCapacity ? '' : ` data-add="brew:${k}" data-repeat`}><img src="${hudAsset(k)}" alt="" draggable="false"></div><h3>${d.name.replace(' Spell', '')} ${level > m.spellLevel(k) ? `<small class="potion-level" title="Power Potion">★${level}</small>` : `<small>★${level}</small>`}</h3>${button(`spell-info:${k}`, `${icon('Info', 13)} ${d.role}`, 'troop-info-button', `aria-label="About ${d.name}"`)}<small class="shop-count">${d.effect}</small>${button(`brew:${k}`, unlocked ? '+ Add' : `${icon('LockKeyhole', 13)} ${spellFactory(k) === 'darkspellfactory' ? 'Dark ' : ''}Factory ${SPELL_UNLOCK[k]}`, `game-btn ${blocked || !spellCapacity ? 'stone' : 'green'} shop-buy`, `${blocked || !spellCapacity ? 'disabled' : ''} data-repeat title="Hold to keep adding"`)}${fill(`brew-fill:${k}`, room, `Fill: add ${room} ${d.name}, ${room * d.space} spell space${room * d.space === 1 ? '' : 's'}`)}<span class="army-bulk">${button(`remove-spell:${k}`, `${icon('Minus', 12)} Remove`, 'army-remove', `aria-label="Remove one ${d.name}" data-repeat ${m.state.spells[k] ? '' : 'disabled'}`)}${button(`remove-all-spell:${k}`, 'All', 'army-remove', `aria-label="Remove every ${d.name}" ${m.state.spells[k] > 1 ? '' : 'disabled'}`)}</span><small class="shop-note"><b data-army-count="spell:${k}">${m.state.spells[k]}</b> ready · ${d.space} spell space${d.space === 1 ? '' : 's'}</small></article>`;
+      return `<article class="shop-tile army-tile ${unlocked ? '' : 'army-locked'}" data-army-category="spells"><div class="shop-tile-art"${blocked || !spellCapacity ? '' : ` data-add="brew:${k}" data-repeat`}><img src="${hudAsset(k)}" alt="" draggable="false"></div><h3>${d.name.replace(' Spell', '')} ${level > m.spellLevel(k) ? `<small class="potion-level" title="Power Potion">★${level}</small>` : `<small>★${level}</small>`}</h3>${button(`spell-info:${k}`, `${icon('Info', 13)} ${d.role}`, 'troop-info-button', `aria-label="About ${d.name}"`)}<small class="shop-count">${d.effect}</small>${button(`brew:${k}`, issue ? `${icon('LockKeyhole', 13)} ${html(issue.label)}` : '+ Add', `game-btn ${blocked || !spellCapacity ? 'stone' : 'green'} shop-buy`, `${blocked || !spellCapacity ? 'disabled' : ''} data-repeat title="${html(issue?.message ?? 'Hold to keep adding')}"`)}${fill(`brew-fill:${k}`, room, `Fill: add ${room} ${d.name}, ${room * d.space} spell space${room * d.space === 1 ? '' : 's'}`)}<span class="army-bulk">${button(`remove-spell:${k}`, `${icon('Minus', 12)} Remove`, 'army-remove', `aria-label="Remove one ${d.name}" data-repeat ${m.state.spells[k] ? '' : 'disabled'}`)}${button(`remove-all-spell:${k}`, 'All', 'army-remove', `aria-label="Remove every ${d.name}" ${m.state.spells[k] > 1 ? '' : 'disabled'}`)}</span><small class="shop-note"><b data-army-count="spell:${k}">${m.state.spells[k]}</b> ready · ${d.space} spell space${d.space === 1 ? '' : 's'}</small></article>`;
     };
     const troopTiles = TROOP_ORDER.filter((k) => this.armyShown(k, false)).map(troopTile);
     const spellTiles = SPELL_ORDER.filter((k) => this.armyShown(k, true)).map(spellTile);
@@ -5813,21 +5814,24 @@ export class HUD {
     const m = this.model,
       spell = isSpellKind(kind);
     const name = spell ? SPELLS[kind].name : TROOPS[kind].name;
+    const original = spell ? undefined : superOriginal(kind);
+    if (original)
+      return `<article class="training-card" data-research-kind="${kind}"><span class="role-tag">SUPER TROOP</span><div class="training-art"><img src="${hudAsset(kind)}" alt=""></div><h3>${name}</h3><p>Research ${TROOPS[original].name} to upgrade this Super Troop.</p></article>`;
     const level = m.researchLevel(kind),
       maximum = isSpellKind(kind) ? maxSpellLevelFor(kind) : maxTroopLevel(kind);
     const max = level >= maximum,
       nextLevel = Math.min(level + 1, maximum);
-    const unlocked = spell ? m.spellUnlocked(kind) : m.troopUnlocked(kind);
+    const unlockIssue = spell ? m.spellTrainingIssue(kind) : m.troopTrainingIssue(kind);
     const requiredLab = m.researchLaboratory(kind);
-    const gated = !unlocked || !m.laboratory || m.laboratory.level < requiredLab;
+    const gated = !!unlockIssue || !m.laboratory || m.laboratory.level < requiredLab;
     const researchResource = m.researchResource(kind);
     const cost = m.researchCost(kind);
     const short = m.state[researchResource] < cost;
     const disabled = max || gated || !!m.state.research || (short && cost > m.resourceCap(researchResource));
     const label = max
       ? '★ Fully researched'
-      : !unlocked
-        ? `Requires ${spell ? spellUnlockLabel(kind) : `${BUILDINGS[troopFacility(kind)].name} ${TROOP_UNLOCK[kind]}`}`
+      : unlockIssue
+        ? `Requires ${html(unlockIssue.label)}`
         : gated
           ? `Requires laboratory ${requiredLab}`
           : `Research ${researchResource === 'dark' ? 'Dark elixir' : elixir} ${n(cost)}`;
@@ -5866,14 +5870,7 @@ export class HUD {
               damageNumber(d.heal! / d.rate),
               damageNumber(next.heal! / next.rate),
             ]
-          : kind === 'superdragon'
-            ? [
-                'Swords',
-                'Damage/flame',
-                damageNumber(superDragonBurstStats(m.troopLevel(kind)).damage),
-                damageNumber(superDragonBurstStats(nextLevel).damage),
-              ]
-            : ['Swords', 'Damage', damageNumber(d.damage), damageNumber(next.damage)],
+          : ['Swords', 'Damage', damageNumber(d.damage), damageNumber(next.damage)],
       ];
     }
     return `<article class="training-card" data-research-kind="${kind}"><span class="role-tag">LEVEL ${level} OF ${maximum}${max ? ' · MAX' : ` → ${level + 1}`}</span><div class="training-art"><img src="${hudAsset(kind)}" alt=""></div><h3>${name.replace(' Spell', '')}</h3><div class="research-stats">${rows.map(([glyph, label, value, next]) => `<span>${icon(glyph, 16)} ${label} <b>${value}${max || value === next ? '' : ` <em>→ ${next}</em>`}</b></span>`).join('')}</div>${button(`research-start:${kind}`, label, 'game-btn ' + (disabled || short ? 'stone' : 'green'), disabled ? 'disabled' : '')}${!max && !gated && m.magicItemCount(spell ? 'hammer-of-spells' : 'hammer-of-fighting') && m.state.research?.kind !== kind ? button(`hammer-research:${kind}`, `${icon('Hammer', 15)} Hammer`, 'game-btn blue', `aria-label="Upgrade ${name} instantly with the ${spell ? 'Hammer of Spells' : 'Hammer of Fighting'}"`) : ''}<small>${max ? 'Ready for the toughest battles' : `${time(m.researchSeconds(kind))} research · permanent upgrade`}</small></article>`;

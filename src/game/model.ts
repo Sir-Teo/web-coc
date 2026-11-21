@@ -2427,9 +2427,8 @@ export class GameModel {
     const spell = isSpellKind(kind);
     if (!spell && superOriginal(kind))
       return 'Research the original troop to upgrade its super variant.';
-    const name = spell ? SPELLS[kind].name : TROOPS[kind].name;
-    if (spell ? !this.spellUnlocked(kind) : !this.troopUnlocked(kind))
-      return `Unlock ${name} at ${spell ? `Spell Factory level ${SPELL_UNLOCK[kind]}` : `Barracks level ${TROOP_UNLOCK[kind]}`} first.`;
+    const unlock = spell ? this.spellTrainingIssue(kind) : this.troopTrainingIssue(kind);
+    if (unlock) return unlock.message;
     if (this.researchLevel(kind) >= (spell ? maxSpellLevelFor(kind) : maxTroopLevel(kind)))
       return `This ${spell ? 'spell' : 'troop'} is at its maximum level.`;
     const requiredLab = this.researchLaboratory(kind);
@@ -4236,6 +4235,15 @@ export class GameModel {
   troopUnlocked(kind: TroopKind) {
     return this.troopTrainingIssue(kind) === null;
   }
+  spellTrainingIssue(kind: SpellKind): { label: string; message: string } | null {
+    if (this.spellUnlocked(kind)) return null;
+    const level = SPELL_UNLOCK[kind];
+    const name = BUILDINGS[spellFactory(kind)].name;
+    return {
+      label: `${name} ${level}`,
+      message: `${SPELLS[kind].name} requires a completed level ${level} ${name}.`,
+    };
+  }
   spellUnlocked(kind: SpellKind) {
     return facilityLevel(this.state.buildings, spellFactory(kind)) >= SPELL_UNLOCK[kind];
   }
@@ -4277,10 +4285,8 @@ export class GameModel {
       count > 5
     )
       return;
-    if (!this.spellUnlocked(kind))
-      return this.notify(
-        `${SPELLS[kind].name} requires a completed level ${SPELL_UNLOCK[kind]} ${BUILDINGS[spellFactory(kind)].name}.`,
-      );
+    const issue = this.spellTrainingIssue(kind);
+    if (issue) return this.notify(issue.message);
     if (
       this.spellHousing + this.queuedSpellHousing + SPELLS[kind].space * count >
       this.spellCapacity
@@ -4387,7 +4393,7 @@ export class GameModel {
       (k) => spells[k] > this.state.spells[k] && !this.spellUnlocked(k),
     );
     if (spell)
-      return `${SPELLS[spell].name} requires a completed level ${SPELL_UNLOCK[spell]} ${BUILDINGS[spellFactory(spell)].name}.`;
+      return this.spellTrainingIssue(spell)!.message;
     return null;
   }
   private prepareArmy(army: Army, spells: SpellBook) {
