@@ -1,3 +1,4 @@
 /* Keep the compact overrides after the base rules in the same production stylesheet. */
 @import './style.css';
+@import './ui/rea-fidelity.css';
 @import './ui/compact-hud.css';

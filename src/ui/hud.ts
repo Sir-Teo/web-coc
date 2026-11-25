@@ -365,8 +365,17 @@ const ACHIEVEMENT_ICONS: Record<string, string> = {
   seasonal_defense: 'Anvil',
   activate_super_licence: 'Sparkles',
 };
-const gearImage = (kind: EquipmentKind | OreKind, cls = '') =>
-  `<img class="${cls}" src="/assets/equipment/${kind}-v1.webp" alt="">`;
+const EQUIPMENT_NATIVE_SLUG: Partial<Record<EquipmentKind, string>> = {
+  puppet: 'barbarian-puppet',
+  vial: 'rage-vial',
+  boots: 'earthquake-boots',
+};
+const gearImage = (kind: EquipmentKind | OreKind, cls = '') => {
+  const nativeSlug = EQUIPMENT_NATIVE_SLUG[kind as EquipmentKind];
+  return nativeSlug
+    ? `<img class="${cls}" src="/assets/catalog-native/roster/equipment-${nativeSlug}.png" alt="">`
+    : `<img class="${cls}" src="/assets/equipment/${kind}-v1.webp" alt="">`;
+};
 /** Matching hero portraits; the legacy King alias uses the same approved art. */
 const HERO_PORTRAIT: Record<HeroKind, string> = {
   king: heroPortraitImage('king'),
@@ -381,12 +390,12 @@ const heroPortrait = (kind: HeroKind) => HERO_PORTRAIT[kind];
 const PET_PORTRAIT: Record<PetKind, string> = {
   lassi: '/assets/catalog-native/roster/pet-lassi.png',
   yak: '/assets/catalog-native/roster/pet-mighty-yak.png',
-  owl: '/assets/catalog-native/roster/equipment-mp-trap-shield.png',
+  owl: '/assets/catalog-native/roster/pet-electro-owl.png',
   unicorn: '/assets/catalog-native/roster/pet-unicorn.png',
   frosty: '/assets/catalog-native/roster/pet-frosty.png',
   diggy: '/assets/catalog-native/roster/pet-diggy.png',
   lizard: '/assets/catalog-native/roster/pet-poison-lizard.png',
-  phoenix: '/assets/catalog-native/roster/equipment-unused17.png',
+  phoenix: '/assets/catalog-native/roster/pet-phoenix.png',
   fox: '/assets/catalog-native/roster/pet-spirit-fox.png',
   jelly: '/assets/catalog-native/roster/pet-angry-jelly.png',
   sneezy: '/assets/catalog-native/roster/pet-sneezy.png',
@@ -5802,7 +5811,7 @@ export class HUD {
         rows.push(['Combined blast damage vs walls', damageNumber(attackDamage + deathDamage)]);
       }
     }
-    return `<div class="modal-body troop-info-body"><div class="troop-info-hero"><img src="${asset(kind)}" alt="${d.name}"><div><span class="eyebrow">${direct ? d.role : 'SUMMONER'} · LEVEL ${displayLevel}</span><h2>${d.name}</h2><p>${description}</p></div></div>${boostNote}<dl class="troop-stats">${rows.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl><p class="troop-tactic">${icon('Info', 20)}<span>${tactic}</span></p>${button('army', `${icon('Swords', 18)} Train troops`, 'game-btn green')}</div>`;
+    return `<div class="modal-body troop-info-body"><div class="troop-info-hero"><img src="${hudAsset(kind)}" alt="${d.name}"><div><span class="eyebrow">${direct ? d.role : 'SUMMONER'} · LEVEL ${displayLevel}</span><h2>${d.name}</h2><p>${description}</p></div></div>${boostNote}<dl class="troop-stats">${rows.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl><p class="troop-tactic">${icon('Info', 20)}<span>${tactic}</span></p>${button('army', `${icon('Swords', 18)} Train troops`, 'game-btn green')}</div>`;
   }
   private spellInfo() {
     const kind = this.inspectedSpell,
@@ -6518,7 +6527,7 @@ export class HUD {
     return `<h3 class="achievement-heading">Achievements${ready ? ` <small>${ready} ready</small>` : ''}</h3><div class="quest-list">${cards.join('')}</div><p class="achievement-note">${UNAVAILABLE_ACHIEVEMENTS.length} more of the original's achievements need clans, wars, Clan Games, Season Challenges, ranked leagues, defenses or a Supercell ID, which this offline village does not have.</p>`;
   }
   private help() {
-    return `<div class="modal-body help-body"><div class="guide-hero"><img src="${asset('swordsman')}" alt="Your Barbarian guide"><div><h2>Good to see you, Chief!</h2><p>The builders are ready, the gold is flowing, and your troops are itching for an adventure. Let's make this village a kingdom.</p></div></div><div class="help-steps"><article><b>1</b><div><h3>Build and rearrange</h3><p>Open the Shop and drag a building straight onto the village. Use Edit mode to drag anything already built — with undo, redo and three saved layouts.</p></div></article><article><b>2</b><div><h3>Grow past the Town Hall</h3><p>Buildings have distinct Town Hall requirements. Open Progression from the Army drawer to see the level caps and unlocks for each tier. Collectors keep working while you're away, up to 8 hours.</p></div></article><article><b>3</b><div><h3>Raise an army. Raid the valley.</h3><p>Prepare troops and spells instantly for free, save Quick armies, then attack. Practice against your own village from Army or the campaign map, and review your attacks in the Battle log. Campaign attacks have no time limit or trophy changes. Ladder matches, this game's own stand-in for multiplayer, pit you against a native layout for trophies: 30 seconds to scout, three minutes to attack, no loot. Each village has a finite supply of loot; any loot beyond your storage capacity is lost. Practice gives you 30 seconds to scout and three minutes to attack. Balloons fly over walls; Archer Towers and Air Defenses can hit them. Send Giants first, Wall Breakers to open a breach, then Goblins to steal resources. Mortars cannot fire within 4 tiles; moving troops can dodge their shells. Wizard Towers splash one troop layer at a time. Buy hidden traps from the Shop, place them in likely approaches, and test them in Practice. Traps are armed again for each new attack.</p></div></article></div><div class="help-controls"><span>Drag <b>Move camera</b></span><span>Hold <b>Stream troops</b></span><span>Hold &amp; drag <b>Spread troops</b></span><span>Double-tap <b>Deploy five</b></span><span>Esc <b>Close / cancel</b></span><span>M <b>Map cursor · Enter acts</b></span><span>B <b>Building list</b></span></div>${button('tutorial', `Let's build ${icon('ArrowRight', 19)}`, 'game-btn green start-btn')}</div>`;
+    return `<div class="modal-body help-body"><div class="guide-hero"><img src="${hudAsset('swordsman')}" alt="Your Barbarian guide"><div><h2>Good to see you, Chief!</h2><p>The builders are ready, the gold is flowing, and your troops are itching for an adventure. Let's make this village a kingdom.</p></div></div><div class="help-steps"><article><b>1</b><div><h3>Build and rearrange</h3><p>Open the Shop and drag a building straight onto the village. Use Edit mode to drag anything already built — with undo, redo and three saved layouts.</p></div></article><article><b>2</b><div><h3>Grow past the Town Hall</h3><p>Buildings have distinct Town Hall requirements. Open Progression from the Army drawer to see the level caps and unlocks for each tier. Collectors keep working while you're away, up to 8 hours.</p></div></article><article><b>3</b><div><h3>Raise an army. Raid the valley.</h3><p>Prepare troops and spells instantly for free, save Quick armies, then attack. Practice against your own village from Army or the campaign map, and review your attacks in the Battle log. Campaign attacks have no time limit or trophy changes. Ladder matches, this game's own stand-in for multiplayer, pit you against a native layout for trophies: 30 seconds to scout, three minutes to attack, no loot. Each village has a finite supply of loot; any loot beyond your storage capacity is lost. Practice gives you 30 seconds to scout and three minutes to attack. Balloons fly over walls; Archer Towers and Air Defenses can hit them. Send Giants first, Wall Breakers to open a breach, then Goblins to steal resources. Mortars cannot fire within 4 tiles; moving troops can dodge their shells. Wizard Towers splash one troop layer at a time. Buy hidden traps from the Shop, place them in likely approaches, and test them in Practice. Traps are armed again for each new attack.</p></div></article></div><div class="help-controls"><span>Drag <b>Move camera</b></span><span>Hold <b>Stream troops</b></span><span>Hold &amp; drag <b>Spread troops</b></span><span>Double-tap <b>Deploy five</b></span><span>Esc <b>Close / cancel</b></span><span>M <b>Map cursor · Enter acts</b></span><span>B <b>Building list</b></span></div>${button('tutorial', `Let's build ${icon('ArrowRight', 19)}`, 'game-btn green start-btn')}</div>`;
   }
   private nextGoblinScout() {
     const b = this.model.battle;
@@ -6541,7 +6550,8 @@ export class HUD {
     const b = this.model.battle!,
       r = b.result!,
       next = this.nextGoblinScout();
-    return `<div class="modal-backdrop result-backdrop"><section class="result-modal" role="dialog" aria-modal="true" aria-labelledby="result-title"><div class="result-summary"><div class="result-rays"></div><span class="result-eyebrow">BATTLE COMPLETE</span><h1 id="result-title" tabindex="-1">${b.practice ? 'Practice complete' : r.stars ? 'Victory!' : 'A brave attempt'}</h1><div class="result-stars" role="img" aria-label="${starCountLabel(r.stars)}">${[0, 1, 2].map((i) => `<span class="${i < r.stars ? 'earned' : ''}">★</span>`).join('')}</div><p>${r.destruction}% destruction <span>·</span> ${b.practice ? 'Your village' : campaignStage(b.index, b.catalog).name}</p>${
+    const outcomeClass = b.practice ? 'result-practice' : r.stars ? 'result-victory' : 'result-defeat';
+    return `<div class="modal-backdrop result-backdrop"><section class="result-modal ${outcomeClass}" role="dialog" aria-modal="true" aria-labelledby="result-title"><div class="result-summary"><div class="result-rays"></div><span class="result-eyebrow">BATTLE COMPLETE</span><h1 id="result-title" tabindex="-1">${b.practice ? 'Practice complete' : r.stars ? 'Victory!' : 'A brave attempt'}</h1><div class="result-stars" role="img" aria-label="${starCountLabel(r.stars)}">${[0, 1, 2].map((i) => `<span class="${i < r.stars ? 'earned' : ''}">★</span>`).join('')}</div><p>${r.destruction}% destruction <span>·</span> ${b.practice ? 'Your village' : campaignStage(b.index, b.catalog).name}</p>${
       b.practice
         ? '<p class="practice-result-note">Your village, troops and spells are unchanged.<br>Rearrange your defenses and try a different approach.</p>'
         : b.ladder

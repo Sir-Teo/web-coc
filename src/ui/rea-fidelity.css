@@ -1,0 +1,1164 @@
+/* ============================================================================
+   Clash of Clans 18.400.21 REA Visual & UX Fidelity Layer
+   Elevates HUD chrome, outlined typography, 3D glossy bevels, resource meters,
+   unit deployment cards, drawers, modals, form controls, battle HUD, results,
+   and replay transport while preserving every responsive & touch-target box.
+   Note: Never use backdrop-filter here (mobile GPU canvas re-filter cost).
+   ============================================================================ */
+
+:root {
+  --coc-outline-sm:
+    -1px -1px 0 #1d140a,
+    1px -1px 0 #1d140a,
+    -1px 1px 0 #1d140a,
+    1px 1px 0 #1d140a,
+    0 2px 0 #1d140a;
+  --coc-outline:
+    -1.5px -1.5px 0 #1a1208,
+    1.5px -1.5px 0 #1a1208,
+    -1.5px 1.5px 0 #1a1208,
+    1.5px 1.5px 0 #1a1208,
+    0 3px 0 #1a1208,
+    0 3px 8px #0f170ca8;
+  --coc-outline-lg:
+    -2px -2px 0 #1a1107,
+    2px -2px 0 #1a1107,
+    -2px 2px 0 #1a1107,
+    2px 2px 0 #1a1107,
+    0 4px 0 #1a1107,
+    0 5px 12px #0c140ac0;
+  --coc-gold-bright: #ffe46e;
+  --coc-wood-dark: #3f301e;
+  --coc-wood-deep: #2b2013;
+  --coc-parchment-top: #fff9e6;
+  --coc-parchment-bot: #e8d8b0;
+}
+
+/* Crisp keyboard focus rings; suppress raw browser focus boxes on programmatic title focus. */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid #ffe478;
+  outline-offset: 3px;
+}
+
+.drawer-head h2:focus:not(:focus-visible),
+.modal-header h1:focus:not(:focus-visible),
+.result-modal h1:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ============================================================================
+   Loading Splash
+   ============================================================================ */
+#loading {
+  background: radial-gradient(ellipse at 50% 38%, #5e8a41 0%, #264833 58%, #13281d 100%);
+}
+
+.loading-emblem {
+  color: #ffe066;
+  text-shadow:
+    0 5px 0 #7a5214,
+    0 0 28px #ffd15c66;
+}
+
+#loading h1 {
+  text-shadow: var(--coc-outline-lg);
+}
+
+#loading h1 span {
+  color: #ffe07d;
+}
+
+.load-track {
+  background: #172a1e;
+  border: 2px solid #c5b46e;
+  box-shadow:
+    inset 0 2px 4px #09130cb0,
+    0 3px 8px #0b180f80;
+}
+
+.load-track > div {
+  background: linear-gradient(180deg, #d7ff82 0%, #86d63b 48%, #589e20 100%);
+  box-shadow: inset 0 1px 0 #f4ffd4cc;
+}
+
+/* ============================================================================
+   Top-Left Player HUD & XP Shield
+   ============================================================================ */
+.player-hud {
+  filter: drop-shadow(0 3px 4px #111c0f88);
+}
+
+.level-shield {
+  background:
+    linear-gradient(to top, transparent var(--xp, 0%), #08214285 var(--xp, 0%)),
+    linear-gradient(135deg, #aef0ff 0%, #48a9eb 38%, #206bb8 78%, #154a8a 100%);
+  box-shadow:
+    inset 0 0 0 5px #c4f2ff,
+    inset 0 -4px 8px #0a2a5488;
+  text-shadow: var(--coc-outline);
+  color: #fff;
+}
+
+.level-shield:before {
+  border-top: 3px solid #eefbffa8;
+  background: linear-gradient(145deg, #ffffff48 0%, #ffffff10 42%, transparent 62%);
+}
+
+.eyebrow {
+  color: #f3f7d8;
+  text-shadow: var(--coc-outline-sm);
+}
+
+.player-name {
+  color: #fffdf2;
+  text-shadow: var(--coc-outline);
+}
+
+.trophy-pill {
+  background: linear-gradient(180deg, #2d3826e0 0%, #1d2619e6 100%);
+  border: 1.5px solid #d4c48866;
+  border-bottom-color: #161d13;
+  box-shadow:
+    inset 0 1px 0 #ffffff24,
+    0 2px 5px #10190d66;
+  font-variant-numeric: tabular-nums;
+  text-shadow: var(--coc-outline-sm);
+}
+
+.trophy-pill svg {
+  color: #ffd859;
+  filter: drop-shadow(0 1px 1px #241806);
+}
+
+.trophy-pill b {
+  color: #fff8de;
+}
+
+.trophy-pill span {
+  color: #e6dfb8;
+}
+
+/* ============================================================================
+   Top-Center Village Status Plaques
+   ============================================================================ */
+.brand {
+  color: #fff4c4;
+  text-shadow: var(--coc-outline);
+}
+
+.brand span {
+  color: #ffd25e;
+}
+
+.status-chips button {
+  background: linear-gradient(180deg, #34442de6 0%, #202b1ceb 100%);
+  border: 1px solid #d9cc9466;
+  box-shadow:
+    inset 0 1px 0 #ffffff29,
+    inset 0 -2px 0 #161f13,
+    0 3px 6px #121c0f5c;
+  color: #fff9e3;
+  font-weight: 800;
+  text-shadow: var(--coc-outline-sm);
+  transition: filter 0.14s ease, transform 0.1s ease;
+}
+
+.status-chips button:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.status-chips svg {
+  color: #ffd978;
+  filter: drop-shadow(0 1px 1px #1d140a);
+}
+
+.status-chips span {
+  color: #e3eccb;
+  font-weight: 700;
+}
+
+/* ============================================================================
+   Top-Right Resource Bars (Gold, Elixir, Dark Elixir, Gems)
+   ============================================================================ */
+.resource-bar {
+  border: 2px solid #453a24;
+  border-bottom-color: #2c2415;
+  background: linear-gradient(180deg, #1b2016eb 0%, #2a3023e6 100%);
+  box-shadow:
+    0 3px 0 #151e1288,
+    0 4px 8px #0d160b44,
+    inset 0 2px 4px #00000088,
+    inset 0 -1px 0 #d9cb9638;
+}
+
+.resource-fill {
+  opacity: 1;
+  background: linear-gradient(180deg, #fff08a 0%, #f5be22 36%, #dc9610 78%, #b97709 100%);
+  box-shadow:
+    inset 0 2px 0 #fff9c499,
+    inset 0 -2px 0 #8a530570;
+}
+
+.elixir .resource-fill {
+  background: linear-gradient(180deg, #ffafff 0%, #e155eb 38%, #bc2ac7 78%, #8f1a9c 100%);
+  box-shadow:
+    inset 0 2px 0 #ffe3ff99,
+    inset 0 -2px 0 #5b0d6975;
+}
+
+.resource-bar.dark .resource-fill {
+  background: linear-gradient(180deg, #a485cc 0%, #63428c 42%, #3f255e 82%, #291640 100%);
+  box-shadow:
+    inset 0 2px 0 #dfc7ff66,
+    inset 0 -2px 0 #170a2680;
+}
+
+.gems .resource-fill {
+  background: linear-gradient(180deg, #b8ff73 0%, #68cf34 40%, #44a621 80%, #2d7d14 100%);
+  box-shadow:
+    inset 0 2px 0 #e9ffc299,
+    inset 0 -2px 0 #1d570b75;
+}
+
+.resource-topline {
+  color: #fff9e3;
+  text-shadow: var(--coc-outline-sm);
+  letter-spacing: 0.45px;
+}
+
+.resource-amount {
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  text-shadow: var(--coc-outline);
+}
+
+.resource-bar > .resource-icon {
+  filter: drop-shadow(0 2px 3px #0c140a99);
+}
+
+.resource-plus {
+  background: linear-gradient(180deg, #c2f578 0%, #76c433 48%, #509c1c 100%);
+  border: 2px solid #2d5414;
+  text-shadow: var(--coc-outline-sm);
+  box-shadow:
+    inset 0 2px 0 #efffc2a8,
+    inset 0 -2px 0 #2a5211,
+    0 2px 4px #121f0e66;
+  transition: filter 0.14s ease, transform 0.1s ease;
+}
+
+.resource-plus:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+/* ============================================================================
+   Left Activity Rail, Right Camera Controls & Collect Button
+   ============================================================================ */
+.square-btn {
+  border: 2px solid #4d3b22;
+  border-bottom-width: 4px;
+  color: #4a371d;
+  background: linear-gradient(180deg, #fffbe6 0%, #f5e6ba 52%, #d8c083 100%);
+  box-shadow:
+    inset 0 2px 0 #ffffffcc,
+    inset 0 -2px 0 #a88d5055,
+    0 4px 7px #141f1066;
+  transition: filter 0.14s ease, transform 0.1s ease;
+}
+
+.square-btn:hover:not(:disabled) {
+  filter: brightness(1.07);
+}
+
+.left-tools .square-btn svg {
+  filter: drop-shadow(0 1px 0 #ffffffa8);
+}
+
+.notification {
+  background: linear-gradient(180deg, #ff7e66 0%, #e03224 58%, #b31c14 100%);
+  border: 2px solid #fff8dc;
+  text-shadow: var(--coc-outline-sm);
+  box-shadow:
+    inset 0 2px 0 #ffb8a888,
+    0 2px 4px #1a090688;
+}
+
+.tool-label {
+  background: linear-gradient(180deg, #4b3924 0%, #2f2316 100%);
+  border: 1px solid #d8be8075;
+  color: #fff6da;
+  text-shadow: 0 1px 1px #170f07;
+  box-shadow: 0 2px 4px #121b0f66;
+}
+
+.camera-tools {
+  border: 2px solid #d4c48870;
+  border-bottom-color: #161f13;
+  background: linear-gradient(180deg, #32422be6 0%, #1f2a1bec 100%);
+  box-shadow:
+    inset 0 1px 0 #ffffff24,
+    0 3px 7px #101b0e66;
+}
+
+.camera-tools button {
+  color: #fff7dc;
+  transition: background 0.14s ease;
+}
+
+.camera-tools button + button {
+  border-top-color: #e7edd438;
+}
+
+.camera-tools button:hover {
+  background: #ffffff24;
+}
+
+.collect-btn {
+  background: linear-gradient(180deg, #374b2fec 0%, #21301cf2 100%);
+  border: 1px solid #e6d5918c;
+  border-bottom: 3px solid #152112;
+  color: #fff8de;
+  text-shadow: var(--coc-outline-sm);
+  box-shadow:
+    inset 0 1px 0 #ffffff2a,
+    0 3px 7px #101b0e66;
+  transition: filter 0.14s ease, transform 0.1s ease;
+}
+
+.collect-btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.village-caption {
+  color: #fffce8;
+  text-shadow: var(--coc-outline-sm);
+}
+
+.village-caption small {
+  color: #edf5d8;
+  text-shadow: var(--coc-outline-sm);
+}
+
+.control-hint {
+  color: #f3f7e3e6;
+  text-shadow: var(--coc-outline-sm);
+}
+
+.shop-btn {
+  background: linear-gradient(180deg, #c2f078 0%, #89c93c 48%, #63a622 100%);
+  border-color: #365c19;
+  border-bottom-color: #294712;
+  box-shadow:
+    inset 0 3px 0 #f2ffcca8,
+    0 5px 10px #14241670;
+  text-shadow: var(--coc-outline);
+}
+
+/* ============================================================================
+   Bottom Army Tray & Battle Deployment Unit Cards
+   ============================================================================ */
+.army-label {
+  color: #fff9e3;
+  text-shadow: var(--coc-outline-sm);
+}
+
+.army-label button {
+  background: linear-gradient(180deg, #32432ce6 0%, #1e2a1bec 100%);
+  border: 0;
+  color: #fff7dc;
+  text-shadow: var(--coc-outline-sm);
+  box-shadow:
+    inset 0 0 0 1px #d9cc9466,
+    0 2px 4px #101a0e55;
+}
+
+.army-label button:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+
+.army-tray {
+  background: linear-gradient(180deg, #3b3e30f5 0%, #24281ff7 100%);
+  border: 2px solid #d4c48a78;
+  border-bottom: 4px solid #181c14;
+  box-shadow:
+    inset 0 2px 0 #ffffff1c,
+    inset 0 -2px 6px #00000044,
+    0 6px 14px #0e180e70;
+}
+
+/* Classic Clash of Clans sky-blue troop card stage */
+.troop-card {
+  border: 2px solid #f7ecc6;
+  border-bottom: 4px solid #3c4857;
+  background: linear-gradient(180deg, #a7dcff 0%, #5da5e0 52%, #336da6 100%);
+  box-shadow:
+    inset 0 2px 0 #e6f7ffaa,
+    0 2px 5px #0e151066;
+  transition: transform 0.14s ease, box-shadow 0.14s ease, filter 0.14s ease;
+}
+
+.troop-card:hover:not(:disabled):not(.empty) {
+  filter: brightness(1.06);
+}
+
+.troop-card:after {
+  background: radial-gradient(ellipse at 50% 62%, #ffffff66, transparent 72%);
+}
+
+.troop-card img {
+  filter: drop-shadow(0 3px 3px #16233380);
+}
+
+/* Arcane purple spell card stage */
+.troop-card.spell-card {
+  border-color: #ecd6ff;
+  border-bottom-color: #462573;
+  background: linear-gradient(180deg, #cfadff 0%, #8c59d4 54%, #572c9c 100%);
+  box-shadow:
+    inset 0 2px 0 #f4e6ffaa,
+    0 2px 5px #140b2466;
+}
+
+/* Royal gold-amethyst hero card stage */
+.troop-card.hero-card {
+  border-color: #ffe28a;
+  border-bottom-color: #6b4212;
+  background: linear-gradient(180deg, #ebbdff 0%, #9b58c7 54%, #5c2a87 100%);
+  box-shadow:
+    inset 0 2px 0 #fff2c299,
+    0 2px 5px #1e0f2c77;
+}
+
+.troop-card.hero-card:is(.tome-active, .vial-active) {
+  border-color: #fff099;
+  box-shadow:
+    0 0 0 2px #ffd84daa,
+    0 0 16px #ffd84d88;
+}
+
+/* Molten bronze siege release card stage */
+.troop-card.siege-release-card {
+  border-color: #ffe08c;
+  border-bottom-color: #6b3c0e;
+  background: linear-gradient(180deg, #ffe294 0%, #d4892a 56%, #945210 100%);
+}
+
+.troop-count {
+  color: #ffffff;
+  text-shadow: var(--coc-outline);
+  font-variant-numeric: tabular-nums;
+}
+
+.troop-level {
+  background: #1c1914d9;
+  border: 1px solid #ffd86e80;
+  border-radius: 4px;
+  padding: 0 4px;
+  line-height: 1.35;
+  color: #ffe78a;
+  text-shadow: 0 1px 0 #140f08;
+}
+
+.troop-name {
+  background: linear-gradient(180deg, #1d2229c9 0%, #13171ce6 100%);
+  color: #fff9e6;
+  text-shadow: 0 1px 1px #000;
+}
+
+.troop-card.selected {
+  border-color: #fff8a8;
+  border-bottom-color: #5ca624;
+  box-shadow:
+    0 0 0 3px #90f24b,
+    0 0 18px #9ef55a99,
+    inset 0 2px 0 #ffffffcc;
+}
+
+.troop-card.empty {
+  filter: grayscale(0.75) brightness(0.82);
+}
+
+.troop-key {
+  background: #1e1b16d9;
+  border: 1px solid #f0dda055;
+  color: #fff6d4;
+}
+
+.train-add {
+  border: 1px solid #2e5714;
+  background: linear-gradient(180deg, #b8f065 0%, #72bd2f 52%, #50961b 100%);
+  color: #ffffff;
+  box-shadow:
+    inset 0 2px 0 #ecffc2a8,
+    inset 0 -3px 0 #2e5714,
+    0 2px 5px #121f0e66;
+  text-shadow: var(--coc-outline-sm);
+  transition: filter 0.14s ease, transform 0.1s ease;
+}
+
+.train-add:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+/* ============================================================================
+   Unified Clash 3D Glossy Button System
+   ============================================================================ */
+.game-btn {
+  border: 2px solid #2e5714;
+  border-bottom-width: 4px;
+  background: linear-gradient(180deg, #baf068 0%, #74bd2e 48%, #52991b 100%);
+  color: #ffffff;
+  text-shadow: var(--coc-outline-sm);
+  box-shadow:
+    inset 0 2px 0 #efffc2a6,
+    inset 0 -1px 0 #35690f66,
+    0 3px 5px #1b170e38;
+  transition: filter 0.14s ease, transform 0.1s ease;
+}
+
+.game-btn:hover:not(:disabled) {
+  filter: brightness(1.07);
+}
+
+.game-btn.stone {
+  background: linear-gradient(180deg, #fffbe8 0%, #e9dab4 52%, #d2be8e 100%);
+  border-color: #6b593c;
+  border-bottom-color: #4f412a;
+  color: #453620;
+  text-shadow: 0 1px 0 #ffffffb8;
+  box-shadow:
+    inset 0 2px 0 #ffffffd4,
+    0 2px 4px #2a201028;
+}
+
+.game-btn.blue {
+  background: linear-gradient(180deg, #7ed3ff 0%, #3495de 48%, #1e6fb5 100%);
+  border-color: #164675;
+  border-bottom-color: #0e3257;
+  color: #ffffff;
+  text-shadow: var(--coc-outline-sm);
+  box-shadow:
+    inset 0 2px 0 #d6f2ffa8,
+    0 3px 5px #10243844;
+}
+
+.game-btn.orange,
+.game-btn.gold {
+  background: linear-gradient(180deg, #ffe270 0%, #f09f24 48%, #c97610 100%);
+  border-color: #7d490a;
+  border-bottom-color: #5c3405;
+  color: #ffffff;
+  text-shadow: var(--coc-outline-sm);
+  box-shadow:
+    inset 0 2px 0 #fff7c2a8,
+    0 3px 5px #2e1b0644;
+}
+
+.game-btn.red {
+  background: linear-gradient(180deg, #ff7461 0%, #df3326 48%, #b31d15 100%);
+  border-color: #6e140e;
+  border-bottom-color: #4f0c08;
+  color: #ffffff;
+  text-shadow: var(--coc-outline-sm);
+  box-shadow:
+    inset 0 2px 0 #ffc2b899,
+    0 3px 5px #2b090744;
+}
+
+/* Iconic Clash of Clans glossy red close button across dialogs & drawers */
+.close-btn {
+  border-color: #6e140e;
+  border-bottom-color: #4f0c08;
+  background: linear-gradient(180deg, #ff7461 0%, #df3326 52%, #b51d15 100%);
+  color: #ffffff;
+  box-shadow:
+    inset 0 2px 0 #ffc7bd99,
+    0 3px 5px #24090744;
+}
+
+.close-btn:hover:not(:disabled) {
+  filter: brightness(1.09);
+}
+
+/* ============================================================================
+   Building Context Card, Toolbars, Coaching Banners & Toast
+   ============================================================================ */
+.building-context {
+  background: linear-gradient(180deg, #fffaf0 0%, #efe1bc 56%, #dfd0a3 100%);
+  border: 3px solid #57452c;
+  border-bottom-width: 5px;
+  border-bottom-color: #3c2f1d;
+  box-shadow:
+    inset 0 2px 0 #ffffffd9,
+    0 8px 24px #101e126e;
+}
+
+.context-art {
+  filter: drop-shadow(0 4px 4px #2e23144d);
+}
+
+.context-info > small {
+  color: #7c6848;
+}
+
+.context-info h2 {
+  color: #3d2e1c;
+  text-shadow: 0 1px 0 #ffffffc4;
+}
+
+.context-close {
+  color: #6e5a3e;
+  border-radius: 6px;
+}
+
+.context-close:hover {
+  color: #b51d15;
+  background: #4d3b2218;
+}
+
+.placement-banner,
+.edit-toolbar,
+.wall-move-toolbar {
+  background: linear-gradient(180deg, #32432cf2 0%, #1e2a1cf5 100%);
+  border-color: #dfce918c;
+  box-shadow:
+    inset 0 1px 0 #ffffff24,
+    inset 0 -2px 0 #141d11,
+    0 6px 18px #0d180e70;
+}
+
+.placement-banner b {
+  text-shadow: var(--coc-outline-sm);
+}
+
+.coach-banner {
+  background: linear-gradient(180deg, #32442cf5 0%, #1e2b1bf7 100%);
+  border-color: #ffd561a8;
+  box-shadow:
+    inset 0 1px 0 #ffffff29,
+    inset 0 -2px 0 #152012,
+    0 8px 22px #0d1a0f77;
+}
+
+.coach-step {
+  border: 1.5px solid #7a4b0b;
+  background: linear-gradient(180deg, #ffe273 0%, #e89b1c 100%);
+  box-shadow: inset 0 2px 0 #fff6c2aa;
+}
+
+.coach-banner b {
+  text-shadow: var(--coc-outline-sm);
+}
+
+.prep-banner,
+.practice-guide {
+  background: linear-gradient(180deg, #253b52f2 0%, #172738f5 100%);
+  border-color: #8bc9f58c;
+  box-shadow:
+    inset 0 1px 0 #ffffff24,
+    inset 0 -2px 0 #0e1a26,
+    0 6px 18px #08121c77;
+}
+
+.prep-banner b {
+  text-shadow: var(--coc-outline-sm);
+}
+
+#toast {
+  background: linear-gradient(180deg, #33452df5 0%, #1e2b1bf7 100%);
+  border-color: #e6d59194;
+  border-bottom-color: #141f12;
+  color: #fff7dc;
+  text-shadow: var(--coc-outline-sm);
+  box-shadow:
+    inset 0 1px 0 #ffffff26,
+    0 8px 22px #0c170d75;
+}
+
+/* ============================================================================
+   Drawers (Shop & Army) & Item Tiles
+   ============================================================================ */
+.drawer-sheet {
+  background: linear-gradient(180deg, #fcf5df 0%, #eadbb5 100%);
+  border-top: 3px solid #4e3d26;
+  box-shadow:
+    inset 0 2px 0 #ffffffd4,
+    0 -10px 30px #0d1a1070;
+}
+
+.drawer-head {
+  background: linear-gradient(180deg, #fff9e6 0%, #eadbb4 100%);
+  border-bottom: 2px solid #bfa97a;
+}
+
+.drawer-head h2 {
+  color: #3f301d;
+  text-shadow: 0 2px 0 #ffffffcc;
+}
+
+.drawer-foot {
+  background: #e5d5ad;
+  border-top-color: #bfa97a;
+  color: #5e4d33;
+}
+
+.tab {
+  color: #705c3d;
+  background: #dfd0a875;
+  border: 1px solid #c5b182;
+  box-shadow: inset 0 -2px 0 #c5b18266;
+  transition: filter 0.14s ease, background 0.14s ease;
+}
+
+.tab:hover:not(.active) {
+  background: #ede0bb;
+  color: #4a3a22;
+}
+
+.tab.active {
+  background: linear-gradient(180deg, #fffdf0 0%, #f5e6bd 100%);
+  border-color: #826a42;
+  color: #3b2d1a;
+  box-shadow:
+    inset 0 2px 0 #ffffffd9,
+    inset 0 -2px 0 #5c492a88,
+    0 2px 4px #2c211022;
+}
+
+.shop-tile {
+  background: linear-gradient(180deg, #fffdf4 0%, #f4e7c6 100%);
+  border-color: #baa577;
+  box-shadow:
+    inset 0 2px 0 #ffffffd9,
+    inset 0 -2px 0 #8a754c99,
+    0 2px 5px #2e231020;
+  transition: transform 0.14s ease, border-color 0.14s ease, filter 0.14s ease;
+}
+
+.shop-tile:hover:not(.unavailable) {
+  border-color: #8f7748;
+  filter: brightness(1.03);
+}
+
+.shop-tile-art {
+  background: radial-gradient(ellipse at 50% 78%, #d4be8644 0%, transparent 72%);
+  border-radius: 8px;
+  width: 100%;
+}
+
+.shop-tile-art img {
+  filter: drop-shadow(0 4px 3px #36281440);
+}
+
+.shop-tile h3 {
+  color: #3d2e1b;
+}
+
+/* ============================================================================
+   Modals, Campaign Cards, Info Dialogs, Blacksmith, Builder Menu & Form Controls
+   ============================================================================ */
+.modal {
+  background: linear-gradient(180deg, #fbf4de 0%, #efe2be 100%);
+  border: 4px solid #4c3b24;
+  border-bottom-width: 7px;
+  box-shadow:
+    0 22px 68px #09180eb8,
+    inset 0 2px 0 #ffffffcc;
+}
+
+.modal-header {
+  background: linear-gradient(180deg, #fffbe8 0%, #e9d9ae 100%);
+  border-bottom: 2px solid #bda878;
+}
+
+.modal-header small {
+  color: #856d42;
+}
+
+.modal-header h1 {
+  color: #3c2d1b;
+  text-shadow: 0 2px 0 #ffffffd4;
+}
+
+.modal-header p {
+  color: #6e5d40;
+}
+
+.modal-footer {
+  background: linear-gradient(180deg, #e7d8b1 0%, #dccaa0 100%);
+  border-top: 2px solid #bda878;
+  color: #5e4d32;
+}
+
+/* Unified Clash parchment styling for native <select> and text <input> controls */
+.campaign-nav select,
+.army-filters input,
+.army-filters select,
+.modal select,
+.modal input:not([type='range']):not([type='checkbox']):not([type='file']) {
+  border: 2px solid #a89060;
+  border-bottom-width: 3px;
+  background-color: #fffcf2;
+  color: #3d2e1b;
+  box-shadow:
+    inset 0 2px 3px #6b56301a,
+    0 1px 0 #ffffffb3;
+}
+
+.campaign-nav select,
+.army-filters select,
+.modal select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 28px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2359462a' d='M1.4 1.2 6 5.8l4.6-4.6L12 2.6 6 8.6 0 2.6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+  cursor: pointer;
+}
+
+.campaign-card {
+  border-color: #bda97c;
+  border-bottom-color: #968153;
+  background: linear-gradient(115deg, #e5edc1 0%, #fff8df 58%, #f5e9c4 100%);
+  box-shadow:
+    inset 0 2px 0 #ffffffcc,
+    0 2px 5px #2e23101a;
+}
+
+.campaign-card.locked {
+  background: linear-gradient(115deg, #ded9c8 0%, #ece5d2 100%);
+  border-color: #bfb69b;
+  border-bottom-color: #9e957b;
+}
+
+.campaign-number {
+  background: linear-gradient(180deg, #7da85c 0%, #557a3b 100%);
+  border: 2px solid #3c5927;
+  border-bottom-width: 3px;
+  color: #fff9de;
+  text-shadow: 0 1px 1px #243817;
+  box-shadow: inset 0 1px 0 #cde8b099;
+}
+
+.locked .campaign-number {
+  background: linear-gradient(180deg, #b5ae96 0%, #8f8872 100%);
+  border-color: #706a57;
+  color: #f0ead6;
+  text-shadow: none;
+}
+
+.info-hero,
+.troop-info-hero {
+  background: linear-gradient(180deg, #fffdf2 0%, #efe1bd 100%);
+  border: 2px solid #c4b082;
+  border-bottom-width: 3px;
+  border-radius: 14px;
+  box-shadow: inset 0 2px 0 #ffffffcc;
+}
+
+.info-hero > img,
+.troop-info-hero > img {
+  filter: drop-shadow(0 5px 5px #382a1440);
+}
+
+.info-table {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.info-table th {
+  background: #e3d3a8;
+  color: #544228;
+}
+
+.info-table td.better {
+  color: #2f7d18;
+  font-weight: 800;
+}
+
+.ore-wallet {
+  background: linear-gradient(180deg, #322b23 0%, #201b16 100%);
+  border: 2px solid #7d6847;
+  box-shadow: inset 0 1px 0 #ffffff1c;
+}
+
+.equipment-card {
+  border-color: #bda878;
+  background: linear-gradient(180deg, #fffcf0 0%, #eee0ba 100%);
+  box-shadow:
+    inset 0 2px 0 #ffffffcc,
+    inset 0 -2px 0 #8f7a4e66;
+}
+
+.equipment-card.selected {
+  border-color: #4c9c24;
+  box-shadow:
+    0 0 0 2px #86e04c75,
+    inset 0 2px 0 #ffffffdd;
+}
+
+.toggle {
+  background: linear-gradient(180deg, #8c826d 0%, #aba18b 100%);
+  box-shadow:
+    inset 0 0 0 2px #6b5b40,
+    inset 0 2px 3px #00000038;
+}
+
+.toggle.on {
+  background: linear-gradient(180deg, #6ab82e 0%, #8cd948 100%);
+  box-shadow:
+    inset 0 0 0 2px #366319,
+    inset 0 2px 3px #00000028;
+}
+
+.toggle span {
+  background: linear-gradient(180deg, #ffffff 0%, #f0e6cc 100%);
+  box-shadow: 0 2px 3px #00000044;
+}
+
+.builder-menu {
+  background: linear-gradient(180deg, #2d3c28f5 0%, #1c2719f7 100%);
+  border-color: #d9c88c8c;
+  box-shadow:
+    inset 0 1px 0 #ffffff24,
+    inset 0 -2px 0 #131c10,
+    0 10px 26px #0b160c80;
+}
+
+.builder-menu h3 {
+  color: #ffe27a;
+  text-shadow: var(--coc-outline-sm);
+}
+
+/* ============================================================================
+   Battle HUD — High-Contrast Clash Outlined Typography & Bars
+   ============================================================================ */
+.battle-enemy {
+  text-shadow: var(--coc-outline);
+}
+
+.battle-enemy h2 {
+  color: #fffdf0;
+  text-shadow: var(--coc-outline);
+}
+
+.battle-enemy > small {
+  color: #f6f8df;
+  opacity: 1;
+  text-shadow: var(--coc-outline-sm);
+}
+
+.loot-track {
+  background: #1a2117d9;
+  border: 1.5px solid #4a4028;
+  box-shadow: inset 0 1px 3px #00000088;
+}
+
+.battle-clock {
+  text-shadow: var(--coc-outline);
+}
+
+.battle-clock > span {
+  color: #fff8de;
+  text-shadow: var(--coc-outline-sm);
+}
+
+.battle-clock > b {
+  color: #ffffff;
+  text-shadow: var(--coc-outline-lg);
+  font-variant-numeric: tabular-nums;
+}
+
+.battle-clock.prep > b {
+  color: #ffe066;
+}
+
+.destruction {
+  text-shadow: var(--coc-outline);
+}
+
+.destruction > span,
+.destruction > small {
+  color: #fff9e3;
+  text-shadow: var(--coc-outline-sm);
+}
+
+.destruction > div {
+  color: #ffe05c;
+  text-shadow:
+    0 3px 0 #7a4c08,
+    0 0 12px #ffd04688;
+}
+
+.destruction > div > span {
+  color: #1c281ed9;
+  text-shadow:
+    -1px -1px 0 #0f1710,
+    1px -1px 0 #0f1710,
+    -1px 1px 0 #0f1710,
+    1px 1px 0 #0f1710;
+}
+
+.destruction > b {
+  color: #ffffff;
+  text-shadow: var(--coc-outline-lg);
+  font-variant-numeric: tabular-nums;
+}
+
+.destruction-bar {
+  background: #192118db;
+  border: 1.5px solid #4f442a;
+  box-shadow: inset 0 1px 3px #00000088;
+}
+
+.destruction-bar > i {
+  background: linear-gradient(180deg, #b8f568 0%, #68c229 55%, #489417 100%);
+  box-shadow: inset 0 1px 0 #ebffc4aa;
+}
+
+.destruction-bar .notch.full {
+  background: #ffe05c;
+  box-shadow: 0 0 6px #ffd44d;
+}
+
+.deploy-label {
+  color: #fffce8;
+  text-shadow: var(--coc-outline-sm);
+}
+
+.battle-tip {
+  color: #fffce6;
+  text-shadow: var(--coc-outline-sm);
+}
+
+.battle-bottom > .battle-speed {
+  background: linear-gradient(180deg, #fffbe8 0%, #e4d3a7 55%, #c9b27d 100%);
+  border-color: #5c4b30;
+  color: #3d2e1b;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================================
+   Victory / Defeat / Practice Result Modal
+   ============================================================================ */
+.result-modal {
+  border-color: #cfa951;
+  background: radial-gradient(ellipse at 50% 8%, #638a42 0%, #2d4c2f 56%, #1a301e 100%);
+  box-shadow:
+    inset 0 2px 0 #fff2b866,
+    inset 0 -3px 0 #6e521988,
+    0 24px 72px #07170dd4;
+}
+
+.result-modal.result-defeat {
+  border-color: #a67862;
+  background: radial-gradient(ellipse at 50% 8%, #70413d 0%, #3a262a 56%, #201518 100%);
+}
+
+.result-modal.result-practice {
+  border-color: #7ab5cf;
+  background: radial-gradient(ellipse at 50% 8%, #42758a 0%, #224252 56%, #142833 100%);
+}
+
+.result-eyebrow {
+  color: #e9f2cc;
+  text-shadow: var(--coc-outline-sm);
+}
+
+.result-modal h1 {
+  color: #ffe473;
+  text-shadow: var(--coc-outline-lg);
+}
+
+.result-modal.result-defeat h1 {
+  color: #ffd7b8;
+}
+
+.result-stars {
+  color: #192b1e;
+  text-shadow:
+    0 3px 0 #0f1c13,
+    0 0 2px #d8e6c133;
+}
+
+.result-stars .earned {
+  color: #ffe059;
+  text-shadow:
+    -2px -2px 0 #6e4208,
+    2px -2px 0 #6e4208,
+    -2px 2px 0 #6e4208,
+    2px 2px 0 #6e4208,
+    0 5px 0 #6e4208;
+  filter: drop-shadow(0 0 20px #ffd44d80);
+}
+
+.result-loot {
+  border-top-color: #e8e2b542;
+  border-bottom-color: #e8e2b542;
+}
+
+.result-loot > div {
+  background: #14221666;
+  border: 1px solid #d9d09c38;
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-width: 106px;
+}
+
+.result-loot b {
+  color: #fffdf0;
+  text-shadow: var(--coc-outline-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================================
+   Replay Transport
+   ============================================================================ */
+.replay-controls {
+  background: linear-gradient(180deg, #32432cf5 0%, #1d291bf7 100%);
+  border-color: #dfce918c;
+  box-shadow:
+    inset 0 1px 0 #ffffff24,
+    inset 0 -2px 0 #131c10,
+    0 8px 22px #0c170d77;
+}
+
+.replay-controls button {
+  text-shadow: var(--coc-outline-sm);
+}
+
+.replay-controls input[type='range'] {
+  accent-color: #ffd859;
+}
+
+/* Respect both OS reduced-motion and in-app reduced-motion setting */
+@media (prefers-reduced-motion: reduce) {
+  .status-chips button,
+  .resource-plus,
+  .square-btn,
+  .collect-btn,
+  .troop-card,
+  .train-add,
+  .game-btn,
+  .tab,
+  .shop-tile {
+    transition: none;
+  }
+}
+
+.reduce-motion .status-chips button,
+.reduce-motion .resource-plus,
+.reduce-motion .square-btn,
+.reduce-motion .collect-btn,
+.reduce-motion .troop-card,
+.reduce-motion .train-add,
+.reduce-motion .game-btn,
+.reduce-motion .tab,
+.reduce-motion .shop-tile {
+  transition: none;
+}
