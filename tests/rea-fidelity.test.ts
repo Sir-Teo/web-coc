@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { leagueLabel, statBarMarkup, statScalar } from '../src/ui/rea-helpers';
+import { leagueLabel, leagueTier, statBarMarkup, statScalar } from '../src/ui/rea-helpers';
 
 describe('REA Clash 18.400.21 UI/UX fidelity invariants', () => {
   it('formats pinned league codes with Clash Roman tier spacing while preserving non-tiered names', () => {
@@ -12,6 +12,18 @@ describe('REA Clash 18.400.21 UI/UX fidelity invariants', () => {
     expect(leagueLabel('Masters3')).toBe('Masters III');
     expect(leagueLabel('Champion1')).toBe('Champion I');
     expect(leagueLabel('Legendary')).toBe('Legendary');
+  });
+
+  it('maps pinned league names to their visual tier keys', () => {
+    expect(leagueTier('Unranked')).toBe('unranked');
+    expect(leagueTier('Bronze3')).toBe('bronze');
+    expect(leagueTier('Silver1')).toBe('silver');
+    expect(leagueTier('Gold2')).toBe('gold');
+    expect(leagueTier('Crystal1')).toBe('crystal');
+    expect(leagueTier('Masters3')).toBe('master');
+    expect(leagueTier('Champion1')).toBe('champion');
+    expect(leagueTier('Titan2')).toBe('titan');
+    expect(leagueTier('Legendary')).toBe('legend');
   });
 
   it('parses scalable stat scalars and skips non-scalable durations, ranges, and ramps', () => {

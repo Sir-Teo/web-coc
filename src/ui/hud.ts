@@ -1,5 +1,5 @@
 import { buildingPortrait } from './building-portrait-art';
-import { leagueLabel, statBarMarkup } from './rea-helpers';
+import { leagueLabel, leagueTier, statBarMarkup } from './rea-helpers';
 import { heroRosterIcon, rosterIcon } from './roster-art';
 import { eternalTomeRemaining } from './eternal-tome-feedback';
 import { rageVialRemaining } from './rage-vial-feedback';
@@ -3557,8 +3557,10 @@ export class HUD {
       s = m.state;
     if (m.editing) return this.editHUD();
     const free = m.builders - m.busy;
+    const { into: xpInto, needed: xpNeeded } = m.chiefProgress;
+    const xpWidth = xpNeeded ? ((xpInto / xpNeeded) * 100).toFixed(1) : '100';
     return `
- <header class="player-hud">${this.levelShield()}<div class="player-info"><div class="eyebrow">CHIEF'S VILLAGE</div><div class="player-name">Oakheart</div><button class="trophy-pill" data-action="achievements">${icon('Trophy', 17)} <b>${n(s.trophies)}</b> <span>${leagueLabel(m.league.name)}</span></button></div></header>
+ <header class="player-hud">${this.levelShield()}<div class="player-info"><div class="eyebrow">CHIEF'S VILLAGE</div><div class="player-name">Oakheart</div><span class="player-xp-track" aria-hidden="true"><i style="width:${xpWidth}%"></i></span><button class="trophy-pill" data-action="achievements" data-league-tier="${leagueTier(m.league.name)}">${icon('Trophy', 17)} <b>${n(s.trophies)}</b> <span>${leagueLabel(m.league.name)}</span></button></div></header>
  <div class="village-status"><div class="brand">CROWN <span>&</span> CLAN</div><div class="status-chips"><button data-action="builders" aria-label="Builders: ${free} of ${m.builders} free">${icon('Hammer', 20)} <b>${free}/${m.builders}</b> <span>Builders</span></button><button data-action="help">${icon('ShieldCheck', 20)} <b>Village safe</b></button></div></div>
  <div class="resources">${(
    [
@@ -6349,7 +6351,7 @@ export class HUD {
         (kind === 'sound' ? (s.effectsVolume ?? 1) : (s.musicVolume ?? MUSIC_VOLUME)) * 100,
       );
       const name = kind === 'sound' ? 'Sound effects volume' : 'Music volume';
-      return `<label class="audio-volume" for="${id}"><span>Volume${on ? '' : ' · Muted'}</span><output id="${id}-value" for="${id}">${value}%</output><input id="${id}" type="range" min="0" max="100" step="1" value="${value}" aria-label="${name}" aria-valuetext="${value} percent${on ? '' : ', muted'}"></label>`;
+      return `<label class="audio-volume${on ? '' : ' muted'}" for="${id}"><span>Volume${on ? '' : ' · Muted'}</span><output id="${id}-value" for="${id}">${value}%</output><input id="${id}" type="range" min="0" max="100" step="1" value="${value}" aria-label="${name}" aria-valuetext="${value} percent${on ? '' : ', muted'}"></label>`;
     };
     return `<div class="modal-body settings-body">${(
       [
@@ -6519,7 +6521,7 @@ export class HUD {
   }
   private achievements() {
     const s = this.model.state;
-    return `<div class="modal-body"><div class="league-banner">${icon('Trophy', 49)}<div><h2>${leagueLabel(this.model.league.name)}</h2><p>${n(s.trophies)} trophies · Chief level ${this.model.chiefLevel}</p>${this.chiefXpLine()}</div></div>${this.starterCard()}${this.starBonusCard()}<div class="profile-stats">${(
+    return `<div class="modal-body"><div class="league-banner" data-league-tier="${leagueTier(this.model.league.name)}">${icon('Trophy', 49)}<div><h2>${leagueLabel(this.model.league.name)}</h2><p>${n(s.trophies)} trophies · Chief level ${this.model.chiefLevel}</p>${this.chiefXpLine()}</div></div>${this.starterCard()}${this.starBonusCard()}<div class="profile-stats">${(
       [
         ['Swords', 'Raids won', n(s.stats.wins ?? 0)],
         ['Flag', 'Raids completed', n(s.stats.raids)],

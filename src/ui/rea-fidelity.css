@@ -95,11 +95,11 @@ textarea:focus-visible,
 
 .level-shield {
   background:
-    linear-gradient(to top, transparent var(--xp, 0%), #071e3d8a var(--xp, 0%)),
-    linear-gradient(155deg, #c2f4ff 0%, #50b2f2 34%, #1e6fc0 76%, #134785 100%);
+    linear-gradient(to top, #9bf3ff55 0%, #52ccff30 var(--xp, 0%), transparent var(--xp, 0%)),
+    linear-gradient(155deg, #b8f2ff 0%, #4ab4f5 32%, #1d73c9 74%, #12498c 100%);
   box-shadow:
-    inset 0 0 0 4px #d6f7ff,
-    inset 0 -6px 10px #08234a8c;
+    inset 0 0 0 4px #dcf8ff,
+    inset 0 -6px 10px #0a2d5c80;
   text-shadow: var(--coc-outline);
   color: #fff;
   transition: filter 0.14s ease, transform 0.1s ease;
@@ -115,8 +115,40 @@ textarea:focus-visible,
 
 .level-shield:before {
   inset: 4px;
-  border-top: 2px solid #f4fdffbf;
-  background: linear-gradient(155deg, #ffffff55 0%, #ffffff16 42%, transparent 60%);
+  border-top: 2px solid #f4fdffcf;
+  background: linear-gradient(155deg, #ffffff66 0%, #ffffff18 42%, transparent 60%);
+}
+
+.player-xp-track {
+  display: block;
+  width: 112px;
+  height: 6px;
+  margin: 1px 0 3px;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #102030e6 0%, #1a3047eb 100%);
+  border: 1.5px solid #2b4c6e;
+  box-shadow:
+    inset 0 1px 2px #050d17b8,
+    0 1px 0 #ffffff24;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.player-xp-track > i {
+  display: block;
+  height: 100%;
+  min-width: 4px;
+  border-radius: inherit;
+  background: linear-gradient(180deg, #baf4ff 0%, #4cc2ff 52%, #1e82d9 100%);
+  box-shadow: inset 0 1px 0 #ffffffcc;
+}
+
+@media (max-height: 600px) and (min-aspect-ratio: 4/3) {
+  .player-xp-track {
+    width: 76px;
+    height: 4px;
+    margin: 1px 0 2px;
+  }
 }
 
 .eyebrow {
@@ -141,6 +173,39 @@ textarea:focus-visible,
   transition: filter 0.14s ease;
 }
 
+.trophy-pill[data-league-tier='bronze'] {
+  border-color: #d9955999;
+}
+
+.trophy-pill[data-league-tier='silver'] {
+  border-color: #d8e5f299;
+}
+
+.trophy-pill[data-league-tier='gold'] {
+  border-color: #ffdc66aa;
+}
+
+.trophy-pill[data-league-tier='crystal'] {
+  border-color: #d496ffaa;
+}
+
+.trophy-pill[data-league-tier='master'] {
+  border-color: #e87a6eaa;
+}
+
+.trophy-pill[data-league-tier='champion'] {
+  border-color: #ff8a66bb;
+}
+
+.trophy-pill[data-league-tier='titan'] {
+  border-color: #ffd978bb;
+}
+
+.trophy-pill[data-league-tier='legend'] {
+  border-color: #f5b3ffbb;
+  background: linear-gradient(180deg, #3e2854eb 0%, #241636f0 100%);
+}
+
 .trophy-pill:hover {
   filter: brightness(1.1);
 }
@@ -148,6 +213,27 @@ textarea:focus-visible,
 .trophy-pill svg {
   color: #ffd859;
   filter: drop-shadow(0 1px 1px #241806);
+}
+
+.trophy-pill[data-league-tier='bronze'] svg {
+  color: #e89c5e;
+}
+
+.trophy-pill[data-league-tier='silver'] svg {
+  color: #e2eef7;
+}
+
+.trophy-pill[data-league-tier='crystal'] svg {
+  color: #df9eff;
+}
+
+.trophy-pill[data-league-tier='master'] svg,
+.trophy-pill[data-league-tier='champion'] svg {
+  color: #ff8c66;
+}
+
+.trophy-pill[data-league-tier='legend'] svg {
+  color: #ffe375;
 }
 
 .trophy-pill b {
@@ -296,23 +382,30 @@ textarea:focus-visible,
 }
 
 .gems .resource-fill {
+  /* Gems have no storage capacity: render an authentic recessed emerald sheen rather than a fake capacity meter. */
+  width: calc(100% - 6px) !important;
   background: linear-gradient(
     180deg,
-    #c6ff85 0%,
-    #7ee043 30%,
-    #52b826 54%,
-    #3a9419 84%,
-    #26700f 100%
+    #355c3185 0%,
+    #23402270 50%,
+    #1930187a 100%
   );
   box-shadow:
-    inset 0 2px 0 #eeffc9aa,
-    inset 0 -2px 0 #194d097a;
+    inset 0 1px 0 #a8f58238,
+    inset 0 -1px 0 #0c1a0b7a;
 }
 
 .resource-topline {
+  top: -15px;
   color: #fffce6;
   text-shadow: var(--coc-outline-sm);
   letter-spacing: 0.45px;
+}
+
+@media (max-height: 600px) and (min-aspect-ratio: 4/3) {
+  .resource-topline {
+    top: -11px;
+  }
 }
 
 .resource-amount {
@@ -856,6 +949,26 @@ textarea:focus-visible,
   box-shadow:
     inset 0 2px 0 #ffc2b899,
     0 3px 5px #2b090744;
+}
+
+/* Authentic Clash desaturated warm-stone disabled buttons */
+.game-btn:disabled,
+.game-btn.stone:disabled,
+.game-btn.blue:disabled,
+.game-btn.purple:disabled,
+.game-btn.orange:disabled,
+.game-btn.gold:disabled,
+.game-btn.red:disabled {
+  background: linear-gradient(180deg, #beb7a6 0%, #999181 52%, #7d7668 100%);
+  border-color: #5e584c;
+  border-bottom-color: #474238;
+  color: #ede7d8;
+  text-shadow: 0 1px 0 #3d382f;
+  box-shadow:
+    inset 0 1px 0 #ffffff40,
+    0 2px 3px #1f1b1326;
+  opacity: 0.92;
+  cursor: not-allowed;
 }
 
 /* Iconic Clash of Clans glossy red close button across dialogs & drawers */
@@ -1699,6 +1812,46 @@ textarea:focus-visible,
     0 4px 12px #101c0e38;
 }
 
+.league-banner[data-league-tier='bronze'] {
+  background: linear-gradient(135deg, #5c3f28 0%, #362316 100%);
+  border-color: #d99559;
+}
+
+.league-banner[data-league-tier='silver'] {
+  background: linear-gradient(135deg, #405259 0%, #25333a 100%);
+  border-color: #cbdbe8;
+}
+
+.league-banner[data-league-tier='gold'] {
+  background: linear-gradient(135deg, #5e4b22 0%, #382c12 100%);
+  border-color: #ffdc66;
+}
+
+.league-banner[data-league-tier='crystal'] {
+  background: linear-gradient(135deg, #4f316b 0%, #2c1940 100%);
+  border-color: #d496ff;
+}
+
+.league-banner[data-league-tier='master'] {
+  background: linear-gradient(135deg, #473232 0%, #26191a 100%);
+  border-color: #e88474;
+}
+
+.league-banner[data-league-tier='champion'] {
+  background: linear-gradient(135deg, #692920 0%, #3b1510 100%);
+  border-color: #ffb85c;
+}
+
+.league-banner[data-league-tier='titan'] {
+  background: linear-gradient(135deg, #484e57 0%, #252a30 100%);
+  border-color: #ffd978;
+}
+
+.league-banner[data-league-tier='legend'] {
+  background: linear-gradient(135deg, #572b75 0%, #2b1442 100%);
+  border-color: #ffe375;
+}
+
 .league-banner h2 {
   color: #ffe378;
   text-shadow: var(--coc-outline-sm);
@@ -1714,6 +1867,48 @@ textarea:focus-visible,
   filter: drop-shadow(0 2px 3px #1c1306);
 }
 
+.league-banner .chief-xp .journey-bar {
+  height: 11px;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #131e14 0%, #1f2e20 100%);
+  border: 1.5px solid #6b7d5c;
+  box-shadow: inset 0 2px 3px #060d07b0;
+  overflow: hidden;
+}
+
+.league-banner .chief-xp .journey-bar > i {
+  background: linear-gradient(180deg, #aef4ff 0%, #44beff 52%, #1d7ed4 100%);
+  box-shadow: inset 0 1px 0 #ffffffcc;
+}
+
+.profile-stat {
+  background: linear-gradient(180deg, #fffdf4 0%, #f0e2bd 100%);
+  border: 2px solid #bfa97a;
+  border-bottom-width: 3px;
+  border-bottom-color: #968153;
+  box-shadow:
+    inset 0 2px 0 #ffffffcc,
+    0 2px 5px #2e23101a;
+  color: #6b5839;
+}
+
+.profile-stat svg {
+  display: inline-block;
+  padding: 6px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #fff5cc 0%, #e6c978 100%);
+  border: 1.5px solid #b59242;
+  color: #6b470c;
+  box-shadow: inset 0 1px 0 #ffffffcc;
+}
+
+.profile-stat b {
+  color: #3d2e1b;
+  text-shadow: 0 1px 0 #ffffffc4;
+}
+
 .star-bonus,
 .starter-card {
   background: linear-gradient(180deg, #fffdf2 0%, #f2e3bc 100%);
@@ -1727,10 +1922,36 @@ textarea:focus-visible,
   background: linear-gradient(180deg, #fffbe3 0%, #fae6a8 100%);
 }
 
+.star-bonus-head svg {
+  color: #e69d12;
+  filter: drop-shadow(0 1px 0 #7a4c0844);
+}
+
+.star-bonus-reward > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #fffef7 0%, #f5ebd0 100%);
+  border: 1.5px solid #ccb888;
+  box-shadow: inset 0 1px 0 #ffffffcc;
+  color: #3d2e1b;
+  font-weight: 800;
+}
+
 .quest.achievement {
   background: linear-gradient(180deg, #fffdf4 0%, #f3e6c4 100%);
   border: 1.5px solid #c7b487;
   border-bottom-width: 3px;
+}
+
+.quest.achievement .quest-icon {
+  background: linear-gradient(180deg, #fff6cc 0%, #e8c76e 100%);
+  border: 2px solid #b8913b;
+  border-bottom-width: 3px;
+  color: #6b440a;
+  box-shadow: inset 0 2px 0 #ffffffc4;
 }
 
 .quest-progress {
@@ -1751,7 +1972,49 @@ textarea:focus-visible,
   text-shadow: 0 1px 0 #7a4c08;
 }
 
-/* Help Modal: crisp contrast step medals & keycaps */
+/* Help Modal: framed Barbarian guide portrait, crisp contrast step medals & keycaps */
+.guide-hero {
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fffdf2 0%, #efe1bd 100%);
+  border: 2px solid #c4b082;
+  border-bottom-width: 3px;
+  box-shadow: inset 0 2px 0 #ffffffcc;
+}
+
+.guide-hero img {
+  padding: 8px 8px 0;
+  border-radius: 14px;
+  border: 2.5px solid #d4a644;
+  border-bottom-width: 4px;
+  border-bottom-color: #8f6517;
+  background:
+    radial-gradient(ellipse at 50% 58%, #ffffff75 0%, transparent 72%),
+    linear-gradient(180deg, #a7dcff 0%, #5da5e0 56%, #2f69a3 100%);
+  box-shadow:
+    inset 0 2px 0 #e6f7ffaa,
+    0 4px 10px #2b201033;
+  filter: drop-shadow(0 3px 3px #14223366);
+}
+
+.guide-hero h2 {
+  color: #3b2d1a;
+  text-shadow: 0 1px 0 #ffffffcc;
+}
+
+.guide-hero p {
+  color: #5c4b30;
+}
+
+.help-steps article {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fffdf4 0%, #f3e6c4 100%);
+  border: 1.5px solid #cbb78a;
+  border-bottom-width: 3px;
+  box-shadow: inset 0 2px 0 #ffffffcc;
+}
+
 .help-steps article > b {
   background: linear-gradient(180deg, #ffe270 0%, #e59d1c 100%);
   border: 2px solid #8a560b;
@@ -1787,7 +2050,7 @@ textarea:focus-visible,
   color: #6b5839;
 }
 
-/* Settings Toggles & Volume Sliders */
+/* Settings Toggles & Authentic Clash 3D Volume Sliders */
 .toggle {
   background: linear-gradient(180deg, #8c826d 0%, #aba18b 100%);
   box-shadow:
@@ -1807,8 +2070,109 @@ textarea:focus-visible,
   box-shadow: 0 2px 3px #00000044;
 }
 
-.modal input[type='range'] {
-  accent-color: #6ab82e;
+.audio-volume.muted {
+  color: #8f8268;
+}
+
+.modal input[type='range'],
+.replay-controls input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+.modal input[type='range']::-webkit-slider-runnable-track {
+  height: 12px;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #c9ba93 0%, #e0d2ad 100%);
+  border: 2px solid #8c7852;
+  box-shadow: inset 0 2px 3px #3d301944;
+}
+
+.modal input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  margin-top: -8px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #baf068 0%, #6eb82c 52%, #4c8c19 100%);
+  border: 2.5px solid #2b5212;
+  box-shadow:
+    inset 0 2px 0 #efffc2b0,
+    0 2px 4px #1f1a1048;
+  cursor: pointer;
+}
+
+.modal input[type='range']::-moz-range-track {
+  height: 12px;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #c9ba93 0%, #e0d2ad 100%);
+  border: 2px solid #8c7852;
+  box-shadow: inset 0 2px 3px #3d301944;
+}
+
+.modal input[type='range']::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #baf068 0%, #6eb82c 52%, #4c8c19 100%);
+  border: 2.5px solid #2b5212;
+  box-shadow:
+    inset 0 2px 0 #efffc2b0,
+    0 2px 4px #1f1a1048;
+  cursor: pointer;
+}
+
+.audio-volume.muted input[type='range']::-webkit-slider-thumb {
+  background: linear-gradient(180deg, #d4cdbd 0%, #a69f8f 54%, #827b6d 100%);
+  border-color: #5c564b;
+}
+
+.audio-volume.muted input[type='range']::-moz-range-thumb {
+  background: linear-gradient(180deg, #d4cdbd 0%, #a69f8f 54%, #827b6d 100%);
+  border-color: #5c564b;
+}
+
+.replay-controls input[type='range']::-webkit-slider-runnable-track {
+  height: 10px;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #121a11 0%, #1e2a1c 100%);
+  border: 1.5px solid #756b4d;
+  box-shadow: inset 0 2px 3px #00000099;
+}
+
+.replay-controls input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #fff08c 0%, #f0b224 55%, #c47d0c 100%);
+  border: 2px solid #6b4108;
+  box-shadow:
+    inset 0 2px 0 #fffbd1cc,
+    0 2px 5px #00000077;
+  cursor: pointer;
+}
+
+.replay-controls input[type='range']::-moz-range-track {
+  height: 10px;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #121a11 0%, #1e2a1c 100%);
+  border: 1.5px solid #756b4d;
+  box-shadow: inset 0 2px 3px #00000099;
+}
+
+.replay-controls input[type='range']::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #fff08c 0%, #f0b224 55%, #c47d0c 100%);
+  border: 2px solid #6b4108;
+  box-shadow:
+    inset 0 2px 0 #fffbd1cc,
+    0 2px 5px #00000077;
+  cursor: pointer;
 }
 
 /* Builder Menu — high-contrast Clash dark wood/forest list with parchment option rows */
@@ -1877,6 +2241,13 @@ textarea:focus-visible,
    Battle HUD — High-Contrast Clash Outlined Typography, Bars & Animations
    ============================================================================ */
 .battle-enemy {
+  padding: 6px 12px 7px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #1e2a1bc2 0%, #131c11cf 100%);
+  border: 1.5px solid #d9c88c52;
+  box-shadow:
+    inset 0 1px 0 #ffffff1c,
+    0 4px 12px #0b14095c;
   text-shadow: var(--coc-outline);
 }
 
@@ -1888,7 +2259,13 @@ textarea:focus-visible,
 .battle-enemy > small {
   color: #f6f8df;
   opacity: 1;
-  text-shadow: var(--coc-outline-sm);
+  letter-spacing: 0.9px;
+  text-shadow:
+    -1px -1px 0 #171f14,
+    1px -1px 0 #171f14,
+    -1px 1px 0 #171f14,
+    1px 1px 0 #171f14,
+    0 1.5px 0 #171f14;
 }
 
 .loot-track {
@@ -1913,14 +2290,32 @@ textarea:focus-visible,
   background: linear-gradient(180deg, #a88ad1 0%, #5c3a87 65%, #341c52 100%);
 }
 
-.loot-row b {
+.loot-row > b {
+  min-width: 0;
+  text-align: left;
   color: #ffffff;
   font-variant-numeric: tabular-nums;
   text-shadow: var(--coc-outline-sm);
 }
 
 .battle-clock {
+  padding: 5px 14px 6px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #212d1ec4 0%, #141d12cf 100%);
+  border: 1.5px solid #d9c88c59;
+  box-shadow:
+    inset 0 1px 0 #ffffff1c,
+    0 4px 12px #0b14095c;
   text-shadow: var(--coc-outline);
+}
+
+.battle-clock.prep {
+  border-color: #9ed9ff80;
+}
+
+.battle-clock.urgent {
+  border-color: #ff7e66b8;
+  background: linear-gradient(180deg, #421f1ad9 0%, #26100de3 100%);
 }
 
 .battle-clock > span {
@@ -1955,6 +2350,14 @@ textarea:focus-visible,
 }
 
 @media (max-width: 700px), (max-height: 550px) {
+  .battle-enemy {
+    padding: 4px 8px 5px;
+    border-radius: 9px;
+  }
+  .battle-clock {
+    padding: 3px 9px 4px;
+    border-radius: 9px;
+  }
   .destruction {
     padding: 4px 8px 5px;
     border-radius: 9px;
@@ -1978,13 +2381,35 @@ textarea:focus-visible,
   animation: coc-star-pop 0.42s cubic-bezier(0.22, 1.4, 0.36, 1);
 }
 
+/* Crisp recessed metallic star sockets so unearned stars remain unmistakably legible */
 .destruction > div > span {
-  color: #1c281ed9;
+  color: #546652eb;
   text-shadow:
-    -1px -1px 0 #0f1710,
-    1px -1px 0 #0f1710,
-    -1px 1px 0 #0f1710,
-    1px 1px 0 #0f1710;
+    -1px -1px 0 #141c13,
+    1px -1px 0 #141c13,
+    -1px 1px 0 #141c13,
+    1px 1px 0 #141c13,
+    0 2px 0 #0b120a;
+}
+
+/* Surrender / Confirm Dialog */
+.confirm-line {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fffdf4 0%, #f2e4bf 100%);
+  border: 2px solid #c7b07e;
+  border-bottom-width: 3px;
+  box-shadow: inset 0 2px 0 #ffffffcc;
+}
+
+.confirm-line svg {
+  padding: 7px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ffe2a8 0%, #f0b248 100%);
+  border: 2px solid #9e6110;
+  color: #5c2e04;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 0 #fff7ccaa;
 }
 
 .destruction > b {
@@ -2080,10 +2505,13 @@ textarea:focus-visible,
 }
 
 .result-stars {
-  color: #192b1e;
+  color: #49614de6;
   text-shadow:
-    0 3px 0 #0f1c13,
-    0 0 2px #d8e6c133;
+    -1.5px -1.5px 0 #142117,
+    1.5px -1.5px 0 #142117,
+    -1.5px 1.5px 0 #142117,
+    1.5px 1.5px 0 #142117,
+    0 4px 0 #0c160f;
 }
 
 .result-stars .earned {
@@ -2105,8 +2533,10 @@ textarea:focus-visible,
 }
 
 .result-loot > div {
-  background: #14221666;
-  border: 1px solid #d9d09c38;
+  background: linear-gradient(180deg, #1d301f85 0%, #111e13a6 100%);
+  border: 1.5px solid #dfd39c4d;
+  border-bottom-color: #0b140d;
+  box-shadow: inset 0 1px 0 #ffffff1c;
   border-radius: 12px;
   padding: 10px 14px;
   min-width: 106px;
@@ -2134,8 +2564,14 @@ textarea:focus-visible,
   text-shadow: var(--coc-outline-sm);
 }
 
-.replay-controls input[type='range'] {
-  accent-color: #ffd859;
+.replay-status b {
+  color: #ffe378;
+  text-shadow: var(--coc-outline-sm);
+}
+
+.replay-status span {
+  color: #f2ebd2;
+  text-shadow: var(--coc-outline-sm);
 }
 
 /* ============================================================================

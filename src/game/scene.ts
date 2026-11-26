@@ -5615,7 +5615,13 @@ export class VillageScene extends Phaser.Scene {
       this.diamond(g, decoration.x, decoration.y, DECORATIONS[decoration.kind].size, 0xffe8a0);
     if (b && !this.model.wallMove && b.hp > 0 && this.model.visibleBuilding(b)) {
       const d = BUILDINGS[b.kind];
-      this.diamond(g, b.x, b.y, d.size, 0xffe8a0);
+      const pulse = this.model.reducedMotion ? 0.18 : 0.14 + Math.sin(performance.now() / 220) * 0.06;
+      this.diamond(g, b.x, b.y, d.size, 0xffe8a0, pulse);
+      // Soft outer gold halo for authentic Clash selection emphasis.
+      g.lineStyle(4, 0xffd654, 0.28);
+      g.strokePoints(this.diamondPoints, true);
+      g.lineStyle(2, 0xfff7c7, 0.94);
+      g.strokePoints(this.diamondPoints, true);
       const range = d.trap?.trigger ?? buildingRange(b);
       if (range) {
         const p = iso(b.x + d.size / 2, b.y + d.size / 2);
@@ -5750,7 +5756,17 @@ export class VillageScene extends Phaser.Scene {
       this.boundarySignature = signature;
       const g = this.groundMarks.clear();
       if (edges) {
-        g.lineStyle(2.5, 0xff4d42, 0.92);
+        // Clash translucent red danger band beneath a crisp red perimeter line.
+        g.lineStyle(8, 0xff362e, 0.24);
+        for (const [x0, y0, x1, y1] of edges) {
+          g.lineBetween(
+            WORLD.ox + (x0 - y0) * 32,
+            WORLD.oy + (x0 + y0) * 16,
+            WORLD.ox + (x1 - y1) * 32,
+            WORLD.oy + (x1 + y1) * 16,
+          );
+        }
+        g.lineStyle(2.5, 0xff5247, 0.96);
         for (const [x0, y0, x1, y1] of edges) {
           g.lineBetween(
             WORLD.ox + (x0 - y0) * 32,
