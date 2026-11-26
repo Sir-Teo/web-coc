@@ -4772,7 +4772,7 @@ export class HUD {
       ? null
       : heroStatsFor({ ...setup, level: progress.level + 1 }, m.townhallLevel);
     const stat = (label: string, value: number, next?: number, suffix = '') =>
-      `<div>${label}<b>${damageNumber(value)}${suffix}${next === undefined || damageNumber(next) === damageNumber(value) ? '' : ` → ${damageNumber(next)}${suffix}`}</b></div>`;
+      `<div>${label}<b>${damageNumber(value)}${suffix}${next === undefined || damageNumber(next) === damageNumber(value) ? '' : ` <em class="stat-delta">→ ${damageNumber(next)}${suffix}</em>`}</b></div>`;
     const scale = heroTownHallScale(kind, m.townhallLevel);
     const upgradeCostText = isKing
       ? `${resource('dark')} ${n(heroUpgradeCost(progress.level))} · Upgrade to ${progress.level + 1}`
@@ -5100,7 +5100,17 @@ export class HUD {
     const titles = { shop: 'Shop', army: 'Army' };
     const body: Pick<DrawerParts, 'body' | 'items' | 'foot' | 'fills'> =
       this.drawerPanel === 'shop' ? this.shop() : this.army();
-    const head = `<header class="drawer-head${this.drawerPanel === 'army' ? ' army-head' : ''}"><h2 tabindex="-1">${titles[this.drawerPanel]}</h2>${this.drawerPanel === 'shop' ? `<div class="shop-tabs" role="tablist" aria-label="Building category">${['All', 'Resources', 'Army', 'Defenses', 'Traps', DECORATION_TEXTS.shopTab, GEM_TEXTS.treasureTab].map((t) => button(`tab:${t}`, t, `tab ${this.tab === t ? 'active' : ''}`, `role="tab" aria-selected="${this.tab === t}"`)).join('')}</div>` : `<nav class="army-categories" aria-label="Army catalog">${button('army-jump:troops', `${icon('Tent', 17)}<span>Troops<b>${this.model.armySize + this.model.queuedSize}/${this.model.capacity}</b></span>`, 'army-category', `aria-label="Show troops, ${this.model.armySize + this.model.queuedSize} of ${this.model.capacity} housing spaces"`)}${button('army-jump:spells', `${icon('Sparkles', 17)}<span>Spells<b>${this.model.spellHousing}/${this.model.spellCapacity}</b></span>`, 'army-category', `aria-label="Show spells, ${this.model.spellHousing} of ${this.model.spellCapacity} housing spaces"`)}</nav>${this.armyFilters()}`}<button class="square-btn small close-btn" data-action="close-drawer" aria-label="Close">${icon('X', 22)}</button></header>`;
+    const troopUsed = this.model.armySize + this.model.queuedSize;
+    const troopCap = Math.max(1, this.model.capacity);
+    const troopPct = Math.min(100, Math.round((troopUsed / troopCap) * 100));
+    const troopOver = this.model.capacity > 0 && troopUsed > this.model.capacity;
+    const spellCap = Math.max(1, this.model.spellCapacity);
+    const spellPct = this.model.spellCapacity
+      ? Math.min(100, Math.round((this.model.spellHousing / spellCap) * 100))
+      : 0;
+    const spellOver =
+      this.model.spellCapacity > 0 && this.model.spellHousing > this.model.spellCapacity;
+    const head = `<header class="drawer-head${this.drawerPanel === 'army' ? ' army-head' : ''}"><h2 tabindex="-1">${titles[this.drawerPanel]}</h2>${this.drawerPanel === 'shop' ? `<div class="shop-tabs" role="tablist" aria-label="Building category">${['All', 'Resources', 'Army', 'Defenses', 'Traps', DECORATION_TEXTS.shopTab, GEM_TEXTS.treasureTab].map((t) => button(`tab:${t}`, t, `tab ${this.tab === t ? 'active' : ''}`, `role="tab" aria-selected="${this.tab === t}"`)).join('')}</div>` : `<nav class="army-categories" aria-label="Army catalog">${button('army-jump:troops', `${icon('Tent', 17)}<span>Troops<b>${troopUsed}/${this.model.capacity}</b></span>`, `army-category${troopOver ? ' over' : ''}`, `style="--fill:${troopPct}%" aria-label="Show troops, ${troopUsed} of ${this.model.capacity} housing spaces"`)}${button('army-jump:spells', `${icon('Sparkles', 17)}<span>Spells<b>${this.model.spellHousing}/${this.model.spellCapacity}</b></span>`, `army-category${spellOver ? ' over' : ''}`, `style="--fill:${spellPct}%" aria-label="Show spells, ${this.model.spellHousing} of ${this.model.spellCapacity} housing spaces"`)}</nav>${this.armyFilters()}`}<button class="square-btn small close-btn" data-action="close-drawer" aria-label="Close">${icon('X', 22)}</button></header>`;
     const open = `<section class="drawer-sheet" aria-label="${titles[this.drawerPanel]}">`;
     this.drawerParts = {
       open,

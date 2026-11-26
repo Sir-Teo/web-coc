@@ -395,8 +395,12 @@ textarea:focus-visible,
     inset 0 -1px 0 #0c1a0b7a;
 }
 
+.resources {
+  padding-top: 2px;
+}
+
 .resource-topline {
-  top: -15px;
+  top: -13px;
   color: #fffce6;
   text-shadow: var(--coc-outline-sm);
   letter-spacing: 0.45px;
@@ -828,6 +832,10 @@ textarea:focus-visible,
   background: linear-gradient(180deg, #1d2229cf 0%, #12161beb 100%);
   color: #fff9e6;
   text-shadow: 0 1px 1px #000;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 2px 3px;
 }
 
 .troop-card.selected {
@@ -1019,6 +1027,29 @@ textarea:focus-visible,
 
 .context-actions {
   align-items: flex-start;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+@media (max-width: 1000px) and (min-width: 701px) {
+  .building-context {
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: calc(100vw - 148px);
+    padding: 10px 36px 10px 14px;
+    gap: 8px;
+  }
+
+  .building-context .context-art {
+    width: 50px;
+    height: 60px;
+    margin-top: -14px;
+  }
+
+  .building-context .context-actions {
+    flex-basis: 100%;
+    justify-content: center;
+  }
 }
 
 .upgrade-price.short,
@@ -1146,6 +1177,14 @@ textarea:focus-visible,
   text-shadow: var(--coc-outline-sm);
 }
 
+@media (max-height: 500px) and (min-aspect-ratio: 4/3) {
+  .prep-banner {
+    top: 158px;
+    padding: 6px 12px;
+    max-width: min(360px, calc(100vw - 380px));
+  }
+}
+
 #toast {
   background: linear-gradient(180deg, #33452df5 0%, #1e2b1bf7 100%);
   border-color: #e6d59194;
@@ -1198,13 +1237,62 @@ textarea:focus-visible,
 }
 
 .tab.active {
-  background: linear-gradient(180deg, #fffdf0 0%, #f5e6bd 100%);
-  border-color: #826a42;
-  color: #3b2d1a;
+  background: linear-gradient(180deg, #fffdf2 0%, #f5e5b8 100%);
+  border-color: #8a6c3c;
+  border-top: 2px solid #d4a644;
+  color: #362714;
+  box-shadow:
+    inset 0 2px 0 #ffffffe6,
+    inset 0 -2px 0 #5c492a88,
+    0 2px 5px #2c211026;
+}
+
+/* Army Drawer capacity pills with live bottom housing bar */
+.army-category {
+  position: relative;
+  overflow: hidden;
+  border: 1.5px solid #ad9562;
+  border-bottom: 3px solid #967e4d;
+  background: linear-gradient(180deg, #fffdf0 0%, #eadbb2 100%);
   box-shadow:
     inset 0 2px 0 #ffffffd9,
-    inset 0 -2px 0 #5c492a88,
-    0 2px 4px #2c211022;
+    0 2px 4px #2a1f0e1c;
+}
+
+.army-category::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: #4435202b;
+  pointer-events: none;
+}
+
+.army-category::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 4px;
+  width: var(--fill, 0%);
+  background: linear-gradient(90deg, #62ba26 0%, #98e346 100%);
+  pointer-events: none;
+  transition: width 0.2s ease;
+}
+
+.army-category.over {
+  border-color: #bf6e3a;
+  border-bottom-color: #8f471d;
+}
+
+.army-category.over::after {
+  background: linear-gradient(90deg, #e0532c 0%, #ff9838 100%);
+}
+
+.army-category.over b {
+  color: #a63218;
 }
 
 .shop-tile {
@@ -1336,10 +1424,10 @@ textarea:focus-visible,
 }
 
 .army-remove:disabled {
-  color: #7d6d52;
-  background: #ebe1c8;
-  border-color: #c7ba9c;
-  opacity: 0.62;
+  color: #6e6350;
+  background: linear-gradient(180deg, #ece3cc 0%, #dcd1b7 100%);
+  border-color: #bcae8f;
+  opacity: 0.78;
 }
 
 /* ============================================================================
@@ -1616,13 +1704,13 @@ textarea:focus-visible,
 .stat-bar {
   position: relative;
   display: block;
-  height: 6px;
+  height: 7px;
   margin-top: 4px;
   border-radius: 99px;
-  background: #d8c89c;
-  border: 1px solid #b5a170;
+  background: linear-gradient(180deg, #4b3d26 0%, #635236 100%);
+  border: 1px solid #8c764e;
   overflow: hidden;
-  box-shadow: inset 0 1px 2px #47371c38;
+  box-shadow: inset 0 1px 2px #1c140870;
 }
 
 .stat-bar > i {
@@ -1687,6 +1775,39 @@ textarea:focus-visible,
   border-radius: 9px;
 }
 
+.hero-stat-grid .stat-delta {
+  color: #2c7a16;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.hero-stats-note {
+  background: linear-gradient(180deg, #fffdf4 0%, #f1e3be 100%);
+  border: 1.5px solid #c9b589;
+  border-radius: 10px;
+  padding: 9px 12px;
+  color: #544326;
+  box-shadow: inset 0 1px 0 #ffffffcc;
+}
+
+.hero-ability {
+  background: linear-gradient(180deg, #fffdf5 0%, #f0e3bf 100%);
+  border: 1.5px solid #c9b589;
+  border-bottom-width: 2.5px;
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 #ffffffcc;
+}
+
+.hero-gear-icon {
+  background: linear-gradient(180deg, #3f82cf 0%, #245391 100%);
+  border: 1.5px solid #7ab5f5;
+  border-radius: 8px;
+  padding: 3px;
+  box-shadow:
+    inset 0 1px 0 #ffffff4d,
+    0 2px 3px #14223844;
+}
+
 .ore-wallet {
   background: linear-gradient(180deg, #322b23 0%, #201b16 100%);
   border: 2px solid #7d6847;
@@ -1703,42 +1824,154 @@ textarea:focus-visible,
   box-shadow: inset 0 1px 0 #ffffff24;
 }
 
+.equipment-slot img {
+  filter: drop-shadow(0 3px 3px #0e0a0588);
+}
+
+.equipment-slot em {
+  background: #1a1510cc;
+  border: 1px solid #a8906099;
+  border-radius: 6px;
+  padding: 1px 6px;
+  color: #ffe891;
+  text-shadow: var(--coc-outline-sm);
+}
+
+/* Clash of Clans Blacksmith rarity tiles: saturated royal blue (Common), royal purple (Epic) */
 .equipment-card {
-  border: 2px solid #8ca8c7;
-  border-bottom-width: 3px;
-  background: linear-gradient(180deg, #f5faff 0%, #d9e8f5 100%);
+  border: 2.5px solid #7bc2ff;
+  border-bottom: 4px solid #163d78;
+  background: linear-gradient(180deg, #4393eb 0%, #2464ba 58%, #16448a 100%);
+  color: #ffffff;
   box-shadow:
-    inset 0 2px 0 #ffffffdd,
-    0 2px 5px #22304224;
+    inset 0 2px 0 #b8e1ff88,
+    0 3px 7px #12203640;
+  text-shadow: var(--coc-outline-sm);
   transition: transform 0.12s ease, border-color 0.12s ease, filter 0.12s ease;
 }
 
+.equipment-card:hover {
+  filter: brightness(1.07);
+}
+
+.equipment-card img {
+  filter: drop-shadow(0 5px 5px #0c182c78);
+}
+
+.equipment-card strong {
+  color: #ffffff;
+  text-shadow: var(--coc-outline);
+}
+
+.equipment-card .equipment-level {
+  color: #eaf5ff;
+  font-weight: 800;
+  text-shadow: var(--coc-outline-sm);
+}
+
+.equipment-card .equipment-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #2d6ec4 0%, #194480 100%);
+  border: 1px solid #96ceff80;
+  color: #f0f8ff;
+  text-shadow: var(--coc-outline-sm);
+}
+
 .equipment-card.rarity-epic {
-  border-color: #a872d4;
-  border-bottom-color: #6b3699;
-  background: linear-gradient(180deg, #faf2ff 0%, #e6d1f7 100%);
+  border-color: #d99cff;
+  border-bottom-color: #461578;
+  background: linear-gradient(180deg, #ab54eb 0%, #742ab8 58%, #4c1780 100%);
+  box-shadow:
+    inset 0 2px 0 #f0d1ff80,
+    0 3px 7px #230c3b48;
 }
 
 .equipment-card.rarity-epic .equipment-badge {
-  background: linear-gradient(180deg, #a64be0 0%, #6f22a8 100%);
+  background: linear-gradient(180deg, #b85ef2 0%, #6d1fa6 100%);
+  border-color: #f0c2ff99;
   color: #fff6ff;
 }
 
 .equipment-card.equipped .equipment-badge {
-  background: linear-gradient(180deg, #74bd2e 0%, #4e8c18 100%);
+  background: linear-gradient(180deg, #74c92c 0%, #448512 100%);
+  border-color: #c2f784aa;
   color: #ffffff;
 }
 
 .equipment-card.locked {
-  border-color: #b8ae99;
-  background: linear-gradient(180deg, #f2ece0 0%, #dfd6c3 100%);
+  border-color: #8ea0b5;
+  border-bottom-color: #2c3847;
+  background: linear-gradient(180deg, #5c708a 0%, #415269 60%, #2f3d52 100%);
+  box-shadow:
+    inset 0 2px 0 #c7d6e844,
+    0 2px 5px #121c2938;
+}
+
+.equipment-card.locked.rarity-epic {
+  border-color: #a98cc2;
+  border-bottom-color: #3a264d;
+  background: linear-gradient(180deg, #71528c 0%, #52386b 60%, #3b264f 100%);
+}
+
+.equipment-card.locked img {
+  filter: grayscale(0.4) brightness(0.92) drop-shadow(0 4px 4px #0c132066);
+}
+
+.equipment-card.locked .equipment-badge {
+  background: linear-gradient(180deg, #4b5663 0%, #323a45 100%);
+  border-color: #a8b4c266;
+  color: #e4eaf0;
 }
 
 .equipment-card.selected {
-  border-color: #4c9c24;
+  border-color: #96ed42;
   box-shadow:
-    0 0 0 2px #86e04c80,
-    inset 0 2px 0 #ffffffdd;
+    0 0 0 2.5px #86e04ca6,
+    inset 0 2px 0 #ffffff99,
+    0 4px 10px #162e0844;
+}
+
+.equipment-detail {
+  background: linear-gradient(180deg, #fffdf4 0%, #f1e3be 100%);
+  border: 2px solid #c4b082;
+  border-bottom-width: 3px;
+  border-radius: 14px;
+  box-shadow:
+    inset 0 2px 0 #ffffffd4,
+    0 3px 8px #2e23101a;
+}
+
+.equipment-detail-heading > img {
+  background: linear-gradient(180deg, #3c82d4 0%, #1d4d8f 100%);
+  border: 2px solid #85c2ff;
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow:
+    inset 0 2px 0 #ffffff44,
+    0 3px 6px #10213844;
+}
+
+.equipment-stats {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1.5px solid #ccb88b;
+  background: #fffdf5;
+}
+
+.equipment-stats th {
+  background: #ebe0be;
+  color: #4a3a22;
+}
+
+.equipment-stats tbody tr:nth-child(even) td {
+  background: #f8f0d8;
+}
+
+.equipment-stats .better {
+  color: #2c7a16;
+  font-weight: 800;
 }
 
 /* Laboratory Research Cards */
@@ -1747,6 +1980,33 @@ textarea:focus-visible,
   border: 2px solid #c4b082;
   border-bottom-width: 3px;
   border-radius: 14px;
+}
+
+@media (max-height: 460px) and (orientation: landscape) {
+  .modal {
+    border-width: 2px;
+  }
+
+  .research-body .research-banner {
+    border-width: 1.5px;
+    border-radius: 10px;
+    padding: 6px 8px;
+  }
+
+  .research-body .research-banner h2 {
+    font-size: 14px;
+    margin: 2px 0;
+  }
+
+  .research-body .facility-research-note {
+    margin: 2px 0;
+    line-height: 1.2;
+  }
+
+  .research-body .research-status {
+    margin-top: 4px;
+    gap: 3px;
+  }
 }
 
 .training-card {
@@ -1789,16 +2049,273 @@ textarea:focus-visible,
     0 2px 5px #2e231018;
 }
 
+/* Magic Item & Trader inventory icon pedestals & stock count pills */
+.magic-item > img {
+  background:
+    radial-gradient(ellipse at 50% 45%, #fffef5 0%, transparent 74%),
+    linear-gradient(180deg, #ede0be 0%, #dcc899 100%);
+  border: 1.5px solid #bfa774;
+  border-radius: 10px;
+  padding: 5px;
+  box-shadow: inset 0 2px 4px #6b532426;
+  filter: drop-shadow(0 2px 3px #2e200b38);
+}
+
+.magic-item h3 b {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 7px;
+  background: #e9dcba;
+  border: 1px solid #c4af7e;
+  color: #4f3e21;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Treasury & Hero's Journey recessed Clash progress meters */
+.treasury-row {
+  background: linear-gradient(180deg, #fffdf4 0%, #f2e5c2 100%);
+  border: 2px solid #c4b082;
+  border-bottom-width: 3px;
+  box-shadow:
+    inset 0 2px 0 #ffffffcc,
+    0 2px 5px #2e231018;
+}
+
+.treasury-row small {
+  color: #4a3a21;
+  font-weight: 800;
+}
+
+.journey-bar {
+  height: 12px;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #3b2f1f 0%, #52422d 100%);
+  border: 1.5px solid #8c764e;
+  box-shadow: inset 0 2px 3px #140e0688;
+}
+
+.journey-bar > i {
+  border-radius: 99px;
+  background: linear-gradient(180deg, #ffd866 0%, #e0911b 100%);
+  box-shadow: inset 0 1px 0 #fff7c2aa;
+}
+
 .treasury-row[data-treasury='gold'] .journey-bar > i {
   background: linear-gradient(180deg, #ffe97a 0%, #e09c14 100%);
+  box-shadow: inset 0 1px 0 #fffbd1cc;
 }
 
 .treasury-row[data-treasury='elixir'] .journey-bar > i {
   background: linear-gradient(180deg, #f596ff 0%, #b52ac7 100%);
+  box-shadow: inset 0 1px 0 #ffdcffcc;
 }
 
 .treasury-row[data-treasury='dark'] .journey-bar > i {
-  background: linear-gradient(180deg, #9d7ec7 0%, #4d2e75 100%);
+  background: linear-gradient(180deg, #a888d4 0%, #502f7a 100%);
+  box-shadow: inset 0 1px 0 #e6d4ff99;
+}
+
+/* Helper Hut 3D medallions, status pills, stats & Alchemist range slider */
+.helper-card.ready {
+  background: linear-gradient(180deg, #fffef2 0%, #faebc0 100%);
+  border-color: #d6a53e;
+}
+
+.helper-card.working {
+  border-color: #6ca632;
+}
+
+.helper-glyph {
+  background: linear-gradient(180deg, #ffe391 0%, #d49c37 60%, #a8751d 100%);
+  border: 2px solid #f7d983;
+  border-bottom: 3px solid #7d5310;
+  color: #3d2808;
+  box-shadow:
+    inset 0 2px 0 #fff8d499,
+    0 2px 5px #2e200a2e;
+}
+
+.helper-card.ready .helper-glyph,
+.helper-card.working .helper-glyph {
+  background: linear-gradient(180deg, #98e346 0%, #5da81e 60%, #3d7510 100%);
+  border-color: #cbf794;
+  border-bottom-color: #2c570b;
+  color: #ffffff;
+}
+
+.helper-card.ready .helper-glyph svg,
+.helper-card.working .helper-glyph svg {
+  filter: drop-shadow(0 1px 2px #1c3b0788);
+}
+
+.helper-card.locked .helper-glyph {
+  background: linear-gradient(180deg, #cfc4ab 0%, #a89b7e 100%);
+  border-color: #e0d6bf;
+  border-bottom-color: #786c52;
+  color: #544936;
+}
+
+.helper-status {
+  padding: 4px 10px;
+  border-radius: 99px;
+  background: #e8dbb8;
+  border: 1px solid #c4b082;
+  color: #59482a;
+}
+
+.helper-card.ready .helper-status,
+.helper-card.working .helper-status {
+  background: linear-gradient(180deg, #e2f7c8 0%, #c7eb9e 100%);
+  border-color: #7eb83b;
+  color: #2e6610;
+}
+
+.helper-stats div {
+  background: linear-gradient(180deg, #fffdf4 0%, #ece0be 100%);
+  border: 1.5px solid #ccb88b;
+  border-radius: 9px;
+  padding: 5px 9px;
+}
+
+.helper-stats dd {
+  color: #3d2e18;
+  font-variant-numeric: tabular-nums;
+}
+
+.alchemy-choice {
+  background: linear-gradient(180deg, #fffdf4 0%, #eee1bc 100%);
+  border: 1.5px solid #c4b082;
+  border-bottom: 3px solid #a89362;
+  color: #4f3f24;
+  box-shadow: inset 0 1px 0 #ffffffcc;
+  transition: filter 0.12s ease, border-color 0.12s ease;
+}
+
+.alchemy-choice:hover:not(:disabled) {
+  filter: brightness(1.04);
+}
+
+.alchemy-choice.on {
+  background: linear-gradient(180deg, #fffdf2 0%, #fae7a7 100%);
+  border-color: #d49d2a;
+  border-bottom-color: #9e7114;
+  color: #36270e;
+  box-shadow:
+    inset 0 2px 0 #ffffffe6,
+    0 2px 5px #8a641233;
+}
+
+.alchemy-amount {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.alchemy-amount::-webkit-slider-runnable-track {
+  height: 12px;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #4b3d25 0%, #685538 100%);
+  border: 1.5px solid #8a754c;
+  box-shadow: inset 0 2px 3px #1d150988;
+}
+
+.alchemy-amount::-moz-range-track {
+  height: 12px;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #4b3d25 0%, #685538 100%);
+  border: 1.5px solid #8a754c;
+  box-shadow: inset 0 2px 3px #1d150988;
+}
+
+.alchemy-amount::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  margin-top: -7.5px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #a7ec54 0%, #64b823 55%, #478a14 100%);
+  border: 2.5px solid #fff8d6;
+  box-shadow:
+    0 2px 5px #1a2e0880,
+    inset 0 2px 0 #e6ffbdcc;
+  cursor: pointer;
+}
+
+.alchemy-amount::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #a7ec54 0%, #64b823 55%, #478a14 100%);
+  border: 2.5px solid #fff8d6;
+  box-shadow:
+    0 2px 5px #1a2e0880,
+    inset 0 2px 0 #e6ffbdcc;
+  cursor: pointer;
+}
+
+/* Crafting Station pedestals, active badge & readable button duration text */
+.crafted-card header img {
+  background:
+    radial-gradient(ellipse at 50% 58%, #ffffff66 0%, transparent 72%),
+    linear-gradient(180deg, #dfd2b0 0%, #c7b58a 100%);
+  border: 2px solid #b59f6e;
+  border-radius: 12px;
+  padding: 5px;
+  box-shadow: inset 0 2px 4px #4d3d1d26;
+  filter: drop-shadow(0 3px 3px #2e220c44);
+}
+
+.crafted-state {
+  padding: 4px 10px;
+  border-radius: 99px;
+  background: #e8dbb8;
+  border: 1px solid #c4b082;
+}
+
+.crafted-state.on {
+  background: linear-gradient(180deg, #e2f7c8 0%, #c7eb9e 100%);
+  border-color: #7eb83b;
+  color: #2e6610;
+}
+
+.crafted-module .game-btn small {
+  color: #ffffff;
+  text-shadow: var(--coc-outline-sm);
+  font-weight: 800;
+  opacity: 0.96;
+}
+
+.crafted-module .game-btn:disabled small {
+  color: #f0ebe0;
+  text-shadow: 0 1px 1px #24211b99;
+}
+
+/* Wall Context counter pill & Battle Log score medallions */
+.wall-quantity > span {
+  background: linear-gradient(180deg, #fffdf4 0%, #efe2be 100%);
+  border: 1.5px solid #c4b082;
+  border-radius: 8px;
+  padding: 4px 10px;
+  box-shadow: inset 0 1px 0 #ffffffcc;
+}
+
+.raid-score {
+  background: linear-gradient(180deg, #fffdf4 0%, #efe1bc 100%);
+  border: 1.5px solid #c9b589;
+  border-radius: 10px;
+  padding: 6px 10px;
+}
+
+.raid-score > b {
+  color: #3d2e18;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Achievements, League Banner, Star Bonus & Starter Pass */
