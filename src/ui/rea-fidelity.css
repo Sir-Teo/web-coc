@@ -52,20 +52,35 @@ textarea:focus-visible,
 }
 
 /* ============================================================================
-   Loading Splash
+   Loading Splash (Clash 18.400.21 sunlit crest + Elixir progress bar)
    ============================================================================ */
 #loading {
-  background: radial-gradient(ellipse at 50% 38%, #5e8a41 0%, #264833 58%, #13281d 100%);
+  background:
+    radial-gradient(ellipse at 50% 34%, #ffe58833 0%, transparent 46%),
+    radial-gradient(ellipse at 50% 42%, #59853d 0%, #264930 56%, #112418 100%);
 }
 
 .loading-emblem {
-  color: #ffe066;
+  display: grid;
+  place-items: center;
+  width: 86px;
+  height: 86px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #ffe782 0%, #e5a11f 52%, #b0670a 100%);
+  border: 3px solid #593307;
+  border-bottom-width: 6px;
+  box-shadow:
+    inset 0 3px 0 #fff9c7cc,
+    inset 0 -3px 0 #8a4b0688,
+    0 10px 28px #0a170daa;
+  color: #fffdf0;
   text-shadow:
-    0 5px 0 #7a5214,
-    0 0 28px #ffd15c66;
+    0 3px 0 #6e3d05,
+    0 0 18px #ffd15c66;
 }
 
 #loading h1 {
+  letter-spacing: 1.5px;
   text-shadow: var(--coc-outline-lg);
 }
 
@@ -74,16 +89,20 @@ textarea:focus-visible,
 }
 
 .load-track {
-  background: #172a1e;
-  border: 2px solid #c5b46e;
+  background: linear-gradient(180deg, #1b1224 0%, #2d1e38 100%);
+  border: 2.5px solid #e0be68;
+  border-bottom-width: 3.5px;
+  border-bottom-color: #8c661c;
   box-shadow:
-    inset 0 2px 4px #09130cb0,
-    0 3px 8px #0b180f80;
+    inset 0 2px 5px #0b0612cc,
+    0 4px 12px #09140b88;
 }
 
 .load-track > div {
-  background: linear-gradient(180deg, #d7ff82 0%, #86d63b 48%, #589e20 100%);
-  box-shadow: inset 0 1px 0 #f4ffd4cc;
+  background: linear-gradient(180deg, #ffc4ff 0%, #e450f0 46%, #991ab5 100%);
+  box-shadow:
+    inset 0 2px 0 #fff0ffcc,
+    0 0 10px #e450f088;
 }
 
 /* ============================================================================
@@ -422,63 +441,77 @@ textarea:focus-visible,
   filter: drop-shadow(0 2px 3px #0c140aa8);
 }
 
-/* Clash-styled glossy resource icons */
+/* Clash-styled glossy resource icons with crisp emblem facets */
 .resource-icon.coin {
   background: radial-gradient(
     ellipse at 34% 26%,
-    #fffcc4 0%,
+    #fffec9 0%,
     #ffe566 26%,
     #f2b31d 60%,
-    #c47c0e 94%
+    #b87108 94%
   );
-  border: 2px solid #f7d259;
-  border-right: 3px solid #a8650a;
-  border-bottom: 3px solid #9e5f08;
-  color: #9e5d06;
-  text-shadow: 0 1px 0 #fff5a8;
-  box-shadow: inset 0 2px 2px #fffde0a8;
+  border: 2px solid #f9dc6a;
+  border-right: 3px solid #9c5b07;
+  border-bottom: 3px solid #8a4e05;
+  color: #8f4f04;
+  text-shadow: 0 1px 0 #fff7b8;
+  box-shadow:
+    inset 0 2px 2px #fffde0b8,
+    inset 0 -2px 2px #a35e0688;
 }
 
 .resource-icon.elixir {
+  border-radius: 50% 50% 50% 50% / 58% 58% 42% 42%;
   background: radial-gradient(
-    ellipse at 32% 28%,
+    ellipse at 34% 28%,
     #ffffff 0%,
-    #f7b8ff 18%,
-    #e359f0 46%,
+    #f9c2ff 18%,
+    #e556f2 46%,
     #a822bd 78%,
-    #6e1185 100%
+    #660e7c 100%
   );
-  border: 2px solid #f5b8f7;
-  border-bottom: 3px solid #59116e;
-  box-shadow: inset 0 2px 3px #ffffff99;
+  border: 2px solid #f7c2f9;
+  border-bottom: 3px solid #520d66;
+  box-shadow:
+    inset 0 2px 3px #ffffffb0,
+    inset -2px -2px 3px #600d7588;
 }
 
 .resource-icon.dark {
+  border-radius: 50% 50% 50% 50% / 58% 58% 42% 42%;
   background: radial-gradient(
     ellipse at 34% 28%,
-    #c4b0e6 0%,
-    #6d5594 22%,
-    #362552 54%,
-    #180e29 94%
+    #dfd0ff 0%,
+    #775ca3 22%,
+    #362454 54%,
+    #160c26 94%
   );
-  border: 2px solid #8c76b3;
-  border-bottom: 3px solid #120921;
-  box-shadow: inset 0 2px 3px #dcd0f566;
+  border: 2px solid #9b84c4;
+  border-bottom: 3px solid #0f071c;
+  box-shadow:
+    inset 0 2px 3px #e6dcff78,
+    inset -2px -2px 3px #0c0518aa;
 }
 
 .resource-icon.gem {
-  background: conic-gradient(
-    from 40deg,
-    #d4ff9e,
-    #66d147,
-    #226b2c,
-    #92e866,
-    #e0ffad,
-    #4cb835,
-    #d4ff9e
-  );
-  border: 2px solid #c2ff8c;
-  box-shadow: inset 0 2px 2px #ffffff99;
+  border-radius: 5px;
+  background:
+    linear-gradient(135deg, #e8ffc2aa 0%, transparent 45%, #164f1e88 100%),
+    conic-gradient(
+      from 38deg,
+      #dcffa6,
+      #6ad649,
+      #1f6629,
+      #96ed6b,
+      #e6ffb8,
+      #48b532,
+      #dcffa6
+    );
+  border: 2px solid #ccff96;
+  border-bottom: 3px solid #1b5924;
+  box-shadow:
+    inset 0 2px 2px #ffffffb0,
+    inset 0 -2px 2px #164d1f99;
 }
 
 .resource-plus {
@@ -1003,32 +1036,44 @@ textarea:focus-visible,
    Building Context Card, Toolbars, Coaching Banners & Toast
    ============================================================================ */
 .building-context {
-  background: linear-gradient(180deg, #fffaf0 0%, #efe1bc 56%, #dfd0a3 100%);
+  background: linear-gradient(180deg, #fffbf2 0%, #f1e3bf 54%, #ded0a2 100%);
   border: 3px solid #57452c;
   border-bottom-width: 5px;
-  border-bottom-color: #3c2f1d;
+  border-bottom-color: #3a2d1b;
+  border-radius: 16px;
   box-shadow:
-    inset 0 2px 0 #ffffffd9,
-    0 8px 24px #101e126e;
+    inset 0 2px 0 #ffffffde,
+    inset 0 -2px 0 #b8a37388,
+    0 10px 26px #0f1c1178;
 }
 
 .context-art {
-  filter: drop-shadow(0 4px 4px #2e23144d);
+  background: radial-gradient(circle at 50% 56%, #fffaf0 0%, #ead8a6 72%, #c9b27a 100%);
+  border: 2px solid #967c4f;
+  border-radius: 14px;
+  padding: 4px;
+  box-shadow:
+    inset 0 2px 0 #ffffffcc,
+    0 4px 8px #2e23144d;
+  filter: drop-shadow(0 2px 3px #2e231438);
 }
 
 .context-info > small {
-  color: #7c6848;
+  color: #7c6642;
+  letter-spacing: 0.75px;
 }
 
 .context-info h2 {
-  color: #3d2e1c;
-  text-shadow: 0 1px 0 #ffffffc4;
+  color: #3a2a16;
+  text-shadow: 0 1px 0 #ffffffd4;
 }
 
 .context-actions {
   align-items: flex-start;
   flex-wrap: wrap;
   min-width: 0;
+  padding-left: 4px;
+  border-left: 1px solid #b8a37366;
 }
 
 @media (max-width: 1000px) and (min-width: 701px) {
@@ -1110,6 +1155,30 @@ textarea:focus-visible,
   text-shadow: var(--coc-outline-sm);
 }
 
+.placement-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.placement-confirm {
+  background: linear-gradient(180deg, #a7ec4f 0%, #63b522 54%, #458913 100%);
+  border-color: #2d5d0b;
+  color: #fff;
+  box-shadow:
+    inset 0 2px 0 #e6ffad99,
+    0 3px 0 #265109;
+}
+
+.placement-cancel {
+  background: linear-gradient(180deg, #ff7866 0%, #df3326 54%, #b31c14 100%);
+  border-color: #6b130d;
+  color: #fff;
+  box-shadow:
+    inset 0 2px 0 #ffcbc299,
+    0 3px 0 #5c100b;
+}
+
 .wall-move-heading b {
   color: #fff8de;
   text-shadow: var(--coc-outline-sm);
@@ -1130,12 +1199,14 @@ textarea:focus-visible,
 }
 
 .coach-banner {
-  background: linear-gradient(180deg, #32442cf5 0%, #1e2b1bf7 100%);
-  border-color: #ffd561a8;
+  background: linear-gradient(180deg, #3b4f30f7 0%, #22301cf7 58%, #182314fa 100%);
+  border: 2px solid #f0c95cd9;
+  border-bottom-width: 4px;
+  border-bottom-color: #9e751f;
   box-shadow:
-    inset 0 1px 0 #ffffff29,
-    inset 0 -2px 0 #152012,
-    0 8px 22px #0d1a0f77;
+    inset 0 2px 0 #fff4c230,
+    inset 0 -2px 0 #10190ecc,
+    0 8px 24px #0b170d88;
 }
 
 .coach-banner > div {
@@ -1143,14 +1214,17 @@ textarea:focus-visible,
 }
 
 .coach-step {
-  border: 1.5px solid #7a4b0b;
-  background: linear-gradient(180deg, #ffe273 0%, #e89b1c 100%);
-  box-shadow: inset 0 2px 0 #fff6c2aa;
+  border: 2px solid #78480a;
+  background: linear-gradient(180deg, #fff099 0%, #f5b72f 55%, #cf7f0e 100%);
+  box-shadow:
+    inset 0 2px 0 #fffbe0cc,
+    0 2px 5px #121c1077;
   color: #3d2405;
-  text-shadow: 0 1px 0 #fff5c299;
+  text-shadow: 0 1px 0 #fff5c2aa;
 }
 
 .coach-banner b {
+  color: #fff9e0;
   text-shadow: var(--coc-outline-sm);
 }
 
@@ -3078,8 +3152,111 @@ textarea:focus-visible,
   font-variant-numeric: tabular-nums;
 }
 
+.result-army {
+  margin: 8px auto 2px;
+  padding: 6px 10px 8px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #1b2e1d96 0%, #0f1b11b3 100%);
+  border: 1.5px solid #dfd39c48;
+  box-shadow: inset 0 1px 0 #ffffff18;
+  max-width: 100%;
+}
+
+.result-army > small {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.9px;
+  color: #e8e2b5;
+  text-shadow: var(--coc-outline-sm);
+}
+
+.result-army-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+}
+
+.result-unit {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #4b6980 0%, #263d4f 100%);
+  border: 1.5px solid #e6d8a399;
+  box-shadow: inset 0 1px 0 #ffffff40;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+.result-unit.hero {
+  background: linear-gradient(180deg, #8a6421 0%, #4d330c 100%);
+  border-color: #f7d259cc;
+}
+
+.result-unit.spell {
+  background: linear-gradient(180deg, #6e3b8a 0%, #3b1c52 100%);
+  border-color: #d9a1ff99;
+}
+
+.result-unit img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.result-unit b {
+  position: absolute;
+  right: 1px;
+  bottom: 0;
+  padding: 0 3px;
+  border-radius: 4px;
+  background: #141c14d9;
+  font-size: 9.5px;
+  line-height: 1.25;
+  color: #fffbe0;
+  text-shadow: 0 1px 0 #000;
+}
+
+@media (max-height: 460px) {
+  .result-army {
+    margin: 4px auto 2px;
+    padding: 4px 6px;
+  }
+
+  .result-army > small {
+    display: none;
+  }
+
+  .result-army-list {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    gap: 4px;
+  }
+
+  .result-unit {
+    width: 28px;
+    height: 28px;
+  }
+
+  .result-unit img {
+    width: 23px;
+    height: 23px;
+  }
+
+  .result-unit b {
+    font-size: 8.5px;
+  }
+}
+
 /* ============================================================================
-   Replay Transport
+   Replay Transport & Timeline Markers
    ============================================================================ */
 .replay-controls {
   background: linear-gradient(180deg, #32432cf5 0%, #1d291bf7 100%);
@@ -3088,6 +3265,76 @@ textarea:focus-visible,
     inset 0 1px 0 #ffffff24,
     inset 0 -2px 0 #131c10,
     0 8px 22px #0c170d77;
+}
+
+.replay-track-wrap {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.replay-track-wrap > input[type='range'] {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+@media (max-height: 550px) and (min-width: 601px) {
+  .replay-controls .replay-track-wrap,
+  .replay-transport .replay-track-wrap {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (orientation: landscape) and (min-width: 540px) and (max-height: 450px) {
+  .replay-transport .replay-track-wrap {
+    grid-column: 2 / -1;
+  }
+}
+
+.replay-markers {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 50%;
+  height: 12px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.replay-marker {
+  position: absolute;
+  top: 50%;
+  width: 3px;
+  height: 9px;
+  border-radius: 2px;
+  transform: translate(-50%, -50%);
+  background: #ffba42;
+  box-shadow: 0 0 0 1px #1d291bcc;
+}
+
+.replay-marker.spell {
+  width: 4px;
+  height: 11px;
+  background: #e56dff;
+}
+
+.replay-marker.hero {
+  width: 5px;
+  height: 12px;
+  background: #ffe85e;
+  border-radius: 3px;
+}
+
+.replay-marker.ability {
+  width: 6px;
+  height: 6px;
+  background: #7df3ff;
+  transform: translate(-50%, -50%) rotate(45deg);
 }
 
 .replay-controls button {
@@ -3175,6 +3422,174 @@ textarea:focus-visible,
   }
 }
 
+/* ============================================================================
+   Clash Cloud-Parting Transition Veil (non-blocking)
+   ============================================================================ */
+.cloud-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.cloud-bank {
+  position: absolute;
+  top: -12%;
+  width: 68%;
+  height: 124%;
+  pointer-events: none;
+  will-change: transform, opacity;
+  background:
+    radial-gradient(circle at 24% 22%, #ffffff 0%, #f8f5ec 46%, transparent 66%),
+    radial-gradient(circle at 62% 18%, #ffffff 0%, #f2ede0 44%, transparent 64%),
+    radial-gradient(circle at 46% 50%, #ffffff 0%, #f5f0e4 52%, transparent 72%),
+    radial-gradient(circle at 26% 78%, #fffdf8 0%, #ebe5d5 46%, transparent 66%),
+    radial-gradient(circle at 66% 80%, #ffffff 0%, #efe9da 48%, transparent 68%),
+    linear-gradient(180deg, #faf7efee 0%, #ede6d6e6 100%);
+  filter: drop-shadow(0 8px 22px #2a3d5244);
+}
+
+.cloud-bank.left {
+  left: -6%;
+  border-radius: 0 46% 48% 0 / 0 38% 42% 0;
+}
+
+.cloud-bank.right {
+  right: -6%;
+  border-radius: 46% 0 0 48% / 38% 0 0 42%;
+}
+
+.cloud-sunburst {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 45%, #fff9d6aa 0%, #ffe69933 38%, transparent 68%);
+  opacity: 0;
+}
+
+.cloud-veil.parting .cloud-bank.left {
+  animation: coc-cloud-left 0.56s cubic-bezier(0.24, 0.82, 0.32, 1) forwards;
+}
+
+.cloud-veil.parting .cloud-bank.right {
+  animation: coc-cloud-right 0.56s cubic-bezier(0.24, 0.82, 0.32, 1) forwards;
+}
+
+.cloud-veil.parting .cloud-sunburst {
+  animation: coc-cloud-flash 0.48s ease-out forwards;
+}
+
+@keyframes coc-cloud-left {
+  0% {
+    transform: translateX(0) scale(1.06);
+    opacity: 0.96;
+  }
+  30% {
+    opacity: 0.92;
+  }
+  100% {
+    transform: translateX(-112%) scale(1.16);
+    opacity: 0;
+  }
+}
+
+@keyframes coc-cloud-right {
+  0% {
+    transform: translateX(0) scale(1.06);
+    opacity: 0.96;
+  }
+  30% {
+    opacity: 0.92;
+  }
+  100% {
+    transform: translateX(112%) scale(1.16);
+    opacity: 0;
+  }
+}
+
+@keyframes coc-cloud-flash {
+  0% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ============================================================================
+   Live Battle Star-Earned Celebration Callout (non-blocking)
+   ============================================================================ */
+.star-callout {
+  position: fixed;
+  left: 50%;
+  top: clamp(74px, 14vh, 118px);
+  transform: translateX(-50%) scale(0.72);
+  z-index: 42;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 22px 8px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #543211ee 0%, #2c1808e6 100%);
+  border: 2px solid #f7d259;
+  box-shadow:
+    inset 0 2px 0 #fff4b866,
+    0 6px 18px #110902aa;
+  opacity: 0;
+}
+
+.star-callout.show {
+  animation: coc-star-callout 1.5s cubic-bezier(0.2, 1.25, 0.32, 1) forwards;
+}
+
+.star-callout-stars {
+  font-size: clamp(22px, 4vw, 34px);
+  line-height: 1;
+  letter-spacing: 3px;
+  color: #ffe24c;
+  text-shadow:
+    0 2px 0 #8a4e05,
+    0 0 14px #ffd43baa;
+}
+
+.star-callout-stars span {
+  color: #5c4328;
+  text-shadow: 0 1px 0 #1f1207;
+}
+
+.star-callout b {
+  font-family: var(--font-display);
+  font-size: clamp(13px, 2vw, 17px);
+  letter-spacing: 0.8px;
+  color: #fff6cf;
+  text-shadow: var(--coc-outline);
+}
+
+@keyframes coc-star-callout {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px) scale(0.68);
+  }
+  16% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1.06);
+  }
+  26% {
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  78% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px) scale(0.95);
+  }
+}
+
 /* Respect both OS reduced-motion and in-app reduced-motion setting */
 @media (prefers-reduced-motion: reduce) {
   .level-shield,
@@ -3206,8 +3621,15 @@ textarea:focus-visible,
   .battle-clock.urgent > b,
   .destruction > div.star-pop,
   .result-modal.result-victory .result-rays,
-  .result-stars .earned {
+  .result-stars .earned,
+  .cloud-veil.parting .cloud-bank,
+  .cloud-veil.parting .cloud-sunburst,
+  .star-callout.show {
     animation: none;
+  }
+  .star-callout.show {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
   }
 }
 
@@ -3241,6 +3663,14 @@ textarea:focus-visible,
 .reduce-motion .battle-clock.urgent > b,
 .reduce-motion .destruction > div.star-pop,
 .reduce-motion .result-modal.result-victory .result-rays,
-.reduce-motion .result-stars .earned {
+.reduce-motion .result-stars .earned,
+.reduce-motion .cloud-veil.parting .cloud-bank,
+.reduce-motion .cloud-veil.parting .cloud-sunburst,
+.reduce-motion .star-callout.show {
   animation: none;
+}
+
+.reduce-motion .star-callout.show {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
 }

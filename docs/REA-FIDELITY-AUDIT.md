@@ -463,3 +463,49 @@ starts in warm and cold baseline replays. The candidate started one
 request was held until 0.8 seconds of playback. A touch restart started one
 new buffer. A paused seek to zero with a pending decode stayed silent after
 resume, as did playback with Sound effects muted after reload.
+
+## Milestone 2 UI/UX alignment (portraits, transitions, tactical panels)
+
+Milestone 2 closed the next tier of HUD, info-panel, battle-transition, and
+replay-transport alignment gaps against the pinned `18.400.21` client without
+breaking existing layout or asset contracts:
+
+- **Native portraits and resource-collection presentation**: Wall HUD portraits
+  (levels 1–19) now resolve to the packaged `/assets/catalog-native/wall/`
+  exports via `buildingPortrait()`, while Hero Hall roster cards for Archer
+  Queen, Minion Prince, Grand Warden, Royal Champion, and Dragon Duke use their
+  packaged `/assets/catalog-native/roster/hero-*.png` icons (preserving the
+  Barbarian King portrait contract). Resource HUD icons received beveled
+  coin/droplet/gem facet styling, and collection flights in
+  `src/ui/resource-flight.ts` follow curved parabolic trajectories while
+  preserving exact start and counter-center landing endpoints.
+- **Cloud-parting transitions and live star celebrations**: Switching between
+  Home Village, Scouting/Battle, and Replay now triggers a non-blocking
+  (`pointer-events: none`) billowing cloud veil (`src/ui/cloud-transition.ts`),
+  and earning stars mid-battle triggers a centered `#star-callout` celebration
+  (`VICTORY!`, `2 STARS!`, `3 STARS!`). Both respect `prefers-reduced-motion`
+  and `.reduce-motion`.
+- **Context dock, placement confirm, and tap feedback**: The placement banner
+  adds a green confirm button (`Confirm placement`) wired to
+  `VillageScene.confirmGhostPlacement()` alongside Cancel, building selection
+  emits a 280 ms golden isometric tile ripple, and `.building-context` uses
+  medallion portrait framing.
+- **Info stat bars, deployed-army results, and replay timeline markers**:
+  Troop Info, Spell Info, and Hero Hall stat panels render Clash two-tone
+  `.stat-bar` progress bars; battle results include a compact `.result-army`
+  deployed-unit summary (collapsing to a single scrollable strip on short
+  landscape viewports such as `568×320`); and `#replay-progress` renders
+  color-coded troop, spell, hero, and ability ticks inside `.replay-track-wrap`
+  while preserving `44×44` touch targets and narrow-viewport grid spans.
+- **Loading splash and onboarding polish**: `#loading` uses a sunlit crest
+  medallion and magenta-violet Elixir progress bar, and `.coach-banner` cards
+  use elevated Clash parchment framing.
+
+Verified in Vitest (613 suites, 9,256 tests), strict TypeScript + production
+build, and Chromium E2E specs (`tests/browser/rea-milestone2.spec.ts`,
+`native-hud.spec.ts`, `hud-layout.spec.ts`, `campaign-row-layout.spec.ts`,
+`battle-toast-layout.spec.ts`, `placement-preview.spec.ts`, `camp-art.spec.ts`,
+and `replay-tools.spec.ts`). Original-client transition timings, result layout
+proportions, and cloud textures remain web presentation pending matched
+captures.
+

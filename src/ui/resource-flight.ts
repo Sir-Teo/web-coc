@@ -14,15 +14,25 @@ export class ResourceFlights {
       dot.style.left = `${x - 5}px`;
       dot.style.top = `${y - 5}px`;
       document.body.append(dot);
+      const dx = to.x - x;
+      const dy = to.y - y;
+      const arcSpread = (i - 3) * 14;
+      const midX = dx * 0.45 + arcSpread;
+      const midY = dy * 0.45 - (34 + (i % 3) * 12);
       const animation = dot.animate(
         [
-          { transform: 'translate(0, 0) scale(1)', opacity: 1 },
-          { transform: `translate(${to.x - x}px, ${to.y - y}px) scale(0.35)`, opacity: 0.5 },
+          { transform: 'translate(0, 0) scale(1)', opacity: 1, offset: 0 },
+          {
+            transform: `translate(${midX}px, ${midY}px) scale(1.16)`,
+            opacity: 1,
+            offset: 0.44,
+          },
+          { transform: `translate(${dx}px, ${dy}px) scale(0.38)`, opacity: 0.55, offset: 1 },
         ],
         {
-          duration: 420 + i * 45,
-          delay: i * 38,
-          easing: 'cubic-bezier(.55, 0, 1, .45)',
+          duration: 440 + i * 44,
+          delay: i * 36,
+          easing: 'cubic-bezier(.45, 0, .82, .55)',
           fill: 'both',
         },
       );

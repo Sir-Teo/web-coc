@@ -14,6 +14,7 @@ const portraitFamilies = new Map([
   ['giantbomb', 'giant-bomb'],
   ['airbomb', 'air-bomb'],
   ['springtrap', 'spring-trap'],
+  ['wall', 'wall'],
 ]);
 
 /** Static source portraits for the HUD. The world renderer owns the animated bodies. */

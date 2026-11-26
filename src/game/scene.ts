@@ -3066,8 +3066,36 @@ export class VillageScene extends Phaser.Scene {
     this.ghostPoint = undefined;
   }
   private ghostPoint?: { x: number; y: number };
+  private lastGhostTile?: { x: number; y: number; size: number; valid: boolean };
+  private lastSelectedId: number | null = null;
+  private selectAt = 0;
   private pointerScreen(): { x: number; y: number } {
     return this.ghostPoint ?? this.input.activePointer;
+  }
+  /** Confirms placement at the last valid ghost tile on the map (touch/banner ✓ button). */
+  confirmGhostPlacement() {
+    const candidate = this.lastGhostTile?.valid
+      ? this.lastGhostTile
+      : this.updateGhost(this.pointerScreen());
+    if (!candidate?.valid) return false;
+    if (this.model.placement) {
+      const ok = this.placeBuilding(candidate.x, candidate.y);
+      if (ok) this.lastGhostTile = undefined;
+      return ok;
+    }
+    if (this.model.decorationPlacement) {
+      if (!this.model.placeDecoration(candidate.x, candidate.y)) return false;
+      this.lastGhostTile = undefined;
+      this.audio.play('click');
+      return true;
+    }
+    if (this.model.movingObstacle !== null) {
+      if (!this.model.placeObstacle(candidate.x, candidate.y)) return false;
+      this.lastGhostTile = undefined;
+      this.audio.play('click');
+      return true;
+    }
+    return false;
   }
   /**
    * The outline of the structure exclusion zone. Cached until a structure falls or reveals.
@@ -5614,14 +5642,33 @@ export class VillageScene extends Phaser.Scene {
     if (decoration)
       this.diamond(g, decoration.x, decoration.y, DECORATIONS[decoration.kind].size, 0xffe8a0);
     if (b && !this.model.wallMove && b.hp > 0 && this.model.visibleBuilding(b)) {
+      const now = performance.now();
+      if (b.id !== this.lastSelectedId) {
+        this.lastSelectedId = b.id;
+        this.selectAt = this.model.reducedMotion ? 0 : now;
+      }
       const d = BUILDINGS[b.kind];
-      const pulse = this.model.reducedMotion ? 0.18 : 0.14 + Math.sin(performance.now() / 220) * 0.06;
+      const pulse = this.model.reducedMotion ? 0.18 : 0.14 + Math.sin(now / 220) * 0.06;
       this.diamond(g, b.x, b.y, d.size, 0xffe8a0, pulse);
       // Soft outer gold halo for authentic Clash selection emphasis.
       g.lineStyle(4, 0xffd654, 0.28);
       g.strokePoints(this.diamondPoints, true);
       g.lineStyle(2, 0xfff7c7, 0.94);
       g.strokePoints(this.diamondPoints, true);
+      if (this.selectAt > 0 && !this.model.reducedMotion) {
+        const t = (now - this.selectAt) / 280;
+        if (t >= 0 && t < 1) {
+          const pad = t * 0.22 * d.size;
+          const ring = [
+            iso(b.x - pad, b.y - pad),
+            iso(b.x + d.size + pad, b.y - pad),
+            iso(b.x + d.size + pad, b.y + d.size + pad),
+            iso(b.x - pad, b.y + d.size + pad),
+          ];
+          g.lineStyle(3 * (1 - t * 0.5), 0xfff08a, 0.85 * (1 - t));
+          g.strokePoints(ring, true);
+        }
+      }
       const range = d.trap?.trigger ?? buildingRange(b);
       if (range) {
         const p = iso(b.x + d.size / 2, b.y + d.size / 2);
@@ -5662,6 +5709,9 @@ export class VillageScene extends Phaser.Scene {
           g.strokeEllipse(p.x, p.y, d.minRange * 64 * Math.SQRT2, d.minRange * 32 * Math.SQRT2);
         }
       }
+    } else if (!b) {
+      this.lastSelectedId = null;
+      this.selectAt = 0;
     }
     const grid =
       !!this.model.wallMove ||
@@ -5682,12 +5732,16 @@ export class VillageScene extends Phaser.Scene {
     ) {
       // Camera motion and DOM drags can change the tile without a Phaser pointer event.
       // Resolve it once per frame for both the sprite and its placement footprint.
-      const preview = this.updateGhost(this.pointerScreen());
+      const ptr = this.pointerScreen();
+      const preview = this.updateGhost(ptr);
       if (preview) {
+        if (this.keyCursor || this.pointerOverCanvas(ptr)) this.lastGhostTile = preview;
         const color = preview.valid ? 0x8fff73 : 0xff6464;
         this.diamond(g, preview.x, preview.y, preview.size, color, 0.28);
         this.drawPlacementArrows(g, preview.x, preview.y, preview.size, color);
       }
+    } else {
+      this.lastGhostTile = undefined;
     }
   }
   /** Classic Clash 4-edge directional placement arrowheads around a building footprint. */
