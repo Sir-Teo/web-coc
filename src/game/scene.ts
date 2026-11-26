@@ -3760,22 +3760,55 @@ export class VillageScene extends Phaser.Scene {
     if (shouldBubble && !this.bubbles.has(b.id)) {
       const c = this.add.container(p.x, p.y - im.displayHeight * 0.86 - 13).setDepth(p.y + 300);
       const bg = this.add.graphics();
-      bg.fillStyle(0xfff6d7, 1);
-      bg.lineStyle(2, 0x846743, 1);
-      bg.fillRoundedRect(-17, -15, 34, 28, 8);
-      bg.strokeRoundedRect(-17, -15, 34, 28, 8);
-      bg.fillTriangle(-5, 12, 5, 12, 0, 19);
-      const icon = this.add
-        .text(0, -2, b.kind === 'goldmine' ? '●' : '♦', {
-          fontFamily: 'Arial',
-          fontSize: '24px',
-          color: b.kind === 'goldmine' ? '#efaa10' : b.kind === 'darkdrill' ? '#514076' : '#c449e2',
-          stroke:
-            b.kind === 'goldmine' ? '#b87516' : b.kind === 'darkdrill' ? '#291d3e' : '#823b9c',
-          strokeThickness: 1,
-        })
-        .setOrigin(0.5);
-      c.add([bg, icon]);
+      // Soft ground-facing shadow behind the speech plaque
+      bg.fillStyle(0x162112, 0.34);
+      bg.fillRoundedRect(-17, -13, 34, 28, 9);
+      bg.fillTriangle(-5, 13, 5, 13, 0, 21);
+      // Warm Clash parchment speech plaque with bronze border
+      bg.fillStyle(0xfff9e4, 1);
+      bg.lineStyle(2, 0x6b5230, 1);
+      bg.fillRoundedRect(-18, -16, 36, 29, 9);
+      bg.strokeRoundedRect(-18, -16, 36, 29, 9);
+      bg.fillStyle(0xfff9e4, 1);
+      bg.fillTriangle(-6, 12, 6, 12, 0, 19);
+      bg.lineStyle(2, 0x6b5230, 1);
+      bg.beginPath();
+      bg.moveTo(-6, 13);
+      bg.lineTo(0, 19);
+      bg.lineTo(6, 13);
+      bg.strokePath();
+      // Glossy Clash resource emblem (Gold coin / Elixir droplet / Dark Elixir droplet)
+      if (b.kind === 'goldmine') {
+        bg.fillStyle(0xb56d09, 1);
+        bg.fillCircle(1, -1, 10);
+        bg.fillStyle(0xf5b91d, 1);
+        bg.fillCircle(0, -2, 10);
+        bg.lineStyle(1.5, 0xffe875, 1);
+        bg.strokeCircle(0, -2, 8.5);
+        bg.fillStyle(0xfff8c4, 0.85);
+        bg.fillEllipse(-3, -5.5, 6, 3.5);
+        bg.fillStyle(0xc2770c, 0.85);
+        bg.fillCircle(0, -2, 3);
+      } else if (b.kind === 'darkdrill') {
+        bg.fillStyle(0x190d2b, 1);
+        bg.fillCircle(0, 1, 8.5);
+        bg.fillTriangle(-7.5, -1, 7.5, -1, 0, -12);
+        bg.fillStyle(0x4b3173, 1);
+        bg.fillCircle(0, 1, 7);
+        bg.fillTriangle(-6, -1, 6, -1, 0, -10);
+        bg.fillStyle(0xd9c7f7, 0.85);
+        bg.fillEllipse(-2.5, -2.5, 3.5, 5);
+      } else {
+        bg.fillStyle(0x781794, 1);
+        bg.fillCircle(0, 1, 8.5);
+        bg.fillTriangle(-7.5, -1, 7.5, -1, 0, -12);
+        bg.fillStyle(0xe354f2, 1);
+        bg.fillCircle(0, 1, 7);
+        bg.fillTriangle(-6, -1, 6, -1, 0, -10);
+        bg.fillStyle(0xffe6ff, 0.9);
+        bg.fillEllipse(-2.5, -2.5, 3.5, 5);
+      }
+      c.add([bg]);
       c.setSize(38, 40).setInteractive();
       c.on('pointerup', () => {
         if (this.dragged || this.uiBlocked || this.model.placement) return;
@@ -5610,9 +5643,16 @@ export class VillageScene extends Phaser.Scene {
           g.lineStyle(2, 0xe1fbff, 0.8).strokePoints(points, true);
           const arrow = iso(x + Math.cos(angle) * 3, y + Math.sin(angle) * 3);
           g.lineStyle(3, 0xffffff, 0.9).lineBetween(p.x, p.y, arrow.x, arrow.y);
-        } else g.strokeEllipse(p.x, p.y, range * 64 * Math.SQRT2, range * 32 * Math.SQRT2);
+        } else {
+          g.fillStyle(0xffffff, 0.07);
+          g.fillEllipse(p.x, p.y, range * 64 * Math.SQRT2, range * 32 * Math.SQRT2);
+          g.lineStyle(2, 0xffffff, 0.78);
+          g.strokeEllipse(p.x, p.y, range * 64 * Math.SQRT2, range * 32 * Math.SQRT2);
+        }
         if (d.minRange) {
-          g.lineStyle(2, 0xffc56b, 0.75);
+          g.fillStyle(0xff9f40, 0.1);
+          g.fillEllipse(p.x, p.y, d.minRange * 64 * Math.SQRT2, d.minRange * 32 * Math.SQRT2);
+          g.lineStyle(2, 0xffc864, 0.85);
           g.strokeEllipse(p.x, p.y, d.minRange * 64 * Math.SQRT2, d.minRange * 32 * Math.SQRT2);
         }
       }
@@ -6555,10 +6595,17 @@ export class VillageScene extends Phaser.Scene {
   }
   bar(x: number, y: number, w: number, p: number, color: number, graphics = this.detail) {
     // Plain rects: rounded rects expand to arcs + earcut triangulation every frame.
-    graphics.fillStyle(0x292920, 0.8);
-    graphics.fillRect(x - w / 2 - 2, y - 2, w + 4, 7);
-    graphics.fillStyle(color);
-    graphics.fillRect(x - w / 2, y, Math.max(0, w * p), 3);
+    const fw = Math.max(0, w * Math.max(0, Math.min(1, p)));
+    graphics.fillStyle(0x141710, 0.9);
+    graphics.fillRect(x - w / 2 - 2, y - 2, w + 4, 8);
+    graphics.fillStyle(0x2d2b22, 0.95);
+    graphics.fillRect(x - w / 2, y, w, 4);
+    if (fw > 0) {
+      graphics.fillStyle(color, 1);
+      graphics.fillRect(x - w / 2, y, fw, 4);
+      graphics.fillStyle(0xffffff, 0.34);
+      graphics.fillRect(x - w / 2, y, fw, 1);
+    }
   }
   private animateEffect(config: EffectTween) {
     if (this.model.reducedMotion) {
