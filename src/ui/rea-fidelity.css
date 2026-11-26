@@ -2881,6 +2881,19 @@ textarea:focus-visible,
   }
 }
 
+@media (max-width: 700px) and (max-height: 400px) {
+  .battle-enemy,
+  .battle-clock,
+  .destruction {
+    padding: 0 2px;
+    border: 0;
+    border-radius: 6px;
+  }
+  #toast[data-toast-anchor] {
+    padding: 7px 11px;
+  }
+}
+
 .destruction > span,
 .destruction > small {
   color: #fff9e3;
