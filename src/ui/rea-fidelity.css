@@ -228,6 +228,7 @@ textarea:focus-visible,
 
 .resource-fill {
   opacity: 1;
+  transition: width 0.25s ease-out;
   background: linear-gradient(
     180deg,
     #fff49e 0%,
@@ -239,6 +240,31 @@ textarea:focus-visible,
   box-shadow:
     inset 0 2px 0 #fffbd1aa,
     inset 0 -2px 0 #7d4b0478;
+}
+
+.resource-bar.resource-bump {
+  animation: coc-resource-bump 0.34s cubic-bezier(0.22, 1.35, 0.36, 1);
+}
+
+.resource-flight.gold {
+  background: radial-gradient(circle at 35% 30%, #fffbc4 0%, #ffd53d 55%, #c97f0a 100%);
+  box-shadow:
+    0 0 6px #ffd84daa,
+    inset 0 1px 1px #ffffffcc;
+}
+
+.resource-flight.elixir {
+  background: radial-gradient(circle at 35% 30%, #ffe8ff 0%, #e552f2 55%, #8c169e 100%);
+  box-shadow:
+    0 0 6px #ea66ffaa,
+    inset 0 1px 1px #ffffffcc;
+}
+
+.resource-flight.dark {
+  background: radial-gradient(circle at 35% 30%, #d4c2f5 0%, #5c3c8c 55%, #1d0e33 100%);
+  box-shadow:
+    0 0 6px #9c7cd4aa,
+    inset 0 1px 1px #ffffff88;
 }
 
 .elixir .resource-fill {
@@ -481,6 +507,15 @@ textarea:focus-visible,
     inset 0 1px 0 #ffffff2a,
     0 3px 7px #101b0e66;
   transition: filter 0.14s ease, transform 0.1s ease;
+}
+
+.collect-btn.has-loot {
+  border-color: #ffe270;
+  border-bottom-color: #6b4508;
+  box-shadow:
+    0 0 10px #ffd84d40,
+    inset 0 1px 0 #fff5b866,
+    0 3px 7px #101b0e66;
 }
 
 .collect-btn:hover:not(:disabled) {
@@ -931,6 +966,25 @@ textarea:focus-visible,
   text-shadow: var(--coc-outline-sm);
 }
 
+.wall-move-heading b {
+  color: #fff8de;
+  text-shadow: var(--coc-outline-sm);
+}
+
+.wall-move-heading span {
+  color: #dce8c5;
+}
+
+.wall-move-status {
+  color: #b8ff7a;
+  font-weight: 800;
+  text-shadow: var(--coc-outline-sm);
+}
+
+.wall-move-status.blocked {
+  color: #ff9f8f;
+}
+
 .coach-banner {
   background: linear-gradient(180deg, #32442cf5 0%, #1e2b1bf7 100%);
   border-color: #ffd561a8;
@@ -964,6 +1018,15 @@ textarea:focus-visible,
     inset 0 1px 0 #ffffff24,
     inset 0 -2px 0 #0e1a26,
     0 6px 18px #08121c77;
+}
+
+.prep-banner.scouting-target {
+  border-color: #ffd866b8;
+  background: linear-gradient(180deg, #2e423cf5 0%, #192924f7 100%);
+}
+
+.prep-banner.scouting-target svg {
+  color: #ffe066;
 }
 
 .prep-banner b {
@@ -1371,6 +1434,40 @@ textarea:focus-visible,
   filter: drop-shadow(0 5px 5px #382a1440);
 }
 
+.troop-info-hero > img {
+  padding: 6px;
+  border-radius: 14px;
+  border: 2px solid #88b0cf;
+  border-bottom-width: 4px;
+  border-bottom-color: #32577a;
+  background:
+    radial-gradient(ellipse at 50% 62%, #ffffff66 0%, transparent 72%),
+    linear-gradient(180deg, #a7dcff 0%, #5da5e0 54%, #3169a3 100%);
+  box-shadow:
+    inset 0 2px 0 #e6f7ffaa,
+    0 4px 10px #1b283833;
+}
+
+.spell-info-body .troop-info-hero > img {
+  border-color: #d4b2ff;
+  border-bottom-color: #462573;
+  background:
+    radial-gradient(ellipse at 50% 62%, #f5e6ff66 0%, transparent 72%),
+    linear-gradient(180deg, #cfadff 0%, #8c59d4 54%, #572c9c 100%);
+}
+
+.troop-tactic {
+  border-radius: 10px;
+  border: 1.5px solid #b5bf8e;
+  border-left: 4px solid #6b9e2b;
+  background: linear-gradient(180deg, #f2f5df 0%, #e4ebd0 100%);
+  color: #3c4527;
+}
+
+.troop-tactic > svg {
+  color: #55851e;
+}
+
 .info-levels i {
   background: #d4c49a;
   border: 1px solid #b5a376;
@@ -1400,6 +1497,44 @@ textarea:focus-visible,
 .info-table td.better {
   color: #2c7a16;
   font-weight: 800;
+}
+
+/* Clash of Clans two-tone horizontal stat bars (current + next-level preview) */
+.stat-bar {
+  position: relative;
+  display: block;
+  height: 6px;
+  margin-top: 4px;
+  border-radius: 99px;
+  background: #d8c89c;
+  border: 1px solid #b5a170;
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px #47371c38;
+}
+
+.stat-bar > i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: block;
+}
+
+.stat-bar > .stat-now {
+  left: 0;
+  background: linear-gradient(180deg, #aef261 0%, #58a81d 100%);
+  box-shadow: inset 0 1px 0 #ecffc7aa;
+}
+
+.stat-bar > .stat-gain {
+  background: linear-gradient(180deg, #fff180 0%, #f0b01a 100%);
+  box-shadow: inset 0 1px 0 #ffffffaa;
+}
+
+/* Warm parchment scrollbars for drawers and modals */
+.modal-body,
+.drawer-body {
+  scrollbar-width: thin;
+  scrollbar-color: #b59d6b #ebe0be;
 }
 
 .troop-stats > div {
@@ -1762,6 +1897,10 @@ textarea:focus-visible,
   box-shadow: inset 0 1px 3px #00000099;
 }
 
+.loot-track > i {
+  transition: transform 0.2s ease-out;
+}
+
 .loot-row.gold .loot-track > i {
   background: linear-gradient(180deg, #fff08a 0%, #e8a815 65%, #bd7a08 100%);
 }
@@ -1861,6 +2000,7 @@ textarea:focus-visible,
 }
 
 .destruction-bar > i {
+  transition: transform 0.2s ease-out;
   background: linear-gradient(180deg, #b8f568 0%, #68c229 55%, #489417 100%);
   box-shadow: inset 0 1px 0 #ebffc4aa;
 }
@@ -2057,11 +2197,24 @@ textarea:focus-visible,
   }
 }
 
+@keyframes coc-resource-bump {
+  0% {
+    transform: scale(1);
+  }
+  42% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 /* Respect both OS reduced-motion and in-app reduced-motion setting */
 @media (prefers-reduced-motion: reduce) {
   .level-shield,
   .trophy-pill,
   .status-chips button,
+  .resource-fill,
   .resource-plus,
   .square-btn,
   .collect-btn,
@@ -2077,9 +2230,12 @@ textarea:focus-visible,
   .shop-tile,
   .army-remove,
   .equipment-card,
-  .builder-menu .builder-option {
+  .builder-menu .builder-option,
+  .loot-track > i,
+  .destruction-bar > i {
     transition: none;
   }
+  .resource-bar.resource-bump,
   .troop-card.hero-card.ability-ready,
   .battle-clock.urgent > b,
   .destruction > div.star-pop,
@@ -2092,6 +2248,7 @@ textarea:focus-visible,
 .reduce-motion .level-shield,
 .reduce-motion .trophy-pill,
 .reduce-motion .status-chips button,
+.reduce-motion .resource-fill,
 .reduce-motion .resource-plus,
 .reduce-motion .square-btn,
 .reduce-motion .collect-btn,
@@ -2107,10 +2264,13 @@ textarea:focus-visible,
 .reduce-motion .shop-tile,
 .reduce-motion .army-remove,
 .reduce-motion .equipment-card,
-.reduce-motion .builder-menu .builder-option {
+.reduce-motion .builder-menu .builder-option,
+.reduce-motion .loot-track > i,
+.reduce-motion .destruction-bar > i {
   transition: none;
 }
 
+.reduce-motion .resource-bar.resource-bump,
 .reduce-motion .troop-card.hero-card.ability-ready,
 .reduce-motion .battle-clock.urgent > b,
 .reduce-motion .destruction > div.star-pop,

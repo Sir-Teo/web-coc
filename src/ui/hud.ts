@@ -1,4 +1,5 @@
 import { buildingPortrait } from './building-portrait-art';
+import { leagueLabel, statBarMarkup } from './rea-helpers';
 import { heroRosterIcon, rosterIcon } from './roster-art';
 import { eternalTomeRemaining } from './eternal-tome-feedback';
 import { rageVialRemaining } from './rage-vial-feedback';
@@ -329,9 +330,6 @@ type Panel =
 /** Shop and army live in a bottom sheet so the village stays visible and clickable. */
 type Drawer = 'shop' | 'army' | null;
 const n = (v: number) => Math.floor(v).toLocaleString('en-US');
-/** Display pinned league codes (e.g. "Silver1", "Bronze3") with Clash Roman tier spacing. */
-const leagueLabel = (name: string) =>
-  name.replace(/([a-z])([123])$/, (_, prev: string, tier: string) => `${prev} ${'I'.repeat(Number(tier))}`);
 /** A guide step's words: the client's <cRRGGBB>…</c> colours as spans, everything else text. */
 const guideMarkup = (text: string) =>
   html(text)
@@ -3598,7 +3596,7 @@ export class HUD {
        }<button class="train-add" data-action="army" aria-label="Train troops">${icon('Plus', 24)}<small>Train</small></button></div>`
      : ''
  }</div>
- <div class="bottom-right"><button class="collect-btn" data-action="collect">${coin}<span>Collect</span></button><button class="shop-btn ${this.drawerPanel === 'shop' ? 'open' : ''}" data-action="shop"><img class="native-shop-icon" src="/assets/hud-native/shop.png" width="104" height="83" alt="" draggable="false"><span>Shop</span></button></div>
+ <div class="bottom-right"><button class="collect-btn${m.state.buildings.some((b) => isCollector(b.kind) && !b.upgradeEnd && b.stored >= 1) ? ' has-loot' : ''}" data-action="collect">${coin}<span>Collect</span></button><button class="shop-btn ${this.drawerPanel === 'shop' ? 'open' : ''}" data-action="shop"><img class="native-shop-icon" src="/assets/hud-native/shop.png" width="104" height="83" alt="" draggable="false"><span>Shop</span></button></div>
  ${this.coach()}
  <div class="control-hint">Drag to explore <span>·</span> Scroll to zoom <span>·</span> Click a building</div>`;
   }
@@ -4244,7 +4242,24 @@ export class HUD {
     return `<div class="battle-enemy"><span class="eyebrow">${m.goblinRaid ? 'GOBLIN RAID' : m.replay ? (m.replay.recordId === null ? 'SHARED REPLAY' : 'ATTACK REPLAY') : b.practice ? 'PRACTICE ATTACK' : b.ladder ? 'LADDER MATCH' : 'ENEMY VILLAGE'}</span><h2>${v.name}</h2>${m.goblinRaid ? '<small class="practice-note">Goblins are raiding your village!<br>Watch your defenses fight back.</small>' : m.replay ? '<small class="practice-note">Recorded attack · Watch &amp; learn</small>' : b.practice ? '<small class="practice-note">Your village and army are safe.<br>No loot or trophies at stake.</small>' : b.ladder ? `<small class="ladder-stake">${icon('Trophy', 15)} ${n(b.ladder.opponent)} · Win <b>+${b.ladder.win}</b> · Defeat <b>−${b.ladder.loss}</b></small><small class="practice-note">No loot at stake.</small>` : `<small>AVAILABLE LOOT</small><div class="loot-bars">${lootKeys.map(lootBar).join('')}</div>${limitedStorage ? '<small class="loot-capacity-note">Loot beyond your storage capacity will be lost.</small>' : ''}`}</div>
  <div class="battle-clock ${b.started ? '' : 'prep'}"><span>${battleClockLabel(b)}</span><b id="battle-timer">${battleClockValue(b)}</b></div>
  <div class="destruction"><span>Total destruction</span><div id="battle-stars" class="battle-stars" role="img" aria-label="${starCountLabel(b.stars)}" data-stars="${b.stars}">${'★'.repeat(b.stars)}<span>${'★'.repeat(3 - b.stars)}</span></div><b id="destruction-value">${b.destruction}%</b><div class="destruction-bar"><i id="destruction-fill" style="transform:${fillScale(b.destruction)}"></i><span class="notch half" style="left:50%"></span><span class="notch full" style="left:100%"></span></div><small>★ 50% <i>·</i> ★ Town Hall <i>·</i> ★ 100%</small></div>
- ${m.practiceGuide && !m.replay ? this.practiceGuideBanner() : !b.started && !m.replay ? `<div class="prep-banner">${icon('Timer', 20)}<div><b>Scout the base</b><small role="status"></small></div></div>` : ''}
+ ${
+   m.practiceGuide && !m.replay
+     ? this.practiceGuideBanner()
+     : !b.started && !m.replay
+       ? (() => {
+           const target =
+             m.selected !== null
+               ? m.buildings.find(
+                   (sb) => sb.id === m.selected && sb.hp > 0 && m.visibleBuilding(sb),
+                 )
+               : undefined;
+           const heading = target
+             ? `${html(target.npc ? NPC_BUILDINGS[target.npc].name : BUILDINGS[target.kind].name)} · Level ${target.level}`
+             : 'Scout the base';
+           return `<div class="prep-banner${target ? ' scouting-target' : ''}">${icon(target ? 'Target' : 'Timer', 20)}<div><b>${heading}</b><small role="status"></small></div></div>`;
+         })()
+       : ''
+ }
   ${
     m.replay
       ? this.replayControls()
@@ -5932,6 +5947,7 @@ export class HUD {
     const gated = !capped && b.level >= m.maxLevel(b.kind);
     const now = statRows(b);
     const next = capped ? [] : statRows(b, b.level + 1);
+    const maxRows = d.maxLevel > 1 ? statRows(b, d.maxLevel) : [];
     const townHallUpgrade = b.kind === 'townhall' && !capped && !b.upgradeEnd;
     const mergeBlocker = townHallUpgrade ? m.townHallMergeIssue(b.level) : null;
     const issue = townHallUpgrade ? m.upgradeIssue(b) : null;
@@ -5959,7 +5975,8 @@ export class HUD {
    .map(([ic, label, value], i) => {
      const after = next[i]?.[2];
      const changed = after !== undefined && after !== value;
-     return `<tr><td><span class="info-stat-label">${icon(ic, 15)} ${label}</span></td><td>${value}</td><td class="${changed ? 'better' : 'same'}">${capped ? '—' : changed ? `${after} ${icon('ArrowBigUp', 13)}` : after}</td></tr>`;
+     const bar = maxRows[i] && maxRows[i][1] === label ? statBarMarkup(value, after, maxRows[i][2]) : '';
+     return `<tr><td><span class="info-stat-label">${icon(ic, 15)} ${label}</span>${bar}</td><td>${value}</td><td class="${changed ? 'better' : 'same'}">${capped ? '—' : changed ? `${after} ${icon('ArrowBigUp', 13)}` : after}</td></tr>`;
    })
    .join('')}</tbody></table>
  ${nextUnlocks.length ? `<p class="upgrade-unlocks">Unlocks at level ${b.level + 1}: <b>${nextUnlocks.join(', ')}</b></p>` : ''}
@@ -6655,6 +6672,8 @@ export class HUD {
       lootBars,
     };
   }
+  /** Cached resource amounts to detect increases across both live patches and full HUD rebuilds. */
+  private prevResources: Partial<Record<'gold' | 'elixir' | 'dark' | 'gems', number>> = {};
   private updateLive() {
     const m = this.model;
     this.audio.musicScene(musicScene(m.battle));
@@ -6835,8 +6854,30 @@ export class HUD {
       if (siegeCardsChanged) refs = this.liveRefs = this.collectLiveRefs();
       setText(refs.deployLabel, this.deployHint());
     }
-    for (const el of refs.resources)
-      setText(el, n(m.state[el.dataset.resource as 'gold' | 'elixir' | 'dark' | 'gems']));
+    for (const el of refs.resources) {
+      const key = el.dataset.resource as 'gold' | 'elixir' | 'dark' | 'gems';
+      const val = Math.floor(m.state[key]);
+      const prev = this.prevResources[key] ?? val;
+      this.prevResources[key] = val;
+      setText(el, n(val));
+      const bar = el.closest<HTMLElement>('.resource-bar');
+      if (bar) {
+        const fill = bar.querySelector<HTMLElement>('.resource-fill');
+        const nextWidth =
+          key === 'gems' ? pct((val / 500) * 100) : pct((val / Math.max(1, m.resourceCap(key))) * 100);
+        if (fill && fill.style.width !== nextWidth) fill.style.width = nextWidth;
+        if (val > prev && !m.reducedMotion) {
+          bar.classList.remove('resource-bump');
+          void bar.offsetWidth;
+          bar.classList.add('resource-bump');
+        }
+      }
+    }
+    const collectBtn = this.hudEl.querySelector<HTMLElement>('.collect-btn');
+    if (collectBtn) {
+      const hasLoot = m.state.buildings.some((b) => isCollector(b.kind) && !b.upgradeEnd && b.stored >= 1);
+      if (collectBtn.classList.contains('has-loot') !== hasLoot) collectBtn.classList.toggle('has-loot', hasLoot);
+    }
     // Army tile counts, patched while a held Add or Remove defers the drawer's redraw.
     for (const el of refs.armyCounts) {
       const [type, kind] = el.dataset.armyCount!.split(':');

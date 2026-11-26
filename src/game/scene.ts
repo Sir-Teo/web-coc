@@ -5677,15 +5677,40 @@ export class VillageScene extends Phaser.Scene {
       // Camera motion and DOM drags can change the tile without a Phaser pointer event.
       // Resolve it once per frame for both the sprite and its placement footprint.
       const preview = this.updateGhost(this.pointerScreen());
-      if (preview)
-        this.diamond(
-          g,
-          preview.x,
-          preview.y,
-          preview.size,
-          preview.valid ? 0x8fff73 : 0xff6464,
-          0.28,
-        );
+      if (preview) {
+        const color = preview.valid ? 0x8fff73 : 0xff6464;
+        this.diamond(g, preview.x, preview.y, preview.size, color, 0.28);
+        this.drawPlacementArrows(g, preview.x, preview.y, preview.size, color);
+      }
+    }
+  }
+  /** Classic Clash 4-edge directional placement arrowheads around a building footprint. */
+  private drawPlacementArrows(
+    g: Phaser.GameObjects.Graphics,
+    x: number,
+    y: number,
+    s: number,
+    color: number,
+  ) {
+    const mid = s / 2;
+    const edges: [number, number, number, number][] = [
+      [x + mid, y, 0, -1],
+      [x + s, y + mid, 1, 0],
+      [x + mid, y + s, 0, 1],
+      [x, y + mid, -1, 0],
+    ];
+    for (const [ex, ey, dx, dy] of edges) {
+      const base = iso(ex + dx * 0.14, ey + dy * 0.14);
+      const tip = iso(ex + dx * 0.62, ey + dy * 0.62);
+      const left = iso(ex + dx * 0.14 - dy * 0.24, ey + dy * 0.14 + dx * 0.24);
+      const right = iso(ex + dx * 0.14 + dy * 0.24, ey + dy * 0.14 - dx * 0.24);
+      g.fillStyle(0x162211, 0.65);
+      g.fillTriangle(tip.x, tip.y + 2, left.x, left.y + 2, right.x, right.y + 2);
+      g.fillStyle(color, 0.96);
+      g.fillTriangle(tip.x, tip.y, left.x, left.y, right.x, right.y);
+      g.lineStyle(1.5, 0xffffff, 0.85);
+      g.strokeTriangle(tip.x, tip.y, left.x, left.y, right.x, right.y);
+      void base;
     }
   }
   private selectionArc = Array.from({ length: 98 }, () => new Phaser.Math.Vector2());
@@ -6984,8 +7009,8 @@ export class VillageScene extends Phaser.Scene {
           fontFamily: HEADING_FONT,
           fontStyle: 'bold',
           fontSize: '23px',
-          color: fx.color === 0xffd34b ? '#ffdc5c' : '#f7adff',
-          stroke: '#3b3524',
+          color: resource === 'gold' ? '#ffdf66' : resource === 'dark' ? '#cfa8ff' : '#ffb5ff',
+          stroke: resource === 'gold' ? '#3d2808' : resource === 'dark' ? '#231138' : '#42124d',
           strokeThickness: 4,
         })
         .setOrigin(0.5)
@@ -7251,8 +7276,23 @@ export class VillageScene extends Phaser.Scene {
         fx.abilityCastId,
         this.model.reducedMotion,
       )
-    )
+    ) {
       this.sparks(p.x, p.y - 8, fx.type === 'spawn' ? 0xefffc5 : 0xffe1a0, 5);
+      if (fx.type === 'spawn' && !this.model.reducedMotion) {
+        const ring = this.add
+          .ellipse(p.x, p.y, 26, 13)
+          .setStrokeStyle(2.5, 0xefffc5, 0.85)
+          .setDepth(7150);
+        this.animateEffect({
+          targets: ring,
+          scaleX: 2.35,
+          scaleY: 2.35,
+          alpha: 0,
+          duration: 280,
+          onComplete: () => ring.destroy(),
+        });
+      }
+    }
   }
   /**
    * Feedback shake. `intensity` keeps Phaser's `camera.shake` meaning on a 1x display at the
