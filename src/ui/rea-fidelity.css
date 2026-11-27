@@ -3590,6 +3590,625 @@ textarea:focus-visible,
   }
 }
 
+/* ============================================================================
+   REA Milestone 3 — Clash Sculpted Emblems, Volumetric Clouds & Flow Parity
+   ============================================================================ */
+
+/* Sculpted XP Star, League Shields, Builder/Shield Medallions & Resource Emblems */
+.level-shield.clash-xp-shield {
+  position: relative;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  width: 50px;
+  height: 50px;
+  display: inline-grid;
+  place-items: center;
+  overflow: visible;
+}
+
+.level-shield.clash-xp-shield::before,
+.level-shield.clash-xp-shield::after {
+  display: none;
+}
+
+.level-shield.clash-xp-shield > .xp-star-svg,
+.level-shield.clash-xp-shield > .xp-level-num {
+  grid-area: 1 / 1;
+}
+
+.xp-star-svg {
+  display: block;
+  width: 50px;
+  height: 50px;
+  filter: drop-shadow(0 3px 4px #091d3880);
+}
+
+.xp-level-num {
+  position: relative;
+  z-index: 2;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1;
+  color: #ffffff;
+  text-shadow: var(--coc-outline);
+  pointer-events: none;
+}
+
+.league-badge-svg,
+.hud-badge-svg,
+.resource-svg {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1.5px 2px #0f160d66);
+}
+
+.resource-icon:has(.resource-svg) {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  border-radius: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+.resource-icon:has(.resource-svg)::before,
+.resource-icon:has(.resource-svg)::after {
+  display: none;
+}
+
+.resource-icon .resource-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Sculpted Clash 3-Star Ribbons (Battle HUD, Callout, Result, Campaign) */
+.battle-stars,
+.star-callout-stars,
+.result-stars,
+.campaign-stars {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  line-height: 1;
+}
+
+.clash-star {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clash-star-svg {
+  display: block;
+  filter: drop-shadow(0 2px 3px #120b0375);
+}
+
+.clash-star-svg.earned {
+  filter: drop-shadow(0 2px 4px #5e340599) drop-shadow(0 0 8px #ffd84d66);
+}
+
+.result-stars .clash-star.earned {
+  animation: coc-result-star 0.45s cubic-bezier(0.22, 1.45, 0.36, 1) backwards;
+  animation-delay: calc(var(--star-i, 0) * 140ms + 80ms);
+}
+
+/* Multi-Layer Volumetric Cloud Banks */
+.cloud-bank.mid {
+  top: -8%;
+  width: 74%;
+  height: 116%;
+  opacity: 0.72;
+  background:
+    radial-gradient(circle at 30% 34%, #ffffffdd 0%, #eae3d2bb 48%, transparent 68%),
+    radial-gradient(circle at 68% 66%, #ffffffdd 0%, #e4dcc9bb 48%, transparent 70%);
+}
+
+.cloud-veil.parting .cloud-bank.mid.left {
+  animation: coc-cloud-left 0.68s cubic-bezier(0.2, 0.78, 0.28, 1) forwards;
+}
+
+.cloud-veil.parting .cloud-bank.mid.right {
+  animation: coc-cloud-right 0.68s cubic-bezier(0.2, 0.78, 0.28, 1) forwards;
+}
+
+/* On-Canvas Floating Placement Confirm/Discard Buttons */
+.canvas-place-actions {
+  position: fixed;
+  z-index: 36;
+  transform: translate(-50%, 0);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.canvas-place-actions[hidden] {
+  display: none;
+}
+
+.canvas-place-btn {
+  pointer-events: auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  border: 2.5px solid #2b4712;
+  border-bottom-width: 4px;
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow:
+    inset 0 2px 0 #ffffff66,
+    0 5px 12px #0b160988;
+  transition: transform 0.1s ease, filter 0.12s ease;
+}
+
+.canvas-place-btn.confirm {
+  background: linear-gradient(180deg, #a7ec4f 0%, #63b522 55%, #448813 100%);
+  border-color: #274f0b;
+}
+
+.canvas-place-btn.cancel {
+  background: linear-gradient(180deg, #ff7866 0%, #df3326 55%, #b31c14 100%);
+  border-color: #6b130d;
+}
+
+.canvas-place-btn:disabled {
+  filter: grayscale(0.75) brightness(0.78);
+  cursor: not-allowed;
+}
+
+.canvas-place-btn:active:not(:disabled) {
+  transform: translateY(2px);
+}
+
+/* Edit Mode Photo Mode Exit Pill */
+.photo-mode-bar {
+  position: fixed;
+  bottom: max(18px, env(safe-area-inset-bottom, 0px) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 32;
+  pointer-events: none;
+}
+
+.photo-exit-btn {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  opacity: 0.9;
+}
+
+.photo-exit-btn:hover {
+  opacity: 1;
+}
+
+/* Battle HUD: Ladder Next Opponent Button, Hero Ability Pills & Depleted Next-Ready Pulse */
+.battle-bottom > .next-match-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 15px;
+  font-size: 14px;
+  font-weight: 900;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.hero-ability-pill {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  z-index: 3;
+  padding: 1px 5px;
+  border-radius: 5px;
+  font-size: 8.5px;
+  font-weight: 900;
+  letter-spacing: 0.4px;
+  line-height: 1.25;
+  text-shadow: 0 1px 1px #000000aa;
+  pointer-events: none;
+}
+
+.hero-ability-pill.ready {
+  background: linear-gradient(180deg, #ffe97a 0%, #e89b14 100%);
+  border: 1px solid #fff8cc;
+  color: #361d03;
+  text-shadow: none;
+}
+
+.hero-ability-pill.active {
+  background: linear-gradient(180deg, #7df3ff 0%, #1c8ce0 100%);
+  border: 1px solid #e0fbff;
+  color: #ffffff;
+}
+
+.hero-ability-pill.spent {
+  background: #232b22d4;
+  border: 1px solid #8a948880;
+  color: #c8cfc4;
+}
+
+.troop-card.ready-next {
+  border-color: #a6f556;
+  box-shadow:
+    0 0 0 2px #92eb44cc,
+    0 0 14px #8be63d75;
+  animation: coc-ready-next 1.1s ease-in-out infinite;
+}
+
+@keyframes coc-ready-next {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px #92eb44aa,
+      0 0 10px #8be63d55;
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px #c6ff70ee,
+      0 0 18px #92eb44aa;
+  }
+}
+
+/* Army Drawer Sticky Live Overview Bar */
+.drawer-head.army-head {
+  flex-wrap: wrap;
+}
+
+.army-overview-bar {
+  flex: 1 0 100%;
+  order: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  margin-top: 2px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #f3e6c4 0%, #e6d4a6 100%);
+  border: 1.5px solid #bfa875;
+  box-shadow: inset 0 1px 0 #ffffffbb;
+  min-width: 0;
+}
+
+@media (max-width: 700px) {
+  .army-head .army-overview-bar {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+}
+
+@media (max-height: 520px) {
+  .army-overview-bar {
+    padding: 3px 8px;
+    gap: 6px;
+    margin-top: 0;
+  }
+  .army-chip {
+    padding: 1px 6px 1px 3px;
+    font-size: 10.5px;
+  }
+  .army-chip img {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.army-overview-meta {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  line-height: 1.15;
+}
+
+.army-overview-title {
+  font-size: 9.5px;
+  font-weight: 900;
+  letter-spacing: 0.7px;
+  color: #6b542c;
+}
+
+.army-overview-meta small {
+  font-size: 11px;
+  font-weight: 800;
+  color: #3d2e18;
+  font-variant-numeric: tabular-nums;
+}
+
+.army-overview-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  min-width: 0;
+  flex: 1;
+  padding: 1px 0;
+}
+
+.army-overview-empty {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #705c3a;
+  white-space: nowrap;
+}
+
+.army-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px 2px 3px;
+  border-radius: 8px;
+  border: 1.5px solid #6b9ec2;
+  border-bottom-width: 2.5px;
+  border-bottom-color: #2f5778;
+  background: linear-gradient(180deg, #e8f6ff 0%, #c6e5fa 100%);
+  color: #1f3347;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.1s ease, filter 0.12s ease;
+}
+
+.army-chip.spell {
+  border-color: #b485e6;
+  border-bottom-color: #542d85;
+  background: linear-gradient(180deg, #f5eaff 0%, #dfc4fc 100%);
+  color: #381b5c;
+}
+
+.army-chip:hover {
+  filter: brightness(1.04);
+}
+
+.army-chip:active {
+  transform: translateY(1px);
+}
+
+.army-chip img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.army-chip-minus {
+  display: inline-grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #d93b2e;
+  color: #ffffff;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 900;
+}
+
+/* Blacksmith Two-Tone Stat Bars inside Equipment Details */
+.equipment-stats .equip-stat-val {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.equipment-stats .stat-delta {
+  color: #2c7a16;
+  font-style: normal;
+  font-weight: 800;
+  font-size: 11.5px;
+}
+
+.equipment-stats .stat-bar {
+  margin-top: 3px;
+  min-width: 96px;
+}
+
+/* Campaign List / Goblin Trail Map Toggle & Illustrated Trail */
+.campaign-view-toggle {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: 9px;
+  background: #ded0a9;
+  border: 1.5px solid #ad9562;
+  gap: 2px;
+}
+
+.view-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 7px;
+  border: 0;
+  background: transparent;
+  color: #594628;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.view-pill.active {
+  background: linear-gradient(180deg, #fffdf4 0%, #f5e6bb 100%);
+  color: #362611;
+  box-shadow:
+    inset 0 1px 0 #ffffffcc,
+    0 1px 3px #2e200a28;
+}
+
+.campaign-trail-map {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 16px 24px;
+  background:
+    radial-gradient(ellipse at 20% 10%, #a5cc6a44 0%, transparent 55%),
+    radial-gradient(ellipse at 82% 45%, #84b34e38 0%, transparent 55%),
+    linear-gradient(180deg, #d7e4b2 0%, #e8dfba 52%, #d8c89e 100%);
+  border-top: 2px solid #b8a374;
+}
+
+.trail-road {
+  position: absolute;
+  top: 16px;
+  bottom: 16px;
+  left: 50%;
+  width: 10px;
+  transform: translateX(-50%);
+  border-radius: 99px;
+  background: repeating-linear-gradient(
+    180deg,
+    #c7a66b 0px,
+    #c7a66b 14px,
+    #a8854c 14px,
+    #a8854c 22px
+  );
+  border: 2px solid #785d32;
+  box-shadow: inset 0 0 0 1px #f2dfa888;
+  pointer-events: none;
+}
+
+.trail-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 44px 1fr;
+  align-items: center;
+  gap: 10px;
+  z-index: 1;
+}
+
+.trail-pin {
+  grid-column: 2;
+  width: 40px;
+  height: 40px;
+  margin: 0 auto;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: 13px;
+  background: linear-gradient(180deg, #8ec44d 0%, #588c24 100%);
+  border: 3px solid #fff8d6;
+  color: #ffffff;
+  text-shadow: 0 1px 1px #1d3608;
+  box-shadow: 0 3px 8px #1d261052;
+}
+
+.trail-node.cleared .trail-pin {
+  background: linear-gradient(180deg, #ffe378 0%, #db9214 100%);
+  color: #3d2405;
+  text-shadow: 0 1px 0 #fff7cc;
+}
+
+.trail-node.current .trail-pin {
+  background: linear-gradient(180deg, #ff9d42 0%, #d95214 100%);
+  box-shadow:
+    0 0 0 4px #ffbe4d80,
+    0 4px 12px #7a290666;
+  animation: coc-ready-next 1.4s ease-in-out infinite;
+}
+
+.trail-node.locked .trail-pin {
+  background: linear-gradient(180deg, #a8a08c 0%, #7d7664 100%);
+  border-color: #dfd8c3;
+}
+
+.trail-card {
+  grid-row: 1;
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fffdf4 0%, #f3e6c2 100%);
+  border: 2px solid #bda878;
+  border-bottom-width: 3px;
+  box-shadow:
+    inset 0 1px 0 #ffffffcc,
+    0 3px 8px #2b200d24;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.trail-node.left .trail-card {
+  grid-column: 1;
+}
+
+.trail-node.right .trail-card {
+  grid-column: 3;
+}
+
+.trail-node.locked .trail-card {
+  opacity: 0.72;
+  background: linear-gradient(180deg, #e8e2d1 0%, #dad3be 100%);
+}
+
+.trail-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.trail-card header strong {
+  color: #3a2b18;
+  font-size: 13.5px;
+}
+
+.trail-loot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #4f3e22;
+}
+
+.trail-btn {
+  align-self: flex-start;
+  padding: 5px 11px;
+  font-size: 12px;
+}
+
+@media (max-width: 640px) {
+  .trail-road {
+    left: 26px;
+    transform: none;
+  }
+  .trail-node {
+    grid-template-columns: 40px 1fr;
+  }
+  .trail-pin {
+    grid-column: 1;
+  }
+  .trail-node.left .trail-card,
+  .trail-node.right .trail-card {
+    grid-column: 2;
+  }
+  .army-overview-bar {
+    padding: 4px 8px;
+    gap: 6px;
+  }
+  .edit-toolbar {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+  }
+}
+
 /* Respect both OS reduced-motion and in-app reduced-motion setting */
 @media (prefers-reduced-motion: reduce) {
   .level-shield,
@@ -3613,15 +4232,20 @@ textarea:focus-visible,
   .equipment-card,
   .builder-menu .builder-option,
   .loot-track > i,
-  .destruction-bar > i {
+  .destruction-bar > i,
+  .canvas-place-btn,
+  .army-chip {
     transition: none;
   }
   .resource-bar.resource-bump,
   .troop-card.hero-card.ability-ready,
+  .troop-card.ready-next,
+  .trail-node.current .trail-pin,
   .battle-clock.urgent > b,
   .destruction > div.star-pop,
   .result-modal.result-victory .result-rays,
   .result-stars .earned,
+  .result-stars .clash-star.earned,
   .cloud-veil.parting .cloud-bank,
   .cloud-veil.parting .cloud-sunburst,
   .star-callout.show {
@@ -3654,16 +4278,21 @@ textarea:focus-visible,
 .reduce-motion .equipment-card,
 .reduce-motion .builder-menu .builder-option,
 .reduce-motion .loot-track > i,
-.reduce-motion .destruction-bar > i {
+.reduce-motion .destruction-bar > i,
+.reduce-motion .canvas-place-btn,
+.reduce-motion .army-chip {
   transition: none;
 }
 
 .reduce-motion .resource-bar.resource-bump,
 .reduce-motion .troop-card.hero-card.ability-ready,
+.reduce-motion .troop-card.ready-next,
+.reduce-motion .trail-node.current .trail-pin,
 .reduce-motion .battle-clock.urgent > b,
 .reduce-motion .destruction > div.star-pop,
 .reduce-motion .result-modal.result-victory .result-rays,
 .reduce-motion .result-stars .earned,
+.reduce-motion .result-stars .clash-star.earned,
 .reduce-motion .cloud-veil.parting .cloud-bank,
 .reduce-motion .cloud-veil.parting .cloud-sunburst,
 .reduce-motion .star-callout.show {

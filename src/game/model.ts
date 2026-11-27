@@ -1687,6 +1687,10 @@ export class GameModel {
     spot?: { x: number; y: number };
   } | null = null;
   editing = false;
+  /** Edit Mode Scout View: conceals traps/Teslas and previews the red no-deploy border. */
+  editScoutView = false;
+  /** Edit Mode Photo Mode: hides HUD overlays for clean village inspection/screenshots. */
+  editPhotoMode = false;
   private undoStack: Layout['slots'][] = [];
   private redoStack: Layout['slots'][] = [];
   /** True after the current drag first moves a building. */
@@ -1695,11 +1699,16 @@ export class GameModel {
   private dragGesture = false;
   private dragOrigin: { x: number; y: number; size: number } | null = null;
   private dragBlocked = false;
+  /** Building id hovered for same-footprint Drag-to-Swap in Edit Mode. */
+  dragSwapTarget: number | null = null;
   get holdingBuildingForEdit() {
     return this.dragGesture;
   }
   get hasBuildingDrag() {
     return this.dragOrigin !== null;
+  }
+  get activeDragId() {
+    return this.draggedBuilding;
   }
   onChange = (_passive = false) => {};
   onEffect = (_fx: FX) => {};
@@ -3909,15 +3918,42 @@ export class GameModel {
     const b = this.state.buildings.find((b) => b.id === this.draggedBuilding);
     const origin = this.dragOrigin;
     const blocked = this.dragBlocked;
+    const swapTargetId = this.dragSwapTarget;
     const wasHeld = this.dragGesture;
     this.draggedBuilding = null;
     this.dragOpen = false;
     this.dragGesture = false;
     this.dragOrigin = null;
     this.dragBlocked = false;
+    this.dragSwapTarget = null;
     if (!b) {
       if (wasHeld) this.changed();
       return;
+    }
+    if (!cancelled && swapTargetId !== null) {
+      const target = this.state.buildings.find((v) => v.id === swapTargetId);
+      if (target && target.id !== b.id && BUILDINGS[target.kind].size === BUILDINGS[b.kind].size) {
+        const before = this.positions();
+        const bx = origin ? origin.x : b.x;
+        const by = origin ? origin.y : b.y;
+        const slotB = before.find(({ id }) => id === b.id);
+        if (slotB) {
+          slotB.x = bx;
+          slotB.y = by;
+        }
+        const tx = target.x,
+          ty = target.y;
+        b.x = tx;
+        b.y = ty;
+        target.x = bx;
+        target.y = by;
+        this.recordPositions(before);
+        this.stashCoveredDecorations();
+        this.nativeBuildingHandling(b, 'place');
+        this.notify(`Swapped ${BUILDINGS[b.kind].name} and ${BUILDINGS[target.kind].name}.`);
+        this.changed();
+        return;
+      }
     }
     const discard = cancelled || (origin !== null && blocked);
     if (origin) {
@@ -3943,7 +3979,10 @@ export class GameModel {
     if (this.battle) return;
     this.cancelNativeHandling();
     this.editing = true;
+    this.editScoutView = false;
+    this.editPhotoMode = false;
     this.dragOpen = false;
+    this.dragSwapTarget = null;
     this.selected = null;
     this.placement = null;
     this.moving = null;
@@ -3951,23 +3990,89 @@ export class GameModel {
     this.movingDecoration = null;
     this.movingObstacle = null;
     // A shared layout restored before entering Edit already has an undo entry.
-    this.notify('Edit mode — drag any building to rearrange your village.');
+    this.notify('Edit mode — drag buildings to move or drop onto a matching size to swap.');
     this.changed();
   }
   endEdit() {
     this.endDrag(true);
     this.wallMove = null;
     this.editing = false;
+    this.editScoutView = false;
+    this.editPhotoMode = false;
     this.undoStack = [];
     this.redoStack = [];
     this.changed();
   }
-  /** Relocates a building during edit mode. Returns false when the ground is taken. */
+  toggleEditScoutView() {
+    if (!this.editing || this.battle) return;
+    this.editScoutView = !this.editScoutView;
+    this.notify(
+      this.editScoutView
+        ? 'Scout View — traps hidden & red no-deploy border shown.'
+        : 'Scout View off.',
+    );
+    this.changed();
+  }
+  toggleEditPhotoMode() {
+    if (!this.editing || this.battle) return;
+    this.editPhotoMode = !this.editPhotoMode;
+    this.changed();
+  }
+  /** Finds a single same-size building eligible for Drag-to-Swap at (x, y). */
+  private findSwapTarget(b: Building, x: number, y: number): Building | null {
+    const size = BUILDINGS[b.kind].size;
+    if (x < BUILD_MIN || y < BUILD_MIN || x + size > BUILD_MAX || y + size > BUILD_MAX)
+      return null;
+    if (overlapsObstacle(this.obstacles, x, y, size)) return null;
+    const hits = this.state.buildings.filter((v) => {
+      if (v.id === b.id) return false;
+      const vs = BUILDINGS[v.kind].size;
+      return x < v.x + vs && x + size > v.x && y < v.y + vs && y + size > v.y;
+    });
+    if (hits.length !== 1) return null;
+    const target = hits[0];
+    if (BUILDINGS[target.kind].size !== size) return null;
+    const ox = this.dragOrigin ? this.dragOrigin.x : b.x;
+    const oy = this.dragOrigin ? this.dragOrigin.y : b.y;
+    if (overlapsObstacle(this.obstacles, ox, oy, size)) return null;
+    // Target must also clear every third building at the dragged building's origin.
+    const originBlocked = this.state.buildings.some((v) => {
+      if (v.id === b.id || v.id === target.id) return false;
+      const vs = BUILDINGS[v.kind].size;
+      return ox < v.x + vs && ox + size > v.x && oy < v.y + vs && oy + size > v.y;
+    });
+    return originBlocked ? null : target;
+  }
+  /** Relocates a building during edit mode, or arms a same-size Drag-to-Swap preview. */
   dragTo(id: number, x: number, y: number) {
     const b = this.state.buildings.find((v) => v.id === id);
     if (!b || !this.editing || this.battle) return false;
-    this.dragBlocked = !this.canPlace(b.kind, x, y, id);
-    if (this.dragBlocked) return false;
+    if (!this.canPlace(b.kind, x, y, id)) {
+      const swap = this.findSwapTarget(b, x, y);
+      if (swap) {
+        if (!this.dragOpen) {
+          if (this.dragGesture) this.dragOrigin = { x: b.x, y: b.y, size: BUILDINGS[b.kind].size };
+          else this.recordPositions();
+          this.dragOpen = true;
+          this.draggedBuilding = b.id;
+          this.nativeBuildingHandling(b, 'pickup');
+        }
+        this.dragBlocked = false;
+        if (this.dragSwapTarget !== swap.id) {
+          this.dragSwapTarget = swap.id;
+          this.changed();
+        }
+        return true;
+      }
+      if (this.dragSwapTarget !== null) {
+        this.dragSwapTarget = null;
+        this.changed();
+      }
+      this.dragBlocked = true;
+      return false;
+    }
+    this.dragBlocked = false;
+    if (this.dragSwapTarget !== null) this.dragSwapTarget = null;
     if (b.x === x && b.y === y) return true;
     if (!this.dragOpen) {
       if (this.dragGesture) this.dragOrigin = { x: b.x, y: b.y, size: BUILDINGS[b.kind].size };
@@ -6226,7 +6331,12 @@ export class GameModel {
     }
   }
   visibleBuilding(building: Building) {
-    if (this.battle && building.kind === 'skeletontrap') {
+    if (!this.battle) {
+      if (this.editing && this.editScoutView)
+        return !isTrap(building.kind) && building.kind !== 'tesla';
+      return true;
+    }
+    if (building.kind === 'skeletontrap') {
       const state = this.battle.traps[building.id];
       return (
         !this.battle.finished &&
@@ -6235,11 +6345,10 @@ export class GameModel {
       );
     }
     return (
-      !this.battle ||
-      (!concealedTesla(this.battle, building) &&
-        (!isTrap(building.kind) ||
-          !!this.battle.traps[building.id] ||
-          alwaysVisibleTrap(this.battle, building)))
+      !concealedTesla(this.battle, building) &&
+      (!isTrap(building.kind) ||
+        !!this.battle.traps[building.id] ||
+        alwaysVisibleTrap(this.battle, building))
     );
   }
   campaignLoot(index: number, catalog?: CampaignCatalog): CampaignResources {
@@ -6450,6 +6559,15 @@ export class GameModel {
     if ((this.battle as Battle | null)?.ladder)
       this.state.ladderSeed = (this.state.ladderSeed ?? 0) + 1;
   }
+  /** Clash-style "Next" scouting skip during pre-deploy Ladder scouting. */
+  nextLadderMatch() {
+    const b = this.battle;
+    if (!b || !b.ladder || b.started || b.finished || this.replay) return false;
+    this.battle = null;
+    this.recording = null;
+    this.startLadder();
+    return Boolean(this.battle);
+  }
   startBattle(
     index: number,
     practice = false,
@@ -6499,6 +6617,8 @@ export class GameModel {
     this.endDrag(true);
     this.cancel();
     this.editing = false;
+    this.editScoutView = false;
+    this.editPhotoMode = false;
     this.practiceGuide = null;
     const heroes = drill ? structuredClone(drill.heroes) : this.heroSetups();
     const buildings = practice
@@ -8556,6 +8676,8 @@ export class GameModel {
       return false;
     this.cancel();
     this.editing = false;
+    this.editScoutView = false;
+    this.editPhotoMode = false;
     this.recording = null;
     this.replayData = structuredClone(data);
     this.replay = {

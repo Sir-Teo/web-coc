@@ -509,3 +509,58 @@ and `replay-tools.spec.ts`). Original-client transition timings, result layout
 proportions, and cloud textures remain web presentation pending matched
 captures.
 
+## Milestone 3 UI/UX alignment (sculpted emblems, diegetic canvas UX, audio, Edit Mode, Battle & Campaign)
+
+Milestone 3 closed the next major tier of visual emblem fidelity, on-canvas
+diegetic interaction, native audio coverage, Village Edit Mode usability, and
+battle/campaign polish against the pinned `18.400.21` client without breaking
+existing layout, accessibility, or asset contracts:
+
+- **Sculpted vector Clash emblems (`src/ui/clash-emblems.ts`)**: Replaced plain
+  geometric circles, text stars, and generic icons across the Home and Battle
+  HUD with beveled Clash emblems — cobalt 5-point XP star (`xpStarSvg`),
+  tier-colored League shield crests (`leagueCrestSvg`), gold/elixir/dark/gem
+  resource emblems (`resourceEmblemSvg` wired through `src/ui/icons.ts`),
+  Builder hammer badge (`builderHammerSvg`), village protection shield
+  (`shieldCrestSvg`), and 3-tier golden/metallic Battle & Campaign stars
+  (`clashStarsMarkup`).
+- **Diegetic on-canvas UX (`src/game/scene.ts`, `src/ui/hud.ts`)**: Added a
+  floating world-space building nameplate (`Name` + `Level N`) above the
+  selected building; animated curved golden/red corner move arrows around
+  draggable/moving footprints; floating on-canvas green check / red X placement
+  buttons (`#canvas-place-actions`, synced to the footprint screen anchor)
+  complementing the placement banner; animated pulsing crimson no-deploy
+  perimeter hatching in scouting/battle (`deploymentBoundary`); and animated
+  collector readiness halos + floating coin/elixir/dark loot bubbles above
+  damaged storages during raids.
+- **Native sound bank expansion (`src/game/audio.ts`)**: Wired 10 already
+  packaged original `.ogg` village/UI cues (`EXTRA_NATIVE_SOUNDS`) with
+  per-building category selection cues (`buildingAudioCue`), distinct UI
+  card/upgrade/star/invalid-action/cloud-sweep/countdown-tick sound effects,
+  and full respect for sound mute settings without modifying
+  `reference/village-sounds/sounds.json`.
+- **Village Edit Mode upgrades (`src/game/model.ts`, `src/ui/hud.ts`)**: Added
+  Drag-to-Swap for equal-footprint buildings (with full undo support), **Scout
+  View** (hides traps/hidden Teslas so players can inspect defender visibility),
+  and **Photo Mode** (hides HUD chrome with a minimal floating `Exit photo`
+  pill for unobstructed village screenshots).
+- **Battle HUD, Army drawer, Blacksmith, and Campaign polish**: Added a
+  Clash-authentic orange **Next** matchmaking button during Ladder scouting
+  (`nextLadderMatch()`), floating hero ability-ready pills (`.hero-ability-pill`)
+  and non-shifting glow hints (`.troop-card.ready-next`), a sticky live
+  **Current Army** overview bar with 1-tap troop/spell removal chips inside
+  `.army-head` (with responsive `<= 700px` grid row placement and compact
+  short-landscape sizing), two-tone Blacksmith equipment `.stat-bar` meters,
+  4-layer volumetric cloud transitions with radial sunburst in
+  `src/ui/cloud-transition.ts`, and a List / **Goblin Trail Map** toggle in the
+  Campaign modal.
+
+Verified in Vitest (`tests/rea-milestone3.test.ts` plus full suite: 614 suites,
+9,261 tests), strict TypeScript (`npm run typecheck` and `npm run
+typecheck:tests`), production build (`npm run build`), and Chromium E2E specs
+(`tests/browser/rea-milestone3.spec.ts`, `rea-milestone2.spec.ts`,
+`hud-layout.spec.ts`, `native-hud.spec.ts`, `native-campaign.spec.ts`,
+`camp-art.spec.ts`, and `siege-manual-release.spec.ts`). Original-client cloud
+textures, nameplate typography proportions, and Goblin Trail Map map-art
+illustrations remain web presentation pending matched captures.
+

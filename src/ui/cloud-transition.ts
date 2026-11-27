@@ -9,7 +9,7 @@ export class CloudTransition {
     this.el.setAttribute('aria-hidden', 'true');
     this.el.hidden = true;
     this.el.innerHTML =
-      '<div class="cloud-bank left"></div><div class="cloud-bank right"></div><div class="cloud-sunburst"></div>';
+      '<div class="cloud-bank mid left"></div><div class="cloud-bank mid right"></div><div class="cloud-bank left"></div><div class="cloud-bank right"></div><div class="cloud-sunburst"></div>';
     host.append(this.el);
   }
 

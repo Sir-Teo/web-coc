@@ -1,4 +1,11 @@
 import { buildingPortrait } from './building-portrait-art';
+import {
+  builderBadgeSvg,
+  clashStarsMarkup,
+  leagueBadgeSvg,
+  shieldBadgeSvg,
+  xpStarSvg,
+} from './clash-emblems';
 import { CloudTransition } from './cloud-transition';
 import {
   deployedArmySummary,
@@ -933,7 +940,10 @@ export class HUD {
   private readonly modalEl: HTMLElement;
   private readonly clouds: CloudTransition;
   private readonly starCalloutEl: HTMLElement;
+  private readonly canvasPlaceEl: HTMLElement;
   private starCalloutTimer: number | null = null;
+  private lastCountdownSec = -1;
+  private campaignView: 'list' | 'trail' = 'list';
   private hasRendered = false;
   constructor(
     private model: GameModel,
@@ -942,12 +952,14 @@ export class HUD {
   ) {
     this.root = document.querySelector('#ui')!;
     this.root.innerHTML =
-      '<div id="hud"></div><div id="star-callout" class="star-callout" aria-hidden="true" hidden></div><div id="coach-ring" aria-hidden="true" hidden></div><div id="context"></div><div id="drawer"></div><div id="modal-root"></div><div id="toast" role="status" aria-live="polite"></div><div id="save-state" aria-live="polite"></div><div id="map-announcer" class="visually-hidden" aria-live="polite"></div><button class="skip-link" data-action="buildings">Building list (B) · Map cursor (M)</button><div id="safe-probe" aria-hidden="true"></div><input id="import-file" type="file" accept="application/json,.json" hidden><input id="import-replay-file" type="file" accept="application/json,.json" hidden>';
+      `<div id="hud"></div><div id="star-callout" class="star-callout" aria-hidden="true" hidden></div><div id="canvas-place-actions" class="canvas-place-actions" hidden><button class="canvas-place-btn confirm" data-action="confirm-place" aria-label="Place here">${icon('Check', 20)}</button><button class="canvas-place-btn cancel" data-action="cancel" aria-label="Discard placement">${icon('X', 20)}</button></div><div id="coach-ring" aria-hidden="true" hidden></div><div id="context"></div><div id="drawer"></div><div id="modal-root"></div><div id="toast" role="status" aria-live="polite"></div><div id="save-state" aria-live="polite"></div><div id="map-announcer" class="visually-hidden" aria-live="polite"></div><button class="skip-link" data-action="buildings">Building list (B) · Map cursor (M)</button><div id="safe-probe" aria-hidden="true"></div><input id="import-file" type="file" accept="application/json,.json" hidden><input id="import-replay-file" type="file" accept="application/json,.json" hidden>`;
     this.hudEl = this.root.querySelector<HTMLElement>('#hud')!;
     this.contextEl = this.root.querySelector<HTMLElement>('#context')!;
     this.drawerEl = this.root.querySelector<HTMLElement>('#drawer')!;
     this.modalEl = this.root.querySelector<HTMLElement>('#modal-root')!;
     this.starCalloutEl = this.root.querySelector<HTMLElement>('#star-callout')!;
+    this.canvasPlaceEl = this.root.querySelector<HTMLElement>('#canvas-place-actions')!;
+    this.scene.onGhostScreen = (point) => this.positionCanvasPlaceActions(point);
     this.clouds = new CloudTransition(this.root);
     const signal = this.listeners.signal;
     this.root.addEventListener(
@@ -1256,14 +1268,29 @@ export class HUD {
     if (stars < 1 || stars > 3) return;
     const label = stars === 1 ? 'VICTORY!' : stars === 2 ? '2 STARS!' : '3 STARS!';
     this.starCalloutEl.dataset.stars = String(stars);
-    this.starCalloutEl.innerHTML = `<div class="star-callout-stars">${'★'.repeat(stars)}<span>${'★'.repeat(3 - stars)}</span></div><b>${label}</b>`;
+    this.starCalloutEl.innerHTML = `<div class="star-callout-stars">${clashStarsMarkup(stars, 44)}</div><b>${label}</b>`;
     this.starCalloutEl.hidden = false;
     void this.starCalloutEl.offsetWidth;
     this.starCalloutEl.classList.add('show');
+    this.audio.playStar(stars);
     this.starCalloutTimer = window.setTimeout(
       () => this.clearStarCallout(),
       this.model.reducedMotion ? 900 : 1550,
     );
+  }
+  private positionCanvasPlaceActions(point: { x: number; y: number; valid: boolean } | null) {
+    if (!point || this.model.battle) {
+      if (!this.canvasPlaceEl.hidden) this.canvasPlaceEl.hidden = true;
+      return;
+    }
+    const pad = 54;
+    const x = Math.max(pad, Math.min(window.innerWidth - pad, point.x));
+    const y = Math.max(76, Math.min(window.innerHeight - 96, point.y + 18));
+    this.canvasPlaceEl.style.left = `${Math.round(x)}px`;
+    this.canvasPlaceEl.style.top = `${Math.round(y)}px`;
+    const confirmBtn = this.canvasPlaceEl.querySelector<HTMLButtonElement>('.confirm');
+    if (confirmBtn) confirmBtn.disabled = !point.valid;
+    if (this.canvasPlaceEl.hidden) this.canvasPlaceEl.hidden = false;
   }
   private clearStarCallout() {
     if (this.starCalloutTimer !== null) {
@@ -2171,8 +2198,10 @@ export class HUD {
             m.castReviveOnHero(kind);
             break;
           }
-          if (hero.unitId === null) m.selectNativeHero(kind);
-          else void m.activateNativeHeroAbility(kind);
+          if (hero.unitId === null) {
+            m.selectNativeHero(kind);
+            this.audio.playCardSelect('hero');
+          } else void m.activateNativeHeroAbility(kind);
           break;
         }
         if (m.battle?.nativeHeroes?.length) {
@@ -2705,6 +2734,32 @@ export class HUD {
         this.panel = null;
         this.render();
         break;
+      case 'edit-scout':
+        m.toggleEditScoutView();
+        this.audio.play('click');
+        this.render();
+        break;
+      case 'edit-photo':
+        m.toggleEditPhotoMode();
+        this.audio.play('click');
+        this.render();
+        break;
+      case 'campaign-view':
+        if (arg === 'list' || arg === 'trail') {
+          this.campaignView = arg;
+          this.audio.play('click');
+          this.render();
+        }
+        break;
+      case 'next-ladder':
+        if (m.nextLadderMatch()) {
+          this.clouds.play(m.reducedMotion);
+          this.audio.playCloudSweep();
+          this.resultShown = false;
+          this.lastCountdownSec = -1;
+          this.render();
+        }
+        break;
       case 'undo':
         m.undo();
         break;
@@ -2831,6 +2886,7 @@ export class HUD {
         m.activeHeroKind = null;
         m.activeTroop = arg as DeployTroopKind;
         m.activeSpell = null;
+        this.audio.playCardSelect('troop');
         // Selection only moves the highlight and hint, which updateLive patches in place.
         this.updateLive();
         document
@@ -2843,6 +2899,7 @@ export class HUD {
         m.activeHero = false;
         m.activeHeroKind = null;
         m.activeSpell = m.activeSpell === arg ? null : (arg as SpellKind);
+        this.audio.playCardSelect('spell');
         this.updateLive();
         document
           .querySelector(`[data-action="spell:${arg}"]`)
@@ -3312,6 +3369,7 @@ export class HUD {
     if (this.hasRendered && b !== this.hudBattle) {
       this.clearStarCallout();
       this.clouds.play(m.reducedMotion);
+      this.audio.playCloudSweep();
     }
     this.hasRendered = true;
     this.hudBattle = b;
@@ -3507,6 +3565,10 @@ export class HUD {
         const nextCategories = template.content.querySelector('.army-categories');
         if (categories && nextCategories && categories.outerHTML !== nextCategories.outerHTML)
           categories.replaceWith(nextCategories);
+        const overview = head.querySelector('.army-overview-bar');
+        const nextOverview = template.content.querySelector('.army-overview-bar');
+        if (overview && nextOverview && overview.outerHTML !== nextOverview.outerHTML)
+          overview.replaceWith(nextOverview);
         for (const [id, value] of [
           ['army-search', this.armyFilter.query],
           ['army-show', this.armyFilter.show],
@@ -3590,11 +3652,11 @@ export class HUD {
     ring.style.height = `${Math.round(rect.height)}px`;
     ring.style.borderRadius = radius;
   }
-  /** The chief's level; the shield fills from the bottom as XP for the next level builds. */
+  /** The chief's level; sculpted Clash XP star with level badge and XP fill indicator. */
   private levelShield() {
     const { level, into, needed } = this.model.chiefProgress;
     const xp = needed ? `${n(into)} of ${n(needed)} XP to level ${level + 1}` : 'Maximum level';
-    return `<button class="level-shield" data-action="achievements" aria-label="Chief level ${level}, ${xp}" title="${xp}" style="--xp:${needed ? ((into / needed) * 100).toFixed(1) : 100}%">${level}</button>`;
+    return `<button class="level-shield clash-xp-shield" data-action="achievements" aria-label="Chief level ${level}, ${xp}" title="${xp}" style="--xp:${needed ? ((into / needed) * 100).toFixed(1) : 100}%">${xpStarSvg(50)}<span class="xp-level-num">${level}</span></button>`;
   }
   private chiefXpLine() {
     const { level, into, needed } = this.model.chiefProgress;
@@ -3607,9 +3669,10 @@ export class HUD {
     const free = m.builders - m.busy;
     const { into: xpInto, needed: xpNeeded } = m.chiefProgress;
     const xpWidth = xpNeeded ? ((xpInto / xpNeeded) * 100).toFixed(1) : '100';
+    const tier = leagueTier(m.league.name);
     return `
- <header class="player-hud">${this.levelShield()}<div class="player-info"><div class="eyebrow">CHIEF'S VILLAGE</div><div class="player-name">Oakheart</div><span class="player-xp-track" aria-hidden="true"><i style="width:${xpWidth}%"></i></span><button class="trophy-pill" data-action="achievements" data-league-tier="${leagueTier(m.league.name)}">${icon('Trophy', 17)} <b>${n(s.trophies)}</b> <span>${leagueLabel(m.league.name)}</span></button></div></header>
- <div class="village-status"><div class="brand">CROWN <span>&</span> CLAN</div><div class="status-chips"><button data-action="builders" aria-label="Builders: ${free} of ${m.builders} free">${icon('Hammer', 20)} <b>${free}/${m.builders}</b> <span>Builders</span></button><button data-action="help">${icon('ShieldCheck', 20)} <b>Village safe</b></button></div></div>
+ <header class="player-hud">${this.levelShield()}<div class="player-info"><div class="eyebrow">CHIEF'S VILLAGE</div><div class="player-name">Oakheart</div><span class="player-xp-track" aria-hidden="true"><i style="width:${xpWidth}%"></i></span><button class="trophy-pill" data-action="achievements" data-league-tier="${tier}">${leagueBadgeSvg(tier, 21)} <b>${n(s.trophies)}</b> <span>${leagueLabel(m.league.name)}</span></button></div></header>
+ <div class="village-status"><div class="brand">CROWN <span>&</span> CLAN</div><div class="status-chips"><button data-action="builders" aria-label="Builders: ${free} of ${m.builders} free">${builderBadgeSvg(22)} <b>${free}/${m.builders}</b> <span>Builders</span></button><button data-action="help">${shieldBadgeSvg(22)} <b>Village safe</b></button></div></div>
  <div class="resources">${(
    [
      'gold',
@@ -3653,12 +3716,16 @@ export class HUD {
   private editHUD() {
     const m = this.model;
     if (m.wallMove) return '';
+    if (m.editPhotoMode)
+      return `<div class="photo-mode-bar">${button('edit-photo', `${icon('Camera', 18)}<span>Exit Photo Mode</span>`, 'game-btn stone photo-exit-btn', 'aria-label="Exit Photo Mode"')}</div>`;
     return `
- <div class="village-caption edit-caption"><span class="caption-line"></span> EDIT MODE <span class="caption-line"></span><small>Drag any building to a clear tile · Ctrl/⌘+Z to undo · Esc to finish</small></div>
+ <div class="village-caption edit-caption"><span class="caption-line"></span> EDIT MODE${m.editScoutView ? ' · SCOUT VIEW' : ''} <span class="caption-line"></span><small>Drag onto a clear tile or swap with another building · Ctrl/⌘+Z to undo · Esc to finish</small></div>
  <div class="right-tools"><div class="camera-tools"><button data-action="zoom-in" aria-label="Zoom in">${icon('Plus', 20)}</button><button data-action="recenter" aria-label="Center village">${icon('LocateFixed', 18)}</button><button data-action="zoom-out" aria-label="Zoom out">${icon('Minus', 20)}</button></div></div>
  <div class="edit-toolbar">
    ${button('undo', `${icon('Undo2', 20)}<span>Undo</span>`, 'game-btn stone edit-tool', m.canUndo ? '' : 'disabled')}
    ${button('redo', `${icon('Redo2', 20)}<span>Redo</span>`, 'game-btn stone edit-tool', m.canRedo ? '' : 'disabled')}
+   ${button('edit-scout', `${icon('Eye', 20)}<span>Scout</span>`, `game-btn ${m.editScoutView ? 'orange' : 'stone'} edit-tool`, `aria-pressed="${m.editScoutView}" aria-label="Scout View: hide traps and show deploy boundary"`)}
+   ${button('edit-photo', `${icon('Camera', 20)}<span>Photo</span>`, 'game-btn stone edit-tool', 'aria-label="Photo Mode: hide all HUD chrome"')}
    ${button('layouts', `${icon('LayoutGrid', 20)}<span>Layouts</span>`, 'game-btn blue edit-tool')}
    ${button('edit-done', `${icon('Check', 20)}<span>Done</span>`, 'game-btn green edit-tool')}
  </div>`;
@@ -3671,7 +3738,13 @@ export class HUD {
       return `${TROOPS[kind].name}, level ${this.model.troopDisplayLevel(kind)}, ${count} recalled for this attack`;
     return `${TROOPS[kind].name}, ${siegeBlocked && count > 0 ? `${count} in reserve, siege machine already deployed` : `${count} available`}`;
   }
-  private troopCard(k: DeployTroopKind, count: number, action: string, selected = false) {
+  private troopCard(
+    k: DeployTroopKind,
+    count: number,
+    action: string,
+    selected = false,
+    readyNext = false,
+  ) {
     const siege = action.startsWith('troop:') ? this.model.deployedSiege : undefined;
     if (siege?.kind === k) return this.siegeReleaseCard(siege);
     const flying = TROOPS[k].flying ? '<span class="air-tag">AIR</span>' : '';
@@ -3686,7 +3759,7 @@ export class HUD {
     const isMax = !isSplitHog(k) && level >= maxTroopLevel(k);
     const levelCls = bonus > 0 ? ' boosted' : isMax ? ' maxed' : '';
     const levelHint = bonus > 0 ? `aria-description="Level ${level} with Power Potion"` : '';
-    return `<button class="troop-card ${isSplitHog(k) ? 'recalled-card' : ''} ${selected ? 'selected' : ''} ${unavailable ? 'empty' : ''}" data-action="${action}" aria-label="${this.troopCardLabel(k, count, siegeBlocked)}" ${levelHint} ${isSplitHog(k) ? 'title="Recalled unit · this attack"' : ''} ${action.startsWith('troop') && unavailable ? 'disabled' : ''}><span class="troop-count">${siegeBlocked && count > 0 ? 'Locked' : `x${count}`}</span>${action.startsWith('troop:') && hotkey ? `<kbd class="troop-key">${hotkey.toUpperCase()}</kbd>` : ''}<img src="${image}" alt="" draggable="false">${flying}<span class="troop-level${levelCls}"${bonus > 0 ? ' title="Power Potion"' : ''}>★ ${level}</span><span class="troop-name">${TROOPS[k].name}</span></button>`;
+    return `<button class="troop-card ${isSplitHog(k) ? 'recalled-card' : ''} ${selected ? 'selected' : ''} ${readyNext ? 'ready-next' : ''} ${unavailable ? 'empty' : ''}" data-action="${action}" aria-label="${this.troopCardLabel(k, count, siegeBlocked)}" ${levelHint} ${isSplitHog(k) ? 'title="Recalled unit · this attack"' : ''} ${action.startsWith('troop') && unavailable ? 'disabled' : ''}><span class="troop-count">${siegeBlocked && count > 0 ? 'Locked' : `x${count}`}</span>${action.startsWith('troop:') && hotkey ? `<kbd class="troop-key">${hotkey.toUpperCase()}</kbd>` : ''}<img src="${image}" alt="" draggable="false">${flying}<span class="troop-level${levelCls}"${bonus > 0 ? ' title="Power Potion"' : ''}>★ ${level}</span><span class="troop-name">${TROOPS[k].name}</span></button>`;
   }
   private spellCard(k: SpellKind, count: number, action: string, selected = false) {
     const recordedLevel = this.model.spellLevel(k);
@@ -4291,7 +4364,7 @@ export class HUD {
       `<div class="loot-row ${k}" aria-label="${k === 'dark' ? 'Dark Elixir' : k} remaining">${resource(k)}<div class="loot-track"><i data-lootbar="${k}" style="transform:${fillScale((lootLeft(k) / Math.max(1, campaignAmount(v, k))) * 100)}"></i></div><b data-loot="${k}">${n(lootLeft(k))}</b></div>`;
     return `<div class="battle-enemy"><span class="eyebrow">${m.goblinRaid ? 'GOBLIN RAID' : m.replay ? (m.replay.recordId === null ? 'SHARED REPLAY' : 'ATTACK REPLAY') : b.practice ? 'PRACTICE ATTACK' : b.ladder ? 'LADDER MATCH' : 'ENEMY VILLAGE'}</span><h2>${v.name}</h2>${m.goblinRaid ? '<small class="practice-note">Goblins are raiding your village!<br>Watch your defenses fight back.</small>' : m.replay ? '<small class="practice-note">Recorded attack · Watch &amp; learn</small>' : b.practice ? '<small class="practice-note">Your village and army are safe.<br>No loot or trophies at stake.</small>' : b.ladder ? `<small class="ladder-stake">${icon('Trophy', 15)} ${n(b.ladder.opponent)} · Win <b>+${b.ladder.win}</b> · Defeat <b>−${b.ladder.loss}</b></small><small class="practice-note">No loot at stake.</small>` : `<small>AVAILABLE LOOT</small><div class="loot-bars">${lootKeys.map(lootBar).join('')}</div>${limitedStorage ? '<small class="loot-capacity-note">Loot beyond your storage capacity will be lost.</small>' : ''}`}</div>
  <div class="battle-clock ${b.started ? '' : 'prep'}"><span>${battleClockLabel(b)}</span><b id="battle-timer">${battleClockValue(b)}</b></div>
- <div class="destruction"><span>Total destruction</span><div id="battle-stars" class="battle-stars" role="img" aria-label="${starCountLabel(b.stars)}" data-stars="${b.stars}">${'★'.repeat(b.stars)}<span>${'★'.repeat(3 - b.stars)}</span></div><b id="destruction-value">${b.destruction}%</b><div class="destruction-bar"><i id="destruction-fill" style="transform:${fillScale(b.destruction)}"></i><span class="notch half" style="left:50%"></span><span class="notch full" style="left:100%"></span></div><small>★ 50% <i>·</i> ★ Town Hall <i>·</i> ★ 100%</small></div>
+ <div class="destruction"><span>Total destruction</span><div id="battle-stars" class="battle-stars" role="img" aria-label="${starCountLabel(b.stars)}" data-stars="${b.stars}">${clashStarsMarkup(b.stars, 22)}</div><b id="destruction-value">${b.destruction}%</b><div class="destruction-bar"><i id="destruction-fill" style="transform:${fillScale(b.destruction)}"></i><span class="notch half" style="left:50%"></span><span class="notch full" style="left:100%"></span></div><small>★ 50% <i>·</i> ★ Town Hall <i>·</i> ★ 100%</small></div>
  ${
    m.practiceGuide && !m.replay
      ? this.practiceGuideBanner()
@@ -4313,33 +4386,56 @@ export class HUD {
   ${
     m.replay
       ? this.replayControls()
-      : `<div class="battle-bottom"><button id="battle-exit" class="game-btn red end-battle" data-action="${b.started ? 'surrender' : 'home'}">${icon('Flag', 23)} ${b.started ? 'Surrender' : 'Return home'}</button>${button('battle-speed', `${icon('FastForward', 20)} <b>${m.battleSpeed}×</b>`, `game-btn ${m.battleSpeed > 1 ? 'green' : 'stone'} battle-speed`, `aria-label="Battle speed ${m.battleSpeed}×, tap to change"`)}<div class="deploy-tray"><div class="deploy-label">${this.deployHint()}</div><div class="army-tray">${this.battleHeroCards()}${TROOP_ORDER.filter(
-          (k) => b.carriedArmy[k] > 0,
-        )
-          .map((k) =>
-            this.troopCard(
-              k,
-              b.remaining[k],
-              `troop:${k}`,
-              m.troopSelected && !m.activeHero && !m.activeHeroKind && !m.activeSpell && m.activeTroop === k,
-            ),
+      : (() => {
+          const activeDepleted =
+            m.troopSelected &&
+            !m.activeHero &&
+            !m.activeHeroKind &&
+            !m.activeSpell &&
+            m.troopRemaining(m.activeTroop) <= 0;
+          const nextReadyTroop = activeDepleted
+            ? TROOP_ORDER.find(
+                (k) => b.carriedArmy[k] > 0 && b.remaining[k] > 0 && !this.siegeUnavailable(k),
+              )
+            : undefined;
+          const nextLadderBtn =
+            !b.started && b.ladder
+              ? button(
+                  'next-ladder',
+                  `<span>Next</span> ${icon('NextIcon', 18)}`,
+                  'game-btn orange next-match-btn',
+                  'aria-label="Next ladder opponent"',
+                )
+              : '';
+          return `<div class="battle-bottom"><button id="battle-exit" class="game-btn red end-battle" data-action="${b.started ? 'surrender' : 'home'}">${icon('Flag', 23)} ${b.started ? 'Surrender' : 'Return home'}</button>${nextLadderBtn}${button('battle-speed', `${icon('FastForward', 20)} <b>${m.battleSpeed}×</b>`, `game-btn ${m.battleSpeed > 1 ? 'green' : 'stone'} battle-speed`, `aria-label="Battle speed ${m.battleSpeed}×, tap to change"`)}<div class="deploy-tray"><div class="deploy-label">${this.deployHint()}</div><div class="army-tray">${this.battleHeroCards()}${TROOP_ORDER.filter(
+            (k) => b.carriedArmy[k] > 0,
           )
-          .join('')}${SPLIT_HOG_KINDS.filter((kind) => b.recalledSplits?.[kind] !== undefined)
-          .map((kind) =>
-            this.troopCard(
-              kind,
-              m.troopRemaining(kind),
-              `troop:${kind}`,
-              m.troopSelected && !m.activeHero && !m.activeHeroKind && !m.activeSpell && m.activeTroop === kind,
-            ),
-          )
-          .join('')}${
-          SPELL_ORDER.some((k) => b.carried[k])
-            ? `<span class="tray-divider"></span>${SPELL_ORDER.filter((k) => b.carried[k])
-                .map((k) => this.spellCard(k, b.spells[k], `spell:${k}`, m.activeSpell === k))
-                .join('')}`
-            : ''
-        }</div></div><div class="battle-tip">${icon('MousePointer2', 19)}<span>Troops <b>1–7, Q, E, Z</b> · Spells <b>8, 9, 0</b> · Heroes <b>H</b><br>Drag the base to move the camera</span></div></div>`
+            .map((k) =>
+              this.troopCard(
+                k,
+                b.remaining[k],
+                `troop:${k}`,
+                m.troopSelected && !m.activeHero && !m.activeHeroKind && !m.activeSpell && m.activeTroop === k,
+                nextReadyTroop === k,
+              ),
+            )
+            .join('')}${SPLIT_HOG_KINDS.filter((kind) => b.recalledSplits?.[kind] !== undefined)
+            .map((kind) =>
+              this.troopCard(
+                kind,
+                m.troopRemaining(kind),
+                `troop:${kind}`,
+                m.troopSelected && !m.activeHero && !m.activeHeroKind && !m.activeSpell && m.activeTroop === kind,
+              ),
+            )
+            .join('')}${
+            SPELL_ORDER.some((k) => b.carried[k])
+              ? `<span class="tray-divider"></span>${SPELL_ORDER.filter((k) => b.carried[k])
+                  .map((k) => this.spellCard(k, b.spells[k], `spell:${k}`, m.activeSpell === k))
+                  .join('')}`
+              : ''
+          }</div></div><div class="battle-tip">${icon('MousePointer2', 19)}<span>Troops <b>1–7, Q, E, Z</b> · Spells <b>8, 9, 0</b> · Heroes <b>H</b><br>Drag the base to move the camera</span></div></div>`;
+        })()
   }`;
   }
 
@@ -4524,7 +4620,14 @@ export class HUD {
       : vialActive
         ? `Rage Vial active, ${vial} seconds remaining`
         : label;
-    return `<button class="troop-card hero-card${tome ? ' tome-active' : vialActive ? ' vial-active' : ''}${abilityReady ? ' ability-ready' : ''}${defeated ? ' hero-defeated' : ''} ${selected ? 'selected' : ''}" data-hero-state="${hero.kind}:${ready}:${defeated}:${!!hero.abilityUsed}:${selected}${pending ? '|reviving' : ''}${phoenixLife === undefined ? '' : '|phoenix'}|tome:${!!tome}|vial:${!!vial}|revive:${revive}|key:${hotkey}" data-action="hero-select:${hero.kind}" aria-label="${name}, ${accessibleLabel}" ${disabled ? 'disabled' : ''}>${hotkey ? '<kbd class="troop-key">H</kbd>' : ''}<img src="${heroRosterIcon(hero.kind)}" alt=""><span class="troop-level">★ ${hero.level}</span><span class="hero-health"><i style="width:${pct((phoenixLife ?? health) * 100)}${phoenixLife === undefined ? '' : ';background:#fff2bf'}"></i></span><span class="troop-name">${label}</span></button>`;
+    const abilityBadge = tome || vialActive
+      ? '<span class="hero-ability-pill active" aria-hidden="true">ACTIVE</span>'
+      : abilityReady
+        ? '<span class="hero-ability-pill ready" aria-hidden="true">⚡ READY</span>'
+        : !ready && !defeated && hero.abilityUsed
+          ? '<span class="hero-ability-pill spent" aria-hidden="true">USED</span>'
+          : '';
+    return `<button class="troop-card hero-card${tome ? ' tome-active' : vialActive ? ' vial-active' : ''}${abilityReady ? ' ability-ready' : ''}${defeated ? ' hero-defeated' : ''} ${selected ? 'selected' : ''}" data-hero-state="${hero.kind}:${ready}:${defeated}:${!!hero.abilityUsed}:${selected}${pending ? '|reviving' : ''}${phoenixLife === undefined ? '' : '|phoenix'}|tome:${!!tome}|vial:${!!vial}|revive:${revive}|key:${hotkey}" data-action="hero-select:${hero.kind}" aria-label="${name}, ${accessibleLabel}" ${disabled ? 'disabled' : ''}>${hotkey ? '<kbd class="troop-key">H</kbd>' : ''}${abilityBadge}<img src="${heroRosterIcon(hero.kind)}" alt=""><span class="troop-level">★ ${hero.level}</span><span class="hero-health"><i style="width:${pct((phoenixLife ?? health) * 100)}${phoenixLife === undefined ? '' : ';background:#fff2bf'}"></i></span><span class="troop-name">${label}</span></button>`;
   }
   /** Home village tray: the saved lineup with levels; opens the Hero Hall. */
   private rosterCards() {
@@ -4562,7 +4665,12 @@ export class HUD {
         : h!.abilityUsed
           ? 'Ability used'
           : 'Activate ability';
-    return `<button class="troop-card hero-card${abilityReady ? ' ability-ready' : ''}${defeated ? ' hero-defeated' : ''} ${m.activeHero ? 'selected' : ''}" data-hero-state="${ready}:${defeated}:${h!.abilityUsed}:${m.activeHero}" data-action="hero-select" aria-label="Barbarian King, ${label}" ${disabled ? 'disabled' : ''}><kbd class="troop-key">H</kbd><img src="${heroRosterIcon('king')}" alt=""><span class="troop-level">★ ${h!.level}</span><span class="hero-health"><i style="width:${u ? pct((u.hp / u.maxHp) * 100) : '100%'}"></i></span><span class="troop-name">${label}</span></button>`;
+    const legacyBadge = abilityReady
+      ? '<span class="hero-ability-pill ready" aria-hidden="true">⚡ READY</span>'
+      : !ready && !defeated && h!.abilityUsed
+        ? '<span class="hero-ability-pill spent" aria-hidden="true">USED</span>'
+        : '';
+    return `<button class="troop-card hero-card${abilityReady ? ' ability-ready' : ''}${defeated ? ' hero-defeated' : ''} ${m.activeHero ? 'selected' : ''}" data-hero-state="${ready}:${defeated}:${h!.abilityUsed}:${m.activeHero}" data-action="hero-select" aria-label="Barbarian King, ${label}" ${disabled ? 'disabled' : ''}><kbd class="troop-key">H</kbd>${legacyBadge}<img src="${heroRosterIcon('king')}" alt=""><span class="troop-level">★ ${h!.level}</span><span class="hero-health"><i style="width:${u ? pct((u.hp / u.maxHp) * 100) : '100%'}"></i></span><span class="troop-name">${label}</span></button>`;
   }
   /** The client's builder menu: work under way, then suggested and other upgrades. */
   private builderMenu() {
@@ -4950,6 +5058,13 @@ export class HUD {
     const unlockLevel = !owned && rarity === 'COMMON' ? itemUnlockBlacksmith(slug) : 0;
     const purchase = this.nativeOrePurchase;
     const stats = slug ? nativeItemStats(slug, owned ? level : 1) : null;
+    const nextStats = slug && owned && level < max ? nativeItemStats(slug, level + 1) : null;
+    const maxStats = slug && max > 0 ? nativeItemStats(slug, max) : null;
+    const equipBar = (cur: number | undefined, next: number | undefined, top: number | undefined) => {
+      if (!cur && !next) return '';
+      const ceiling = Math.max(1, top ?? Math.max(cur ?? 0, next ?? 0));
+      return numericStatBarMarkup(cur ?? 0, next ?? cur ?? 0, ceiling);
+    };
     const abilityRow = (name: string) => {
       const ability = stats?.abilities.find((entry) => entry.name === name);
       return ability && nativeRow('abilities', ability.name, ability.level);
@@ -5023,17 +5138,45 @@ export class HUD {
           ? `<section class="equipment-detail" aria-label="${nativeItemName(slug)} details"><div class="equipment-detail-heading">${nativeItemImage(slug)}<div><span class="eyebrow">${rarity} · ${stats!.passive ? 'PASSIVE' : 'ACTIVE ABILITY'}</span><h2>${nativeItemName(slug)}</h2><p>${owned ? `Level ${level} / ${max}` : `${rarity} item · ${unlockLevel ? `Requires Blacksmith level ${unlockLevel}` : 'Not owned'}`}</p></div></div>
       ${
         stats
-          ? `<table class="equipment-stats"><thead><tr><th>Attribute</th><th>${owned ? `Level ${level}` : 'Level 1'}</th></tr></thead><tbody>${[
-              ['Hitpoint increase', stats.hp ? `+${n(stats.hp)}` : '—'],
-              ['Damage per second', stats.dps ? `+${n(stats.dps)}` : '—'],
-              ['Hitpoint recovery', stats.heal ? n(stats.heal) : '—'],
+          ? `<table class="equipment-stats"><thead><tr><th>Attribute</th><th>${owned ? `Level ${level}` : 'Level 1'}${nextStats ? ` → ${level + 1}` : ''}</th></tr></thead><tbody>${[
+              [
+                'Hitpoint increase',
+                stats.hp
+                  ? `+${n(stats.hp)}${nextStats && nextStats.hp > stats.hp ? ` <em class="stat-delta">+${n(nextStats.hp - stats.hp)}</em>` : ''}`
+                  : '—',
+                equipBar(stats.hp, nextStats?.hp, maxStats?.hp),
+              ],
+              [
+                'Damage per second',
+                stats.dps
+                  ? `+${n(stats.dps)}${nextStats && nextStats.dps > stats.dps ? ` <em class="stat-delta">+${n(nextStats.dps - stats.dps)}</em>` : ''}`
+                  : '—',
+                equipBar(stats.dps, nextStats?.dps, maxStats?.dps),
+              ],
+              [
+                'Hitpoint recovery',
+                stats.heal
+                  ? `${n(stats.heal)}${nextStats && nextStats.heal > stats.heal ? ` <em class="stat-delta">+${n(nextStats.heal - stats.heal)}</em>` : ''}`
+                  : '—',
+                equipBar(stats.heal, nextStats?.heal, maxStats?.heal),
+              ],
               [
                 'Attack speed',
-                stats.attackSpeed ? `+${Math.round(stats.attackSpeed * 100)}%` : '—',
+                stats.attackSpeed
+                  ? `+${Math.round(stats.attackSpeed * 100)}%${nextStats && nextStats.attackSpeed > stats.attackSpeed ? ` <em class="stat-delta">+${Math.round((nextStats.attackSpeed - stats.attackSpeed) * 100)}%</em>` : ''}`
+                  : '—',
+                equipBar(
+                  Math.round((stats.attackSpeed ?? 0) * 100),
+                  Math.round((nextStats?.attackSpeed ?? stats.attackSpeed ?? 0) * 100),
+                  Math.round((maxStats?.attackSpeed ?? 0) * 100),
+                ),
               ],
-              ...abilityRows,
+              ...abilityRows.map(([label, value]) => [label, value, '']),
             ]
-              .map(([label, value]) => `<tr><td>${label}</td><td>${value}</td></tr>`)
+              .map(
+                ([label, value, bar]) =>
+                  `<tr><td>${label}</td><td><div class="equip-stat-val">${value}</div>${bar}</td></tr>`,
+              )
               .join('')}</tbody></table>`
           : ''
       }
@@ -5165,7 +5308,7 @@ export class HUD {
       : 0;
     const spellOver =
       this.model.spellCapacity > 0 && this.model.spellHousing > this.model.spellCapacity;
-    const head = `<header class="drawer-head${this.drawerPanel === 'army' ? ' army-head' : ''}"><h2 tabindex="-1">${titles[this.drawerPanel]}</h2>${this.drawerPanel === 'shop' ? `<div class="shop-tabs" role="tablist" aria-label="Building category">${['All', 'Resources', 'Army', 'Defenses', 'Traps', DECORATION_TEXTS.shopTab, GEM_TEXTS.treasureTab].map((t) => button(`tab:${t}`, t, `tab ${this.tab === t ? 'active' : ''}`, `role="tab" aria-selected="${this.tab === t}"`)).join('')}</div>` : `<nav class="army-categories" aria-label="Army catalog">${button('army-jump:troops', `${icon('Tent', 17)}<span>Troops<b>${troopUsed}/${this.model.capacity}</b></span>`, `army-category${troopOver ? ' over' : ''}`, `style="--fill:${troopPct}%" aria-label="Show troops, ${troopUsed} of ${this.model.capacity} housing spaces"`)}${button('army-jump:spells', `${icon('Sparkles', 17)}<span>Spells<b>${this.model.spellHousing}/${this.model.spellCapacity}</b></span>`, `army-category${spellOver ? ' over' : ''}`, `style="--fill:${spellPct}%" aria-label="Show spells, ${this.model.spellHousing} of ${this.model.spellCapacity} housing spaces"`)}</nav>${this.armyFilters()}`}<button class="square-btn small close-btn" data-action="close-drawer" aria-label="Close">${icon('X', 22)}</button></header>`;
+    const head = `<header class="drawer-head${this.drawerPanel === 'army' ? ' army-head' : ''}"><h2 tabindex="-1">${titles[this.drawerPanel]}</h2>${this.drawerPanel === 'shop' ? `<div class="shop-tabs" role="tablist" aria-label="Building category">${['All', 'Resources', 'Army', 'Defenses', 'Traps', DECORATION_TEXTS.shopTab, GEM_TEXTS.treasureTab].map((t) => button(`tab:${t}`, t, `tab ${this.tab === t ? 'active' : ''}`, `role="tab" aria-selected="${this.tab === t}"`)).join('')}</div>` : `<nav class="army-categories" aria-label="Army catalog">${button('army-jump:troops', `${icon('Tent', 17)}<span>Troops<b>${troopUsed}/${this.model.capacity}</b></span>`, `army-category${troopOver ? ' over' : ''}`, `style="--fill:${troopPct}%" aria-label="Show troops, ${troopUsed} of ${this.model.capacity} housing spaces"`)}${button('army-jump:spells', `${icon('Sparkles', 17)}<span>Spells<b>${this.model.spellHousing}/${this.model.spellCapacity}</b></span>`, `army-category${spellOver ? ' over' : ''}`, `style="--fill:${spellPct}%" aria-label="Show spells, ${this.model.spellHousing} of ${this.model.spellCapacity} housing spaces"`)}</nav>${this.armyFilters()}${this.armyOverviewStrip()}`}<button class="square-btn small close-btn" data-action="close-drawer" aria-label="Close">${icon('X', 22)}</button></header>`;
     const open = `<section class="drawer-sheet" aria-label="${titles[this.drawerPanel]}">`;
     this.drawerParts = {
       open,
@@ -5258,6 +5401,25 @@ export class HUD {
       items: cards,
       foot: `<footer class="drawer-foot">${icon('Hammer', 16)} ${m.builders - m.busy} of ${m.builders} builders free <span>Drag a building onto the village, or tap to pick it up</span></footer>`,
     };
+  }
+  /** Sticky live summary strip of prepared troops and spells with 1-tap removal. */
+  private armyOverviewStrip() {
+    const m = this.model;
+    const preparedTroops = TROOP_ORDER.filter((k) => m.state.army[k] > 0);
+    const preparedSpells = SPELL_ORDER.filter((k) => m.state.spells[k] > 0);
+    const overviewChips = [
+      ...preparedTroops.map(
+        (k) =>
+          `<button class="army-chip" data-action="remove-troop:${k}" aria-label="Remove one ${TROOPS[k].name} (${m.state.army[k]} ready)" title="Tap to remove 1 ${TROOPS[k].name}"><img src="${hudAsset(k)}" alt="" draggable="false"><b>×${m.state.army[k]}</b><span class="army-chip-minus" aria-hidden="true">−</span></button>`,
+      ),
+      ...preparedSpells.map(
+        (k) =>
+          `<button class="army-chip spell" data-action="remove-spell:${k}" aria-label="Remove one ${SPELLS[k].name} (${m.state.spells[k]} ready)" title="Tap to remove 1 ${SPELLS[k].name}"><img src="${hudAsset(k)}" alt="" draggable="false"><b>×${m.state.spells[k]}</b><span class="army-chip-minus" aria-hidden="true">−</span></button>`,
+      ),
+    ];
+    const spellCapacity = m.spellCapacity;
+    const siegeCapacity = m.siegeCapacity;
+    return `<div class="army-overview-bar" aria-label="Prepared army summary"><div class="army-overview-meta"><span class="army-overview-title">CURRENT ARMY</span><small>${m.armySize}/${m.capacity} troops${spellCapacity ? ` · ${m.spellHousing}/${spellCapacity} spells` : ''}${siegeCapacity ? ` · ${m.siegeCount}/${siegeCapacity} siege` : ''}</small></div><div class="army-overview-chips">${overviewChips.length ? overviewChips.join('') : '<span class="army-overview-empty">No troops or spells prepared yet — tap + Add below</span>'}</div></div>`;
   }
   private army() {
     const m = this.model;
@@ -6466,25 +6628,50 @@ export class HUD {
     const prepare = armyReady
       ? ''
       : button('campaign-army', `${icon('Tent', 17)} Prepare army`, 'game-btn green');
-    return `<div class="campaign-summary">${prepare}${button('practice', `${icon('ShieldCheck', 17)} Practice your defense`, 'game-btn blue', armyReady ? '' : 'disabled')}${this.model.siegeCount && this.model.clanCastle ? button('practice-cargo', 'Practice siege cargo', 'game-btn blue') : ''}${button('ladder', `${icon('Trophy', 17)} Ladder match <small>+${ladder.win} / −${ladder.loss}</small>`, 'game-btn orange', `${armyReady ? '' : 'disabled'} aria-label="Ladder match: win up to ${ladder.win} trophies, lose ${ladder.loss}"`)}${icon('Map', 23)} <span>${NATIVE_CAMPAIGN.length} villages · ${forged} fan-made</span><b>${stars.reduce((a, b) => a + b, 0)} / ${NATIVE_CAMPAIGN.length * 3} ${icon('Star', 17)}</b></div><div class="campaign-nav">${next === null ? '' : button('campaign-continue', `${icon('ArrowRight', 17)} Continue · ${html(NATIVE_CAMPAIGN[next].name)}`, 'game-btn orange')}<select id="campaign-filter" aria-label="Show villages">${option('all', 'All villages')}${option('open', 'Not yet won')}${option('stars', 'Missing stars')}${option('done', 'Three stars')}</select><select id="campaign-section" aria-label="Jump to">${'<option value="">Jump to…</option>'}${sections.map(([family, i]) => `<option value="${i}">${sectionName[family]} · ${NATIVE_CAMPAIGN[i].stage}+</option>`).join('')}</select></div><p class="campaign-rules">Campaign villages: no time limit · no trophy changes · loot does not replenish</p><div class="modal-body campaign-list">${NATIVE_CAMPAIGN.map(
-      (v, i) => {
-        if (!shown(i)) return '';
-        const loot = this.model.campaignLoot(i, 'goblin-v1');
-        const pending = campaignPending(i);
-        const locked = !this.model.campaignOpen(i),
-          score = stars[i] ?? 0;
-        // A Practice level brings its own army and opens at its Town Hall.
-        const drill = practiceLevelAt(i);
-        const needsArmy = !locked && !pending && !drill && !armyReady;
-        const lockReason = this.campaignLockReason(i);
-        const key = `${locked}|${needsArmy}|${score}|${loot.gold}|${loot.elixir}|${loot.dark}`;
-        const cached = this.campaignCards.get(i);
-        if (cached?.key === key) return cached.markup;
-        const markup = `<article class="campaign-card ${locked || pending ? 'locked' : ''}" id="campaign-stage-${i}" data-stage="${v.stage}"><div class="campaign-number">${locked ? icon('LockKeyhole', 22) : v.stage}</div>${this.campaignMap(i)}<div class="campaign-info"><span>${drill ? PRACTICE_TEXTS.title.toUpperCase() : 'SINGLE PLAYER'}</span><h3>${v.name}</h3><p>${lockReason ? html(lockReason) : drill ? `Fought with its own army: ${practiceArmyLine(drill)}. Yours stays home.` : v.dependencies.length ? 'Win a star to open the next path.' : 'Your campaign begins here.'}</p>${v.family === 'forged' ? '<small class="campaign-fan-made">Fan-made · not a client village</small>' : ''}${v.recommendedTownHall ? `<small class="campaign-recommendation">Suggested Town Hall: ${v.recommendedTownHall}</small>` : ''}<div class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</div>${loot.gold || loot.elixir || loot.dark ? '' : `<small class="campaign-depleted">Loot depleted${score < 3 ? ' · Replay for stars' : ' · Village cleared'}</small>`}</div><div class="campaign-action"><div class="campaign-stars" role="img" aria-label="${starCountLabel(score)}">${'★'.repeat(score)}<span>${'★'.repeat(3 - score)}</span></div>${button(`attack:${i}`, pending ? 'Coming soon' : locked ? 'Locked' : needsArmy ? 'Scout' : `Attack ${icon('ArrowRight', 17)}`, 'game-btn ' + (locked || pending ? 'stone' : 'orange'), locked || pending ? 'disabled' : '')}</div></article>`;
-        this.campaignCards.set(i, { key, markup });
-        return markup;
-      },
-    ).join('')}</div>`;
+    const viewToggle = `<div class="campaign-view-toggle" role="group" aria-label="Campaign layout">${button('campaign-view:list', `${icon('List', 15)} List`, `view-pill${this.campaignView === 'list' ? ' active' : ''}`, `aria-pressed="${this.campaignView === 'list'}"`)}${button('campaign-view:trail', `${icon('Map', 15)} Trail map`, `view-pill${this.campaignView === 'trail' ? ' active' : ''}`, `aria-pressed="${this.campaignView === 'trail'}"`)}</div>`;
+    const body =
+      this.campaignView === 'trail'
+        ? this.campaignTrailMap(stars, shown, armyReady, next)
+        : `<div class="modal-body campaign-list">${NATIVE_CAMPAIGN.map(
+            (v, i) => {
+              if (!shown(i)) return '';
+              const loot = this.model.campaignLoot(i, 'goblin-v1');
+              const pending = campaignPending(i);
+              const locked = !this.model.campaignOpen(i),
+                score = stars[i] ?? 0;
+              // A Practice level brings its own army and opens at its Town Hall.
+              const drill = practiceLevelAt(i);
+              const needsArmy = !locked && !pending && !drill && !armyReady;
+              const lockReason = this.campaignLockReason(i);
+              const key = `${locked}|${needsArmy}|${score}|${loot.gold}|${loot.elixir}|${loot.dark}`;
+              const cached = this.campaignCards.get(i);
+              if (cached?.key === key) return cached.markup;
+              const markup = `<article class="campaign-card ${locked || pending ? 'locked' : ''}" id="campaign-stage-${i}" data-stage="${v.stage}"><div class="campaign-number">${locked ? icon('LockKeyhole', 22) : v.stage}</div>${this.campaignMap(i)}<div class="campaign-info"><span>${drill ? PRACTICE_TEXTS.title.toUpperCase() : 'SINGLE PLAYER'}</span><h3>${v.name}</h3><p>${lockReason ? html(lockReason) : drill ? `Fought with its own army: ${practiceArmyLine(drill)}. Yours stays home.` : v.dependencies.length ? 'Win a star to open the next path.' : 'Your campaign begins here.'}</p>${v.family === 'forged' ? '<small class="campaign-fan-made">Fan-made · not a client village</small>' : ''}${v.recommendedTownHall ? `<small class="campaign-recommendation">Suggested Town Hall: ${v.recommendedTownHall}</small>` : ''}<div class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</div>${loot.gold || loot.elixir || loot.dark ? '' : `<small class="campaign-depleted">Loot depleted${score < 3 ? ' · Replay for stars' : ' · Village cleared'}</small>`}</div><div class="campaign-action"><div class="campaign-stars" role="img" aria-label="${starCountLabel(score)}">${clashStarsMarkup(score, 18)}</div>${button(`attack:${i}`, pending ? 'Coming soon' : locked ? 'Locked' : needsArmy ? 'Scout' : `Attack ${icon('ArrowRight', 17)}`, 'game-btn ' + (locked || pending ? 'stone' : 'orange'), locked || pending ? 'disabled' : '')}</div></article>`;
+              this.campaignCards.set(i, { key, markup });
+              return markup;
+            },
+          ).join('')}</div>`;
+    return `<div class="campaign-summary">${prepare}${button('practice', `${icon('ShieldCheck', 17)} Practice your defense`, 'game-btn blue', armyReady ? '' : 'disabled')}${this.model.siegeCount && this.model.clanCastle ? button('practice-cargo', 'Practice siege cargo', 'game-btn blue') : ''}${button('ladder', `${icon('Trophy', 17)} Ladder match <small>+${ladder.win} / −${ladder.loss}</small>`, 'game-btn orange', `${armyReady ? '' : 'disabled'} aria-label="Ladder match: win up to ${ladder.win} trophies, lose ${ladder.loss}"`)}${icon('Map', 23)} <span>${NATIVE_CAMPAIGN.length} villages · ${forged} fan-made</span><b>${stars.reduce((a, b) => a + b, 0)} / ${NATIVE_CAMPAIGN.length * 3} ${icon('Star', 17)}</b></div><div class="campaign-nav">${next === null ? '' : button('campaign-continue', `${icon('ArrowRight', 17)} Continue · ${html(NATIVE_CAMPAIGN[next].name)}`, 'game-btn orange')}${viewToggle}<select id="campaign-filter" aria-label="Show villages">${option('all', 'All villages')}${option('open', 'Not yet won')}${option('stars', 'Missing stars')}${option('done', 'Three stars')}</select><select id="campaign-section" aria-label="Jump to">${'<option value="">Jump to…</option>'}${sections.map(([family, i]) => `<option value="${i}">${sectionName[family]} · ${NATIVE_CAMPAIGN[i].stage}+</option>`).join('')}</select></div><p class="campaign-rules">Campaign villages: no time limit · no trophy changes · loot does not replenish</p>${body}`;
+  }
+  private campaignTrailMap(
+    stars: number[],
+    shown: (i: number) => boolean,
+    armyReady: boolean,
+    next: number | null,
+  ) {
+    const nodes = NATIVE_CAMPAIGN.map((v, i) => {
+      if (!shown(i)) return '';
+      const loot = this.model.campaignLoot(i, 'goblin-v1');
+      const pending = campaignPending(i);
+      const locked = !this.model.campaignOpen(i);
+      const score = stars[i] ?? 0;
+      const drill = practiceLevelAt(i);
+      const needsArmy = !locked && !pending && !drill && !armyReady;
+      const side = i % 2 === 0 ? 'left' : 'right';
+      const stateCls = locked || pending ? 'locked' : i === next ? 'current' : score === 3 ? 'cleared' : 'open';
+      return `<article class="trail-node ${side} ${stateCls}" id="campaign-stage-${i}" data-stage="${v.stage}"><div class="trail-pin" aria-hidden="true">${locked ? icon('LockKeyhole', 18) : `<span>${v.stage}</span>`}</div><div class="trail-card"><header><strong>${html(v.name)}</strong><div class="campaign-stars" role="img" aria-label="${starCountLabel(score)}">${clashStarsMarkup(score, 16)}</div></header><div class="trail-loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</div>${button(`attack:${i}`, pending ? 'Soon' : locked ? 'Locked' : needsArmy ? 'Scout' : `Attack ${icon('ArrowRight', 15)}`, `game-btn ${locked || pending ? 'stone' : 'orange'} trail-btn`, locked || pending ? 'disabled' : '')}</div></article>`;
+    }).join('');
+    return `<div class="modal-body campaign-trail-map" aria-label="Goblin Trail Map"><div class="trail-road" aria-hidden="true"></div>${nodes}</div>`;
   }
 
   private settings() {
@@ -6763,7 +6950,7 @@ export class HUD {
           })
           .join('')}</div></div>`
       : '';
-    return `<div class="modal-backdrop result-backdrop"><section class="result-modal ${outcomeClass}" role="dialog" aria-modal="true" aria-labelledby="result-title"><div class="result-summary"><div class="result-rays"></div><span class="result-eyebrow">BATTLE COMPLETE</span><h1 id="result-title" tabindex="-1">${b.practice ? 'Practice complete' : r.stars ? 'Victory!' : 'A brave attempt'}</h1><div class="result-stars" role="img" aria-label="${starCountLabel(r.stars)}">${[0, 1, 2].map((i) => `<span class="${i < r.stars ? 'earned' : ''}" style="--star-i:${i}">★</span>`).join('')}</div><p>${r.destruction}% destruction <span>·</span> ${b.practice ? 'Your village' : campaignStage(b.index, b.catalog).name}</p>${
+    return `<div class="modal-backdrop result-backdrop"><section class="result-modal ${outcomeClass}" role="dialog" aria-modal="true" aria-labelledby="result-title"><div class="result-summary"><div class="result-rays"></div><span class="result-eyebrow">BATTLE COMPLETE</span><h1 id="result-title" tabindex="-1">${b.practice ? 'Practice complete' : r.stars ? 'Victory!' : 'A brave attempt'}</h1><div class="result-stars" role="img" aria-label="${starCountLabel(r.stars)}">${clashStarsMarkup(r.stars, 42)}</div><p>${r.destruction}% destruction <span>·</span> ${b.practice ? 'Your village' : campaignStage(b.index, b.catalog).name}</p>${
       b.practice
         ? '<p class="practice-result-note">Your village, troops and spells are unchanged.<br>Rearrange your defenses and try a different approach.</p>'
         : b.ladder
@@ -7033,6 +7220,21 @@ export class HUD {
         if (el.getAttribute('aria-label') !== label) el.setAttribute('aria-label', label);
       }
       if (siegeCardsChanged) refs = this.liveRefs = this.collectLiveRefs();
+      const activeDepleted =
+        m.troopSelected &&
+        !m.activeHero &&
+        !m.activeHeroKind &&
+        !m.activeSpell &&
+        m.troopRemaining(m.activeTroop) <= 0;
+      const nextReadyTroop = activeDepleted
+        ? TROOP_ORDER.find(
+            (k) => b.carriedArmy[k] > 0 && b.remaining[k] > 0 && !this.siegeUnavailable(k),
+          )
+        : undefined;
+      for (const el of refs.trayButtons) {
+        const isNext = !!nextReadyTroop && el.dataset.action === `troop:${nextReadyTroop}`;
+        if (el.classList.contains('ready-next') !== isNext) el.classList.toggle('ready-next', isNext);
+      }
       setText(refs.deployLabel, this.deployHint());
     }
     for (const el of refs.resources) {
@@ -7141,6 +7343,17 @@ export class HUD {
         timedBattle(b) &&
         (b.started ? BATTLE_SECONDS - b.elapsed <= 30 : b.prep <= 10);
       clockBox?.classList.toggle('urgent', urgent);
+      if (!b.finished && !m.replay && timedBattle(b)) {
+        const leftSec = Math.ceil(b.started ? BATTLE_SECONDS - b.elapsed : b.prep);
+        if (leftSec > 0 && leftSec <= 10 && leftSec !== this.lastCountdownSec) {
+          this.lastCountdownSec = leftSec;
+          this.audio.playCountdownTick(leftSec <= 3);
+        } else if (leftSec > 10) {
+          this.lastCountdownSec = -1;
+        }
+      } else {
+        this.lastCountdownSec = -1;
+      }
       setText(refs.battleTimer, battleClockValue(b));
       setText(refs.destructionValue, `${b.destruction}%`);
       if (refs.surrenderDestruction) {
@@ -7157,7 +7370,7 @@ export class HUD {
         const prev = Number(stars.dataset.stars ?? '0');
         stars.dataset.stars = String(b.stars);
         stars.setAttribute('aria-label', starCountLabel(b.stars));
-        stars.innerHTML = `${'★'.repeat(b.stars)}<span>${'★'.repeat(3 - b.stars)}</span>`;
+        stars.innerHTML = clashStarsMarkup(b.stars, 22);
         if (b.stars > prev) {
           if (!m.reducedMotion) {
             stars.classList.remove('star-pop');

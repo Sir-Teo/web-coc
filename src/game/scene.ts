@@ -235,7 +235,7 @@ import {
   walkAsset,
   type BuildingKind,
 } from './data';
-import { GameModel, makeBuilding, type Battle, type Building, type FX } from './model';
+import { GameModel, formatTime, makeBuilding, type Battle, type Building, type FX } from './model';
 import { cueAudible, registerCachedSample, type SampleCue } from './sample-audio';
 import { ShapeAtlas, ShapePool, applyShape, type BakedShape } from './shape-atlas';
 import { RenderInterpolation } from './render-interpolation';
@@ -789,6 +789,29 @@ export class VillageScene extends Phaser.Scene {
   onSelect = () => {};
   /** A tap on the Trader's camp or the Super Troop building, for the HUD to open what it opens. */
   onVillageObject: (opens: VillageObjectDef['opens']) => void = () => {};
+  /** Notifies the HUD when the placement ghost's viewport anchor changes. */
+  onGhostScreen: (point: { x: number; y: number; valid: boolean } | null) => void = () => {};
+  /** Pooled world-space nameplate centered above the selected building. */
+  private nameplate?: Phaser.GameObjects.Text;
+  private nameplateText = '';
+  /** Pooled world-space upgrade countdown labels keyed by building id. */
+  private upgradeTimers = new Map<number, Phaser.GameObjects.Text>();
+  /** Recent invalid-deploy world tap marker + timestamp for red X & border flash. */
+  private invalidDrop?: { x: number; y: number; at: number };
+  /** Short-lived expanding deploy chevrons/ripples on troop/hero drop. */
+  private deployRipples: { x: number; y: number; at: number; color: number }[] = [];
+  /** Last reported floating placement button screen coordinates (throttled). */
+  private lastGhostScreen?: { x: number; y: number; valid: boolean } | null;
+  /** Per-battle loot delta tracker for floating combat loot popups. */
+  private battleLootSeen?: {
+    battle: Battle;
+    gold: number;
+    elixir: number;
+    dark: number;
+    lastAt: number;
+  };
+  /** Cached home-village Scout View no-deploy boundary. */
+  private scoutBoundary = { signature: NaN, edges: [] as number[][] };
   /** Callbacks waiting for Phaser to inject `events` (the HUD is built before the game boots). */
   private bootWaiters: (() => void)[] = [];
   /** Attribute boot errors to their family; release File references once the scene is created. */
@@ -1429,6 +1452,8 @@ export class VillageScene extends Phaser.Scene {
         this.model.beginDrag();
         this.model.selected = held.id;
         this.model.changed();
+        const dragged = this.model.buildings.find((v) => v.id === held.id);
+        if (dragged) this.audio.playBuilding(dragged.kind, 'pickup');
       }
     };
     this.input.on('pointerdown', onPointerDown);
@@ -1510,7 +1535,13 @@ export class VillageScene extends Phaser.Scene {
           t: performance.now(),
         };
       } else this.fling.stop();
+      const draggedId = down?.building?.id;
+      const hadSwap = this.model.dragSwapTarget !== null;
       this.model.endDrag(cancelled || !droppedOnMap);
+      if (draggedId && !cancelled && droppedOnMap && (this.dragged || hadSwap)) {
+        const placed = this.model.buildings.find((v) => v.id === draggedId);
+        if (placed) this.audio.playBuilding(placed.kind, 'place');
+      }
       if (cancelled || !droppedOnMap) return;
       // A new Practice objective can select a different unit while this pointer is down.
       if (down.guideStep !== this.model.guideStep) {
@@ -2875,6 +2906,7 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.deploy(grid.x, grid.y)) {
       this.lastDeploy = { x: grid.x, y: grid.y };
       this.model.selected = null;
+      this.recordDeployRipple(grid.x, grid.y);
       this.deployFeedback();
     }
   }
@@ -2885,6 +2917,7 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.deployBlocked(grid.x, grid.y)) return;
     if (this.model.deploy(grid.x, grid.y)) {
       this.lastDeploy = { x: grid.x, y: grid.y };
+      this.recordDeployRipple(grid.x, grid.y);
       this.deployFeedback();
     }
   }
@@ -2968,7 +3001,11 @@ export class VillageScene extends Phaser.Scene {
       if (placed) {
         this.model.selected = null;
         this.lastTap = kind ? { kind, x: grid.x, y: grid.y, t: now } : undefined;
+        this.recordDeployRipple(grid.x, grid.y);
         this.deployFeedback();
+      } else if (this.model.deployBlocked(grid.x, grid.y)) {
+        this.invalidDrop = { x: grid.x, y: grid.y, at: now };
+        this.audio.playInvalid();
       }
       return;
     }
@@ -3011,7 +3048,8 @@ export class VillageScene extends Phaser.Scene {
     else this.model.selected = hit?.id ?? (obstacle ? -obstacle[0] : null);
     this.model.changed();
     this.onSelect();
-    if (hit || decoration) this.audio.play('click');
+    if (hit) this.audio.playBuilding(hit.kind, 'pickup');
+    else if (decoration) this.audio.play('click');
   }
   gridAtPointer(p: { x: number; y: number }) {
     const world = this.cameras.main.getWorldPoint(p.x, p.y);
@@ -3054,7 +3092,8 @@ export class VillageScene extends Phaser.Scene {
       kind !== 'xbow' &&
       kind !== 'wizardtower'
     )
-      this.audio.play('build');
+      if (kind) this.audio.playBuilding(kind, 'place');
+      else this.audio.play('build');
     return true;
   }
   /** Drives the placement ghost from a DOM drag that Phaser never sees. */
@@ -5740,9 +5779,16 @@ export class VillageScene extends Phaser.Scene {
         this.diamond(g, preview.x, preview.y, preview.size, color, 0.28);
         this.drawPlacementArrows(g, preview.x, preview.y, preview.size, color);
       }
+      this.notifyGhostScreen();
     } else {
       this.lastGhostTile = undefined;
+      this.notifyGhostScreen();
     }
+    this.drawDragSwapHighlight(g);
+    this.drawInvalidDrop(g);
+    this.drawDeployRipples(g);
+    this.drawSpellTargetPreview(g);
+    this.syncSelectedNameplate(b);
   }
   /** Classic Clash 4-edge directional placement arrowheads around a building footprint. */
   private drawPlacementArrows(
@@ -5804,8 +5850,17 @@ export class VillageScene extends Phaser.Scene {
    */
   private drawGroundMarks(battle: GameModel['battle']) {
     const active = battle && !battle.finished;
-    const edges = active ? this.battleBoundary() : undefined;
-    const signature = edges ? this.boundary.signature : NaN;
+    const scoutEdit = !battle && this.model.editing && this.model.editScoutView;
+    const edges = active
+      ? this.battleBoundary()
+      : scoutEdit
+        ? this.homeScoutBoundary()
+        : undefined;
+    const signature = active
+      ? this.boundary.signature
+      : scoutEdit
+        ? this.scoutBoundary.signature
+        : NaN;
     if (!Object.is(signature, this.boundarySignature)) {
       this.boundarySignature = signature;
       const g = this.groundMarks.clear();
@@ -5830,6 +5885,13 @@ export class VillageScene extends Phaser.Scene {
           );
         }
       }
+    }
+    if (active && this.invalidDrop) {
+      const age = performance.now() - this.invalidDrop.at;
+      const flash = age < 420 && !this.model.reducedMotion ? 1 + Math.sin((age / 420) * Math.PI) * 0.4 : 1;
+      this.groundMarks.setAlpha(Math.min(1, 0.85 * flash + 0.15));
+    } else if (this.groundMarks.alpha !== 1) {
+      this.groundMarks.setAlpha(1);
     }
     this.drawAuras(active ? battle : null);
   }
@@ -6045,39 +6107,47 @@ export class VillageScene extends Phaser.Scene {
       if (v.upgradeEnd) {
         const start = v.upgradeStart ?? v.upgradeEnd - 15000,
           duration = Math.max(1, v.upgradeEnd - start),
-          progress = (this.model.clock - start) / duration;
-        this.bar(
-          im.x,
-          nativeBounds
+          progress = (this.model.clock - start) / duration,
+          barY = nativeBounds
             ? im.y + nativeBounds[1] - 6
             : im.y -
-                im.displayHeight *
-                  (['camp', 'xbow', 'darkstorage'].includes(v.kind) ? im.originY : 0.87),
-          54,
-          progress,
-          0x82d745,
-        );
+              im.displayHeight *
+                (['camp', 'xbow', 'darkstorage'].includes(v.kind) ? im.originY : 0.87);
+        this.bar(im.x, barY, 56, progress, 0x46d8ff);
+        if (!battle && !this.model.editPhotoMode) {
+          const left = Math.max(0, Math.ceil((v.upgradeEnd - this.model.clock) / 1000));
+          this.syncUpgradeTimer(v.id, im.x, barY - 12, formatTime(left));
+        }
         if (!nativeBounds) {
+          const s = BUILDINGS[v.kind].size;
+          this.diamond(this.detail, v.x, v.y, s, 0xe8b54f, 0.12);
           const p = iso(v.x, v.y);
-          this.detail.lineStyle(3, 0xe6b356, 0.7);
+          this.detail.lineStyle(3, 0x6f4318, 0.9);
+          this.detail.lineBetween(p.x - 13, p.y - 8, p.x - 13, p.y - 58);
+          this.detail.lineStyle(2.5, 0xf2c864, 0.95);
           this.detail.lineBetween(p.x - 12, p.y - 10, p.x - 12, p.y - 60);
           this.detail.lineBetween(p.x - 12, p.y - 50, p.x + 22, p.y - 65);
         }
-      } else
+      } else {
+        const ratio = v.hp / v.maxHp;
+        const hpColor = ratio >= 0.55 ? 0x6ce03b : ratio >= 0.25 ? 0xf5b82e : 0xea4e3d;
         this.bar(
           im.x,
           nativeBounds
             ? im.y + nativeBounds[1] - 6
             : im.y -
-                im.displayHeight *
-                  (['camp', 'xbow', 'darkstorage'].includes(v.kind) || isGoblinBuilding(v.npc)
-                    ? im.originY
-                    : 0.88),
-          42,
-          v.hp / v.maxHp,
-          0xea654d,
+              im.displayHeight *
+                (['camp', 'xbow', 'darkstorage'].includes(v.kind) || isGoblinBuilding(v.npc)
+                  ? im.originY
+                  : 0.88),
+          44,
+          ratio,
+          hpColor,
         );
+      }
     }
+    this.pruneUpgradeTimers(battle);
+    this.drawCombatLootPopups(battle, reduced);
     if (battle?.buildingEffects && !battle.finished)
       for (const v of this.model.buildings) {
         const e = battle.buildingEffects[v.id];
@@ -6691,15 +6761,21 @@ export class VillageScene extends Phaser.Scene {
   bar(x: number, y: number, w: number, p: number, color: number, graphics = this.detail) {
     // Plain rects: rounded rects expand to arcs + earcut triangulation every frame.
     const fw = Math.max(0, w * Math.max(0, Math.min(1, p)));
-    graphics.fillStyle(0x141710, 0.9);
-    graphics.fillRect(x - w / 2 - 2, y - 2, w + 4, 8);
-    graphics.fillStyle(0x2d2b22, 0.95);
-    graphics.fillRect(x - w / 2, y, w, 4);
+    // Soft Clash drop shadow + dark bevel rim.
+    graphics.fillStyle(0x000000, 0.45);
+    graphics.fillRect(x - w / 2 - 2, y - 1, w + 4, 10);
+    graphics.fillStyle(0x141710, 0.94);
+    graphics.fillRect(x - w / 2 - 2, y - 2, w + 4, 9);
+    graphics.fillStyle(0x2d2b22, 0.96);
+    graphics.fillRect(x - w / 2, y, w, 5);
     if (fw > 0) {
       graphics.fillStyle(color, 1);
-      graphics.fillRect(x - w / 2, y, fw, 4);
-      graphics.fillStyle(0xffffff, 0.34);
-      graphics.fillRect(x - w / 2, y, fw, 1);
+      graphics.fillRect(x - w / 2, y, fw, 5);
+      // Top glossy bevel highlight + bottom inner shade.
+      graphics.fillStyle(0xffffff, 0.42);
+      graphics.fillRect(x - w / 2, y, fw, 1.5);
+      graphics.fillStyle(0x000000, 0.22);
+      graphics.fillRect(x - w / 2, y + 3.5, fw, 1.5);
     }
   }
   private animateEffect(config: EffectTween) {
@@ -7765,6 +7841,313 @@ export class VillageScene extends Phaser.Scene {
     if (!battle && !this.model.reducedMotion) this.campTime += dt;
     this.drawCampUnits();
     this.present(time, true);
+  }
+  /** Current floating world-space building nameplate text (empty when hidden). */
+  get selectedNameplateText() {
+    return this.nameplate?.visible ? this.nameplateText : '';
+  }
+  /** Viewport screen coordinates directly below the active placement ghost footprint. */
+  ghostScreenPoint(): { x: number; y: number; valid: boolean } | null {
+    const ghost = this.lastGhostTile;
+    if (
+      !ghost ||
+      (!this.model.placement &&
+        !this.model.decorationPlacement &&
+        this.model.movingObstacle === null)
+    )
+      return null;
+    const pt = this.screenFor(ghost.x + ghost.size, ghost.y + ghost.size);
+    return { x: pt.x, y: pt.y, valid: ghost.valid };
+  }
+  private notifyGhostScreen() {
+    const next = this.ghostScreenPoint();
+    const prev = this.lastGhostScreen;
+    if (
+      prev === next ||
+      (prev &&
+        next &&
+        prev.valid === next.valid &&
+        Math.abs(prev.x - next.x) < 0.75 &&
+        Math.abs(prev.y - next.y) < 0.75)
+    )
+      return;
+    this.lastGhostScreen = next;
+    this.onGhostScreen(next);
+  }
+  private recordDeployRipple(x: number, y: number) {
+    if (this.model.reducedMotion) return;
+    const isHero = !!this.model.activeHero || !!this.model.activeHeroKind;
+    this.deployRipples.push({
+      x,
+      y,
+      at: performance.now(),
+      color: isHero ? 0xffd654 : 0x8fff73,
+    });
+    if (this.deployRipples.length > 14) this.deployRipples.shift();
+  }
+  /** Home village Edit Mode Scout View no-deploy outline (traps and Hidden Teslas excluded). */
+  private homeScoutBoundary() {
+    let signature = 0x5c07 ^ MAP_SIZE;
+    const footprints: { x: number; y: number; size: number }[] = [];
+    for (const v of this.model.buildings) {
+      if (v.hp <= 0 || v.kind === 'wall' || isTrap(v.kind) || v.kind === 'tesla') continue;
+      signature = ((signature * 31 + v.id * 17 + v.x * 3 + v.y) | 0) ^ (v.level << 2);
+      footprints.push({ x: v.x, y: v.y, size: BUILDINGS[v.kind].size });
+    }
+    if (signature === this.scoutBoundary.signature) return this.scoutBoundary.edges;
+    const edges = deploymentBoundary(footprints, MAP_SIZE, this.blockedGrid);
+    this.scoutBoundary = { signature, edges };
+    return edges;
+  }
+  private drawDragSwapHighlight(g: Phaser.GameObjects.Graphics) {
+    if (!this.model.editing || this.model.dragSwapTarget === null) return;
+    const byId = this.buildingMap(this.model.buildings);
+    const target = byId.get(this.model.dragSwapTarget);
+    const active = this.model.activeDragId !== null ? byId.get(this.model.activeDragId) : undefined;
+    const pulse = this.model.reducedMotion ? 0.24 : 0.18 + Math.sin(performance.now() / 160) * 0.08;
+    for (const v of [target, active]) {
+      if (!v) continue;
+      const s = BUILDINGS[v.kind].size;
+      this.diamond(g, v.x, v.y, s, 0x4ae8ff, pulse);
+      g.lineStyle(3, 0xa8f6ff, 0.96);
+      g.strokePoints(this.diamondPoints, true);
+    }
+  }
+  private drawInvalidDrop(g: Phaser.GameObjects.Graphics) {
+    const drop = this.invalidDrop;
+    if (!drop) return;
+    const age = performance.now() - drop.at;
+    if (age > 560) {
+      this.invalidDrop = undefined;
+      return;
+    }
+    const t = age / 560;
+    const alpha = 1 - t;
+    const p = iso(drop.x, drop.y);
+    const grow = this.model.reducedMotion ? 1 : 0.85 + t * 0.45;
+    g.lineStyle(3, 0xff4c42, 0.85 * alpha);
+    g.strokeEllipse(p.x, p.y, 44 * grow, 22 * grow);
+    const r = 10 * (this.model.reducedMotion ? 1 : 1 + t * 0.15);
+    g.lineStyle(5, 0x3b0907, 0.9 * alpha);
+    g.lineBetween(p.x - r, p.y - r, p.x + r, p.y + r);
+    g.lineBetween(p.x + r, p.y - r, p.x - r, p.y + r);
+    g.lineStyle(3, 0xff6259, alpha);
+    g.lineBetween(p.x - r, p.y - r, p.x + r, p.y + r);
+    g.lineBetween(p.x + r, p.y - r, p.x - r, p.y + r);
+  }
+  private drawDeployRipples(g: Phaser.GameObjects.Graphics) {
+    if (!this.deployRipples.length) return;
+    const now = performance.now();
+    let keep = 0;
+    for (let i = 0; i < this.deployRipples.length; i++) {
+      const r = this.deployRipples[i];
+      const age = now - r.at;
+      if (age > 340) continue;
+      this.deployRipples[keep++] = r;
+      const t = age / 340;
+      const alpha = 1 - t;
+      const p = iso(r.x, r.y);
+      const scale = 0.55 + t * 1.15;
+      g.lineStyle(2.5, r.color, 0.88 * alpha);
+      g.strokeEllipse(p.x, p.y, 38 * scale, 19 * scale);
+      const lift = 6 + t * 14;
+      g.lineStyle(2.5, 0xffffff, 0.8 * alpha);
+      g.lineBetween(p.x - 6, p.y - lift + 4, p.x, p.y - lift);
+      g.lineBetween(p.x, p.y - lift, p.x + 6, p.y - lift + 4);
+    }
+    this.deployRipples.length = keep;
+  }
+  private drawSpellTargetPreview(g: Phaser.GameObjects.Graphics) {
+    const battle = this.model.battle;
+    const spell = this.model.activeSpell;
+    if (!battle || battle.finished || this.model.replay || !spell) return;
+    if ((battle.spells[spell] ?? 0) <= 0) return;
+    const ptr = this.pointerScreen();
+    if (!this.keyCursor && !this.pointerOverCanvas(ptr)) return;
+    const grid = this.keyCursor
+      ? { x: this.keyCursor.x + 0.5, y: this.keyCursor.y + 0.5 }
+      : this.gridAtPointer(ptr);
+    const maxCoord = battleMapSize(battle);
+    if (grid.x < 0 || grid.y < 0 || grid.x > maxCoord || grid.y > maxCoord) return;
+    const source = SPELL_SOURCE[spell];
+    const row = source ? nativeRow('spells', source, this.model.spellLevel(spell)) : undefined;
+    const radius =
+      (row ? nativeTiles(row, 'Radius') || nativeTiles(row, 'TargetingRadius') : 0) ||
+      SPELLS[spell]?.radius ||
+      3.5;
+    const color =
+      (source ? NATIVE_SPELL_COLOR[source] : undefined) ?? SPELL_COLOR[spell] ?? 0x9fe3ff;
+    const p = iso(grid.x, grid.y);
+    const pulse = this.model.reducedMotion ? 1 : 1 + Math.sin(performance.now() / 190) * 0.03;
+    const w = radius * 64 * Math.SQRT2 * pulse;
+    const h = radius * 32 * Math.SQRT2 * pulse;
+    g.fillStyle(color, 0.12);
+    g.fillEllipse(p.x, p.y, w, h);
+    g.lineStyle(2.5, color, 0.9);
+    g.strokeEllipse(p.x, p.y, w, h);
+    g.lineStyle(1.5, 0xffffff, 0.82);
+    g.lineBetween(p.x - 8, p.y, p.x + 8, p.y);
+    g.lineBetween(p.x, p.y - 4, p.x, p.y + 4);
+  }
+  private syncSelectedNameplate(b: Building | undefined) {
+    const hide =
+      !b ||
+      b.hp <= 0 ||
+      !this.model.visibleBuilding(b) ||
+      this.model.wallMove ||
+      this.model.hasBuildingDrag ||
+      this.model.editPhotoMode;
+    if (hide) {
+      if (this.nameplate?.visible) this.nameplate.setVisible(false);
+      return;
+    }
+    const im = this.sprites.get(b.id);
+    if (!im || !im.visible) {
+      if (this.nameplate?.visible) this.nameplate.setVisible(false);
+      return;
+    }
+    const def = BUILDINGS[b.kind];
+    const text = `${def.name} (Level ${b.level})`;
+    if (!this.nameplate) {
+      this.nameplate = this.add
+        .text(0, 0, text, {
+          fontFamily: HEADING_FONT,
+          fontSize: '15px',
+          fontStyle: 'bold',
+          color: '#fff8dc',
+          stroke: '#241406',
+          strokeThickness: 4,
+          shadow: { offsetX: 0, offsetY: 2, color: '#000000', blur: 2, fill: true, stroke: true },
+        })
+        .setOrigin(0.5, 1)
+        .setDepth(9100);
+      this.nameplateText = text;
+    } else if (this.nameplateText !== text) {
+      this.nameplate.setText(text);
+      this.nameplateText = text;
+    }
+    const nativeBounds = this.nativeBuildingBounds(b);
+    const topY = nativeBounds
+      ? im.y + nativeBounds[1] - 10
+      : im.y - im.displayHeight * (['camp', 'xbow', 'darkstorage'].includes(b.kind) ? im.originY : 0.88) - 8;
+    const bounce =
+      this.selectAt > 0 && !this.model.reducedMotion
+        ? Math.sin(Math.min(1, (performance.now() - this.selectAt) / 180) * Math.PI) * 7
+        : 0;
+    this.nameplate.setPosition(im.x, topY - bounce - (b.upgradeEnd ? 18 : 0)).setVisible(true);
+  }
+  private syncUpgradeTimer(id: number, x: number, y: number, label: string) {
+    let text = this.upgradeTimers.get(id);
+    if (!text) {
+      text = this.add
+        .text(x, y, label, {
+          fontFamily: HEADING_FONT,
+          fontSize: '13px',
+          fontStyle: 'bold',
+          color: '#e6f9ff',
+          stroke: '#0d2638',
+          strokeThickness: 4,
+        })
+        .setOrigin(0.5, 1)
+        .setDepth(8950);
+      this.upgradeTimers.set(id, text);
+    } else {
+      if (text.text !== label) text.setText(label);
+      text.setPosition(x, y).setVisible(true);
+    }
+  }
+  private pruneUpgradeTimers(battle: GameModel['battle']) {
+    if (!this.upgradeTimers.size) return;
+    const active = new Set<number>();
+    if (!battle && !this.model.editPhotoMode) {
+      for (const v of this.model.buildings) if (v.upgradeEnd && v.hp > 0) active.add(v.id);
+    }
+    for (const [id, text] of this.upgradeTimers) {
+      if (!active.has(id)) {
+        text.destroy();
+        this.upgradeTimers.delete(id);
+      }
+    }
+  }
+  private drawCombatLootPopups(battle: GameModel['battle'], reduced: boolean) {
+    const loot = battle?.lootTaken;
+    if (!battle || battle.finished || battle.practice || !loot) {
+      if (this.battleLootSeen && this.battleLootSeen.battle !== battle)
+        this.battleLootSeen = undefined;
+      return;
+    }
+    const curDark = loot.dark ?? 0;
+    const seen = this.battleLootSeen;
+    if (!seen || seen.battle !== battle) {
+      this.battleLootSeen = {
+        battle,
+        gold: loot.gold,
+        elixir: loot.elixir,
+        dark: curDark,
+        lastAt: performance.now(),
+      };
+      return;
+    }
+    const now = performance.now();
+    if (now - seen.lastAt < 240) return;
+    const dGold = loot.gold - seen.gold;
+    const dElixir = loot.elixir - seen.elixir;
+    const dDark = curDark - seen.dark;
+    if (dGold <= 0 && dElixir <= 0 && dDark <= 0) return;
+    seen.gold = loot.gold;
+    seen.elixir = loot.elixir;
+    seen.dark = curDark;
+    seen.lastAt = now;
+
+    const findAnchor = (kinds: BuildingKind[]) => {
+      let best: Building | undefined;
+      for (const v of battle.buildings) {
+        if (v.hp >= v.maxHp) continue;
+        if (kinds.includes(v.kind) && (!best || v.hp / v.maxHp < best.hp / best.maxHp)) best = v;
+      }
+      if (!best) {
+        for (const v of battle.buildings) {
+          if (v.hp < v.maxHp) {
+            best = v;
+            break;
+          }
+        }
+      }
+      return best;
+    };
+    const emit = (
+      delta: number,
+      resource: 'gold' | 'elixir' | 'dark',
+      kinds: BuildingKind[],
+      yOffset: number,
+    ) => {
+      if (delta <= 0) return;
+      const target = findAnchor(kinds);
+      if (!target) return;
+      const s = BUILDINGS[target.kind].size;
+      const p = iso(target.x + s / 2, target.y + s / 2);
+      const text = this.add
+        .text(p.x, p.y - 54 - yOffset, `+${delta.toLocaleString()}`, {
+          fontFamily: HEADING_FONT,
+          fontStyle: 'bold',
+          fontSize: '18px',
+          color: resource === 'gold' ? '#ffdf66' : resource === 'dark' ? '#cfa8ff' : '#ffb5ff',
+          stroke: resource === 'gold' ? '#3d2808' : resource === 'dark' ? '#231138' : '#42124d',
+          strokeThickness: 4,
+        })
+        .setOrigin(0.5)
+        .setDepth(9020);
+      this.animateEffect({
+        targets: text,
+        y: p.y - (reduced ? 54 + yOffset : 112 + yOffset),
+        alpha: 0,
+        duration: 950,
+        onComplete: () => text.destroy(),
+      });
+    };
+    emit(dGold, 'gold', ['goldstorage', 'goldmine', 'townhall'], 0);
+    emit(dElixir, 'elixir', ['elixirstorage', 'collector', 'townhall'], dGold > 0 ? 20 : 0);
+    emit(dDark, 'dark', ['darkstorage', 'darkdrill', 'townhall'], (dGold > 0 ? 20 : 0) + (dElixir > 0 ? 20 : 0));
   }
   screenFor(x: number, y: number) {
     const p = iso(x, y),

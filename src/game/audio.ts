@@ -6,11 +6,67 @@ export type Tone = 'click' | 'collect' | 'build' | 'hit' | 'destroy' | 'deploy' 
 /** The client's village feedback effects (logic/effects.csv), by its own names. */
 export type VillageEffect = keyof typeof villageSounds.effects | 'Button Click';
 const villageSample = (path: string) => `village-${path.split('/').pop()}`;
+/** Additional already-packaged native OGG cues loaded alongside village-native sounds. */
+export const EXTRA_NATIVE_SOUNDS = {
+  'native-destroy': 'assets/audio/archer-tower-native/building_destroyed_01.ogg',
+  'native-hit': 'assets/audio/archer-tower-native/generic_hit_01.ogg',
+  'native-deploy': 'assets/audio/troops-native/barb_deploy_11.ogg',
+  'native-at-pick': 'assets/audio/archer-tower-native/archer_tower_pick_01.ogg',
+  'native-at-place': 'assets/audio/archer-tower-native/archer_tower_place_02.ogg',
+  'native-drill-pick': 'assets/audio/dark-drill-native/dark_drill_pickup_02.ogg',
+  'native-drill-place': 'assets/audio/dark-drill-native/dark_drill_place_07.ogg',
+  'native-inferno-pick': 'assets/audio/inferno-native/darktower_pickup_01.ogg',
+  'native-inferno-place': 'assets/audio/inferno-native/darktower_place_01.ogg',
+  'native-bow-place': 'assets/audio/troops-native/bow_place.ogg',
+} as const;
+export type ExtraNativeSound = keyof typeof EXTRA_NATIVE_SOUNDS;
+
+/** Maps building pickup/place actions to native already-packaged OGG keys + material pitch. */
+export function buildingAudioCue(
+  kind: string,
+  action: 'pickup' | 'place',
+): { key: string; volume: number; pitch: number } {
+  if (action === 'pickup') {
+    if (kind === 'archertower') return { key: 'native-at-pick', volume: 0.58, pitch: 1 };
+    if (kind === 'darkdrill') return { key: 'native-drill-pick', volume: 0.58, pitch: 1 };
+    if (kind === 'inferno') return { key: 'native-inferno-pick', volume: 0.58, pitch: 1 };
+    const heavy =
+      kind === 'townhall' ||
+      kind === 'cannon' ||
+      kind === 'mortar' ||
+      kind === 'bombtower' ||
+      kind === 'eagle' ||
+      kind === 'monolith' ||
+      kind === 'scattershot';
+    const arcane =
+      kind === 'spellfactory' ||
+      kind === 'darkspellfactory' ||
+      kind === 'laboratory' ||
+      kind === 'wizardtower' ||
+      kind === 'tesla';
+    const pitch = heavy ? 0.86 : arcane ? 1.14 : kind === 'wall' ? 0.96 : 1.03;
+    return { key: villageSample('sfx/wall_pickup_01.ogg'), volume: 0.52, pitch };
+  }
+  if (kind === 'archertower') return { key: 'native-at-place', volume: 0.62, pitch: 1 };
+  if (kind === 'darkdrill') return { key: 'native-drill-place', volume: 0.62, pitch: 1 };
+  if (kind === 'inferno') return { key: 'native-inferno-place', volume: 0.62, pitch: 1 };
+  if (kind === 'xbow' || kind === 'scattershot' || kind === 'monolith')
+    return { key: 'native-bow-place', volume: 0.62, pitch: 1 };
+  const pitch = kind === 'wall' ? 0.92 : kind === 'townhall' ? 0.72 : 0.8;
+  return { key: villageSample('sfx/building_construct_07.ogg'), volume: 0.68, pitch };
+}
+
 /** Generated tones that the client's own sounds replace once decoded. */
 const TONE_EFFECT: Partial<Record<Tone, VillageEffect>> = {
   click: 'Button Click',
   build: 'Start Building',
   collect: 'Collect Gold',
+  victory: 'TH Upgrade Jingle',
+};
+const TONE_EXTRA_NATIVE: Partial<Record<Tone, { key: ExtraNativeSound; volume: number; spread: number }>> = {
+  destroy: { key: 'native-destroy', volume: 0.64, spread: 0.08 },
+  hit: { key: 'native-hit', volume: 0.42, spread: 0.12 },
+  deploy: { key: 'native-deploy', volume: 0.5, spread: 0.06 },
 };
 export class AudioManager {
   context: AudioContext | null = null;
@@ -131,11 +187,22 @@ export class AudioManager {
   }
   private loadVillageSounds() {
     if (this.villageLoad || !this.effectsAudible || typeof fetch === 'undefined') return;
+    const villageEntries = Object.entries(villageSounds.sounds).map(
+      ([path, sound]) => [villageSample(path), sound.path] as const,
+    );
+    const extraEntries = Object.entries(EXTRA_NATIVE_SOUNDS).map(
+      ([key, path]) => [key, path] as const,
+    );
     this.villageLoad = Promise.all(
-      Object.entries(villageSounds.sounds).map(async ([path, sound]) => {
-        const response = await fetch('/' + sound.path);
-        if (!response.ok) throw Error(`${sound.path}: ${response.status}`);
-        this.samples.register(villageSample(path), await response.arrayBuffer());
+      [...villageEntries, ...extraEntries].map(async ([key, path]) => {
+        try {
+          const response = await fetch('/' + path);
+          if (!response.ok) throw Error(`${path}: ${response.status}`);
+          this.samples.register(key, await response.arrayBuffer());
+        } catch (err) {
+          // Core village sounds must retry if offline; optional native combat cues degrade gracefully.
+          if (key.startsWith('village-')) throw err;
+        }
       }),
     ).then(
       () => undefined,
@@ -185,9 +252,161 @@ export class AudioManager {
       kind === 'hit' ? 70 : kind === 'destroy' ? 150 : kind === 'victory' ? 500 : 50;
     if (this.throttled(kind, throttleMs)) return;
     this.unlock();
+    const extra = TONE_EXTRA_NATIVE[kind];
+    if (extra) {
+      const pitch = 1 + (Math.random() * 2 - 1) * extra.spread;
+      if (this.samples.shot(extra.key, extra.volume, pitch)) return;
+    }
     const effect = TONE_EFFECT[kind];
     if (effect && this.playEffect(effect)) return;
     this.tone(kind);
+  }
+  /** Native per-building pickup or placement foley with graceful click/build fallback. */
+  playBuilding(kind: string, action: 'pickup' | 'place') {
+    this.feedback(action === 'place' ? 'build' : 'click');
+    if (!this.effectsAudible) {
+      if (this.musicAudible) this.unlock();
+      return;
+    }
+    if (this.throttled(`bldg-${action}`, 45)) return;
+    this.unlock();
+    const cue = buildingAudioCue(kind, action);
+    if (this.samples.shot(cue.key, cue.volume, cue.pitch)) return;
+    if (action === 'place') this.playEffect('Start Building') || this.tone('build');
+    else this.playEffect('Button Click') || this.tone('click');
+  }
+  /** Distinct Clash UI card-selection pitch per battle tray category. */
+  playCardSelect(category: 'troop' | 'spell' | 'hero') {
+    this.feedback('click');
+    if (!this.effectsAudible) {
+      if (this.musicAudible) this.unlock();
+      return;
+    }
+    if (this.throttled('card-select', 35)) return;
+    this.unlock();
+    const pitch = category === 'spell' ? 1.24 : category === 'hero' ? 0.82 : 1.02;
+    if (this.samples.shot(villageSample(villageSounds.click), 0.56, pitch)) return;
+    this.tone('click');
+  }
+  /** Mid-battle ascending Clash star celebration fanfare (1, 2, or 3 stars). */
+  playStar(stars: number) {
+    const clamped = Math.max(1, Math.min(3, Math.floor(stars)));
+    this.feedback('victory');
+    if (!this.effectsAudible) {
+      if (this.musicAudible) this.unlock();
+      return;
+    }
+    if (this.throttled(`star-${clamped}`, 220)) return;
+    this.unlock();
+    // Subtle native celebratory bell accent layered beneath the ascending star triad.
+    this.samples.shot(
+      villageSample('sfx/building_finished_01.ogg'),
+      clamped === 3 ? 0.42 : 0.28,
+      clamped === 1 ? 0.96 : clamped === 2 ? 1.06 : 1.18,
+    );
+    const ctx = this.context;
+    if (!ctx || !this.audible || ctx.state !== 'running') return;
+    const notes =
+      clamped === 1
+        ? [523.25, 783.99]
+        : clamped === 2
+          ? [523.25, 659.25, 783.99]
+          : [523.25, 659.25, 783.99, 1046.5];
+    const base = ctx.currentTime;
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const start = base + i * 0.075;
+      const dur = clamped === 3 && i === notes.length - 1 ? 0.48 : 0.24;
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, start);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.linearRampToValueAtTime(0.055, start + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + dur);
+      osc.connect(gain);
+      gain.connect(this.effectsOutput(ctx));
+      this.tones.set(osc, gain);
+      osc.start(start);
+      osc.stop(start + dur + 0.01);
+      osc.onended = () => {
+        if (!this.tones.delete(osc)) return;
+        osc.disconnect();
+        gain.disconnect();
+      };
+    });
+  }
+  /** Muted low double-thud when tapping an invalid / no-deploy tile. */
+  playInvalid() {
+    this.feedback('hit');
+    if (!this.effectsAudible) {
+      if (this.musicAudible) this.unlock();
+      return;
+    }
+    if (this.throttled('invalid-drop', 180)) return;
+    this.unlock();
+    const ctx = this.context;
+    if (!ctx || !this.audible || ctx.state !== 'running') return;
+    const now = ctx.currentTime;
+    for (const [offset, freq] of [
+      [0, 175],
+      [0.07, 130],
+    ] as const) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, now + offset);
+      osc.frequency.exponentialRampToValueAtTime(freq * 0.62, now + offset + 0.07);
+      gain.gain.setValueAtTime(0.04, now + offset);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.075);
+      osc.connect(gain);
+      gain.connect(this.effectsOutput(ctx));
+      this.tones.set(osc, gain);
+      osc.start(now + offset);
+      osc.stop(now + offset + 0.08);
+      osc.onended = () => {
+        if (!this.tones.delete(osc)) return;
+        osc.disconnect();
+        gain.disconnect();
+      };
+    }
+  }
+  /** Subtle airy sweep paired with CloudTransition across village/battle switches. */
+  playCloudSweep() {
+    if (!this.effectsAudible) return;
+    if (this.throttled('cloud-sweep', 350)) return;
+    this.unlock();
+    const ctx = this.context;
+    if (!ctx || !this.audible || ctx.state !== 'running') return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const now = ctx.currentTime;
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(240, now);
+    osc.frequency.exponentialRampToValueAtTime(540, now + 0.24);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.linearRampToValueAtTime(0.024, now + 0.06);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+    osc.connect(gain);
+    gain.connect(this.effectsOutput(ctx));
+    this.tones.set(osc, gain);
+    osc.start(now);
+    osc.stop(now + 0.27);
+    osc.onended = () => {
+      if (!this.tones.delete(osc)) return;
+      osc.disconnect();
+      gain.disconnect();
+    };
+  }
+  /** Crisp low-volume countdown tick during the final 10s of timed scouting or battle. */
+  playCountdownTick(finalFive = false) {
+    if (!this.effectsAudible) return;
+    if (this.throttled('countdown-tick', 750)) return;
+    this.unlock();
+    this.samples.shot(
+      villageSample(villageSounds.click),
+      finalFive ? 0.34 : 0.22,
+      finalFive ? 1.52 : 1.32,
+    );
   }
   /** The generated stand-in for a cue. */
   private tone(kind: Tone) {

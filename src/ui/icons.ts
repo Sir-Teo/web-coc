@@ -68,15 +68,22 @@ import {
   FastForward,
   Crown,
   Landmark,
+  List,
   ListChecks,
+  Camera,
+  SkipForward as NextIcon,
 } from 'lucide';
+import { resourceEmblemSvg } from './clash-emblems';
 const icons = {
   Circle,
   Bomb,
+  Camera,
   Pause,
   SkipForward,
+  NextIcon,
   ArrowLeft,
   Landmark,
+  List,
   ListChecks,
   FastForward,
   Crown,
@@ -166,9 +173,9 @@ export function icon(name: string, size = 22) {
 }
 /** Whether a glyph name is registered (used by tests to catch silent fallbacks). */
 export const hasIcon = (name: string) => name in icons;
-export const coin = '<span class="resource-icon coin" aria-hidden="true">✦</span>';
-export const elixir = '<span class="resource-icon elixir" aria-hidden="true"></span>';
-export const darkElixir = '<span class="resource-icon dark" aria-hidden="true"></span>';
-export const gem = '<span class="resource-icon gem" aria-hidden="true"></span>';
+export const coin = `<span class="resource-icon coin" aria-hidden="true">${resourceEmblemSvg('gold')}</span>`;
+export const elixir = `<span class="resource-icon elixir" aria-hidden="true">${resourceEmblemSvg('elixir')}</span>`;
+export const darkElixir = `<span class="resource-icon dark" aria-hidden="true">${resourceEmblemSvg('dark')}</span>`;
+export const gem = `<span class="resource-icon gem" aria-hidden="true">${resourceEmblemSvg('gem')}</span>`;
 export const resource = (k: string) =>
   k === 'gold' ? coin : k === 'elixir' ? elixir : k === 'dark' ? darkElixir : gem;
