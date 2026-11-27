@@ -131,10 +131,10 @@ describe('REA Clash 18.400.21 UI/UX fidelity invariants', () => {
       10,
     );
     expect(markers).toEqual([
-      { pct: 10, kind: 'troop' },
-      { pct: 30, kind: 'spell' },
-      { pct: 50, kind: 'hero' },
-      { pct: 70, kind: 'ability' },
+      { pct: 10, kind: 'troop', time: 1, label: 'Troop deployment' },
+      { pct: 30, kind: 'spell', time: 3, label: 'Spell cast' },
+      { pct: 50, kind: 'hero', time: 5, label: 'Hero deployed' },
+      { pct: 70, kind: 'ability', time: 7, label: 'Hero ability' },
     ]);
     expect(replayTimelineMarkers([], [], 0)).toEqual([]);
   });

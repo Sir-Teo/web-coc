@@ -100,8 +100,17 @@ export function deployedArmySummary(input: {
 
 export interface ReplayTimelineMarker {
   pct: number;
+  time: number;
   kind: 'troop' | 'spell' | 'hero' | 'ability';
+  label: string;
 }
+
+const MARKER_LABELS: Record<ReplayTimelineMarker['kind'], string> = {
+  troop: 'Troop deployment',
+  spell: 'Spell cast',
+  hero: 'Hero deployed',
+  ability: 'Hero ability',
+};
 
 /** Project replay deployment/spell/hero actions onto normalized [0..100] timeline markers. */
 export function replayTimelineMarkers(
@@ -132,10 +141,69 @@ export function replayTimelineMarkers(
               : null;
     if (!kind) continue;
     const stepIdx = Math.max(0, Math.min(steps.length, action.step));
-    const pct = Math.max(0, Math.min(100, (elapsedAt[stepIdx] / duration) * 100));
+    const time = Math.max(0, Math.min(duration, elapsedAt[stepIdx]));
+    const pct = Math.max(0, Math.min(100, (time / duration) * 100));
     if (kind === 'troop' && pct - lastTroopPct < 1.8) continue;
     if (kind === 'troop') lastTroopPct = pct;
-    markers.push({ pct, kind });
+    markers.push({ pct, time, kind, label: MARKER_LABELS[kind] });
   }
   return markers;
+}
+
+/** Find the next timeline marker timestamp strictly ahead of `currentTime` (with wrap to first). */
+export function nextReplayEventTime(
+  markers: readonly ReplayTimelineMarker[],
+  currentTime: number,
+): number | null {
+  if (!markers.length) return null;
+  const next = markers.find((m) => m.time > currentTime + 0.35);
+  return next ? next.time : markers[0].time;
+}
+
+export interface BattleStarMilestones {
+  half: boolean;
+  townHall: boolean;
+  full: boolean;
+}
+
+/** Derive which of the 3 Clash star conditions (50%, Town Hall, 100%) are met. */
+export function battleStarMilestones(input: {
+  destruction: number;
+  buildings: readonly { kind: string; npc?: string; hp: number }[];
+}): BattleStarMilestones {
+  const townHall = input.buildings.some(
+    (b) =>
+      (b.kind === 'townhall' || b.npc === 'goblin-hall' || b.npc === 'goblin-townhall') &&
+      b.hp <= 0,
+  );
+  return {
+    half: input.destruction >= 50,
+    townHall,
+    full: input.destruction >= 100,
+  };
+}
+
+export type CampaignBiomeId =
+  | 'meadow'
+  | 'forest'
+  | 'highlands'
+  | 'volcano'
+  | 'citadel'
+  | 'practice'
+  | 'forged';
+
+export interface CampaignBiome {
+  id: CampaignBiomeId;
+  name: string;
+}
+
+/** Map a Campaign stage number and family to its Goblin Trail Map biome region. */
+export function campaignBiome(stage: number, family?: string): CampaignBiome {
+  if (family === 'challenge') return { id: 'practice', name: 'Practice Arena' };
+  if (family === 'forged') return { id: 'forged', name: 'Fan-Made Frontier' };
+  if (stage <= 15) return { id: 'meadow', name: 'Goblin Meadow' };
+  if (stage <= 35) return { id: 'forest', name: 'Whispering Woods' };
+  if (stage <= 55) return { id: 'highlands', name: 'Craggy Highlands' };
+  if (stage <= 75) return { id: 'volcano', name: 'Magma Peaks' };
+  return { id: 'citadel', name: 'Goblin Citadel' };
 }

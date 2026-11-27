@@ -5484,7 +5484,7 @@ export class GameModel {
       type: 'upgrade',
       x: b.x + size / 2,
       y: b.y + size / 2,
-      ...(finished ? { finished } : { building: b.kind }),
+      ...(finished ? { finished } : { building: b.kind, sourceId: b.id }),
     });
   }
   // ------------------------------------------------------------ Helper Hut

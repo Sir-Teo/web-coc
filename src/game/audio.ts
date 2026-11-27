@@ -18,6 +18,10 @@ export const EXTRA_NATIVE_SOUNDS = {
   'native-inferno-pick': 'assets/audio/inferno-native/darktower_pickup_01.ogg',
   'native-inferno-place': 'assets/audio/inferno-native/darktower_place_01.ogg',
   'native-bow-place': 'assets/audio/troops-native/bow_place.ogg',
+  'native-invalid': 'assets/audio/inferno-native/darktower_noammo_02.ogg',
+  'native-mode-toggle': 'assets/audio/inferno-native/darktower_reload_01.ogg',
+  'native-star-chime': 'assets/audio/inferno-dragon-native/infdragon_lvl_up_03.ogg',
+  'native-spell-revive': 'assets/audio/troops-native/Spell_Revive_Activate.ogg',
 } as const;
 export type ExtraNativeSound = keyof typeof EXTRA_NATIVE_SOUNDS;
 
@@ -298,12 +302,14 @@ export class AudioManager {
     }
     if (this.throttled(`star-${clamped}`, 220)) return;
     this.unlock();
+    this.duckMusic(clamped === 3 ? 0.3 : 0.42, clamped === 3 ? 1100 : 750, 600);
     // Subtle native celebratory bell accent layered beneath the ascending star triad.
     this.samples.shot(
       villageSample('sfx/building_finished_01.ogg'),
       clamped === 3 ? 0.42 : 0.28,
       clamped === 1 ? 0.96 : clamped === 2 ? 1.06 : 1.18,
     );
+    if (clamped === 3) this.samples.shot('native-star-chime', 0.34, 1.04);
     const ctx = this.context;
     if (!ctx || !this.audible || ctx.state !== 'running') return;
     const notes =
@@ -335,7 +341,19 @@ export class AudioManager {
       };
     });
   }
-  /** Muted low double-thud when tapping an invalid / no-deploy tile. */
+  /** Mechanical defense mode toggle / rotation click backed by a packaged native OGG. */
+  playModeToggle() {
+    this.feedback('click');
+    if (!this.effectsAudible) {
+      if (this.musicAudible) this.unlock();
+      return;
+    }
+    this.unlock();
+    if (this.samples.shot('native-mode-toggle', 0.56, 1.04)) return;
+    if (this.samples.shot(villageSample(villageSounds.click), 0.56, 1.12)) return;
+    this.tone('click');
+  }
+  /** Muted low thud when tapping an invalid / no-deploy tile (native OGG with synth fallback). */
   playInvalid() {
     this.feedback('hit');
     if (!this.effectsAudible) {
@@ -344,6 +362,7 @@ export class AudioManager {
     }
     if (this.throttled('invalid-drop', 180)) return;
     this.unlock();
+    if (this.samples.shot('native-invalid', 0.52, 0.92)) return;
     const ctx = this.context;
     if (!ctx || !this.audible || ctx.state !== 'running') return;
     const now = ctx.currentTime;
@@ -369,6 +388,11 @@ export class AudioManager {
         gain.disconnect();
       };
     }
+  }
+  /** Briefly ducks background music during high-impact stings and fanfare. */
+  duckMusic(factor = 0.36, holdMs = 800, releaseMs = 550) {
+    if (!this.musicAudible) return;
+    this.tracks.duck(factor, holdMs, releaseMs);
   }
   /** Subtle airy sweep paired with CloudTransition across village/battle switches. */
   playCloudSweep() {

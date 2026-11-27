@@ -81,6 +81,8 @@ export class MusicPlayer {
   private stings = new Map<string, Promise<AudioBuffer | null>>();
   private activeSting: { source: AudioBufferSourceNode; gain: GainNode } | null = null;
   private level = MUSIC_VOLUME;
+  private duckFactor = 1;
+  private duckTimer: ReturnType<typeof setTimeout> | null = null;
   private gain: GainNode | null = null;
   private stream: MediaElementAudioSourceNode | null = null;
   /** Increments on every change, so a slow download cannot start a track no longer wanted. */
@@ -98,15 +100,68 @@ export class MusicPlayer {
   get volume() {
     return this.level;
   }
+  get isDucked() {
+    return this.duckFactor < 0.999;
+  }
+  private effectiveVolume() {
+    return this.level * this.duckFactor;
+  }
+  private applyOutputGain(rampSec = 0) {
+    const target = this.effectiveVolume();
+    const ctx = this.host.context();
+    if (this.gain) {
+      const param = this.gain.gain;
+      if (
+        rampSec > 0 &&
+        ctx &&
+        typeof param.cancelScheduledValues === 'function' &&
+        typeof param.setValueAtTime === 'function' &&
+        typeof param.linearRampToValueAtTime === 'function'
+      ) {
+        const now = ctx.currentTime;
+        param.cancelScheduledValues(now);
+        param.setValueAtTime(param.value, now);
+        param.linearRampToValueAtTime(target, now + rampSec);
+      } else {
+        setAudioGain(this.gain, target, ctx);
+      }
+    }
+    if (this.el) this.el.volume = this.stream ? 1 : target;
+  }
+  private clearDuck(restore = false, releaseSec = 0) {
+    if (this.duckTimer !== null) {
+      clearTimeout(this.duckTimer);
+      this.duckTimer = null;
+    }
+    if (this.duckFactor !== 1) {
+      this.duckFactor = 1;
+      if (restore) this.applyOutputGain(releaseSec);
+    }
+  }
+  /** Briefly ducks music beneath high-impact fanfare (stars, Town Hall fall, upgrades). */
+  duck(factor = 0.36, holdMs = 800, releaseMs = 550) {
+    if (!this.enabled) return;
+    const clamped = Math.max(0.1, Math.min(1, factor));
+    if (this.duckTimer !== null) {
+      clearTimeout(this.duckTimer);
+      this.duckTimer = null;
+    }
+    this.duckFactor = Math.min(this.duckFactor, clamped);
+    this.applyOutputGain(0.08);
+    this.duckTimer = setTimeout(() => {
+      this.duckTimer = null;
+      this.duckFactor = 1;
+      this.applyOutputGain(Math.max(0.05, releaseMs / 1000));
+    }, Math.max(0, holdMs));
+  }
   setVolume(value: number) {
     this.level = audioVolume(value, MUSIC_VOLUME);
-    if (this.gain) setAudioGain(this.gain, this.level, this.host.context());
-    if (this.el) this.el.volume = this.stream ? 1 : this.level;
+    this.applyOutputGain();
   }
   private output(ctx: AudioContext) {
     if (!this.gain) {
       this.gain = ctx.createGain();
-      this.gain.gain.value = this.level;
+      this.gain.gain.value = this.effectiveVolume();
       this.gain.connect(ctx.destination);
     }
     return this.gain;
@@ -117,6 +172,7 @@ export class MusicPlayer {
     this.generation++;
     if (on) this.resume();
     else {
+      this.clearDuck(false);
       this.el?.pause();
       this.stopSting();
     }
@@ -126,6 +182,7 @@ export class MusicPlayer {
     const previous = this.scene;
     this.scene = scene;
     this.generation++;
+    this.clearDuck(true);
     this.stopSting();
     const loop = scene === 'victory' || scene === 'defeat' ? null : scene;
     if (loop !== this.loop) {
@@ -138,7 +195,7 @@ export class MusicPlayer {
     else if (loop === 'planning' && previous !== 'planning') {
       const generation = this.generation;
       this.sting('intro', () => generation === this.generation && this.resume());
-    } else this.resume();
+    } else this.resume(previous !== null);
   }
   private url(path: string) {
     let url = this.urls.get(path);
@@ -154,7 +211,7 @@ export class MusicPlayer {
     }
     return url;
   }
-  private resume() {
+  private resume(fadeIn = false) {
     if (!this.enabled || !this.loop) return;
     const loop = this.loop,
       part = this.part,
@@ -162,9 +219,25 @@ export class MusicPlayer {
     void this.url(LOOPS[loop][part]).then((url) => {
       if (!url || generation !== this.generation || !this.enabled) return;
       const el = (this.el ??= this.createElement());
-      if (el.src !== url) el.src = url;
+      const switched = el.src !== url;
+      if (switched) el.src = url;
       el.loop = LOOPS[loop].length === 1;
-      el.volume = this.stream ? 1 : this.level;
+      el.volume = this.stream ? 1 : this.effectiveVolume();
+      if (fadeIn && switched && this.gain) {
+        const ctx = this.host.context();
+        const param = this.gain.gain;
+        if (
+          ctx &&
+          typeof param.cancelScheduledValues === 'function' &&
+          typeof param.setValueAtTime === 'function' &&
+          typeof param.linearRampToValueAtTime === 'function'
+        ) {
+          const now = ctx.currentTime;
+          param.cancelScheduledValues(now);
+          param.setValueAtTime(0.001, now);
+          param.linearRampToValueAtTime(this.effectiveVolume(), now + 0.35);
+        }
+      }
       void el.play().catch(() => {});
     });
   }

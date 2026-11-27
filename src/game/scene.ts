@@ -6117,6 +6117,20 @@ export class VillageScene extends Phaser.Scene {
         if (!battle && !this.model.editPhotoMode) {
           const left = Math.max(0, Math.ceil((v.upgradeEnd - this.model.clock) / 1000));
           this.syncUpgradeTimer(v.id, im.x, barY - 12, formatTime(left));
+          if (!reduced && this.detailLevel === 0) {
+            // Subtle warm wooden-gold builder hammer sparks pulsing over active build sites.
+            const phase = ((performance.now() * 0.0024 + v.id * 0.37) % 1 + 1) % 1;
+            const sparkAlpha = Math.sin(phase * Math.PI) * 0.85;
+            if (sparkAlpha > 0.08) {
+              const drift = phase * 14;
+              const sx = im.x + Math.sin(v.id * 2.1 + phase * 3.1) * 10;
+              const sy = barY + 14 - drift;
+              this.detail.fillStyle(0xffe788, sparkAlpha);
+              this.detail.fillCircle(sx, sy, 2.4 * (1 - phase * 0.45));
+              this.detail.fillStyle(0xfff7d4, sparkAlpha * 0.8);
+              this.detail.fillCircle(sx - 5 + phase * 8, sy + 4, 1.7 * (1 - phase * 0.4));
+            }
+          }
         }
         if (!nativeBounds) {
           const s = BUILDINGS[v.kind].size;
@@ -7061,6 +7075,14 @@ export class VillageScene extends Phaser.Scene {
     }
     if (fx.type === 'destroy' && fx.sourceId !== undefined) {
       const source = this.fxBuildings.get(fx.sourceId);
+      if (
+        source &&
+        (source.kind === 'townhall' ||
+          source.npc === 'goblin-hall' ||
+          source.npc === 'goblin-townhall')
+      ) {
+        this.showTownHallDestroyed(iso(fx.x, fx.y));
+      }
       // Player Cannons draw their native destruction only once the deferred art is in.
       if (
         source &&
@@ -7117,18 +7139,49 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     if (fx.type === 'upgrade') {
-      this.sparks(p.x, p.y - 55, 0xd4f480, 18);
+      const reduced = this.model.reducedMotion;
+      this.sparks(p.x, p.y - 55, 0xd4f480, reduced ? 8 : 22);
       const ring = this.add
         .ellipse(p.x, p.y, 110, 55)
-        .setStrokeStyle(3, 0xe9ffb1, 0.8)
+        .setStrokeStyle(3.5, 0xffe885, 0.9)
         .setDepth(7000);
       this.animateEffect({
         targets: ring,
-        scale: 1.8,
+        scale: 1.9,
         alpha: 0,
-        duration: 750,
+        duration: 820,
         onComplete: () => ring.destroy(),
       });
+      if (fx.building || fx.finished) {
+        const done = fx.sourceId !== undefined ? this.fxBuildings.get(fx.sourceId) : undefined;
+        const badgeText =
+          fx.finished === 'research'
+            ? 'RESEARCH READY!'
+            : fx.finished === 'hero'
+              ? 'HERO READY!'
+              : done && done.level > 1
+                ? `LEVEL ${done.level}!`
+                : 'BUILT!';
+        const badge = this.add
+          .text(p.x, p.y - 64, badgeText, {
+            fontFamily: HEADING_FONT,
+            fontStyle: 'bold',
+            fontSize: fx.building === 'townhall' ? '26px' : '21px',
+            color: fx.building === 'townhall' ? '#ffe678' : '#e4ff9c',
+            stroke: '#271a08',
+            strokeThickness: 5,
+          })
+          .setOrigin(0.5)
+          .setDepth(8600);
+        this.animateEffect({
+          targets: badge,
+          y: p.y - (reduced ? 72 : 112),
+          alpha: 0,
+          duration: reduced ? 900 : 1250,
+          onComplete: () => badge.destroy(),
+        });
+        this.audio.duckMusic(fx.building === 'townhall' ? 0.3 : 0.45, 750, 550);
+      }
       // The client's own sounds: its Town Hall jingle, Building Ready, or the gem reward of
       // a cleared obstacle.
       if (fx.finished === 'research') this.audio.effect('Troop Upgrade Finished', 'build');
@@ -8055,6 +8108,55 @@ export class VillageScene extends Phaser.Scene {
       if (text.text !== label) text.setText(label);
       text.setPosition(x, y).setVisible(true);
     }
+  }
+  /** Dramatic golden-crimson shockwave & world banner when the enemy Town Hall falls. */
+  private showTownHallDestroyed(p: { x: number; y: number }) {
+    const reduced = this.model.reducedMotion;
+    this.audio.duckMusic(0.32, 950, 600);
+    if (!reduced) {
+      this.cameras.main.shake(220, 0.0045);
+      this.sparks(p.x, p.y - 36, 0xffd654, 24);
+      const outer = this.add
+        .ellipse(p.x, p.y, 130, 65)
+        .setStrokeStyle(5, 0xffd654, 0.95)
+        .setDepth(8400);
+      this.animateEffect({
+        targets: outer,
+        scale: 2.35,
+        alpha: 0,
+        duration: 720,
+        onComplete: () => outer.destroy(),
+      });
+      const inner = this.add
+        .ellipse(p.x, p.y, 88, 44)
+        .setStrokeStyle(4, 0xff5a3d, 0.9)
+        .setDepth(8401);
+      this.animateEffect({
+        targets: inner,
+        scale: 1.9,
+        alpha: 0,
+        duration: 540,
+        onComplete: () => inner.destroy(),
+      });
+    }
+    const callout = this.add
+      .text(p.x, p.y - 78, 'TOWN HALL DESTROYED!', {
+        fontFamily: HEADING_FONT,
+        fontStyle: 'bold',
+        fontSize: '22px',
+        color: '#ffe878',
+        stroke: '#3d1408',
+        strokeThickness: 6,
+      })
+      .setOrigin(0.5)
+      .setDepth(8800);
+    this.animateEffect({
+      targets: callout,
+      y: p.y - (reduced ? 84 : 124),
+      alpha: 0,
+      duration: reduced ? 1050 : 1450,
+      onComplete: () => callout.destroy(),
+    });
   }
   private pruneUpgradeTimers(battle: GameModel['battle']) {
     if (!this.upgradeTimers.size) return;

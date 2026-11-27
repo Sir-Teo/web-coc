@@ -8,9 +8,12 @@ import {
 } from './clash-emblems';
 import { CloudTransition } from './cloud-transition';
 import {
+  battleStarMilestones,
+  campaignBiome,
   deployedArmySummary,
   leagueLabel,
   leagueTier,
+  nextReplayEventTime,
   numericStatBarMarkup,
   replayTimelineMarkers,
   statBarMarkup,
@@ -243,6 +246,7 @@ import {
   GameModel,
   formatTime,
   BATTLE_SECONDS,
+  PREP_SECONDS,
   DEPLOYMENT_BOUNDARY_WARNING,
   SPELL_BOUNDARY_WARNING,
   timedBattle,
@@ -773,9 +777,13 @@ type LiveRefs = {
   replayProgress: HTMLInputElement | null;
   battleTimer: HTMLElement | null;
   battlePhase: HTMLElement | null;
+  battlePrepFill: HTMLElement | null;
   destructionValue: HTMLElement | null;
   destructionFill: HTMLElement | null;
   battleStars: HTMLElement | null;
+  milestoneHalf: HTMLElement | null;
+  milestoneTh: HTMLElement | null;
+  milestoneFull: HTMLElement | null;
   surrenderDestruction: HTMLElement | null;
   surrenderStars: HTMLElement | null;
   loot: Map<string, HTMLElement>;
@@ -1268,7 +1276,7 @@ export class HUD {
     if (stars < 1 || stars > 3) return;
     const label = stars === 1 ? 'VICTORY!' : stars === 2 ? '2 STARS!' : '3 STARS!';
     this.starCalloutEl.dataset.stars = String(stars);
-    this.starCalloutEl.innerHTML = `<div class="star-callout-stars">${clashStarsMarkup(stars, 44)}</div><b>${label}</b>`;
+    this.starCalloutEl.innerHTML = `<div class="star-callout-stars">${clashStarsMarkup(stars, 3, 44)}</div><b>${label}</b>`;
     this.starCalloutEl.hidden = false;
     void this.starCalloutEl.offsetWidth;
     this.starCalloutEl.classList.add('show');
@@ -1841,19 +1849,28 @@ export class HUD {
         break;
       case 'sweeper-rotate':
         m.rotateSweeper();
+        this.audio.playModeToggle();
         break;
       case 'skeleton-mode':
         m.toggleSkeletonMode();
+        this.audio.playModeToggle();
         break;
       case 'inferno-mode':
         this.model.toggleInfernoMode();
+        this.audio.playModeToggle();
         break;
       case 'spell-tower-weapon':
         this.model.cycleSpellTowerWeapon();
+        this.audio.playModeToggle();
         break;
       case 'xbow-mode':
-        if (arg === 'ground' || arg === 'both') m.toggleXbowMode(arg);
-        else if (!arg) m.toggleXbowMode();
+        if (arg === 'ground' || arg === 'both') {
+          m.toggleXbowMode(arg);
+          this.audio.playModeToggle();
+        } else if (!arg) {
+          m.toggleXbowMode();
+          this.audio.playModeToggle();
+        }
         break;
       case 'merge': {
         const [kind, id] = arg.split('.');
@@ -1900,9 +1917,11 @@ export class HUD {
         break;
       case 'spelltower-mode':
         this.model.cycleSpellTowerMode();
+        this.audio.playModeToggle();
         break;
       case 'gear-mode':
         this.model.toggleGearMode();
+        this.audio.playModeToggle();
         break;
       case 'wall-rotate':
         m.rotateWallMove();
@@ -2520,6 +2539,15 @@ export class HUD {
       case 'replay-jump':
         if (m.replay) m.seekReplay(m.replay.time + Number(arg));
         break;
+      case 'replay-next-event': {
+        const rec = m.replayRecording();
+        if (m.replay && rec) {
+          const markers = replayTimelineMarkers(rec.steps, rec.actions, m.replay.duration);
+          const nextTime = nextReplayEventTime(markers, m.replay.time);
+          if (nextTime !== null) m.seekReplay(nextTime);
+        }
+        break;
+      }
       case 'replay-skip':
         m.skipReplayScouting();
         break;
@@ -4362,9 +4390,11 @@ export class HUD {
       lootKeys.some((k) => (b.lootRoom?.[k] ?? campaignAmount(v, k)) < campaignAmount(v, k));
     const lootBar = (k: CampaignResource) =>
       `<div class="loot-row ${k}" aria-label="${k === 'dark' ? 'Dark Elixir' : k} remaining">${resource(k)}<div class="loot-track"><i data-lootbar="${k}" style="transform:${fillScale((lootLeft(k) / Math.max(1, campaignAmount(v, k))) * 100)}"></i></div><b data-loot="${k}">${n(lootLeft(k))}</b></div>`;
+    const milestones = battleStarMilestones(b);
+    const prepPct = !b.started && timedBattle(b) ? (b.prep / PREP_SECONDS) * 100 : 0;
     return `<div class="battle-enemy"><span class="eyebrow">${m.goblinRaid ? 'GOBLIN RAID' : m.replay ? (m.replay.recordId === null ? 'SHARED REPLAY' : 'ATTACK REPLAY') : b.practice ? 'PRACTICE ATTACK' : b.ladder ? 'LADDER MATCH' : 'ENEMY VILLAGE'}</span><h2>${v.name}</h2>${m.goblinRaid ? '<small class="practice-note">Goblins are raiding your village!<br>Watch your defenses fight back.</small>' : m.replay ? '<small class="practice-note">Recorded attack · Watch &amp; learn</small>' : b.practice ? '<small class="practice-note">Your village and army are safe.<br>No loot or trophies at stake.</small>' : b.ladder ? `<small class="ladder-stake">${icon('Trophy', 15)} ${n(b.ladder.opponent)} · Win <b>+${b.ladder.win}</b> · Defeat <b>−${b.ladder.loss}</b></small><small class="practice-note">No loot at stake.</small>` : `<small>AVAILABLE LOOT</small><div class="loot-bars">${lootKeys.map(lootBar).join('')}</div>${limitedStorage ? '<small class="loot-capacity-note">Loot beyond your storage capacity will be lost.</small>' : ''}`}</div>
- <div class="battle-clock ${b.started ? '' : 'prep'}"><span>${battleClockLabel(b)}</span><b id="battle-timer">${battleClockValue(b)}</b></div>
- <div class="destruction"><span>Total destruction</span><div id="battle-stars" class="battle-stars" role="img" aria-label="${starCountLabel(b.stars)}" data-stars="${b.stars}">${clashStarsMarkup(b.stars, 22)}</div><b id="destruction-value">${b.destruction}%</b><div class="destruction-bar"><i id="destruction-fill" style="transform:${fillScale(b.destruction)}"></i><span class="notch half" style="left:50%"></span><span class="notch full" style="left:100%"></span></div><small>★ 50% <i>·</i> ★ Town Hall <i>·</i> ★ 100%</small></div>
+ <div class="battle-clock ${b.started ? '' : 'prep'}"><span>${battleClockLabel(b)}</span><b id="battle-timer">${battleClockValue(b)}</b>${!b.started && timedBattle(b) ? `<div id="battle-prep-bar" class="battle-prep-bar" aria-hidden="true"><i id="battle-prep-fill" style="transform:${fillScale(prepPct)}"></i></div>` : ''}</div>
+ <div class="destruction"><span>Total destruction</span><div id="battle-stars" class="battle-stars" role="img" aria-label="${starCountLabel(b.stars)}" data-stars="${b.stars}">${clashStarsMarkup(b.stars, 3, 22)}</div><b id="destruction-value">${b.destruction}%</b><div class="destruction-bar"><i id="destruction-fill" style="transform:${fillScale(b.destruction)}"></i><span class="notch half" style="left:50%"></span><span class="notch full" style="left:100%"></span></div><small class="destruction-milestones"><span class="milestone-chip${milestones.half ? ' earned' : ''}" data-milestone="half">★ 50%</span> <i>·</i> <span class="milestone-chip${milestones.townHall ? ' earned' : ''}" data-milestone="th">★ Town Hall</span> <i>·</i> <span class="milestone-chip${milestones.full ? ' earned' : ''}" data-milestone="full">★ 100%</span></small></div>
  ${
    m.practiceGuide && !m.replay
      ? this.practiceGuideBanner()
@@ -4407,7 +4437,7 @@ export class HUD {
                   'aria-label="Next ladder opponent"',
                 )
               : '';
-          return `<div class="battle-bottom"><button id="battle-exit" class="game-btn red end-battle" data-action="${b.started ? 'surrender' : 'home'}">${icon('Flag', 23)} ${b.started ? 'Surrender' : 'Return home'}</button>${nextLadderBtn}${button('battle-speed', `${icon('FastForward', 20)} <b>${m.battleSpeed}×</b>`, `game-btn ${m.battleSpeed > 1 ? 'green' : 'stone'} battle-speed`, `aria-label="Battle speed ${m.battleSpeed}×, tap to change"`)}<div class="deploy-tray"><div class="deploy-label">${this.deployHint()}</div><div class="army-tray">${this.battleHeroCards()}${TROOP_ORDER.filter(
+          return `<div class="battle-bottom"><button id="battle-exit" class="game-btn red end-battle" data-action="${b.started ? 'surrender' : 'home'}">${icon('Flag', 23)} ${b.started ? 'Surrender' : 'Return home'}</button>${nextLadderBtn}${button('battle-speed', `${icon('FastForward', 20)} <b>${m.battleSpeed}×</b>`, `game-btn ${m.battleSpeed > 1 ? 'green' : 'stone'} battle-speed`, `aria-label="Battle speed ${m.battleSpeed}×, tap to change"`)}<div class="deploy-tray"><div class="deploy-label${m.activeSpell ? ' spell-armed' : ''}">${this.deployHint()}</div><div class="army-tray">${this.battleHeroCards()}${TROOP_ORDER.filter(
             (k) => b.carriedArmy[k] > 0,
           )
             .map((k) =>
@@ -4460,11 +4490,19 @@ export class HUD {
     const rec = this.model.replayRecording();
     const markers = rec ? replayTimelineMarkers(rec.steps, rec.actions, r.duration) : [];
     const markerMarkup = markers.length
-      ? `<div class="replay-markers" aria-hidden="true">${markers.map((mk) => `<i class="replay-marker ${mk.kind}" style="left:${mk.pct.toFixed(1)}%"></i>`).join('')}</div>`
+      ? `<div class="replay-markers" aria-hidden="true">${markers.map((mk) => `<i class="replay-marker ${mk.kind}" style="left:${mk.pct.toFixed(1)}%" title="${mk.label} · ${clock(mk.time)}"></i>`).join('')}</div>`
+      : '';
+    const nextEventBtn = markers.length
+      ? button(
+          'replay-next-event',
+          `${icon('ChevronRight', 17)}<span class="replay-control-label">Next event</span>`,
+          'replay-link',
+          `${r.seeking ? 'disabled ' : ''}aria-label="Next event" title="Jump to next deployment, spell or ability"`,
+        )
       : '';
     return `<section class="replay-controls replay-transport" aria-label="Replay playback">
       <div class="replay-status"><strong aria-live="polite">${this.replayStatusText()}</strong><span id="replay-time">${clock(r.time)} / ${clock(r.duration)}</span></div>
-      <div class="replay-track-wrap">${markerMarkup}<input id="replay-progress" data-action="replay-position" type="range" aria-label="Replay position" aria-valuetext="${clock(r.time)}" min="0" max="${r.duration || 1}" step="any" value="${r.seeking ? r.seekTarget : r.time}" ${!r.duration ? 'disabled' : ''}></div><div class="replay-shortcuts">${button('replay-jump:-10', '−10s', 'replay-link', r.seeking ? 'disabled' : '')}${button('replay-jump:10', '+10s', 'replay-link', r.seeking ? 'disabled' : '')}${button('replay-skip', `${icon('SkipForward', 17)}<span class="replay-control-label">First deployment</span>`, 'replay-link', `${r.seeking ? 'disabled ' : ''}aria-label="First deployment" title="Jump to first deployment"`)}${button('replay-export', `${icon('Download', 17)}<span class="replay-control-label">Export replay</span>`, 'replay-link', 'aria-label="Export replay" title="Export replay"')}</div>
+      <div class="replay-track-wrap">${markerMarkup}<input id="replay-progress" data-action="replay-position" type="range" aria-label="Replay position" aria-valuetext="${clock(r.time)}" min="0" max="${r.duration || 1}" step="any" value="${r.seeking ? r.seekTarget : r.time}" ${!r.duration ? 'disabled' : ''}></div><div class="replay-shortcuts">${button('replay-jump:-10', '−10s', 'replay-link', r.seeking ? 'disabled' : '')}${button('replay-jump:10', '+10s', 'replay-link', r.seeking ? 'disabled' : '')}${nextEventBtn}${button('replay-skip', `${icon('SkipForward', 17)}<span class="replay-control-label">First deployment</span>`, 'replay-link', `${r.seeking ? 'disabled ' : ''}aria-label="First deployment" title="Jump to first deployment"`)}${button('replay-export', `${icon('Download', 17)}<span class="replay-control-label">Export replay</span>`, 'replay-link', 'aria-label="Export replay" title="Export replay"')}</div>
       <div class="replay-buttons">${button('replay-pause', `${icon(playbackAction, 17)}<span class="replay-control-label">${playbackAction}</span>`, 'game-btn blue', `${r.complete ? 'disabled ' : ''}aria-label="${playbackAction}" title="${playbackAction}"`)}${button('replay-restart', `${icon('RotateCcw', 17)}<span class="replay-control-label">Restart</span>`, 'game-btn stone', 'aria-label="Restart" title="Restart replay"')}<div class="replay-speeds" role="group" aria-label="Playback speed">${[1, 2, 4].map((speed) => button(`replay-speed:${speed}`, `${speed}×`, `game-btn ${r.speed === speed ? 'green' : 'stone'}`, `aria-pressed="${r.speed === speed}"`)).join('')}</div>${button('replay-exit', `${icon('ArrowLeft', 17)}<span class="replay-control-label">Back to log</span>`, 'game-btn stone', 'aria-label="Back to log" title="Back to log"')}</div>
     </section>`;
   }
@@ -5394,7 +5432,7 @@ export class HUD {
             'game-btn stone shop-buy',
             'disabled',
           )}</article>`;
-        return `<article class="shop-tile ${full || locked ? 'unavailable' : ''}" ${full || locked ? '' : `data-drag="${k}"`}><div class="shop-tile-art"><img src="${hudAsset(k)}" alt="" draggable="false"></div><h3>${d.name}</h3><small class="shop-count">${locked ? `Town Hall ${unlockTownHall(k)}` : `${count}/${limit}`}</small>${button(`build:${k}`, locked ? `${icon('LockKeyhole', 13)} Locked` : full ? 'At limit' : price.cost === 0 ? 'Free' : `${resource(price.resource)} ${n(price.cost)}`, `game-btn ${locked || full || !afford ? 'stone' : 'green'} shop-buy`, locked || full ? 'disabled' : '')}</article>`;
+        return `<article class="shop-tile ${full || locked ? 'unavailable' : ''}" ${full || locked ? '' : `data-drag="${k}"`}>${!locked && count === 0 ? '<span class="shop-new-badge">NEW</span>' : ''}<div class="shop-tile-art"><img src="${hudAsset(k)}" alt="" draggable="false"></div><h3>${d.name}</h3><small class="shop-count">${locked ? `Town Hall ${unlockTownHall(k)}` : `${count}/${limit}`}</small>${button(`build:${k}`, locked ? `${icon('LockKeyhole', 13)} Locked` : full ? 'At limit' : price.cost === 0 ? 'Free' : `${resource(price.resource)} ${n(price.cost)}`, `game-btn ${locked || full || !afford ? 'stone' : 'green'} shop-buy`, locked || full ? 'disabled' : '')}</article>`;
       });
     return {
       body: '<div class="drawer-body shop-strip">',
@@ -6646,7 +6684,7 @@ export class HUD {
               const key = `${locked}|${needsArmy}|${score}|${loot.gold}|${loot.elixir}|${loot.dark}`;
               const cached = this.campaignCards.get(i);
               if (cached?.key === key) return cached.markup;
-              const markup = `<article class="campaign-card ${locked || pending ? 'locked' : ''}" id="campaign-stage-${i}" data-stage="${v.stage}"><div class="campaign-number">${locked ? icon('LockKeyhole', 22) : v.stage}</div>${this.campaignMap(i)}<div class="campaign-info"><span>${drill ? PRACTICE_TEXTS.title.toUpperCase() : 'SINGLE PLAYER'}</span><h3>${v.name}</h3><p>${lockReason ? html(lockReason) : drill ? `Fought with its own army: ${practiceArmyLine(drill)}. Yours stays home.` : v.dependencies.length ? 'Win a star to open the next path.' : 'Your campaign begins here.'}</p>${v.family === 'forged' ? '<small class="campaign-fan-made">Fan-made · not a client village</small>' : ''}${v.recommendedTownHall ? `<small class="campaign-recommendation">Suggested Town Hall: ${v.recommendedTownHall}</small>` : ''}<div class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</div>${loot.gold || loot.elixir || loot.dark ? '' : `<small class="campaign-depleted">Loot depleted${score < 3 ? ' · Replay for stars' : ' · Village cleared'}</small>`}</div><div class="campaign-action"><div class="campaign-stars" role="img" aria-label="${starCountLabel(score)}">${clashStarsMarkup(score, 18)}</div>${button(`attack:${i}`, pending ? 'Coming soon' : locked ? 'Locked' : needsArmy ? 'Scout' : `Attack ${icon('ArrowRight', 17)}`, 'game-btn ' + (locked || pending ? 'stone' : 'orange'), locked || pending ? 'disabled' : '')}</div></article>`;
+              const markup = `<article class="campaign-card ${locked || pending ? 'locked' : ''}" id="campaign-stage-${i}" data-stage="${v.stage}"><div class="campaign-number">${locked ? icon('LockKeyhole', 22) : v.stage}</div>${this.campaignMap(i)}<div class="campaign-info"><span>${drill ? PRACTICE_TEXTS.title.toUpperCase() : 'SINGLE PLAYER'}</span><h3>${v.name}</h3><p>${lockReason ? html(lockReason) : drill ? `Fought with its own army: ${practiceArmyLine(drill)}. Yours stays home.` : v.dependencies.length ? 'Win a star to open the next path.' : 'Your campaign begins here.'}</p>${v.family === 'forged' ? '<small class="campaign-fan-made">Fan-made · not a client village</small>' : ''}${v.recommendedTownHall ? `<small class="campaign-recommendation">Suggested Town Hall: ${v.recommendedTownHall}</small>` : ''}<div class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</div>${loot.gold || loot.elixir || loot.dark ? '' : `<small class="campaign-depleted">Loot depleted${score < 3 ? ' · Replay for stars' : ' · Village cleared'}</small>`}</div><div class="campaign-action"><div class="campaign-stars" role="img" aria-label="${starCountLabel(score)}">${clashStarsMarkup(score, 3, 18)}</div>${button(`attack:${i}`, pending ? 'Coming soon' : locked ? 'Locked' : needsArmy ? 'Scout' : `Attack ${icon('ArrowRight', 17)}`, 'game-btn ' + (locked || pending ? 'stone' : 'orange'), locked || pending ? 'disabled' : '')}</div></article>`;
               this.campaignCards.set(i, { key, markup });
               return markup;
             },
@@ -6659,8 +6697,27 @@ export class HUD {
     armyReady: boolean,
     next: number | null,
   ) {
+    const biomeStars = new Map<string, { earned: number; total: number }>();
+    NATIVE_CAMPAIGN.forEach((v, i) => {
+      if (!shown(i)) return;
+      const biome = campaignBiome(v.stage, v.family);
+      const entry = biomeStars.get(biome.id) ?? { earned: 0, total: 0 };
+      entry.earned += stars[i] ?? 0;
+      entry.total += 3;
+      biomeStars.set(biome.id, entry);
+    });
+    let lastBiome = '';
     const nodes = NATIVE_CAMPAIGN.map((v, i) => {
       if (!shown(i)) return '';
+      const biome = campaignBiome(v.stage, v.family);
+      const header =
+        biome.id !== lastBiome
+          ? (() => {
+              lastBiome = biome.id;
+              const tally = biomeStars.get(biome.id)!;
+              return `<div class="trail-biome-banner" data-biome="${biome.id}"><span>${html(biome.name)}</span><b>${tally.earned} / ${tally.total} ★</b></div>`;
+            })()
+          : '';
       const loot = this.model.campaignLoot(i, 'goblin-v1');
       const pending = campaignPending(i);
       const locked = !this.model.campaignOpen(i);
@@ -6669,7 +6726,8 @@ export class HUD {
       const needsArmy = !locked && !pending && !drill && !armyReady;
       const side = i % 2 === 0 ? 'left' : 'right';
       const stateCls = locked || pending ? 'locked' : i === next ? 'current' : score === 3 ? 'cleared' : 'open';
-      return `<article class="trail-node ${side} ${stateCls}" id="campaign-stage-${i}" data-stage="${v.stage}"><div class="trail-pin" aria-hidden="true">${locked ? icon('LockKeyhole', 18) : `<span>${v.stage}</span>`}</div><div class="trail-card"><header><strong>${html(v.name)}</strong><div class="campaign-stars" role="img" aria-label="${starCountLabel(score)}">${clashStarsMarkup(score, 16)}</div></header><div class="trail-loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</div>${button(`attack:${i}`, pending ? 'Soon' : locked ? 'Locked' : needsArmy ? 'Scout' : `Attack ${icon('ArrowRight', 15)}`, `game-btn ${locked || pending ? 'stone' : 'orange'} trail-btn`, locked || pending ? 'disabled' : '')}</div></article>`;
+      const beacon = i === next ? '<span class="trail-frontier-pill">NEXT FRONTIER</span>' : '';
+      return `${header}<article class="trail-node ${side} ${stateCls}" data-biome="${biome.id}" id="campaign-stage-${i}" data-stage="${v.stage}"><div class="trail-pin" aria-hidden="true">${locked ? icon('LockKeyhole', 18) : `<span>${v.stage}</span>`}</div><div class="trail-card">${beacon}<header><strong>${html(v.name)}</strong><div class="campaign-stars" role="img" aria-label="${starCountLabel(score)}">${clashStarsMarkup(score, 3, 16)}</div></header><div class="trail-loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</div>${button(`attack:${i}`, pending ? 'Soon' : locked ? 'Locked' : needsArmy ? 'Scout' : `Attack ${icon('ArrowRight', 15)}`, `game-btn ${locked || pending ? 'stone' : 'orange'} trail-btn`, locked || pending ? 'disabled' : '')}</div></article>`;
     }).join('');
     return `<div class="modal-body campaign-trail-map" aria-label="Goblin Trail Map"><div class="trail-road" aria-hidden="true"></div>${nodes}</div>`;
   }
@@ -6950,7 +7008,8 @@ export class HUD {
           })
           .join('')}</div></div>`
       : '';
-    return `<div class="modal-backdrop result-backdrop"><section class="result-modal ${outcomeClass}" role="dialog" aria-modal="true" aria-labelledby="result-title"><div class="result-summary"><div class="result-rays"></div><span class="result-eyebrow">BATTLE COMPLETE</span><h1 id="result-title" tabindex="-1">${b.practice ? 'Practice complete' : r.stars ? 'Victory!' : 'A brave attempt'}</h1><div class="result-stars" role="img" aria-label="${starCountLabel(r.stars)}">${clashStarsMarkup(r.stars, 42)}</div><p>${r.destruction}% destruction <span>·</span> ${b.practice ? 'Your village' : campaignStage(b.index, b.catalog).name}</p>${
+    const milestones = battleStarMilestones(b);
+    return `<div class="modal-backdrop result-backdrop"><section class="result-modal ${outcomeClass}" role="dialog" aria-modal="true" aria-labelledby="result-title"><div class="result-summary"><div class="result-rays"></div><span class="result-eyebrow">BATTLE COMPLETE</span><h1 id="result-title" tabindex="-1">${b.practice ? 'Practice complete' : r.stars ? 'Victory!' : 'A brave attempt'}</h1><div class="result-stars" data-stars="${r.stars}" role="img" aria-label="${starCountLabel(r.stars)}">${clashStarsMarkup(r.stars, 3, 42)}</div><p>${r.destruction}% destruction <span>·</span> ${b.practice ? 'Your village' : campaignStage(b.index, b.catalog).name}</p><div class="result-milestones" aria-label="Star conditions"><span class="result-milestone${milestones.half ? ' earned' : ''}">★ 50%</span><span class="result-milestone${milestones.townHall ? ' earned' : ''}">★ Town Hall</span><span class="result-milestone${milestones.full ? ' earned' : ''}">★ 100%</span></div>${
       b.practice
         ? '<p class="practice-result-note">Your village, troops and spells are unchanged.<br>Rearrange your defenses and try a different approach.</p>'
         : b.ladder
@@ -7031,9 +7090,13 @@ export class HUD {
       replayProgress: one<HTMLInputElement>('#replay-progress'),
       battleTimer: one('#battle-timer'),
       battlePhase: one('.battle-clock > span'),
+      battlePrepFill: one('#battle-prep-fill'),
       destructionValue: one('#destruction-value'),
       destructionFill: one('#destruction-fill'),
       battleStars: one('#battle-stars'),
+      milestoneHalf: one('[data-milestone="half"]'),
+      milestoneTh: one('[data-milestone="th"]'),
+      milestoneFull: one('[data-milestone="full"]'),
       surrenderDestruction: one('[data-surrender-destruction]'),
       surrenderStars: one('[data-surrender-stars]'),
       loot,
@@ -7355,7 +7418,19 @@ export class HUD {
         this.lastCountdownSec = -1;
       }
       setText(refs.battleTimer, battleClockValue(b));
+      if (refs.battlePrepFill && !b.started && timedBattle(b)) {
+        const nextPrep = fillScale((b.prep / PREP_SECONDS) * 100);
+        if (refs.battlePrepFill.style.transform !== nextPrep)
+          refs.battlePrepFill.style.transform = nextPrep;
+      }
+      refs.deployLabel?.classList.toggle('spell-armed', Boolean(m.activeSpell));
       setText(refs.destructionValue, `${b.destruction}%`);
+      if (refs.milestoneHalf || refs.milestoneTh || refs.milestoneFull) {
+        const milestones = battleStarMilestones(b);
+        refs.milestoneHalf?.classList.toggle('earned', milestones.half);
+        refs.milestoneTh?.classList.toggle('earned', milestones.townHall);
+        refs.milestoneFull?.classList.toggle('earned', milestones.full);
+      }
       if (refs.surrenderDestruction) {
         setText(refs.surrenderDestruction, `${b.destruction}% destruction`);
         setText(refs.surrenderStars, `${b.stars} ${b.stars === 1 ? 'star' : 'stars'}`);
@@ -7370,7 +7445,7 @@ export class HUD {
         const prev = Number(stars.dataset.stars ?? '0');
         stars.dataset.stars = String(b.stars);
         stars.setAttribute('aria-label', starCountLabel(b.stars));
-        stars.innerHTML = clashStarsMarkup(b.stars, 22);
+        stars.innerHTML = clashStarsMarkup(b.stars, 3, 22);
         if (b.stars > prev) {
           if (!m.reducedMotion) {
             stars.classList.remove('star-pop');

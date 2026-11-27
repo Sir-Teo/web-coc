@@ -564,3 +564,57 @@ typecheck:tests`), production build (`npm run build`), and Chromium E2E specs
 textures, nameplate typography proportions, and Goblin Trail Map map-art
 illustrations remain web presentation pending matched captures.
 
+### Milestone 4 — Dynamic Audio Mixing, Live Canvas Feedback, and Battle/Replay/Campaign Clarity
+
+Implemented the next web-verifiable Clash of Clans `18.400.21` fidelity wave
+across P3 audio dynamics, P2 live battlefield/village world feedback, and P1
+HUD/campaign/replay ergonomics:
+
+- **P3 Dynamic Audio Mixing & Additional Native OGG Cues (`src/game/music.ts`, `src/game/audio.ts`, `src/ui/hud.ts`)**:
+  - Added smooth Web Audio gain-ramp track fade-ins and temporary music ducking
+    (`Music.duck(factor, holdMs, releaseMs)`, `isDucked`) during celebratory
+    chimes (victory stars and Home upgrade completions) without modifying
+    `reference/village-sounds/sounds.json`.
+  - Wired 4 additional already-packaged `18.400.21` native `.ogg` cues into
+    `EXTRA_NATIVE_SOUNDS` (`native-invalid`, `native-mode-toggle`,
+    `native-star-chime`, `native-spell-revive`), connecting `playInvalid()`,
+    `playModeToggle()` across defense mode/rotation controls, and the 3-star
+    celebration chime.
+- **P2 Live Canvas Celebrations & Construction Life (`src/game/model.ts`, `src/game/scene.ts`)**:
+  - Added enemy Town Hall destruction shockwave, gold ember burst, brief camera
+    shake, and floating world banner (`TOWN HALL DESTROYED!`) via
+    `showTownHallDestroyed()`.
+  - Extended building upgrade completions in `finishedAt()` with `sourceId` so
+    Home village upgrades, research, and hero completions emit rising world
+    badges (`LEVEL N!`, `BUILT!`, `RESEARCH READY!`, `HERO READY!`) paired with
+    subtle music ducking.
+  - Added subtle construction hammer sparks on active Home upgrade sites at
+    full detail (`detailLevel === 0`).
+- **P1 Battle HUD, Replay Ergonomics, Shop, & Campaign Trail (`src/ui/rea-helpers.ts`, `src/ui/hud.ts`, `src/ui/rea-fidelity.css`)**:
+  - Added live battle star milestone pills (`★ 50%`, `★ Town Hall`, `★ 100%`)
+    that highlight in real time, a pre-deploy scouting countdown bar
+    (`#battle-prep-bar`), a full-width non-shifting `.deploy-label.spell-armed`
+    highlight, and a Battle Result star-condition breakdown (`.result-milestones`,
+    hidden on `568×320` short landscape so all 4 Practice buttons remain
+    unclipped).
+  - Enhanced Replay controls with interactive `Next event` jumping
+    (`nextReplayEventTime()`), per-marker tooltips (`title`), and a single-row
+    responsive shortcut grid preserving `>= 44×44` touch targets at `320×740`
+    and `568×320`.
+  - Added biome-grouped Goblin Trail Map zone headers (`campaignBiome()`) with
+    per-biome star tallies and a `NEXT FRONTIER` beacon, Shop `"NEW"` corner
+    badges on unlocked unbuilt tiles, and fixed a Milestone 3 `clashStarsMarkup`
+    argument-order regression across all 6 HUD call sites so star ribbons
+    always render 3 sculpted SVG stars.
+
+Verified in Vitest (`tests/rea-milestone4.test.ts` + `tests/rea-fidelity.test.ts`
+and full 615-suite run: 9,268 tests passing), strict TypeScript
+(`npm run typecheck` and `npm run typecheck:tests`), Vite production build
+(`npx vite build`), and Chromium E2E specs
+(`tests/browser/rea-milestone4.spec.ts` 4/4, `replay-tools.spec.ts` viewport
+layout, `hud-layout.spec.ts` 8/8, `practice-mode.spec.ts` 28/28,
+`rea-milestone2.spec.ts` 3/3, `rea-milestone3.spec.ts` 4/4). Matched live
+`18.400.21` client captures and ARM64 Android native binary instrumentation
+remain external follow-up outside this x86_64 Linux workspace.
+
+

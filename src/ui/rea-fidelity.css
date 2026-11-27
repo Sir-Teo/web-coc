@@ -4209,6 +4209,256 @@ textarea:focus-visible,
   }
 }
 
+/* ============================================================================
+   REA Milestone 4 — Live Battle Milestones, Scouting Bar, Biome Trail & Badges
+   ============================================================================ */
+
+/* Battle Scouting Countdown Bar */
+.battle-prep-bar {
+  width: 100%;
+  height: 5px;
+  margin-top: 3px;
+  border-radius: 99px;
+  background: #171f15d9;
+  border: 1px solid #d9b54a80;
+  overflow: hidden;
+}
+
+.battle-prep-bar > i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: left center;
+  background: linear-gradient(90deg, #ffb838 0%, #ffe675 100%);
+  transition: transform 0.14s linear;
+}
+
+/* Live Battle Star Milestone Chips */
+.destruction-milestones {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.milestone-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  border-radius: 99px;
+  color: #dcd7be;
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.milestone-chip.earned {
+  color: #362004;
+  background: linear-gradient(180deg, #fff099 0%, #f2b730 100%);
+  text-shadow: none;
+  box-shadow:
+    inset 0 1px 0 #fffbe6,
+    0 1px 3px #140c0280;
+  font-weight: 900;
+}
+
+/* Spell-Armed Deploy Banner */
+.deploy-label {
+  pointer-events: none;
+}
+
+.deploy-label.spell-armed {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #5d2b8ae6 15%,
+    #37155ce6 85%,
+    transparent 100%
+  );
+  color: #fff6ff;
+  text-shadow:
+    0 1px 3px #240842,
+    0 0 8px #c880ff;
+}
+
+/* Battle Result Star Milestone Breakdown */
+.result-milestones {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 4px auto 6px;
+  flex-wrap: wrap;
+}
+
+.result-milestone {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #b7c2b3;
+  background: #172419b8;
+  border: 1px solid #7f947c66;
+}
+
+.result-milestone.earned {
+  color: #382103;
+  background: linear-gradient(180deg, #ffef91 0%, #eda924 100%);
+  border-color: #fff5c2;
+  box-shadow:
+    inset 0 1px 0 #fffbe6,
+    0 2px 6px #170e0266;
+}
+
+@media (max-width: 700px) and (max-height: 500px) {
+  .battle-clock {
+    padding: 1px 7px 1px;
+    border-width: 1px;
+  }
+  .battle-clock > span {
+    display: block;
+    line-height: 1.1;
+  }
+  .battle-clock > b {
+    margin-top: 1px;
+    line-height: 1;
+  }
+}
+
+@media (max-height: 500px) and (min-aspect-ratio: 4/3) {
+  .result-milestones {
+    display: none;
+  }
+  .battle-prep-bar {
+    height: 3px;
+    margin-top: 2px;
+  }
+}
+
+/* Shop Unlocked Unbuilt "NEW" Corner Ribbon */
+.shop-tile {
+  position: relative;
+}
+
+.shop-new-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #ff6c59 0%, #d9261c 100%);
+  border: 1.5px solid #ffd5cc;
+  color: #ffffff;
+  font-size: 9.5px;
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  line-height: 1.2;
+  text-shadow: 0 1px 1px #5c0c06;
+  box-shadow: 0 2px 5px #5e0c0659;
+  pointer-events: none;
+}
+
+/* Goblin Trail Map Biome Zone Headers & Next Frontier Beacon */
+.trail-biome-banner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 14px;
+  margin-top: 4px;
+  border-radius: 10px;
+  border: 2px solid #8c7447;
+  border-bottom-width: 3px;
+  background: linear-gradient(180deg, #5e7d34 0%, #3d591f 100%);
+  color: #fffce6;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.4px;
+  text-shadow: var(--coc-outline-sm);
+  box-shadow:
+    inset 0 1px 0 #ffffff44,
+    0 3px 8px #1d241240;
+}
+
+.trail-biome-banner b {
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: #1b29128c;
+  border: 1px solid #f7d96e80;
+  color: #ffe875;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.trail-biome-banner[data-biome='forest'] {
+  background: linear-gradient(180deg, #3e7045 0%, #244a2b 100%);
+  border-color: #709e74;
+}
+
+.trail-biome-banner[data-biome='highlands'] {
+  background: linear-gradient(180deg, #756b58 0%, #4d4537 100%);
+  border-color: #ada089;
+}
+
+.trail-biome-banner[data-biome='volcano'] {
+  background: linear-gradient(180deg, #8f3d28 0%, #592014 100%);
+  border-color: #d47b5a;
+}
+
+.trail-biome-banner[data-biome='citadel'] {
+  background: linear-gradient(180deg, #5a3c78 0%, #36204d 100%);
+  border-color: #b48ee0;
+}
+
+.trail-biome-banner[data-biome='practice'] {
+  background: linear-gradient(180deg, #2c6d8a 0%, #194459 100%);
+  border-color: #7cc5e3;
+}
+
+.trail-biome-banner[data-biome='forged'] {
+  background: linear-gradient(180deg, #8a6427 0%, #573d14 100%);
+  border-color: #deb464;
+}
+
+.trail-node[data-biome='volcano'] .trail-card {
+  border-color: #c27c63;
+}
+
+.trail-node[data-biome='citadel'] .trail-card {
+  border-color: #9e82bd;
+}
+
+.trail-frontier-pill {
+  align-self: flex-start;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #ffb742 0%, #e06b14 100%);
+  border: 1px solid #fff0b8;
+  color: #ffffff;
+  font-size: 9.5px;
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  text-shadow: 0 1px 1px #612603;
+}
+
+@media (max-width: 600px), (max-height: 550px) {
+  .replay-transport .replay-shortcuts {
+    display: grid;
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(44px, 1fr);
+    gap: 2px;
+  }
+}
+
 /* Respect both OS reduced-motion and in-app reduced-motion setting */
 @media (prefers-reduced-motion: reduce) {
   .level-shield,
@@ -4233,6 +4483,8 @@ textarea:focus-visible,
   .builder-menu .builder-option,
   .loot-track > i,
   .destruction-bar > i,
+  .battle-prep-bar > i,
+  .milestone-chip,
   .canvas-place-btn,
   .army-chip {
     transition: none;
@@ -4279,6 +4531,8 @@ textarea:focus-visible,
 .reduce-motion .builder-menu .builder-option,
 .reduce-motion .loot-track > i,
 .reduce-motion .destruction-bar > i,
+.reduce-motion .battle-prep-bar > i,
+.reduce-motion .milestone-chip,
 .reduce-motion .canvas-place-btn,
 .reduce-motion .army-chip {
   transition: none;
